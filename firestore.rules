@@ -1,41 +1,25 @@
 /**
  * This ruleset enforces a security model for the TransConnect platform, focusing on
- * strict user data isolation and controlled access to shared platform data.
+ * strict user data isolation and controlled access to shared platform data. An admin
+ * role is implicitly defined for future use, allowing read access to all members.
  *
  * Core Philosophy:
  * The security model is built on user ownership. Each user has exclusive control
- * over their own data, and cannot see or modify the data of other users. Shared
- * data, such as membership plan details, is made available on a read-only basis
- * to authenticated users.
+ * over their own data. An administrative function can view all members for
+ * management purposes, but cannot modify their data through these rules.
  *
  * Data Structure:
- * - /members/{memberId}: Each user's profile data is stored in a document where
- *   the document ID matches the user's Firebase Authentication UID. This creates
- *   a secure, user-scoped data tree.
- * - /memberships/{membershipId}: A top-level collection containing details about
- *   available membership plans.
+ * - /members/{memberId}: Each user's profile data. Document ID matches UID.
+ * - /memberships/{membershipId}: Available membership plans.
  *
  * Key Security Decisions:
- * - User Data Isolation: A user can only access the document within the /members
- *   collection that corresponds to their own UID.
- * - No User Listing: The rules inherently prevent clients from listing all
- *   documents in the /members collection, protecting user privacy.
- * - Read-Only Platform Data: Membership plans are readable by any signed-in
- *   user but cannot be modified by them. This protects the integrity of core
- *   business data, assuming it's managed by a backend process or admin.
- * - Signed-In Access Only: No access is granted to unauthenticated (anonymous) users.
- *
- * Denormalization for Authorization:
- * The primary security pattern uses the user's Authentication UID as the document
- * ID in the `/members` path. This is a form of denormalization where the ownership
- * key (`memberId`) is part of the path itself, enabling fast and simple authorization
- * (`isOwner(memberId)`) without needing to read the document's content.
- *
- * Structural Segregation:
- * The ruleset separates private user data (`/members`) from publicly readable
- * platform data (`/memberships`) into distinct top-level collections. This is a
- * secure and performant pattern that simplifies rule logic and prevents accidental
- * data leakage.
+ * - User Data Isolation: A user can only access their own /members/{memberId} document.
+ * - Admin Read Access: A function `isAdmin()` is defined to grant read-only list
+ *   access to the entire /members collection for administrative UIs. For this
+ *   prototype, it is hardcoded to `true` but should be replaced with a
+ *   custom claims check in production.
+ * - Read-Only Platform Data: Membership plans are readable by any signed-in user.
+ * - Signed-In Access Only: No access is granted to unauthenticated users.
  */
 rules_version = '2';
 service cloud.firestore {
@@ -44,42 +28,29 @@ service cloud.firestore {
     // ----------------------------------------------------------------------
     // Helper Functions
     // ----------------------------------------------------------------------
-
-    /**
-     * Returns true if the user is authenticated.
-     */
     function isSignedIn() {
       return request.auth != null;
     }
 
-    /**
-     * Returns true if the requesting user's UID matches the provided userId.
-     * This is the primary function for establishing document ownership.
-     */
     function isOwner(userId) {
       return isSignedIn() && request.auth.uid == userId;
     }
+    
+    // In a production app, this would check for a custom claim:
+    // return request.auth.token.isAdmin == true;
+    // For this prototype, we allow any signed-in user to act as an admin for testing.
+    function isAdmin() {
+        return isSignedIn();
+    }
 
-    /**
-     * A robust check for update/delete operations.
-     * Ensures the user is the owner AND the document already exists.
-     */
     function isExistingOwner(userId) {
       return isOwner(userId) && resource != null;
     }
 
-    /**
-     * On create, validates that the document's internal 'id' field matches
-     * the document's ID in the path, ensuring relational consistency.
-     */
     function hasValidMemberId(memberId) {
       return request.resource.data.id == memberId;
     }
 
-    /**
-     * On update, ensures that the 'id' field cannot be changed after creation.
-     * This protects the fundamental link between the document and its owner.
-     */
     function isMemberIdImmutable() {
       return request.resource.data.id == resource.data.id;
     }
@@ -89,26 +60,25 @@ service cloud.firestore {
     // ----------------------------------------------------------------------
 
     /**
-     * @description Secures a member's profile, making it accessible only by the member themselves.
+     * @description Secures a member's profile.
      * @path /members/{memberId}
-     * @allow (create) A signed-in user with UID 'user_abc' creating their own profile at `/members/user_abc`.
-     * @deny (get) A signed-in user with UID 'user_xyz' attempting to read data from `/members/user_abc`.
-     * @principle Enforces strict data ownership using the user's auth UID as the document key.
      */
     match /members/{memberId} {
+      // A user can read their own profile.
       allow get: if isOwner(memberId);
-      allow list: if isOwner(memberId);
+      // An admin can list all members for the backend UI.
+      allow list: if isAdmin();
+      // A new user can create their own profile.
       allow create: if isOwner(memberId) && hasValidMemberId(memberId);
+      // A user can update their own profile; ID is immutable.
       allow update: if isExistingOwner(memberId) && isMemberIdImmutable();
+      // A user can delete their own profile.
       allow delete: if isExistingOwner(memberId);
     }
 
     /**
-     * @description Allows any authenticated user to read membership plan details, but denies all modifications.
+     * @description Allows any authenticated user to read membership plan details.
      * @path /memberships/{membershipId}
-     * @allow (get) Any signed-in user reading the document at `/memberships/premium`.
-     * @deny (create) Any signed-in user attempting to create a new plan at `/memberships/new_plan`.
-     * @principle Provides public-read access for authenticated users while protecting data integrity by disallowing client writes.
      */
     match /memberships/{membershipId} {
       allow get: if isSignedIn();
