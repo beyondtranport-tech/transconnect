@@ -21,7 +21,7 @@ export const divisions: Division[] = [
     title: 'TransConnect Mall',
     icon: <ShoppingBasket className="h-10 w-10 text-primary" />,
     description: 'Your one-stop shop for parts, gear, and essentials.',
-    longDescription: 'Keep your fleet running with our member-exclusive mall. We\'ve negotiated bulk discounts with top-tier suppliers for everything from tires and engine oil to logbooks and safety gear. Enjoy streamlined purchasing, fast shipping, and a loyalty program that gives back on every dollar spent. It\'s the convenience you need with savings you can count on.',
+    longDescription: "Join each of our malls are set up to break specific business constraints that you have.",
     image: mallImage,
   },
   {
