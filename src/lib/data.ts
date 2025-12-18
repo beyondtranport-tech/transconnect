@@ -29,7 +29,7 @@ export const divisions: Division[] = [
     title: 'TransConnect Marketplace',
     icon: <Store className="h-10 w-10 text-primary" />,
     description: 'The trusted community to buy, sell, and trade.',
-    longDescription: 'The TransConnect Marketplace is a secure and transparent platform for members to buy and sell vehicles, trailers, and heavy equipment. With verified member profiles and integrated escrow services, you can transact with confidence. Whether you\'re upgrading your rig or selling surplus assets, our marketplace connects you with a network of serious buyers and sellers.',
+    longDescription: 'Access unique products from our partner partners and earn by sharing discounts from them.',
     image: marketplaceImage,
   },
   {
