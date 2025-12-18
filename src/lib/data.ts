@@ -13,7 +13,7 @@ export const divisions: Division[] = [
     title: 'TransConnect Funding',
     icon: <DollarSign className="h-10 w-10 text-primary" />,
     description: 'Fueling your growth with flexible financial solutions.',
-    longDescription: 'In a capital-intensive industry, access to funding is crucial. TransConnect Funding provides members with a range of financial products, from equipment financing and invoice factoring to business loans and lines of credit. We partner with financial institutions that understand the transport sector, ensuring you get competitive rates and terms that work for your cash flow.',
+    longDescription: 'We have dared to challenge the status quo. We are able to fund where banks are not able to',
     image: fundingImage,
   },
   {
