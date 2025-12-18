@@ -1,3 +1,4 @@
+
 {
   "entities": {
     "Member": {
@@ -33,7 +34,7 @@
         },
         "membershipId": {
           "type": "string",
-          "description": "Reference to Membership. (Relationship: Member 1:1 Membership)"
+          "description": "Reference to Membership tier ID (e.g., 'professional'). (Relationship: Member 1:1 Membership)"
         },
         "rewardPoints": {
           "type": "number",
@@ -54,35 +55,36 @@
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Membership",
       "type": "object",
-      "description": "Represents a membership plan for TransConnect platform access.",
+      "description": "Represents a single tier of membership plan for the TransConnect platform (e.g., Member, Professional, Enterprise).",
       "properties": {
         "id": {
           "type": "string",
-          "description": "Unique identifier for the Membership entity."
+          "description": "Unique identifier for the Membership tier (e.g., 'professional')."
         },
         "name": {
           "type": "string",
-          "description": "Name of the membership plan (e.g., Basic, Premium)."
+          "description": "Display name of the membership plan (e.g., Professional)."
         },
         "description": {
           "type": "string",
-          "description": "Description of the features included in the membership plan."
+          "description": "A short description of the ideal user for this plan."
         },
         "price": {
           "type": "number",
-          "description": "Price of the membership plan."
+          "description": "Monthly price of the membership plan in USD. A value of 0 indicates a free plan. A null or undefined value indicates custom pricing."
         },
-        "duration": {
-          "type": "string",
-          "description": "Duration of the membership (e.g., monthly, annually)."
+        "features": {
+          "type": "array",
+          "description": "A list of features included in this plan.",
+          "items": {
+            "type": "string"
+          }
         }
       },
       "required": [
         "id",
         "name",
-        "description",
-        "price",
-        "duration"
+        "description"
       ]
     }
   },
@@ -117,11 +119,11 @@
           "schema": {
             "$ref": "#/backend/entities/Membership"
           },
-          "description": "Stores details of membership plans, readable by all authenticated users.",
+          "description": "Stores details of available membership plans (tiers), readable by all authenticated users.",
           "params": [
             {
               "name": "membershipId",
-              "description": "The unique identifier of the membership plan."
+              "description": "The unique identifier of the membership plan (e.g. 'professional')."
             }
           ]
         }
