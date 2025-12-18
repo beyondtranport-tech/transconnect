@@ -5,7 +5,10 @@ import { cookies } from 'next/headers';
 const ADMIN_TOKEN_NAME = 'admin-auth-token';
 
 export async function handleAdminLogin(password: string) {
-  if (password === process.env.SUPER_ADMIN_PASSWORD) {
+  // Use the environment variable if available, otherwise default to 'admin'
+  const adminPassword = process.env.SUPER_ADMIN_PASSWORD || 'admin';
+
+  if (password === adminPassword) {
     // In a real app, you'd generate a secure, signed token (e.g., JWT).
     // For this prototype, we'll use a simple static value.
     const adminToken = 'SUPER_SECRET_ADMIN_TOKEN_VALUE';
