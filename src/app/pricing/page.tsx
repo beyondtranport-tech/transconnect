@@ -1,92 +1,147 @@
 
+'use client';
+
+import { useState } from 'react';
 import { Check, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import Link from 'next/link';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
+import { cn } from '@/lib/utils';
 
 const tiers = [
   {
-    name: 'Member',
-    price: 'R0',
-    frequency: '/month',
-    description: 'For individuals getting started in the transport industry.',
+    id: 'access',
+    name: 'Access',
+    price: {
+      monthly: 375,
+      annual: 3750,
+    },
+    description: 'Mandatory base plan for platform access.',
     features: [
       { text: 'Access to Community Forum', included: true },
       { text: 'Basic Marketplace Access', included: true },
       { text: 'Weekly Newsletter', included: true },
-      { text: 'AI Freight Matching (5 searches/mo)', included: false },
+      { text: 'AI Freight Matching', included: false },
       { text: 'Discounted Mall Access', included: false },
-      { text: 'Priority Support', included: false },
-      { text: 'Advanced Analytics', included: false },
     ],
-    cta: 'Sign Up for Free',
-    href: '/join',
+    mandatory: true,
   },
   {
-    name: 'Professional',
-    price: 'R750',
-    frequency: '/month',
-    description: 'For owner-operators and small fleets ready to grow.',
+    id: 'reward',
+    name: 'Reward',
+    price: {
+      monthly: 125,
+      annual: 1250,
+    },
+    description: 'Unlock rewards and advanced matching.',
     features: [
-      { text: 'Access to Community Forum', included: true },
-      { text: 'Full Marketplace Access & Listings', included: true },
-      { text: 'Weekly Newsletter', included: true },
+      { text: 'Earn & Redeem Reward Points', included: true },
       { text: 'AI Freight Matching (Unlimited)', included: true },
-      { text: 'Discounted Mall Access', included: true },
-      { text: 'Priority Support', included: false },
-      { text: 'Advanced Analytics', included: false },
+      { text: 'Priority Load Alerts', included: true },
     ],
-    cta: 'Get Started',
-    href: '/join',
-    recommended: true,
+    mandatory: false,
   },
   {
-    name: 'Enterprise',
-    price: 'Contact Us',
-    frequency: '',
-    description: 'For large fleets requiring advanced tools and support.',
+    id: 'loyalty',
+    name: 'Loyalty',
+    price: {
+      monthly: 100,
+      annual: 1000,
+    },
+    description: 'Exclusive discounts and loyalty benefits.',
     features: [
-      { text: 'Access to Community Forum', included: true },
-      { text: 'Full Marketplace Access & Listings', included: true },
-      { text: 'Weekly Newsletter', included: true },
-      { text: 'AI Freight Matching (Unlimited)', included: true },
-      { text: 'Discounted Mall Access', included: true },
-      { text: 'Priority Support', included: true },
-      { text: 'Advanced Analytics & Reporting', included: true },
+      { text: 'Exclusive Mall Discounts', included: true },
+      { text: 'Loyalty Tier Status', included: true },
+      { text: 'Early access to new features', included: true },
     ],
-    cta: 'Contact Sales',
-    href: '/contact',
+    mandatory: false,
   },
 ];
 
+const formatPrice = (price: number) => {
+    return new Intl.NumberFormat('en-ZA', {
+        style: 'currency',
+        currency: 'ZAR',
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0,
+    }).format(price);
+};
+
 export default function PricingPage() {
+  const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('monthly');
+  const [selectedPlans, setSelectedPlans] = useState<string[]>(['access']);
+
+  const handlePlanChange = (planId: string, checked: boolean | 'indeterminate') => {
+    if (checked) {
+      setSelectedPlans((prev) => [...prev, planId]);
+    } else {
+      setSelectedPlans((prev) => prev.filter((id) => id !== planId));
+    }
+  };
+
+  const total = selectedPlans.reduce((acc, planId) => {
+    const tier = tiers.find(t => t.id === planId);
+    if (tier) {
+      return acc + tier.price[billingCycle];
+    }
+    return acc;
+  }, 0);
+
+
   return (
     <div className="bg-background">
       <div className="container mx-auto px-4 py-16 md:py-24">
         <div className="text-center max-w-3xl mx-auto mb-12">
           <h1 className="text-4xl md:text-5xl font-bold font-headline">Find a Plan to Power Your Business</h1>
           <p className="mt-4 text-lg md:text-xl text-muted-foreground">
-            Simple, transparent pricing. Choose the plan that's right for you and unlock the full potential of the TransConnect ecosystem.
+            Start with the mandatory Access plan and add what you need. All prices are VAT exclusive.
           </p>
+        </div>
+
+        <div className="flex justify-center items-center gap-4 mb-12">
+          <Label htmlFor="billing-cycle" className={billingCycle === 'monthly' ? 'text-foreground' : 'text-muted-foreground'}>Monthly</Label>
+          <Switch 
+            id="billing-cycle"
+            checked={billingCycle === 'annual'}
+            onCheckedChange={(checked) => setBillingCycle(checked ? 'annual' : 'monthly')}
+            aria-label="Toggle billing cycle"
+          />
+          <Label htmlFor="billing-cycle" className={billingCycle === 'annual' ? 'text-foreground' : 'text-muted-foreground'}>
+            Annual <span className="text-primary text-xs font-semibold">(Save 2 months)</span>
+          </Label>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
           {tiers.map((tier) => (
-            <Card key={tier.name} className={`flex flex-col h-full ${tier.recommended ? 'border-primary shadow-2xl' : 'shadow-lg'}`}>
+            <Card 
+              key={tier.id} 
+              className={cn(
+                'flex flex-col h-full shadow-lg transition-all',
+                selectedPlans.includes(tier.id) ? 'border-primary shadow-2xl' : ''
+              )}
+            >
               <CardHeader className="relative">
-                {tier.recommended && (
-                  <div className="absolute top-0 -translate-y-1/2 w-full flex justify-center">
-                    <div className="bg-primary text-primary-foreground px-4 py-1 rounded-full text-sm font-semibold">
-                      Most Popular
+                <div className='flex items-start justify-between'>
+                    <div>
+                        <CardTitle className="text-2xl font-bold">{tier.name}</CardTitle>
+                        <CardDescription className='mt-2'>{tier.description}</CardDescription>
                     </div>
-                  </div>
-                )}
-                <CardTitle className="text-2xl font-bold">{tier.name}</CardTitle>
-                <div className="flex items-baseline gap-1">
-                  <span className="text-4xl font-extrabold tracking-tight">{tier.price}</span>
-                  {tier.frequency && <span className="text-muted-foreground">{tier.frequency}</span>}
+                     <Checkbox
+                        id={tier.id}
+                        checked={selectedPlans.includes(tier.id)}
+                        disabled={tier.mandatory}
+                        onCheckedChange={(checked) => handlePlanChange(tier.id, checked)}
+                        className='h-6 w-6'
+                        aria-label={`Select ${tier.name} plan`}
+                    />
                 </div>
-                <CardDescription>{tier.description}</CardDescription>
+                <div className="flex items-baseline gap-1 pt-4">
+                  <span className="text-4xl font-extrabold tracking-tight">{formatPrice(tier.price[billingCycle])}</span>
+                  <span className="text-muted-foreground">/{billingCycle === 'monthly' ? 'mo' : 'yr'} + VAT</span>
+                </div>
               </CardHeader>
               <CardContent className="flex-grow">
                 <ul className="space-y-4">
@@ -104,14 +159,39 @@ export default function PricingPage() {
                   ))}
                 </ul>
               </CardContent>
-              <CardFooter>
-                <Button asChild className="w-full" variant={tier.recommended ? 'default' : 'outline'}>
-                  <Link href={tier.href}>{tier.cta}</Link>
-                </Button>
-              </CardFooter>
             </Card>
           ))}
         </div>
+
+        <div className="mt-16">
+            <Card className='max-w-xl mx-auto'>
+                <CardHeader>
+                    <CardTitle>Your Custom Plan</CardTitle>
+                    <CardDescription>Review your selection and proceed to checkout.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <div className='space-y-2'>
+                        {tiers.filter(t => selectedPlans.includes(t.id)).map(t => (
+                            <div key={t.id} className="flex justify-between items-center">
+                                <span>{t.name}</span>
+                                <span className='font-medium'>{formatPrice(t.price[billingCycle])}</span>
+                            </div>
+                        ))}
+                    </div>
+                    <div className="border-t my-4"></div>
+                    <div className="flex justify-between items-center text-lg font-bold">
+                        <span>Total (per {billingCycle === 'monthly' ? 'month' : 'year'})</span>
+                        <span>{formatPrice(total)} + VAT</span>
+                    </div>
+                </CardContent>
+                <CardFooter>
+                    <Button asChild className="w-full" size='lg'>
+                        <Link href="/join">Proceed to Checkout</Link>
+                    </Button>
+                </CardFooter>
+            </Card>
+        </div>
+
       </div>
     </div>
   );
