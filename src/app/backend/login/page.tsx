@@ -31,18 +31,29 @@ export default function SecureLoginPage() {
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
-    const result = await handleSecureAdminLogin(values.password);
-    if (result.success) {
-      toast({ title: 'Access Granted' });
-      router.push('/backend');
-      router.refresh(); 
-    } else {
-      toast({
-        variant: 'destructive',
-        title: 'Access Denied',
-        description: result.error,
-      });
-      setIsLoading(false);
+    try {
+        const result = await handleSecureAdminLogin(values.password);
+        if (result && result.error) {
+             toast({
+                variant: 'destructive',
+                title: 'Access Denied',
+                description: result.error,
+            });
+            setIsLoading(false);
+        }
+        // If successful, the server action will redirect. 
+        // If we get here, it means there was an error that the action didn't handle with a redirect.
+    } catch (error: any) {
+        // The server action will throw an error on redirect, which is expected.
+        // We only need to handle actual errors.
+        if (error.message !== 'NEXT_REDIRECT') {
+             toast({
+                variant: 'destructive',
+                title: 'Access Denied',
+                description: 'An unexpected error occurred.',
+            });
+            setIsLoading(false);
+        }
     }
   }
 
