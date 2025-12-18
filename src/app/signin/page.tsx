@@ -57,31 +57,28 @@ export default function SignInPage() {
     try {
       const userCredential = await signInWithEmailAndPassword(auth, values.email, values.password);
       const user = userCredential.user;
-      
+
       toast({
         title: 'Signed In!',
         description: "Welcome back to TransConnect.",
       });
-
+      
       const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
       
-      if (user && user.email === adminEmail) {
+      if (user.email === adminEmail) {
         const idToken = await user.getIdToken();
-        const response = await fetch('/api/auth/session', {
+        // Create the session
+        await fetch('/api/auth/session', {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${idToken}`,
             },
         });
-
-        if (response.ok) {
-            router.push('/backend');
-        } else {
-            throw new Error('Session creation failed.');
-        }
+        // Redirect to backend
+        router.push('/backend');
 
       } else {
-        router.push('/account');
+         router.push('/account');
       }
 
     } catch (error: any) {
