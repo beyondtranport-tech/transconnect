@@ -12,6 +12,8 @@ import {
   SidebarFooter,
   SidebarInset,
   SidebarTrigger,
+  SidebarMenuSub,
+  SidebarMenuSubButton,
 } from '@/components/ui/sidebar';
 import {
   Users,
@@ -19,23 +21,82 @@ import {
   Truck,
   LayoutDashboard,
   LogOut,
-  ShoppingBag,
+  Server,
+  FileText,
+  ListTodo,
+  DollarSign,
+  TrendingUp,
+  Boxes,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import MembersList from './members-list';
-import Link from 'next/link';
 
+// Placeholder Content Components
 function DashboardContent() {
     return (
         <div>
-            <h1 className="text-2xl font-bold">Dashboard</h1>
-            <p className="mt-2 text-muted-foreground">Welcome to the admin backend.</p>
+            <h1 className="text-2xl font-bold">Main Dashboard</h1>
+            <p className="mt-2 text-muted-foreground">Aggregated view of all platform metrics.</p>
         </div>
     )
 }
+
+function PlatformLogsContent() {
+    return (
+        <div>
+            <h1 className="text-2xl font-bold">Platform Logs</h1>
+            <p className="mt-2 text-muted-foreground">Monitor system activity and errors.</p>
+        </div>
+    )
+}
+
+function PlatformTasksContent() {
+    return (
+        <div>
+            <h1 className="text-2xl font-bold">Platform Tasks</h1>
+            <p className="mt-2 text-muted-foreground">Manage background jobs and scheduled processes.</p>
+        </div>
+    )
+}
+function PlatformSettingsContent() {
+    return (
+        <div>
+            <h1 className="text-2xl font-bold">Platform Settings</h1>
+            <p className="mt-2 text-muted-foreground">Global platform configurations.</p>
+        </div>
+    )
+}
+
+function RevenuePricingContent() {
+    return (
+        <div>
+            <h1 className="text-2xl font-bold">Revenue Pricing</h1>
+            <p className="mt-2 text-muted-foreground">Define and manage membership tiers and prices.</p>
+        </div>
+    )
+}
+
+function RevenueTransactionsContent() {
+    return (
+        <div>
+            <h1 className="text-2xl font-bold">Revenue Transactions</h1>
+            <p className="mt-2 text-muted-foreground">View all financial transactions on the platform.</p>
+        </div>
+    )
+}
+
+function DivisionsContent() {
+    return (
+        <div>
+            <h1 className="text-2xl font-bold">Divisions Management</h1>
+            <p className="mt-2 text-muted-foreground">Manage settings for Funding, Mall, Marketplace, and Tech.</p>
+        </div>
+    )
+}
+
 
 export default function BackendPage() {
   const router = useRouter();
@@ -51,6 +112,18 @@ export default function BackendPage() {
     switch (activeView) {
       case 'members':
         return <MembersList />;
+      case 'platform-logs':
+        return <PlatformLogsContent />;
+      case 'platform-tasks':
+        return <PlatformTasksContent />;
+      case 'platform-settings':
+        return <PlatformSettingsContent />;
+      case 'revenue-pricing':
+        return <RevenuePricingContent />;
+      case 'revenue-transactions':
+        return <RevenueTransactionsContent />;
+      case 'divisions':
+        return <DivisionsContent />;
       case 'dashboard':
       default:
         return <DashboardContent />;
@@ -82,16 +155,46 @@ export default function BackendPage() {
                   <span>Members</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
+                <SidebarMenuItem>
+                    <SidebarMenuButton tooltip="Platform">
+                        <Server />
+                        <span>Platform</span>
+                    </SidebarMenuButton>
+                    <SidebarMenuSub>
+                        <SidebarMenuSubButton isActive={activeView === 'platform-logs'} onClick={() => setActiveView('platform-logs')}>
+                            <FileText />
+                            <span>Logs</span>
+                        </SidebarMenuSubButton>
+                        <SidebarMenuSubButton isActive={activeView === 'platform-tasks'} onClick={() => setActiveView('platform-tasks')}>
+                            <ListTodo />
+                            <span>Tasks</span>
+                        </SidebarMenuSubButton>
+                        <SidebarMenuSubButton isActive={activeView === 'platform-settings'} onClick={() => setActiveView('platform-settings')}>
+                            <Settings />
+                            <span>Settings</span>
+                        </SidebarMenuSubButton>
+                    </SidebarMenuSub>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                    <SidebarMenuButton tooltip="Revenue">
+                        <DollarSign />
+                        <span>Revenue</span>
+                    </SidebarMenuButton>
+                     <SidebarMenuSub>
+                        <SidebarMenuSubButton isActive={activeView === 'revenue-pricing'} onClick={() => setActiveView('revenue-pricing')}>
+                            <TrendingUp />
+                            <span>Pricing</span>
+                        </SidebarMenuSubButton>
+                        <SidebarMenuSubButton isActive={activeView === 'revenue-transactions'} onClick={() => setActiveView('revenue-transactions')}>
+                            <DollarSign />
+                            <span>Transactions</span>
+                        </SidebarMenuSubButton>
+                    </SidebarMenuSub>
+                </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Marketplace" disabled>
-                  <ShoppingBag />
-                  <span>Marketplace</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Settings" disabled>
-                  <Settings />
-                  <span>Settings</span>
+                <SidebarMenuButton tooltip="Divisions" isActive={activeView === 'divisions'} onClick={() => setActiveView('divisions')}>
+                  <Boxes />
+                  <span>Divisions</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
           </SidebarGroup>
