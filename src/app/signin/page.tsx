@@ -67,15 +67,20 @@ export default function SignInPage() {
       
       if (user.email === adminEmail) {
         const idToken = await user.getIdToken();
-        // Create the session
-        await fetch('/api/auth/session', {
+        // Create the session by calling the API route
+        const response = await fetch('/api/auth/session', {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${idToken}`,
             },
         });
-        // Redirect to backend
-        router.push('/backend');
+        
+        if (response.ok) {
+            // Redirect to backend on successful session creation
+            router.push('/backend');
+        } else {
+             throw new Error('Failed to create admin session.');
+        }
 
       } else {
          router.push('/account');
@@ -87,6 +92,9 @@ export default function SignInPage() {
       if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
         title = 'Invalid Credentials';
         description = 'The email or password you entered is incorrect.';
+      } else if (error.message === 'Failed to create admin session.') {
+        title = 'Admin Session Error';
+        description = 'Could not create a secure session for the backend.';
       }
       toast({
         variant: 'destructive',

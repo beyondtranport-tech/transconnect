@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
-import { initializeApp, getApps, App, cert } from 'firebase-admin/app';
+import { initializeApp, getApps, cert } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 
 // This is a temporary solution for service account credentials.
@@ -18,7 +18,6 @@ if (!getApps().length) {
     });
   } else {
     // This will work in environments like Cloud Run where ADC is available.
-    // It might not work in all local development setups without specific configuration.
     initializeApp();
   }
 }
@@ -44,6 +43,7 @@ export async function POST(request: Request) {
         });
         return NextResponse.json({ status: 'success' }, { status: 200 });
       } else {
+        // Not an admin, deny setting the cookie.
         return NextResponse.json({ error: 'Not an admin' }, { status: 403 });
       }
     } catch (error) {
