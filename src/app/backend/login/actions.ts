@@ -1,3 +1,4 @@
+
 'use server';
 
 import { cookies } from 'next/headers';
@@ -14,7 +15,7 @@ export async function handleSecureAdminLogin(password: string) {
       cookies().set('secure-backend-access', 'true', {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
-        path: '/backend',
+        path: '/', // Set cookie for all paths
         maxAge: 60 * 60, // 1 hour
       });
       return { success: true };

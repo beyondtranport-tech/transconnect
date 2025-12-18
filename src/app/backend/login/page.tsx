@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -10,7 +11,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Eye, EyeOff } from 'lucide-react';
+import { Loader2, Eye, EyeOff, ShieldCheck } from 'lucide-react';
 import { handleSecureAdminLogin } from './actions';
 
 const formSchema = z.object({
@@ -33,7 +34,7 @@ export default function SecureLoginPage() {
     const result = await handleSecureAdminLogin(values.password);
     if (result.success) {
       toast({ title: 'Access Granted' });
-      router.push('/backend/secure');
+      router.push('/backend');
       router.refresh(); 
     } else {
       toast({
@@ -48,9 +49,12 @@ export default function SecureLoginPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
       <Card className="w-full max-w-sm">
-        <CardHeader>
-          <CardTitle className="text-2xl">Secure Area Access</CardTitle>
-          <CardDescription>Enter the password to access the secure backend.</CardDescription>
+        <CardHeader className="text-center">
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 mb-2">
+                <ShieldCheck className="h-8 w-8 text-primary" />
+            </div>
+          <CardTitle className="text-2xl">Backend Access</CardTitle>
+          <CardDescription>Enter the password to access the admin area.</CardDescription>
         </CardHeader>
         <CardContent>
           <Form {...form}>
@@ -60,7 +64,7 @@ export default function SecureLoginPage() {
                 name="password"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Password</FormLabel>
+                    <FormLabel>Super Admin Password</FormLabel>
                     <div className="relative">
                       <FormControl>
                         <Input type={showPassword ? 'text' : 'password'} {...field} />

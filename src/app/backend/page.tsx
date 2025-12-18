@@ -1,16 +1,17 @@
+
 'use client';
 
 import {
   SidebarProvider,
   Sidebar,
   SidebarHeader,
-  SidebarTrigger,
   SidebarContent,
   SidebarGroup,
   SidebarMenuItem,
   SidebarMenuButton,
   SidebarFooter,
   SidebarInset,
+  SidebarTrigger,
 } from '@/components/ui/sidebar';
 import {
   Users,
@@ -19,7 +20,6 @@ import {
   LayoutDashboard,
   LogOut,
   ShoppingBag,
-  ShieldCheck,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -27,8 +27,6 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import MembersList from './members-list';
 import Link from 'next/link';
-import { useAuth } from '@/firebase';
-import { signOut } from 'firebase/auth';
 
 function DashboardContent() {
     return (
@@ -41,18 +39,12 @@ function DashboardContent() {
 
 export default function BackendPage() {
   const router = useRouter();
-  const auth = useAuth();
   const [activeView, setActiveView] = useState('dashboard');
 
   const onLogout = async () => {
-    // Clear the standard auth session
-    if (auth) {
-        await signOut(auth);
-    }
     // Manually clear custom session cookies
-    document.cookie = "__session=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
     document.cookie = "secure-backend-access=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-    router.push('/signin');
+    router.push('/');
   };
 
   const renderContent = () => {
@@ -96,14 +88,6 @@ export default function BackendPage() {
                   <span>Marketplace</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
-               <SidebarMenuItem>
-                <SidebarMenuButton asChild>
-                    <Link href="/backend/secure">
-                        <ShieldCheck />
-                        <span>Secure Area</span>
-                    </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
               <SidebarMenuItem>
                 <SidebarMenuButton tooltip="Settings" disabled>
                   <Settings />
@@ -130,6 +114,7 @@ export default function BackendPage() {
               size="icon"
               className="ml-auto"
               onClick={onLogout}
+              title="Sign Out of Backend"
             >
               <LogOut className="h-5 w-5" />
             </Button>

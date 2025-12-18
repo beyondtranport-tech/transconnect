@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -55,37 +56,16 @@ export default function SignInPage() {
   const onSubmit = async (values: SignInFormValues) => {
     setIsLoading(true);
     try {
-      const userCredential = await signInWithEmailAndPassword(auth, values.email, values.password);
-      const user = userCredential.user;
+      await signInWithEmailAndPassword(auth, values.email, values.password);
 
       toast({
         title: 'Signed In!',
         description: "Welcome back to TransConnect.",
       });
       
-      const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
-      
-      if (user.email === adminEmail) {
-        const idToken = await user.getIdToken();
-        // Create the session by calling the API route
-        const response = await fetch('/api/auth/session', {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${idToken}`,
-            },
-        });
-        
-        if (response.ok) {
-            // Redirect to backend on successful session creation
-            router.push('/backend');
-        } else {
-             const errorData = await response.json();
-             throw new Error(errorData.error || 'Failed to create admin session.');
-        }
-
-      } else {
-         router.push('/account');
-      }
+      // All users are redirected to the account page after login.
+      // The middleware will handle routing for admins to the backend.
+      router.push('/account');
 
     } catch (error: any) {
       let title = 'An error occurred.';
@@ -94,9 +74,6 @@ export default function SignInPage() {
       if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
         title = 'Invalid Credentials';
         description = 'The email or password you entered is incorrect.';
-      } else if (error.message.includes('admin session')) {
-        title = 'Admin Session Error';
-        description = error.message;
       }
 
       toast({
