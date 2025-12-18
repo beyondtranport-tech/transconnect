@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { useForm } from 'react-hook-form';
+import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { signInWithEmailAndPassword } from 'firebase/auth';
@@ -50,6 +50,9 @@ function AdminLoginDialog({ open, onOpenChange }: { open: boolean, onOpenChange:
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
+  
+  // Create a dummy form instance for the dialog
+  const methods = useForm();
 
   const onAdminLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -78,23 +81,25 @@ function AdminLoginDialog({ open, onOpenChange }: { open: boolean, onOpenChange:
             Enter the admin password to access the backend.
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={onAdminLogin} className="space-y-4">
-          <div className="space-y-2">
-            <FormLabel htmlFor="admin-password">Admin Password</FormLabel>
-            <Input
-              id="admin-password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
-              disabled={isLoading}
-            />
-          </div>
-          <Button type="submit" className="w-full" disabled={isLoading}>
-            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Access Backend
-          </Button>
-        </form>
+        <FormProvider {...methods}>
+          <form onSubmit={onAdminLogin} className="space-y-4">
+            <div className="space-y-2">
+              <FormLabel htmlFor="admin-password">Admin Password</FormLabel>
+              <Input
+                id="admin-password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                disabled={isLoading}
+              />
+            </div>
+            <Button type="submit" className="w-full" disabled={isLoading}>
+              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Access Backend
+            </Button>
+          </form>
+        </FormProvider>
       </DialogContent>
     </Dialog>
   );
