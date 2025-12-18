@@ -17,7 +17,7 @@ const tiers = [
     name: 'Access',
     price: {
       monthly: 375,
-      annual: 3750,
+      annual: 375 * 12 * 0.85, // 15% discount
     },
     description: 'Mandatory base plan for platform access.',
     features: [
@@ -34,7 +34,7 @@ const tiers = [
     name: 'Reward',
     price: {
       monthly: 125,
-      annual: 1250,
+      annual: 125 * 12 * 0.85, // 15% discount
     },
     description: 'Unlock rewards and advanced matching.',
     features: [
@@ -49,7 +49,7 @@ const tiers = [
     name: 'Loyalty',
     price: {
       monthly: 100,
-      annual: 1000,
+      annual: 100 * 12 * 0.85, // 15% discount
     },
     description: 'Exclusive discounts and loyalty benefits.',
     features: [
@@ -110,7 +110,7 @@ export default function PricingPage() {
             aria-label="Toggle billing cycle"
           />
           <Label htmlFor="billing-cycle" className={billingCycle === 'annual' ? 'text-foreground' : 'text-muted-foreground'}>
-            Annual <span className="text-primary text-xs font-semibold">(Save 2 months)</span>
+            Annual <span className="text-primary text-xs font-semibold">(15% discount if annual membership is selected)</span>
           </Label>
         </div>
 
