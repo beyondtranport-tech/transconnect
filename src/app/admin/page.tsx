@@ -18,17 +18,30 @@ export default function AdminLoginPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isLoading) return;
+
     setIsLoading(true);
-    const result = await handleAdminLogin(password);
-    if (result.success) {
-      router.push('/backend');
-    } else {
-      toast({
-        variant: 'destructive',
-        title: 'Login Failed',
-        description: result.error,
-      });
-      setIsLoading(false);
+    
+    try {
+      const result = await handleAdminLogin(password);
+      if (result.success) {
+        router.push('/backend');
+      } else {
+        toast({
+          variant: 'destructive',
+          title: 'Login Failed',
+          description: result.error,
+        });
+        setIsLoading(false);
+      }
+    } catch (error) {
+        console.error('Admin login error:', error);
+        toast({
+            variant: 'destructive',
+            title: 'Login Failed',
+            description: 'An unexpected error occurred. Please try again.',
+        });
+        setIsLoading(false);
     }
   };
 
@@ -49,6 +62,7 @@ export default function AdminLoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
+                disabled={isLoading}
               />
             </div>
             <Button type="submit" className="w-full" disabled={isLoading}>
