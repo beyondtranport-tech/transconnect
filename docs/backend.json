@@ -71,7 +71,7 @@
         },
         "price": {
           "type": "number",
-          "description": "Monthly price of the membership plan in USD. A value of 0 indicates a free plan. A null or undefined value indicates custom pricing."
+          "description": "Monthly price of the membership plan in ZAR. A value of 0 indicates a free plan. A null or undefined value indicates custom pricing."
         },
         "features": {
           "type": "array",

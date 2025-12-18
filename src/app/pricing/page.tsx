@@ -7,7 +7,7 @@ import Link from 'next/link';
 const tiers = [
   {
     name: 'Member',
-    price: '$0',
+    price: 'R0',
     frequency: '/month',
     description: 'For individuals getting started in the transport industry.',
     features: [
@@ -24,7 +24,7 @@ const tiers = [
   },
   {
     name: 'Professional',
-    price: '$49',
+    price: 'R750',
     frequency: '/month',
     description: 'For owner-operators and small fleets ready to grow.',
     features: [
