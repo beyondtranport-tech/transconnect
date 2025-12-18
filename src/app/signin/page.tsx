@@ -60,7 +60,26 @@ export default function SignInPage() {
         title: 'Signed In!',
         description: "Welcome back to TransConnect.",
       });
-      router.push('/account');
+
+      // Check if the signed-in user is the admin
+      const adminUID = process.env.NEXT_PUBLIC_ADMIN_UID;
+      const user = auth.currentUser;
+      
+      if (user && user.uid === adminUID) {
+        // To get the session cookie
+        const idToken = await user.getIdToken();
+        await fetch('/api/auth/session', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${idToken}`,
+            },
+        });
+        router.push('/backend');
+      } else {
+        router.push('/account');
+      }
+
     } catch (error: any) {
       let title = 'An error occurred.';
       let description = 'Please check your credentials and try again.';
