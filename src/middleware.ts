@@ -7,14 +7,16 @@ import { getAuth } from 'firebase-admin/auth';
 let adminApp: App;
 if (!getApps().length) {
     try {
-        // Try to initialize with service account from environment variables
-        const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY!);
-        adminApp = initializeApp({
-            credential: cert(serviceAccount)
-        });
+        const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY || '{}');
+        if(Object.keys(serviceAccount).length > 0) {
+            adminApp = initializeApp({
+                credential: cert(serviceAccount)
+            });
+        } else {
+             adminApp = initializeApp();
+        }
     } catch (e) {
         console.error("Failed to initialize Firebase Admin SDK from service account. Falling back to default init.", e);
-        // Fallback for environments where default initialization is expected to work
         adminApp = initializeApp();
     }
 } else {
@@ -22,10 +24,12 @@ if (!getApps().length) {
 }
 
 export async function middleware(request: NextRequest) {
-  const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
-  
-  if (request.nextUrl.pathname.startsWith('/backend')) {
+  const { pathname } = request.nextUrl;
+
+  // Protect the main /backend route
+  if (pathname.startsWith('/backend')) {
     const sessionCookie = request.cookies.get('__session')?.value;
+    const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
 
     if (!sessionCookie) {
       return NextResponse.redirect(new URL('/signin?error=unauthorized', request.url));
@@ -34,21 +38,24 @@ export async function middleware(request: NextRequest) {
     try {
       const decodedToken = await getAuth(adminApp).verifySessionCookie(sessionCookie, true);
       if (decodedToken.email !== adminEmail) {
-        // Not the admin user, redirect
         return NextResponse.redirect(new URL('/signin?error=forbidden', request.url));
       }
-      // This is the admin, allow access
-      return NextResponse.next();
     } catch (error) {
-      // Cookie is invalid or expired, redirect to signin
       return NextResponse.redirect(new URL('/signin?error=session_expired', request.url));
+    }
+  }
+
+  // Protect the new /backend/secure route
+  if (pathname.startsWith('/backend/secure')) {
+    const hasAccess = request.cookies.get('secure-backend-access')?.value === 'true';
+    if (!hasAccess) {
+      return NextResponse.redirect(new URL('/backend/login', request.url));
     }
   }
 
   return NextResponse.next();
 }
 
-// Ensure the middleware runs only for the backend route
 export const config = {
   matcher: ['/backend/:path*'],
 };

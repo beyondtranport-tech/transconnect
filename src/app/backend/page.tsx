@@ -11,6 +11,7 @@ import {
   SidebarMenuButton,
   SidebarFooter,
   SidebarInset,
+  SidebarMenu,
 } from '@/components/ui/sidebar';
 import {
   Users,
@@ -19,13 +20,14 @@ import {
   LayoutDashboard,
   LogOut,
   ShoppingBag,
+  ShieldCheck,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { handleAdminLogout } from '../admin/actions';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import MembersList from './members-list';
+import Link from 'next/link';
 
 function DashboardContent() {
     return (
@@ -41,8 +43,9 @@ export default function BackendPage() {
   const [activeView, setActiveView] = useState('dashboard');
 
   const onLogout = async () => {
-    await handleAdminLogout();
-    router.push('/admin');
+    // This is a client-side only action, we can just clear the cookie and redirect.
+    document.cookie = "__session=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+    router.push('/signin');
   };
 
   const renderContent = () => {
@@ -87,6 +90,14 @@ export default function BackendPage() {
                   <span>Marketplace</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
+               <SidebarMenuItem>
+                <Button variant="ghost" className="w-full justify-start pl-2" asChild>
+                    <Link href="/backend/secure">
+                        <ShieldCheck />
+                        <span>Backend</span>
+                    </Link>
+                </Button>
+              </SidebarMenuItem>
               <SidebarMenuItem>
                 <SidebarMenuButton tooltip="Settings" disabled>
                   <Settings />
@@ -106,7 +117,7 @@ export default function BackendPage() {
                 Super Admin
               </span>
               <span className="text-xs text-sidebar-foreground/70">
-                admin@transconnect.com
+                beyondtransport@gmail.com
               </span>
             </div>
             <Button
