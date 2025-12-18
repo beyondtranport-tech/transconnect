@@ -27,7 +27,7 @@ const divisions = [
   {
     icon: <Cpu className="h-8 w-8 text-primary" />,
     title: 'Tech',
-    description: 'Leverage cutting-edge tools, including AI-powered freight matching, to optimize your operations.',
+    description: 'Use the innovative tools that we have built to gain access to new opportunities',
     href: '/tech',
   },
 ];
