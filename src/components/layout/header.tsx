@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Truck, Menu, User } from "lucide-react";
+import { Truck, Menu, User, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
@@ -16,16 +16,26 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  DropdownMenuGroup,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
-const navLinks = [
+const mainNavLinks = [
   { href: "/", label: "Home" },
   { href: "/about", label: "About" },
-  { href: "/divisions", label: "Divisions" },
-  { href: "/marketplace", label: "Marketplace" },
-  { href: "/tech", label: "Tech" },
+  // Divisions is now a dropdown
+  { href: "/pricing", label: "Pricing" },
+  { href: "/connect", label: "Connect" },
+  { href: "/resources", label: "Resources" },
+  { href: "/contact", label: "Contact Us" },
 ];
+
+const divisionLinks = [
+    { href: "/divisions#funding", label: "Funding" },
+    { href: "/divisions#mall", label: "Mall" },
+    { href: "/marketplace", label: "Marketplace" },
+    { href: "/tech", label: "Tech" },
+]
 
 export function Header() {
   const pathname = usePathname();
@@ -52,19 +62,36 @@ export function Header() {
           </Link>
         </div>
 
-        <nav className="hidden md:flex items-center gap-6 text-sm font-medium">
-          {navLinks.map(({ href, label }) => (
+        <nav className="hidden md:flex items-center gap-1 text-sm font-medium">
+          {mainNavLinks.map(({ href, label }) => (
             <Link
               key={href}
               href={href}
               className={cn(
-                "transition-colors hover:text-primary",
-                pathname === href ? "text-primary" : "text-muted-foreground"
+                "transition-colors hover:text-primary px-3 py-2 rounded-md",
+                pathname === href ? "text-primary font-semibold" : "text-muted-foreground"
               )}
             >
               {label}
             </Link>
           ))}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="flex items-center gap-1 px-3 py-2 text-sm font-medium text-muted-foreground hover:text-primary data-[state=open]:text-primary">
+                    Divisions
+                    <ChevronDown className="h-4 w-4" />
+                </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start">
+              {divisionLinks.map(({ href, label }) => (
+                <DropdownMenuItem key={href} asChild>
+                    <Link href={href}>
+                        {label}
+                    </Link>
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </nav>
 
         <div className="flex items-center gap-4">
@@ -128,7 +155,7 @@ export function Header() {
                     </Link>
                 </div>
                 <nav className="flex flex-col gap-4 mt-6">
-                  {navLinks.map(({ href, label }) => (
+                  {[...mainNavLinks, ...divisionLinks].map(({ href, label }) => (
                     <Link
                       key={href}
                       href={href}
