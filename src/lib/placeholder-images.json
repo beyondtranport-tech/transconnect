@@ -1,3 +1,70 @@
 {
-  "placeholderImages": []
+  "placeholderImages": [
+    {
+      "id": "hero-home",
+      "description": "A modern truck driving on an open highway at sunset",
+      "imageUrl": "https://images.unsplash.com/photo-1754409218615-f541d5cc6021?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8dHJ1Y2slMjBoaWdod2F5fGVufDB8fHx8MTc2NjA1MTgwM3ww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "truck highway"
+    },
+    {
+      "id": "tech-home",
+      "description": "A driver using a tablet inside a truck cabin with logistics data on screen",
+      "imageUrl": "https://images.unsplash.com/photo-1634743556192-d19f0c69ff3a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8ZHJpdmVyJTIwdGFibGV0fGVufDB8fHx8MTc2NjA1MTgwM3ww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "driver tablet"
+    },
+    {
+      "id": "about-hero",
+      "description": "A diverse group of transport professionals collaborating",
+      "imageUrl": "https://images.unsplash.com/photo-1610565470125-fcf95b867142?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHx0cmFuc3BvcnRhdGlvbiUyMHByb2Zlc3Npb25hbHN8ZW58MHx8fHwxNzY2MDUxODAzfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "transportation professionals"
+    },
+    {
+      "id": "funding-division",
+      "description": "Abstract image representing financial growth and investment",
+      "imageUrl": "https://images.unsplash.com/photo-1738479021471-d5bfcc169e10?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHxmaW5hbmNlJTIwZ3Jvd3RofGVufDB8fHx8MTc2NjA1MTgwNHww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "finance growth"
+    },
+    {
+      "id": "mall-division",
+      "description": "A clean, modern warehouse aisle with truck parts on shelves",
+      "imageUrl": "https://images.unsplash.com/photo-1720036236694-d0a231c52563?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHx3YXJlaG91c2UlMjBwYXJ0c3xlbnwwfHx8fDE3NjYwNTE4MDN8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "warehouse parts"
+    },
+    {
+      "id": "marketplace-division",
+      "description": "A lineup of various trucks and commercial vehicles for sale",
+      "imageUrl": "https://images.unsplash.com/photo-1731074282332-a1a732f5c503?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw5fHx0cnVja3MlMjBkZWFsZXJzaGlwfGVufDB8fHx8MTc2NjA1MTgwM3ww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "trucks dealership"
+    },
+    {
+      "id": "tech-division",
+      "description": "Futuristic heads-up display showing logistics and mapping data",
+      "imageUrl": "https://images.unsplash.com/photo-1633886036603-109bd327edfa?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw1fHxsb2dpc3RpY3MlMjBkYXRhfGVufDB8fHx8MTc2NjA1MTgwM3ww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "logistics data"
+    },
+    {
+      "id": "product-tires",
+      "description": "A stack of new commercial truck tires",
+      "imageUrl": "https://images.unsplash.com/photo-1541770188093-e6d1c87a59b7?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw4fHx0cnVjayUyMHRpcmVzfGVufDB8fHx8MTc2NjA1MTgwM3ww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "truck tires"
+    },
+    {
+      "id": "product-engine-oil",
+      "description": "Bottles of heavy-duty engine oil",
+      "imageUrl": "https://images.unsplash.com/photo-1590227763209-821c686b932f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHxlbmdpbmUlMjBvaWx8ZW58MHx8fHwxNzY1OTkzOTkwfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "engine oil"
+    },
+    {
+      "id": "product-gps",
+      "description": "A modern GPS navigation device for commercial vehicles",
+      "imageUrl": "https://images.unsplash.com/photo-1653824021081-13b56eec90ff?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw4fHxncHMlMjBkZXZpY2V8ZW58MHx8fHwxNzY2MDUxODAzfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "gps device"
+    },
+    {
+      "id": "product-truck-seat",
+      "description": "An ergonomic air-ride truck driver seat",
+      "imageUrl": "https://images.unsplash.com/photo-1716919875151-674390e0dd57?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8dHJ1Y2slMjBzZWF0fGVufDB8fHx8MTc2NjA1MTgwM3ww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "truck seat"
+    }
+  ]
 }
