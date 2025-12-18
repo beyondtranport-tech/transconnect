@@ -3,12 +3,16 @@ import { cookies } from 'next/headers';
 import { initializeApp, getApps, cert } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 
-// This is a temporary solution for service account credentials.
-// In a real production environment, use environment variables
-// or a secret manager.
-const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT
-  ? JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT)
-  : undefined;
+const serviceAccountString = process.env.FIREBASE_SERVICE_ACCOUNT;
+let serviceAccount: any;
+if (serviceAccountString) {
+    try {
+        serviceAccount = JSON.parse(serviceAccountString);
+    } catch (e) {
+        console.error("Failed to parse FIREBASE_SERVICE_ACCOUNT:", e);
+    }
+}
+
 
 // Ensure Firebase Admin is initialized only once.
 if (!getApps().length) {
@@ -17,7 +21,9 @@ if (!getApps().length) {
       credential: cert(serviceAccount),
     });
   } else {
-    // This will work in environments like Cloud Run where ADC is available.
+    // This may work in environments like Cloud Run with Application Default Credentials
+    // but we add a warning if the service account is missing.
+    console.warn("FIREBASE_SERVICE_ACCOUNT environment variable not set. Firebase Admin SDK might not be initialized correctly.");
     initializeApp();
   }
 }
@@ -48,7 +54,7 @@ export async function POST(request: Request) {
       }
     } catch (error) {
       console.error('Session login error:', error);
-      return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+      return NextResponse.json({ error: 'Internal Server Error while verifying token.' }, { status: 500 });
     }
   }
   return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

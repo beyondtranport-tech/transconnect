@@ -79,7 +79,8 @@ export default function SignInPage() {
             // Redirect to backend on successful session creation
             router.push('/backend');
         } else {
-             throw new Error('Failed to create admin session.');
+             const errorData = await response.json();
+             throw new Error(errorData.error || 'Failed to create admin session.');
         }
 
       } else {
@@ -89,13 +90,15 @@ export default function SignInPage() {
     } catch (error: any) {
       let title = 'An error occurred.';
       let description = 'Please check your credentials and try again.';
+      
       if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
         title = 'Invalid Credentials';
         description = 'The email or password you entered is incorrect.';
-      } else if (error.message === 'Failed to create admin session.') {
+      } else if (error.message.includes('admin session')) {
         title = 'Admin Session Error';
-        description = 'Could not create a secure session for the backend.';
+        description = error.message;
       }
+
       toast({
         variant: 'destructive',
         title,

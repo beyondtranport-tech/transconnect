@@ -12,11 +12,11 @@ export async function middleware(request: NextRequest) {
        // If there's no session cookie, redirect to sign-in.
        return NextResponse.redirect(new URL('/signin?error=unauthorized', request.url));
      }
-     // The presence of the __session cookie is now the source of truth.
-     // The API route is responsible for verifying it's a valid admin.
+     // The presence of the __session cookie is now the source of truth for admin access.
+     // The API route is responsible for verifying it's a valid admin before setting the cookie.
   }
   
-  // Protect the /backend/secure route with a password-based cookie.
+  // Protect the /backend/secure route with a separate password-based cookie.
   if (pathname.startsWith('/backend/secure')) {
     if (secureAccessCookie !== 'true') {
       return NextResponse.redirect(new URL('/backend/login', request.url));
