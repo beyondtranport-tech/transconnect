@@ -59,7 +59,7 @@ export default function Home() {
             Join the TransConnect ecosystem to unlock funding, a dedicated marketplace, and powerful tech to drive your business forward.
           </p>
           <Button asChild size="lg" className="mt-8">
-            <Link href="/account">Join the Ecosystem</Link>
+            <Link href="/join">Join the Ecosystem</Link>
           </Button>
         </div>
       </section>
@@ -130,7 +130,7 @@ export default function Home() {
             Become a member today and gain access to a world of opportunities. Benefit from our rewards program, community support, and a full suite of tools to supercharge your business.
           </p>
           <Button asChild size="lg" className="mt-8">
-            <Link href="/account">Create Your Account</Link>
+            <Link href="/join">Create Your Account</Link>
           </Button>
         </div>
       </section>

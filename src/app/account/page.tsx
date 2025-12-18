@@ -1,8 +1,40 @@
+'use client';
+
+import { useUser, useAuth, useFirestore, useMemoFirebase } from '@/firebase';
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Award, FileText, Gem, User } from "lucide-react";
+import { Award, FileText, Gem, User, Loader2 } from "lucide-react";
+import { doc } from 'firebase/firestore';
+import { useDoc } from '@/firebase/firestore/use-doc';
 
 export default function AccountPage() {
+    const { user, isUserLoading } = useUser();
+    const router = useRouter();
+    const firestore = useFirestore();
+
+    const memberRef = useMemoFirebase(() => {
+        if (!firestore || !user) return null;
+        return doc(firestore, 'members', user.uid);
+    }, [firestore, user]);
+
+    const { data: memberData, isLoading: isMemberLoading } = useDoc(memberRef);
+
+    useEffect(() => {
+        if (!isUserLoading && !user) {
+            router.push('/signin');
+        }
+    }, [user, isUserLoading, router]);
+
+    if (isUserLoading || !user || isMemberLoading) {
+        return (
+            <div className="flex justify-center items-center min-h-[calc(100vh-8rem)]">
+                <Loader2 className="h-16 w-16 animate-spin text-primary" />
+            </div>
+        );
+    }
+
     return (
         <div className="bg-background min-h-full">
             <div className="container mx-auto px-4 py-16">
@@ -12,7 +44,7 @@ export default function AccountPage() {
                     </div>
                     <div>
                         <h1 className="text-3xl md:text-4xl font-bold font-headline">My Account</h1>
-                        <p className="text-lg text-muted-foreground">Welcome back, Member!</p>
+                        <p className="text-lg text-muted-foreground">Welcome back, {memberData?.firstName || 'Member'}!</p>
                     </div>
                 </div>
 
@@ -23,7 +55,7 @@ export default function AccountPage() {
                             <Gem className="h-4 w-4 text-muted-foreground" />
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold text-primary">Gold</div>
+                            <div className="text-2xl font-bold text-primary capitalize">{memberData?.membershipId || 'Free'}</div>
                             <p className="text-xs text-muted-foreground">Next tier: Platinum</p>
                         </CardContent>
                     </Card>
@@ -33,8 +65,8 @@ export default function AccountPage() {
                             <Award className="h-4 w-4 text-muted-foreground" />
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold">12,450</div>
-                            <p className="text-xs text-muted-foreground">+200 points from last month</p>
+                            <div className="text-2xl font-bold">{memberData?.rewardPoints || 0}</div>
+                            <p className="text-xs text-muted-foreground">+0 points from last month</p>
                         </CardContent>
                     </Card>
                      <Card>
@@ -56,8 +88,28 @@ export default function AccountPage() {
                             <CardDescription>Manage your personal and company details.</CardDescription>
                         </CardHeader>
                         <CardContent>
-                            {/* Placeholder for a profile form */}
-                            <p className="text-muted-foreground">Profile editing form will be here.</p>
+                            {memberData ? (
+                                <div className="space-y-4">
+                                    <div>
+                                        <h4 className="font-medium">Full Name</h4>
+                                        <p className="text-muted-foreground">{memberData.firstName} {memberData.lastName}</p>
+                                    </div>
+                                     <div>
+                                        <h4 className="font-medium">Company Name</h4>
+                                        <p className="text-muted-foreground">{memberData.companyName}</p>
+                                    </div>
+                                    <div>
+                                        <h4 className="font-medium">Email</h4>
+                                        <p className="text-muted-foreground">{memberData.email}</p>
+                                    </div>
+                                    <div>
+                                        <h4 className="font-medium">Phone</h4>
+                                        <p className="text-muted-foreground">{memberData.phone}</p>
+                                    </div>
+                                </div>
+                            ): (
+                               <p className="text-muted-foreground">Could not load profile information.</p>
+                            )}
                         </CardContent>
                     </Card>
                 </div>
