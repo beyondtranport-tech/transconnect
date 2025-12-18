@@ -9,17 +9,43 @@ import Link from 'next/link';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
+import { Checkbox } from '@/components/ui/checkbox';
+
+const features = {
+    malls: [
+        "Supplier", "Transport", "Funding", "Loads", "Buy and Sell", 
+        "Developer", "Warehousing", "Distribution", "Repurpose"
+    ],
+    marketplace: [
+        "Data", "Agents", "Accountants", "Mobile", "Marketing", "Courier", 
+        "Pay per click", "SEO", "Branding", "Copywriting", "Communication", 
+        "Mahala hub", "RAF assist", "Open loyalty funeral", 
+        "Open loyalty roadside assist", "Open loyalty benefit"
+    ],
+    tech: [
+        "# days free onboarding support", "# hrs free tech support for 1st month", 
+        "# hrs free SEO optimization 1st month", "# email templates", 
+        "# emails per month", "# group emails per month", "Facebook login", 
+        "Google login", "# API calls per month", "# Products in mall", 
+        "# Methods per month", "# themes available", "# templates available", 
+        "# website meta key words", "# staff", "# product reviews per month"
+    ]
+};
 
 const tiers = [
   {
     id: 'basic',
     name: 'Basic',
     price: {
-      monthly: 150,
-      annual: 150 * 12 * 0.85, // 15% discount
+      monthly: 375,
+      annual: 375 * 12 * 0.85,
     },
     description: '',
-    features: [],
+    features: {
+        malls: [],
+        marketplace: [],
+        tech: []
+    },
     highlight: false,
   },
   {
@@ -27,10 +53,14 @@ const tiers = [
     name: 'Standard',
     price: {
       monthly: 450,
-      annual: 450 * 12 * 0.85, // 15% discount
+      annual: 450 * 12 * 0.85,
     },
     description: '',
-    features: [],
+    features: {
+        malls: [],
+        marketplace: [],
+        tech: []
+    },
     highlight: true,
   },
   {
@@ -38,10 +68,14 @@ const tiers = [
     name: 'Premium',
     price: {
       monthly: 900,
-      annual: 900 * 12 * 0.85, // 15% discount
+      annual: 900 * 12 * 0.85,
     },
     description: '',
-    features: [],
+    features: {
+        malls: [],
+        marketplace: [],
+        tech: []
+    },
     highlight: false,
   },
 ];
@@ -54,6 +88,21 @@ const formatPrice = (price: number) => {
         maximumFractionDigits: 0,
     }).format(price);
 };
+
+const FeatureList = ({ title, items }: { title: string, items: string[] }) => (
+    <div className="mt-6">
+        <h4 className="font-semibold text-sm uppercase tracking-wider text-muted-foreground">{title}</h4>
+        <ul className="mt-3 space-y-3">
+            {items.map((item) => (
+                <li key={item} className="flex items-center justify-between text-sm">
+                    <span>{item}</span>
+                    <Checkbox />
+                </li>
+            ))}
+        </ul>
+    </div>
+);
+
 
 export default function PricingPage() {
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('monthly');
@@ -81,7 +130,7 @@ export default function PricingPage() {
           </Label>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start max-w-5xl mx-auto">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start max-w-7xl mx-auto">
           {tiers.map((tier) => (
             <Card 
               key={tier.id} 
@@ -102,14 +151,9 @@ export default function PricingPage() {
                 </div>
               </CardHeader>
               <CardContent className="flex-grow min-h-[150px]">
-                <ul className="space-y-4">
-                  {tier.features.map((feature) => (
-                    <li key={feature} className="flex items-center gap-3">
-                        <Check className="h-5 w-5 text-primary" />
-                        <span>{feature}</span>
-                    </li>
-                  ))}
-                </ul>
+                 <FeatureList title="Malls" items={features.malls} />
+                 <FeatureList title="Marketplace" items={features.marketplace} />
+                 <FeatureList title="Tech" items={features.tech} />
               </CardContent>
               <CardFooter>
                  <Button asChild className="w-full" variant={tier.highlight ? 'default' : 'outline'}>
