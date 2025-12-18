@@ -11,9 +11,6 @@ export async function middleware(request: NextRequest) {
     if (!sessionCookie) {
       return NextResponse.redirect(new URL('/signin?error=unauthorized', request.url));
     }
-    // The session cookie's validity in terms of being the correct admin
-    // will be checked on the client-side components. The middleware's job
-    // is just to ensure a session exists.
   }
 
   // Protect the /backend/secure route

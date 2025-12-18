@@ -66,14 +66,8 @@ export default function SignInPage() {
       const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
       
       if (user && user.email === adminEmail) {
-        // Get the ID token and create the session cookie.
-        const idToken = await user.getIdToken();
-        await fetch('/api/auth/session', {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${idToken}`,
-            },
-        });
+        // Just set a simple session cookie for middleware check
+        document.cookie = `__session=true; path=/; max-age=${60 * 60 * 24}`; // 1 day expiry
         router.push('/backend');
       } else {
         router.push('/account');
