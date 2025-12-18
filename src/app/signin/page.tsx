@@ -3,11 +3,10 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { useForm, FormProvider } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { signInWithEmailAndPassword } from 'firebase/auth';
-import { handleAdminLogin } from './actions';
 
 import { useAuth } from '@/firebase';
 import { Button } from '@/components/ui/button';
@@ -26,14 +25,6 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Eye, EyeOff } from 'lucide-react';
@@ -45,73 +36,12 @@ const formSchema = z.object({
 
 type SignInFormValues = z.infer<typeof formSchema>;
 
-function AdminLoginDialog({ open, onOpenChange }: { open: boolean, onOpenChange: (open: boolean) => void }) {
-  const [password, setPassword] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const router = useRouter();
-  const { toast } = useToast();
-  
-  // Create a dummy form instance for the dialog
-  const methods = useForm();
-
-  const onAdminLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-
-    const result = await handleAdminLogin(password);
-
-    if (result.success) {
-      router.push('/backend');
-    } else {
-      toast({
-        variant: 'destructive',
-        title: 'Login Failed',
-        description: result.error,
-      });
-      setIsLoading(false);
-    }
-  };
-
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Admin Access</DialogTitle>
-          <DialogDescription>
-            Enter the admin password to access the backend.
-          </DialogDescription>
-        </DialogHeader>
-        <FormProvider {...methods}>
-          <form onSubmit={onAdminLogin} className="space-y-4">
-            <div className="space-y-2">
-              <FormLabel htmlFor="admin-password">Admin Password</FormLabel>
-              <Input
-                id="admin-password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                disabled={isLoading}
-              />
-            </div>
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Access Backend
-            </Button>
-          </form>
-        </FormProvider>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
 
 export default function SignInPage() {
   const router = useRouter();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [showAdminDialog, setShowAdminDialog] = useState(false);
   const auth = useAuth();
 
   const form = useForm<SignInFormValues>({
@@ -216,13 +146,7 @@ export default function SignInPage() {
             </Link>
           </div>
         </CardContent>
-         <div className="text-center text-xs text-muted-foreground pb-4">
-            <button onClick={() => setShowAdminDialog(true)} className="hover:underline">
-                Admin Access
-            </button>
-         </div>
       </Card>
-      <AdminLoginDialog open={showAdminDialog} onOpenChange={setShowAdminDialog} />
     </div>
   );
 }
