@@ -5,22 +5,25 @@ import { cookies } from 'next/headers';
 const ADMIN_TOKEN_NAME = 'admin-auth-token';
 
 export async function handleAdminLogin(password: string) {
-  // Use the environment variable if available, otherwise default to 'admin'
-  const adminPassword = process.env.SUPER_ADMIN_PASSWORD || 'admin';
+  try {
+    const adminPassword = process.env.SUPER_ADMIN_PASSWORD || 'admin';
 
-  if (password === adminPassword) {
-    // In a real app, you'd generate a secure, signed token (e.g., JWT).
-    // For this prototype, we'll use a simple static value.
-    const adminToken = 'SUPER_SECRET_ADMIN_TOKEN_VALUE';
-    cookies().set(ADMIN_TOKEN_NAME, adminToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      path: '/',
-      maxAge: 60 * 60, // 1 hour
-    });
-    return { success: true };
-  } else {
-    return { success: false, error: 'Incorrect password.' };
+    if (password === adminPassword) {
+      const adminToken = 'SUPER_SECRET_ADMIN_TOKEN_VALUE';
+      cookies().set(ADMIN_TOKEN_NAME, adminToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        path: '/',
+        maxAge: 60 * 60, // 1 hour
+      });
+      return { success: true };
+    } else {
+      return { success: false, error: 'Incorrect password.' };
+    }
+  } catch (error) {
+    console.error('Error in handleAdminLogin:', error);
+    // Ensure that even if a server error occurs (e.g., with cookies), a response is sent.
+    return { success: false, error: 'An unexpected server error occurred.' };
   }
 }
 
