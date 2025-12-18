@@ -70,7 +70,7 @@ export default function BackendPage() {
           </div>
         </SidebarHeader>
         <SidebarContent>
-          <SidebarMenu>
+          <SidebarGroup>
               <SidebarMenuItem>
                 <SidebarMenuButton tooltip="Dashboard" isActive={activeView === 'dashboard'} onClick={() => setActiveView('dashboard')}>
                   <LayoutDashboard />
@@ -93,7 +93,7 @@ export default function BackendPage() {
                 <SidebarMenuButton asChild variant="ghost" className="w-full justify-start pl-2">
                     <Link href="/backend/secure">
                         <ShieldCheck />
-                        <span>Backend</span>
+                        <span>Secure Area</span>
                     </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
@@ -103,7 +103,7 @@ export default function BackendPage() {
                   <span>Settings</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
-          </SidebarMenu>
+          </SidebarGroup>
         </SidebarContent>
         <SidebarFooter>
           <div className="flex items-center gap-3 p-2 rounded-md bg-sidebar-accent">

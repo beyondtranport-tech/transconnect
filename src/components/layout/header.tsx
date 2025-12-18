@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Truck, Menu, User, ChevronDown } from "lucide-react";
+import { Truck, Menu, User, ChevronDown, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
@@ -42,6 +42,7 @@ export function Header() {
   const [isSheetOpen, setIsSheetOpen] = React.useState(false);
   const { user, isUserLoading } = useUser();
   const auth = useAuth();
+  const isAdmin = user?.email === process.env.NEXT_PUBLIC_ADMIN_EMAIL;
 
   const handleSignOut = () => {
     signOut(auth);
@@ -120,6 +121,14 @@ export function Header() {
                     <DropdownMenuItem asChild>
                       <Link href="/account">Account</Link>
                     </DropdownMenuItem>
+                    {isAdmin && (
+                        <DropdownMenuItem asChild>
+                          <Link href="/backend" className='flex items-center'>
+                            <ShieldCheck className="mr-2 h-4 w-4" />
+                            Backend
+                          </Link>
+                        </DropdownMenuItem>
+                    )}
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={handleSignOut}>
                       Sign out
