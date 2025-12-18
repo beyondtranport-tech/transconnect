@@ -14,7 +14,7 @@ export async function handleSecureAdminLogin(password: string) {
       cookies().set('secure-backend-access', 'true', {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
-        path: '/backend/secure',
+        path: '/backend',
         maxAge: 60 * 60, // 1 hour
       });
       return { success: true };

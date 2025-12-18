@@ -11,7 +11,6 @@ import {
   SidebarMenuButton,
   SidebarFooter,
   SidebarInset,
-  SidebarMenu,
 } from '@/components/ui/sidebar';
 import {
   Users,
@@ -28,6 +27,8 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import MembersList from './members-list';
 import Link from 'next/link';
+import { useAuth } from '@/firebase';
+import { signOut } from 'firebase/auth';
 
 function DashboardContent() {
     return (
@@ -40,11 +41,17 @@ function DashboardContent() {
 
 export default function BackendPage() {
   const router = useRouter();
+  const auth = useAuth();
   const [activeView, setActiveView] = useState('dashboard');
 
   const onLogout = async () => {
-    // This is a client-side only action, we can just clear the cookie and redirect.
+    // Clear the standard auth session
+    if (auth) {
+        await signOut(auth);
+    }
+    // Manually clear custom session cookies
     document.cookie = "__session=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+    document.cookie = "secure-backend-access=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
     router.push('/signin');
   };
 
@@ -90,7 +97,7 @@ export default function BackendPage() {
                 </SidebarMenuButton>
               </SidebarMenuItem>
                <SidebarMenuItem>
-                <SidebarMenuButton asChild variant="ghost" className="w-full justify-start pl-2">
+                <SidebarMenuButton asChild>
                     <Link href="/backend/secure">
                         <ShieldCheck />
                         <span>Secure Area</span>

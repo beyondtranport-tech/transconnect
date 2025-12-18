@@ -6,14 +6,14 @@ export async function middleware(request: NextRequest) {
   const sessionCookie = request.cookies.get('__session')?.value;
   const secureAccessCookie = request.cookies.get('secure-backend-access')?.value;
 
-  // Protect the main /backend route
+  // Protect the main /backend route for admin access.
   if (pathname.startsWith('/backend') && !pathname.startsWith('/backend/login')) {
-    if (!sessionCookie) {
-      return NextResponse.redirect(new URL('/signin?error=unauthorized', request.url));
-    }
+     if (!sessionCookie) {
+       return NextResponse.redirect(new URL('/signin?error=unauthorized', request.url));
+     }
   }
-
-  // Protect the /backend/secure route
+  
+  // Protect the /backend/secure route with a password.
   if (pathname.startsWith('/backend/secure')) {
     if (secureAccessCookie !== 'true') {
       return NextResponse.redirect(new URL('/backend/login', request.url));
@@ -24,6 +24,6 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  // Match all backend routes except the login page for the secure area
+  // Match all backend routes.
   matcher: ['/backend/:path*'],
 };
