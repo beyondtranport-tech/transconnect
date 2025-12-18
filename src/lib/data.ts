@@ -1,5 +1,4 @@
 import type { Division, MarketplaceItem } from '@/lib/types';
-import { DollarSign, ShoppingBasket, Store, Cpu } from 'lucide-react';
 import { placeholderImages } from '@/lib/placeholder-images.json';
 
 const fundingImage = placeholderImages.find(p => p.id === 'funding-division')!;
@@ -11,7 +10,7 @@ export const divisions: Division[] = [
   {
     id: 'funding',
     title: 'TransConnect Funding',
-    icon: <DollarSign className="h-10 w-10 text-primary" />,
+    icon: 'DollarSign',
     description: 'Fueling your growth with flexible financial solutions.',
     longDescription: 'We have dared to challenge the status quo. We are able to fund where banks are not able to',
     image: fundingImage,
@@ -19,7 +18,7 @@ export const divisions: Division[] = [
   {
     id: 'mall',
     title: 'TransConnect Mall',
-    icon: <ShoppingBasket className="h-10 w-10 text-primary" />,
+    icon: 'ShoppingBasket',
     description: 'Your one-stop shop for parts, gear, and essentials.',
     longDescription: "Join each of our malls are set up to break specific business constraints that you have.",
     image: mallImage,
@@ -27,7 +26,7 @@ export const divisions: Division[] = [
   {
     id: 'marketplace',
     title: 'TransConnect Marketplace',
-    icon: <Store className="h-10 w-10 text-primary" />,
+    icon: 'Store',
     description: 'The trusted community to buy, sell, and trade.',
     longDescription: 'Access unique products from our partner partners and earn by sharing discounts from them.',
     image: marketplaceImage,
@@ -35,7 +34,7 @@ export const divisions: Division[] = [
   {
     id: 'tech',
     title: 'TransConnect Tech',
-    icon: <Cpu className="h-10 w-10 text-primary" />,
+    icon: 'Cpu',
     description: 'Smart tools for a more efficient business.',
     longDescription: 'Gain a competitive edge with TransConnect Tech. Our suite of digital tools is designed to optimize your operations. Key features include our AI-powered freight matching service to eliminate deadhead miles, route optimization software to save on fuel, and a digital document vault for compliance management. We handle the tech, so you can focus on the road.',
     image: techImage,

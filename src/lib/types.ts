@@ -5,7 +5,7 @@ export interface Division {
   title: string;
   description: string;
   longDescription: string;
-  icon: React.ReactElement<LucideIcon | any>;
+  icon: string;
   image: {
     id: string;
     description: string;
