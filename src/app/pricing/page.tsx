@@ -2,62 +2,47 @@
 'use client';
 
 import { useState } from 'react';
-import { Check, X } from 'lucide-react';
+import { Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import Link from 'next/link';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
 
 const tiers = [
   {
-    id: 'access',
-    name: 'Access',
+    id: 'basic',
+    name: 'Basic',
     price: {
-      monthly: 375,
-      annual: 375 * 12 * 0.85, // 15% discount
+      monthly: 150,
+      annual: 150 * 12 * 0.85, // 15% discount
     },
-    description: 'Mandatory base plan for platform access.',
-    features: [
-      { text: 'Access to Community Forum', included: true },
-      { text: 'Basic Marketplace Access', included: true },
-      { text: 'Weekly Newsletter', included: true },
-      { text: 'AI Freight Matching', included: false },
-      { text: 'Discounted Mall Access', included: false },
-    ],
-    mandatory: true,
+    description: '',
+    features: [],
+    highlight: false,
   },
   {
-    id: 'reward',
-    name: 'Reward',
+    id: 'standard',
+    name: 'Standard',
     price: {
-      monthly: 125,
-      annual: 125 * 12 * 0.85, // 15% discount
+      monthly: 450,
+      annual: 450 * 12 * 0.85, // 15% discount
     },
-    description: 'Unlock rewards and advanced matching.',
-    features: [
-      { text: 'Earn & Redeem Reward Points', included: true },
-      { text: 'AI Freight Matching (Unlimited)', included: true },
-      { text: 'Priority Load Alerts', included: true },
-    ],
-    mandatory: false,
+    description: '',
+    features: [],
+    highlight: true,
   },
   {
-    id: 'loyalty',
-    name: 'Loyalty',
+    id: 'premium',
+    name: 'Premium',
     price: {
-      monthly: 100,
-      annual: 100 * 12 * 0.85, // 15% discount
+      monthly: 900,
+      annual: 900 * 12 * 0.85, // 15% discount
     },
-    description: 'Exclusive discounts and loyalty benefits.',
-    features: [
-      { text: 'Exclusive Mall Discounts', included: true },
-      { text: 'Loyalty Tier Status', included: true },
-      { text: 'Early access to new features', included: true },
-    ],
-    mandatory: false,
+    description: '',
+    features: [],
+    highlight: false,
   },
 ];
 
@@ -72,24 +57,6 @@ const formatPrice = (price: number) => {
 
 export default function PricingPage() {
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('monthly');
-  const [selectedPlans, setSelectedPlans] = useState<string[]>(['access']);
-
-  const handlePlanChange = (planId: string, checked: boolean | 'indeterminate') => {
-    if (checked) {
-      setSelectedPlans((prev) => [...prev, planId]);
-    } else {
-      setSelectedPlans((prev) => prev.filter((id) => id !== planId));
-    }
-  };
-
-  const total = selectedPlans.reduce((acc, planId) => {
-    const tier = tiers.find(t => t.id === planId);
-    if (tier) {
-      return acc + tier.price[billingCycle];
-    }
-    return acc;
-  }, 0);
-
 
   return (
     <div className="bg-background">
@@ -97,7 +64,7 @@ export default function PricingPage() {
         <div className="text-center max-w-3xl mx-auto mb-12">
           <h1 className="text-4xl md:text-5xl font-bold font-headline">Find a Plan to Power Your Business</h1>
           <p className="mt-4 text-lg md:text-xl text-muted-foreground">
-            Start with the mandatory Access plan and add what you need. All prices are VAT exclusive.
+            Choose the plan that's right for you. All prices are VAT exclusive.
           </p>
         </div>
 
@@ -110,88 +77,48 @@ export default function PricingPage() {
             aria-label="Toggle billing cycle"
           />
           <Label htmlFor="billing-cycle" className={billingCycle === 'annual' ? 'text-foreground' : 'text-muted-foreground'}>
-            Annual <span className="text-primary text-xs font-semibold">(15% discount if annual membership is selected)</span>
+            Annual <span className="text-primary text-xs font-semibold">(15% discount)</span>
           </Label>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start max-w-5xl mx-auto">
           {tiers.map((tier) => (
             <Card 
               key={tier.id} 
               className={cn(
                 'flex flex-col h-full shadow-lg transition-all',
-                selectedPlans.includes(tier.id) ? 'border-primary shadow-2xl' : ''
+                tier.highlight ? 'border-primary shadow-2xl relative' : 'border-border'
               )}
             >
-              <CardHeader className="relative">
-                <div className='flex items-start justify-between'>
-                    <div>
-                        <CardTitle className="text-2xl font-bold">{tier.name}</CardTitle>
-                        <CardDescription className='mt-2'>{tier.description}</CardDescription>
-                    </div>
-                     <Checkbox
-                        id={tier.id}
-                        checked={selectedPlans.includes(tier.id)}
-                        disabled={tier.mandatory}
-                        onCheckedChange={(checked) => handlePlanChange(tier.id, checked)}
-                        className='h-6 w-6'
-                        aria-label={`Select ${tier.name} plan`}
-                    />
-                </div>
+              {tier.highlight && (
+                <div className="absolute -top-4 right-4 bg-primary text-primary-foreground text-xs font-bold px-3 py-1 rounded-full">MOST POPULAR</div>
+              )}
+              <CardHeader>
+                <CardTitle className="text-2xl font-bold">{tier.name}</CardTitle>
+                <CardDescription className='mt-2 h-10'>{tier.description}</CardDescription>
                 <div className="flex items-baseline gap-1 pt-4">
                   <span className="text-4xl font-extrabold tracking-tight">{formatPrice(tier.price[billingCycle])}</span>
                   <span className="text-muted-foreground">/{billingCycle === 'monthly' ? 'mo' : 'yr'} + VAT</span>
                 </div>
               </CardHeader>
-              <CardContent className="flex-grow">
+              <CardContent className="flex-grow min-h-[150px]">
                 <ul className="space-y-4">
                   {tier.features.map((feature) => (
-                    <li key={feature.text} className="flex items-center gap-3">
-                      {feature.included ? (
+                    <li key={feature} className="flex items-center gap-3">
                         <Check className="h-5 w-5 text-primary" />
-                      ) : (
-                        <X className="h-5 w-5 text-muted-foreground" />
-                      )}
-                      <span className={!feature.included ? 'text-muted-foreground' : ''}>
-                        {feature.text}
-                      </span>
+                        <span>{feature}</span>
                     </li>
                   ))}
                 </ul>
               </CardContent>
+              <CardFooter>
+                 <Button asChild className="w-full" variant={tier.highlight ? 'default' : 'outline'}>
+                    <Link href="/join">Choose {tier.name}</Link>
+                </Button>
+              </CardFooter>
             </Card>
           ))}
         </div>
-
-        <div className="mt-16">
-            <Card className='max-w-xl mx-auto'>
-                <CardHeader>
-                    <CardTitle>Your Custom Plan</CardTitle>
-                    <CardDescription>Review your selection and proceed to checkout.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <div className='space-y-2'>
-                        {tiers.filter(t => selectedPlans.includes(t.id)).map(t => (
-                            <div key={t.id} className="flex justify-between items-center">
-                                <span>{t.name}</span>
-                                <span className='font-medium'>{formatPrice(t.price[billingCycle])}</span>
-                            </div>
-                        ))}
-                    </div>
-                    <div className="border-t my-4"></div>
-                    <div className="flex justify-between items-center text-lg font-bold">
-                        <span>Total (per {billingCycle === 'monthly' ? 'month' : 'year'})</span>
-                        <span>{formatPrice(total)} + VAT</span>
-                    </div>
-                </CardContent>
-                <CardFooter>
-                    <Button asChild className="w-full" size='lg'>
-                        <Link href="/join">Proceed to Checkout</Link>
-                    </Button>
-                </CardFooter>
-            </Card>
-        </div>
-
       </div>
     </div>
   );
