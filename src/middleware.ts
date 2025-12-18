@@ -22,7 +22,7 @@ if (!getApps().length) {
 }
 
 export async function middleware(request: NextRequest) {
-  const adminUID = process.env.NEXT_PUBLIC_ADMIN_UID;
+  const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
   
   if (request.nextUrl.pathname.startsWith('/backend')) {
     const sessionCookie = request.cookies.get('__session')?.value;
@@ -33,7 +33,7 @@ export async function middleware(request: NextRequest) {
 
     try {
       const decodedToken = await getAuth(adminApp).verifySessionCookie(sessionCookie, true);
-      if (decodedToken.uid !== adminUID) {
+      if (decodedToken.email !== adminEmail) {
         // Not the admin user, redirect
         return NextResponse.redirect(new URL('/signin?error=forbidden', request.url));
       }

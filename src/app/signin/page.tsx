@@ -63,9 +63,9 @@ export default function SignInPage() {
         description: "Welcome back to TransConnect.",
       });
 
-      const adminUID = process.env.NEXT_PUBLIC_ADMIN_UID;
+      const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
       
-      if (user && user.uid === adminUID) {
+      if (user && user.email === adminEmail) {
         // Get the ID token and create the session cookie.
         const idToken = await user.getIdToken();
         await fetch('/api/auth/session', {
