@@ -1,11 +1,11 @@
 'use client';
 
-import { useUser, useAuth, useFirestore, useMemoFirebase } from '@/firebase';
+import { useUser, useFirestore, useMemoFirebase } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Award, FileText, Gem, User, Loader2 } from "lucide-react";
+import { Award, FileText, Gem, User, Loader2, DollarSign } from "lucide-react";
 import { doc } from 'firebase/firestore';
 import { useDoc } from '@/firebase/firestore/use-doc';
 
@@ -56,7 +56,7 @@ export default function AccountPage() {
                         </CardHeader>
                         <CardContent>
                             <div className="text-2xl font-bold text-primary capitalize">{memberData?.membershipId || 'Free'}</div>
-                            <p className="text-xs text-muted-foreground">Next tier: Platinum</p>
+                            <p className="text-xs text-muted-foreground">Upgrade to unlock more benefits.</p>
                         </CardContent>
                     </Card>
                     <Card>
@@ -66,7 +66,7 @@ export default function AccountPage() {
                         </CardHeader>
                         <CardContent>
                             <div className="text-2xl font-bold">{memberData?.rewardPoints || 0}</div>
-                            <p className="text-xs text-muted-foreground">+0 points from last month</p>
+                            <p className="text-xs text-muted-foreground">Redeem points in the Mall.</p>
                         </CardContent>
                     </Card>
                      <Card>
@@ -81,7 +81,7 @@ export default function AccountPage() {
                     </Card>
                 </div>
 
-                <div className="mt-12">
+                <div className="mt-12 grid grid-cols-1 lg:grid-cols-2 gap-8">
                     <Card>
                         <CardHeader>
                             <CardTitle>Profile Information</CardTitle>
@@ -111,6 +111,21 @@ export default function AccountPage() {
                                <p className="text-muted-foreground">Could not load profile information.</p>
                             )}
                         </CardContent>
+                    </Card>
+                     <Card>
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2">
+                               <DollarSign className="h-6 w-6" />
+                               Transactions
+                            </CardTitle>
+                            <CardDescription>View your membership payments and marketplace history.</CardDescription>
+                        </CardHeader>
+                        <CardContent className="text-center py-10">
+                            <p className="text-muted-foreground">You have no transactions yet.</p>
+                        </CardContent>
+                        <CardFooter>
+                            <Button variant="outline">View All Transactions</Button>
+                        </CardFooter>
                     </Card>
                 </div>
             </div>
