@@ -2,7 +2,6 @@
 'use client';
 
 import { useState } from 'react';
-import { Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import Link from 'next/link';
@@ -43,8 +42,11 @@ const tiers = [
     description: '',
     features: {
         malls: ["Supplier", "Transport", "Funding"],
-        marketplace: [...features.marketplace],
-        tech: [...features.tech]
+        marketplace: [
+            "Data", "Agents", "Mahala hub", "RAF assist", "Open loyalty funeral", 
+            "Open loyalty roadside assist", "Open loyalty benefit"
+        ],
+        tech: ["# email templates", "# emails per month", "Facebook login", "Google login"]
     },
     highlight: false,
   },
@@ -126,7 +128,7 @@ export default function PricingPage() {
             aria-label="Toggle billing cycle"
           />
           <Label htmlFor="billing-cycle" className={billingCycle === 'annual' ? 'text-foreground' : 'text-muted-foreground'}>
-            Annual <span className="text-primary text-xs font-semibold">(15% discount)</span>
+            Annual <span className="text-primary text-xs font-semibold">(15% discount if annual membership is selected)</span>
           </Label>
         </div>
 
