@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   Dialog,
   DialogContent,
@@ -29,6 +30,7 @@ const contributionOptions = [
 export function DataContributionModal({ isOpen, onOpenChange }: DataContributionModalProps) {
   const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
   const { toast } = useToast();
+  const router = useRouter();
 
   const handleCheckboxChange = (optionId: string, checked: boolean) => {
     setSelectedOptions((prev) =>
@@ -42,8 +44,11 @@ export function DataContributionModal({ isOpen, onOpenChange }: DataContribution
         title: 'Thank You for Contributing!',
         description: "We'll guide you through the next steps shortly. Your contribution helps the whole community.",
       });
+      onOpenChange(false);
+      router.push('/contribute'); // Redirect to the new contribution page
+    } else {
+        onOpenChange(false);
     }
-    onOpenChange(false);
   };
 
   return (
