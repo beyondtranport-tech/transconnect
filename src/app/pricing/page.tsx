@@ -42,9 +42,9 @@ const tiers = [
     },
     description: '',
     features: {
-        malls: [],
-        marketplace: [],
-        tech: []
+        malls: ["Supplier", "Transport", "Funding"],
+        marketplace: ["Mahala hub", "RAF assist", "Open loyalty funeral", "Open loyalty roadside assist", "Open loyalty benefit"],
+        tech: ["# email templates", "# emails per month", "Facebook login", "Google login"]
     },
     highlight: false,
   },
@@ -89,14 +89,14 @@ const formatPrice = (price: number) => {
     }).format(price);
 };
 
-const FeatureList = ({ title, items }: { title: string, items: string[] }) => (
+const FeatureList = ({ title, items, includedFeatures }: { title: string, items: string[], includedFeatures: string[] }) => (
     <div className="mt-6">
         <h4 className="font-semibold text-sm uppercase tracking-wider text-muted-foreground">{title}</h4>
         <ul className="mt-3 space-y-3">
             {items.map((item) => (
                 <li key={item} className="flex items-center justify-between text-sm">
                     <span>{item}</span>
-                    <Checkbox />
+                    <Checkbox checked={includedFeatures.includes(item)} disabled />
                 </li>
             ))}
         </ul>
@@ -151,9 +151,9 @@ export default function PricingPage() {
                 </div>
               </CardHeader>
               <CardContent className="flex-grow min-h-[150px]">
-                 <FeatureList title="Malls" items={features.malls} />
-                 <FeatureList title="Marketplace" items={features.marketplace} />
-                 <FeatureList title="Tech" items={features.tech} />
+                 <FeatureList title="Malls" items={features.malls} includedFeatures={tier.features.malls} />
+                 <FeatureList title="Marketplace" items={features.marketplace} includedFeatures={tier.features.marketplace} />
+                 <FeatureList title="Tech" items={features.tech} includedFeatures={tier.features.tech} />
               </CardContent>
               <CardFooter>
                  <Button asChild className="w-full" variant={tier.highlight ? 'default' : 'outline'}>
