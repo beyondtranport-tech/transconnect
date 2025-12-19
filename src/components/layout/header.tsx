@@ -93,7 +93,7 @@ export function Header() {
         </nav>
 
         <div className="flex items-center gap-4">
-          {user ? (
+          {!isUserLoading && user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="relative h-8 w-8 rounded-full">
@@ -192,7 +192,7 @@ export function Header() {
                    ))}
                 </nav>
                  <div className="mt-auto border-t pt-4">
-                    {user ? (
+                    {!isUserLoading && user ? (
                       <Button asChild className="w-full justify-start" >
                         <Link href="/account" onClick={() => setIsSheetOpen(false)}>
                             <User className="mr-2 h-5 w-5" />
