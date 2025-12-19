@@ -53,20 +53,21 @@ const plans = [
 ]
 
 const formatPrice = (price: number) => {
-    // Replaces non-breaking spaces with regular spaces to prevent hydration errors
     const formattedPrice = new Intl.NumberFormat('en-ZA', {
         style: 'currency',
         currency: 'ZAR',
         minimumFractionDigits: 0,
         maximumFractionDigits: 0,
     }).format(price);
-    return typeof window === 'undefined' ? formattedPrice : formattedPrice.replace(/\s/g, ' ');
+    return typeof window === 'undefined' ? formattedPrice.replace(/\s/g, ' ') : formattedPrice;
 };
+
+const tierPercentages = [20, 40, 60, 80];
 
 export default function ConnectPage() {
     const [monthlySpend, setMonthlySpend] = useState(20000);
     const [supplierDiscount, setSupplierDiscount] = useState(7.5);
-    const [loyaltyShare, setLoyaltyShare] = useState(80);
+    const [loyaltyTier, setLoyaltyTier] = useState(4); // Represents tier 1, 2, 3, 4
     const [potentialSavings, setPotentialSavings] = useState(0);
     const [isClient, setIsClient] = useState(false);
 
@@ -75,9 +76,10 @@ export default function ConnectPage() {
     }, []);
 
     useEffect(() => {
+        const loyaltyShare = tierPercentages[loyaltyTier - 1];
         const savings = monthlySpend * (supplierDiscount / 100) * (loyaltyShare / 100);
         setPotentialSavings(savings);
-    }, [monthlySpend, supplierDiscount, loyaltyShare]);
+    }, [monthlySpend, supplierDiscount, loyaltyTier]);
 
 
     return (
@@ -181,16 +183,18 @@ export default function ConnectPage() {
                             </div>
                             <div>
                                 <div className="flex justify-between items-center mb-2">
-                                    <Label htmlFor="share-slider" className="text-lg font-medium">Your Share of Discount (Loyalty Tier)</Label>
-                                    <span className="text-lg font-bold text-foreground">{loyaltyShare}%</span>
+                                    <Label htmlFor="share-slider" className="text-lg font-medium">Your Loyalty Tier</Label>
+                                    <span className="text-lg font-bold text-foreground">
+                                        Tier {loyaltyTier}: {tierPercentages[loyaltyTier - 1]}%
+                                    </span>
                                 </div>
                                 <Slider
                                     id="share-slider"
-                                    min={0}
-                                    max={100}
-                                    step={5}
-                                    value={[loyaltyShare]}
-                                    onValueChange={(value) => setLoyaltyShare(value[0])}
+                                    min={1}
+                                    max={4}
+                                    step={1}
+                                    value={[loyaltyTier]}
+                                    onValueChange={(value) => setLoyaltyTier(value[0])}
                                 />
                             </div>
 
