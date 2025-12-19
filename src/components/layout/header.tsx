@@ -41,6 +41,12 @@ export function Header() {
   const [isSheetOpen, setIsSheetOpen] = React.useState(false);
   const { user, isUserLoading } = useUser();
   const auth = useAuth();
+  const [isClient, setIsClient] = React.useState(false);
+
+  React.useEffect(() => {
+    setIsClient(true);
+  }, []);
+
   const isAdmin = user?.email === process.env.NEXT_PUBLIC_ADMIN_EMAIL;
 
   const handleSignOut = () => {
@@ -92,53 +98,61 @@ export function Header() {
         </nav>
 
         <div className="flex items-center gap-4">
-          {user ? (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-                  <Avatar className="h-8 w-8">
-                      {user.photoURL && <AvatarImage src={user.photoURL} alt={user.displayName || 'User'} />}
-                    <AvatarFallback>{getInitials(user.displayName)}</AvatarFallback>
-                  </Avatar>
+          <div className="hidden md:flex items-center gap-2">
+            {!isClient || isUserLoading ? (
+              <div className="flex items-center gap-2">
+                 <div className="h-9 w-20 rounded-md bg-muted/50 animate-pulse" />
+                 <div className="h-9 w-24 rounded-md bg-muted/50 animate-pulse" />
+              </div>
+            ) : user ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                    <Avatar className="h-8 w-8">
+                        {user.photoURL && <AvatarImage src={user.photoURL} alt={user.displayName || 'User'} />}
+                      <AvatarFallback>{getInitials(user.displayName)}</AvatarFallback>
+                    </Avatar>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-56" align="end" forceMount>
+                  <DropdownMenuLabel className="font-normal">
+                    <div className="flex flex-col space-y-1">
+                      <p className="text-sm font-medium leading-none">{user.displayName}</p>
+                      <p className="text-xs leading-none text-muted-foreground">
+                        {user.email}
+                      </p>
+                    </div>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild>
+                    <Link href="/account">Account</Link>
+                  </DropdownMenuItem>
+                  {isAdmin && (
+                      <DropdownMenuItem asChild>
+                        <Link href="/backend" className='flex items-center'>
+                          <ShieldCheck className="mr-2 h-4 w-4" />
+                          Backend
+                        </Link>
+                      </DropdownMenuItem>
+                  )}
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleSignOut}>
+                    Sign out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <>
+                <Button asChild variant="ghost">
+                  <Link href="/signin">Sign In</Link>
                 </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-56" align="end" forceMount>
-                <DropdownMenuLabel className="font-normal">
-                  <div className="flex flex-col space-y-1">
-                    <p className="text-sm font-medium leading-none">{user.displayName}</p>
-                    <p className="text-xs leading-none text-muted-foreground">
-                      {user.email}
-                    </p>
-                  </div>
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem asChild>
-                  <Link href="/account">Account</Link>
-                </DropdownMenuItem>
-                {isAdmin && (
-                    <DropdownMenuItem asChild>
-                      <Link href="/backend" className='flex items-center'>
-                        <ShieldCheck className="mr-2 h-4 w-4" />
-                        Backend
-                      </Link>
-                    </DropdownMenuItem>
-                )}
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleSignOut}>
-                  Sign out
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          ) : (
-            <div className="hidden md:flex items-center gap-2">
-              <Button asChild variant="ghost">
-                <Link href="/signin">Sign In</Link>
-              </Button>
-              <Button asChild>
-                <Link href="/join">Join Now</Link>
-              </Button>
-            </div>
-          )}
+                <Button asChild>
+                  <Link href="/join">Join Now</Link>
+                </Button>
+              </>
+            )}
+          </div>
+          
 
           <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
             <SheetTrigger asChild>
@@ -196,7 +210,9 @@ export function Header() {
                    </div>
                 </nav>
                  <div className="mt-auto border-t pt-4">
-                    {user ? (
+                    {(!isClient || isUserLoading) ? (
+                       <div className="h-10 w-full rounded-md bg-muted/50 animate-pulse" />
+                    ) : user ? (
                       <Button asChild className="w-full justify-start" >
                         <Link href="/account" onClick={() => setIsSheetOpen(false)}>
                             <User className="mr-2 h-5 w-5" />
