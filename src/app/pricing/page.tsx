@@ -57,7 +57,7 @@ const tiers = [
     },
     description: '',
     features: {
-        malls: [...features.malls],
+        malls: ["Supplier", "Transport", "Funding", "Loads", "Buy and Sell", "Distribution", "Repurpose"],
         marketplace: [...features.marketplace],
         tech: [...features.tech]
     },
