@@ -48,9 +48,7 @@ const tiers = [
         ],
         tech: [
             "# email templates", 
-            "# emails per month",
-            "# group emails per month",
-            "Facebook login", 
+            "# emails per month", "# group emails per month", "Facebook login", 
             "Google login",
         ]
     },
@@ -71,7 +69,13 @@ const tiers = [
             "Pay per click", "Mahala hub", "RAF assist", "Open loyalty funeral", 
             "Open loyalty roadside assist", "Open loyalty benefit"
         ],
-        tech: [...features.tech]
+        tech: [
+            "# email templates", 
+            "# emails per month", "# group emails per month", "Facebook login", 
+            "Google login", "# API calls per month", "# Products in mall", 
+            "# Methods per month", "# themes available", "# templates available", 
+            "# website meta key words", "# staff", "# product reviews per month"
+        ]
     },
     highlight: true,
   },
