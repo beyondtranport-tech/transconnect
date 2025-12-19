@@ -28,6 +28,11 @@ const formSchema = z.object({
   vin: z.string().min(1, 'VIN is required'),
   tare: z.string().min(1, 'Tare weight is required'),
   gvm: z.string().min(1, 'GVM is required'),
+  registerNumber: z.string().min(1, 'Register number is required'),
+  titleholder: z.string().min(1, 'Titleholder is required'),
+  owner: z.string().min(1, 'Owner is required'),
+  firstRegistrationDate: z.string().min(1, 'Date of first registration is required'),
+  classification: z.string().min(1, 'Classification is required'),
 });
 
 type TrailerFormValues = z.infer<typeof formSchema>;
@@ -47,6 +52,11 @@ export default function TrailerForm() {
       vin: '',
       tare: '',
       gvm: '',
+      registerNumber: '',
+      titleholder: '',
+      owner: '',
+      firstRegistrationDate: '',
+      classification: '',
     },
   });
 
@@ -108,7 +118,7 @@ export default function TrailerForm() {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <FormField
             control={form.control}
             name="make"
@@ -186,6 +196,71 @@ export default function TrailerForm() {
                 <FormMessage />
                 </FormItem>
             )}
+            />
+            <FormField
+              control={form.control}
+              name="registerNumber"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Register #</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Register Number" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="titleholder"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Titleholder</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Titleholder" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="owner"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Owner</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Owner" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="firstRegistrationDate"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Date of First Registration</FormLabel>
+                  <FormControl>
+                    <Input placeholder="YYYY-MM-DD" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="classification"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Classification</FormLabel>
+                  <FormControl>
+                    <Input placeholder="e.g., Trailer" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
         </div>
         <Button type="submit" disabled={isLoading || !user}>

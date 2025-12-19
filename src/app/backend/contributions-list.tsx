@@ -4,14 +4,14 @@ import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query, orderBy } from 'firebase/firestore';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Loader2, Truck, Warehouse } from 'lucide-react';
+import { Loader2, Truck, Warehouse, Building } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 
 const typeConfig = {
     truck: { icon: Truck, color: 'default' as const, label: 'Truck' },
     trailer: { icon: Warehouse, color: 'secondary' as const, label: 'Trailer' },
-    supplier: { icon: 'Building', color: 'outline' as const, label: 'Supplier' },
+    supplier: { icon: Building, color: 'outline' as const, label: 'Supplier' },
 }
 
 
@@ -31,6 +31,10 @@ export default function ContributionsList() {
         }
         return 'N/A';
     };
+    
+    const renderCell = (item: any, field: string) => {
+        return item.data?.[field] || '';
+    }
 
     return (
         <Card>
@@ -60,6 +64,11 @@ export default function ContributionsList() {
                                     <TableHead>Make / Name</TableHead>
                                     <TableHead>Model / Contact</TableHead>
                                     <TableHead>VIN / Items</TableHead>
+                                    <TableHead>Register #</TableHead>
+                                    <TableHead>Titleholder</TableHead>
+                                    <TableHead>Owner</TableHead>
+                                    <TableHead>1st Reg. Date</TableHead>
+                                    <TableHead>Classification</TableHead>
                                     <TableHead>Member ID</TableHead>
                                 </TableRow>
                             </TableHeader>
@@ -75,19 +84,24 @@ export default function ContributionsList() {
                                         
                                         {/* Polymorphic cells */}
                                         <TableCell>
-                                            {item.type === 'truck' || item.type === 'trailer' ? item.data.make : ''}
-                                            {item.type === 'supplier' ? item.data.supplierName : ''}
+                                            {item.type === 'truck' || item.type === 'trailer' ? renderCell(item, 'make') : ''}
+                                            {item.type === 'supplier' ? renderCell(item, 'supplierName') : ''}
                                         </TableCell>
                                          <TableCell>
-                                            {item.type === 'truck' || item.type === 'trailer' ? item.data.model : ''}
-                                             {item.type === 'supplier' ? item.data.contactPerson : ''}
+                                            {item.type === 'truck' || item.type === 'trailer' ? renderCell(item, 'model') : ''}
+                                            {item.type === 'supplier' ? renderCell(item, 'contactPerson') : ''}
                                         </TableCell>
-                                         <TableCell className="max-w-[200px] truncate">
-                                            {item.type === 'truck' || item.type === 'trailer' ? item.data.vin : ''}
-                                            {item.type === 'supplier' ? item.data.itemsPurchased : ''}
+                                         <TableCell className="max-w-[150px] truncate">
+                                            {item.type === 'truck' || item.type === 'trailer' ? renderCell(item, 'vin') : ''}
+                                            {item.type === 'supplier' ? renderCell(item, 'itemsPurchased') : ''}
                                         </TableCell>
+                                        <TableCell>{renderCell(item, 'registerNumber')}</TableCell>
+                                        <TableCell>{renderCell(item, 'titleholder')}</TableCell>
+                                        <TableCell>{renderCell(item, 'owner')}</TableCell>
+                                        <TableCell>{renderCell(item, 'firstRegistrationDate')}</TableCell>
+                                        <TableCell>{renderCell(item, 'classification')}</TableCell>
 
-                                        <TableCell className="font-mono text-xs">{item.userId}</TableCell>
+                                        <TableCell className="font-mono text-xs max-w-[100px] truncate">{item.userId}</TableCell>
                                     </TableRow>
                                 ))}
                             </TableBody>
