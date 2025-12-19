@@ -41,12 +41,7 @@ export function Header() {
   const [isSheetOpen, setIsSheetOpen] = React.useState(false);
   const { user, isUserLoading } = useUser();
   const auth = useAuth();
-  const [isClient, setIsClient] = React.useState(false);
-
-  React.useEffect(() => {
-    setIsClient(true);
-  }, []);
-
+  
   const isAdmin = user?.email === process.env.NEXT_PUBLIC_ADMIN_EMAIL;
 
   const handleSignOut = () => {
@@ -99,7 +94,7 @@ export function Header() {
 
         <div className="flex items-center gap-4">
           <div className="hidden md:flex items-center gap-2">
-            {!isClient || isUserLoading ? (
+            {isUserLoading ? (
               <div className="flex items-center gap-2">
                  <div className="h-9 w-20 rounded-md bg-muted/50 animate-pulse" />
                  <div className="h-9 w-24 rounded-md bg-muted/50 animate-pulse" />
@@ -210,7 +205,7 @@ export function Header() {
                    </div>
                 </nav>
                  <div className="mt-auto border-t pt-4">
-                    {(!isClient || isUserLoading) ? (
+                    {isUserLoading ? (
                        <div className="h-10 w-full rounded-md bg-muted/50 animate-pulse" />
                     ) : user ? (
                       <Button asChild className="w-full justify-start" >
