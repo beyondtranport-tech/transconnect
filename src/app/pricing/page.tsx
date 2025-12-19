@@ -46,7 +46,7 @@ const tiers = [
             "Data", "Agents", "Mahala hub", "RAF assist", "Open loyalty funeral", 
             "Open loyalty roadside assist", "Open loyalty benefit"
         ],
-        tech: ["# email templates", "# emails per month", "Facebook login", "Google login"]
+        tech: [...features.tech]
     },
     highlight: false,
   },
@@ -60,7 +60,11 @@ const tiers = [
     description: '',
     features: {
         malls: ["Supplier", "Transport", "Funding", "Loads", "Buy and Sell", "Distribution", "Repurpose"],
-        marketplace: [...features.marketplace],
+        marketplace: [
+            "Data", "Agents", "Accountants", "Mobile", "Marketing", "Courier", 
+            "Pay per click", "Mahala hub", "RAF assist", "Open loyalty funeral", 
+            "Open loyalty roadside assist", "Open loyalty benefit"
+        ],
         tech: [...features.tech]
     },
     highlight: true,
