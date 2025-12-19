@@ -93,7 +93,7 @@ export function Header() {
             if (item.type === 'dropdown') {
               return (
                 <DropdownMenu key={item.label}>
-                  <DropdownMenuTrigger asChild>
+                  <DropdownMenuTrigger>
                     <Button variant="ghost" className={cn(
                       "flex items-center gap-1 px-3 py-2 text-sm font-medium hover:text-primary data-[state=open]:text-primary",
                       item.links.some(l => pathname.startsWith(l.href)) ? "text-primary font-semibold" : "text-muted-foreground"
