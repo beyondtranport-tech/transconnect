@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from "next/link";
@@ -23,7 +24,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 const mainNavLinks = [
   { href: "/", label: "Home" },
   { href: "/about", label: "About" },
-  // Divisions is now a dropdown
+  // Divisions will be manually inserted after "About"
   { href: "/pricing", label: "Pricing" },
   { href: "/connect", label: "Connect" },
   { href: "/resources", label: "Resources" },
@@ -53,6 +54,16 @@ export function Header() {
     return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
   };
 
+  const navItems = [
+      { type: 'link', href: '/', label: 'Home' },
+      { type: 'link', href: '/about', label: 'About' },
+      { type: 'dropdown', label: 'Divisions', links: divisionLinks },
+      { type: 'link', href: '/pricing', label: 'Pricing' },
+      { type: 'link', href: '/connect', label: 'Connect' },
+      { type: 'link', href: '/resources', label: 'Resources' },
+      { type: 'link', href: '/contact', label: 'Contact Us' },
+  ];
+
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 items-center justify-between">
@@ -64,35 +75,45 @@ export function Header() {
         </div>
 
         <nav className="hidden md:flex items-center gap-1 text-sm font-medium">
-          {mainNavLinks.map(({ href, label }) => (
-            <Link
-              key={href}
-              href={href}
-              className={cn(
-                "transition-colors hover:text-primary px-3 py-2 rounded-md",
-                pathname === href ? "text-primary font-semibold" : "text-muted-foreground"
-              )}
-            >
-              {label}
-            </Link>
-          ))}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="flex items-center gap-1 px-3 py-2 text-sm font-medium text-muted-foreground hover:text-primary data-[state=open]:text-primary">
-                    Divisions
-                    <ChevronDown className="h-4 w-4" />
-                </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start">
-              {divisionLinks.map(({ href, label }) => (
-                <DropdownMenuItem key={href} asChild>
-                    <Link href={href}>
-                        {label}
-                    </Link>
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
+          {navItems.map((item) => {
+            if (item.type === 'link') {
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href!}
+                  className={cn(
+                    "transition-colors hover:text-primary px-3 py-2 rounded-md",
+                    pathname === item.href ? "text-primary font-semibold" : "text-muted-foreground"
+                  )}
+                >
+                  {item.label}
+                </Link>
+              );
+            }
+            if (item.type === 'dropdown') {
+              return (
+                <DropdownMenu key={item.label}>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className={cn(
+                      "flex items-center gap-1 px-3 py-2 text-sm font-medium hover:text-primary data-[state=open]:text-primary",
+                      item.links.some(l => pathname.startsWith(l.href)) ? "text-primary font-semibold" : "text-muted-foreground"
+                    )}>
+                      {item.label}
+                      <ChevronDown className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start">
+                    {item.links.map(({ href, label }) => (
+                      <DropdownMenuItem key={href} asChild>
+                        <Link href={href}>{label}</Link>
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              );
+            }
+            return null;
+          })}
         </nav>
 
         <div className="flex items-center gap-4">
@@ -164,7 +185,7 @@ export function Header() {
                     </Link>
                 </div>
                 <nav className="flex flex-col gap-4 mt-6">
-                  {[...mainNavLinks, ...divisionLinks].map(({ href, label }) => (
+                  {mainNavLinks.map(({ href, label }) => (
                     <Link
                       key={href}
                       href={href}
@@ -177,6 +198,20 @@ export function Header() {
                       {label}
                     </Link>
                   ))}
+                   <p className="text-lg text-muted-foreground">Divisions</p>
+                   {divisionLinks.map(({ href, label }) => (
+                    <Link
+                      key={href}
+                      href={href}
+                      onClick={() => setIsSheetOpen(false)}
+                      className={cn(
+                        "text-lg transition-colors hover:text-primary pl-4",
+                        pathname === href ? "text-primary" : "text-muted-foreground"
+                      )}
+                    >
+                      {label}
+                    </Link>
+                   ))}
                 </nav>
                  <div className="mt-auto border-t pt-4">
                     {!isUserLoading && (
