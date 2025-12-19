@@ -52,8 +52,8 @@ const tiers = [
     id: 'standard',
     name: 'Standard',
     price: {
-      monthly: 450,
-      annual: 450 * 12 * 0.85,
+      monthly: 425,
+      annual: 425 * 12 * 0.85,
     },
     description: '',
     features: {
@@ -67,8 +67,8 @@ const tiers = [
     id: 'premium',
     name: 'Premium',
     price: {
-      monthly: 900,
-      annual: 900 * 12 * 0.85,
+      monthly: 475,
+      annual: 475 * 12 * 0.85,
     },
     description: '',
     features: {
