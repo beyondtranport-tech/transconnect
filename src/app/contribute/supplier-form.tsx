@@ -20,32 +20,32 @@ import { useFirestore, useUser } from '@/firebase';
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
-
+import { Textarea } from '@/components/ui/textarea';
 
 const formSchema = z.object({
-  vehicleType: z.string().min(1, 'Vehicle type is required'),
-  registrationNumber: z.string().min(1, 'Registration number is required'),
-  capacity: z.string().min(1, 'Capacity is required'),
+  supplierName: z.string().min(1, 'Supplier name is required'),
+  contactPerson: z.string().optional(),
+  itemsPurchased: z.string().min(1, 'Please list items you purchase.'),
 });
 
-type FleetFormValues = z.infer<typeof formSchema>;
+type SupplierFormValues = z.infer<typeof formSchema>;
 
-export default function FleetForm() {
+export default function SupplierForm() {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const firestore = useFirestore();
   const { user } = useUser();
 
-  const form = useForm<FleetFormValues>({
+  const form = useForm<SupplierFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      vehicleType: '',
-      registrationNumber: '',
-      capacity: '',
+      supplierName: '',
+      contactPerson: '',
+      itemsPurchased: '',
     },
   });
 
-  const onSubmit = async (values: FleetFormValues) => {
+  const onSubmit = async (values: SupplierFormValues) => {
     setIsLoading(true);
 
     if (!firestore || !user) {
@@ -63,7 +63,7 @@ export default function FleetForm() {
       const contributionData = {
         userId: user.uid,
         createdAt: serverTimestamp(),
-        type: 'fleet',
+        type: 'supplier',
         data: values,
       };
       
@@ -84,7 +84,7 @@ export default function FleetForm() {
 
       toast({
         title: 'Submission Received!',
-        description: 'Thank you for contributing your fleet data.',
+        description: 'Thank you for contributing your supplier data.',
       });
       
       form.reset();
@@ -98,7 +98,6 @@ export default function FleetForm() {
     } finally {
         setIsLoading(false);
     }
-
   };
 
   return (
@@ -106,12 +105,12 @@ export default function FleetForm() {
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         <FormField
           control={form.control}
-          name="vehicleType"
+          name="supplierName"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Vehicle Type</FormLabel>
+              <FormLabel>Supplier Name</FormLabel>
               <FormControl>
-                <Input placeholder="e.g., Tautliner, Flatbed, Refrigerated" {...field} />
+                <Input placeholder="e.g., Parts Inc." {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -119,12 +118,12 @@ export default function FleetForm() {
         />
         <FormField
           control={form.control}
-          name="registrationNumber"
+          name="contactPerson"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Vehicle Registration</FormLabel>
+              <FormLabel>Contact Person (Optional)</FormLabel>
               <FormControl>
-                <Input placeholder="e.g., CA 123-456" {...field} />
+                <Input placeholder="e.g., John Doe" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -132,12 +131,12 @@ export default function FleetForm() {
         />
         <FormField
           control={form.control}
-          name="capacity"
+          name="itemsPurchased"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Capacity</FormLabel>
+              <FormLabel>Items/Services Purchased</FormLabel>
               <FormControl>
-                <Input placeholder="e.g., 34 tons" {...field} />
+                <Textarea placeholder="e.g., Tires, engine oil, brake pads..." {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -145,7 +144,7 @@ export default function FleetForm() {
         />
         <Button type="submit" disabled={isLoading || !user}>
           {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          Submit Fleet Details
+          Submit Supplier Details
         </Button>
       </form>
     </Form>

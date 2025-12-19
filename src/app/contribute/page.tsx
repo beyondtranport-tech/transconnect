@@ -2,6 +2,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import FleetForm from "./fleet-form";
 import { Users, Building, Truck } from "lucide-react";
+import SupplierForm from "./supplier-form";
 
 export default function ContributePage() {
   return (
@@ -49,8 +50,8 @@ export default function ContributePage() {
                 Let us know who you buy from. This allows us to identify common suppliers and start negotiating group discounts.
               </CardDescription>
             </CardHeader>
-            <CardContent className="text-center py-12">
-                <p className="text-muted-foreground">This contribution form is coming soon. Thank you for your interest!</p>
+            <CardContent>
+                <SupplierForm />
             </CardContent>
           </Card>
         </TabsContent>

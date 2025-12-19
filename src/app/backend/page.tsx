@@ -36,7 +36,7 @@ import { useState } from 'react';
 import MembersList from './members-list';
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import FleetContributionsList from './fleet-contributions-list';
+import ContributionsList from './contributions-list';
 
 // Placeholder Content Components
 function DashboardContent() {
@@ -103,7 +103,7 @@ function DivisionsContent() {
 
 function ContributionsContent() {
     return (
-        <FleetContributionsList />
+        <ContributionsList />
     )
 }
 
