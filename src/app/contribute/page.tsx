@@ -1,8 +1,9 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import FleetForm from "./fleet-form";
-import { Users, Building, Truck } from "lucide-react";
+import TruckForm from "./truck-form";
+import { Users, Building, Truck, Warehouse } from "lucide-react";
 import SupplierForm from "./supplier-form";
+import TrailerForm from "./trailer-form";
 
 export default function ContributePage() {
   return (
@@ -14,11 +15,15 @@ export default function ContributePage() {
         </p>
       </div>
 
-      <Tabs defaultValue="fleet" className="w-full max-w-4xl mx-auto">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="fleet">
+      <Tabs defaultValue="trucks" className="w-full max-w-4xl mx-auto">
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="trucks">
             <Truck className="mr-2 h-4 w-4" />
-            Fleet Details
+            Trucks
+          </TabsTrigger>
+          <TabsTrigger value="trailers">
+            <Warehouse className="mr-2 h-4 w-4" />
+            Trailers
           </TabsTrigger>
           <TabsTrigger value="suppliers">
             <Building className="mr-2 h-4 w-4" />
@@ -29,16 +34,29 @@ export default function ContributePage() {
             Clients
           </TabsTrigger>
         </TabsList>
-        <TabsContent value="fleet">
+        <TabsContent value="trucks">
           <Card>
             <CardHeader>
-              <CardTitle>Upload Fleet Details</CardTitle>
+              <CardTitle>Upload Truck Details</CardTitle>
               <CardDescription>
-                Provide some basic, anonymous information about your vehicles. This helps us negotiate bulk deals on parts, maintenance, and insurance.
+                Provide anonymous information about your trucks based on their RC1 certificate. This helps us negotiate bulk deals on parts, maintenance, and insurance.
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <FleetForm />
+              <TruckForm />
+            </CardContent>
+          </Card>
+        </TabsContent>
+        <TabsContent value="trailers">
+          <Card>
+            <CardHeader>
+              <CardTitle>Upload Trailer Details</CardTitle>
+              <CardDescription>
+                Provide anonymous information about your trailers. This data helps us understand fleet composition for better marketplace and funding opportunities.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <TrailerForm />
             </CardContent>
           </Card>
         </TabsContent>

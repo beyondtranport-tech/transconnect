@@ -4,9 +4,16 @@ import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query, orderBy } from 'firebase/firestore';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Truck, Warehouse } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
+
+const typeConfig = {
+    truck: { icon: Truck, color: 'default' as const, label: 'Truck' },
+    trailer: { icon: Warehouse, color: 'secondary' as const, label: 'Trailer' },
+    supplier: { icon: 'Building', color: 'outline' as const, label: 'Supplier' },
+}
+
 
 export default function ContributionsList() {
     const firestore = useFirestore();
@@ -48,9 +55,11 @@ export default function ContributionsList() {
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead>Date Submitted</TableHead>
+                                    <TableHead>Submitted</TableHead>
                                     <TableHead>Type</TableHead>
-                                    <TableHead>Details</TableHead>
+                                    <TableHead>Make / Name</TableHead>
+                                    <TableHead>Model / Contact</TableHead>
+                                    <TableHead>VIN / Items</TableHead>
                                     <TableHead>Member ID</TableHead>
                                 </TableRow>
                             </TableHeader>
@@ -59,26 +68,25 @@ export default function ContributionsList() {
                                     <TableRow key={item.id}>
                                         <TableCell>{formatDate(item.createdAt)}</TableCell>
                                         <TableCell>
-                                            <Badge variant={item.type === 'fleet' ? 'default' : 'secondary'} className="capitalize">
+                                            <Badge variant={typeConfig[item.type as keyof typeof typeConfig]?.color || 'secondary'} className="capitalize">
                                                 {item.type}
                                             </Badge>
                                         </TableCell>
+                                        
+                                        {/* Polymorphic cells */}
                                         <TableCell>
-                                            {item.type === 'fleet' && (
-                                                <div className="text-sm">
-                                                    <div><span className="font-semibold">Vehicle:</span> {item.data.vehicleType}</div>
-                                                    <div><span className="font-semibold">Reg:</span> {item.data.registrationNumber}</div>
-                                                    <div><span className="font-semibold">Capacity:</span> {item.data.capacity}</div>
-                                                </div>
-                                            )}
-                                            {item.type === 'supplier' && (
-                                                 <div className="text-sm">
-                                                    <div><span className="font-semibold">Supplier:</span> {item.data.supplierName}</div>
-                                                    <div><span className="font-semibold">Contact:</span> {item.data.contactPerson || 'N/A'}</div>
-                                                    <div><span className="font-semibold">Items:</span> {item.data.itemsPurchased}</div>
-                                                </div>
-                                            )}
+                                            {item.type === 'truck' || item.type === 'trailer' ? item.data.make : ''}
+                                            {item.type === 'supplier' ? item.data.supplierName : ''}
                                         </TableCell>
+                                         <TableCell>
+                                            {item.type === 'truck' || item.type === 'trailer' ? item.data.model : ''}
+                                             {item.type === 'supplier' ? item.data.contactPerson : ''}
+                                        </TableCell>
+                                         <TableCell className="max-w-[200px] truncate">
+                                            {item.type === 'truck' || item.type === 'trailer' ? item.data.vin : ''}
+                                            {item.type === 'supplier' ? item.data.itemsPurchased : ''}
+                                        </TableCell>
+
                                         <TableCell className="font-mono text-xs">{item.userId}</TableCell>
                                     </TableRow>
                                 ))}
