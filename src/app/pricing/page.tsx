@@ -46,7 +46,13 @@ const tiers = [
             "Data", "Agents", "Mahala hub", "RAF assist", "Open loyalty funeral", 
             "Open loyalty roadside assist", "Open loyalty benefit"
         ],
-        tech: [...features.tech]
+        tech: [
+            "# email templates", 
+            "# emails per month", 
+            "# group emails per month", 
+            "Facebook login", 
+            "Google login",
+        ]
     },
     highlight: false,
   },
