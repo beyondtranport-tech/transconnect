@@ -11,15 +11,17 @@
  * Data Structure:
  * - /members/{memberId}: Each user's profile data. Document ID matches UID.
  * - /memberships/{membershipId}: Available membership plans.
+ * - /fleetContributions/{contributionId}: Data submitted by members.
  *
  * Key Security Decisions:
  * - User Data Isolation: A user can only access their own /members/{memberId} document.
  * - Admin Read Access: A function `isAdmin()` is defined to grant read-only list
- *   access to the entire /members collection for administrative UIs. For this
+ *   access to the entire /members and /fleetContributions collections for administrative UIs. For this
  *   prototype, it is hardcoded to `true` but should be replaced with a
  *   custom claims check in production.
  * - Read-Only Platform Data: Membership plans are readable by any signed-in user.
  * - Signed-In Access Only: No access is granted to unauthenticated users.
+ * - Open Contribution: Any authenticated user can create documents in /fleetContributions.
  */
 rules_version = '2';
 service cloud.firestore {
@@ -84,6 +86,21 @@ service cloud.firestore {
       allow get: if isSignedIn();
       allow list: if isSignedIn();
       allow create: if false;
+      allow update: if false;
+      allow delete: if false;
+    }
+
+    /**
+     * @description Secures member-submitted fleet data.
+     * @path /fleetContributions/{contributionId}
+     */
+    match /fleetContributions/{contributionId} {
+      // Any signed-in user can submit data.
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      // Only admins can view the collected data.
+      allow get: if isAdmin();
+      allow list: if isAdmin();
+      // Data is immutable once submitted.
       allow update: if false;
       allow delete: if false;
     }

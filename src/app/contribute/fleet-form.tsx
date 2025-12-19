@@ -16,6 +16,11 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { useState } from 'react';
 import { Loader2 } from 'lucide-react';
+import { useFirestore, useUser } from '@/firebase';
+import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
+
 
 const formSchema = z.object({
   vehicleType: z.string().min(1, 'Vehicle type is required'),
@@ -28,6 +33,8 @@ type FleetFormValues = z.infer<typeof formSchema>;
 export default function FleetForm() {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const firestore = useFirestore();
+  const { user } = useUser();
 
   const form = useForm<FleetFormValues>({
     resolver: zodResolver(formSchema),
@@ -40,21 +47,57 @@ export default function FleetForm() {
 
   const onSubmit = async (values: FleetFormValues) => {
     setIsLoading(true);
-    
-    // Simulate an API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    // In a real application, you would send this data to your backend.
-    // For now, we'll just show a success message.
-    console.log('Fleet data submitted:', values);
 
-    toast({
-      title: 'Submission Received!',
-      description: 'Thank you for contributing your fleet data.',
-    });
+    if (!firestore || !user) {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'You must be logged in to contribute.',
+      });
+      setIsLoading(false);
+      return;
+    }
     
-    form.reset();
-    setIsLoading(false);
+    try {
+      const contributionsCollectionRef = collection(firestore, 'fleetContributions');
+      const contributionData = {
+        ...values,
+        userId: user.uid,
+        createdAt: serverTimestamp(),
+      };
+      
+      addDoc(contributionsCollectionRef, contributionData)
+        .catch((serverError) => {
+            const permissionError = new FirestorePermissionError({
+                path: contributionsCollectionRef.path,
+                operation: 'create',
+                requestResourceData: contributionData,
+            });
+            errorEmitter.emit('permission-error', permissionError);
+             toast({
+                variant: 'destructive',
+                title: 'Submission Failed',
+                description: 'You do not have permission to submit this data.',
+            });
+        });
+
+      toast({
+        title: 'Submission Received!',
+        description: 'Thank you for contributing your fleet data.',
+      });
+      
+      form.reset();
+
+    } catch (error) {
+       toast({
+        variant: 'destructive',
+        title: 'An unexpected error occurred',
+        description: 'Please try again later.',
+      });
+    } finally {
+        setIsLoading(false);
+    }
+
   };
 
   return (
@@ -99,7 +142,7 @@ export default function FleetForm() {
             </FormItem>
           )}
         />
-        <Button type="submit" disabled={isLoading}>
+        <Button type="submit" disabled={isLoading || !user}>
           {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           Submit Fleet Details
         </Button>

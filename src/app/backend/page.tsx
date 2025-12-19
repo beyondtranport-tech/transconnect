@@ -36,6 +36,7 @@ import { useState } from 'react';
 import MembersList from './members-list';
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import FleetContributionsList from './fleet-contributions-list';
 
 // Placeholder Content Components
 function DashboardContent() {
@@ -102,22 +103,7 @@ function DivisionsContent() {
 
 function ContributionsContent() {
     return (
-        <Card>
-            <CardHeader>
-                <CardTitle>Member Contributions</CardTitle>
-                <CardDescription>
-                    Review and manage data submitted by members to the Contribution Hub.
-                </CardDescription>
-            </CardHeader>
-            <CardContent>
-                <p>
-                    This is where you would review submitted fleet, supplier, and client data. For now, you can view the contribution form that members see.
-                </p>
-                <Button asChild className="mt-4">
-                    <Link href="/contribute" target="_blank">Open Contribution Hub</Link>
-                </Button>
-            </CardContent>
-        </Card>
+        <FleetContributionsList />
     )
 }
 
