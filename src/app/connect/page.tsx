@@ -3,12 +3,13 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
-import { Check, Gift, Heart, Zap, UploadCloud, Truck, Users } from "lucide-react";
+import { Check, Gift, Heart, Zap } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { placeholderImages } from "@/lib/placeholder-images.json";
 import { Slider } from "@/components/ui/slider";
 import { Label } from "@/components/ui/label";
+import { DataContributionModal } from "./data-contribution-modal";
 
 const connectHeroImage = placeholderImages.find(p => p.id === 'tech-division');
 
@@ -73,6 +74,7 @@ export default function ConnectPage() {
     const [potentialSavings, setPotentialSavings] = useState(0);
     const [isClient, setIsClient] = useState(false);
     const [hasInteracted, setHasInteracted] = useState(false);
+    const [isModalOpen, setIsModalOpen] = useState(false);
 
     useEffect(() => {
         setIsClient(true);
@@ -87,6 +89,7 @@ export default function ConnectPage() {
     const handleSliderInteraction = <T extends number | number[]>(setter: React.Dispatch<React.SetStateAction<T>>) => (value: T) => {
         if (!hasInteracted) {
             setHasInteracted(true);
+            setIsModalOpen(true);
         }
         setter(value);
     }
@@ -94,6 +97,7 @@ export default function ConnectPage() {
 
     return (
         <div>
+            <DataContributionModal isOpen={isModalOpen} onOpenChange={setIsModalOpen} />
             <section className="relative w-full h-80 bg-card">
                 {connectHeroImage && (
                     <Image
@@ -216,51 +220,6 @@ export default function ConnectPage() {
                             </div>
                         </div>
                     </div>
-                    
-                    {hasInteracted && (
-                        <div className="mt-16 max-w-4xl mx-auto transition-all duration-500 ease-in-out">
-                             <h3 className="text-2xl md:text-3xl font-bold font-headline">You Have the Power to Increase These Savings</h3>
-                             <p className="mt-3 text-md text-muted-foreground max-w-2xl mx-auto">
-                                The more we understand our members' collective needs, the stronger our negotiating power. By providing some anonymous data, you help us secure bigger discounts for the entire TransConnect community.
-                             </p>
-                             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
-                                <Card className="bg-background/50">
-                                    <CardContent className="p-6 text-center">
-                                        <Truck className="h-10 w-10 mx-auto text-primary" />
-                                        <h4 className="mt-4 font-semibold text-lg">Upload Fleet Details</h4>
-                                        <p className="text-sm text-muted-foreground mt-2">Let us know the size and type of your fleet.</p>
-                                        <Button disabled className="mt-4 w-full">
-                                            <UploadCloud className="mr-2 h-4 w-4" />
-                                            Upload Fleet
-                                        </Button>
-                                    </CardContent>
-                                </Card>
-                                 <Card className="bg-background/50">
-                                    <CardContent className="p-6 text-center">
-                                        <Users className="h-10 w-10 mx-auto text-primary" />
-                                        <h4 className="mt-4 font-semibold text-lg">List Your Suppliers</h4>
-                                        <p className="text-sm text-muted-foreground mt-2">Tell us who you currently buy from.</p>
-                                        <Button disabled className="mt-4 w-full">
-                                            <UploadCloud className="mr-2 h-4 w-4" />
-                                            Add Suppliers
-                                        </Button>
-                                    </CardContent>
-                                </Card>
-                                 <Card className="bg-background/50">
-                                    <CardContent className="p-6 text-center">
-                                        <Zap className="h-10 w-10 mx-auto text-primary" />
-                                        <h4 className="mt-4 font-semibold text-lg">Describe Your Clients</h4>
-                                        <p className="text-sm text-muted-foreground mt-2">Help us understand the cargo you move.</p>
-                                        <Button disabled className="mt-4 w-full">
-                                            <UploadCloud className="mr-2 h-4 w-4" />
-                                            Add Client Info
-                                        </Button>
-                                    </CardContent>
-                                </Card>
-                             </div>
-                        </div>
-                    )}
-
 
                     <Button asChild size="lg" className="mt-12">
                         <Link href="/join">Join and Activate Your Plans</Link>
