@@ -42,9 +42,9 @@ const tiers = [
     },
     description: '',
     features: {
-        malls: ["Supplier", "Transport", "Funding"],
-        marketplace: ["Mahala hub", "RAF assist", "Open loyalty funeral", "Open loyalty roadside assist", "Open loyalty benefit"],
-        tech: ["# email templates", "# emails per month", "Facebook login", "Google login"]
+        malls: [...features.malls],
+        marketplace: [...features.marketplace],
+        tech: [...features.tech]
     },
     highlight: false,
   },
@@ -57,9 +57,9 @@ const tiers = [
     },
     description: '',
     features: {
-        malls: [],
-        marketplace: [],
-        tech: []
+        malls: [...features.malls],
+        marketplace: [...features.marketplace],
+        tech: [...features.tech]
     },
     highlight: true,
   },
@@ -72,9 +72,9 @@ const tiers = [
     },
     description: '',
     features: {
-        malls: [],
-        marketplace: [],
-        tech: []
+        malls: [...features.malls],
+        marketplace: [...features.marketplace],
+        tech: [...features.tech]
     },
     highlight: false,
   },
