@@ -23,7 +23,6 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 const mainNavLinks = [
   { href: "/", label: "Home" },
   { href: "/about", label: "About" },
-  // Divisions is handled separately now
   { href: "/pricing", label: "Pricing" },
   { href: "/connect", label: "Connect" },
   { href: "/resources", label: "Resources" },
