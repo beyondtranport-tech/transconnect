@@ -9,6 +9,7 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import { Checkbox } from '@/components/ui/checkbox';
+import { useUser } from '@/firebase';
 
 const features = {
     malls: [
@@ -122,6 +123,8 @@ const FeatureList = ({ title, items, includedFeatures }: { title: string, items:
 
 export default function PricingPage() {
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('monthly');
+  const { user } = useUser();
+  const linkHref = user ? '/account' : '/join';
 
   return (
     <div className="bg-background">
@@ -173,7 +176,7 @@ export default function PricingPage() {
               </CardContent>
               <CardFooter>
                  <Button asChild className="w-full" variant={tier.highlight ? 'default' : 'outline'}>
-                    <Link href="/join">Choose {tier.name}</Link>
+                    <Link href={linkHref}>Choose {tier.name}</Link>
                 </Button>
               </CardFooter>
             </Card>
