@@ -20,19 +20,14 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
-const mainNavLinks = [
+const allNavLinks = [
   { href: "/", label: "Home" },
   { href: "/about", label: "About" },
+  { href: "/divisions", label: "Divisions" },
   { href: "/pricing", label: "Pricing" },
   { href: "/connect", label: "Connect" },
   { href: "/resources", label: "Resources" },
   { href: "/contact", label: "Contact Us" },
-];
-
-const allNavLinks = [
-  ...mainNavLinks.slice(0, 2),
-  { href: "/divisions", label: "Divisions" },
-  ...mainNavLinks.slice(2)
 ];
 
 const divisionLinks = [
@@ -231,3 +226,5 @@ export function Header() {
     </header>
   );
 }
+
+    
