@@ -52,17 +52,23 @@ const plans = [
 ]
 
 const formatPrice = (price: number) => {
+    // Replaces non-breaking spaces with regular spaces to prevent hydration errors
     return new Intl.NumberFormat('en-ZA', {
         style: 'currency',
         currency: 'ZAR',
         minimumFractionDigits: 0,
         maximumFractionDigits: 0,
-    }).format(price);
+    }).format(price).replace(/\s/g, ' ');
 };
 
 export default function ConnectPage() {
     const [monthlySpend, setMonthlySpend] = useState(20000);
     const [potentialSavings, setPotentialSavings] = useState(0);
+    const [isClient, setIsClient] = useState(false);
+
+    useEffect(() => {
+        setIsClient(true);
+    }, []);
 
     const DISCOUNT_RATE = 0.075;
     const MEMBER_SHARE = 0.8;
@@ -147,7 +153,7 @@ export default function ConnectPage() {
                             <div>
                                 <div className="flex justify-between items-center mb-2">
                                     <Label htmlFor="spend-slider" className="text-lg font-medium">Monthly Spend</Label>
-                                    <span className="text-lg font-bold text-foreground">{formatPrice(monthlySpend)}</span>
+                                    <span className="text-lg font-bold text-foreground">{isClient ? formatPrice(monthlySpend) : 'R 20,000'}</span>
                                 </div>
                                 <Slider
                                     id="spend-slider"
@@ -166,7 +172,7 @@ export default function ConnectPage() {
                             <div className="border-t border-dashed pt-4">
                                 <div className="flex justify-between items-center">
                                     <p className="text-xl font-semibold">Your Potential Monthly Savings:</p>
-                                    <p className="text-3xl font-bold text-primary">{formatPrice(potentialSavings)}</p>
+                                    <p className="text-3xl font-bold text-primary">{isClient ? formatPrice(potentialSavings) : 'R 1,200'}</p>
                                 </div>
                             </div>
                         </div>
