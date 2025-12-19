@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from "react";
@@ -53,16 +54,19 @@ const plans = [
 
 const formatPrice = (price: number) => {
     // Replaces non-breaking spaces with regular spaces to prevent hydration errors
-    return new Intl.NumberFormat('en-ZA', {
+    const formattedPrice = new Intl.NumberFormat('en-ZA', {
         style: 'currency',
         currency: 'ZAR',
         minimumFractionDigits: 0,
         maximumFractionDigits: 0,
-    }).format(price).replace(/\s/g, ' ');
+    }).format(price);
+    return typeof window === 'undefined' ? formattedPrice : formattedPrice.replace(/\s/g, ' ');
 };
 
 export default function ConnectPage() {
     const [monthlySpend, setMonthlySpend] = useState(20000);
+    const [supplierDiscount, setSupplierDiscount] = useState(7.5);
+    const [loyaltyShare, setLoyaltyShare] = useState(80);
     const [potentialSavings, setPotentialSavings] = useState(0);
     const [isClient, setIsClient] = useState(false);
 
@@ -70,13 +74,10 @@ export default function ConnectPage() {
         setIsClient(true);
     }, []);
 
-    const DISCOUNT_RATE = 0.075;
-    const MEMBER_SHARE = 0.8;
-
     useEffect(() => {
-        const savings = monthlySpend * DISCOUNT_RATE * MEMBER_SHARE;
+        const savings = monthlySpend * (supplierDiscount / 100) * (loyaltyShare / 100);
         setPotentialSavings(savings);
-    }, [monthlySpend]);
+    }, [monthlySpend, supplierDiscount, loyaltyShare]);
 
 
     return (
@@ -146,7 +147,7 @@ export default function ConnectPage() {
                 <div className="container mx-auto px-4 text-center">
                     <h2 className="text-3xl md:text-4xl font-bold font-headline">Calculate Your Potential Savings</h2>
                     <p className="mt-4 text-lg text-muted-foreground max-w-3xl mx-auto">
-                        Use the slider to estimate your monthly spend on parts and tires and see how much you could save with the <span className="font-semibold text-primary">Loyalty Plan</span>.
+                        Use the sliders to estimate how much you could save with the <span className="font-semibold text-primary">Loyalty Plan</span>.
                     </p>
                     <div className="mt-10 max-w-2xl mx-auto p-8 bg-background rounded-lg shadow-inner">
                         <div className="space-y-6">
@@ -164,11 +165,35 @@ export default function ConnectPage() {
                                     onValueChange={(value) => setMonthlySpend(value[0])}
                                 />
                             </div>
-                            <div className="text-left text-sm text-muted-foreground space-y-1">
-                                <p>Calculation based on:</p>
-                                <p><span className="font-semibold text-foreground">7.5%</span> average supplier discount.</p>
-                                <p><span className="font-semibold text-foreground">80%</span> of discount passed to you.</p>
+                            <div>
+                                <div className="flex justify-between items-center mb-2">
+                                    <Label htmlFor="discount-slider" className="text-lg font-medium">Average Supplier Discount</Label>
+                                    <span className="text-lg font-bold text-foreground">{supplierDiscount.toFixed(1)}%</span>
+                                </div>
+                                <Slider
+                                    id="discount-slider"
+                                    min={1}
+                                    max={20}
+                                    step={0.5}
+                                    value={[supplierDiscount]}
+                                    onValueChange={(value) => setSupplierDiscount(value[0])}
+                                />
                             </div>
+                            <div>
+                                <div className="flex justify-between items-center mb-2">
+                                    <Label htmlFor="share-slider" className="text-lg font-medium">Your Share of Discount (Loyalty Tier)</Label>
+                                    <span className="text-lg font-bold text-foreground">{loyaltyShare}%</span>
+                                </div>
+                                <Slider
+                                    id="share-slider"
+                                    min={0}
+                                    max={100}
+                                    step={5}
+                                    value={[loyaltyShare]}
+                                    onValueChange={(value) => setLoyaltyShare(value[0])}
+                                />
+                            </div>
+
                             <div className="border-t border-dashed pt-4">
                                 <div className="flex justify-between items-center">
                                     <p className="text-xl font-semibold">Your Potential Monthly Savings:</p>
