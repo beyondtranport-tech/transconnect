@@ -42,7 +42,7 @@ const tiers = [
     },
     description: '',
     features: {
-        malls: [...features.malls],
+        malls: ["Supplier", "Transport", "Funding"],
         marketplace: [...features.marketplace],
         tech: [...features.tech]
     },
