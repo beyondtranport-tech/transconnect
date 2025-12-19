@@ -33,7 +33,11 @@ export default function ContributionsList() {
     };
     
     const renderCell = (item: any, field: string) => {
-        return item.data?.[field] || '';
+        const value = item.data?.[field];
+        if (typeof value === 'boolean') {
+            return value ? 'Yes' : 'No';
+        }
+        return value || '';
     }
 
     return (
@@ -61,15 +65,26 @@ export default function ContributionsList() {
                                 <TableRow>
                                     <TableHead>Submitted</TableHead>
                                     <TableHead>Type</TableHead>
-                                    <TableHead>Make / Name</TableHead>
-                                    <TableHead>Model / Contact</TableHead>
-                                    <TableHead>VIN / Items</TableHead>
+                                    <TableHead>Member ID</TableHead>
+                                    
+                                    {/* Truck/Trailer/Supplier */}
+                                    <TableHead>Make / Supplier Name</TableHead>
+                                    <TableHead>Model / Contact Person</TableHead>
+                                    <TableHead>VIN / Items Purchased</TableHead>
+                                    
+                                    {/* RC1 Fields */}
                                     <TableHead>Register #</TableHead>
                                     <TableHead>Titleholder</TableHead>
                                     <TableHead>Owner</TableHead>
                                     <TableHead>1st Reg. Date</TableHead>
                                     <TableHead>Classification</TableHead>
-                                    <TableHead>Member ID</TableHead>
+
+                                    {/* Supplier Fields */}
+                                    <TableHead>Supplier Phone</TableHead>
+                                    <TableHead>Supplier Email</TableHead>
+                                    <TableHead>Payment Terms</TableHead>
+                                    <TableHead>Member Since</TableHead>
+                                    <TableHead>Credit Facility</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -81,6 +96,7 @@ export default function ContributionsList() {
                                                 {item.type}
                                             </Badge>
                                         </TableCell>
+                                        <TableCell className="font-mono text-xs max-w-[100px] truncate">{item.userId}</TableCell>
                                         
                                         {/* Polymorphic cells */}
                                         <TableCell>
@@ -101,7 +117,13 @@ export default function ContributionsList() {
                                         <TableCell>{renderCell(item, 'firstRegistrationDate')}</TableCell>
                                         <TableCell>{renderCell(item, 'classification')}</TableCell>
 
-                                        <TableCell className="font-mono text-xs max-w-[100px] truncate">{item.userId}</TableCell>
+                                        {/* Supplier specific */}
+                                        <TableCell>{renderCell(item, 'phone')}</TableCell>
+                                        <TableCell>{renderCell(item, 'email')}</TableCell>
+                                        <TableCell>{renderCell(item, 'paymentTerms')}</TableCell>
+                                        <TableCell>{renderCell(item, 'memberSince')}</TableCell>
+                                        <TableCell>{renderCell(item, 'hasCreditFacility')}</TableCell>
+
                                     </TableRow>
                                 ))}
                             </TableBody>
