@@ -24,7 +24,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 const mainNavLinks = [
   { href: "/", label: "Home" },
   { href: "/about", label: "About" },
-  // Divisions will be manually inserted after "About"
+  { href: "/divisions", label: "Divisions" },
   { href: "/pricing", label: "Pricing" },
   { href: "/connect", label: "Connect" },
   { href: "/resources", label: "Resources" },
@@ -54,16 +54,6 @@ export function Header() {
     return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
   };
 
-  const navItems = [
-      { type: 'link', href: '/', label: 'Home' },
-      { type: 'link', href: '/about', label: 'About' },
-      { type: 'dropdown', label: 'Divisions', links: divisionLinks },
-      { type: 'link', href: '/pricing', label: 'Pricing' },
-      { type: 'link', href: '/connect', label: 'Connect' },
-      { type: 'link', href: '/resources', label: 'Resources' },
-      { type: 'link', href: '/contact', label: 'Contact Us' },
-  ];
-
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 items-center justify-between">
@@ -75,45 +65,30 @@ export function Header() {
         </div>
 
         <nav className="hidden md:flex items-center gap-1 text-sm font-medium">
-          {navItems.map((item) => {
-            if (item.type === 'link') {
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href!}
-                  className={cn(
-                    "transition-colors hover:text-primary px-3 py-2 rounded-md",
-                    pathname === item.href ? "text-primary font-semibold" : "text-muted-foreground"
-                  )}
-                >
-                  {item.label}
-                </Link>
-              );
-            }
-            if (item.type === 'dropdown') {
-              return (
-                <DropdownMenu key={item.label}>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className={cn(
-                      "flex items-center gap-1 px-3 py-2 text-sm font-medium hover:text-primary data-[state=open]:text-primary",
-                      item.links.some(l => pathname.startsWith(l.href)) ? "text-primary font-semibold" : "text-muted-foreground"
-                    )}>
-                      {item.label}
-                      <ChevronDown className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="start">
-                    {item.links.map(({ href, label }) => (
-                      <DropdownMenuItem key={href} asChild>
-                        <Link href={href}>{label}</Link>
-                      </DropdownMenuItem>
-                    ))}
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              );
-            }
-            return null;
-          })}
+            <Link href="/" className={cn("transition-colors hover:text-primary px-3 py-2 rounded-md", pathname === "/" ? "text-primary font-semibold" : "text-muted-foreground")}>Home</Link>
+            <Link href="/about" className={cn("transition-colors hover:text-primary px-3 py-2 rounded-md", pathname === "/about" ? "text-primary font-semibold" : "text-muted-foreground")}>About</Link>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className={cn(
+                  "flex items-center gap-1 px-3 py-2 text-sm font-medium hover:text-primary data-[state=open]:text-primary",
+                  ["/divisions", "/marketplace", "/tech"].some(p => pathname.startsWith(p)) ? "text-primary font-semibold" : "text-muted-foreground"
+                )}>
+                  Divisions
+                  <ChevronDown className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start">
+                {divisionLinks.map(({ href, label }) => (
+                  <DropdownMenuItem key={href} asChild>
+                    <Link href={href}>{label}</Link>
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <Link href="/pricing" className={cn("transition-colors hover:text-primary px-3 py-2 rounded-md", pathname === "/pricing" ? "text-primary font-semibold" : "text-muted-foreground")}>Pricing</Link>
+            <Link href="/connect" className={cn("transition-colors hover:text-primary px-3 py-2 rounded-md", pathname === "/connect" ? "text-primary font-semibold" : "text-muted-foreground")}>Connect</Link>
+            <Link href="/resources" className={cn("transition-colors hover:text-primary px-3 py-2 rounded-md", pathname === "/resources" ? "text-primary font-semibold" : "text-muted-foreground")}>Resources</Link>
+            <Link href="/contact" className={cn("transition-colors hover:text-primary px-3 py-2 rounded-md", pathname === "/contact" ? "text-primary font-semibold" : "text-muted-foreground")}>Contact Us</Link>
         </nav>
 
         <div className="flex items-center gap-4">
