@@ -29,9 +29,9 @@ export default function ContributePage() {
             <Building className="mr-2 h-4 w-4" />
             Suppliers
           </TabsTrigger>
-          <TabsTrigger value="clients">
+          <TabsTrigger value="debtors">
             <Users className="mr-2 h-4 w-4" />
-            Clients
+            Debtors
           </TabsTrigger>
         </TabsList>
         <TabsContent value="trucks">
@@ -73,10 +73,10 @@ export default function ContributePage() {
             </CardContent>
           </Card>
         </TabsContent>
-        <TabsContent value="clients">
+        <TabsContent value="debtors">
            <Card>
             <CardHeader>
-              <CardTitle>Describe Your Clients</CardTitle>
+              <CardTitle>Describe Your Debtors (Clients)</CardTitle>
               <CardDescription>
                 Help us understand the types of industries you serve. This data can reveal opportunities for specialized services and partnerships.
               </CardDescription>
