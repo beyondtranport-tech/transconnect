@@ -17,18 +17,23 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-  DropdownMenuGroup,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const mainNavLinks = [
   { href: "/", label: "Home" },
   { href: "/about", label: "About" },
-  { href: "/divisions", label: "Divisions" },
+  // Divisions is handled separately now
   { href: "/pricing", label: "Pricing" },
   { href: "/connect", label: "Connect" },
   { href: "/resources", label: "Resources" },
   { href: "/contact", label: "Contact Us" },
+];
+
+const allNavLinks = [
+  ...mainNavLinks.slice(0, 2),
+  { href: "/divisions", label: "Divisions" },
+  ...mainNavLinks.slice(2)
 ];
 
 const divisionLinks = [
@@ -67,6 +72,7 @@ export function Header() {
         <nav className="hidden md:flex items-center gap-1 text-sm font-medium">
             <Link href="/" className={cn("transition-colors hover:text-primary px-3 py-2 rounded-md", pathname === "/" ? "text-primary font-semibold" : "text-muted-foreground")}>Home</Link>
             <Link href="/about" className={cn("transition-colors hover:text-primary px-3 py-2 rounded-md", pathname === "/about" ? "text-primary font-semibold" : "text-muted-foreground")}>About</Link>
+            
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className={cn(
@@ -85,6 +91,7 @@ export function Header() {
                 ))}
               </DropdownMenuContent>
             </DropdownMenu>
+
             <Link href="/pricing" className={cn("transition-colors hover:text-primary px-3 py-2 rounded-md", pathname === "/pricing" ? "text-primary font-semibold" : "text-muted-foreground")}>Pricing</Link>
             <Link href="/connect" className={cn("transition-colors hover:text-primary px-3 py-2 rounded-md", pathname === "/connect" ? "text-primary font-semibold" : "text-muted-foreground")}>Connect</Link>
             <Link href="/resources" className={cn("transition-colors hover:text-primary px-3 py-2 rounded-md", pathname === "/resources" ? "text-primary font-semibold" : "text-muted-foreground")}>Resources</Link>
@@ -160,11 +167,17 @@ export function Header() {
                     </Link>
                 </div>
                 <nav className="flex flex-col gap-4 mt-6">
-                  {mainNavLinks.map(({ href, label }) => (
+                  {allNavLinks.map(({ href, label }) => (
                     <Link
                       key={href}
                       href={href}
-                      onClick={() => setIsSheetOpen(false)}
+                      onClick={() => {
+                        if (href.startsWith('/divisions')) {
+                            // Don't close sheet for main divisions link, allow sub-menu
+                        } else {
+                            setIsSheetOpen(false)
+                        }
+                      }}
                       className={cn(
                         "text-lg transition-colors hover:text-primary",
                         pathname === href ? "text-primary" : "text-muted-foreground"
@@ -173,14 +186,14 @@ export function Header() {
                       {label}
                     </Link>
                   ))}
-                   <p className="text-lg text-muted-foreground">Divisions</p>
+                   <p className="text-lg text-muted-foreground pl-4">Sub-Divisions</p>
                    {divisionLinks.map(({ href, label }) => (
                     <Link
                       key={href}
                       href={href}
                       onClick={() => setIsSheetOpen(false)}
                       className={cn(
-                        "text-lg transition-colors hover:text-primary pl-4",
+                        "text-lg transition-colors hover:text-primary pl-8",
                         pathname === href ? "text-primary" : "text-muted-foreground"
                       )}
                     >
