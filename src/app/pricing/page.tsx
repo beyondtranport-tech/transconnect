@@ -48,8 +48,8 @@ const tiers = [
         ],
         tech: [
             "# email templates", 
-            "# emails per month", 
-            "# group emails per month", 
+            "# emails per month",
+            "# group emails per month",
             "Facebook login", 
             "Google login",
         ]
