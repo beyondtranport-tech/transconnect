@@ -20,10 +20,9 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
-const allNavLinks = [
+const mainNavLinks = [
   { href: "/", label: "Home" },
   { href: "/about", label: "About" },
-  { href: "/divisions", label: "Divisions" },
   { href: "/pricing", label: "Pricing" },
   { href: "/connect", label: "Connect" },
   { href: "/resources", label: "Resources" },
@@ -64,8 +63,11 @@ export function Header() {
         </div>
 
         <nav className="hidden md:flex items-center gap-1 text-sm font-medium">
-            <Link href="/" className={cn("transition-colors hover:text-primary px-3 py-2 rounded-md", pathname === "/" ? "text-primary font-semibold" : "text-muted-foreground")}>Home</Link>
-            <Link href="/about" className={cn("transition-colors hover:text-primary px-3 py-2 rounded-md", pathname === "/about" ? "text-primary font-semibold" : "text-muted-foreground")}>About</Link>
+            {mainNavLinks.map(({ href, label }) => (
+                <Link key={href} href={href} className={cn("transition-colors hover:text-primary px-3 py-2 rounded-md", pathname === href ? "text-primary font-semibold" : "text-muted-foreground")}>
+                    {label}
+                </Link>
+            ))}
             
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -78,6 +80,8 @@ export function Header() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start">
+                <DropdownMenuItem asChild><Link href="/divisions">All Divisions</Link></DropdownMenuItem>
+                <DropdownMenuSeparator />
                 {divisionLinks.map(({ href, label }) => (
                   <DropdownMenuItem key={href} asChild>
                     <Link href={href}>{label}</Link>
@@ -85,11 +89,6 @@ export function Header() {
                 ))}
               </DropdownMenuContent>
             </DropdownMenu>
-
-            <Link href="/pricing" className={cn("transition-colors hover:text-primary px-3 py-2 rounded-md", pathname === "/pricing" ? "text-primary font-semibold" : "text-muted-foreground")}>Pricing</Link>
-            <Link href="/connect" className={cn("transition-colors hover:text-primary px-3 py-2 rounded-md", pathname === "/connect" ? "text-primary font-semibold" : "text-muted-foreground")}>Connect</Link>
-            <Link href="/resources" className={cn("transition-colors hover:text-primary px-3 py-2 rounded-md", pathname === "/resources" ? "text-primary font-semibold" : "text-muted-foreground")}>Resources</Link>
-            <Link href="/contact" className={cn("transition-colors hover:text-primary px-3 py-2 rounded-md", pathname === "/contact" ? "text-primary font-semibold" : "text-muted-foreground")}>Contact Us</Link>
         </nav>
 
         <div className="flex items-center gap-4">
@@ -157,17 +156,11 @@ export function Header() {
                     </Link>
                 </div>
                 <nav className="flex flex-col gap-4 mt-6">
-                  {allNavLinks.map(({ href, label }) => (
+                  {mainNavLinks.map(({ href, label }) => (
                     <Link
                       key={href}
                       href={href}
-                      onClick={() => {
-                        if (href.startsWith('/divisions')) {
-                            // Don't close sheet for main divisions link, allow sub-menu
-                        } else {
-                            setIsSheetOpen(false)
-                        }
-                      }}
+                      onClick={() => setIsSheetOpen(false)}
                       className={cn(
                         "text-lg transition-colors hover:text-primary",
                         pathname === href ? "text-primary" : "text-muted-foreground"
@@ -176,20 +169,31 @@ export function Header() {
                       {label}
                     </Link>
                   ))}
-                   <p className="text-lg text-muted-foreground pl-4">Sub-Divisions</p>
-                   {divisionLinks.map(({ href, label }) => (
-                    <Link
-                      key={href}
-                      href={href}
+                   <Link
+                      href="/divisions"
                       onClick={() => setIsSheetOpen(false)}
                       className={cn(
-                        "text-lg transition-colors hover:text-primary pl-8",
-                        pathname === href ? "text-primary" : "text-muted-foreground"
+                        "text-lg transition-colors hover:text-primary",
+                         ["/divisions", "/marketplace", "/tech"].some(p => pathname.startsWith(p)) ? "text-primary" : "text-muted-foreground"
                       )}
                     >
-                      {label}
+                      Divisions
                     </Link>
-                   ))}
+                   <div className="pl-4 border-l ml-2">
+                     {divisionLinks.map(({ href, label }) => (
+                      <Link
+                        key={href}
+                        href={href}
+                        onClick={() => setIsSheetOpen(false)}
+                        className={cn(
+                          "text-base transition-colors hover:text-primary block py-2",
+                          pathname === href ? "text-primary" : "text-muted-foreground"
+                        )}
+                      >
+                        {label}
+                      </Link>
+                     ))}
+                   </div>
                 </nav>
                  <div className="mt-auto border-t pt-4">
                     {!isUserLoading && user ? (
