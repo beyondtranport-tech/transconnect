@@ -1,10 +1,14 @@
+'use client';
 
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Check, Gift, Heart, Zap } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { placeholderImages } from "@/lib/placeholder-images.json";
+import { Slider } from "@/components/ui/slider";
+import { Label } from "@/components/ui/label";
 
 const connectHeroImage = placeholderImages.find(p => p.id === 'tech-division');
 
@@ -47,7 +51,28 @@ const plans = [
     },
 ]
 
+const formatPrice = (price: number) => {
+    return new Intl.NumberFormat('en-ZA', {
+        style: 'currency',
+        currency: 'ZAR',
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0,
+    }).format(price);
+};
+
 export default function ConnectPage() {
+    const [monthlySpend, setMonthlySpend] = useState(20000);
+    const [potentialSavings, setPotentialSavings] = useState(0);
+
+    const DISCOUNT_RATE = 0.075;
+    const MEMBER_SHARE = 0.8;
+
+    useEffect(() => {
+        const savings = monthlySpend * DISCOUNT_RATE * MEMBER_SHARE;
+        setPotentialSavings(savings);
+    }, [monthlySpend]);
+
+
     return (
         <div>
             <section className="relative w-full h-80 bg-card">
@@ -113,17 +138,42 @@ export default function ConnectPage() {
             </section>
              <section className="py-16 md:py-24 bg-card">
                 <div className="container mx-auto px-4 text-center">
-                <h2 className="text-3xl md:text-4xl font-bold font-headline">A Direct Return On Investment</h2>
-                <p className="mt-4 text-lg text-muted-foreground max-w-3xl mx-auto">
-                    These are not just features; they are financial tools. Members who activate these plans see significant savings and earnings that far exceed the monthly cost.
-                </p>
-                <div className="mt-8 max-w-md mx-auto p-6 bg-background rounded-lg shadow-inner">
-                    <p className="text-lg font-semibold">Example Scenario:</p>
-                    <p className="text-muted-foreground mt-2">A member using the <span className="text-primary font-medium">Loyalty Plan</span> saves an average of <span className="font-bold text-foreground">R1,500 per month</span> on tires and parts alone.</p>
-                </div>
-                <Button asChild size="lg" className="mt-10">
-                    <Link href="/join">Join and Activate Your Plans</Link>
-                </Button>
+                    <h2 className="text-3xl md:text-4xl font-bold font-headline">Calculate Your Potential Savings</h2>
+                    <p className="mt-4 text-lg text-muted-foreground max-w-3xl mx-auto">
+                        Use the slider to estimate your monthly spend on parts and tires and see how much you could save with the <span className="font-semibold text-primary">Loyalty Plan</span>.
+                    </p>
+                    <div className="mt-10 max-w-2xl mx-auto p-8 bg-background rounded-lg shadow-inner">
+                        <div className="space-y-6">
+                            <div>
+                                <div className="flex justify-between items-center mb-2">
+                                    <Label htmlFor="spend-slider" className="text-lg font-medium">Monthly Spend</Label>
+                                    <span className="text-lg font-bold text-foreground">{formatPrice(monthlySpend)}</span>
+                                </div>
+                                <Slider
+                                    id="spend-slider"
+                                    min={0}
+                                    max={100000}
+                                    step={1000}
+                                    value={[monthlySpend]}
+                                    onValueChange={(value) => setMonthlySpend(value[0])}
+                                />
+                            </div>
+                            <div className="text-left text-sm text-muted-foreground space-y-1">
+                                <p>Calculation based on:</p>
+                                <p><span className="font-semibold text-foreground">7.5%</span> average supplier discount.</p>
+                                <p><span className="font-semibold text-foreground">80%</span> of discount passed to you.</p>
+                            </div>
+                            <div className="border-t border-dashed pt-4">
+                                <div className="flex justify-between items-center">
+                                    <p className="text-xl font-semibold">Your Potential Monthly Savings:</p>
+                                    <p className="text-3xl font-bold text-primary">{formatPrice(potentialSavings)}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <Button asChild size="lg" className="mt-12">
+                        <Link href="/join">Join and Activate Your Plans</Link>
+                    </Button>
                 </div>
             </section>
         </div>
