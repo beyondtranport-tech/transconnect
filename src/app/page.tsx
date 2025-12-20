@@ -1,40 +1,20 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArrowRight, Cpu, DollarSign, ShoppingBasket, Store } from 'lucide-react';
 import { placeholderImages } from '@/lib/placeholder-images.json';
-
-const divisions = [
-  {
-    icon: <DollarSign className="h-8 w-8 text-primary" />,
-    title: 'Funding',
-    description: 'Access capital and financial solutions tailored for the transport industry to grow your business.',
-    href: '/divisions#funding',
-  },
-  {
-    icon: <ShoppingBasket className="h-8 w-8 text-primary" />,
-    title: 'Mall',
-    description: 'Shop for parts, equipment, and essentials from trusted vendors in our exclusive member mall.',
-    href: '/divisions#mall',
-  },
-  {
-    icon: <Store className="h-8 w-8 text-primary" />,
-    title: 'Marketplace',
-    description: 'Buy, sell, and trade vehicles, equipment, and services with other members of the community.',
-    href: '/marketplace',
-  },
-  {
-    icon: <Cpu className="h-8 w-8 text-primary" />,
-    title: 'Tech',
-    description: 'Use the innovative tools that we have built to gain access to new opportunities',
-    href: '/tech',
-  },
-];
+import * as React from 'react';
+import { divisions as divisionData } from '@/lib/data';
 
 const heroImage = placeholderImages.find(p => p.id === "hero-home");
 const techImage = placeholderImages.find(p => p.id === "tech-home");
 
+const iconComponents: { [key: string]: React.ElementType } = {
+    DollarSign,
+    ShoppingBasket,
+    Store,
+    Cpu,
+};
 
 export default function Home() {
   return (
@@ -66,31 +46,46 @@ export default function Home() {
 
       <section id="divisions" className="py-16 md:py-24 bg-background">
         <div className="container mx-auto px-4">
-          <div className="text-center max-w-3xl mx-auto mb-12">
+          <div className="text-center max-w-3xl mx-auto mb-16">
             <h2 className="text-3xl md:text-4xl font-bold font-headline">Our Divisions</h2>
             <p className="mt-4 text-lg text-muted-foreground">
               A complete ecosystem designed to support every aspect of your transport business.
             </p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {divisions.map((division) => (
-              <Card key={division.title} className="text-center shadow-lg hover:shadow-xl transition-shadow duration-300">
-                <CardHeader>
-                  <div className="mx-auto bg-primary/10 p-4 rounded-full w-fit">
-                    {division.icon}
-                  </div>
-                  <CardTitle className="mt-4">{division.title}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-muted-foreground">{division.description}</p>
-                  <Button variant="link" asChild className="mt-4 text-primary">
-                    <Link href={division.href}>
-                      Learn More <ArrowRight className="ml-2 h-4 w-4" />
-                    </Link>
-                  </Button>
-                </CardContent>
-              </Card>
-            ))}
+          <div className="space-y-16">
+             {divisionData.map((division, index) => {
+                const IconComponent = iconComponents[division.icon];
+                const href = ['marketplace', 'tech'].includes(division.id) ? `/${division.id}` : `/divisions#${division.id}`;
+                return (
+                    <div key={division.id} className="grid md:grid-cols-2 gap-8 md:gap-12 items-center">
+                        <div className={`relative aspect-video rounded-lg overflow-hidden shadow-lg ${index % 2 === 1 ? 'md:order-2' : ''}`}>
+                             {division.image && (
+                                <Image
+                                    src={division.image.imageUrl}
+                                    alt={division.image.description}
+                                    fill
+                                    className="object-cover"
+                                    data-ai-hint={division.image.imageHint}
+                                />
+                             )}
+                        </div>
+                        <div className={index % 2 === 1 ? 'md:order-1' : ''}>
+                           <div className="flex items-center gap-4">
+                                {IconComponent && <IconComponent className="h-10 w-10 text-primary" />}
+                                <h3 className="text-3xl font-bold font-headline">{division.title.split(' ')[1]}</h3>
+                            </div>
+                            <p className="mt-4 text-lg text-muted-foreground">
+                                {division.description}
+                            </p>
+                            <Button asChild className="mt-6">
+                                <Link href={href}>
+                                    Learn More <ArrowRight className="ml-2 h-4 w-4" />
+                                </Link>
+                            </Button>
+                        </div>
+                    </div>
+                )
+            })}
           </div>
         </div>
       </section>
