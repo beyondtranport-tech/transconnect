@@ -29,7 +29,11 @@ const plans = [
         title: "Rewards Plan",
         price: 50,
         description: "Claim your share to discounts and save",
-        features: [],
+        features: [
+            "Earn points on all Mall purchases",
+            "Redeem points for fuel vouchers",
+            "Access exclusive member-only products"
+        ],
         cta: "Activate Rewards Plan"
     },
     {
@@ -37,7 +41,12 @@ const plans = [
         title: "Loyalty Plan",
         price: 50,
         description: "Join our loyalty plan, your path to increasing your share of the rewards.",
-        features: [],
+        features: [
+            "Unlock deep discounts from our network of trusted suppliers.",
+            "Get exclusive pricing on parts & tires",
+            "Receive special offers from partners",
+            "Priority access to new suppliers"
+        ],
         cta: "Activate Loyalty Plan"
     },
     {
@@ -127,10 +136,10 @@ export default function ConnectPage() {
                 </div>
             </section>
 
-            <section id="opportunity-hub" className="py-16 md:py-24 bg-background">
+            <section id="plans-section" className="py-16 md:py-24 bg-background">
                 <div className="container mx-auto px-4">
                     <div className="text-center max-w-3xl mx-auto mb-12">
-                        <h2 className="text-3xl md:text-4xl font-bold font-headline">The Opportunity Hub</h2>
+                        <h2 className="text-3xl md:text-4xl font-bold font-headline">Unlock Your Potential</h2>
                         <p className="mt-4 text-lg text-muted-foreground">
                             Choose one or more plans to unlock the full financial power of the TransConnect ecosystem. Each plan is a tool designed to directly impact your bottom line.
                         </p>
@@ -161,14 +170,6 @@ export default function ConnectPage() {
                                         <p className="mt-4 text-lg text-muted-foreground">
                                             {plan.description}
                                         </p>
-                                        <ul className="mt-6 space-y-3">
-                                            {plan.features.map((feature, index) => (
-                                                <li key={index} className="flex items-start">
-                                                    <Check className="h-5 w-5 text-primary mr-3 shrink-0 mt-0.5" />
-                                                    <span className="text-muted-foreground">{feature}</span>
-                                                </li>
-                                            ))}
-                                        </ul>
                                         <Button asChild className="mt-8" onClick={() => handlePlanExplore(plan.id)}>
                                             <Link href={`/connect/${plan.id}`}>
                                                 Find Out More <ArrowRight className="ml-2 h-4 w-4" />
