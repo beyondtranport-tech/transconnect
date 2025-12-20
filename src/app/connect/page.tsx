@@ -40,12 +40,8 @@ const plans = [
         id: "loyalty",
         title: "Loyalty Plan",
         price: 50,
-        description: "Unlock deep discounts from our network of trusted suppliers.",
-        features: [
-            "Get exclusive pricing on parts & tires",
-            "Receive special offers from partners",
-            "Priority access to new suppliers",
-        ],
+        description: "Join our loyalty plan, your path to increasing your share of the rewards.",
+        features: [],
         cta: "Activate Loyalty Plan"
     },
     {
