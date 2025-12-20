@@ -12,6 +12,7 @@ import { Slider } from "@/components/ui/slider";
 import { Label } from "@/components/ui/label";
 import { DataContributionModal } from "./data-contribution-modal";
 import React from "react";
+import * as gtag from '@/lib/gtag';
 
 const connectHeroImage = placeholderImages.find(p => p.id === 'tech-division');
 const opportunityImage = placeholderImages.find(p => p.id === 'mall-division');
@@ -24,6 +25,7 @@ const iconMap: { [key: string]: React.ElementType } = {
 
 const plans = [
     {
+        id: "rewards",
         title: "Rewards Plan",
         price: 50,
         description: "Turn every purchase into points and get tangible benefits.",
@@ -35,6 +37,7 @@ const plans = [
         cta: "Activate Rewards Plan"
     },
     {
+        id: "loyalty",
         title: "Loyalty Plan",
         price: 50,
         description: "Unlock deep discounts from our network of trusted suppliers.",
@@ -46,6 +49,7 @@ const plans = [
         cta: "Activate Loyalty Plan"
     },
     {
+        id: "actions",
         title: "Actions Plan",
         price: 50,
         description: "Generate new revenue by sharing the benefits of TransConnect.",
@@ -99,6 +103,15 @@ export default function ConnectPage() {
         }
         setter(value);
     }
+    
+    const handlePlanExplore = (planId: string) => {
+        gtag.event({
+            action: 'explore_plan',
+            category: 'Connect Page',
+            label: planId,
+            value: 0
+        });
+    };
 
 
     return (
@@ -164,9 +177,9 @@ export default function ConnectPage() {
                                                 </li>
                                             ))}
                                         </ul>
-                                        <Button asChild className="mt-8">
-                                            <Link href="/join">
-                                                {plan.cta} <ArrowRight className="ml-2 h-4 w-4" />
+                                        <Button asChild className="mt-8" onClick={() => handlePlanExplore(plan.id)}>
+                                            <Link href="/pricing">
+                                                Find Out More <ArrowRight className="ml-2 h-4 w-4" />
                                             </Link>
                                         </Button>
                                     </div>
