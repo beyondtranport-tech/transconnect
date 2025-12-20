@@ -28,7 +28,7 @@ const plans = [
         id: "rewards",
         title: "Rewards Plan",
         price: 50,
-        description: "Turn every purchase into points and get tangible benefits.",
+        description: "Supercharge your plan by joining our rewards plan. Claim your share to discounts and save.",
         features: [
             "Earn points on all Mall purchases",
             "Redeem points for fuel vouchers",
@@ -178,7 +178,7 @@ export default function ConnectPage() {
                                             ))}
                                         </ul>
                                         <Button asChild className="mt-8" onClick={() => handlePlanExplore(plan.id)}>
-                                            <Link href="/pricing">
+                                            <Link href={`/connect/${plan.id}`}>
                                                 Find Out More <ArrowRight className="ml-2 h-4 w-4" />
                                             </Link>
                                         </Button>
