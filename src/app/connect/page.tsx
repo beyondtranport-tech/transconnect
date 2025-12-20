@@ -28,12 +28,8 @@ const plans = [
         id: "rewards",
         title: "Rewards Plan",
         price: 50,
-        description: "Supercharge your plan by joining our rewards plan. Claim your share to discounts and save.",
-        features: [
-            "Earn points on all Mall purchases",
-            "Redeem points for fuel vouchers",
-            "Access exclusive member-only products",
-        ],
+        description: "Claim your share to discounts and save",
+        features: [],
         cta: "Activate Rewards Plan"
     },
     {
