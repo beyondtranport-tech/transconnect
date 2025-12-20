@@ -1,9 +1,15 @@
+
 import Image from "next/image";
 import { placeholderImages } from "@/lib/placeholder-images.json";
 import { Card, CardContent } from "@/components/ui/card";
 import { CheckCircle } from "lucide-react";
+import { ArrowRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
 
 const aboutHeroImage = placeholderImages.find(p => p.id === 'about-hero');
+const valuesImage = placeholderImages.find(p => p.id === 'tech-division');
+
 
 const values = [
     {
@@ -72,17 +78,32 @@ export default function AboutPage() {
                         The principles that guide every decision we make.
                     </p>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-                    {values.map(value => (
-                        <Card key={value.title} className="bg-background">
-                            <CardContent className="p-6">
-                                <CheckCircle className="h-8 w-8 text-primary mb-4" />
-                                <h3 className="text-xl font-bold">{value.title}</h3>
-                                <p className="mt-2 text-muted-foreground">{value.description}</p>
-                            </CardContent>
-                        </Card>
+                 <div className="space-y-16">
+                    {values.map((value, index) => (
+                         <div key={value.title} className="grid md:grid-cols-2 gap-8 md:gap-12 items-center">
+                            <div className={`relative aspect-video rounded-lg overflow-hidden shadow-lg ${index % 2 === 1 ? 'md:order-2' : ''}`}>
+                                 {valuesImage && (
+                                    <Image
+                                        src={valuesImage.imageUrl}
+                                        alt={value.title}
+                                        fill
+                                        className="object-cover"
+                                        data-ai-hint={valuesImage.imageHint}
+                                    />
+                                 )}
+                            </div>
+                            <div className={index % 2 === 1 ? 'md:order-1' : ''}>
+                                <div className="flex items-center gap-4">
+                                     <CheckCircle className="h-10 w-10 text-primary" />
+                                    <h3 className="text-3xl font-bold font-headline">{value.title}</h3>
+                                </div>
+                                <p className="mt-4 text-lg text-muted-foreground">
+                                    {value.description}
+                                </p>
+                            </div>
+                        </div>
                     ))}
-                </div>
+                 </div>
             </div>
         </section>
     </div>

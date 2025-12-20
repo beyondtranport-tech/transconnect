@@ -1,21 +1,29 @@
+
 'use client';
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
-import { Check, Gift, Heart, Zap } from "lucide-react";
+import { Check, Gift, Heart, Zap, ArrowRight } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { placeholderImages } from "@/lib/placeholder-images.json";
 import { Slider } from "@/components/ui/slider";
 import { Label } from "@/components/ui/label";
 import { DataContributionModal } from "./data-contribution-modal";
+import React from "react";
 
 const connectHeroImage = placeholderImages.find(p => p.id === 'tech-division');
+const opportunityImage = placeholderImages.find(p => p.id === 'mall-division');
+
+const iconMap: { [key: string]: React.ElementType } = {
+    "Rewards Plan": Gift,
+    "Loyalty Plan": Heart,
+    "Actions Plan": Zap,
+};
 
 const plans = [
     {
-        icon: <Gift className="h-8 w-8 text-primary" />,
         title: "Rewards Plan",
         price: 50,
         description: "Turn every purchase into points and get tangible benefits.",
@@ -27,7 +35,6 @@ const plans = [
         cta: "Activate Rewards Plan"
     },
     {
-        icon: <Heart className="h-8 w-8 text-primary" />,
         title: "Loyalty Plan",
         price: 50,
         description: "Unlock deep discounts from our network of trusted suppliers.",
@@ -39,7 +46,6 @@ const plans = [
         cta: "Activate Loyalty Plan"
     },
     {
-        icon: <Zap className="h-8 w-8 text-primary" />,
         title: "Actions Plan",
         price: 50,
         description: "Generate new revenue by sharing the benefits of TransConnect.",
@@ -125,37 +131,48 @@ export default function ConnectPage() {
                         </p>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-stretch">
-                        {plans.map((plan) => (
-                            <Card key={plan.title} className="flex flex-col">
-                                <CardHeader className="text-center">
-                                    <div className="mx-auto bg-primary/10 p-4 rounded-full w-fit mb-4">
-                                        {plan.icon}
+                    <div className="space-y-16">
+                        {plans.map((plan, index) => {
+                            const IconComponent = iconMap[plan.title];
+                            return (
+                                <div key={plan.title} className="grid md:grid-cols-2 gap-8 md:gap-12 items-center">
+                                    <div className={`relative aspect-video rounded-lg overflow-hidden shadow-lg ${index % 2 === 1 ? 'md:order-2' : ''}`}>
+                                         {opportunityImage && (
+                                            <Image
+                                                src={opportunityImage.imageUrl}
+                                                alt={plan.title}
+                                                fill
+                                                className="object-cover"
+                                                data-ai-hint={opportunityImage.imageHint}
+                                            />
+                                         )}
                                     </div>
-                                    <CardTitle>{plan.title}</CardTitle>
-                                     <CardDescription className="flex items-baseline justify-center gap-1 pt-2">
-                                        <span className="text-3xl font-extrabold tracking-tight text-foreground">R{plan.price}</span>
-                                        <span className="text-muted-foreground">/month</span>
-                                    </CardDescription>
-                                </CardHeader>
-                                <CardContent className="flex-grow">
-                                    <p className="text-center text-muted-foreground mb-6">{plan.description}</p>
-                                    <ul className="space-y-3">
-                                        {plan.features.map((feature, index) => (
-                                            <li key={index} className="flex items-start">
-                                                <Check className="h-5 w-5 text-primary mr-3 shrink-0 mt-0.5" />
-                                                <span className="text-muted-foreground">{feature}</span>
-                                            </li>
-                                        ))}
-                                    </ul>
-                                </CardContent>
-                                <CardFooter>
-                                    <Button className="w-full" asChild>
-                                        <Link href="/join">{plan.cta}</Link>
-                                    </Button>
-                                </CardFooter>
-                            </Card>
-                        ))}
+                                    <div className={index % 2 === 1 ? 'md:order-1' : ''}>
+                                        <div className="flex items-center gap-4">
+                                            {IconComponent && <IconComponent className="h-10 w-10 text-primary" />}
+                                            <h3 className="text-3xl font-bold font-headline">{plan.title}</h3>
+                                        </div>
+                                        <p className="mt-2 text-lg font-semibold text-primary">{formatPrice(plan.price)}/month</p>
+                                        <p className="mt-4 text-lg text-muted-foreground">
+                                            {plan.description}
+                                        </p>
+                                        <ul className="mt-6 space-y-3">
+                                            {plan.features.map((feature, index) => (
+                                                <li key={index} className="flex items-start">
+                                                    <Check className="h-5 w-5 text-primary mr-3 shrink-0 mt-0.5" />
+                                                    <span className="text-muted-foreground">{feature}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                        <Button asChild className="mt-8">
+                                            <Link href="/join">
+                                                {plan.cta} <ArrowRight className="ml-2 h-4 w-4" />
+                                            </Link>
+                                        </Button>
+                                    </div>
+                                </div>
+                            )
+                        })}
                     </div>
                 </div>
             </section>
