@@ -4,7 +4,7 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { placeholderImages } from "@/lib/placeholder-images.json";
-import { Landmark, University, HandCoins, Building, Users, Sparkles } from "lucide-react";
+import { Landmark, University, HandCoins, Building, Users, Sparkles, ArrowRight } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import * as gtag from '@/lib/gtag';
@@ -13,26 +13,31 @@ const financeMallImage = placeholderImages.find(p => p.id === 'funding-division'
 
 const financierCategories = [
     { 
+        id: "banks",
         name: "Banks", 
         description: "Traditional financing from major financial institutions for established businesses.",
         icon: University,
     },
     { 
+        id: "niche-lenders",
         name: "Niche Lenders", 
         description: "Specialized lenders who understand the transport industry, like our own TransConnect Funding division.",
         icon: Landmark,
     },
     { 
+        id: "debt-funders",
         name: "Debt Funders", 
         description: "Alternative debt financing options for growth, expansion, or large-scale asset acquisition.",
         icon: Building,
     },
     { 
+        id: "ngos-and-grants",
         name: "NGOs & Grants", 
         description: "Access funding from non-governmental organizations and grant programs aimed at supporting transport businesses.",
         icon: HandCoins,
     },
     {
+        id: "individuals",
         name: "Individuals",
         description: "Peer-to-peer and crowdfunding platforms to source capital directly from individual investors.",
         icon: Users,
@@ -58,6 +63,15 @@ export default function FinanceMallPage() {
             value: 0
         });
     }
+
+    const handleCategoryClick = (categoryId: string) => {
+        gtag.event({
+            action: 'view_financier_category',
+            category: 'Finance Mall',
+            label: categoryId,
+            value: 0
+        });
+    };
 
     return (
         <div>
@@ -103,7 +117,12 @@ export default function FinanceMallPage() {
                                         <p className="text-muted-foreground">{category.description}</p>
                                     </CardContent>
                                     <CardFooter>
-                                        <Button variant="outline" className="w-full">Learn More</Button>
+                                        <Button asChild variant="outline" className="w-full" onClick={() => handleCategoryClick(category.id)}>
+                                            <Link href={`/mall/finance/${category.id}`}>
+                                                Learn More
+                                                <ArrowRight className="ml-2 h-4 w-4" />
+                                            </Link>
+                                        </Button>
                                     </CardFooter>
                                 </Card>
                             )
