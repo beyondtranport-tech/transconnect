@@ -49,7 +49,7 @@ const malls = [
         name: "Finance Mall",
         description: "Access flexible funding and insurance products.",
         icon: Landmark,
-        href: "/funding",
+        href: "/mall/finance",
         image: fundingImage!,
     },
     {
