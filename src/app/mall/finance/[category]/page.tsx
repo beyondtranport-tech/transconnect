@@ -1,4 +1,3 @@
-
 'use client';
 
 import { placeholderImages } from "@/lib/placeholder-images.json";
@@ -140,7 +139,7 @@ export default function FinancierCategoryPage({ params }: { params: { category: 
 
                     <div className="text-center">
                          <Button asChild size="lg">
-                            <Link href="/join">
+                            <Link href="/funding">
                                 Start Your Application
                                 <ArrowRight className="ml-2 h-5 w-5" />
                             </Link>
