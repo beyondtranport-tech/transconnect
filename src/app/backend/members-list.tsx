@@ -17,6 +17,8 @@ export default function MembersList() {
     
     const { data: members, isLoading, error } = useCollection(membersCollectionRef);
 
+    const capitalize = (s: string) => s && s[0].toUpperCase() + s.slice(1);
+
     return (
         <Card>
             <CardHeader>
@@ -44,6 +46,8 @@ export default function MembersList() {
                                 <TableHead>Email</TableHead>
                                 <TableHead>Phone</TableHead>
                                 <TableHead>Membership</TableHead>
+                                <TableHead>Role</TableHead>
+                                <TableHead>Details</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -57,6 +61,20 @@ export default function MembersList() {
                                         <Badge variant={member.membershipId === 'free' ? 'secondary' : 'default'} className="capitalize">
                                             {member.membershipId}
                                         </Badge>
+                                    </TableCell>
+                                    <TableCell>
+                                        {member.role && (
+                                            <Badge variant="outline" className="capitalize">
+                                                {member.role}
+                                            </Badge>
+                                        )}
+                                    </TableCell>
+                                    <TableCell>
+                                        {member.financierType && (
+                                            <Badge variant="default" className="capitalize bg-accent text-accent-foreground">
+                                                {capitalize(member.financierType.replace('-', ' '))}
+                                            </Badge>
+                                        )}
                                     </TableCell>
                                 </TableRow>
                             ))}
