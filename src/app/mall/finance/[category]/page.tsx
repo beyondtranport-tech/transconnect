@@ -110,7 +110,7 @@ export default function FinancierCategoryPage({ params }: { params: { category: 
                     <div className="bg-background/20 backdrop-blur-sm p-4 rounded-full mb-4 border border-white/20">
                         <Icon className="h-12 w-12 text-white" />
                     </div>
-                    <h1 className="text-4xl md:text-5xl font-bold font-headline">{category.name}</h1>
+                    <h1 className="text-4xl md:text-5xl font-bold font-headline">Borrowing from {category.name}</h1>
                     <p className="mt-4 text-lg md:text-xl max-w-3xl">{category.description}</p>
                 </div>
             </section>
@@ -120,7 +120,7 @@ export default function FinancierCategoryPage({ params }: { params: { category: 
                      <div className="text-center max-w-3xl mx-auto mb-12">
                         <h2 className="text-3xl md:text-4xl font-bold font-headline">The Smart Way to Get Financed</h2>
                         <p className="mt-4 text-lg text-muted-foreground">
-                            Stop applying to multiple lenders. Our intelligent platform connects you with the right financier for your needs, saving you time and effort.
+                            Stop applying to multiple lenders one by one. Our intelligent platform connects you with the right financier for your needs, saving you time and effort.
                         </p>
                     </div>
 
@@ -151,9 +151,9 @@ export default function FinancierCategoryPage({ params }: { params: { category: 
             <section className="py-16 md:py-24 bg-card">
                 <div className="container mx-auto px-4">
                     <div className="text-center max-w-3xl mx-auto mb-12">
-                        <h2 className="text-3xl md:text-4xl font-bold font-headline">Our Network of Partners</h2>
+                        <h2 className="text-3xl md:text-4xl font-bold font-headline">Our Partner Network in this Category</h2>
                         <p className="mt-4 text-lg text-muted-foreground">
-                            We work with a diverse range of financiers to increase your chances of success.
+                            We work with a diverse range of financiers to increase your chances of success. Here are some of the partners in our network.
                         </p>
                     </div>
 
@@ -168,7 +168,7 @@ export default function FinancierCategoryPage({ params }: { params: { category: 
                              <Building2 className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                             <h3 className="text-xl font-semibold">Partners Coming Soon</h3>
                             <p className="text-muted-foreground mt-2">
-                                We are actively expanding our network in this category. Are you a financier who fits this description?
+                                We are actively expanding our network in this category. As our network grows, so do your funding opportunities.
                             </p>
                         </div>
                     )}

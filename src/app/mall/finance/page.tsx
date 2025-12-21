@@ -107,16 +107,19 @@ export default function FinanceMallPage() {
                             const Icon = category.icon;
                             return (
                                 <Card key={category.name} className="flex flex-col">
-                                    <CardHeader className="flex-row items-center gap-4">
+                                    <CardHeader className="flex-row items-start gap-4">
                                         <div className="bg-primary/10 p-3 rounded-lg">
                                             <Icon className="h-8 w-8 text-primary" />
                                         </div>
-                                        <CardTitle className="text-xl">{category.name}</CardTitle>
+                                        <div>
+                                            <CardTitle className="text-xl">{category.name}</CardTitle>
+                                            <CardDescription className="mt-1">{category.description}</CardDescription>
+                                        </div>
                                     </CardHeader>
                                     <CardContent className="flex-grow">
-                                        <p className="text-muted-foreground">{category.description}</p>
+                                        {/* Content can be added here if needed in the future */}
                                     </CardContent>
-                                    <CardFooter className="flex flex-col sm:flex-row gap-2">
+                                    <CardFooter className="flex flex-col sm:flex-row gap-2 pt-4">
                                         <Button asChild variant="outline" className="w-full" onClick={() => handleCategoryClick(category.id, 'borrower')}>
                                             <Link href={`/mall/finance/${category.id}`}>
                                                I want to Borrow
@@ -131,14 +134,6 @@ export default function FinanceMallPage() {
                                 </Card>
                             )
                         })}
-                    </div>
-                    <div className="text-center mt-16">
-                        <Button size="lg" asChild onClick={handleJoinNetworkClick}>
-                           <Link href="/for-financiers">
-                                <Sparkles className="mr-2 h-5 w-5" />
-                               Are you a financier? Join Our Network
-                           </Link>
-                        </Button>
                     </div>
                 </div>
             </section>

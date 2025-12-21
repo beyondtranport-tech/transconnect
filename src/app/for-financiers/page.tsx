@@ -221,9 +221,9 @@ function ForFinanciersContent() {
         <section id="start-onboarding" className="py-16 md:py-24 bg-card scroll-mt-20">
              <div className="container mx-auto px-4">
                  <div className="max-w-4xl mx-auto">
-                    <h2 className="text-3xl md:text-4xl font-bold font-headline text-center">Join Our Network</h2>
+                    <h2 className="text-3xl md:text-4xl font-bold font-headline text-center">Join Our Financier Network</h2>
                     <p className="mt-4 text-lg text-muted-foreground text-center">
-                       Complete the following steps to build your financier profile and start receiving matched applications.
+                       Complete the following steps to build your financier profile and start receiving matched applications from qualified transport businesses.
                     </p>
 
                     <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-12">
@@ -242,7 +242,7 @@ function ForFinanciersContent() {
                                         Financier Setup
                                     </CardTitle>
                                     <CardDescription>
-                                        Tell us what kind of financier you are so we can tailor the next steps.
+                                        Tell us what kind of financier you are so we can tailor the next steps. If you arrived from one of our category pages, this will be pre-selected.
                                     </CardDescription>
                                 </CardHeader>
                                 <CardContent className="p-6">
@@ -326,7 +326,7 @@ export default function ForFinanciersPage() {
                 )}
                 <div className="absolute inset-0 bg-black/60" />
                 <div className="relative h-full flex flex-col items-center justify-center text-center text-primary-foreground z-10 p-4">
-                    <h1 className="text-4xl md:text-5xl font-bold font-headline">Partner with TransConnect</h1>
+                    <h1 className="text-4xl md:text-5xl font-bold font-headline">Become a TransConnect Lending Partner</h1>
                     <p className="mt-4 text-lg md:text-xl max-w-3xl">Access a targeted stream of qualified finance opportunities from the heart of the transport industry.</p>
                      <Button asChild size="lg" className="mt-8">
                         <Link href="#start-onboarding">
