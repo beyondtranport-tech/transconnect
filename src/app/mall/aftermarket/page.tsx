@@ -137,6 +137,11 @@ export default function AftermarketMallPage() {
                             </Card>
                         ))}
                     </div>
+                    <div className="text-center mt-16">
+                        <Button size="lg" onClick={() => gtag.event({ action: 'feature_brand_click', category: 'Aftermarket Mall', label: 'Footer CTA', value: 0 })}>
+                            Are you a brand? Get Featured!
+                        </Button>
+                    </div>
                 </div>
             </section>
         </div>

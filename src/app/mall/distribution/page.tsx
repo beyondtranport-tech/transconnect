@@ -102,6 +102,11 @@ export default function DistributionMallPage() {
                             </Card>
                         ))}
                     </div>
+                    <div className="text-center mt-16">
+                        <Button size="lg" onClick={() => gtag.event({ action: 'join_distribution_click', category: 'Distribution Mall', label: 'Footer CTA', value: 0 })}>
+                            Join Our Distribution Network
+                        </Button>
+                    </div>
                 </div>
             </section>
         </div>

@@ -104,6 +104,11 @@ export default function WarehouseMallPage() {
                             </Card>
                         ))}
                     </div>
+                     <div className="text-center mt-16">
+                        <Button size="lg" onClick={() => gtag.event({ action: 'list_warehouse_click', category: 'Warehouse Mall', label: 'Footer CTA', value: 0 })}>
+                            List Your Warehouse Space
+                        </Button>
+                    </div>
                 </div>
             </section>
         </div>

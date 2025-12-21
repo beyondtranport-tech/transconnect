@@ -163,7 +163,7 @@ export default function TransporterMallPage() {
                     <div className="text-center mt-16">
                         <Button size="lg" variant="outline" onClick={handleGetFeaturedClick}>
                             <Sparkles className="mr-2 h-5 w-5" />
-                            Want your company featured? Join TransConnect!
+                            Need a Transport Partner? Join TransConnect!
                         </Button>
                     </div>
                 </div>

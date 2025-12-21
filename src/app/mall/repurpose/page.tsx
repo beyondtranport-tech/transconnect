@@ -98,6 +98,11 @@ export default function RepurposeMallPage() {
                             </Card>
                         ))}
                     </div>
+                    <div className="text-center mt-16">
+                        <Button size="lg" onClick={() => gtag.event({ action: 'list_asset_click', category: 'Repurpose Mall', label: 'Footer CTA', value: 0 })}>
+                           List Your Decommissioned Assets
+                        </Button>
+                    </div>
                 </div>
             </section>
         </div>

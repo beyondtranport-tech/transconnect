@@ -59,7 +59,7 @@ export default function SupplierMallPage() {
         gtag.event({
             action: 'claim_profile_click',
             category: 'Supplier Mall',
-            label: 'Header CTA',
+            label: 'Footer CTA',
             value: 0
         });
     };
@@ -165,7 +165,7 @@ export default function SupplierMallPage() {
                      <div className="text-center mt-16">
                         <Button size="lg" onClick={handleClaimProfileClick}>
                             <Sparkles className="mr-2 h-5 w-5" />
-                            Are you a supplier? Get Featured Today!
+                            Are you a supplier? Claim Your Profile Today!
                         </Button>
                     </div>
                 </div>
