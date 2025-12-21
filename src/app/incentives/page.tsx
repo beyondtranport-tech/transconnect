@@ -1,6 +1,6 @@
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import Image from "next/image";
 import Link from "next/link";
 import { placeholderImages } from "@/lib/placeholder-images.json";
@@ -11,31 +11,37 @@ const incentivesHeroImage = placeholderImages.find(p => p.id === 'incentives-her
 
 const products = [
     {
+        id: "ecosystem-membership",
         icon: <Boxes className="h-8 w-8 text-primary" />,
         title: "Ecosystem Membership",
         description: "Sell the core TransConnect membership. Give businesses access to our powerful ecosystem of malls, marketplaces, and technology.",
     },
     {
+        id: "raf-assist",
         icon: <FileText className="h-8 w-8 text-primary" />,
         title: "RAF Assist",
         description: "Offer a valuable service that helps members navigate the complexities of the Road Accident Fund claims process, ensuring they get the support they deserve.",
     },
     {
+        id: "open-loyalty-funeral",
         icon: <Heart className="h-8 w-8 text-primary" />,
         title: "Open Loyalty Funeral",
         description: "Provide peace of mind with a funeral benefit plan tailored for the transport community, offered through our Open Loyalty program.",
     },
     {
+        id: "open-loyalty-roadside-assist",
         icon: <LifeBuoy className="h-8 w-8 text-primary" />,
         title: "Open Loyalty Roadside Assist",
         description: "Sell an essential roadside assistance package that gets drivers and their vehicles back on the road faster after a breakdown.",
     },
     {
+        id: "open-loyalty-liability",
         icon: <Shield className="h-8 w-8 text-primary" />,
         title: "Open Loyalty Liability",
         description: "Offer specialized liability coverage designed to protect transport businesses from unforeseen events and financial loss.",
     },
     {
+        id: "mahala-hub",
         icon: <Gift className="h-8 w-8 text-primary" />,
         title: "Mahala Hub",
         description: "Promote a hub of exclusive deals, freebies, and discounts. A powerful tool to attract and retain members in the ecosystem.",
@@ -84,16 +90,23 @@ export default function IncentivesPage() {
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                         {products.map((product) => (
-                            <Card key={product.title}>
+                            <Card key={product.title} className="flex flex-col">
                                 <CardHeader className="items-center text-center">
                                     <div className="bg-primary/10 p-4 rounded-full mb-4">
                                         {product.icon}
                                     </div>
                                     <CardTitle>{product.title}</CardTitle>
                                 </CardHeader>
-                                <CardContent className="text-center">
+                                <CardContent className="text-center flex-grow">
                                     <p className="text-muted-foreground">{product.description}</p>
                                 </CardContent>
+                                <CardFooter>
+                                    <Button asChild className="w-full" variant="outline">
+                                        <Link href={`/incentives/${product.id}`}>
+                                            Find Out More <ArrowRight className="ml-2 h-4 w-4" />
+                                        </Link>
+                                    </Button>
+                                </CardFooter>
                             </Card>
                         ))}
                     </div>
