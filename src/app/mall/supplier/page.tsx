@@ -1,20 +1,44 @@
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { placeholderImages } from "@/lib/placeholder-images.json";
-import { Building2, Search, CheckCircle, Star, Sparkles } from "lucide-react";
+import { Building2, Search, Star, ArrowRight } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
 
 const supplierMallImage = placeholderImages.find(p => p.id === 'mall-division');
-const supplierProfileImage = placeholderImages.find(p => p.id === 'tech-division');
 
 const featuredSuppliers = [
-    { name: "Global Parts Inc.", category: "Engine & Drivetrain" },
-    { name: "TireMax Pro", category: "Tires & Wheels" },
-    { name: "Advanced Auto Electrical", category: "Electrical & Lighting" },
-    { name: "Brake & Clutch Specialists", category: "Brakes & Suspension" },
+    { 
+        id: "global-parts-inc",
+        name: "Global Parts Inc.", 
+        category: "Engine & Drivetrain",
+        rating: 4.5,
+        image: placeholderImages.find(p => p.id === 'tech-division'),
+    },
+    { 
+        id: "tiremax-pro",
+        name: "TireMax Pro", 
+        category: "Tires & Wheels",
+        rating: 4.8,
+        image: placeholderImages.find(p => p.id === 'product-tires'),
+    },
+    { 
+        id: "advanced-auto-electrical",
+        name: "Advanced Auto Electrical", 
+        category: "Electrical & Lighting",
+        rating: 4.2,
+        image: placeholderImages.find(p => p.id === 'tech-home'),
+    },
+    { 
+        id: "brake-clutch-specialists",
+        name: "Brake & Clutch Specialists", 
+        category: "Brakes & Suspension",
+        rating: 4.6,
+        image: placeholderImages.find(p => p.id === 'hero-home'),
+    },
 ]
 
 export default function SupplierMallPage() {
@@ -71,95 +95,49 @@ export default function SupplierMallPage() {
                     </div>
                 </div>
             </section>
-            
-            <section id="supplier-showcase" className="py-16 md:py-24 bg-card">
+
+             <section id="featured-suppliers" className="py-16 md:py-24 bg-card">
                 <div className="container mx-auto px-4">
-                    <div className="text-center max-w-3xl mx-auto mb-12">
-                        <h2 className="text-3xl md:text-4xl font-bold font-headline">Your Profile on TransConnect</h2>
+                     <div className="text-center max-w-3xl mx-auto mb-12">
+                        <h2 className="text-3xl md:text-4xl font-bold font-headline">Featured Suppliers</h2>
                         <p className="mt-4 text-lg text-muted-foreground">
-                            This is what your dedicated profile could look like. Connect directly with thousands of transporters ready to buy.
+                            Top-rated suppliers trusted by the TransConnect community.
                         </p>
                     </div>
-
-                    <div className="max-w-6xl mx-auto border rounded-xl overflow-hidden shadow-2xl bg-background">
-                        {/* Profile Header */}
-                        <div className="relative h-48 md:h-64">
-                             {supplierProfileImage && (
-                                <Image
-                                    src={supplierProfileImage.imageUrl}
-                                    alt="Supplier Showcase"
-                                    fill
-                                    className="object-cover"
-                                    data-ai-hint={supplierProfileImage.imageHint}
-                                />
-                            )}
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
-                            <div className="absolute bottom-0 left-0 p-6">
-                                <div className="flex items-center gap-4">
-                                    <div className="bg-background p-3 rounded-lg shadow-md">
-                                        <Building2 className="h-10 w-10 text-primary" />
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+                        {featuredSuppliers.map(supplier => (
+                            <Card key={supplier.id} className="overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300 flex flex-col">
+                                {supplier.image && (
+                                    <div className="relative aspect-video">
+                                        <Image
+                                            src={supplier.image.imageUrl}
+                                            alt={supplier.name}
+                                            fill
+                                            className="object-cover"
+                                            data-ai-hint={supplier.image.imageHint}
+                                        />
                                     </div>
-                                    <div>
-                                        <h3 className="text-3xl font-bold text-white font-headline">Global Parts Inc.</h3>
-                                        <p className="text-white/90">Engine & Drivetrain Specialists</p>
+                                )}
+                                <CardHeader>
+                                    <CardTitle className="text-xl">{supplier.name}</CardTitle>
+                                    <CardDescription>{supplier.category}</CardDescription>
+                                </CardHeader>
+                                <CardContent className="flex-grow">
+                                     <div className="flex items-center gap-1">
+                                        <Star className="h-5 w-5 text-yellow-400 fill-yellow-400" />
+                                        <span className="font-semibold">{supplier.rating.toFixed(1)}</span>
+                                        <span className="text-sm text-muted-foreground">/ 5.0</span>
                                     </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Profile Body */}
-                        <div className="p-6 md:p-8 grid md:grid-cols-3 gap-8">
-                            <div className="md:col-span-2">
-                                <h4 className="text-xl font-semibold font-headline">About Us</h4>
-                                <p className="mt-2 text-muted-foreground">
-                                    With over 20 years of experience, Global Parts Inc. is a leading distributor of OEM and aftermarket parts for heavy-duty trucks. Our mission is to keep your fleet on the road with reliable parts, expert advice, and unbeatable service.
-                                </p>
-
-                                <h4 className="mt-8 text-xl font-semibold font-headline">Product Categories</h4>
-                                <div className="mt-4 grid grid-cols-2 gap-4">
-                                    <div className="flex items-center gap-2 p-3 bg-card rounded-md border">
-                                        <CheckCircle className="h-5 w-5 text-green-500" />
-                                        <span>Engine Components</span>
-                                    </div>
-                                    <div className="flex items-center gap-2 p-3 bg-card rounded-md border">
-                                        <CheckCircle className="h-5 w-5 text-green-500" />
-                                        <span>Transmission Parts</span>
-                                    </div>
-                                    <div className="flex items-center gap-2 p-3 bg-card rounded-md border">
-                                        <CheckCircle className="h-5 w-5 text-green-500" />
-                                        <span>Axle & Differential</span>
-                                    </div>
-                                    <div className="flex items-center gap-2 p-3 bg-card rounded-md border">
-                                        <CheckCircle className="h-5 w-5 text-green-500" />
-                                        <span>Filters & Fluids</span>
-                                    </div>
-                                </div>
-                            </div>
-                            <div className="bg-card p-6 rounded-lg border">
-                                <h4 className="text-xl font-semibold font-headline">Contact Details</h4>
-                                <ul className="mt-4 space-y-3 text-sm text-muted-foreground">
-                                    <li><strong>Phone:</strong> 011 555 1234</li>
-                                    <li><strong>Email:</strong> sales@globalparts.co.za</li>
-                                    <li><strong>Address:</strong> 42 Industrial Rd, Johannesburg</li>
-                                </ul>
-                                 <h4 className="mt-6 text-xl font-semibold font-headline">Member Rating</h4>
-                                <div className="flex items-center gap-1 mt-2">
-                                    <Star className="h-5 w-5 text-yellow-400 fill-yellow-400" />
-                                    <Star className="h-5 w-5 text-yellow-400 fill-yellow-400" />
-                                    <Star className="h-5 w-5 text-yellow-400 fill-yellow-400" />
-                                    <Star className="h-5 w-5 text-yellow-400 fill-yellow-400" />
-                                    <Star className="h-5 w-5 text-yellow-400/50 fill-yellow-400/50" />
-                                    <span className="ml-2 text-sm text-muted-foreground">(4.5/5)</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="text-center mt-12">
-                        <Button size="lg">
-                            <Sparkles className="mr-2 h-5 w-5" />
-                            Are you a supplier? Claim Your Profile Today!
-                        </Button>
+                                </CardContent>
+                                <CardFooter>
+                                    <Button asChild className="w-full">
+                                        <Link href={`/mall/supplier/${supplier.id}`}>
+                                            View Profile <ArrowRight className="ml-2" />
+                                        </Link>
+                                    </Button>
+                                </CardFooter>
+                            </Card>
+                        ))}
                     </div>
                 </div>
             </section>
