@@ -64,9 +64,9 @@ export default function FinanceMallPage() {
         });
     }
 
-    const handleCategoryClick = (categoryId: string) => {
+    const handleCategoryClick = (categoryId: string, userType: 'borrower' | 'lender') => {
         gtag.event({
-            action: 'view_financier_category',
+            action: userType === 'borrower' ? 'view_borrower_journey' : 'view_lender_journey',
             category: 'Finance Mall',
             label: categoryId,
             value: 0
@@ -116,11 +116,15 @@ export default function FinanceMallPage() {
                                     <CardContent className="flex-grow">
                                         <p className="text-muted-foreground">{category.description}</p>
                                     </CardContent>
-                                    <CardFooter>
-                                        <Button asChild variant="outline" className="w-full" onClick={() => handleCategoryClick(category.id)}>
+                                    <CardFooter className="flex flex-col sm:flex-row gap-2">
+                                        <Button asChild variant="outline" className="w-full" onClick={() => handleCategoryClick(category.id, 'borrower')}>
                                             <Link href={`/mall/finance/${category.id}`}>
-                                                Learn More
-                                                <ArrowRight className="ml-2 h-4 w-4" />
+                                               I want to Borrow
+                                            </Link>
+                                        </Button>
+                                         <Button asChild variant="default" className="w-full" onClick={() => handleCategoryClick(category.id, 'lender')}>
+                                            <Link href={`/for-financiers?type=${category.id}`}>
+                                               I want to Lend
                                             </Link>
                                         </Button>
                                     </CardFooter>
