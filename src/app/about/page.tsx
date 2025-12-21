@@ -8,24 +8,27 @@ import Link from "next/link";
 import React from "react";
 
 const aboutHeroImage = placeholderImages.find(p => p.id === 'about-hero');
-const valuesImage = placeholderImages.find(p => p.id === 'tech-division');
 
 const values = [
     {
         title: "Efficiency",
-        description: "We build tools and systems that streamline operations and maximize profitability for our members."
+        description: "We build tools and systems that streamline operations and maximize profitability for our members.",
+        image: placeholderImages.find(p => p.id === 'value-efficiency'),
     },
     {
         title: "Community",
-        description: "We foster a collaborative environment where transporters can connect, trade, and grow together."
+        description: "We foster a collaborative environment where transporters can connect, trade, and grow together.",
+        image: placeholderImages.find(p => p.id === 'value-community'),
     },
     {
         title: "Innovation",
-        description: "We relentlessly pursue technological advancements to solve the industry's most pressing challenges."
+        description: "We relentlessly pursue technological advancements to solve the industry's most pressing challenges.",
+        image: placeholderImages.find(p => p.id === 'value-innovation'),
     },
     {
         title: "Integrity",
-        description: "We operate with transparency and trust, ensuring a secure and reliable ecosystem for all members."
+        description: "We operate with transparency and trust, ensuring a secure and reliable ecosystem for all members.",
+        image: placeholderImages.find(p => p.id === 'value-integrity'),
     }
 ]
 
@@ -164,13 +167,13 @@ export default function AboutPage() {
                     {values.map((value, index) => (
                          <div key={value.title} className="grid md:grid-cols-2 gap-8 md:gap-12 items-center">
                             <div className={`relative aspect-video rounded-lg overflow-hidden shadow-lg ${index % 2 === 1 ? 'md:order-2' : ''}`}>
-                                 {valuesImage && (
+                                 {value.image && (
                                     <Image
-                                        src={valuesImage.imageUrl}
+                                        src={value.image.imageUrl}
                                         alt={value.title}
                                         fill
                                         className="object-cover"
-                                        data-ai-hint={valuesImage.imageHint}
+                                        data-ai-hint={value.image.imageHint}
                                     />
                                  )}
                             </div>

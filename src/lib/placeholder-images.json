@@ -65,6 +65,30 @@
       "description": "An ergonomic air-ride truck driver seat",
       "imageUrl": "https://images.unsplash.com/photo-1716919875151-674390e0dd57?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8dHJ1Y2slMjBzZWF0fGVufDB8fHx8MTc2NjA1MTgwM3ww&ixlib=rb-4.1.0&q=80&w=1080",
       "imageHint": "truck seat"
+    },
+    {
+      "id": "value-efficiency",
+      "description": "Streamlined warehouse with automated robots",
+      "imageUrl": "https://images.unsplash.com/photo-1651615832931-1f0540d43ef0?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHx3YXJlaG91c2UlMjBhdXRvbWF0aW9ufGVufDB8fHx8MTc2NjMzNjk1M3ww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "warehouse automation"
+    },
+    {
+      "id": "value-community",
+      "description": "A group of diverse truck drivers talking and laughing",
+      "imageUrl": "https://images.unsplash.com/photo-1591768793355-74d04bb6608f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHx0cnVjayUyMGRyaXZlcnN8ZW58MHx8fHwxNzY2MzM2OTUyfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "truck drivers"
+    },
+    {
+      "id": "value-innovation",
+      "description": "Abstract image of data streams and neural networks",
+      "imageUrl": "https://images.unsplash.com/photo-1510906594845-bc082582c8cc?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw3fHxhYnN0cmFjdCUyMGRhdGF8ZW58MHx8fHwxNzY2MjU1MTE3fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "abstract data"
+    },
+    {
+      "id": "value-integrity",
+      "description": "A secure handshake between two business professionals",
+      "imageUrl": "https://images.unsplash.com/photo-1521791136064-7986c2920216?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxidXNpbmVzcyUyMGhhbmRzaGFrZXxlbnwwfHx8fDE3NjYzMDAxNzF8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "business handshake"
     }
   ]
 }
