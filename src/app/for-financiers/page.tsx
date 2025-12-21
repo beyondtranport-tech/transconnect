@@ -103,8 +103,10 @@ export default function ForFinanciersPage() {
                             </CardHeader>
                         </Card>
 
-                        <Button size="lg" className="mt-12">
-                            Start Onboarding <ArrowRight className="ml-2 h-5 w-5" />
+                        <Button size="lg" className="mt-12" asChild>
+                            <Link href="#start-onboarding">
+                                Start Onboarding <ArrowRight className="ml-2 h-5 w-5" />
+                            </Link>
                         </Button>
                      </div>
                  </div>
