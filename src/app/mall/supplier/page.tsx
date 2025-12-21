@@ -4,10 +4,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { placeholderImages } from "@/lib/placeholder-images.json";
-import { Building2, Search } from "lucide-react";
+import { Building2, Search, CheckCircle, Star, Sparkles } from "lucide-react";
 import Image from "next/image";
 
 const supplierMallImage = placeholderImages.find(p => p.id === 'mall-division');
+const supplierProfileImage = placeholderImages.find(p => p.id === 'tech-division');
 
 const featuredSuppliers = [
     { name: "Global Parts Inc.", category: "Engine & Drivetrain" },
@@ -71,35 +72,97 @@ export default function SupplierMallPage() {
                 </div>
             </section>
             
-             <section id="featured-suppliers" className="py-16 md:py-24 bg-card">
+            <section id="supplier-showcase" className="py-16 md:py-24 bg-card">
                 <div className="container mx-auto px-4">
                     <div className="text-center max-w-3xl mx-auto mb-12">
-                        <h2 className="text-3xl md:text-4xl font-bold font-headline">Featured Suppliers</h2>
+                        <h2 className="text-3xl md:text-4xl font-bold font-headline">Your Profile on TransConnect</h2>
                         <p className="mt-4 text-lg text-muted-foreground">
-                            Top-rated suppliers trusted by the TransConnect community.
+                            This is what your dedicated profile could look like. Connect directly with thousands of transporters ready to buy.
                         </p>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-                         {featuredSuppliers.map((supplier) => (
-                            <Card key={supplier.name}>
-                                <CardHeader>
-                                    <div className="flex items-center gap-3 mb-2">
-                                        <div className="p-2 bg-primary/10 rounded-full">
-                                            <Building2 className="h-6 w-6 text-primary"/>
-                                        </div>
-                                        <CardTitle className="text-lg">{supplier.name}</CardTitle>
+                    <div className="max-w-6xl mx-auto border rounded-xl overflow-hidden shadow-2xl bg-background">
+                        {/* Profile Header */}
+                        <div className="relative h-48 md:h-64">
+                             {supplierProfileImage && (
+                                <Image
+                                    src={supplierProfileImage.imageUrl}
+                                    alt="Supplier Showcase"
+                                    fill
+                                    className="object-cover"
+                                    data-ai-hint={supplierProfileImage.imageHint}
+                                />
+                            )}
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
+                            <div className="absolute bottom-0 left-0 p-6">
+                                <div className="flex items-center gap-4">
+                                    <div className="bg-background p-3 rounded-lg shadow-md">
+                                        <Building2 className="h-10 w-10 text-primary" />
                                     </div>
-                                    <CardDescription>{supplier.category}</CardDescription>
-                                </CardHeader>
-                                <CardContent>
-                                    <Button variant="outline" className="w-full">View Profile</Button>
-                                </CardContent>
-                            </Card>
-                        ))}
+                                    <div>
+                                        <h3 className="text-3xl font-bold text-white font-headline">Global Parts Inc.</h3>
+                                        <p className="text-white/90">Engine & Drivetrain Specialists</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Profile Body */}
+                        <div className="p-6 md:p-8 grid md:grid-cols-3 gap-8">
+                            <div className="md:col-span-2">
+                                <h4 className="text-xl font-semibold font-headline">About Us</h4>
+                                <p className="mt-2 text-muted-foreground">
+                                    With over 20 years of experience, Global Parts Inc. is a leading distributor of OEM and aftermarket parts for heavy-duty trucks. Our mission is to keep your fleet on the road with reliable parts, expert advice, and unbeatable service.
+                                </p>
+
+                                <h4 className="mt-8 text-xl font-semibold font-headline">Product Categories</h4>
+                                <div className="mt-4 grid grid-cols-2 gap-4">
+                                    <div className="flex items-center gap-2 p-3 bg-card rounded-md border">
+                                        <CheckCircle className="h-5 w-5 text-green-500" />
+                                        <span>Engine Components</span>
+                                    </div>
+                                    <div className="flex items-center gap-2 p-3 bg-card rounded-md border">
+                                        <CheckCircle className="h-5 w-5 text-green-500" />
+                                        <span>Transmission Parts</span>
+                                    </div>
+                                    <div className="flex items-center gap-2 p-3 bg-card rounded-md border">
+                                        <CheckCircle className="h-5 w-5 text-green-500" />
+                                        <span>Axle & Differential</span>
+                                    </div>
+                                    <div className="flex items-center gap-2 p-3 bg-card rounded-md border">
+                                        <CheckCircle className="h-5 w-5 text-green-500" />
+                                        <span>Filters & Fluids</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="bg-card p-6 rounded-lg border">
+                                <h4 className="text-xl font-semibold font-headline">Contact Details</h4>
+                                <ul className="mt-4 space-y-3 text-sm text-muted-foreground">
+                                    <li><strong>Phone:</strong> 011 555 1234</li>
+                                    <li><strong>Email:</strong> sales@globalparts.co.za</li>
+                                    <li><strong>Address:</strong> 42 Industrial Rd, Johannesburg</li>
+                                </ul>
+                                 <h4 className="mt-6 text-xl font-semibold font-headline">Member Rating</h4>
+                                <div className="flex items-center gap-1 mt-2">
+                                    <Star className="h-5 w-5 text-yellow-400 fill-yellow-400" />
+                                    <Star className="h-5 w-5 text-yellow-400 fill-yellow-400" />
+                                    <Star className="h-5 w-5 text-yellow-400 fill-yellow-400" />
+                                    <Star className="h-5 w-5 text-yellow-400 fill-yellow-400" />
+                                    <Star className="h-5 w-5 text-yellow-400/50 fill-yellow-400/50" />
+                                    <span className="ml-2 text-sm text-muted-foreground">(4.5/5)</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="text-center mt-12">
+                        <Button size="lg">
+                            <Sparkles className="mr-2 h-5 w-5" />
+                            Are you a supplier? Claim Your Profile Today!
+                        </Button>
                     </div>
                 </div>
             </section>
         </div>
-    )
+    );
 }
