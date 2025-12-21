@@ -75,7 +75,8 @@ const processSteps = [
 
 export default function FinancierCategoryPage({ params }: { params: { category: string } }) {
     
-    const category = categoryDetails[params.category as keyof typeof categoryDetails];
+    const resolvedParams = React.use(params);
+    const category = categoryDetails[resolvedParams.category as keyof typeof categoryDetails];
 
     if (!category) {
         notFound();
