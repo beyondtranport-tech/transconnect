@@ -15,6 +15,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 
 const financierHeroImage = placeholderImages.find(p => p.id === 'funding-division');
@@ -40,7 +41,11 @@ const benefits = [
 const companyDetailsSchema = z.object({
   companyName: z.string().min(1, "Company name is required"),
   registrationNumber: z.string().min(1, "Registration number is required"),
-  contactPerson: z.string().min(1, "Contact person is required"),
+  legalEntityType: z.string().min(1, "Please select a legal entity type"),
+  ncrNumber: z.string().optional(),
+  fullName: z.string().min(1, "Your full name is required"),
+  positionInCompany: z.string().min(1, "Your position is required"),
+  actingCapacity: z.string().min(1, "Please select your capacity"),
   contactEmail: z.string().email("Invalid email address"),
   contactPhone: z.string().min(1, "Phone number is required"),
   website: z.string().url("Please enter a valid URL").optional().or(z.literal('')),
@@ -58,7 +63,11 @@ function CompanyDetailsForm({ onNext }: { onNext: () => void }) {
         defaultValues: {
             companyName: "",
             registrationNumber: "",
-            contactPerson: "",
+            legalEntityType: "",
+            ncrNumber: "",
+            fullName: "",
+            positionInCompany: "",
+            actingCapacity: "",
             contactEmail: "",
             contactPhone: "",
             website: "",
@@ -68,7 +77,6 @@ function CompanyDetailsForm({ onNext }: { onNext: () => void }) {
     const onSubmit = async (values: CompanyDetailsFormValues) => {
         setIsLoading(true);
         console.log("Company Details Submitted:", values);
-        // In a real app, you would save this data to state or a database
         await new Promise(resolve => setTimeout(resolve, 1000));
         
         toast({
@@ -77,17 +85,17 @@ function CompanyDetailsForm({ onNext }: { onNext: () => void }) {
         });
 
         setIsLoading(false);
-        onNext(); // Move to the next tab
+        onNext();
     };
 
     return (
         <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <FormField control={form.control} name="companyName" render={({ field }) => (
                         <FormItem>
                             <FormLabel>Company Name</FormLabel>
-                            <FormControl><Input placeholder="e.g., ABC Finance" {...field} /></FormControl>
+                            <FormControl><Input placeholder="e.g., ABC Finance (Pty) Ltd" {...field} /></FormControl>
                             <FormMessage />
                         </FormItem>
                     )} />
@@ -98,36 +106,86 @@ function CompanyDetailsForm({ onNext }: { onNext: () => void }) {
                             <FormMessage />
                         </FormItem>
                     )} />
-                     <FormField control={form.control} name="contactPerson" render={({ field }) => (
+                    <FormField control={form.control} name="legalEntityType" render={({ field }) => (
                         <FormItem>
-                            <FormLabel>Primary Contact Person</FormLabel>
-                            <FormControl><Input placeholder="e.g., Jane Doe" {...field} /></FormControl>
+                            <FormLabel>Type of Legal Entity</FormLabel>
+                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <FormControl><SelectTrigger><SelectValue placeholder="Select an entity type" /></SelectTrigger></FormControl>
+                                <SelectContent>
+                                    <SelectItem value="sole_proprietor">Sole Proprietor</SelectItem>
+                                    <SelectItem value="private_company">(Pty) Ltd - Private Company</SelectItem>
+                                    <SelectItem value="public_company">Ltd - Public Company</SelectItem>
+                                    <SelectItem value="close_corporation">CC - Close Corporation</SelectItem>
+                                    <SelectItem value="partnership">Partnership</SelectItem>
+                                    <SelectItem value="trust">Trust</SelectItem>
+                                </SelectContent>
+                            </Select>
                             <FormMessage />
                         </FormItem>
                     )} />
-                     <FormField control={form.control} name="contactEmail" render={({ field }) => (
+                    <FormField control={form.control} name="ncrNumber" render={({ field }) => (
                         <FormItem>
-                            <FormLabel>Contact Email</FormLabel>
-                            <FormControl><Input placeholder="e.g., jane.doe@abcfinance.co.za" {...field} /></FormControl>
-                            <FormMessage />
-                        </FormItem>
-                    )} />
-                     <FormField control={form.control} name="contactPhone" render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Contact Phone Number</FormLabel>
-                            <FormControl><Input {...field} /></FormControl>
-                            <FormMessage />
-                        </FormItem>
-                    )} />
-                     <FormField control={form.control} name="website" render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Website (Optional)</FormLabel>
-                            <FormControl><Input placeholder="e.g., https://www.abcfinance.co.za" {...field} /></FormControl>
+                            <FormLabel>NCR Registration # (if applicable)</FormLabel>
+                            <FormControl><Input placeholder="e.g., NCRCP0000" {...field} /></FormControl>
                             <FormMessage />
                         </FormItem>
                     )} />
                 </div>
-                 <div className="flex justify-end pt-4">
+                 <div className="border-t border-border pt-6 mt-6">
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <FormField control={form.control} name="fullName" render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Your Full Name</FormLabel>
+                                <FormControl><Input placeholder="e.g., Jane Doe" {...field} /></FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )} />
+                        <FormField control={form.control} name="positionInCompany" render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Your Position in Company</FormLabel>
+                                <FormControl><Input placeholder="e.g., Director" {...field} /></FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )} />
+                        <FormField control={form.control} name="actingCapacity" render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Capacity You Are Acting In</FormLabel>
+                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                    <FormControl><SelectTrigger><SelectValue placeholder="Select your capacity" /></SelectTrigger></FormControl>
+                                    <SelectContent>
+                                        <SelectItem value="director">Director</SelectItem>
+                                        <SelectItem value="representative">Authorized Representative</SelectItem>
+                                        <SelectItem value="owner">Owner</SelectItem>
+                                        <SelectItem value="employee">Employee</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                                <FormMessage />
+                            </FormItem>
+                        )} />
+                        <FormField control={form.control} name="contactEmail" render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Your Contact Email</FormLabel>
+                                <FormControl><Input placeholder="e.g., jane.doe@abcfinance.co.za" {...field} /></FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )} />
+                        <FormField control={form.control} name="contactPhone" render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Your Contact Phone Number</FormLabel>
+                                <FormControl><Input {...field} /></FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )} />
+                        <FormField control={form.control} name="website" render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Website (Optional)</FormLabel>
+                                <FormControl><Input placeholder="e.g., https://www.abcfinance.co.za" {...field} /></FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )} />
+                     </div>
+                 </div>
+                 <div className="flex justify-end pt-6">
                     <Button type="submit" disabled={isLoading}>
                         {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                         Save & Continue
@@ -188,7 +246,7 @@ export default function ForFinanciersPage() {
                 </div>
             </section>
 
-            <section id="start-onboarding" className="py-16 md:py-24 bg-card">
+            <section id="start-onboarding" className="py-16 md:py-24 bg-card scroll-mt-20">
                  <div className="container mx-auto px-4">
                      <div className="max-w-4xl mx-auto">
                         <h2 className="text-3xl md:text-4xl font-bold font-headline text-center">Join Our Network</h2>
@@ -210,7 +268,7 @@ export default function ForFinanciersPage() {
                                             Let's start with the basics. Provide your company's details so we know who you are.
                                         </CardDescription>
                                     </CardHeader>
-                                    <CardContent>
+                                    <CardContent className="p-6">
                                         <CompanyDetailsForm onNext={() => setActiveTab("lending-criteria")} />
                                     </CardContent>
                                 </Card>
@@ -249,5 +307,3 @@ export default function ForFinanciersPage() {
         </div>
     )
 }
-
-    
