@@ -56,7 +56,7 @@ export default function Home() {
           <div className="space-y-16">
              {divisionData.map((division, index) => {
                 const IconComponent = iconComponents[division.icon];
-                const href = ['marketplace', 'tech', 'funding'].includes(division.id) ? `/${division.id}` : `/divisions#${division.id}`;
+                const href = ['marketplace', 'tech', 'funding', 'mall'].includes(division.id) ? `/${division.id}` : `/divisions#${division.id}`;
                 return (
                     <div key={division.id} className="grid md:grid-cols-2 gap-8 md:gap-12 items-center">
                         <div className={`relative aspect-video rounded-lg overflow-hidden shadow-lg ${index % 2 === 1 ? 'md:order-2' : ''}`}>
@@ -133,3 +133,5 @@ export default function Home() {
     </div>
   );
 }
+
+    

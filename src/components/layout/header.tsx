@@ -30,8 +30,8 @@ const mainNavLinks = [
 ];
 
 const divisionLinks = [
-    { href: "/divisions#funding", label: "Funding" },
-    { href: "/divisions#mall", label: "Mall" },
+    { href: "/funding", label: "Funding" },
+    { href: "/mall", label: "Mall" },
     { href: "/marketplace", label: "Marketplace" },
     { href: "/tech", label: "Tech" },
 ]
@@ -79,7 +79,7 @@ export function Header() {
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className={cn(
                   "flex items-center gap-1 px-3 py-2 text-sm font-medium hover:text-primary data-[state=open]:text-primary",
-                  ["/divisions", "/marketplace", "/tech"].some(p => pathname.startsWith(p)) ? "text-primary font-semibold" : "text-muted-foreground"
+                  ["/divisions", "/marketplace", "/tech", "/funding", "/mall"].some(p => pathname.startsWith(p)) ? "text-primary font-semibold" : "text-muted-foreground"
                 )}>
                   Divisions
                   <ChevronDown className="h-4 w-4" />
@@ -243,3 +243,5 @@ export function Header() {
     </header>
   );
 }
+
+    
