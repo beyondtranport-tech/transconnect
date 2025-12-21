@@ -3,7 +3,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowRight, Filter, Handshake, Target, Loader2 } from "lucide-react";
+import { ArrowRight, Filter, Handshake, Target, Loader2, Link as LinkIcon } from "lucide-react";
 import Image from "next/image";
 import { placeholderImages } from "@/lib/placeholder-images.json";
 import Link from "next/link";
@@ -15,7 +15,6 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 
 const financierHeroImage = placeholderImages.find(p => p.id === 'funding-division');
@@ -40,15 +39,7 @@ const benefits = [
 
 const companyDetailsSchema = z.object({
   companyName: z.string().min(1, "Company name is required"),
-  registrationNumber: z.string().min(1, "Registration number is required"),
-  legalEntityType: z.string().min(1, "Please select a legal entity type"),
-  ncrNumber: z.string().optional(),
-  fullName: z.string().min(1, "Your full name is required"),
-  positionInCompany: z.string().min(1, "Your position is required"),
-  actingCapacity: z.string().min(1, "Please select your capacity"),
   contactEmail: z.string().email("Invalid email address"),
-  contactPhone: z.string().min(1, "Phone number is required"),
-  website: z.string().url("Please enter a valid URL").optional().or(z.literal('')),
 });
 
 type CompanyDetailsFormValues = z.infer<typeof companyDetailsSchema>;
@@ -62,15 +53,7 @@ function CompanyDetailsForm({ onNext }: { onNext: () => void }) {
         resolver: zodResolver(companyDetailsSchema),
         defaultValues: {
             companyName: "",
-            registrationNumber: "",
-            legalEntityType: "",
-            ncrNumber: "",
-            fullName: "",
-            positionInCompany: "",
-            actingCapacity: "",
             contactEmail: "",
-            contactPhone: "",
-            website: "",
         },
     });
 
@@ -92,99 +75,33 @@ function CompanyDetailsForm({ onNext }: { onNext: () => void }) {
         <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <FormField control={form.control} name="companyName" render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Company Name</FormLabel>
-                            <FormControl><Input placeholder="e.g., ABC Finance (Pty) Ltd" {...field} /></FormControl>
-                            <FormMessage />
-                        </FormItem>
-                    )} />
-                    <FormField control={form.control} name="registrationNumber" render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Company Registration Number</FormLabel>
-                            <FormControl><Input placeholder="e.g., 2023/123456/07" {...field} /></FormControl>
-                            <FormMessage />
-                        </FormItem>
-                    )} />
-                    <FormField control={form.control} name="legalEntityType" render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Type of Legal Entity</FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                <FormControl><SelectTrigger><SelectValue placeholder="Select an entity type" /></SelectTrigger></FormControl>
-                                <SelectContent>
-                                    <SelectItem value="sole_proprietor">Sole Proprietor</SelectItem>
-                                    <SelectItem value="private_company">(Pty) Ltd - Private Company</SelectItem>
-                                    <SelectItem value="public_company">Ltd - Public Company</SelectItem>
-                                    <SelectItem value="close_corporation">CC - Close Corporation</SelectItem>
-                                    <SelectItem value="partnership">Partnership</SelectItem>
-                                    <SelectItem value="trust">Trust</SelectItem>
-                                </SelectContent>
-                            </Select>
-                            <FormMessage />
-                        </FormItem>
-                    )} />
-                    <FormField control={form.control} name="ncrNumber" render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>NCR Registration # (if applicable)</FormLabel>
-                            <FormControl><Input placeholder="e.g., NCRCP0000" {...field} /></FormControl>
-                            <FormMessage />
-                        </FormItem>
-                    )} />
+                     <FormField
+                        control={form.control}
+                        name="companyName"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Company Name</FormLabel>
+                                <FormControl>
+                                    <Input placeholder="e.g., ABC Finance (Pty) Ltd" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                     <FormField
+                        control={form.control}
+                        name="contactEmail"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Contact Email</FormLabel>
+                                <FormControl>
+                                    <Input placeholder="e.g., partnerships@abcfinance.co.za" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
                 </div>
-                 <div className="border-t border-border pt-6 mt-6">
-                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <FormField control={form.control} name="fullName" render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Your Full Name</FormLabel>
-                                <FormControl><Input placeholder="e.g., Jane Doe" {...field} /></FormControl>
-                                <FormMessage />
-                            </FormItem>
-                        )} />
-                        <FormField control={form.control} name="positionInCompany" render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Your Position in Company</FormLabel>
-                                <FormControl><Input placeholder="e.g., Director" {...field} /></FormControl>
-                                <FormMessage />
-                            </FormItem>
-                        )} />
-                        <FormField control={form.control} name="actingCapacity" render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Capacity You Are Acting In</FormLabel>
-                                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                    <FormControl><SelectTrigger><SelectValue placeholder="Select your capacity" /></SelectTrigger></FormControl>
-                                    <SelectContent>
-                                        <SelectItem value="director">Director</SelectItem>
-                                        <SelectItem value="representative">Authorized Representative</SelectItem>
-                                        <SelectItem value="owner">Owner</SelectItem>
-                                        <SelectItem value="employee">Employee</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                                <FormMessage />
-                            </FormItem>
-                        )} />
-                        <FormField control={form.control} name="contactEmail" render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Your Contact Email</FormLabel>
-                                <FormControl><Input placeholder="e.g., jane.doe@abcfinance.co.za" {...field} /></FormControl>
-                                <FormMessage />
-                            </FormItem>
-                        )} />
-                        <FormField control={form.control} name="contactPhone" render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Your Contact Phone Number</FormLabel>
-                                <FormControl><Input {...field} /></FormControl>
-                                <FormMessage />
-                            </FormItem>
-                        )} />
-                        <FormField control={form.control} name="website" render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Website (Optional)</FormLabel>
-                                <FormControl><Input placeholder="e.g., https://www.abcfinance.co.za" {...field} /></FormControl>
-                                <FormMessage />
-                            </FormItem>
-                        )} />
-                     </div>
-                 </div>
                  <div className="flex justify-end pt-6">
                     <Button type="submit" disabled={isLoading}>
                         {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -217,6 +134,11 @@ export default function ForFinanciersPage() {
                 <div className="relative h-full flex flex-col items-center justify-center text-center text-primary-foreground z-10 p-4">
                     <h1 className="text-4xl md:text-5xl font-bold font-headline">Partner with TransConnect</h1>
                     <p className="mt-4 text-lg md:text-xl max-w-3xl">Access a targeted stream of qualified finance opportunities from the heart of the transport industry.</p>
+                     <Button asChild size="lg" className="mt-8">
+                        <Link href="#start-onboarding">
+                           Start Onboarding
+                        </Link>
+                    </Button>
                 </div>
             </section>
 
@@ -255,10 +177,12 @@ export default function ForFinanciersPage() {
                         </p>
 
                         <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-12">
-                            <TabsList className="grid w-full grid-cols-3">
-                                <TabsTrigger value="company-details">1. Company Details</TabsTrigger>
-                                <TabsTrigger value="lending-criteria" disabled>2. Lending Criteria</TabsTrigger>
-                                <TabsTrigger value="review" disabled>3. Review & Submit</TabsTrigger>
+                            <TabsList className="grid w-full grid-cols-5">
+                                <TabsTrigger value="company-details">1. Company</TabsTrigger>
+                                <TabsTrigger value="lending-criteria" disabled>2. Criteria</TabsTrigger>
+                                <TabsTrigger value="products" disabled>3. Products</TabsTrigger>
+                                <TabsTrigger value="documents" disabled>4. Documents</TabsTrigger>
+                                <TabsTrigger value="review" disabled>5. Review</TabsTrigger>
                             </TabsList>
                             <TabsContent value="company-details">
                                 <Card>
@@ -273,16 +197,42 @@ export default function ForFinanciersPage() {
                                     </CardContent>
                                 </Card>
                             </TabsContent>
-                            <TabsContent value="lending-criteria">
+                             <TabsContent value="lending-criteria">
                                 <Card>
                                     <CardHeader>
                                         <CardTitle>Lending Criteria</CardTitle>
                                         <CardDescription>
-                                           Define your lending parameters, including products, focus areas, and more. This data will power our matching matrix.
+                                           Define your ideal customer profile and lending parameters.
                                         </CardDescription>
                                     </CardHeader>
                                     <CardContent>
                                          <p className="text-muted-foreground">Lending criteria form will be here.</p>
+                                    </CardContent>
+                                </Card>
+                            </TabsContent>
+                             <TabsContent value="products">
+                                <Card>
+                                    <CardHeader>
+                                        <CardTitle>Finance Products</CardTitle>
+                                        <CardDescription>
+                                           Detail the specific finance products you offer (e.g., Asset Finance, Working Capital).
+                                        </CardDescription>
+                                    </CardHeader>
+                                    <CardContent>
+                                         <p className="text-muted-foreground">Products form will be here.</p>
+                                    </CardContent>
+                                </Card>
+                            </TabsContent>
+                             <TabsContent value="documents">
+                                <Card>
+                                    <CardHeader>
+                                        <CardTitle>Required Documents</CardTitle>
+                                        <CardDescription>
+                                           List the standard documents you require for an application.
+                                        </CardDescription>
+                                    </CardHeader>
+                                    <CardContent>
+                                         <p className="text-muted-foreground">Document checklist form will be here.</p>
                                     </CardContent>
                                 </Card>
                             </TabsContent>
