@@ -24,7 +24,7 @@ const mainNavLinks = [
   { href: "/", label: "Home" },
   { href: "/about", label: "About" },
   { href: "/pricing", label: "Pricing" },
-  { href: "/connect", label: "Connect" },
+  { href: "/incentives", label: "Incentives" },
   { href: "/resources", label: "Resources" },
   { href: "/contact", label: "Contact Us" },
 ];
@@ -243,5 +243,3 @@ export function Header() {
     </header>
   );
 }
-
-    

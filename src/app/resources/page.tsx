@@ -69,10 +69,10 @@ const resources = [
     },
     {
         icon: <Info className="h-5 w-5 mr-3 text-primary" />,
-        title: "Understanding The 'Connect' Page",
+        title: "Understanding The 'Incentives' Page",
         content: (
              <div className="space-y-4 text-muted-foreground">
-                <p>The "Connect" page is where you can activate optional paid plans to unlock new ways to save money and earn revenue.</p>
+                <p>The "Incentives" page is where you can activate optional paid plans to unlock new ways to save money and earn revenue.</p>
                 <div>
                     <h4 className="font-semibold text-foreground">The Loyalty Plan & Savings Calculator</h4>
                     <p>This plan gives you access to exclusive discounts we've negotiated with suppliers. The Savings Calculator is a powerful tool that demonstrates how it works. By adjusting the sliders for your monthly spend and the average discount, you can see your potential savings in real-time. The "Your Loyalty Tier" slider shows how sharing in the community's negotiated discounts can be passed back to you.</p>
