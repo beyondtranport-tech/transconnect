@@ -1,12 +1,13 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowRight, ShoppingBasket } from "lucide-react";
+import { ArrowRight, ShoppingBasket, Building2, Truck, Landmark, PackageSearch, Store, Network, Warehouse, Recycle, Wrench } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { placeholderImages } from "@/lib/placeholder-images.json";
 import { marketplaceItems } from "@/lib/data";
 import { Badge } from "@/components/ui/badge";
+import * as React from "react";
 
 const mallHeroImage = placeholderImages.find(p => p.id === 'mall-division');
 
@@ -16,6 +17,76 @@ const formatPrice = (price: number) => {
         currency: 'ZAR',
     }).format(price);
 };
+
+const malls = [
+    {
+        name: "Supplier Mall",
+        description: "Connect with trusted suppliers for parts, consumables, and services.",
+        icon: Building2,
+        href: "#"
+    },
+    {
+        name: "Transporter Mall",
+        description: "Find opportunities and collaborate with peers.",
+        icon: Truck,
+        href: "#"
+    },
+    {
+        name: "Finance Mall",
+        description: "Access flexible funding and insurance products.",
+        icon: Landmark,
+        href: "/funding"
+    },
+    {
+        name: "Loads Mall",
+        description: "Discover and secure freight loads from shippers.",
+        icon: PackageSearch,
+        href: "/tech"
+    },
+    {
+        name: "Buy & Sell Mall",
+        description: "Marketplace for new and used vehicles and equipment.",
+        icon: Store,
+        href: "/marketplace"
+    },
+    {
+        name: "Distribution Mall",
+        description: "Optimize your logistics and final-mile delivery networks.",
+        icon: Network,
+        href: "#"
+    },
+    {
+        name: "Warehouse Mall",
+        description: "Find and offer short-term or long-term storage solutions.",
+        icon: Warehouse,
+        href: "#"
+    },
+    {
+        name: "Repurpose Mall",
+        description: "Give a second life to decommissioned assets and parts.",
+        icon: Recycle,
+        href: "#"
+    },
+    {
+        name: "Aftermarket Mall",
+        description: "Your source for aftermarket parts, accessories, and upgrades.",
+        icon: Wrench,
+        href: "#"
+    },
+]
+
+const iconMap: { [key: string]: React.ElementType } = {
+    Building2,
+    Truck,
+    Landmark,
+    PackageSearch,
+    Store,
+    Network,
+    Warehouse,
+    Recycle,
+    Wrench,
+};
+
 
 export default function MallPage() {
     return (
@@ -37,8 +108,43 @@ export default function MallPage() {
                     <p className="mt-4 text-lg md:text-xl max-w-3xl">Your one-stop shop for parts, gear, and essentials, with exclusive member pricing.</p>
                 </div>
             </section>
+             <section id="malls-grid" className="py-16 md:py-24 bg-background">
+                <div className="container mx-auto px-4">
+                     <div className="text-center max-w-3xl mx-auto mb-12">
+                        <h2 className="text-3xl md:text-4xl font-bold font-headline">Explore Our Malls</h2>
+                        <p className="mt-4 text-lg text-muted-foreground">
+                            Specialized marketplaces designed to meet every need of your transport business.
+                        </p>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+                        {malls.map(mall => {
+                            const Icon = mall.icon;
+                            return (
+                                <Card key={mall.name} className="flex flex-col">
+                                    <CardHeader className="flex-row items-center gap-4">
+                                        <div className="bg-primary/10 p-3 rounded-full">
+                                            <Icon className="h-6 w-6 text-primary" />
+                                        </div>
+                                        <CardTitle>{mall.name}</CardTitle>
+                                    </CardHeader>
+                                    <CardContent className="flex-grow">
+                                        <p className="text-muted-foreground">{mall.description}</p>
+                                    </CardContent>
+                                    <CardFooter>
+                                        <Button asChild variant="outline" className="w-full">
+                                            <Link href={mall.href}>
+                                                Explore {mall.name.split(' ')[0]}
+                                            </Link>
+                                        </Button>
+                                    </CardFooter>
+                                </Card>
+                            )
+                        })}
+                    </div>
+                </div>
+            </section>
 
-            <section id="featured-products" className="py-16 md:py-24 bg-background">
+            <section id="featured-products" className="py-16 md:py-24 bg-card">
                 <div className="container mx-auto px-4">
                     <div className="text-center max-w-3xl mx-auto mb-12">
                         <h2 className="text-3xl md:text-4xl font-bold font-headline">Featured Products</h2>
@@ -89,5 +195,3 @@ export default function MallPage() {
         </div>
     )
 }
-
-    
