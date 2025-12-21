@@ -1,4 +1,6 @@
 
+'use client';
+
 import { placeholderImages } from "@/lib/placeholder-images.json";
 import { University, Landmark, HandCoins, Building, Users, Sparkles, Building2, ArrowRight } from "lucide-react";
 import Image from "next/image";
@@ -7,9 +9,11 @@ import { notFound } from "next/navigation";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import Link from "next/link";
 import * as React from "react";
+import * as gtag from '@/lib/gtag';
 
 const categoryDetails = {
     banks: { 
+        id: "banks",
         name: "Banks", 
         description: "Explore financing options from major financial institutions for established businesses.",
         icon: University,
@@ -20,6 +24,7 @@ const categoryDetails = {
         ]
     },
     "niche-lenders": { 
+        id: "niche-lenders",
         name: "Niche Lenders", 
         description: "Connect with specialized lenders who deeply understand the transport industry.",
         icon: Landmark,
@@ -29,18 +34,21 @@ const categoryDetails = {
         ]
     },
     "debt-funders": { 
+        id: "debt-funders",
         name: "Debt Funders", 
         description: "Find alternative debt financing for growth, expansion, or large-scale asset acquisition.",
         icon: Building,
         partners: []
     },
     "ngos-and-grants": { 
+        id: "ngos-and-grants",
         name: "NGOs & Grants", 
         description: "Access funding from non-governmental organizations and grant programs.",
         icon: HandCoins,
         partners: []
     },
     "individuals": {
+        id: "individuals",
         name: "Individuals (P2P & Crowdfunding)",
         description: "Source capital directly from individual investors and peer-to-peer platforms.",
         icon: Users,
@@ -72,6 +80,15 @@ export default function FinancierCategoryPage({ params }: { params: { category: 
     if (!category) {
         notFound();
     }
+
+    const handleJoinNetworkClick = () => {
+        gtag.event({
+            action: 'join_financier_network',
+            category: 'Finance Mall Category',
+            label: category.id,
+            value: 0
+        });
+    };
     
     const Icon = category.icon;
 
@@ -157,8 +174,8 @@ export default function FinancierCategoryPage({ params }: { params: { category: 
                     )}
 
                     <div className="text-center mt-16">
-                        <Button size="lg" variant="outline" asChild>
-                           <Link href="/for-financiers">
+                        <Button size="lg" variant="outline" asChild onClick={handleJoinNetworkClick}>
+                           <Link href={`/for-financiers?type=${category.id}`}>
                                 <Sparkles className="mr-2 h-5 w-5" />
                                 Are you a financier? Join Our Network
                            </Link>
