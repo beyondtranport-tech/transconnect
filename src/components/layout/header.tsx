@@ -24,7 +24,7 @@ const mainNavLinks = [
   { href: "/", label: "Home" },
   { href: "/about", label: "About" },
   { href: "/pricing", label: "Pricing" },
-  { href: "/incentives", label: "Incentives" },
+  { href: "/connect", label: "Connect" },
   { href: "/resources", label: "Resources" },
   { href: "/contact", label: "Contact Us" },
 ];
