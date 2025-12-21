@@ -111,7 +111,7 @@ export default function FinancierCategoryPage({ params }: { params: { category: 
                         <Icon className="h-12 w-12 text-white" />
                     </div>
                     <h1 className="text-4xl md:text-5xl font-bold font-headline">Borrowing from {category.name}</h1>
-                    <p className="mt-4 text-lg md:text-xl max-w-3xl">{category.description}</p>
+                    <p className="mt-4 text-lg md:text-xl max-w-3xl">You're in the right place. We simplify the process of finding the right funding from {category.name.toLowerCase()} by connecting you with the best options for your transport business.</p>
                 </div>
             </section>
             
