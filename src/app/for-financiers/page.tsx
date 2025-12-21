@@ -1,13 +1,13 @@
-
 'use client';
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowRight, Filter, Handshake, Target } from "lucide-react";
+import { ArrowRight, Filter, Handshake, Target, Sparkles, UserPlus } from "lucide-react";
 import Image from "next/image";
 import { placeholderImages } from "@/lib/placeholder-images.json";
 import Link from "next/link";
 import { useUser } from "@/firebase";
+import { useSearchParams } from "next/navigation";
 
 const financierHeroImage = placeholderImages.find(p => p.id === 'funding-division');
 
@@ -31,10 +31,17 @@ const benefits = [
 
 export default function ForFinanciersPage() {
     const { user, isUserLoading } = useUser();
+    const searchParams = useSearchParams();
+    const financierType = searchParams.get('type');
 
-    // Determine the correct link for the CTA based on auth state.
-    // If loading, disable the button. If logged in, go to account. If not, go to join.
-    const ctaLink = user ? "/account" : "/join";
+    let ctaLink = '/join?role=financier';
+    if (financierType) {
+        ctaLink += `&type=${financierType}`;
+    }
+
+    if (user) {
+        ctaLink = "/account";
+    }
 
     return (
         <div>
@@ -51,21 +58,15 @@ export default function ForFinanciersPage() {
                 )}
                 <div className="absolute inset-0 bg-black/60" />
                 <div className="relative h-full flex flex-col items-center justify-center text-center text-primary-foreground z-10 p-4">
-                    <h1 className="text-4xl md:text-5xl font-bold font-headline">Become a TransConnect Lending Partner</h1>
-                    <p className="mt-4 text-lg md:text-xl max-w-3xl">Access a targeted stream of qualified finance opportunities from the heart of the transport industry.</p>
-                     <Button asChild size="lg" className="mt-8" disabled={isUserLoading}>
-                        <Link href={ctaLink}>
-                           {user ? "Complete Your Profile" : "Start Onboarding"}
-                           <ArrowRight className="ml-2 h-5 w-5" />
-                        </Link>
-                    </Button>
+                    <h1 className="text-4xl md:text-5xl font-bold font-headline">A Smarter Way to Lend</h1>
+                    <p className="mt-4 text-lg md:text-xl max-w-3xl">Join the TransConnect network to access a targeted stream of qualified finance opportunities from the heart of the transport industry.</p>
                 </div>
             </section>
 
             <section className="py-16 md:py-24 bg-background">
                 <div className="container mx-auto px-4">
                     <div className="text-center max-w-3xl mx-auto mb-16">
-                        <h2 className="text-3xl md:text-4xl font-bold font-headline">A Smarter Way to Lend</h2>
+                        <h2 className="text-3xl md:text-4xl font-bold font-headline">Why Partner With Us?</h2>
                         <p className="mt-4 text-lg text-muted-foreground">
                             Stop sifting through unqualified leads. We bring the right borrowers directly to you. By understanding the unique needs of the transport sector, we connect you with businesses that fit your profile.
                         </p>
@@ -91,18 +92,18 @@ export default function ForFinanciersPage() {
             <section id="how-it-works" className="py-16 md:py-24 bg-card">
                  <div className="container mx-auto px-4">
                      <div className="max-w-4xl mx-auto text-center">
-                        <h2 className="text-3xl md:text-4xl font-bold font-headline">How It Works</h2>
+                        <h2 className="text-3xl md:text-4xl font-bold font-headline">A Simple, Powerful Partnership</h2>
                         <p className="mt-4 text-lg text-muted-foreground">
-                           Joining our network is simple. Once you register, you'll gain access to your partner dashboard to complete your profile and start receiving deals.
+                           Joining our network is free and simple. Once you register, you'll gain access to your secure partner dashboard to build your lending profile and start receiving matched deals.
                         </p>
 
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-12 text-left">
                             <Card>
                                 <CardHeader>
-                                    <CardTitle>1. Register</CardTitle>
+                                    <CardTitle>1. Register Your Account</CardTitle>
                                 </CardHeader>
                                 <CardContent>
-                                    <p className="text-muted-foreground">Create your account to get access to the partner portal.</p>
+                                    <p className="text-muted-foreground">Create your free account to get access to the partner portal.</p>
                                 </CardContent>
                             </Card>
                              <Card>
@@ -110,7 +111,7 @@ export default function ForFinanciersPage() {
                                     <CardTitle>2. Build Your Profile</CardTitle>
                                 </CardHeader>
                                 <CardContent>
-                                    <p className="text-muted-foreground">Define your lending criteria, products, and target market inside your secure dashboard.</p>
+                                    <p className="text-muted-foreground">Inside your secure dashboard, define your lending criteria, products, and target market.</p>
                                 </CardContent>
                             </Card>
                              <Card>
