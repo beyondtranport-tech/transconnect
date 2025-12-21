@@ -104,8 +104,8 @@ export default function MallPage() {
                 )}
                 <div className="absolute inset-0 bg-black/60" />
                 <div className="relative h-full flex flex-col items-center justify-center text-center text-primary-foreground z-10 p-4">
-                    <h1 className="text-4xl md:text-5xl font-bold font-headline">TransConnect Mall</h1>
-                    <p className="mt-4 text-lg md:text-xl max-w-3xl">Your one-stop shop for parts, gear, and essentials, with exclusive member pricing.</p>
+                    <h1 className="text-4xl md:text-5xl font-bold font-headline">The TransConnect Mall Ecosystem</h1>
+                    <p className="mt-4 text-lg md:text-xl max-w-3xl">A collective of specialized marketplaces designed to break constraints and drive efficiency throughout the logistics sector.</p>
                 </div>
             </section>
              <section id="malls-grid" className="py-16 md:py-24 bg-background">
