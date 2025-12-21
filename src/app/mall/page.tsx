@@ -18,10 +18,14 @@ const techImage = placeholderImages.find(p => p.id === 'tech-division');
 const tiresImage = placeholderImages.find(p => p.id === 'product-tires');
 
 const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('en-ZA', {
+    const formattedPrice = new Intl.NumberFormat('en-ZA', {
         style: 'currency',
         currency: 'ZAR',
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0,
     }).format(price);
+    // Normalize non-breaking spaces to regular spaces to prevent hydration errors.
+    return formattedPrice.replace(/\s/g, ' ');
 };
 
 const malls = [
