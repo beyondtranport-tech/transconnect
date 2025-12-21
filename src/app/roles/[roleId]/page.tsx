@@ -2,7 +2,7 @@
 'use client'
 
 import { useMemo } from 'react';
-import { notFound, useSearchParams } from 'next/navigation';
+import { notFound } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -10,13 +10,15 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { ArrowRight } from 'lucide-react';
 import { roles } from '@/lib/roles';
 import { useUser } from '@/firebase';
+import * as React from 'react';
 
 export default function RolePage({ params }: { params: { roleId: string } }) {
   const { user } = useUser();
+  const resolvedParams = React.use(params);
   
   const role = useMemo(() => {
-    return roles.find(r => r.id === params.roleId);
-  }, [params.roleId]);
+    return roles.find(r => r.id === resolvedParams.roleId);
+  }, [resolvedParams.roleId]);
 
   if (!role) {
     notFound();
