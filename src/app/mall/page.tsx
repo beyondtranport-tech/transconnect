@@ -1,4 +1,6 @@
 
+'use client';
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { ArrowRight, ShoppingBasket, Building2, Truck, Landmark, PackageSearch, Store, Network, Warehouse, Recycle, Wrench } from "lucide-react";
@@ -10,6 +12,10 @@ import { Badge } from "@/components/ui/badge";
 import * as React from "react";
 
 const mallHeroImage = placeholderImages.find(p => p.id === 'mall-division');
+const fundingImage = placeholderImages.find(p => p.id === 'funding-division');
+const marketplaceImage = placeholderImages.find(p => p.id === 'marketplace-division');
+const techImage = placeholderImages.find(p => p.id === 'tech-division');
+const tiresImage = placeholderImages.find(p => p.id === 'product-tires');
 
 const formatPrice = (price: number) => {
     return new Intl.NumberFormat('en-ZA', {
@@ -23,55 +29,64 @@ const malls = [
         name: "Supplier Mall",
         description: "Connect with trusted suppliers for parts, consumables, and services.",
         icon: Building2,
-        href: "#"
+        href: "#",
+        image: placeholderImages.find(p => p.id === 'mall-division')!,
     },
     {
         name: "Transporter Mall",
         description: "Find opportunities and collaborate with peers.",
         icon: Truck,
-        href: "#"
+        href: "#",
+        image: placeholderImages.find(p => p.id === 'hero-home')!,
     },
     {
         name: "Finance Mall",
         description: "Access flexible funding and insurance products.",
         icon: Landmark,
-        href: "/funding"
+        href: "/funding",
+        image: fundingImage,
     },
     {
         name: "Loads Mall",
         description: "Discover and secure freight loads from shippers.",
         icon: PackageSearch,
-        href: "/tech"
+        href: "/tech",
+        image: techImage,
     },
     {
         name: "Buy & Sell Mall",
         description: "Marketplace for new and used vehicles and equipment.",
         icon: Store,
-        href: "/marketplace"
+        href: "/marketplace",
+        image: marketplaceImage,
     },
     {
         name: "Distribution Mall",
         description: "Optimize your logistics and final-mile delivery networks.",
         icon: Network,
-        href: "#"
+        href: "#",
+        image: placeholderImages.find(p => p.id === 'tech-home')!,
     },
     {
         name: "Warehouse Mall",
         description: "Find and offer short-term or long-term storage solutions.",
         icon: Warehouse,
-        href: "#"
+        href: "#",
+        image: placeholderImages.find(p => p.id === 'mall-division')!,
     },
     {
         name: "Repurpose Mall",
         description: "Give a second life to decommissioned assets and parts.",
         icon: Recycle,
-        href: "#"
+        href: "#",
+        image: tiresImage,
     },
     {
         name: "Aftermarket Mall",
         description: "Your source for aftermarket parts, accessories, and upgrades.",
         icon: Wrench,
-        href: "#"
+        href: "#",
+        image: placeholderImages.find(p => p.id === 'product-engine-oil')!,
     },
 ]
 
@@ -110,34 +125,43 @@ export default function MallPage() {
             </section>
              <section id="malls-grid" className="py-16 md:py-24 bg-background">
                 <div className="container mx-auto px-4">
-                     <div className="text-center max-w-3xl mx-auto mb-12">
+                     <div className="text-center max-w-3xl mx-auto mb-16">
                         <h2 className="text-3xl md:text-4xl font-bold font-headline">Explore Our Malls</h2>
                         <p className="mt-4 text-lg text-muted-foreground">
                             Specialized marketplaces designed to meet every need of your transport business.
                         </p>
                     </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-                        {malls.map(mall => {
+                    <div className="space-y-16">
+                        {malls.map((mall, index) => {
                             const Icon = mall.icon;
                             return (
-                                <Card key={mall.name} className="flex flex-col">
-                                    <CardHeader className="flex-row items-center gap-4">
-                                        <div className="bg-primary/10 p-3 rounded-full">
-                                            <Icon className="h-6 w-6 text-primary" />
+                                <div key={mall.name} className="grid md:grid-cols-2 gap-8 md:gap-12 items-center">
+                                    <div className={`relative aspect-video rounded-lg overflow-hidden shadow-lg ${index % 2 === 1 ? 'md:order-2' : ''}`}>
+                                        {mall.image && (
+                                            <Image
+                                                src={mall.image.imageUrl}
+                                                alt={mall.name}
+                                                fill
+                                                className="object-cover"
+                                                data-ai-hint={mall.image.imageHint}
+                                            />
+                                        )}
+                                    </div>
+                                    <div className={index % 2 === 1 ? 'md:order-1' : ''}>
+                                        <div className="flex items-center gap-4">
+                                            {Icon && <Icon className="h-10 w-10 text-primary" />}
+                                            <h3 className="text-3xl font-bold font-headline">{mall.name}</h3>
                                         </div>
-                                        <CardTitle>{mall.name}</CardTitle>
-                                    </CardHeader>
-                                    <CardContent className="flex-grow">
-                                        <p className="text-muted-foreground">{mall.description}</p>
-                                    </CardContent>
-                                    <CardFooter>
-                                        <Button asChild variant="outline" className="w-full">
+                                        <p className="mt-4 text-lg text-muted-foreground">
+                                            {mall.description}
+                                        </p>
+                                        <Button asChild className="mt-6" variant="outline">
                                             <Link href={mall.href}>
-                                                Explore {mall.name.split(' ')[0]}
+                                                Explore {mall.name.split(' ')[0]} <ArrowRight className="ml-2 h-4 w-4" />
                                             </Link>
                                         </Button>
-                                    </CardFooter>
-                                </Card>
+                                    </div>
+                                </div>
                             )
                         })}
                     </div>
