@@ -31,6 +31,7 @@ const mainNavLinks = [
 ];
 
 const divisionLinks = [
+    { href: "/divisions", label: "All Divisions" },
     { href: "/funding", label: "Funding" },
     { href: "/mall", label: "Mall" },
     { href: "/marketplace", label: "Marketplace" },
@@ -87,8 +88,6 @@ export function Header() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start">
-                <DropdownMenuItem asChild><Link href="/divisions">All Divisions</Link></DropdownMenuItem>
-                <DropdownMenuSeparator />
                 {divisionLinks.map(({ href, label }) => (
                   <DropdownMenuItem key={href} asChild>
                     <Link href={href}>{label}</Link>
@@ -194,7 +193,7 @@ export function Header() {
                       onClick={() => setIsSheetOpen(false)}
                       className={cn(
                         "text-lg transition-colors hover:text-primary",
-                         ["/divisions", "/marketplace", "/tech"].some(p => pathname.startsWith(p)) ? "text-primary" : "text-muted-foreground"
+                         ["/divisions", "/marketplace", "/tech", "/funding", "/mall"].some(p => pathname.startsWith(p)) ? "text-primary" : "text-muted-foreground"
                       )}
                     >
                       Divisions

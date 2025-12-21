@@ -89,6 +89,12 @@
       "description": "A secure handshake between two business professionals",
       "imageUrl": "https://images.unsplash.com/photo-1521791136064-7986c2920216?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxidXNpbmVzcyUyMGhhbmRzaGFrZXxlbnwwfHx8fDE3NjYzMDAxNzF8MA&ixlib=rb-4.1.0&q=80&w=1080",
       "imageHint": "business handshake"
+    },
+    {
+      "id": "incentives-hero",
+      "description": "A person earning money and commissions through a network",
+      "imageUrl": "https://images.unsplash.com/photo-1554224155-83e84365313a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw1fHxlYXJuaW5nJTIwY29tbWlzc2lvbnxlbnwwfHx8fDE3NjYzMTA0NDd8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "earning commission"
     }
   ]
 }
