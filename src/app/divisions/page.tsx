@@ -1,3 +1,4 @@
+
 import Image from "next/image";
 import { divisions } from "@/lib/data";
 import { Button } from "@/components/ui/button";
@@ -26,6 +27,7 @@ export default function DivisionsPage() {
         <div className="space-y-16">
             {divisions.map((division, index) => {
                 const IconComponent = iconComponents[division.icon];
+                const href = ['marketplace', 'tech', 'funding'].includes(division.id) ? `/${division.id}` : `/${division.id}#${division.id}`;
                 return (
                     <div key={division.id} id={division.id} className="grid md:grid-cols-2 gap-8 md:gap-12 items-center">
                         <div className={`relative aspect-video rounded-lg overflow-hidden shadow-lg ${index % 2 === 1 ? 'md:order-2' : ''}`}>
@@ -48,7 +50,7 @@ export default function DivisionsPage() {
                                 {division.longDescription}
                             </p>
                             <Button asChild className="mt-6">
-                                <Link href={division.id === 'marketplace' || division.id === 'tech' ? `/${division.id}` : '#!'}>
+                                <Link href={href}>
                                     Explore {division.title.split(' ')[1]} <ArrowRight className="ml-2 h-4 w-4" />
                                 </Link>
                             </Button>
