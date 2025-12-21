@@ -1,12 +1,15 @@
 
+'use client';
+
 import { notFound } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { ArrowLeft, Boxes, FileText, Heart, Shield, LifeBuoy, Gift } from "lucide-react";
+import { ArrowLeft, Boxes, FileText, Heart, Shield, LifeBuoy, Gift, ArrowRight } from "lucide-react";
 import * as React from "react";
 import { placeholderImages } from "@/lib/placeholder-images.json";
 import Image from 'next/image';
+import { useUser } from '@/firebase';
 
 const incentivesHeroImage = placeholderImages.find(p => p.id === 'incentives-hero');
 
@@ -50,11 +53,14 @@ const productDetails = {
 };
 
 export default function ProductLandingPage({ params }: { params: { productId: string } }) {
+    const { user } = useUser();
     const product = productDetails[params.productId as keyof typeof productDetails];
 
     if (!product) {
         notFound();
     }
+
+    const ctaLink = user ? '/account' : '/join';
 
     return (
         <div>
@@ -82,13 +88,21 @@ export default function ProductLandingPage({ params }: { params: { productId: st
                             <CardTitle>Product Details</CardTitle>
                         </CardHeader>
                         <CardContent className="text-center py-20">
-                            <p className="text-muted-foreground text-lg">Detailed product information coming soon.</p>
-                            <Button asChild variant="outline" className="mt-8">
-                                <Link href="/incentives">
-                                    <ArrowLeft className="mr-2 h-4 w-4" />
-                                    Back to All Products
-                                </Link>
-                            </Button>
+                            <p className="text-muted-foreground text-lg">Detailed product information and purchase options coming soon.</p>
+                            <div className="flex flex-col sm:flex-row gap-4 justify-center mt-8">
+                                <Button asChild variant="outline">
+                                    <Link href="/incentives">
+                                        <ArrowLeft className="mr-2 h-4 w-4" />
+                                        Back to All Products
+                                    </Link>
+                                </Button>
+                                 <Button asChild>
+                                    <Link href={ctaLink}>
+                                       {user ? 'Go to Account' : 'Join to Purchase'}
+                                        <ArrowRight className="ml-2 h-4 w-4" />
+                                    </Link>
+                                </Button>
+                            </div>
                         </CardContent>
                      </Card>
                  </div>
