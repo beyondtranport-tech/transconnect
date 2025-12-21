@@ -10,6 +10,7 @@ import { placeholderImages } from "@/lib/placeholder-images.json";
 import { marketplaceItems } from "@/lib/data";
 import { Badge } from "@/components/ui/badge";
 import * as React from "react";
+import { useState, useEffect } from 'react';
 
 const mallHeroImage = placeholderImages.find(p => p.id === 'mall-division');
 const fundingImage = placeholderImages.find(p => p.id === 'funding-division');
@@ -27,6 +28,7 @@ const formatPrice = (price: number) => {
     // Normalize non-breaking spaces to regular spaces to prevent hydration errors.
     return formattedPrice.replace(/\s/g, ' ');
 };
+
 
 const malls = [
     {
@@ -108,6 +110,12 @@ const iconMap: { [key: string]: React.ElementType } = {
 
 
 export default function MallPage() {
+    const [isClient, setIsClient] = useState(false);
+
+    useEffect(() => {
+        setIsClient(true);
+    }, []);
+
     return (
         <div>
             <section className="relative w-full h-80 bg-card">
@@ -204,7 +212,7 @@ export default function MallPage() {
                                         <p className="text-sm text-muted-foreground mt-1 h-10 truncate">{item.description}</p>
                                     </div>
                                     <div className="flex justify-between items-end mt-4">
-                                        <p className="text-xl font-bold text-primary">{formatPrice(item.price)}</p>
+                                        <p className="text-xl font-bold text-primary">{isClient ? formatPrice(item.price) : ''}</p>
                                         <Button size="sm">View Item</Button>
                                     </div>
                                 </CardContent>
