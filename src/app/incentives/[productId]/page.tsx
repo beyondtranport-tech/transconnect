@@ -54,7 +54,8 @@ const productDetails = {
 
 export default function ProductLandingPage({ params }: { params: { productId: string } }) {
     const { user } = useUser();
-    const product = productDetails[params.productId as keyof typeof productDetails];
+    const resolvedParams = React.use(params);
+    const product = productDetails[resolvedParams.productId as keyof typeof productDetails];
 
     if (!product) {
         notFound();
