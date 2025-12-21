@@ -31,7 +31,7 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Eye, EyeOff, Building2 } from 'lucide-react';
+import { Loader2, Eye, EyeOff, Building2, User } from 'lucide-react';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { Badge } from '@/components/ui/badge';
@@ -46,7 +46,6 @@ const formSchema = z.object({
 });
 
 type JoinFormValues = z.infer<typeof formSchema>;
-
 
 function JoinFormComponent() {
   const router = useRouter();
@@ -140,6 +139,19 @@ function JoinFormComponent() {
       setIsLoading(false);
     }
   };
+  
+  const getRoleLabel = () => {
+    if (!userRole) return null;
+    let label = userRole.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase());
+    if (financierType) {
+      label += ` (${financierType.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())})`;
+    }
+    return label;
+  }
+  
+  const RoleIcon = userRole === 'financier' ? Building2 : User;
+  const roleLabel = getRoleLabel();
+
 
   return (
     <Card className="w-full max-w-lg">
@@ -152,11 +164,11 @@ function JoinFormComponent() {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        {userRole === 'financier' && (
+        {roleLabel && (
           <div className="mb-4">
             <Badge variant="outline" className="w-full justify-center p-2 text-sm">
-                <Building2 className="mr-2 h-4 w-4" />
-                Registering as: Financier {financierType && `(${financierType.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())})`}
+                <RoleIcon className="mr-2 h-4 w-4" />
+                Registering as: {roleLabel}
             </Badge>
           </div>
         )}
