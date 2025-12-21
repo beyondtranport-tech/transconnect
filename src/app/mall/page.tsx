@@ -35,7 +35,7 @@ const malls = [
         name: "Supplier Mall",
         description: "Connect with trusted suppliers for parts, consumables, and services.",
         icon: Building2,
-        href: "#",
+        href: "/mall/supplier",
         image: placeholderImages.find(p => p.id === 'mall-division')!,
     },
     {
@@ -212,7 +212,7 @@ export default function MallPage() {
                                         <p className="text-sm text-muted-foreground mt-1 h-10 truncate">{item.description}</p>
                                     </div>
                                     <div className="flex justify-between items-end mt-4">
-                                        <p className="text-xl font-bold text-primary">{isClient ? formatPrice(item.price) : ''}</p>
+                                        {isClient && <p className="text-xl font-bold text-primary">{formatPrice(item.price)}</p>}
                                         <Button size="sm">View Item</Button>
                                     </div>
                                 </CardContent>
