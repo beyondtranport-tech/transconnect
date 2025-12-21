@@ -3,7 +3,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowRight, Filter, Handshake, Target, Loader2, Link as LinkIcon } from "lucide-react";
+import { ArrowRight, Filter, Handshake, Target, Loader2, Link as LinkIcon, Briefcase } from "lucide-react";
 import Image from "next/image";
 import { placeholderImages } from "@/lib/placeholder-images.json";
 import Link from "next/link";
@@ -15,6 +15,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 
 const financierHeroImage = placeholderImages.find(p => p.id === 'funding-division');
@@ -42,8 +43,100 @@ const companyDetailsSchema = z.object({
   contactEmail: z.string().email("Invalid email address"),
 });
 
-type CompanyDetailsFormValues = z.infer<typeof companyDetailsSchema>;
+const setupSchema = z.object({
+  financierType: z.enum(["bank", "niche", "debt", "ngo", "individual"], {
+    required_error: "You need to select a financier type.",
+  }),
+});
 
+type CompanyDetailsFormValues = z.infer<typeof companyDetailsSchema>;
+type SetupFormValues = z.infer<typeof setupSchema>;
+
+
+function SetupForm({ onNext }: { onNext: () => void }) {
+    const [isLoading, setIsLoading] = useState(false);
+    const { toast } = useToast();
+
+    const form = useForm<SetupFormValues>({
+        resolver: zodResolver(setupSchema),
+    });
+
+    const onSubmit = async (values: SetupFormValues) => {
+        setIsLoading(true);
+        console.log("Setup Details Submitted:", values);
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        toast({
+            title: "Step 1 Complete!",
+            description: "Financier type saved.",
+        });
+
+        setIsLoading(false);
+        onNext();
+    };
+
+    return (
+        <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                <FormField
+                    control={form.control}
+                    name="financierType"
+                    render={({ field }) => (
+                        <FormItem className="space-y-3">
+                        <FormLabel>What type of financier are you?</FormLabel>
+                        <FormControl>
+                            <RadioGroup
+                            onValueChange={field.onChange}
+                            defaultValue={field.value}
+                            className="flex flex-col space-y-1"
+                            >
+                                <FormItem className="flex items-center space-x-3 space-y-0">
+                                    <FormControl>
+                                    <RadioGroupItem value="bank" />
+                                    </FormControl>
+                                    <FormLabel className="font-normal">Bank</FormLabel>
+                                </FormItem>
+                                 <FormItem className="flex items-center space-x-3 space-y-0">
+                                    <FormControl>
+                                    <RadioGroupItem value="niche" />
+                                    </FormControl>
+                                    <FormLabel className="font-normal">Niche Lender</FormLabel>
+                                </FormItem>
+                                <FormItem className="flex items-center space-x-3 space-y-0">
+                                    <FormControl>
+                                    <RadioGroupItem value="debt" />
+                                    </FormControl>
+                                    <FormLabel className="font-normal">Debt Funder</FormLabel>
+                                </FormItem>
+                                 <FormItem className="flex items-center space-x-3 space-y-0">
+                                    <FormControl>
+                                    <RadioGroupItem value="ngo" />
+                                    </FormControl>
+                                    <FormLabel className="font-normal">NGO / Grant Provider</FormLabel>
+                                </FormItem>
+                                 <FormItem className="flex items-center space-x-3 space-y-0">
+                                    <FormControl>
+                                    <RadioGroupItem value="individual" />
+                                    </FormControl>
+                                    <FormLabel className="font-normal">Individual / P2P Investor</FormLabel>
+                                </FormItem>
+                            </RadioGroup>
+                        </FormControl>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                    />
+                 <div className="flex justify-end pt-6">
+                    <Button type="submit" disabled={isLoading}>
+                        {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        Save & Continue
+                        <ArrowRight className="ml-2 h-4 w-4" />
+                    </Button>
+                </div>
+            </form>
+        </Form>
+    );
+}
 
 function CompanyDetailsForm({ onNext }: { onNext: () => void }) {
     const [isLoading, setIsLoading] = useState(false);
@@ -63,7 +156,7 @@ function CompanyDetailsForm({ onNext }: { onNext: () => void }) {
         await new Promise(resolve => setTimeout(resolve, 1000));
         
         toast({
-            title: "Step 1 Complete!",
+            title: "Step 2 Complete!",
             description: "Company details saved.",
         });
 
@@ -115,7 +208,7 @@ function CompanyDetailsForm({ onNext }: { onNext: () => void }) {
 }
 
 export default function ForFinanciersPage() {
-    const [activeTab, setActiveTab] = useState("company-details");
+    const [activeTab, setActiveTab] = useState("setup");
 
     return (
         <div>
@@ -178,18 +271,34 @@ export default function ForFinanciersPage() {
 
                         <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-12">
                             <TabsList className="grid w-full grid-cols-5">
-                                <TabsTrigger value="company-details">1. Company</TabsTrigger>
-                                <TabsTrigger value="lending-criteria" disabled>2. Criteria</TabsTrigger>
-                                <TabsTrigger value="products" disabled>3. Products</TabsTrigger>
-                                <TabsTrigger value="documents" disabled>4. Documents</TabsTrigger>
+                                <TabsTrigger value="setup">1. Setup</TabsTrigger>
+                                <TabsTrigger value="company-details">2. Company</TabsTrigger>
+                                <TabsTrigger value="lending-criteria" disabled>3. Criteria</TabsTrigger>
+                                <TabsTrigger value="products" disabled>4. Products</TabsTrigger>
                                 <TabsTrigger value="review" disabled>5. Review</TabsTrigger>
                             </TabsList>
+                            <TabsContent value="setup">
+                                <Card>
+                                    <CardHeader>
+                                        <CardTitle className="flex items-center gap-2">
+                                            <Briefcase className="h-6 w-6"/>
+                                            Financier Setup
+                                        </CardTitle>
+                                        <CardDescription>
+                                            Tell us what kind of financier you are so we can tailor the next steps.
+                                        </CardDescription>
+                                    </CardHeader>
+                                    <CardContent className="p-6">
+                                        <SetupForm onNext={() => setActiveTab("company-details")} />
+                                    </CardContent>
+                                </Card>
+                            </TabsContent>
                             <TabsContent value="company-details">
                                 <Card>
                                     <CardHeader>
                                         <CardTitle>Company Information</CardTitle>
                                         <CardDescription>
-                                            Let's start with the basics. Provide your company's details so we know who you are.
+                                            Now, let's get the basics. Provide your company's details so we know who you are.
                                         </CardDescription>
                                     </CardHeader>
                                     <CardContent className="p-6">
@@ -223,19 +332,6 @@ export default function ForFinanciersPage() {
                                     </CardContent>
                                 </Card>
                             </TabsContent>
-                             <TabsContent value="documents">
-                                <Card>
-                                    <CardHeader>
-                                        <CardTitle>Required Documents</CardTitle>
-                                        <CardDescription>
-                                           List the standard documents you require for an application.
-                                        </CardDescription>
-                                    </CardHeader>
-                                    <CardContent>
-                                         <p className="text-muted-foreground">Document checklist form will be here.</p>
-                                    </CardContent>
-                                </Card>
-                            </TabsContent>
                             <TabsContent value="review">
                                  <Card>
                                     <CardHeader>
@@ -257,3 +353,5 @@ export default function ForFinanciersPage() {
         </div>
     )
 }
+
+    
