@@ -2,10 +2,11 @@
 import Image from "next/image";
 import { placeholderImages } from "@/lib/placeholder-images.json";
 import { Card, CardContent } from "@/components/ui/card";
-import { CheckCircle, ArrowRight, ShoppingCart, Truck, Handshake, Briefcase, Bot, Code, Users } from "lucide-react";
+import { CheckCircle, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import React from "react";
+import { roles } from "@/lib/roles";
 
 const aboutHeroImage = placeholderImages.find(p => p.id === 'about-hero');
 
@@ -31,59 +32,6 @@ const values = [
         image: placeholderImages.find(p => p.id === 'value-integrity'),
     }
 ]
-
-const roles = [
-    {
-        icon: ShoppingCart,
-        title: "Vendors",
-        description: "Sell parts, equipment, and services directly to a targeted market of transport professionals.",
-        cta: "Become a Vendor",
-        href: "/join?role=vendor",
-    },
-    {
-        icon: Truck,
-        title: "Buyers",
-        description: "Find vehicles, source parts, and secure transport services from a trusted community network.",
-        cta: "Become a Buyer",
-        href: "/join?role=buyer",
-    },
-    {
-        icon: Handshake,
-        title: "Partners",
-        description: "Collaborate with us as a strategic partner to enable growth and provide value-added services.",
-        cta: "Become a Partner",
-        href: "/join?role=partner",
-    },
-    {
-        icon: Briefcase,
-        title: "Associates",
-        description: "Join as a professional offering specialized services like accounting, legal, or consulting.",
-        cta: "Become an Associate",
-        href: "/join?role=associate",
-    },
-    {
-        icon: Bot,
-        title: "ISA Agents",
-        description: "Leverage our platform to connect buyers and sellers and earn commissions as an Independent Sales Agent.",
-        cta: "Become an ISA Agent",
-        href: "/join?role=isa-agent",
-    },
-    {
-        icon: Users,
-        title: "Drivers",
-        description: "Find job opportunities, access resources, and connect with other professional drivers.",
-        cta: "Become a Driver",
-        href: "/join?role=driver",
-    },
-    {
-        icon: Code,
-        title: "Developers",
-        description: "Integrate with our APIs and build innovative applications on top of the TransConnect platform.",
-        cta: "Become a Developer",
-        href: "/join?role=developer",
-    }
-]
-
 
 export default function AboutPage() {
   return (
@@ -144,8 +92,8 @@ export default function AboutPage() {
                                 <h3 className="text-xl font-bold">{role.title}</h3>
                                 <p className="text-muted-foreground mt-2 flex-grow">{role.description}</p>
                                 <Button asChild className="mt-6 w-full" variant="outline">
-                                    <Link href={role.href}>
-                                        {role.cta}
+                                    <Link href={`/roles/${role.id}`}>
+                                        Learn More
                                     </Link>
                                 </Button>
                             </Card>
