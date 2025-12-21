@@ -129,9 +129,11 @@ export default function FinanceMallPage() {
                         })}
                     </div>
                     <div className="text-center mt-16">
-                        <Button size="lg" onClick={handleJoinNetworkClick}>
-                            <Sparkles className="mr-2 h-5 w-5" />
-                           Are you a financier? Join Our Network
+                        <Button size="lg" asChild onClick={handleJoinNetworkClick}>
+                           <Link href="/contact">
+                                <Sparkles className="mr-2 h-5 w-5" />
+                               Are you a financier? Join Our Network
+                           </Link>
                         </Button>
                     </div>
                 </div>
