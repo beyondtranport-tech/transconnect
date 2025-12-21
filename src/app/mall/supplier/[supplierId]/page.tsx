@@ -1,6 +1,4 @@
 
-'use client';
-
 import { placeholderImages } from "@/lib/placeholder-images.json";
 import { Building2, CheckCircle, Star, Sparkles } from "lucide-react";
 import Image from "next/image";
@@ -146,4 +144,3 @@ export default function SupplierProfilePage({ params }: { params: { supplierId: 
         </div>
     );
 }
-
