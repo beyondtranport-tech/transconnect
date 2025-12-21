@@ -1,10 +1,13 @@
 
+'use client';
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { placeholderImages } from "@/lib/placeholder-images.json";
 import { Recycle, ArrowRight } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import * as gtag from '@/lib/gtag';
 
 const repurposeMallImage = placeholderImages.find(p => p.id === 'product-tires');
 
@@ -26,6 +29,16 @@ const featuredItems = [
 ]
 
 export default function RepurposeMallPage() {
+
+    const handleItemClick = (itemId: string) => {
+        gtag.event({
+            action: 'view_repurpose_item',
+            category: 'Repurpose Mall',
+            label: itemId,
+            value: 0
+        });
+    };
+
     return (
         <div>
             <section className="relative w-full h-80 bg-card">
@@ -76,7 +89,7 @@ export default function RepurposeMallPage() {
                                      <p className="text-sm">Condition: <span className="font-semibold">{item.condition}</span></p>
                                 </CardContent>
                                 <CardFooter>
-                                    <Button asChild className="w-full">
+                                    <Button asChild className="w-full" onClick={() => handleItemClick(item.id)}>
                                         <Link href={`/mall/repurpose/${item.id}`}>
                                             View Listing <ArrowRight className="ml-2" />
                                         </Link>

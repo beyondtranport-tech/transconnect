@@ -1,11 +1,13 @@
 
+'use client';
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { placeholderImages } from "@/lib/placeholder-images.json";
-import { Warehouse, Search, Star, ArrowRight } from "lucide-react";
+import { Warehouse, Star, ArrowRight } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import * as gtag from '@/lib/gtag';
 
 const warehouseMallImage = placeholderImages.find(p => p.id === 'mall-division');
 
@@ -29,6 +31,16 @@ const featuredFacilities = [
 ]
 
 export default function WarehouseMallPage() {
+
+    const handleFacilityClick = (facilityId: string) => {
+        gtag.event({
+            action: 'view_warehouse_facility',
+            category: 'Warehouse Mall',
+            label: facilityId,
+            value: 0
+        });
+    };
+
     return (
         <div>
             <section className="relative w-full h-80 bg-card">
@@ -83,7 +95,7 @@ export default function WarehouseMallPage() {
                                     </div>
                                 </CardContent>
                                 <CardFooter>
-                                    <Button asChild className="w-full">
+                                    <Button asChild className="w-full" onClick={() => handleFacilityClick(facility.id)}>
                                         <Link href={`/mall/warehouse/${facility.id}`}>
                                             View Facility <ArrowRight className="ml-2" />
                                         </Link>

@@ -1,4 +1,6 @@
 
+'use client';
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -7,6 +9,7 @@ import { placeholderImages } from "@/lib/placeholder-images.json";
 import { Wrench, Search, Star, ArrowRight } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import * as gtag from '@/lib/gtag';
 
 const aftermarketMallImage = placeholderImages.find(p => p.id === 'product-engine-oil');
 
@@ -28,6 +31,16 @@ const featuredBrands = [
 ]
 
 export default function AftermarketMallPage() {
+
+    const handleBrandClick = (brandId: string) => {
+        gtag.event({
+            action: 'view_aftermarket_brand',
+            category: 'Aftermarket Mall',
+            label: brandId,
+            value: 0
+        });
+    };
+
     return (
         <div>
             <section className="relative w-full h-80 bg-card">
@@ -115,7 +128,7 @@ export default function AftermarketMallPage() {
                                     </div>
                                 </CardContent>
                                 <CardFooter>
-                                    <Button asChild className="w-full">
+                                    <Button asChild className="w-full" onClick={() => handleBrandClick(brand.id)}>
                                         <Link href={`/mall/aftermarket/${brand.id}`}>
                                             View Brand <ArrowRight className="ml-2" />
                                         </Link>

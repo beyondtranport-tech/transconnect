@@ -1,12 +1,15 @@
 
+'use client';
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { placeholderImages } from "@/lib/placeholder-images.json";
-import { Building2, Search, Star, ArrowRight } from "lucide-react";
+import { Building2, Search, Star, ArrowRight, Sparkles } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import * as gtag from '@/lib/gtag';
 
 const supplierMallImage = placeholderImages.find(p => p.id === 'mall-division');
 
@@ -42,6 +45,26 @@ const featuredSuppliers = [
 ]
 
 export default function SupplierMallPage() {
+
+    const handleSupplierClick = (supplierId: string) => {
+        gtag.event({
+            action: 'view_supplier_profile',
+            category: 'Supplier Mall',
+            label: supplierId,
+            value: 0
+        });
+    };
+
+    const handleClaimProfileClick = () => {
+        gtag.event({
+            action: 'claim_profile_click',
+            category: 'Supplier Mall',
+            label: 'Header CTA',
+            value: 0
+        });
+    };
+
+
     return (
         <div>
             <section className="relative w-full h-80 bg-card">
@@ -130,7 +153,7 @@ export default function SupplierMallPage() {
                                     </div>
                                 </CardContent>
                                 <CardFooter>
-                                    <Button asChild className="w-full">
+                                    <Button asChild className="w-full" onClick={() => handleSupplierClick(supplier.id)}>
                                         <Link href={`/mall/supplier/${supplier.id}`}>
                                             View Profile <ArrowRight className="ml-2" />
                                         </Link>
@@ -138,6 +161,12 @@ export default function SupplierMallPage() {
                                 </CardFooter>
                             </Card>
                         ))}
+                    </div>
+                     <div className="text-center mt-16">
+                        <Button size="lg" onClick={handleClaimProfileClick}>
+                            <Sparkles className="mr-2 h-5 w-5" />
+                            Are you a supplier? Get Featured Today!
+                        </Button>
                     </div>
                 </div>
             </section>

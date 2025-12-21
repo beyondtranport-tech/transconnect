@@ -1,11 +1,13 @@
 
+'use client';
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { placeholderImages } from "@/lib/placeholder-images.json";
-import { Network, Search, Star, ArrowRight } from "lucide-react";
+import { Network, Star, ArrowRight } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import * as gtag from '@/lib/gtag';
 
 const distributionMallImage = placeholderImages.find(p => p.id === 'tech-home');
 
@@ -27,6 +29,16 @@ const featuredPartners = [
 ]
 
 export default function DistributionMallPage() {
+
+    const handlePartnerClick = (partnerId: string) => {
+        gtag.event({
+            action: 'view_distribution_partner',
+            category: 'Distribution Mall',
+            label: partnerId,
+            value: 0
+        });
+    };
+
     return (
         <div>
             <section className="relative w-full h-80 bg-card">
@@ -81,7 +93,7 @@ export default function DistributionMallPage() {
                                     </div>
                                 </CardContent>
                                 <CardFooter>
-                                    <Button asChild className="w-full">
+                                    <Button asChild className="w-full" onClick={() => handlePartnerClick(partner.id)}>
                                         <Link href={`/mall/distribution/${partner.id}`}>
                                             View Partner <ArrowRight className="ml-2" />
                                         </Link>
