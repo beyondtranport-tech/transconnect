@@ -169,7 +169,7 @@ export default function MallPage() {
                                         </p>
                                         <Button asChild className="mt-6" variant="outline">
                                             <Link href={mall.href}>
-                                                Explore {mall.name.split(' ')[0]} <ArrowRight className="ml-2 h-4 w-4" />
+                                                Explore Mall <ArrowRight className="ml-2 h-4 w-4" />
                                             </Link>
                                         </Button>
                                     </div>
