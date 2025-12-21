@@ -1,6 +1,6 @@
 
 import { placeholderImages } from "@/lib/placeholder-images.json";
-import { University, Landmark, HandCoins, Building, Users, Sparkles, Building2 } from "lucide-react";
+import { University, Landmark, HandCoins, Building, Users, Sparkles, Building2, ArrowRight } from "lucide-react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { notFound } from "next/navigation";
@@ -50,6 +50,21 @@ const categoryDetails = {
 
 const financeMallImage = placeholderImages.find(p => p.id === 'funding-division');
 
+const processSteps = [
+    {
+        title: "1. Complete One Application",
+        description: "Fill out our smart online application. We'll ask for the necessary details about your business and funding needs just once."
+    },
+    {
+        title: "2. We Match, You Choose",
+        description: "Our system runs your application against our network's criteria and finds the best potential matches. We present you with the options."
+    },
+    {
+        title: "3. Get Funded",
+        description: "Engage directly with the financiers who are ready to fund you. We facilitate the introduction and help you close the deal."
+    }
+]
+
 export default function FinancierCategoryPage({ params }: { params: { category: string } }) {
     
     const category = categoryDetails[params.category as keyof typeof categoryDetails];
@@ -82,49 +97,71 @@ export default function FinancierCategoryPage({ params }: { params: { category: 
                     <p className="mt-4 text-lg md:text-xl max-w-3xl">{category.description}</p>
                 </div>
             </section>
+            
             <section className="py-16 md:py-24 bg-background">
                 <div className="container mx-auto px-4">
-                    <div className="text-center max-w-3xl mx-auto mb-12">
-                        <h2 className="text-3xl md:text-4xl font-bold font-headline">Partners in this Category</h2>
+                     <div className="text-center max-w-3xl mx-auto mb-12">
+                        <h2 className="text-3xl md:text-4xl font-bold font-headline">The Smart Way to Get Financed</h2>
                         <p className="mt-4 text-lg text-muted-foreground">
-                            Connect with financiers specializing in the transport sector.
+                            Stop applying to multiple lenders. Our intelligent platform connects you with the right financier for your needs, saving you time and effort.
+                        </p>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto mb-16">
+                        {processSteps.map(step => (
+                             <Card key={step.title} className="bg-card">
+                                <CardHeader>
+                                    <CardTitle className="text-xl">{step.title}</CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <p className="text-muted-foreground">{step.description}</p>
+                                </CardContent>
+                            </Card>
+                        ))}
+                    </div>
+
+                    <div className="text-center">
+                         <Button asChild size="lg">
+                            <Link href="/join">
+                                Start Your Application
+                                <ArrowRight className="ml-2 h-5 w-5" />
+                            </Link>
+                        </Button>
+                    </div>
+                </div>
+            </section>
+
+            <section className="py-16 md:py-24 bg-card">
+                <div className="container mx-auto px-4">
+                    <div className="text-center max-w-3xl mx-auto mb-12">
+                        <h2 className="text-3xl md:text-4xl font-bold font-headline">Our Network of Partners</h2>
+                        <p className="mt-4 text-lg text-muted-foreground">
+                            We work with a diverse range of financiers to increase your chances of success.
                         </p>
                     </div>
 
                     {category.partners.length > 0 ? (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
+                        <div className="flex flex-wrap justify-center items-center gap-8 md:gap-12">
                             {category.partners.map(partner => (
-                                <Card key={partner.name}>
-                                    <CardHeader>
-                                        <div className="flex justify-start mb-4">
-                                             <Image src={partner.logo} alt={`${partner.name} logo`} width={100} height={40} className="object-contain" />
-                                        </div>
-                                        <CardTitle>{partner.name}</CardTitle>
-                                    </CardHeader>
-                                    <CardContent>
-                                        <p className="text-muted-foreground">{partner.description}</p>
-                                        <Button className="w-full mt-6">Contact {partner.name}</Button>
-                                    </CardContent>
-                                </Card>
+                               <Image key={partner.name} src={partner.logo} alt={`${partner.name} logo`} width={150} height={60} className="object-contain" />
                             ))}
                         </div>
                     ) : (
-                        <div className="text-center max-w-2xl mx-auto bg-card p-10 rounded-lg border">
+                        <div className="text-center max-w-2xl mx-auto bg-background p-10 rounded-lg border">
                              <Building2 className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                             <h3 className="text-xl font-semibold">Partners Coming Soon</h3>
                             <p className="text-muted-foreground mt-2">
                                 We are actively expanding our network in this category. Are you a financier who fits this description?
                             </p>
-                            <Button asChild className="mt-6">
-                                <Link href="/contact">Join Our Network</Link>
-                            </Button>
                         </div>
                     )}
 
                     <div className="text-center mt-16">
-                        <Button size="lg" variant="outline">
-                            <Sparkles className="mr-2 h-5 w-5" />
-                           Are you a financier? Join Our Network
+                        <Button size="lg" variant="outline" asChild>
+                           <Link href="/contact">
+                                <Sparkles className="mr-2 h-5 w-5" />
+                                Are you a financier? Join Our Network
+                           </Link>
                         </Button>
                     </div>
                 </div>
