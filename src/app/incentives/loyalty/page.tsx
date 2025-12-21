@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -50,7 +49,7 @@ export default function LoyaltyPlanPage() {
                             <ul className="list-disc list-inside space-y-2 text-muted-foreground">
                                 <li><span className="font-semibold text-foreground">Group Discounts:</span> By negotiating with suppliers on behalf of all our members, we secure significant discounts that no single transporter could achieve alone.</li>
                                 <li><span className="font-semibold text-foreground">Shared Savings:</span> A portion of these negotiated savings is passed back to our members. The Loyalty Plan gives you access to these shared benefits.</li>
-                                <li><span className="font-semibold text-foreground">Tiered Rewards:</span> As you move up the loyalty tiers, you claim a larger percentage of the available discounts, maximizing your savings. Use the calculator on the Incentives page to see your potential.</li>
+                                <li><span className="font-semibold text-foreground">Tiered Rewards:</span> As you move up the loyalty tiers, you claim a larger percentage of the available discounts, maximizing your savings. Use the calculator on the Connect page to see your potential.</li>
                             </ul>
                         </div>
                         
