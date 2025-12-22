@@ -1,26 +1,16 @@
 
 import { NextResponse, type NextRequest } from 'next/server';
-import { initializeApp } from 'firebase-admin/app';
+import { initializeApp, getApps } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
-import { firebaseConfig } from '@/firebase/config';
 
 // To prevent re-initialization in hot-reload environments
-if (!global._firebaseAdminApp) {
+if (!getApps().length) {
   try {
-    global._firebaseAdminApp = initializeApp({
-        projectId: firebaseConfig.projectId,
-    });
+    initializeApp();
   } catch (error) {
     console.error("Firebase Admin initialization error:", error);
   }
 }
-
-// Extend the NodeJS.Global interface to include our custom property
-declare global {
-  // eslint-disable-next-line no-var
-  var _firebaseAdminApp: any;
-}
-
 
 // Create a session cookie
 export async function POST(request: NextRequest) {
@@ -33,7 +23,7 @@ export async function POST(request: NextRequest) {
         }
 
         const expiresIn = 60 * 60 * 24 * 5 * 1000; // 5 days
-        const sessionCookie = await getAuth(global._firebaseAdminApp).createSessionCookie(idToken, { expiresIn });
+        const sessionCookie = await getAuth().createSessionCookie(idToken, { expiresIn });
 
         const response = new Response(JSON.stringify({ status: 'success' }), { status: 200 });
         response.headers.set('Set-Cookie', `__session=${sessionCookie}; HttpOnly; Path=/; Max-Age=${expiresIn}; SameSite=Lax; Secure=${process.env.NODE_ENV === 'production'}`);

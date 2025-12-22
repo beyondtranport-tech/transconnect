@@ -1,16 +1,16 @@
 
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { initializeApp } from 'firebase-admin/app';
+import { initializeApp, getApps } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
-import { firebaseConfig } from '@/firebase/config';
+
+// This forces the middleware to run on the Node.js runtime instead of the Edge runtime.
+export const runtime = 'nodejs';
 
 // To prevent re-initialization in hot-reload environments
-if (!global._firebaseAdminApp) {
+if (!getApps().length) {
   try {
-    global._firebaseAdminApp = initializeApp({
-        projectId: firebaseConfig.projectId,
-    });
+    initializeApp();
   } catch (error) {
     console.error("Firebase Admin initialization error in middleware:", error);
   }
@@ -32,7 +32,7 @@ export async function middleware(request: NextRequest) {
 
     try {
       // 2. Verify the session cookie
-      const decodedIdToken = await getAuth(global._firebaseAdminApp).verifySessionCookie(sessionCookie, true);
+      const decodedIdToken = await getAuth().verifySessionCookie(sessionCookie, true);
       
       // 3. Check if the user is the designated admin
       const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
@@ -60,12 +60,6 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  // Match all backend routes, excluding the API route for creating the session
+  // Match all backend routes
   matcher: ['/backend/:path*'],
 };
-
-// Extend the NodeJS.Global interface to include our custom property
-declare global {
-  // eslint-disable-next-line no-var
-  var _firebaseAdminApp: any;
-}
