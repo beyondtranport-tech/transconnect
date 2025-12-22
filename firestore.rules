@@ -18,16 +18,6 @@ service cloud.firestore {
       // Check if the requesting user has the 'admin' flag in their own member document.
       return isSignedIn() && get(/databases/$(database)/documents/members/$(request.auth.uid)).data.admin == true;
     }
-    
-    function isCreatingAdmin() {
-        // Allow the initial creation of the specific admin user.
-        return request.resource.data.email == 'beyondtransport@gmail.com' && request.resource.data.admin == true;
-    }
-    
-    function isCreatingCleanupAdmin() {
-      // Allow the creation of the temporary cleanup admin user.
-      return request.resource.data.email == 'admin.cleanup@transconnect.com' && request.resource.data.admin == true;
-    }
 
     function hasValidMemberId(memberId) {
       // Ensure the document ID matches the 'id' field within the document.
@@ -62,10 +52,6 @@ service cloud.firestore {
         return isOwner(memberId) && isUpdatingAllowedFields();
     }
     
-    function isCreditTopUp() {
-      return request.resource.data.fundingType == 'credit-top-up';
-    }
-    
     function isAdminManagingCredit() {
         return isAdmin() && request.resource.data.keys().hasAll(['rewardPoints']);
     }
@@ -76,11 +62,12 @@ service cloud.firestore {
 
     match /members/{memberId} {
       allow get: if isOwner(memberId) || isAdmin();
-      // This rule is simplified to allow any authenticated user to list members,
-      // which is necessary for the Firebase Console to function correctly.
+      // Allow any signed-in user to see the list of members.
+      // This is necessary for the Firebase Console to function correctly.
       allow list: if isSignedIn();
-      // Allow creation for a new user setting their own doc, or for the initial admin setups.
-      allow create: if (isOwner(memberId) && hasValidMemberId(memberId)) || isCreatingAdmin() || isCreatingCleanupAdmin();
+      // Allow creation for a new user setting their own doc.
+      // The special admin creation rules have been removed to prevent lockouts.
+      allow create: if isOwner(memberId) && hasValidMemberId(memberId);
       
       // Allow admins to manage credits, and users to update their own allowed profile fields or specific membership details.
       allow update: if (isAdmin() && isAdminManagingCredit()) || 

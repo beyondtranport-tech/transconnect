@@ -111,14 +111,11 @@ function JoinFormComponent() {
       if (financierType) {
         memberData.financierType = financierType;
       }
-      
-      // Specifically assign admin role if the email matches one of the admin emails
-      if (values.email === 'beyondtransport@gmail.com' || values.email === 'admin.cleanup@transconnect.com') {
-        memberData.admin = true;
-      }
-
 
       const memberDocRef = doc(firestore, 'members', user.uid);
+      
+      // We are deliberately NOT setting an admin flag here anymore.
+      // This will be handled in a separate, controlled step later.
       
       await setDoc(memberDocRef, memberData);
 
@@ -127,7 +124,7 @@ function JoinFormComponent() {
         description: "Welcome to TransConnect. You're now signed in.",
       });
 
-      const redirectUrl = memberData.admin ? '/backend' : '/account';
+      const redirectUrl = '/account';
       router.push(redirectUrl);
 
     } catch (error: any) {
