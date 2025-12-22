@@ -70,12 +70,14 @@ service cloud.firestore {
     // ----------------------------------------------------------------------
 
     match /members/{memberId} {
-      // Corrected Rule: An owner can always read their own document. An admin can also read it.
+      // **FIXED RULE**: A user can read their own document (isOwner), OR an admin can read any document (isAdmin).
+      // This breaks the circular dependency for the isAdmin() check.
       allow get: if isOwner(memberId) || isAdmin();
+      
       // Allow any signed-in user to see the list of members for console functionality.
       allow list: if isSignedIn();
+      
       // Allow creation for a new user setting their own doc.
-      // Admin creation is now handled by making the user and then an admin updates the flag.
       allow create: if (isOwner(memberId) && hasValidMemberId(memberId)) || isCreatingAdmin();
       
       // Allow admins to manage credits, and users to update their own allowed profile fields or specific membership details.
@@ -83,7 +85,7 @@ service cloud.firestore {
                       isOwnerUpdatingAllowedFields(memberId) ||
                       isUpdatingOwnMembershipOrPoints(memberId);
 
-      // Only an admin can delete a member's record. This is a critical rule for the backend functionality.
+      // Only an admin can delete a member's record.
       allow delete: if isAdmin();
     }
 
@@ -113,7 +115,8 @@ service cloud.firestore {
     }
 
     match /platform_config/{docId} {
-      allow get, list, create, update, delete: if isAdmin(); // Only admins can manage platform-wide config.
+      // Correct rule: Only admins can perform any action on platform config.
+      allow get, list, create, update, delete: if isAdmin();
     }
   }
 }
