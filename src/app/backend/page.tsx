@@ -28,7 +28,7 @@ import {
   TrendingUp,
   Boxes,
   HeartHandshake,
-  Banknote,
+  Wallet,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -138,7 +138,7 @@ export default function BackendPage() {
         return <DivisionsContent />;
       case 'contributions':
         return <ContributionsContent />;
-      case 'credit-management':
+      case 'wallet-management':
         return <FinanceApplicationsList />;
       case 'dashboard':
       default:
@@ -178,9 +178,9 @@ export default function BackendPage() {
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Credit Management" isActive={activeView === 'credit-management'} onClick={() => setActiveView('credit-management')}>
-                  <Banknote />
-                  <span>Credit Management</span>
+                <SidebarMenuButton tooltip="Wallet Management" isActive={activeView === 'wallet-management'} onClick={() => setActiveView('wallet-management')}>
+                  <Wallet />
+                  <span>Wallet Management</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
                 <SidebarMenuItem>

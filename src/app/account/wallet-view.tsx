@@ -20,13 +20,12 @@ const formatPrice = (price: number) => {
     return new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(price);
 };
 
-export default function FinanceView() {
+export default function WalletView() {
     const firestore = useFirestore();
     const { user } = useUser();
 
     const applicationsCollectionRef = useMemoFirebase(() => {
         if (!firestore || !user) return null;
-        // This query now filters by the current user's ID, which aligns with security rules.
         return query(
             collection(firestore, 'financeApplications'),
             where('applicantId', '==', user.uid),
@@ -46,8 +45,8 @@ export default function FinanceView() {
     return (
         <Card className="w-full">
             <CardHeader>
-                <CardTitle>My Finance Applications</CardTitle>
-                <CardDescription>A history of your funding and credit top-up requests.</CardDescription>
+                <CardTitle>Wallet History</CardTitle>
+                <CardDescription>A history of your credit top-up requests and other transactions.</CardDescription>
             </CardHeader>
             <CardContent>
                 {isLoading && (
@@ -67,7 +66,7 @@ export default function FinanceView() {
                             <TableHeader>
                                 <TableRow>
                                     <TableHead>Date Submitted</TableHead>
-                                    <TableHead>Funding Type</TableHead>
+                                    <TableHead>Transaction Type</TableHead>
                                     <TableHead className="text-right">Amount</TableHead>
                                     <TableHead className="text-center">Status</TableHead>
                                 </TableRow>
@@ -90,7 +89,7 @@ export default function FinanceView() {
                     </div>
                 )}
                  {applications && applications.length === 0 && !isLoading && (
-                    <p className="text-center text-muted-foreground py-10">You have not submitted any finance applications yet.</p>
+                    <p className="text-center text-muted-foreground py-10">You have no wallet transactions yet.</p>
                 )}
             </CardContent>
         </Card>

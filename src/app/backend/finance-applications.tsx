@@ -5,8 +5,7 @@ import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query, orderBy, doc, updateDoc } from 'firebase/firestore';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Loader2, Banknote, Edit, Check } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
+import { Loader2, Edit, Check } from 'lucide-react';
 import { format } from 'date-fns';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
@@ -48,7 +47,7 @@ export default function FinanceApplicationsList() {
         
         try {
             await updateDoc(memberRef, updateData);
-            toast({ title: 'Success', description: 'Member credit balance updated.' });
+            toast({ title: 'Success', description: 'Member wallet balance updated.' });
             handleCancel(); 
         } catch (serverError) {
              const permissionError = new FirestorePermissionError({
@@ -73,7 +72,7 @@ export default function FinanceApplicationsList() {
     return (
         <Card>
             <CardHeader>
-                <CardTitle>Member Credit Management</CardTitle>
+                <CardTitle>Member Wallet Management</CardTitle>
                 <CardDescription>View members and manually update their wallet balance after confirming EFT payments.</CardDescription>
             </CardHeader>
             <CardContent>
@@ -131,7 +130,7 @@ export default function FinanceApplicationsList() {
                                              ) : (
                                                 <Button size="sm" variant="outline" onClick={() => handleEdit(member.id, member.rewardPoints || 0)}>
                                                     <Edit className="h-4 w-4 mr-2"/>
-                                                    Update Credit
+                                                    Update Wallet
                                                 </Button>
                                              )}
                                         </TableCell>
