@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useForm } from 'react-hook-form';
@@ -18,7 +17,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useEffect, useState } from 'react';
 import { Loader2, Banknote, Save } from 'lucide-react';
 import { useFirestore, useMemoFirebase } from '@/firebase';
-import { setDoc, doc, getDoc } from 'firebase/firestore';
+import { setDoc, doc } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -26,10 +25,11 @@ import { useDoc } from '@/firebase/firestore/use-doc';
 
 const formSchema = z.object({
   bankName: z.string().min(1, 'Bank name is required'),
+  branchName: z.string().min(1, 'Branch name is required'),
   accountHolder: z.string().min(1, 'Account holder is required'),
+  accountType: z.string().min(1, 'Account type is required'),
   accountNumber: z.string().min(1, 'Account number is required'),
   branchCode: z.string().min(1, 'Branch code is required'),
-  accountType: z.string().min(1, 'Account type is required'),
 });
 
 type BankDetailsFormValues = z.infer<typeof formSchema>;
@@ -50,10 +50,11 @@ export default function BankDetailsSettings() {
     resolver: zodResolver(formSchema),
     defaultValues: {
       bankName: '',
+      branchName: '',
       accountHolder: '',
+      accountType: '',
       accountNumber: '',
       branchCode: '',
-      accountType: '',
     },
   });
 
@@ -66,33 +67,34 @@ export default function BankDetailsSettings() {
   const onSubmit = async (values: BankDetailsFormValues) => {
     setIsLoading(true);
 
-    if (!firestore) {
+    if (!firestore || !bankDetailsRef) {
       toast({ variant: 'destructive', title: 'Error', description: 'Firestore not available.' });
       setIsLoading(false);
       return;
     }
     
-    try {
-      await setDoc(bankDetailsRef, values);
-      toast({
-        title: 'Bank Details Saved!',
-        description: 'Your EFT details have been updated successfully.',
-      });
-    } catch (error) {
-       const permissionError = new FirestorePermissionError({
+    setDoc(bankDetailsRef, values, { merge: true })
+      .then(() => {
+        toast({
+            title: 'Bank Details Saved!',
+            description: 'Your EFT details have been updated successfully.',
+        });
+      })
+      .catch((error) => {
+        const permissionError = new FirestorePermissionError({
             path: bankDetailsRef.path,
             operation: 'write',
             requestResourceData: values,
         });
         errorEmitter.emit('permission-error', permissionError);
-       toast({
-        variant: 'destructive',
-        title: 'Save Failed',
-        description: 'You do not have permission to update these settings.',
-      });
-    } finally {
+        toast({
+            variant: 'destructive',
+            title: 'Save Failed',
+            description: 'You do not have permission to update these settings.',
+        });
+    }).finally(() => {
         setIsLoading(false);
-    }
+    });
   };
 
   if (isLoadingDetails) {
@@ -135,12 +137,12 @@ export default function BankDetailsSettings() {
                     />
                      <FormField
                     control={form.control}
-                    name="accountType"
+                    name="branchName"
                     render={({ field }) => (
                         <FormItem>
-                        <FormLabel>Account Type</FormLabel>
+                        <FormLabel>Branch</FormLabel>
                         <FormControl>
-                            <Input placeholder="e.g., Cheque" {...field} />
+                            <Input placeholder="e.g., Sandton City" {...field} />
                         </FormControl>
                         <FormMessage />
                         </FormItem>
@@ -152,7 +154,7 @@ export default function BankDetailsSettings() {
                 name="accountHolder"
                 render={({ field }) => (
                     <FormItem>
-                    <FormLabel>Account Holder</FormLabel>
+                    <FormLabel>Holder</FormLabel>
                     <FormControl>
                         <Input placeholder="e.g., TransConnect (Pty) Ltd" {...field} />
                     </FormControl>
@@ -163,10 +165,23 @@ export default function BankDetailsSettings() {
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <FormField
                     control={form.control}
+                    name="accountType"
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>Account Type</FormLabel>
+                        <FormControl>
+                            <Input placeholder="e.g., Cheque" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                    />
+                     <FormField
+                    control={form.control}
                     name="accountNumber"
                     render={({ field }) => (
                         <FormItem>
-                        <FormLabel>Account Number</FormLabel>
+                        <FormLabel>Acc Number</FormLabel>
                         <FormControl>
                             <Input placeholder="e.g., 62800012345" {...field} />
                         </FormControl>
@@ -174,7 +189,8 @@ export default function BankDetailsSettings() {
                         </FormItem>
                     )}
                     />
-                    <FormField
+                </div>
+                 <FormField
                     control={form.control}
                     name="branchCode"
                     render={({ field }) => (
@@ -187,7 +203,6 @@ export default function BankDetailsSettings() {
                         </FormItem>
                     )}
                     />
-                </div>
 
                 <Button type="submit" disabled={isLoading} className="mt-4">
                 {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
