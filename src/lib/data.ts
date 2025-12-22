@@ -1,3 +1,4 @@
+
 import type { Division, MarketplaceItem } from '@/lib/types';
 import { placeholderImages } from '@/lib/placeholder-images.json';
 
@@ -11,7 +12,7 @@ export const divisions: Division[] = [
     id: 'funding',
     title: 'TransConnect Funding',
     icon: 'DollarSign',
-    description: 'Fueling your growth with flexible financial solutions.',
+    description: "We have dared to challenge the status quo. We are able to fund where banks are not able to. Fueling your growth with flexible financial solutions.",
     longDescription: 'We have dared to challenge the status quo. We are able to fund where banks are not able to',
     image: fundingImage,
   },
