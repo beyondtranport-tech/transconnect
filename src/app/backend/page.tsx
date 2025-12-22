@@ -28,6 +28,7 @@ import {
   TrendingUp,
   Boxes,
   HeartHandshake,
+  Banknote,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -37,6 +38,7 @@ import MembersList from './members-list';
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import ContributionsList from './contributions-list';
+import FinanceApplicationsList from './finance-applications';
 
 // Placeholder Content Components
 function DashboardContent() {
@@ -136,6 +138,8 @@ export default function BackendPage() {
         return <DivisionsContent />;
       case 'contributions':
         return <ContributionsContent />;
+      case 'finance-applications':
+        return <FinanceApplicationsList />;
       case 'dashboard':
       default:
         return <DashboardContent />;
@@ -171,6 +175,12 @@ export default function BackendPage() {
                 <SidebarMenuButton tooltip="Contributions" isActive={activeView === 'contributions'} onClick={() => setActiveView('contributions')}>
                   <HeartHandshake />
                   <span>Contributions</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton tooltip="Finance Applications" isActive={activeView === 'finance-applications'} onClick={() => setActiveView('finance-applications')}>
+                  <Banknote />
+                  <span>Finance Applications</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
                 <SidebarMenuItem>
@@ -253,3 +263,4 @@ export default function BackendPage() {
     </SidebarProvider>
   );
 }
+

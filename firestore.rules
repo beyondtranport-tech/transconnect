@@ -1,3 +1,4 @@
+
 /**
  * This ruleset enforces a security model for the TransConnect platform, focusing on
  * strict user data isolation and controlled access to shared platform data. An admin
@@ -12,13 +13,13 @@
  * - /members/{memberId}: Each user's profile data. Document ID matches UID.
  * - /memberships/{membershipId}: Available membership plans.
  * - /contributions/{contributionId}: Data submitted by members.
+ * - /financeApplications/{applicationId}: Finance applications and credit top-ups.
  *
  * Key Security Decisions:
  * - User Data Isolation: A user can only access their own /members/{memberId} document.
- * - Admin Read Access: A function `isAdmin()` is defined to grant read-only list
- *   access to the entire /members and /contributions collections for administrative UIs. For this
- *   prototype, it is hardcoded to `true` but should be replaced with a
- *   custom claims check in production.
+ * - Admin Read/Write Access: A function `isAdmin()` is defined to grant read-only list
+ *   access to collections for administrative UIs, and write access for specific admin
+ *   tasks like updating reward points. For this prototype, it is hardcoded to `true`.
  * - Read-Only Platform Data: Membership plans are readable by any signed-in user.
  * - Signed-In Access Only: No access is granted to unauthenticated users.
  * - Open Contribution: Any authenticated user can create documents in /contributions.
@@ -56,6 +57,34 @@ service cloud.firestore {
     function isMemberIdImmutable() {
       return request.resource.data.id == resource.data.id;
     }
+    
+    function isUpdatingOwnMembershipOrPoints(memberId) {
+      let isChangingMembership = request.resource.data.membershipId != resource.data.membershipId;
+      let isChangingPoints = request.resource.data.rewardPoints != resource.data.rewardPoints;
+      let allowedFields = ['membershipId', 'rewardPoints'];
+      let otherFieldsChanged = request.resource.data.diff(resource.data).affectedKeys()
+                                .filter(key => ! (key in allowedFields)).size() > 0;
+                                
+      return isOwner(memberId) && (isChangingMembership || isChangingPoints) && !otherFieldsChanged;
+    }
+    
+    function isUpdatingAllowedFields() {
+      let allowedToUpdate = ['firstName', 'lastName', 'phone', 'companyName'];
+      let incomingKeys = request.resource.data.keys();
+      return incomingKeys.hasAll(allowedToUpdate) && incomingKeys.size() == allowedToUpdate.size();
+    }
+    
+    function isOwnerUpdatingAllowedFields(memberId) {
+        return isOwner(memberId) && isUpdatingAllowedFields();
+    }
+    
+    function isCreditTopUp() {
+      return request.resource.data.fundingType == 'credit-top-up';
+    }
+    
+    function isAdminManagingCredit() {
+        return isAdmin() && request.resource.data.keys().hasAll(['rewardPoints']);
+    }
 
     // ----------------------------------------------------------------------
     // Collection Rules
@@ -66,15 +95,16 @@ service cloud.firestore {
      * @path /members/{memberId}
      */
     match /members/{memberId} {
-      // A user can read their own profile.
-      allow get: if isOwner(memberId);
-      // An admin can list all members for the backend UI.
+      allow get: if isOwner(memberId) || isAdmin();
       allow list: if isAdmin();
-      // A new user can create their own profile.
       allow create: if isOwner(memberId) && hasValidMemberId(memberId);
-      // A user can update their own profile; ID is immutable.
-      allow update: if isExistingOwner(memberId) && isMemberIdImmutable();
-      // A user can delete their own profile.
+      
+      // Admins can update rewardPoints. Users can update their own profile fields.
+      // Users can use their points to change their membership.
+      allow update: if (isAdmin() && isAdminManagingCredit()) || 
+                      isOwnerUpdatingAllowedFields(memberId) ||
+                      isUpdatingOwnMembershipOrPoints(memberId);
+
       allow delete: if isExistingOwner(memberId);
     }
 
@@ -83,11 +113,8 @@ service cloud.firestore {
      * @path /memberships/{membershipId}
      */
     match /memberships/{membershipId} {
-      allow get: if isSignedIn();
-      allow list: if isSignedIn();
-      allow create: if false;
-      allow update: if false;
-      allow delete: if false;
+      allow get, list: if isSignedIn();
+      allow create, update, delete: if false;
     }
 
     /**
@@ -95,13 +122,23 @@ service cloud.firestore {
      * @path /contributions/{contributionId}
      */
     match /contributions/{contributionId} {
-      // Any signed-in user can submit data.
       allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
-      // Only admins can view the collected data.
-      allow get: if isAdmin();
-      allow list: if isAdmin();
-      // Data is immutable once submitted.
-      allow update: if false;
+      allow get, list: if isAdmin();
+      allow update, delete: if false;
+    }
+    
+     /**
+     * @description Secures finance applications and credit top-ups.
+     * @path /financeApplications/{applicationId}
+     */
+    match /financeApplications/{applicationId} {
+      // Admins can read all applications.
+      allow get, list: if isAdmin();
+      // An applicant can create their own application or credit request.
+      allow create: if isOwner(request.resource.data.applicantId);
+      // Status can be updated by admin.
+      allow update: if isAdmin();
+      // Deletion is not allowed to maintain records.
       allow delete: if false;
     }
   }
