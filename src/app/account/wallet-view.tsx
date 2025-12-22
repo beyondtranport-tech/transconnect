@@ -2,13 +2,14 @@
 'use client';
 
 import { useDoc, useFirestore, useMemoFirebase, useUser } from '@/firebase';
-import { doc, getDoc, DocumentData, DocumentReference } from 'firebase/firestore';
+import { doc, getDoc, DocumentData } from 'firebase/firestore';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Loader2 } from 'lucide-react';
+import { Loader2, ClipboardCopy } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 import { useEffect, useState } from 'react';
+import { useToast } from '@/hooks/use-toast';
 
 const statusColors: { [key: string]: 'default' | 'secondary' | 'destructive' | 'outline' } = {
   pending: 'secondary',
@@ -23,9 +24,19 @@ const formatPrice = (price: number) => {
     return new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(price);
 };
 
+const bankDetails = {
+    bankName: "First National Bank",
+    accountHolder: "TransConnect (Pty) Ltd",
+    accountNumber: "62800012345",
+    branchCode: "250655",
+    accountType: "Cheque",
+};
+
+
 export default function WalletView() {
     const firestore = useFirestore();
     const { user } = useUser();
+    const { toast } = useToast();
     const [applications, setApplications] = useState<DocumentData[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<Error | null>(null);
@@ -78,6 +89,12 @@ export default function WalletView() {
         }
 
     }, [memberData, isMemberLoading, firestore]);
+    
+    const copyToClipboard = (text: string) => {
+        navigator.clipboard.writeText(text).then(() => {
+            toast({ title: "Copied!", description: `${text} copied to clipboard.`})
+        });
+    };
 
 
     const formatDate = (timestamp: any) => {
@@ -112,56 +129,83 @@ export default function WalletView() {
     }
 
     return (
-        <Card className="w-full">
-            <CardHeader>
-                <CardTitle>Wallet History</CardTitle>
-                <CardDescription>A history of your credit top-up requests and other transactions.</CardDescription>
-            </CardHeader>
-            <CardContent>
-                {(isLoading || isMemberLoading) && (
-                    <div className="flex justify-center items-center py-10">
-                        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                    </div>
-                )}
-                {error && (
-                     <div className="text-destructive-foreground bg-destructive/90 p-4 rounded-md">
-                        <h4 className="font-semibold">Error</h4>
-                        <p className="text-sm">{error.message}</p>
-                    </div>
-                )}
-                {!isLoading && !isMemberLoading && applications && (
-                    <div className="overflow-x-auto">
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Date</TableHead>
-                                    <TableHead>Transaction Type</TableHead>
-                                    <TableHead className="text-right">Amount</TableHead>
-                                    <TableHead className="text-center">Status</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {applications.map(app => (
-                                    <TableRow key={app.id}>
-                                        <TableCell>{formatDate(app.createdAt)}</TableCell>
-                                        <TableCell className="capitalize">{getTransactionType(app)}</TableCell>
-                                        <TableCell className={`text-right font-mono ${getAmountClass(app)}`}>{getAmount(app)}</TableCell>
-                                        <TableCell className="text-center">
-                                            <Badge variant={statusColors[app.status] || 'secondary'} className="capitalize">
-                                                {app.status.replace(/_/g, ' ')}
-                                            </Badge>
-                                        </TableCell>
+        <div className="w-full space-y-8">
+            <Card>
+                <CardHeader>
+                    <CardTitle>Top up your Wallet</CardTitle>
+                    <CardDescription>
+                        To add funds, make an EFT payment using the details below. Your balance will be updated once payment is confirmed by an administrator.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                     {Object.entries(bankDetails).map(([key, value]) => (
+                        <div key={key} className="flex justify-between items-center text-sm">
+                            <span className="text-muted-foreground capitalize">{key.replace(/([A-Z])/g, ' $1').trim()}</span>
+                            <span className="font-mono">{value}</span>
+                        </div>
+                    ))}
+                    {user && (
+                        <div className="flex justify-between items-center text-sm pt-3 border-t">
+                            <span className="text-muted-foreground font-semibold">Your Payment Reference</span>
+                             <button onClick={() => copyToClipboard(user.uid)} className="font-mono text-primary hover:underline flex items-center gap-2">
+                                {user.uid}
+                                <ClipboardCopy className="h-4 w-4"/>
+                            </button>
+                        </div>
+                    )}
+                </CardContent>
+            </Card>
+
+            <Card>
+                <CardHeader>
+                    <CardTitle>Wallet History</CardTitle>
+                    <CardDescription>A history of your credit top-up requests and other transactions.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    {(isLoading || isMemberLoading) && (
+                        <div className="flex justify-center items-center py-10">
+                            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                        </div>
+                    )}
+                    {error && (
+                         <div className="text-destructive-foreground bg-destructive/90 p-4 rounded-md">
+                            <h4 className="font-semibold">Error</h4>
+                            <p className="text-sm">{error.message}</p>
+                        </div>
+                    )}
+                    {!isLoading && !isMemberLoading && applications && (
+                        <div className="overflow-x-auto">
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>Date</TableHead>
+                                        <TableHead>Transaction Type</TableHead>
+                                        <TableHead className="text-right">Amount</TableHead>
+                                        <TableHead className="text-center">Status</TableHead>
                                     </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    </div>
-                )}
-                 {applications && applications.length === 0 && !isLoading && !isMemberLoading && (
-                    <p className="text-center text-muted-foreground py-10">You have no wallet transactions yet.</p>
-                )}
-            </CardContent>
-        </Card>
+                                </TableHeader>
+                                <TableBody>
+                                    {applications.map(app => (
+                                        <TableRow key={app.id}>
+                                            <TableCell>{formatDate(app.createdAt)}</TableCell>
+                                            <TableCell className="capitalize">{getTransactionType(app)}</TableCell>
+                                            <TableCell className={`text-right font-mono ${getAmountClass(app)}`}>{getAmount(app)}</TableCell>
+                                            <TableCell className="text-center">
+                                                <Badge variant={statusColors[app.status] || 'secondary'} className="capitalize">
+                                                    {app.status.replace(/_/g, ' ')}
+                                                </Badge>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </div>
+                    )}
+                     {applications && applications.length === 0 && !isLoading && !isMemberLoading && (
+                        <p className="text-center text-muted-foreground py-10">You have no wallet transactions yet.</p>
+                    )}
+                </CardContent>
+            </Card>
+        </div>
     );
 }
-
