@@ -1,7 +1,8 @@
+
 'use client';
 
 import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
-import { collection, doc, deleteDoc } from 'firebase/firestore';
+import { collection, doc } from 'firebase/firestore';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Loader2, Trash2 } from 'lucide-react';
@@ -34,8 +35,6 @@ export default function MembersList() {
     const { data: members, isLoading, error, setData: setMembers } = useCollection(membersCollectionRef);
 
     const handleDelete = async (memberId: string, email: string | undefined) => {
-        if (!firestore) return;
-
         // Prevent admin from deleting themselves
         if (user?.uid === memberId) {
             toast({
@@ -46,32 +45,24 @@ export default function MembersList() {
             return;
         }
 
-        try {
-            // Firestore document deletion
-            const memberDocRef = doc(firestore, 'members', memberId);
-            await deleteDoc(memberDocRef);
+        // Call the server action to delete both Auth user and Firestore doc.
+        const result = await deleteUser(memberId);
 
-            // Auth user deletion via server action
-            const result = await deleteUser(memberId);
-            if (!result.success) {
-                throw new Error(result.error);
-            }
-
+        if (result.success) {
             toast({
                 title: "User Deleted",
                 description: `The user ${email || memberId} has been permanently removed.`,
             });
             
-            // Optimistically update UI
+            // Optimistically update UI by removing the user from the local state.
             if (members) {
                  (setMembers as any)(members.filter(m => m.id !== memberId));
             }
-
-        } catch (e: any) {
-            toast({
+        } else {
+             toast({
                 variant: "destructive",
                 title: "Deletion Failed",
-                description: e.message || "Could not delete the user.",
+                description: result.error || "Could not delete the user due to an unknown error.",
             });
         }
     };

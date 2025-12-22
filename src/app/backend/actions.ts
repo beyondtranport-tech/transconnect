@@ -1,14 +1,14 @@
+
 'use server';
 
 import { getApps, initializeApp, cert, getApp } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { getFirestore } from 'firebase-admin/firestore';
 
-// Helper function to initialize Firebase Admin SDK
+// Helper function to initialize Firebase Admin SDK idempotently.
 function initializeAdminApp() {
-  const apps = getApps();
-  // Use the default app if it already exists.
-  if (apps.length > 0) {
+  // Check if the default app is already initialized.
+  if (getApps().some(app => app.name === '[DEFAULT]')) {
     return getApp();
   }
   
@@ -21,15 +21,16 @@ function initializeAdminApp() {
 export async function deleteUser(uid: string): Promise<{ success: boolean; error?: string }> {
   try {
     const adminApp = initializeAdminApp();
-    if (!adminApp) throw new Error("Admin SDK initialization failed.");
-
     const auth = getAuth(adminApp);
     const firestore = getFirestore(adminApp);
 
-    // Delete from Firebase Authentication
+    // Step 1: Delete the user from Firebase Authentication.
+    // This is the privileged operation that requires the Admin SDK.
     await auth.deleteUser(uid);
     
-    // Delete from Firestore
+    // Step 2: Delete the user's document from the 'members' collection in Firestore.
+    // This could also be done from the client, but doing it here ensures atomicity
+    // with the auth user deletion.
     const memberDocRef = firestore.collection('members').doc(uid);
     await memberDocRef.delete();
 
@@ -37,6 +38,6 @@ export async function deleteUser(uid: string): Promise<{ success: boolean; error
   } catch (error: any) {
     console.error('Failed to delete user:', error);
     // Return a more generic error to the client, but log the specific one on the server.
-    return { success: false, error: 'An unknown server error occurred during user deletion.' };
+    return { success: false, error: error.message || 'An unknown server error occurred during user deletion.' };
   }
 }

@@ -85,7 +85,7 @@ service cloud.firestore {
                       isOwnerUpdatingAllowedFields(memberId) ||
                       isUpdatingOwnMembershipOrPoints(memberId);
 
-      // Only an admin can delete a member's record.
+      // Only an admin can delete a member's record. This is a critical rule for the backend functionality.
       allow delete: if isAdmin();
     }
 
