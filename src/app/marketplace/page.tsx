@@ -1,73 +1,83 @@
+
 import Image from "next/image";
 import { marketplaceItems } from "@/lib/data";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
+import { placeholderImages } from "@/lib/placeholder-images.json";
+import { Eye, Sparkles, Handshake } from "lucide-react";
+import Link from 'next/link';
 
-const categories = ["All", "Vehicles", "Parts", "Electronics", "Consumables", "Accessories"];
+const marketplaceHeroImage = placeholderImages.find(p => p.id === 'marketplace-division');
 
-const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('en-ZA', {
-        style: 'currency',
-        currency: 'ZAR',
-    }).format(price);
-};
+const sections = [
+    {
+        icon: Eye,
+        title: "Our Vision",
+        content: "We want to collaborate with you to link you with the best of breed partner resellers."
+    },
+    {
+        icon: Sparkles,
+        title: "What Makes Us Unique",
+        content: "We work together with you to drive customers to your platform by connecting with you as a partner reseller."
+    },
+    {
+        icon: Handshake,
+        title: "Partner Reseller Offer",
+        content: "Our partner pledge is that we are dedicated to driving sales to you."
+    }
+];
 
 export default function MarketplacePage() {
     return (
-        <div className="container mx-auto px-4 py-16">
-            <div className="text-center max-w-3xl mx-auto mb-12">
-                <h1 className="text-4xl md:text-5xl font-bold font-headline">Marketplace</h1>
-                <p className="mt-4 text-lg md:text-xl text-muted-foreground">
-                    Buy, sell, and trade within a trusted community of transport professionals.
-                </p>
-            </div>
-
-            <Tabs defaultValue="All" className="w-full">
-                <TabsList className="grid w-full grid-cols-3 md:w-auto md:grid-cols-6 mb-8">
-                    {categories.map(category => (
-                        <TabsTrigger key={category} value={category}>{category}</TabsTrigger>
-                    ))}
-                </TabsList>
-
-                {categories.map(category => (
-                     <TabsContent key={category} value={category}>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-                            {marketplaceItems
-                                .filter(item => category === 'All' || item.category === category)
-                                .map(item => (
-                                <Card key={item.id} className="overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300 flex flex-col">
-                                    <CardHeader className="p-0">
-                                        <div className="relative aspect-4/3">
-                                            {item.image && (
-                                                <Image 
-                                                    src={item.image.imageUrl}
-                                                    alt={item.name}
-                                                    fill
-                                                    className="object-cover"
-                                                    data-ai-hint={item.image.imageHint}
-                                                />
-                                            )}
+        <div>
+             <section className="relative w-full h-80 bg-card">
+                {marketplaceHeroImage && (
+                    <Image
+                        src={marketplaceHeroImage.imageUrl}
+                        alt={marketplaceHeroImage.description}
+                        fill
+                        className="object-cover"
+                        priority
+                        data-ai-hint={marketplaceHeroImage.imageHint}
+                    />
+                )}
+                <div className="absolute inset-0 bg-black/60" />
+                <div className="relative h-full flex flex-col items-center justify-center text-center text-primary-foreground z-10 p-4">
+                    <h1 className="text-4xl md:text-5xl font-bold font-headline">Marketplace of Resellers</h1>
+                    <p className="mt-4 text-lg md:text-xl max-w-3xl">
+                        We have searched for the best partners to make your life easier. We have negotiated bulk discounts upfront and will share up to 50% of this discount with you.
+                    </p>
+                </div>
+            </section>
+            
+            <section className="py-16 md:py-24 bg-background">
+                <div className="container mx-auto px-4">
+                    <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+                        {sections.map(section => {
+                            const Icon = section.icon;
+                            return (
+                                <Card key={section.title} className="text-center">
+                                    <CardHeader>
+                                        <div className="mx-auto bg-primary/10 p-4 rounded-full w-fit mb-4">
+                                            <Icon className="h-8 w-8 text-primary" />
                                         </div>
+                                        <CardTitle>{section.title}</CardTitle>
                                     </CardHeader>
-                                    <CardContent className="p-4 flex flex-col flex-grow">
-                                        <div className="flex-grow">
-                                            <Badge variant="secondary" className="mb-2">{item.category}</Badge>
-                                            <h3 className="font-bold text-lg">{item.name}</h3>
-                                            <p className="text-sm text-muted-foreground mt-1">{item.description}</p>
-                                        </div>
-                                        <div className="flex justify-between items-end mt-4">
-                                            <p className="text-xl font-bold text-primary">{formatPrice(item.price)}</p>
-                                            <Button size="sm">View Item</Button>
-                                        </div>
+                                    <CardContent>
+                                        <p className="text-muted-foreground">{section.content}</p>
                                     </CardContent>
                                 </Card>
-                            ))}
-                        </div>
-                     </TabsContent>
-                ))}
-            </Tabs>
+                            )
+                        })}
+                    </div>
+                     <div className="text-center mt-16">
+                        <Button asChild size="lg">
+                            <Link href="/join">Become a Partner Reseller</Link>
+                        </Button>
+                    </div>
+                </div>
+            </section>
         </div>
     );
 }
+
