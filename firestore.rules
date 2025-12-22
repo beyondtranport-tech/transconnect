@@ -87,7 +87,7 @@ service cloud.firestore {
     
      match /financeApplications/{applicationId} {
       allow get: if isOwner(resource.data.applicantId) || isAdmin();
-      allow list: if isAdmin() || (isSignedIn() && request.query.where.applicantId == request.auth.uid);
+      allow list: if isAdmin() || (isSignedIn() && request.query.where['applicantId'] == request.auth.uid);
       
       allow create: if isOwner(request.resource.data.applicantId);
       allow update: if isAdmin();
