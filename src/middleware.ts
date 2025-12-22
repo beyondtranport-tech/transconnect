@@ -6,8 +6,8 @@ import { getAuth } from 'firebase-admin/auth';
 
 export const runtime = 'nodejs';
 
-const adminApp =
-  getApps().find((it) => it.name === 'admin') ||
+// Initialize Firebase Admin SDK
+if (!getApps().some(app => app.name === 'admin')) {
   initializeApp(
     {
       credential:
@@ -16,27 +16,32 @@ const adminApp =
     },
     'admin'
   );
+}
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  const sessionCookie = request.cookies.get('__session')?.value;
-
+  
   if (pathname.startsWith('/backend')) {
+    const sessionCookie = request.cookies.get('__session')?.value;
+
     if (!sessionCookie) {
-      // If no session, redirect to the main sign-in page
-      return NextResponse.redirect(new URL('/signin', request.url));
+      // Redirect to the member sign-in page if there's no session cookie
+      const url = request.nextUrl.clone();
+      url.pathname = '/signin';
+      url.searchParams.set('redirect', pathname);
+      return NextResponse.redirect(url);
     }
 
     try {
       // Verify the session cookie to get the user's details
-      const decodedToken = await getAuth(adminApp).verifySessionCookie(
+      const decodedToken = await getAuth(getApp('admin')).verifySessionCookie(
         sessionCookie,
         true
       );
-
-      // Check if the authenticated user is the super admin
+      
+      // Check if the authenticated user is the designated super admin
       if (decodedToken.email !== 'beyondtransport@gmail.com') {
-        // If not the admin, redirect them away from the backend
+        // If not the admin, redirect them away from the backend to the homepage
         return NextResponse.redirect(new URL('/', request.url));
       }
 
@@ -44,7 +49,10 @@ export async function middleware(request: NextRequest) {
       return NextResponse.next();
     } catch (error) {
       // If cookie is invalid or expired, redirect to sign-in
-      return NextResponse.redirect(new URL('/signin', request.url));
+       const url = request.nextUrl.clone();
+      url.pathname = '/signin';
+      url.searchParams.set('redirect', pathname);
+      return NextResponse.redirect(url);
     }
   }
 

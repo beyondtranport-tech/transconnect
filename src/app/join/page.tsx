@@ -102,6 +102,11 @@ function JoinFormComponent() {
       if (financierType) {
         memberData.financierType = financierType;
       }
+      
+      // Specifically assign admin role if the email matches
+      if (values.email === 'beyondtransport@gmail.com') {
+        memberData.admin = true;
+      }
 
 
       const memberDocRef = doc(firestore, 'members', user.uid);
