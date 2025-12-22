@@ -66,7 +66,7 @@ service cloud.firestore {
       // An owner can always read their own document. An admin can also read it.
       allow get: if isOwner(memberId) || isAdmin();
       // Allow any signed-in user to see the list of members for console functionality.
-      allow list: if isSignedIn();
+      allow list: if isAdmin();
       // Allow creation for a new user setting their own doc.
       // Admin creation is now handled by making the user and then an admin updates the flag.
       allow create: if isOwner(memberId) && hasValidMemberId(memberId);
