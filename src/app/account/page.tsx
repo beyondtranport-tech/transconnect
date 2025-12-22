@@ -20,6 +20,7 @@ import {
   FileText,
   DollarSign,
   User,
+  Building,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -38,6 +39,46 @@ function ProfileContent() {
         </div>
     )
 }
+function CompanyContent() {
+    return (
+        <div>
+            <h1 className="text-2xl font-bold">Company</h1>
+            <p className="mt-2 text-muted-foreground">This is where company editing will go.</p>
+        </div>
+    )
+}
+function StaffContent() {
+    return (
+        <div>
+            <h1 className="text-2xl font-bold">Staff</h1>
+            <p className="mt-2 text-muted-foreground">This is where staff management will go.</p>
+        </div>
+    )
+}
+function TransactionsContent() {
+    return (
+        <div>
+            <h1 className="text-2xl font-bold">Transactions</h1>
+            <p className="mt-2 text-muted-foreground">This is where transaction history will go.</p>
+        </div>
+    )
+}
+function DocumentsContent() {
+    return (
+        <div>
+            <h1 className="text-2xl font-bold">Documents</h1>
+            <p className="mt-2 text-muted-foreground">This is where document management will go.</p>
+        </div>
+    )
+}
+function SettingsContent() {
+    return (
+        <div>
+            <h1 className="text-2xl font-bold">Settings</h1>
+            <p className="mt-2 text-muted-foreground">This is where account settings will go.</p>
+        </div>
+    )
+}
 
 export default function AccountPage() {
   const router = useRouter();
@@ -53,6 +94,7 @@ export default function AccountPage() {
 
 
   const onLogout = async () => {
+    if (!auth) return;
     await signOut(auth);
     router.push('/');
   };
@@ -66,6 +108,16 @@ export default function AccountPage() {
     switch (activeView) {
       case 'profile':
         return <ProfileContent />;
+      case 'company':
+        return <CompanyContent />;
+      case 'staff':
+        return <StaffContent />;
+      case 'transactions':
+        return <TransactionsContent />;
+      case 'documents':
+        return <DocumentsContent />;
+      case 'settings':
+        return <SettingsContent />;
       case 'dashboard':
       default:
         return <AccountDashboard />;
@@ -103,24 +155,36 @@ export default function AccountPage() {
               </SidebarMenuItem>
               <SidebarMenuItem>
                 <SidebarMenuButton tooltip="My Profile" isActive={activeView === 'profile'} onClick={() => setActiveView('profile')}>
-                  <Users />
+                  <User />
                   <span>My Profile</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
+               <SidebarMenuItem>
+                <SidebarMenuButton tooltip="Company" isActive={activeView === 'company'} onClick={() => setActiveView('company')}>
+                  <Building />
+                  <span>Company</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+               <SidebarMenuItem>
+                <SidebarMenuButton tooltip="Staff" isActive={activeView === 'staff'} onClick={() => setActiveView('staff')}>
+                  <Users />
+                  <span>Staff</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Transactions" disabled>
+                <SidebarMenuButton tooltip="Transactions" isActive={activeView === 'transactions'} onClick={() => setActiveView('transactions')}>
                   <DollarSign />
                   <span>Transactions</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Documents" disabled>
+                <SidebarMenuButton tooltip="Documents" isActive={activeView === 'documents'} onClick={() => setActiveView('documents')}>
                   <FileText />
                   <span>Documents</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Settings" disabled>
+                <SidebarMenuButton tooltip="Settings" isActive={activeView === 'settings'} onClick={() => setActiveView('settings')}>
                   <Settings />
                   <span>Settings</span>
                 </SidebarMenuButton>

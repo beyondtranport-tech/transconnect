@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -13,7 +12,7 @@ const loyaltyImage = placeholderImages.find(p => p.id === 'funding-division');
 
 export default function LoyaltyPlanPage() {
     const { user } = useUser();
-    const ctaLink = user ? '/account' : '/join';
+    const ctaLink = user ? '/account' : '/signin';
     
     return (
         <div className="container mx-auto px-4 py-16">

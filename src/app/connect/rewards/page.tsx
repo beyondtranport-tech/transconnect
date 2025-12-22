@@ -12,7 +12,7 @@ const rewardsImage = placeholderImages.find(p => p.id === 'mall-division');
 
 export default function RewardsPlanPage() {
     const { user } = useUser();
-    const ctaLink = user ? '/account' : '/join';
+    const ctaLink = user ? '/account' : '/signin';
     
     return (
         <div className="container mx-auto px-4 py-16">

@@ -12,7 +12,7 @@ const actionsImage = placeholderImages.find(p => p.id === 'tech-division');
 
 export default function ActionsPlanPage() {
     const { user } = useUser();
-    const ctaLink = user ? '/account' : '/join';
+    const ctaLink = user ? '/account' : '/signin';
     
     return (
         <div className="container mx-auto px-4 py-16">
