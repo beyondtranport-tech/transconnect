@@ -53,11 +53,6 @@ export default function MembersList() {
                 title: "User Deleted",
                 description: `The user ${email || memberId} has been permanently removed.`,
             });
-            
-            // Optimistically update UI by removing the user from the local state.
-            if (members) {
-                 (setMembers as any)(members.filter(m => m.id !== memberId));
-            }
         } else {
              toast({
                 variant: "destructive",

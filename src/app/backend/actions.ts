@@ -24,15 +24,14 @@ export async function deleteUser(uid: string): Promise<{ success: boolean; error
     const auth = getAuth(adminApp);
     const firestore = getFirestore(adminApp);
 
-    // Step 1: Delete the user from Firebase Authentication.
-    // This is the privileged operation that requires the Admin SDK.
-    await auth.deleteUser(uid);
-    
-    // Step 2: Delete the user's document from the 'members' collection in Firestore.
-    // This could also be done from the client, but doing it here ensures atomicity
-    // with the auth user deletion.
+    // Step 1: Delete the user's document from the 'members' collection in Firestore.
+    // This is done first to ensure we have the data before deleting the auth user.
     const memberDocRef = firestore.collection('members').doc(uid);
     await memberDocRef.delete();
+    
+    // Step 2: Delete the user from Firebase Authentication.
+    // This is the privileged operation that requires the Admin SDK.
+    await auth.deleteUser(uid);
 
     return { success: true };
   } catch (error: any) {
