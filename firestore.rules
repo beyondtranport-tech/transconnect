@@ -134,8 +134,8 @@ service cloud.firestore {
     match /financeApplications/{applicationId} {
       // A user can get their own application, and admins can get any.
       allow get: if isOwner(resource.data.applicantId) || isAdmin();
-      // Users can list applications ONLY if querying by their own ID. Admins can list all.
-      allow list: if (request.query.limit <= 10 && request.query.filters[0].field == 'applicantId' && request.query.filters[0].value == request.auth.uid) || isAdmin();
+      // Admins can list all. Users can list ONLY their own applications.
+      allow list: if isAdmin() || request.query.where.applicantId == request.auth.uid;
       // An applicant can create their own application or credit request.
       allow create: if isOwner(request.resource.data.applicantId);
       // Status can be updated by admin.
