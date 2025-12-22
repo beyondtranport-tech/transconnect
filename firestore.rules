@@ -87,10 +87,7 @@ service cloud.firestore {
     
      match /financeApplications/{applicationId} {
       allow get: if isOwner(resource.data.applicantId) || isAdmin();
-      // Admins can list all. Users can list their own by querying on applicantId.
-      // The security rule is implicitly enforced by the 'get' rule on reads.
-      allow list: if isAdmin();
-      allow read: if isOwner(resource.data.applicantId);
+      allow list: if isAdmin() || (isSignedIn() && request.query.where.applicantId == request.auth.uid);
       
       allow create: if isOwner(request.resource.data.applicantId);
       allow update: if isAdmin();
