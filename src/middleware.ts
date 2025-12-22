@@ -2,6 +2,8 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
+export const runtime = 'nodejs';
+
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const adminSession = request.cookies.get('admin-session')?.value;
@@ -15,7 +17,6 @@ export async function middleware(request: NextRequest) {
 
     try {
       // 2. Verify the session by checking its value against the env variable
-      // In a real app, this would be a more secure JWT verification
       const isValid = adminSession === process.env.SUPER_ADMIN_PASSWORD;
       
       if (!isValid) {

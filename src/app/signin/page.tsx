@@ -66,6 +66,15 @@ export default function SignInPage() {
       return;
     }
     
+    if (!auth) {
+        toast({
+            variant: 'destructive',
+            title: 'Authentication Error',
+            description: 'Could not connect to authentication service. Please try again later.',
+        });
+        return;
+    }
+    
     try {
       await sendPasswordResetEmail(auth, email);
       toast({
@@ -84,6 +93,15 @@ export default function SignInPage() {
 
   const onSubmit = async (values: SignInFormValues) => {
     setIsLoading(true);
+    if (!auth) {
+        toast({
+            variant: 'destructive',
+            title: 'Authentication Error',
+            description: 'Could not connect to authentication service. Please try again later.',
+        });
+        setIsLoading(false);
+        return;
+    }
     try {
       await signInWithEmailAndPassword(auth, values.email, values.password);
 
