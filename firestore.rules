@@ -19,10 +19,6 @@ service cloud.firestore {
       // This is more secure than checking the email.
       return isSignedIn() && get(/databases/$(database)/documents/members/$(request.auth.uid)).data.admin == true;
     }
-    
-    function isCreatingAdmin() {
-      return request.resource.data.email == 'beyondtransport@gmail.com' && request.resource.data.admin == true;
-    }
 
     function isExistingOwner(userId) {
       return isOwner(userId) && resource != null;
@@ -75,8 +71,7 @@ service cloud.firestore {
     match /members/{memberId} {
       allow get: if isOwner(memberId) || isAdmin();
       allow list: if isAdmin();
-      // Allow creation if the user is the owner OR if the special admin user is being created.
-      allow create: if (isOwner(memberId) && hasValidMemberId(memberId)) || isCreatingAdmin();
+      allow create: if isOwner(memberId) && hasValidMemberId(memberId);
       
       allow update: if (isAdmin() && isAdminManagingCredit()) || 
                       isOwnerUpdatingAllowedFields(memberId) ||
