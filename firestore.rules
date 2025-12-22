@@ -104,8 +104,7 @@ service cloud.firestore {
     }
 
     match /platform_config/{docId} {
-      allow get, list: if isSignedIn();
-      allow create, update, delete: if isAdmin(); // Only admins can change platform-wide config.
+      allow get, list, create, update, delete: if isAdmin(); // Only admins can manage platform-wide config.
     }
   }
 }
