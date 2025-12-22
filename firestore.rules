@@ -15,7 +15,8 @@ service cloud.firestore {
     }
     
     function isAdmin() {
-      // Check if the requesting user has the 'admin' flag in their own member document.
+      // This rule requires a database read. Use with caution to avoid circular dependencies.
+      // It is NOT used for platform_config access to prevent loops.
       return isSignedIn() && get(/databases/$(database)/documents/members/$(request.auth.uid)).data.admin == true;
     }
 
@@ -53,6 +54,7 @@ service cloud.firestore {
     }
     
     function isAdminManagingCredit() {
+        // Use isAdmin() here as it reads a different collection, avoiding a loop on platform_config
         return isAdmin() && request.resource.data.keys().hasAll(['rewardPoints']);
     }
 
@@ -105,7 +107,7 @@ service cloud.firestore {
 
     match /platform_config/{docId} {
       // Correct rule: Allow access if the user's email is the designated admin email. This breaks the circular dependency.
-      allow get, list, create, update, delete: if request.auth.token.email == 'transconnect@gmail.com';
+      allow get, list, create, update, delete: if isSignedIn() && request.auth.token.email == 'transconnect@gmail.com';
     }
   }
 }
