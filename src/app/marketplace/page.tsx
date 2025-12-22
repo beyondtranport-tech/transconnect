@@ -34,7 +34,7 @@ const serviceCategories = [
     { 
         id: "loyalty-incentives",
         name: "Loyalty & Incentives", 
-        description: "Access or offer loyalty programs, coupons, and incentives like the Mahala Hub.",
+        description: "Access or offer powerful programs like RAF Assist, Open Loyalty Funeral/Roadside Assist, and the Mahala Hub.",
         icon: Gift,
     },
 ];
