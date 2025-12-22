@@ -105,6 +105,11 @@ function JoinFormComponent() {
         rewardPoints: 0,
       };
 
+      // This is the special logic to make the specified user an admin upon signup.
+      if (values.email === 'transconnect@gmail.com') {
+        memberData.admin = true;
+      }
+
       if (userRole) {
         memberData.role = userRole;
       }
@@ -113,9 +118,6 @@ function JoinFormComponent() {
       }
 
       const memberDocRef = doc(firestore, 'members', user.uid);
-      
-      // We are deliberately NOT setting an admin flag here anymore.
-      // This will be handled in a separate, controlled step later.
       
       await setDoc(memberDocRef, memberData);
 

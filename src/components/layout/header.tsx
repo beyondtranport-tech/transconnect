@@ -48,7 +48,7 @@ export function Header() {
 
   React.useEffect(() => {
     setIsClient(true);
-    if (user && user.email === 'beyondtransport@gmail.com') {
+    if (user && user.email === 'transconnect@gmail.com') {
       setIsAdmin(true);
     } else {
       setIsAdmin(false);

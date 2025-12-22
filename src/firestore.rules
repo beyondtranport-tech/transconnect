@@ -18,17 +18,12 @@ service cloud.firestore {
       // Check if the requesting user has the 'admin' flag in their own member document.
       return isSignedIn() && get(/databases/$(database)/documents/members/$(request.auth.uid)).data.admin == true;
     }
-    
+
     function isCreatingAdmin() {
         // Allow the initial creation of the specific admin user.
-        return request.resource.data.email == 'beyondtransport@gmail.com' && request.resource.data.admin == true;
+        return request.resource.data.email == 'transconnect@gmail.com' && request.resource.data.admin == true;
     }
     
-    function isCreatingCleanupAdmin() {
-      // Allow the creation of the temporary cleanup admin user.
-      return request.resource.data.email == 'admin.cleanup@transconnect.com' && request.resource.data.admin == true;
-    }
-
     function hasValidMemberId(memberId) {
       // Ensure the document ID matches the 'id' field within the document.
       return request.resource.data.id == memberId;
@@ -76,16 +71,17 @@ service cloud.firestore {
 
     match /members/{memberId} {
       allow get: if isOwner(memberId) || isAdmin();
-      allow list: if isAdmin();
-      // Allow creation for a new user setting their own doc, or for the initial admin setups.
-      allow create: if (isOwner(memberId) && hasValidMemberId(memberId)) || isCreatingAdmin() || isCreatingCleanupAdmin();
+      allow list: if isSignedIn(); // Allow any signed-in user to see the list for console access
       
-      // Allow admins to manage credits, and users to update their own allowed profile fields or specific membership details.
+      // Allow creation for a new user, or for the special admin setup.
+      allow create: if (isOwner(memberId) && hasValidMemberId(memberId)) || isCreatingAdmin();
+      
+      // Allow admins to manage credits, and users to update their own profile fields.
       allow update: if (isAdmin() && isAdminManagingCredit()) || 
                       isOwnerUpdatingAllowedFields(memberId) ||
                       isUpdatingOwnMembershipOrPoints(memberId);
 
-      // Only an admin can delete a member's record.
+      // Allow admins to delete users.
       allow delete: if isAdmin();
     }
 
