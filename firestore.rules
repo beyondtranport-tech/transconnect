@@ -135,7 +135,7 @@ service cloud.firestore {
       // A user can get their own application, and admins can get any.
       allow get: if isOwner(resource.data.applicantId) || isAdmin();
       // Admins can list all. Users can list ONLY their own applications.
-      allow list: if isAdmin() || (isSignedIn() && request.query.get("where.applicantId") == request.auth.uid);
+      allow list: if isAdmin() || (isSignedIn() && request.query.where.applicantId == request.auth.uid);
       // An applicant can create their own application or credit request.
       allow create: if isOwner(request.resource.data.applicantId);
       // Status can be updated by admin.
