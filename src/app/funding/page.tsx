@@ -77,8 +77,28 @@ export default function FundingPage() {
                             </li>
                         </ul>
                          <p className="mt-6 text-xl font-semibold">Then you have landed in the right place!</p>
-                        <p className="mt-4 text-muted-foreground">We provide a broad range of finance products and unique industry specific finance solutions. Solutions that will work for your business.</p>
-                        <p className="mt-2 text-muted-foreground">Our solutions are simple - designed to empower you to do what you do best - managing and growing your business.</p>
+                        <div className="mt-6 text-left space-y-4 text-muted-foreground">
+                            <p>We provide a broad range of finance products and unique industry specific finance solutions. Solutions that will work for your business. Our solutions are simple - designed to empower you to do what you do best - managing and growing your business.</p>
+                            <p>Frustrated with banks? We have the solution! We have changed funding to make it work for you. Our systems put you in control by providing you with your own account where you are in total control. We have built a tailored made funding fund you where others cannot. Register and become a client to experience our unique lending structures first hand. The only thing that is certain, our clients all have unique businesses and needs. Our vision is to help you by providing the right finance solutions, solutions that are simple.</p>
+                            <p>In addition to providing you stand alone products like loans, leases, factoring…. we with have designed unique industry focused solutions that provide industry solutions. We help you by not only financing you, but by also investing in the companies that provide services to your company. Services that you use day to day. Technology that makes your business more efficient. Expertise that gives you the upper hand. Making your job easier. Our expertise lies in our ability to take something that is un financeable, structure it correctly and convert it into something that can be financed. We don’t want to run your business, we just want to run how you convert your opportunities into finance opportunities that we can work with.</p>
+                        </div>
+                        <div className="mt-10 text-left">
+                            <h3 className="text-2xl font-bold font-headline mb-4 text-center">Our business is based on 3 structures</h3>
+                            <ul className="space-y-4">
+                                <li className="bg-card p-4 rounded-lg shadow-sm">
+                                    <h4 className="font-semibold text-lg text-primary">Agreement types</h4>
+                                    <p className="text-muted-foreground mt-1">These are standard generic agreements.</p>
+                                </li>
+                                <li className="bg-card p-4 rounded-lg shadow-sm">
+                                    <h4 className="font-semibold text-lg text-primary">Product type</h4>
+                                    <p className="text-muted-foreground mt-1">These are agreement types that have been customised to suite specific industries.</p>
+                                </li>
+                                <li className="bg-card p-4 rounded-lg shadow-sm">
+                                    <h4 className="font-semibold text-lg text-primary">Solution type</h4>
+                                    <p className="text-muted-foreground mt-1">These facilities that have multiple product types including collateral.</p>
+                                </li>
+                            </ul>
+                        </div>
                     </div>
                 </div>
             </section>
