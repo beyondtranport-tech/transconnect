@@ -15,15 +15,11 @@ service cloud.firestore {
     }
     
     function isAdmin() {
-      // Check if the requesting user has the 'admin' flag in their own member document.
+      // This rule requires a database read. Use with caution to avoid circular dependencies.
+      // It is NOT used for platform_config access to prevent loops.
       return isSignedIn() && get(/databases/$(database)/documents/members/$(request.auth.uid)).data.admin == true;
     }
 
-    function isCreatingAdmin() {
-        // Allow the initial creation of the specific admin user.
-        return request.resource.data.email == 'transconnect@gmail.com' && request.resource.data.admin == true;
-    }
-    
     function hasValidMemberId(memberId) {
       // Ensure the document ID matches the 'id' field within the document.
       return request.resource.data.id == memberId;
@@ -57,11 +53,8 @@ service cloud.firestore {
         return isOwner(memberId) && isUpdatingAllowedFields();
     }
     
-    function isCreditTopUp() {
-      return request.resource.data.fundingType == 'credit-top-up';
-    }
-    
     function isAdminManagingCredit() {
+        // Use isAdmin() here as it reads a different collection, avoiding a loop on platform_config
         return isAdmin() && request.resource.data.keys().hasAll(['rewardPoints']);
     }
 
@@ -70,12 +63,20 @@ service cloud.firestore {
     // ----------------------------------------------------------------------
 
     match /members/{memberId} {
+      // An owner can always read their own document. An admin can also read it.
       allow get: if isOwner(memberId) || isAdmin();
+      // Allow any signed-in user to see the list of members for console functionality.
       allow list: if isSignedIn();
-      allow create: if (isOwner(memberId) && hasValidMemberId(memberId)) || isCreatingAdmin();
+      // Allow creation for a new user setting their own doc.
+      // Admin creation is now handled by making the user and then an admin updates the flag.
+      allow create: if isOwner(memberId) && hasValidMemberId(memberId);
+      
+      // Allow admins to manage credits, and users to update their own allowed profile fields or specific membership details.
       allow update: if (isAdmin() && isAdminManagingCredit()) || 
                       isOwnerUpdatingAllowedFields(memberId) ||
                       isUpdatingOwnMembershipOrPoints(memberId);
+
+      // Only an admin can delete a member's record. This is a critical rule for the backend functionality.
       allow delete: if isAdmin();
     }
 
@@ -99,7 +100,7 @@ service cloud.firestore {
       allow list: if isAdmin();
       // A user can create an application for themselves.
       allow create: if isOwner(request.resource.data.applicantId);
-      // The owner or an admin can update the application status.
+      // The owner or an admin can update the application.
       allow update: if isAdmin() || isOwner(resource.data.applicantId);
       allow delete: if false; // Applications should not be deleted.
     }
