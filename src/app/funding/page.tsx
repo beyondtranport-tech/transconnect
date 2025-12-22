@@ -1,7 +1,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, CheckCircle } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { placeholderImages } from "@/lib/placeholder-images.json";
@@ -56,8 +56,34 @@ export default function FundingPage() {
                     <p className="mt-4 text-lg md:text-xl max-w-3xl">Select the type of funding that best suits your needs to begin. Our single application process connects you to a network of ideal lenders.</p>
                 </div>
             </section>
+
+             <section className="py-16 md:py-24 bg-background">
+                <div className="container mx-auto px-4">
+                     <div className="max-w-4xl mx-auto text-center">
+                        <h2 className="text-3xl md:text-4xl font-bold font-headline">Our business is about empowering you through Finance.</h2>
+                        <p className="mt-6 text-lg text-muted-foreground">Are you:</p>
+                        <ul className="mt-4 space-y-2 text-left inline-block">
+                             <li className="flex items-start">
+                                <CheckCircle className="h-6 w-6 text-primary mr-3 mt-1 flex-shrink-0" />
+                                <span>Tired of being turned down by banks that simply don’t understand your unique business needs?</span>
+                            </li>
+                             <li className="flex items-start">
+                                <CheckCircle className="h-6 w-6 text-primary mr-3 mt-1 flex-shrink-0" />
+                                <span>Frustrated with finance solutions that fall short of meeting your needs?</span>
+                            </li>
+                             <li className="flex items-start">
+                                <CheckCircle className="h-6 w-6 text-primary mr-3 mt-1 flex-shrink-0" />
+                                <span>In need of finance that can be implemented fast?</span>
+                            </li>
+                        </ul>
+                         <p className="mt-6 text-xl font-semibold">Then you have landed in the right place!</p>
+                        <p className="mt-4 text-muted-foreground">We provide a broad range of finance products and unique industry specific finance solutions. Solutions that will work for your business.</p>
+                        <p className="mt-2 text-muted-foreground">Our solutions are simple - designed to empower you to do what you do best - managing and growing your business.</p>
+                    </div>
+                </div>
+            </section>
             
-            <section id="start-journey" className="py-16 md:py-24 bg-background">
+            <section id="start-journey" className="py-16 md:py-24 bg-card">
                 <div className="container mx-auto px-4">
                      <div className="text-center max-w-3xl mx-auto">
                         <h2 className="text-3xl md:text-4xl font-bold font-headline">What Do You Need to Fund?</h2>
