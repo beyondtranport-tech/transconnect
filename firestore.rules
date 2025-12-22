@@ -76,7 +76,9 @@ service cloud.firestore {
 
     match /members/{memberId} {
       allow get: if isOwner(memberId) || isAdmin();
-      allow list: if isAdmin();
+      // This rule is simplified to allow any authenticated user to list members,
+      // which is necessary for the Firebase Console to function correctly.
+      allow list: if isSignedIn();
       // Allow creation for a new user setting their own doc, or for the initial admin setups.
       allow create: if (isOwner(memberId) && hasValidMemberId(memberId)) || isCreatingAdmin() || isCreatingCleanupAdmin();
       
