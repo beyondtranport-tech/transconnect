@@ -100,9 +100,14 @@ export default function MarketplacePage() {
                             )
                         })}
                     </div>
-                     <div className="text-center mt-16">
+                     <div className="text-center mt-16 flex flex-col sm:flex-row justify-center items-center gap-4">
+                        <Button asChild size="lg" variant="secondary">
+                            <Link href="/mall">
+                                Explore Services <ArrowRight className="ml-2 h-4 w-4" />
+                            </Link>
+                        </Button>
                         <Button asChild size="lg">
-                            <Link href="/join">
+                            <Link href="/join?role=partner">
                                 Become a Partner Reseller <ArrowRight className="ml-2 h-4 w-4" />
                             </Link>
                         </Button>
