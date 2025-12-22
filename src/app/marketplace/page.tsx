@@ -83,6 +83,7 @@ export default function MarketplacePage() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto">
                         {serviceCategories.map(category => {
                             const Icon = category.icon;
+                            const buyerLink = category.id === 'loyalty-incentives' ? '/incentives' : '/mall';
                             return (
                                 <Card key={category.name} className="flex flex-col">
                                     <CardHeader className="flex-row items-start gap-4">
@@ -99,7 +100,7 @@ export default function MarketplacePage() {
                                     </CardContent>
                                     <CardFooter className="flex flex-col sm:flex-row gap-2 pt-4">
                                         <Button asChild variant="outline" className="w-full" onClick={() => handleCategoryClick(category.id, 'buyer')}>
-                                            <Link href="/mall">
+                                            <Link href={buyerLink}>
                                                I want to Buy
                                             </Link>
                                         </Button>
