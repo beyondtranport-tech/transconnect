@@ -20,7 +20,7 @@ export const divisions: Division[] = [
     id: 'mall',
     title: 'TransConnect Mall',
     icon: 'ShoppingBasket',
-    description: 'Your one-stop shop for parts, gear, and essentials.',
+    description: 'Connect with our malls to solve your real world issues. Your one-stop shop for parts, gear, and essentials.',
     longDescription: "Join each of our malls are set up to break specific business constraints that you have.",
     image: mallImage,
   },
