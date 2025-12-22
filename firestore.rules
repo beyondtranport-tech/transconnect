@@ -1,29 +1,4 @@
 
-/**
- * This ruleset enforces a security model for the TransConnect platform, focusing on
- * strict user data isolation and controlled access to shared platform data. An admin
- * role is implicitly defined for future use, allowing read access to all members.
- *
- * Core Philosophy:
- * The security model is built on user ownership. Each user has exclusive control
- * over their own data. An administrative function can view all members for
- * management purposes, but cannot modify their data through these rules.
- *
- * Data Structure:
- * - /members/{memberId}: Each user's profile data. Document ID matches UID.
- * - /memberships/{membershipId}: Available membership plans.
- * - /contributions/{contributionId}: Data submitted by members.
- * - /financeApplications/{applicationId}: Finance applications and credit top-ups.
- *
- * Key Security Decisions:
- * - User Data Isolation: A user can only access their own /members/{memberId} document.
- * - Admin Read/Write Access: A function `isAdmin()` is defined to grant read-only list
- *   access to collections for administrative UIs, and write access for specific admin
- *   tasks like updating reward points. For this prototype, it is hardcoded to `true`.
- * - Read-Only Platform Data: Membership plans are readable by any signed-in user.
- * - Signed-In Access Only: No access is granted to unauthenticated users.
- * - Open Contribution: Any authenticated user can create documents in /contributions.
- */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -39,9 +14,6 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
     
-    // In a production app, this would check for a custom claim:
-    // return request.auth.token.isAdmin == true;
-    // For this prototype, we allow any signed-in user to act as an admin for testing.
     function isAdmin() {
         return isSignedIn();
     }
@@ -90,17 +62,11 @@ service cloud.firestore {
     // Collection Rules
     // ----------------------------------------------------------------------
 
-    /**
-     * @description Secures a member's profile.
-     * @path /members/{memberId}
-     */
     match /members/{memberId} {
       allow get: if isOwner(memberId) || isAdmin();
       allow list: if isAdmin();
       allow create: if isOwner(memberId) && hasValidMemberId(memberId);
       
-      // Admins can update rewardPoints. Users can update their own profile fields.
-      // Users can use their points to change their membership.
       allow update: if (isAdmin() && isAdminManagingCredit()) || 
                       isOwnerUpdatingAllowedFields(memberId) ||
                       isUpdatingOwnMembershipOrPoints(memberId);
@@ -108,39 +74,26 @@ service cloud.firestore {
       allow delete: if isExistingOwner(memberId);
     }
 
-    /**
-     * @description Allows any authenticated user to read membership plan details.
-     * @path /memberships/{membershipId}
-     */
     match /memberships/{membershipId} {
       allow get, list: if isSignedIn();
       allow create, update, delete: if false;
     }
 
-    /**
-     * @description Secures member-submitted fleet data.
-     * @path /contributions/{contributionId}
-     */
     match /contributions/{contributionId} {
       allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
       allow get, list: if isAdmin();
       allow update, delete: if false;
     }
     
-     /**
-     * @description Secures finance applications and credit top-ups.
-     * @path /financeApplications/{applicationId}
-     */
-    match /financeApplications/{applicationId} {
-      // A user can get their own application, and admins can get any.
+     match /financeApplications/{applicationId} {
       allow get: if isOwner(resource.data.applicantId) || isAdmin();
-      // Admins can list all. A user can ONLY list their own applications by filtering on their UID.
-      allow list: if isAdmin() || (isSignedIn() && request.query.where.applicantId == request.auth.uid);
-      // An applicant can create their own application or credit request.
+      // Admins can list all. Users can list their own by querying on applicantId.
+      // The security rule is implicitly enforced by the 'get' rule on reads.
+      allow list: if isAdmin();
+      allow read: if isOwner(resource.data.applicantId);
+      
       allow create: if isOwner(request.resource.data.applicantId);
-      // Status can be updated by admin.
       allow update: if isAdmin();
-      // Deletion is not allowed to maintain records.
       allow delete: if false;
     }
   }

@@ -14,7 +14,7 @@ import { useToast } from '@/hooks/use-toast';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { errorEmitter } from '@/firebase/error-emitter';
 
-export default function FinanceApplicationsList() {
+export default function WalletManagementList() {
     const firestore = useFirestore();
     const { toast } = useToast();
     const [editingMemberId, setEditingMemberId] = useState<string | null>(null);

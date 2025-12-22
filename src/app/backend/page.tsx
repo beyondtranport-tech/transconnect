@@ -38,7 +38,7 @@ import MembersList from './members-list';
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import ContributionsList from './contributions-list';
-import FinanceApplicationsList from './finance-applications';
+import WalletManagementList from './finance-applications';
 
 // Placeholder Content Components
 function DashboardContent() {
@@ -139,7 +139,7 @@ export default function BackendPage() {
       case 'contributions':
         return <ContributionsContent />;
       case 'wallet-management':
-        return <FinanceApplicationsList />;
+        return <WalletManagementList />;
       case 'dashboard':
       default:
         return <DashboardContent />;
