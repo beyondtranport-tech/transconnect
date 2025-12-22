@@ -1,41 +1,55 @@
 
+'use client';
 
-import Image from "next/image";
-import { marketplaceItems } from "@/lib/data";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { ArrowRight, Search, BarChart, Truck, Gift } from "lucide-react";
+import Image from "next/image";
+import Link from "next/link";
 import { placeholderImages } from "@/lib/placeholder-images.json";
-import { Eye, Sparkles, Handshake, ArrowRight, Tags, Search, Mail, Users } from "lucide-react";
-import Link from 'next/link';
+import * as React from "react";
+import * as gtag from '@/lib/gtag';
 
 const marketplaceHeroImage = placeholderImages.find(p => p.id === 'marketplace-division');
 
-const sections = [
-    {
-        icon: Eye,
-        title: "Our Vision",
-        content: "We want to collaborate with you to link you with the best of breed partner resellers."
+const serviceCategories = [
+    { 
+        id: "digital-marketing",
+        name: "Digital Marketing", 
+        description: "Grow your online presence with SEO and Pay-Per-Click partner programs.",
+        icon: Search,
     },
-    {
-        icon: Sparkles,
-        title: "What Makes Us Unique",
-        content: "We work together with you to drive customers to your platform by connecting with you as a partner reseller."
+    { 
+        id: "data-services",
+        name: "Data & Analytics", 
+        description: "Leverage data insights and marketing services to make smarter decisions.",
+        icon: BarChart,
     },
-    {
-        icon: Handshake,
-        title: "Partner Reseller Offer",
-        content: "Our partner pledge is that we are dedicated to driving sales to you."
-    }
-];
-
-const serviceExamples = [
-    { icon: Tags, name: "Loyalty & Coupon Programs" },
-    { icon: Search, name: "SEO & Pay-Per-Click" },
-    { icon: Mail, name: "Data & Marketing Services" },
-    { icon: Users, name: "Courier & Agent Networks" }
+    { 
+        id: "logistics-networks",
+        name: "Logistics & Courier Networks", 
+        description: "Join or utilize established courier and agent networks to expand your reach.",
+        icon: Truck,
+    },
+    { 
+        id: "loyalty-incentives",
+        name: "Loyalty & Incentives", 
+        description: "Access or offer loyalty programs, coupons, and incentives like the Mahala Hub.",
+        icon: Gift,
+    },
 ];
 
 export default function MarketplacePage() {
+
+    const handleCategoryClick = (categoryId: string, userType: 'buyer' | 'seller') => {
+        gtag.event({
+            action: userType === 'buyer' ? 'explore_service_category' : 'join_service_category',
+            category: 'Marketplace',
+            label: categoryId,
+            value: 0
+        });
+    };
+
     return (
         <div>
              <section className="relative w-full h-80 bg-card">
@@ -60,57 +74,44 @@ export default function MarketplacePage() {
             
             <section className="py-16 md:py-24 bg-background">
                 <div className="container mx-auto px-4">
-                    <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-                        {sections.map(section => {
-                            const Icon = section.icon;
+                     <div className="text-center max-w-3xl mx-auto mb-12">
+                        <h2 className="text-3xl md:text-4xl font-bold font-headline">Our Partner Service Categories</h2>
+                        <p className="mt-4 text-lg text-muted-foreground">
+                           Our reseller network is comprised of service providers with established partner programs. We connect you with opportunities in:
+                        </p>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+                        {serviceCategories.map(category => {
+                            const Icon = category.icon;
                             return (
-                                <Card key={section.title} className="text-center">
-                                    <CardHeader>
-                                        <div className="mx-auto bg-primary/10 p-4 rounded-full w-fit mb-4">
+                                <Card key={category.name} className="flex flex-col">
+                                    <CardHeader className="flex-row items-start gap-4">
+                                        <div className="bg-primary/10 p-3 rounded-lg">
                                             <Icon className="h-8 w-8 text-primary" />
                                         </div>
-                                        <CardTitle>{section.title}</CardTitle>
+                                        <div>
+                                            <CardTitle className="text-xl">{category.name}</CardTitle>
+                                            <CardDescription className="mt-1">{category.description}</CardDescription>
+                                        </div>
                                     </CardHeader>
-                                    <CardContent>
-                                        <p className="text-muted-foreground">{section.content}</p>
+                                    <CardContent className="flex-grow">
+                                        {/* Content can be added here if needed */}
                                     </CardContent>
+                                    <CardFooter className="flex flex-col sm:flex-row gap-2 pt-4">
+                                        <Button asChild variant="outline" className="w-full" onClick={() => handleCategoryClick(category.id, 'buyer')}>
+                                            <Link href="/mall">
+                                               I want to Buy
+                                            </Link>
+                                        </Button>
+                                         <Button asChild variant="default" className="w-full" onClick={() => handleCategoryClick(category.id, 'seller')}>
+                                            <Link href={`/join?role=partner-reseller&type=${category.id}`}>
+                                               I want to Sell
+                                            </Link>
+                                        </Button>
+                                    </CardFooter>
                                 </Card>
                             )
                         })}
-                    </div>
-                </div>
-            </section>
-
-             <section className="py-16 md:py-24 bg-card">
-                <div className="container mx-auto px-4">
-                    <div className="text-center max-w-3xl mx-auto mb-12">
-                        <h2 className="text-3xl md:text-4xl font-bold font-headline">A Marketplace of Services</h2>
-                        <p className="mt-4 text-lg text-muted-foreground">
-                            Our reseller network is comprised of service providers with established partner programs. We connect you with opportunities in:
-                        </p>
-                    </div>
-                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 max-w-6xl mx-auto">
-                        {serviceExamples.map(service => {
-                            const Icon = service.icon;
-                            return (
-                                <div key={service.name} className="flex items-center gap-4 p-4 bg-background rounded-lg">
-                                    <Icon className="h-8 w-8 text-primary shrink-0" />
-                                    <span className="font-semibold">{service.name}</span>
-                                </div>
-                            )
-                        })}
-                    </div>
-                     <div className="text-center mt-16 flex flex-col sm:flex-row justify-center items-center gap-4">
-                        <Button asChild size="lg" variant="secondary">
-                            <Link href="/mall">
-                                Explore Services <ArrowRight className="ml-2 h-4 w-4" />
-                            </Link>
-                        </Button>
-                        <Button asChild size="lg">
-                            <Link href="/join?role=partner">
-                                Become a Partner Reseller <ArrowRight className="ml-2 h-4 w-4" />
-                            </Link>
-                        </Button>
                     </div>
                 </div>
             </section>
