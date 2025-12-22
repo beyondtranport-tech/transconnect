@@ -21,6 +21,7 @@ import {
   DollarSign,
   User,
   Building,
+  Banknote,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -30,6 +31,7 @@ import { useUser, useAuth } from '@/firebase';
 import { signOut } from 'firebase/auth';
 import AccountDashboard from './dashboard';
 import { Loader2 } from 'lucide-react';
+import FinanceView from './finance-view';
 
 function ProfileContent() {
     return (
@@ -112,6 +114,8 @@ export default function AccountPage() {
         return <CompanyContent />;
       case 'staff':
         return <StaffContent />;
+      case 'finance':
+        return <FinanceView />;
       case 'transactions':
         return <TransactionsContent />;
       case 'documents':
@@ -169,6 +173,12 @@ export default function AccountPage() {
                 <SidebarMenuButton tooltip="Staff" isActive={activeView === 'staff'} onClick={() => setActiveView('staff')}>
                   <Users />
                   <span>Staff</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton tooltip="Finance" isActive={activeView === 'finance'} onClick={() => setActiveView('finance')}>
+                  <Banknote />
+                  <span>Finance</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>

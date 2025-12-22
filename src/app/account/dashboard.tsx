@@ -20,6 +20,10 @@ export default function AccountDashboard() {
     const { data: memberData, isLoading: isMemberLoading } = useDoc(memberRef);
 
     const isFreeMember = memberData?.membershipId === 'free';
+    
+    const formatPrice = (price: number) => {
+        return new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(price);
+    };
 
     if (isUserLoading || !user || isMemberLoading) {
         return (
@@ -87,12 +91,12 @@ export default function AccountDashboard() {
                 </Card>
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between pb-2">
-                        <CardTitle className="text-sm font-medium">Reward Points</CardTitle>
+                        <CardTitle className="text-sm font-medium">Wallet Balance</CardTitle>
                         <Award className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">{memberData?.rewardPoints || 0}</div>
-                        <p className="text-xs text-muted-foreground">Redeem points in the Mall.</p>
+                        <div className="text-2xl font-bold">{formatPrice(memberData?.rewardPoints || 0)}</div>
+                        <p className="text-xs text-muted-foreground">Used for membership payments.</p>
                     </CardContent>
                 </Card>
                  <Card>

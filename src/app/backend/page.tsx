@@ -138,7 +138,7 @@ export default function BackendPage() {
         return <DivisionsContent />;
       case 'contributions':
         return <ContributionsContent />;
-      case 'finance-applications':
+      case 'credit-management':
         return <FinanceApplicationsList />;
       case 'dashboard':
       default:
@@ -178,9 +178,9 @@ export default function BackendPage() {
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Finance Applications" isActive={activeView === 'finance-applications'} onClick={() => setActiveView('finance-applications')}>
+                <SidebarMenuButton tooltip="Credit Management" isActive={activeView === 'credit-management'} onClick={() => setActiveView('credit-management')}>
                   <Banknote />
-                  <span>Finance Applications</span>
+                  <span>Credit Management</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
                 <SidebarMenuItem>
@@ -263,4 +263,3 @@ export default function BackendPage() {
     </SidebarProvider>
   );
 }
-
