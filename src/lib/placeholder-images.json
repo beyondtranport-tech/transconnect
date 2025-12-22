@@ -95,6 +95,24 @@
       "description": "A person earning money and commissions through a network",
       "imageUrl": "https://images.unsplash.com/photo-1554224155-83e84365313a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw1fHxlYXJuaW5nJTIwY29tbWlzc2lvbnxlbnwwfHx8fDE3NjYzMTA0NDd8MA&ixlib=rb-4.1.0&q=80&w=1080",
       "imageHint": "earning commission"
+    },
+    {
+      "id": "funding-asset-finance",
+      "description": "A new truck being financed",
+      "imageUrl": "https://images.unsplash.com/photo-1682033239487-30f076c82232?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHx0cnVjayUyMGZpbmFuY2V8ZW58MHx8fHwxNzY2MzkxODY4fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "truck finance"
+    },
+    {
+      "id": "funding-working-capital",
+      "description": "An image representing cash flow and business operations",
+      "imageUrl": "https://images.unsplash.com/photo-1621504450272-8abba1bfefde?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxidXNpbmVzcyUyMGNhc2h8ZW58MHx8fHwxNzY2MzkxODY4fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "business cash"
+    },
+    {
+      "id": "funding-partnership",
+      "description": "A handshake sealing a business partnership deal",
+      "imageUrl": "https://images.unsplash.com/photo-1549923746-c502d488b3ea?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw4fHxidXNpbmVzcyUyMGhhbmRzaGFrZXxlbnwwfHx8fDE3NjYzMDAxNzF8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "business handshake"
     }
   ]
 }

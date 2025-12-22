@@ -7,7 +7,10 @@ import Link from "next/link";
 import { placeholderImages } from "@/lib/placeholder-images.json";
 
 const fundingHeroImage = placeholderImages.find(p => p.id === 'funding-division');
-const fundingTypeImage = placeholderImages.find(p => p.id === 'tech-division');
+const assetFinanceImage = placeholderImages.find(p => p.id === 'funding-asset-finance');
+const workingCapitalImage = placeholderImages.find(p => p.id === 'funding-working-capital');
+const partnershipImage = placeholderImages.find(p => p.id === 'funding-partnership');
+
 
 const methodology = [
     {
@@ -15,18 +18,21 @@ const methodology = [
         description: "Secure financing for new trucks, trailers, or equipment. We offer competitive rates and flexible terms tailored to the transport industry.",
         cta: "Apply for Asset Finance",
         link: "/join",
+        image: assetFinanceImage,
     },
     {
         title: "Working Capital",
         description: "Access short-term loans to manage cash flow, cover operational expenses, or seize immediate opportunities without disrupting your capital.",
         cta: "Apply for Working Capital",
         link: "/join",
+        image: workingCapitalImage,
     },
     {
         title: "Partnership",
         description: "We invest directly in your business, becoming a partner in your growth. This model is for established businesses looking for strategic capital.",
         cta: "Explore Partnership",
         link: "/join",
+        image: partnershipImage,
     }
 ]
 
@@ -62,15 +68,15 @@ export default function FundingPage() {
                     
                     <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
                        {methodology.map((item) => (
-                           <Card key={item.title} className="flex flex-col">
-                                {fundingTypeImage && (
+                           <Card key={item.title} className="flex flex-col overflow-hidden">
+                                {item.image && (
                                     <div className="relative h-48">
                                          <Image
-                                            src={fundingTypeImage.imageUrl}
+                                            src={item.image.imageUrl}
                                             alt={item.title}
                                             fill
-                                            className="object-cover rounded-t-lg"
-                                            data-ai-hint={fundingTypeImage.imageHint}
+                                            className="object-cover"
+                                            data-ai-hint={item.image.imageHint}
                                         />
                                     </div>
                                 )}
