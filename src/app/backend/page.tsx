@@ -101,19 +101,12 @@ function ContributionsContent() {
 
 export default function BackendPage() {
   const router = useRouter();
-  const auth = useAuth();
   const [activeView, setActiveView] = useState('dashboard');
 
-  const onLogout = async () => {
-    if (!auth) return;
-    try {
-        await signOut(auth);
-        // Clear the session cookie by calling our API route
-        await fetch('/api/auth/session', { method: 'DELETE' });
-        router.push('/');
-    } catch (error) {
-        console.error("Error signing out: ", error);
-    }
+  const onLogout = () => {
+    // Clear the session cookie by calling our API route
+    document.cookie = 'admin-session=; path=/; max-age=0';
+    router.push('/');
   };
 
   const renderContent = () => {

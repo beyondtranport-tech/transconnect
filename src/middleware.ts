@@ -1,59 +1,44 @@
 
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { initializeApp, getApps } from 'firebase-admin/app';
-import { getAuth } from 'firebase-admin/auth';
-
-// This forces the middleware to run on the Node.js runtime instead of the Edge runtime.
-export const runtime = 'nodejs';
-
-// To prevent re-initialization in hot-reload environments
-if (!getApps().length) {
-  try {
-    initializeApp();
-  } catch (error) {
-    console.error("Firebase Admin initialization error in middleware:", error);
-  }
-}
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  const sessionCookie = request.cookies.get('__session')?.value;
+  const adminSession = request.cookies.get('admin-session')?.value;
 
-  // 1. If trying to access the backend
-  if (pathname.startsWith('/backend')) {
-    // If no session cookie, redirect to the main sign-in page
-    if (!sessionCookie) {
-      const url = request.nextUrl.clone();
-      url.pathname = '/signin';
-      url.searchParams.set('redirect', pathname);
-      return NextResponse.redirect(url);
+  // 1. If trying to access a protected backend route
+  if (pathname.startsWith('/backend') && pathname !== '/backend/login') {
+    // If no session cookie, redirect to the admin login page
+    if (!adminSession) {
+      return NextResponse.redirect(new URL('/backend/login', request.url));
     }
 
     try {
-      // 2. Verify the session cookie
-      const decodedIdToken = await getAuth().verifySessionCookie(sessionCookie, true);
+      // 2. Verify the session by checking its value against the env variable
+      // In a real app, this would be a more secure JWT verification
+      const isValid = adminSession === process.env.SUPER_ADMIN_PASSWORD;
       
-      // 3. Check if the user is the designated admin
-      const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
-      if (decodedIdToken.email !== adminEmail) {
-        // Not the admin, redirect to the account page or an "unauthorized" page
-        return NextResponse.redirect(new URL('/account', request.url));
+      if (!isValid) {
+        throw new Error("Invalid session");
       }
-      
-      // 4. User is the admin, allow access
+
+      // 3. Session is valid, allow access
       return NextResponse.next();
 
     } catch (error) {
-      // Cookie is invalid or expired. Redirect to sign-in.
+      // Session is invalid. Redirect to login.
       const url = request.nextUrl.clone();
-      url.pathname = '/signin';
-      url.searchParams.set('redirect', pathname);
+      url.pathname = '/backend/login';
       const response = NextResponse.redirect(url);
       // Clear the invalid cookie
-      response.cookies.delete('__session');
+      response.cookies.delete('admin-session');
       return response;
     }
+  }
+  
+  // If accessing the login page with a valid session, redirect to the dashboard
+  if (pathname === '/backend/login' && adminSession === process.env.SUPER_ADMIN_PASSWORD) {
+     return NextResponse.redirect(new URL('/backend', request.url));
   }
 
   return NextResponse.next();

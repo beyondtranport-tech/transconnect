@@ -7,7 +7,7 @@ import Link from 'next/link';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { signInWithEmailAndPassword } from 'firebase/auth';
+import { signInWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
 
 import { useAuth } from '@/firebase';
 import { Button } from '@/components/ui/button';
@@ -17,6 +17,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  CardFooter,
 } from '@/components/ui/card';
 import {
   Form,
@@ -28,7 +29,7 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Eye, EyeOff } from 'lucide-react';
+import { Loader2, Eye, EyeOff, Shield } from 'lucide-react';
 
 const formSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -54,21 +55,37 @@ export default function SignInPage() {
     },
   });
 
+  const handlePasswordReset = async () => {
+    const email = form.getValues('email');
+    if (!email) {
+      toast({
+        variant: 'destructive',
+        title: 'Email required',
+        description: 'Please enter your email address to reset your password.',
+      });
+      return;
+    }
+    
+    try {
+      await sendPasswordResetEmail(auth, email);
+      toast({
+        title: 'Password Reset Email Sent',
+        description: `If an account exists for ${email}, a password reset link has been sent.`,
+      });
+    } catch (error: any) {
+       toast({
+        variant: 'destructive',
+        title: 'Error sending reset email',
+        description: 'Please try again later.',
+      });
+    }
+  };
+
+
   const onSubmit = async (values: SignInFormValues) => {
     setIsLoading(true);
     try {
-      const userCredential = await signInWithEmailAndPassword(auth, values.email, values.password);
-
-      const idToken = await userCredential.user.getIdToken();
-      
-      // Send the ID token to the server to create a session cookie
-      await fetch('/api/auth/session', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ idToken }),
-      });
+      await signInWithEmailAndPassword(auth, values.email, values.password);
 
       toast({
         title: 'Signed In!',
@@ -102,7 +119,7 @@ export default function SignInPage() {
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <CardTitle className="text-3xl font-bold font-headline">
-            Sign In
+            Member Sign In
           </CardTitle>
           <CardDescription>
             Access your TransConnect account.
@@ -131,9 +148,9 @@ export default function SignInPage() {
                   <FormItem>
                     <div className="flex items-center justify-between">
                         <FormLabel>Password</FormLabel>
-                        <Link href="#!" className="text-sm font-medium text-primary hover:underline">
+                        <button type="button" onClick={handlePasswordReset} className="text-sm font-medium text-primary hover:underline">
                             Forgot password?
-                        </Link>
+                        </button>
                     </div>
                     <div className="relative">
                         <FormControl>
@@ -165,6 +182,14 @@ export default function SignInPage() {
             </Link>
           </div>
         </CardContent>
+        <CardFooter className="flex justify-center border-t pt-4">
+             <Button asChild variant="ghost" size="sm">
+                <Link href="/backend/login">
+                    <Shield className="mr-2 h-4 w-4" />
+                    Admin Portal
+                </Link>
+            </Button>
+        </CardFooter>
       </Card>
     </div>
   );

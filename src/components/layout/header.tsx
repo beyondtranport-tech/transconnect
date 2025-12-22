@@ -43,23 +43,35 @@ export function Header() {
   const [isSheetOpen, setIsSheetOpen] = React.useState(false);
   const { user, isUserLoading } = useUser();
   const auth = useAuth();
+  const [isAdmin, setIsAdmin] = React.useState(false);
   const [isClient, setIsClient] = React.useState(false);
 
   React.useEffect(() => {
     setIsClient(true);
   }, []);
-  
-  const isAdmin = isClient && user?.email === process.env.NEXT_PUBLIC_ADMIN_EMAIL;
+
+  React.useEffect(() => {
+    // Check if the admin cookie exists
+    const adminCookie = document.cookie.split('; ').find(row => row.startsWith('admin-session='));
+    setIsAdmin(!!adminCookie);
+  }, [pathname]);
 
   const handleSignOut = async () => {
     if (!auth) return;
     try {
         await signOut(auth);
-        // This will trigger the onAuthStateChanged listener and update the UI
-        // Also, clear the session cookie by calling our API route
-        await fetch('/api/auth/session', { method: 'DELETE' });
     } catch (error) {
         console.error("Error signing out: ", error);
+    }
+  };
+
+  const handleAdminSignOut = async () => {
+    // Just delete the cookie
+    document.cookie = 'admin-session=; path=/; max-age=0';
+    setIsAdmin(false);
+    // Optionally, redirect to a public page
+    if (pathname.startsWith("/backend")) {
+      window.location.href = "/";
     }
   };
 
@@ -112,34 +124,36 @@ export function Header() {
                  <div className="h-9 w-20 rounded-md bg-muted/50 animate-pulse" />
                  <div className="h-9 w-24 rounded-md bg-muted/50 animate-pulse" />
               </div>
-            ) : isUserLoading ? (
+            ) : isUserLoading && !isAdmin ? (
               <div className="flex items-center gap-2">
                  <div className="h-9 w-20 rounded-md bg-muted/50 animate-pulse" />
                  <div className="h-9 w-24 rounded-md bg-muted/50 animate-pulse" />
               </div>
-            ) : user ? (
+            ) : user || isAdmin ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                     <Avatar className="h-8 w-8">
-                        {user.photoURL && <AvatarImage src={user.photoURL} alt={user.displayName || 'User'} />}
-                      <AvatarFallback>{getInitials(user.displayName)}</AvatarFallback>
+                        {user && user.photoURL && <AvatarImage src={user.photoURL} alt={user.displayName || 'User'} />}
+                        <AvatarFallback>{isAdmin ? 'SA' : getInitials(user?.displayName)}</AvatarFallback>
                     </Avatar>
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="w-56" align="end" forceMount>
                   <DropdownMenuLabel className="font-normal">
                     <div className="flex flex-col space-y-1">
-                      <p className="text-sm font-medium leading-none">{user.displayName}</p>
+                      <p className="text-sm font-medium leading-none">{isAdmin ? "Super Admin" : user?.displayName}</p>
                       <p className="text-xs leading-none text-muted-foreground">
-                        {user.email}
+                        {isAdmin ? "admin@transconnect.com" : user?.email}
                       </p>
                     </div>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem asChild>
-                    <Link href="/account">Account</Link>
-                  </DropdownMenuItem>
+                  {user && !isAdmin && (
+                    <DropdownMenuItem asChild>
+                      <Link href="/account">Account</Link>
+                    </DropdownMenuItem>
+                  )}
                   {isAdmin && (
                       <DropdownMenuItem asChild>
                         <Link href="/backend" className='flex items-center'>
@@ -149,7 +163,7 @@ export function Header() {
                       </DropdownMenuItem>
                   )}
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleSignOut}>
+                  <DropdownMenuItem onClick={isAdmin ? handleAdminSignOut : handleSignOut}>
                     Sign out
                   </DropdownMenuItem>
                 </DropdownMenuContent>
