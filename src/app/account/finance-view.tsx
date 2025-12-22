@@ -26,6 +26,7 @@ export default function FinanceView() {
 
     const applicationsCollectionRef = useMemoFirebase(() => {
         if (!firestore || !user) return null;
+        // This query now filters by the current user's ID, which aligns with security rules.
         return query(
             collection(firestore, 'financeApplications'),
             where('applicantId', '==', user.uid),
