@@ -61,7 +61,7 @@ service cloud.firestore {
     // ----------------------------------------------------------------------
 
     match /members/{memberId} {
-      // Corrected Rule: An owner can always read their own document. An admin can also read it.
+      // An owner can always read their own document. An admin can also read it.
       allow get: if isOwner(memberId) || isAdmin();
       // Allow any signed-in user to see the list of members for console functionality.
       allow list: if isSignedIn();
@@ -98,7 +98,7 @@ service cloud.firestore {
       allow list: if isAdmin();
       // A user can create an application for themselves.
       allow create: if isOwner(request.resource.data.applicantId);
-      // The owner or an admin can update the application status.
+      // The owner or an admin can update the application.
       allow update: if isAdmin() || isOwner(resource.data.applicantId);
       allow delete: if false; // Applications should not be deleted.
     }
