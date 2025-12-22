@@ -1,6 +1,6 @@
 'use client';
 
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
 import { collection, query, orderBy, doc, updateDoc, arrayUnion } from 'firebase/firestore';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -15,15 +15,16 @@ import { errorEmitter } from '@/firebase/error-emitter';
 
 export default function WalletManagementList() {
     const firestore = useFirestore();
+    const { user, isUserLoading } = useUser();
     const { toast } = useToast();
     const [editingMemberId, setEditingMemberId] = useState<string | null>(null);
     const [creditAmount, setCreditAmount] = useState<number>(0);
     const [isUpdating, setIsUpdating] = useState(false);
 
     const membersCollectionRef = useMemoFirebase(() => {
-        if (!firestore) return null;
+        if (!firestore || !user) return null; // Don't fetch if no user
         return query(collection(firestore, 'members'), orderBy('email', 'desc'));
-    }, [firestore]);
+    }, [firestore, user]);
     
     const { data: members, isLoading, error } = useCollection(membersCollectionRef);
 
@@ -67,6 +68,100 @@ export default function WalletManagementList() {
         }
         return 'N/A';
     };
+    
+    const renderBody = () => {
+        if (isUserLoading) {
+            return (
+                <div className="flex justify-center items-center py-10">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                </div>
+            );
+        }
+        
+        if (!user) {
+            return (
+                <div className="text-center py-10">
+                    <p className="text-muted-foreground">Please log in to manage member wallets.</p>
+                </div>
+            );
+        }
+
+        if (isLoading) {
+            return (
+                <div className="flex justify-center items-center py-10">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                </div>
+            );
+        }
+
+        if (error) {
+             return (
+                 <div className="text-destructive-foreground bg-destructive/90 p-4 rounded-md">
+                    <h4 className="font-semibold">Error</h4>
+                    <p className="text-sm">{error.message}</p>
+                </div>
+             );
+        }
+
+        if (members) {
+            return (
+                 <div className="overflow-x-auto">
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Member</TableHead>
+                                <TableHead>Company</TableHead>
+                                <TableHead className="text-right">Wallet Balance (R)</TableHead>
+                                <TableHead className="text-right">Actions</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {members.map(member => (
+                                <TableRow key={member.id}>
+                                    <TableCell>
+                                        <div className="font-medium">{member.firstName} {member.lastName}</div>
+                                        <div className="text-sm text-muted-foreground">{member.email}</div>
+                                    </TableCell>
+                                    <TableCell>{member.companyName}</TableCell>
+                                    <TableCell className="text-right">
+                                        {editingMemberId === member.id ? (
+                                            <Input
+                                                type="number"
+                                                value={creditAmount}
+                                                onChange={(e) => setCreditAmount(Number(e.target.value))}
+                                                className="w-32 ml-auto"
+                                                disabled={isUpdating}
+                                            />
+                                        ) : (
+                                            <span className="font-mono">{member.rewardPoints?.toFixed(2) || '0.00'}</span>
+                                        )}
+                                    </TableCell>
+                                    <TableCell className="text-right">
+                                            {editingMemberId === member.id ? (
+                                            <div className="flex gap-2 justify-end">
+                                                <Button size="sm" onClick={() => handleUpdate(member.id)} disabled={isUpdating}>
+                                                    {isUpdating ? <Loader2 className="h-4 w-4 animate-spin"/> : <Check className="h-4 w-4" />}
+                                                </Button>
+                                                <Button size="sm" variant="outline" onClick={handleCancel} disabled={isUpdating}>Cancel</Button>
+                                            </div>
+                                            ) : (
+                                            <Button size="sm" variant="outline" onClick={() => handleEdit(member.id, member.rewardPoints || 0)}>
+                                                <Edit className="h-4 w-4 mr-2"/>
+                                                Update Wallet
+                                            </Button>
+                                            )}
+                                    </TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                </div>
+            );
+        }
+
+        return <p className="text-center text-muted-foreground py-10">No members found.</p>;
+    }
+
 
     return (
         <Card>
@@ -75,70 +170,7 @@ export default function WalletManagementList() {
                 <CardDescription>View members and manually update their wallet balance after confirming EFT payments.</CardDescription>
             </CardHeader>
             <CardContent>
-                {isLoading && (
-                    <div className="flex justify-center items-center py-10">
-                        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                    </div>
-                )}
-                {error && (
-                     <div className="text-destructive-foreground bg-destructive/90 p-4 rounded-md">
-                        <h4 className="font-semibold">Error</h4>
-                        <p className="text-sm">{error.message}</p>
-                    </div>
-                )}
-                {members && !isLoading && (
-                    <div className="overflow-x-auto">
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Member</TableHead>
-                                    <TableHead>Company</TableHead>
-                                    <TableHead className="text-right">Wallet Balance (R)</TableHead>
-                                    <TableHead className="text-right">Actions</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {members.map(member => (
-                                    <TableRow key={member.id}>
-                                        <TableCell>
-                                            <div className="font-medium">{member.firstName} {member.lastName}</div>
-                                            <div className="text-sm text-muted-foreground">{member.email}</div>
-                                        </TableCell>
-                                        <TableCell>{member.companyName}</TableCell>
-                                        <TableCell className="text-right">
-                                            {editingMemberId === member.id ? (
-                                                <Input
-                                                    type="number"
-                                                    value={creditAmount}
-                                                    onChange={(e) => setCreditAmount(Number(e.target.value))}
-                                                    className="w-32 ml-auto"
-                                                    disabled={isUpdating}
-                                                />
-                                            ) : (
-                                                <span className="font-mono">{member.rewardPoints?.toFixed(2) || '0.00'}</span>
-                                            )}
-                                        </TableCell>
-                                        <TableCell className="text-right">
-                                             {editingMemberId === member.id ? (
-                                                <div className="flex gap-2 justify-end">
-                                                    <Button size="sm" onClick={() => handleUpdate(member.id)} disabled={isUpdating}>
-                                                        {isUpdating ? <Loader2 className="h-4 w-4 animate-spin"/> : <Check className="h-4 w-4" />}
-                                                    </Button>
-                                                    <Button size="sm" variant="outline" onClick={handleCancel} disabled={isUpdating}>Cancel</Button>
-                                                </div>
-                                             ) : (
-                                                <Button size="sm" variant="outline" onClick={() => handleEdit(member.id, member.rewardPoints || 0)}>
-                                                    <Edit className="h-4 w-4 mr-2"/>
-                                                    Update Wallet
-                                                </Button>
-                                             )}
-                                        </TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    </div>
-                )}
+                {renderBody()}
             </CardContent>
         </Card>
     );
