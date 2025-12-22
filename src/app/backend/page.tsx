@@ -29,7 +29,6 @@ import {
   Boxes,
   HeartHandshake,
   Wallet,
-  Banknote,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -40,7 +39,6 @@ import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import ContributionsList from './contributions-list';
 import WalletManagementList from './wallet-management-list';
-import BankDetailsSettings from './bank-details-settings';
 import FinanceApplicationsList from './finance-applications-list';
 import { useAuth } from '@/firebase';
 import { signOut } from 'firebase/auth';
@@ -52,6 +50,14 @@ function DashboardContent() {
         <div>
             <h1 className="text-2xl font-bold">Main Dashboard</h1>
             <p className="mt-2 text-muted-foreground">Aggregated view of all platform metrics.</p>
+        </div>
+    )
+}
+function BankDetailsSettings() {
+    return (
+        <div>
+            <h1 className="text-2xl font-bold">Bank Details Settings</h1>
+            <p className="mt-2 text-muted-foreground">This is where bank details settings will go.</p>
         </div>
     )
 }
@@ -187,7 +193,7 @@ export default function BackendPage() {
                             <span>Tasks</span>
                         </SidebarMenuSubButton>
                         <SidebarMenuSubButton isActive={activeView === 'bank-details-settings'} onClick={() => setActiveView('bank-details-settings')}>
-                            <Banknote />
+                            <ListTodo />
                             <span>Bank Details</span>
                         </SidebarMenuSubButton>
                     </SidebarMenuSub>

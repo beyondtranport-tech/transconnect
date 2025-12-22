@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
@@ -175,5 +176,3 @@ export default function WalletManagementList() {
         </Card>
     );
 }
-
-    
