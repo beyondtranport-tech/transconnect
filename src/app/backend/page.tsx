@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -39,7 +38,7 @@ import MembersList from './members-list';
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import ContributionsList from './contributions-list';
-import WalletManagementList from './finance-applications';
+import WalletManagementList from './wallet-management-list';
 import BankDetailsSettings from './bank-details-settings';
 
 // Placeholder Content Components
