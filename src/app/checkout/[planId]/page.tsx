@@ -5,7 +5,7 @@ import { Suspense } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { useUser, useFirestore, useMemoFirebase } from '@/firebase';
-import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc, updateDoc, arrayUnion, writeBatch } from 'firebase/firestore';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
@@ -84,27 +84,42 @@ function CheckoutComponent() {
         return;
     }
     setIsProcessing(true);
+    
+    const batch = writeBatch(firestore);
+    
+    // 1. Update member's balance and membership
+    const memberRef = doc(firestore, 'members', user.uid);
+    const newBalance = userBalance - price;
+    const memberUpdateData = { membershipId: plan.id, rewardPoints: newBalance };
+    batch.update(memberRef, memberUpdateData);
+
+    // 2. Create a transaction record in financeApplications
+    const transactionRef = doc(collection(firestore, 'financeApplications'));
+    const transactionData = {
+        applicantId: user.uid,
+        status: 'funded', // or 'completed'
+        fundingType: 'membership_payment',
+        amountRequested: -price, // Negative amount for payment
+        createdAt: new Date(),
+        updatedAt: new Date(),
+    };
+    batch.set(transactionRef, transactionData);
+
+    // 3. Add the transaction ID to the member's record
+    batch.update(memberRef, { financeApplicationIds: arrayUnion(transactionRef.id) });
+    
     try {
-        const newBalance = userBalance - price;
-        const memberRef = doc(firestore, 'members', user.uid);
-        const updateData = { membershipId: plan.id, rewardPoints: newBalance };
-
-        setDoc(memberRef, updateData, { merge: true })
-         .catch((serverError) => {
-            const permissionError = new FirestorePermissionError({
-                path: memberRef.path,
-                operation: 'update',
-                requestResourceData: updateData,
-            });
-            errorEmitter.emit('permission-error', permissionError);
-             toast({ variant: 'destructive', title: 'Upgrade Failed', description: 'Permission denied.' });
-        });
-
+        await batch.commit();
         toast({ title: 'Upgrade Successful!', description: `Your membership is now ${plan.name}.` });
         router.push('/account');
-
-    } catch (error) {
-        toast({ variant: 'destructive', title: 'An error occurred', description: 'Could not update membership.' });
+    } catch (serverError) {
+        const permissionError = new FirestorePermissionError({
+            path: memberRef.path,
+            operation: 'update',
+            requestResourceData: { memberUpdate: memberUpdateData, transaction: transactionData },
+        });
+        errorEmitter.emit('permission-error', permissionError);
+        toast({ variant: 'destructive', title: 'Upgrade Failed', description: 'Permission denied.' });
     } finally {
         setIsProcessing(false);
     }
