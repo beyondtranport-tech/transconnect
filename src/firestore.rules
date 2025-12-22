@@ -18,10 +18,6 @@ service cloud.firestore {
       return isSignedIn() && get(/databases/$(database)/documents/members/$(request.auth.uid)).data.admin == true;
     }
     
-    function isCreatingAdmin() {
-      return request.resource.data.email == 'beyondtransport@gmail.com' && request.resource.data.admin == true;
-    }
-
     function isCreatingCleanupAdmin() {
       return request.resource.data.email == 'admin.cleanup@transconnect.com' && request.resource.data.admin == true;
     }
@@ -77,13 +73,13 @@ service cloud.firestore {
     match /members/{memberId} {
       allow get: if isOwner(memberId) || isAdmin();
       allow list: if isAdmin();
-      allow create: if (isOwner(memberId) && hasValidMemberId(memberId)) || isCreatingAdmin() || isCreatingCleanupAdmin();
+      allow create: if (isOwner(memberId) && hasValidMemberId(memberId)) || isCreatingCleanupAdmin();
       
       allow update: if (isAdmin() && isAdminManagingCredit()) || 
                       isOwnerUpdatingAllowedFields(memberId) ||
                       isUpdatingOwnMembershipOrPoints(memberId);
 
-      allow delete: if isExistingOwner(memberId) || isAdmin();
+      allow delete: if isAdmin();
     }
 
     match /memberships/{membershipId} {

@@ -1,27 +1,83 @@
 'use client';
 
 import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
-import { collection } from 'firebase/firestore';
+import { collection, doc, deleteDoc } from 'firebase/firestore';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Trash2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { deleteUser } from './actions';
+import { useToast } from '@/hooks/use-toast';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 
 export default function MembersList() {
     const firestore = useFirestore();
     const { user, isUserLoading } = useUser();
+    const { toast } = useToast();
 
-    // Only create the query if the user is authenticated
     const membersCollectionRef = useMemoFirebase(() => {
         if (!firestore || !user) return null;
         return collection(firestore, 'members');
     }, [firestore, user]);
     
-    const { data: members, isLoading, error } = useCollection(membersCollectionRef);
+    const { data: members, isLoading, error, setData: setMembers } = useCollection(membersCollectionRef);
+
+    const handleDelete = async (memberId: string, email: string | undefined) => {
+        if (!firestore) return;
+
+        // Prevent admin from deleting themselves
+        if (user?.uid === memberId) {
+            toast({
+                variant: "destructive",
+                title: "Action not allowed",
+                description: "Administrators cannot delete their own account.",
+            });
+            return;
+        }
+
+        try {
+            // Firestore document deletion
+            const memberDocRef = doc(firestore, 'members', memberId);
+            await deleteDoc(memberDocRef);
+
+            // Auth user deletion via server action
+            const result = await deleteUser(memberId);
+            if (!result.success) {
+                throw new Error(result.error);
+            }
+
+            toast({
+                title: "User Deleted",
+                description: `The user ${email || memberId} has been permanently removed.`,
+            });
+            
+            // Optimistically update UI
+            if (members) {
+                 (setMembers as any)(members.filter(m => m.id !== memberId));
+            }
+
+        } catch (e: any) {
+            toast({
+                variant: "destructive",
+                title: "Deletion Failed",
+                description: e.message || "Could not delete the user.",
+            });
+        }
+    };
 
     const capitalize = (s: string) => s && s[0].toUpperCase() + s.slice(1);
 
-    // Show a loading state while checking for user authentication
     if (isUserLoading) {
         return (
              <Card>
@@ -36,8 +92,6 @@ export default function MembersList() {
         );
     }
     
-    // If the backend lock is off, a user might access this page without being logged in.
-    // We should not attempt to fetch data in that case.
     if (!user) {
          return (
              <Card>
@@ -81,7 +135,7 @@ export default function MembersList() {
                                 <TableHead>Phone</TableHead>
                                 <TableHead>Membership</TableHead>
                                 <TableHead>Role</TableHead>
-                                <TableHead>Details</TableHead>
+                                <TableHead className="text-right">Actions</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -97,18 +151,38 @@ export default function MembersList() {
                                         </Badge>
                                     </TableCell>
                                     <TableCell>
-                                        {member.role && (
+                                        {member.admin && <Badge variant="destructive">Admin</Badge>}
+                                        {member.role && !member.admin && (
                                             <Badge variant="outline" className="capitalize">
                                                 {member.role}
                                             </Badge>
                                         )}
                                     </TableCell>
-                                    <TableCell>
-                                        {member.financierType && (
-                                            <Badge variant="default" className="capitalize bg-accent text-accent-foreground">
-                                                {capitalize(member.financierType.replace('-', ' '))}
-                                            </Badge>
-                                        )}
+                                    <TableCell className="text-right">
+                                        <AlertDialog>
+                                            <AlertDialogTrigger asChild>
+                                                <Button variant="ghost" size="icon" disabled={user?.uid === member.id}>
+                                                    <Trash2 className="h-4 w-4 text-destructive" />
+                                                </Button>
+                                            </AlertDialogTrigger>
+                                            <AlertDialogContent>
+                                                <AlertDialogHeader>
+                                                    <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                                    <AlertDialogDescription>
+                                                        This action cannot be undone. This will permanently delete the user <span className="font-bold">{member.email}</span> and all associated data from the authentication system and database.
+                                                    </AlertDialogDescription>
+                                                </AlertDialogHeader>
+                                                <AlertDialogFooter>
+                                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                    <AlertDialogAction
+                                                        onClick={() => handleDelete(member.id, member.email)}
+                                                        className="bg-destructive hover:bg-destructive/90"
+                                                    >
+                                                        Delete User
+                                                    </AlertDialogAction>
+                                                </AlertDialogFooter>
+                                            </AlertDialogContent>
+                                        </AlertDialog>
                                     </TableCell>
                                 </TableRow>
                             ))}
