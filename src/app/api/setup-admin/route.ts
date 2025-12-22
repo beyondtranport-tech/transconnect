@@ -6,16 +6,12 @@ import { getFirestore } from 'firebase-admin/firestore';
 
 export const runtime = 'nodejs';
 
-// Ensure the admin app is initialized only once.
-const adminApp: App =
-  getApps().find((app) => app.name === 'admin') ||
-  initializeApp(
-    {
-      // projectId is read from GOOGLE_CLOUD_PROJECT env var
-    },
-    'admin'
-  );
+// Ensure the admin app is initialized only once using the default instance.
+if (!getApps().length) {
+  initializeApp();
+}
 
+const adminApp = getApp();
 const adminAuth = getAuth(adminApp);
 const adminFirestore = getFirestore(adminApp);
 
