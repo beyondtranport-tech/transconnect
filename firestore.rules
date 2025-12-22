@@ -15,9 +15,11 @@ service cloud.firestore {
     }
     
     function isAdmin() {
-      // Check for a custom claim `admin` on the user's token.
-      // This is more secure than checking the email.
       return isSignedIn() && get(/databases/$(database)/documents/members/$(request.auth.uid)).data.admin == true;
+    }
+    
+    function isCreatingAdmin() {
+        return request.resource.data.email == 'beyondtransport@gmail.com' && request.resource.data.admin == true;
     }
 
     function isExistingOwner(userId) {
@@ -71,7 +73,7 @@ service cloud.firestore {
     match /members/{memberId} {
       allow get: if isOwner(memberId) || isAdmin();
       allow list: if isAdmin();
-      allow create: if isOwner(memberId) && hasValidMemberId(memberId);
+      allow create: if (isOwner(memberId) && hasValidMemberId(memberId)) || isCreatingAdmin();
       
       allow update: if (isAdmin() && isAdminManagingCredit()) || 
                       isOwnerUpdatingAllowedFields(memberId) ||

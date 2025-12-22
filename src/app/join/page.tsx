@@ -73,6 +73,15 @@ function JoinFormComponent() {
 
   const onSubmit = async (values: JoinFormValues) => {
     setIsLoading(true);
+    if (!auth || !firestore) {
+      toast({
+        variant: 'destructive',
+        title: 'Initialization Error',
+        description: 'Firebase is not ready. Please try again in a moment.',
+      });
+      setIsLoading(false);
+      return;
+    }
     try {
       const userCredential = await createUserWithEmailAndPassword(
         auth,
@@ -111,22 +120,15 @@ function JoinFormComponent() {
 
       const memberDocRef = doc(firestore, 'members', user.uid);
       
-      setDoc(memberDocRef, memberData)
-        .catch((serverError) => {
-            const permissionError = new FirestorePermissionError({
-                path: memberDocRef.path,
-                operation: 'create',
-                requestResourceData: memberData,
-            });
-            errorEmitter.emit('permission-error', permissionError);
-        });
+      await setDoc(memberDocRef, memberData);
 
       toast({
         title: 'Account Created!',
         description: "Welcome to TransConnect. You're now signed in.",
       });
 
-      router.push('/account');
+      const redirectUrl = memberData.admin ? '/backend' : '/account';
+      router.push(redirectUrl);
 
     } catch (error: any) {
       let title = 'An error occurred.';
