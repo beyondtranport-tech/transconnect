@@ -3,6 +3,9 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { initializeApp, getApps } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 
+// This forces the route handler to run on the Node.js runtime instead of the Edge runtime.
+export const runtime = 'nodejs';
+
 // To prevent re-initialization in hot-reload environments
 if (!getApps().length) {
   try {
