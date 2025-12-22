@@ -15,42 +15,48 @@ const products = [
         icon: <Boxes className="h-8 w-8 text-primary" />,
         title: "Ecosystem Membership",
         description: "Sell the core TransConnect membership. Give businesses access to our powerful ecosystem of malls, marketplaces, and technology.",
-        brochureUrl: "/brochures/ecosystem-membership.pdf",
+        linkUrl: "/pricing",
+        isExternal: false,
     },
     {
         id: "raf-assist",
         icon: <FileText className="h-8 w-8 text-primary" />,
         title: "RAF Assist",
         description: "Offer a valuable service that helps members navigate the complexities of the Road Accident Fund claims process, ensuring they get the support they deserve.",
-        brochureUrl: "/brochures/raf-assist.pdf",
+        linkUrl: "/brochures/raf-assist.pdf",
+        isExternal: true,
     },
     {
         id: "open-loyalty-funeral",
         icon: <Heart className="h-8 w-8 text-primary" />,
         title: "Open Loyalty Funeral",
         description: "Provide peace of mind with a funeral benefit plan tailored for the transport community, offered through our Open Loyalty program.",
-        brochureUrl: "/brochures/open-loyalty-funeral.pdf",
+        linkUrl: "/brochures/open-loyalty-funeral.pdf",
+        isExternal: true,
     },
     {
         id: "open-loyalty-roadside-assist",
         icon: <LifeBuoy className="h-8 w-8 text-primary" />,
         title: "Open Loyalty Roadside Assist",
         description: "Sell an essential roadside assistance package that gets drivers and their vehicles back on the road faster after a breakdown.",
-        brochureUrl: "/brochures/open-loyalty-roadside-assist.pdf",
+        linkUrl: "/brochures/open-loyalty-roadside-assist.pdf",
+        isExternal: true,
     },
     {
         id: "open-loyalty-liability",
         icon: <Shield className="h-8 w-8 text-primary" />,
         title: "Open Loyalty Liability",
         description: "Offer specialized liability coverage designed to protect transport businesses from unforeseen events and financial loss.",
-        brochureUrl: "/brochures/open-loyalty-liability.pdf",
+        linkUrl: "/brochures/open-loyalty-liability.pdf",
+        isExternal: true,
     },
     {
         id: "mahala-hub",
         icon: <Gift className="h-8 w-8 text-primary" />,
         title: "Mahala Hub",
         description: "Promote a hub of exclusive deals, freebies, and discounts. A powerful tool to attract and retain members in the ecosystem.",
-        brochureUrl: "/brochures/mahala-hub.pdf",
+        linkUrl: "/brochures/mahala-hub.pdf",
+        isExternal: true,
     }
 ];
 
@@ -108,7 +114,11 @@ export default function IncentivesPage() {
                                 </CardContent>
                                 <CardFooter>
                                     <Button asChild className="w-full" variant="outline">
-                                        <Link href={product.brochureUrl} target="_blank" rel="noopener noreferrer">
+                                        <Link 
+                                            href={product.linkUrl} 
+                                            target={product.isExternal ? "_blank" : "_self"} 
+                                            rel={product.isExternal ? "noopener noreferrer" : ""}
+                                        >
                                             Find Out More <ArrowRight className="ml-2 h-4 w-4" />
                                         </Link>
                                     </Button>
