@@ -124,7 +124,13 @@ const FeatureList = ({ title, items, includedFeatures }: { title: string, items:
 export default function PricingPage() {
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('monthly');
   const { user } = useUser();
-  const linkHref = user ? '/account' : '/join';
+  
+  const getLinkHref = (tierId: string) => {
+    if (!user) {
+      return `/join?plan=${tierId}`;
+    }
+    return `/checkout/${tierId}?cycle=${billingCycle}`;
+  };
 
   return (
     <div className="bg-background">
@@ -176,7 +182,7 @@ export default function PricingPage() {
               </CardContent>
               <CardFooter>
                  <Button asChild className="w-full" variant={tier.highlight ? 'default' : 'outline'}>
-                    <Link href={linkHref}>Choose {tier.name}</Link>
+                    <Link href={getLinkHref(tier.id)}>Choose {tier.name}</Link>
                 </Button>
               </CardFooter>
             </Card>
