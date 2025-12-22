@@ -58,7 +58,7 @@ function CheckoutComponent() {
       setIsBalanceLoading(true);
       getDoc(memberRef).then(docSnap => {
         if (docSnap.exists()) {
-          setUserBalance(docSnap.data().rewardPoints || 0);
+          setUserBalance(docSnap.data().walletBalance || 0);
         }
         setIsBalanceLoading(false);
       });
@@ -83,7 +83,7 @@ function CheckoutComponent() {
     // 1. Update member's balance and membership
     const memberRef = doc(firestore, 'members', user.uid);
     const newBalance = userBalance - price;
-    const memberUpdateData = { membershipId: plan.id, rewardPoints: newBalance };
+    const memberUpdateData = { membershipId: plan.id, walletBalance: newBalance };
     batch.update(memberRef, memberUpdateData);
 
     // 2. Create a transaction record in financeApplications
@@ -199,3 +199,5 @@ export default function CheckoutPage() {
         </div>
     );
 }
+
+    

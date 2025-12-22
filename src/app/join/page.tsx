@@ -103,6 +103,7 @@ function JoinFormComponent() {
         companyName: values.companyName,
         membershipId: 'free', // Default to a free plan
         rewardPoints: 0,
+        walletBalance: 0,
       };
 
       // This is the special logic to make the specified user an admin upon signup.
@@ -305,3 +306,5 @@ export default function JoinPage() {
     </div>
   );
 }
+
+    

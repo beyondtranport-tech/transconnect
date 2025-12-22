@@ -43,7 +43,7 @@ export default function WalletManagementList() {
         setIsUpdating(true);
 
         const memberRef = doc(firestore, 'members', memberId);
-        const updateData = { rewardPoints: Number(creditAmount) };
+        const updateData = { walletBalance: Number(creditAmount) };
         
         try {
             await updateDoc(memberRef, updateData);
@@ -133,7 +133,7 @@ export default function WalletManagementList() {
                                                 disabled={isUpdating}
                                             />
                                         ) : (
-                                            <span className="font-mono">{member.rewardPoints?.toFixed(2) || '0.00'}</span>
+                                            <span className="font-mono">{member.walletBalance?.toFixed(2) || '0.00'}</span>
                                         )}
                                     </TableCell>
                                     <TableCell className="text-right">
@@ -145,7 +145,7 @@ export default function WalletManagementList() {
                                                 <Button size="sm" variant="outline" onClick={handleCancel} disabled={isUpdating}>Cancel</Button>
                                             </div>
                                             ) : (
-                                            <Button size="sm" variant="outline" onClick={() => handleEdit(member.id, member.rewardPoints || 0)}>
+                                            <Button size="sm" variant="outline" onClick={() => handleEdit(member.id, member.walletBalance || 0)}>
                                                 <Edit className="h-4 w-4 mr-2"/>
                                                 Update Wallet
                                             </Button>
@@ -175,3 +175,5 @@ export default function WalletManagementList() {
         </Card>
     );
 }
+
+    

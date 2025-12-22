@@ -3,7 +3,7 @@
 import { useUser, useFirestore, useMemoFirebase } from '@/firebase';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Award, FileText, Gem, User, Loader2, DollarSign, HeartHandshake, ArrowRight, Sparkles } from "lucide-react";
+import { Award, FileText, Gem, User, Loader2, DollarSign, HeartHandshake, ArrowRight, Sparkles, Wallet } from "lucide-react";
 import { doc } from 'firebase/firestore';
 import { useDoc } from '@/firebase/firestore/use-doc';
 import Link from 'next/link';
@@ -92,11 +92,21 @@ export default function AccountDashboard() {
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between pb-2">
                         <CardTitle className="text-sm font-medium">Wallet Balance</CardTitle>
+                        <Wallet className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold">{formatPrice(memberData?.walletBalance || 0)}</div>
+                        <p className="text-xs text-muted-foreground">Used for membership payments.</p>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between pb-2">
+                        <CardTitle className="text-sm font-medium">Reward Points</CardTitle>
                         <Award className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">{formatPrice(memberData?.rewardPoints || 0)}</div>
-                        <p className="text-xs text-muted-foreground">Used for membership payments.</p>
+                        <div className="text-2xl font-bold">{memberData?.rewardPoints || 0}</div>
+                        <p className="text-xs text-muted-foreground">Earned from community actions.</p>
                     </CardContent>
                 </Card>
                  <Card>
@@ -109,16 +119,6 @@ export default function AccountDashboard() {
                          <Button asChild>
                             <Link href="/contribute">Contribute Data</Link>
                         </Button>
-                    </CardContent>
-                </Card>
-                 <Card>
-                    <CardHeader className="flex flex-row items-center justify-between pb-2">
-                        <CardTitle className="text-sm font-medium">My Documents</CardTitle>
-                        <FileText className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                        <p className="text-sm text-muted-foreground mb-4">Securely store and manage your important documents.</p>
-                         <Button disabled>Upload Documents</Button>
                     </CardContent>
                 </Card>
             </div>
@@ -143,3 +143,5 @@ export default function AccountDashboard() {
         </div>
     );
 }
+
+    
