@@ -15,7 +15,8 @@ service cloud.firestore {
     }
     
     function isAdmin() {
-        return isSignedIn();
+        // In a real app, this would check for a custom claim, e.g., request.auth.token.admin == true
+        return isSignedIn(); 
     }
 
     function isExistingOwner(userId) {
@@ -95,6 +96,12 @@ service cloud.firestore {
       allow create: if isOwner(request.resource.data.applicantId);
       allow update: if isAdmin() || isOwner(resource.data.applicantId);
       allow delete: if false;
+    }
+
+    match /platform_config/{docId} {
+      allow get: if isSignedIn();
+      allow list: if isSignedIn();
+      allow create, update, delete: if isAdmin();
     }
   }
 }

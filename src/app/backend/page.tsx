@@ -29,6 +29,7 @@ import {
   Boxes,
   HeartHandshake,
   Wallet,
+  Banknote,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -39,6 +40,7 @@ import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import ContributionsList from './contributions-list';
 import WalletManagementList from './finance-applications';
+import BankDetailsSettings from './bank-details-settings';
 
 // Placeholder Content Components
 function DashboardContent() {
@@ -64,14 +66,6 @@ function PlatformTasksContent() {
         <div>
             <h1 className="text-2xl font-bold">Platform Tasks</h1>
             <p className="mt-2 text-muted-foreground">Manage background jobs and scheduled processes.</p>
-        </div>
-    )
-}
-function PlatformSettingsContent() {
-    return (
-        <div>
-            <h1 className="text-2xl font-bold">Platform Settings</h1>
-            <p className="mt-2 text-muted-foreground">Global platform configurations.</p>
         </div>
     )
 }
@@ -128,8 +122,8 @@ export default function BackendPage() {
         return <PlatformLogsContent />;
       case 'platform-tasks':
         return <PlatformTasksContent />;
-      case 'platform-settings':
-        return <PlatformSettingsContent />;
+      case 'bank-details-settings':
+        return <BankDetailsSettings />;
       case 'revenue-pricing':
         return <RevenuePricingContent />;
       case 'revenue-transactions':
@@ -197,9 +191,9 @@ export default function BackendPage() {
                             <ListTodo />
                             <span>Tasks</span>
                         </SidebarMenuSubButton>
-                        <SidebarMenuSubButton isActive={activeView === 'platform-settings'} onClick={() => setActiveView('platform-settings')}>
-                            <Settings />
-                            <span>Settings</span>
+                        <SidebarMenuSubButton isActive={activeView === 'bank-details-settings'} onClick={() => setActiveView('bank-details-settings')}>
+                            <Banknote />
+                            <span>Bank Details</span>
                         </SidebarMenuSubButton>
                     </SidebarMenuSub>
                 </SidebarMenuItem>

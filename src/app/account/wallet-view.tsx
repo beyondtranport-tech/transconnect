@@ -5,7 +5,7 @@ import { useDoc, useFirestore, useMemoFirebase, useUser } from '@/firebase';
 import { doc, getDoc, DocumentData } from 'firebase/firestore';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Loader2, ClipboardCopy } from 'lucide-react';
+import { Loader2, ClipboardCopy, Banknote } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 import { useEffect, useState } from 'react';
@@ -24,15 +24,6 @@ const formatPrice = (price: number) => {
     return new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(price);
 };
 
-const bankDetails = {
-    bankName: "First National Bank",
-    accountHolder: "TransConnect (Pty) Ltd",
-    accountNumber: "62800012345",
-    branchCode: "250655",
-    accountType: "Cheque",
-};
-
-
 export default function WalletView() {
     const firestore = useFirestore();
     const { user } = useUser();
@@ -45,8 +36,15 @@ export default function WalletView() {
         if (!firestore || !user) return null;
         return doc(firestore, 'members', user.uid);
     }, [firestore, user]);
+    
+    const bankDetailsRef = useMemoFirebase(() => {
+        if (!firestore) return null;
+        return doc(firestore, 'platform_config', 'bank_details');
+    }, [firestore]);
 
     const { data: memberData, isLoading: isMemberLoading } = useDoc(memberDocRef);
+    const { data: bankDetails, isLoading: isBankDetailsLoading } = useDoc(bankDetailsRef);
+
 
     useEffect(() => {
         const fetchApplications = async () => {
@@ -69,7 +67,6 @@ export default function WalletView() {
                     .filter(snap => snap.exists())
                     .map(snap => ({ id: snap.id, ...snap.data() }));
 
-                // Sort applications by createdAt date, descending
                 appData.sort((a, b) => {
                     const dateA = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(0);
                     const dateB = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(0);
@@ -137,20 +134,36 @@ export default function WalletView() {
                         To add funds, make an EFT payment using the details below. Your balance will be updated once payment is confirmed by an administrator.
                     </CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-3">
-                     {Object.entries(bankDetails).map(([key, value]) => (
-                        <div key={key} className="flex justify-between items-center text-sm">
-                            <span className="text-muted-foreground capitalize">{key.replace(/([A-Z])/g, ' $1').trim()}</span>
-                            <span className="font-mono">{value}</span>
+                <CardContent>
+                    {isBankDetailsLoading && (
+                        <div className="flex justify-center items-center py-6">
+                            <Loader2 className="h-6 w-6 animate-spin text-primary" />
                         </div>
-                    ))}
-                    {user && (
-                        <div className="flex justify-between items-center text-sm pt-3 border-t">
-                            <span className="text-muted-foreground font-semibold">Your Payment Reference</span>
-                             <button onClick={() => copyToClipboard(user.uid)} className="font-mono text-primary hover:underline flex items-center gap-2">
-                                {user.uid}
-                                <ClipboardCopy className="h-4 w-4"/>
-                            </button>
+                    )}
+                    {bankDetails && !isBankDetailsLoading && (
+                        <div className="space-y-3">
+                             {Object.entries(bankDetails).map(([key, value]) => (
+                                <div key={key} className="flex justify-between items-center text-sm">
+                                    <span className="text-muted-foreground capitalize">{key.replace(/([A-Z])/g, ' $1').trim()}</span>
+                                    <span className="font-mono">{value}</span>
+                                </div>
+                            ))}
+                            {user && (
+                                <div className="flex justify-between items-center text-sm pt-3 border-t">
+                                    <span className="text-muted-foreground font-semibold">Your Payment Reference</span>
+                                     <button onClick={() => copyToClipboard(user.uid)} className="font-mono text-primary hover:underline flex items-center gap-2">
+                                        {user.uid}
+                                        <ClipboardCopy className="h-4 w-4"/>
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                    )}
+                     {!bankDetails && !isBankDetailsLoading && (
+                        <div className="py-6 text-center text-muted-foreground">
+                            <Banknote className="h-8 w-8 mx-auto mb-2"/>
+                            <p>Bank details are not configured yet.</p>
+                            <p className="text-xs">Please contact support or check back later.</p>
                         </div>
                     )}
                 </CardContent>
