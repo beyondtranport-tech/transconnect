@@ -1,10 +1,11 @@
 
+
 import Image from "next/image";
 import { marketplaceItems } from "@/lib/data";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { placeholderImages } from "@/lib/placeholder-images.json";
-import { Eye, Sparkles, Handshake } from "lucide-react";
+import { Eye, Sparkles, Handshake, ArrowRight, Tags, Search, Mail, Users } from "lucide-react";
 import Link from 'next/link';
 
 const marketplaceHeroImage = placeholderImages.find(p => p.id === 'marketplace-division');
@@ -25,6 +26,13 @@ const sections = [
         title: "Partner Reseller Offer",
         content: "Our partner pledge is that we are dedicated to driving sales to you."
     }
+];
+
+const serviceExamples = [
+    { icon: Tags, name: "Loyalty & Coupon Programs" },
+    { icon: Search, name: "SEO & Pay-Per-Click" },
+    { icon: Mail, name: "Data & Marketing Services" },
+    { icon: Users, name: "Courier & Agent Networks" }
 ];
 
 export default function MarketplacePage() {
@@ -70,9 +78,33 @@ export default function MarketplacePage() {
                             )
                         })}
                     </div>
+                </div>
+            </section>
+
+             <section className="py-16 md:py-24 bg-card">
+                <div className="container mx-auto px-4">
+                    <div className="text-center max-w-3xl mx-auto mb-12">
+                        <h2 className="text-3xl md:text-4xl font-bold font-headline">A Marketplace of Services</h2>
+                        <p className="mt-4 text-lg text-muted-foreground">
+                            Our reseller network is comprised of service providers with established partner programs. We connect you with opportunities in:
+                        </p>
+                    </div>
+                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 max-w-6xl mx-auto">
+                        {serviceExamples.map(service => {
+                            const Icon = service.icon;
+                            return (
+                                <div key={service.name} className="flex items-center gap-4 p-4 bg-background rounded-lg">
+                                    <Icon className="h-8 w-8 text-primary shrink-0" />
+                                    <span className="font-semibold">{service.name}</span>
+                                </div>
+                            )
+                        })}
+                    </div>
                      <div className="text-center mt-16">
                         <Button asChild size="lg">
-                            <Link href="/join">Become a Partner Reseller</Link>
+                            <Link href="/join">
+                                Become a Partner Reseller <ArrowRight className="ml-2 h-4 w-4" />
+                            </Link>
                         </Button>
                     </div>
                 </div>
@@ -80,4 +112,3 @@ export default function MarketplacePage() {
         </div>
     );
 }
-
