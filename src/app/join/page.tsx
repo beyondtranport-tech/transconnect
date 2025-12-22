@@ -112,8 +112,8 @@ function JoinFormComponent() {
         memberData.financierType = financierType;
       }
       
-      // Specifically assign admin role if the email matches
-      if (values.email === 'beyondtransport@gmail.com') {
+      // Specifically assign admin role if the email matches one of the admin emails
+      if (values.email === 'beyondtransport@gmail.com' || values.email === 'admin.cleanup@transconnect.com') {
         memberData.admin = true;
       }
 
