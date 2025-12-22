@@ -1,6 +1,6 @@
 'use client';
 
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
 import { collection } from 'firebase/firestore';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -9,15 +9,49 @@ import { Badge } from '@/components/ui/badge';
 
 export default function MembersList() {
     const firestore = useFirestore();
+    const { user, isUserLoading } = useUser();
 
+    // Only create the query if the user is authenticated
     const membersCollectionRef = useMemoFirebase(() => {
-        if (!firestore) return null;
+        if (!firestore || !user) return null;
         return collection(firestore, 'members');
-    }, [firestore]);
+    }, [firestore, user]);
     
     const { data: members, isLoading, error } = useCollection(membersCollectionRef);
 
     const capitalize = (s: string) => s && s[0].toUpperCase() + s.slice(1);
+
+    // Show a loading state while checking for user authentication
+    if (isUserLoading) {
+        return (
+             <Card>
+                <CardHeader>
+                    <CardTitle>Members</CardTitle>
+                    <CardDescription>A list of all registered members on the platform.</CardDescription>
+                </CardHeader>
+                <CardContent className="flex justify-center items-center py-10">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                </CardContent>
+            </Card>
+        );
+    }
+    
+    // If the backend lock is off, a user might access this page without being logged in.
+    // We should not attempt to fetch data in that case.
+    if (!user) {
+         return (
+             <Card>
+                <CardHeader>
+                    <CardTitle>Members</CardTitle>
+                    <CardDescription>A list of all registered members on the platform.</CardDescription>
+                </CardHeader>
+                <CardContent className="text-center py-10">
+                    <p className="text-muted-foreground">Please log in to view member data.</p>
+                </CardContent>
+            </Card>
+        );
+    }
+
 
     return (
         <Card>
