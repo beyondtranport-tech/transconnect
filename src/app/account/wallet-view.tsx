@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 import { useEffect, useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { bankDetails } from '@/lib/bank-details.json';
+import bankDetailsData from '@/lib/bank-details.json';
 
 const statusColors: { [key: string]: 'default' | 'secondary' | 'destructive' | 'outline' } = {
   pending: 'secondary',
@@ -118,6 +118,8 @@ export default function WalletView() {
         return '';
     }
 
+    const safeBankDetails = bankDetailsData || {};
+
     return (
         <div className="w-full space-y-8">
             <Card>
@@ -129,7 +131,7 @@ export default function WalletView() {
                 </CardHeader>
                 <CardContent>
                     <div className="space-y-3">
-                         {Object.entries(bankDetails).map(([key, value]) => (
+                         {Object.entries(safeBankDetails).map(([key, value]) => (
                             <div key={key} className="flex justify-between items-center text-sm">
                                 <span className="text-muted-foreground capitalize">{key.replace(/([A-Z])/g, ' $1').trim()}</span>
                                 <span className="font-mono">{value}</span>
