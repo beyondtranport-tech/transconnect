@@ -2,7 +2,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -40,6 +40,7 @@ type SignInFormValues = z.infer<typeof formSchema>;
 
 export default function SignInPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -56,16 +57,26 @@ export default function SignInPage() {
   const onSubmit = async (values: SignInFormValues) => {
     setIsLoading(true);
     try {
-      await signInWithEmailAndPassword(auth, values.email, values.password);
+      const userCredential = await signInWithEmailAndPassword(auth, values.email, values.password);
+
+      const idToken = await userCredential.user.getIdToken();
+      
+      // Send the ID token to the server to create a session cookie
+      await fetch('/api/auth/session', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ idToken }),
+      });
 
       toast({
         title: 'Signed In!',
         description: "Welcome back to TransConnect.",
       });
       
-      // All users are redirected to the account page after login.
-      // The middleware will handle routing for admins to the backend.
-      router.push('/account');
+      const redirectUrl = searchParams.get('redirect') || '/account';
+      router.push(redirectUrl);
 
     } catch (error: any) {
       let title = 'An error occurred.';

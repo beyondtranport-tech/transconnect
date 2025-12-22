@@ -49,10 +49,18 @@ export function Header() {
     setIsClient(true);
   }, []);
   
-  const isAdmin = user?.email === process.env.NEXT_PUBLIC_ADMIN_EMAIL;
+  const isAdmin = isClient && user?.email === process.env.NEXT_PUBLIC_ADMIN_EMAIL;
 
-  const handleSignOut = () => {
-    signOut(auth);
+  const handleSignOut = async () => {
+    if (!auth) return;
+    try {
+        await signOut(auth);
+        // This will trigger the onAuthStateChanged listener and update the UI
+        // Also, clear the session cookie by calling our API route
+        await fetch('/api/auth/session', { method: 'DELETE' });
+    } catch (error) {
+        console.error("Error signing out: ", error);
+    }
   };
 
   const getInitials = (name: string | null | undefined) => {

@@ -42,6 +42,9 @@ import ContributionsList from './contributions-list';
 import WalletManagementList from './wallet-management-list';
 import BankDetailsSettings from './bank-details-settings';
 import FinanceApplicationsList from './finance-applications-list';
+import { useAuth } from '@/firebase';
+import { signOut } from 'firebase/auth';
+
 
 // Placeholder Content Components
 function DashboardContent() {
@@ -98,12 +101,19 @@ function ContributionsContent() {
 
 export default function BackendPage() {
   const router = useRouter();
+  const auth = useAuth();
   const [activeView, setActiveView] = useState('dashboard');
 
   const onLogout = async () => {
-    // Manually clear custom session cookies
-    document.cookie = "secure-backend-access=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-    router.push('/');
+    if (!auth) return;
+    try {
+        await signOut(auth);
+        // Clear the session cookie by calling our API route
+        await fetch('/api/auth/session', { method: 'DELETE' });
+        router.push('/');
+    } catch (error) {
+        console.error("Error signing out: ", error);
+    }
   };
 
   const renderContent = () => {

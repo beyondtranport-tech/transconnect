@@ -15,8 +15,7 @@ service cloud.firestore {
     }
     
     function isAdmin() {
-        // In a real app, this would check for a custom claim, e.g., request.auth.token.admin == true
-        return isSignedIn(); 
+        return isSignedIn() && request.auth.token.email == "beyondtransport@gmail.com";
     }
 
     function isExistingOwner(userId) {
