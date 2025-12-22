@@ -70,22 +70,12 @@ service cloud.firestore {
     // ----------------------------------------------------------------------
 
     match /members/{memberId} {
-      // **FIXED RULE**: A user can read their own document (isOwner), OR an admin can read any document (isAdmin).
-      // This breaks the circular dependency for the isAdmin() check.
       allow get: if isOwner(memberId) || isAdmin();
-      
-      // Allow any signed-in user to see the list of members for console functionality.
       allow list: if isSignedIn();
-      
-      // Allow creation for a new user setting their own doc.
       allow create: if (isOwner(memberId) && hasValidMemberId(memberId)) || isCreatingAdmin();
-      
-      // Allow admins to manage credits, and users to update their own allowed profile fields or specific membership details.
       allow update: if (isAdmin() && isAdminManagingCredit()) || 
                       isOwnerUpdatingAllowedFields(memberId) ||
                       isUpdatingOwnMembershipOrPoints(memberId);
-
-      // Only an admin can delete a member's record.
       allow delete: if isAdmin();
     }
 
@@ -115,8 +105,8 @@ service cloud.firestore {
     }
 
     match /platform_config/{docId} {
-      // Correct rule: Only admins can perform any action on platform config.
-      allow get, list, create, update, delete: if isAdmin();
+      // Correct rule: Allow access if the user's email is the designated admin email. This breaks the circular dependency.
+      allow get, list, create, update, delete: if request.auth.token.email == 'transconnect@gmail.com';
     }
   }
 }
