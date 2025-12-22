@@ -200,14 +200,6 @@ export default function SignInPage() {
             </Link>
           </div>
         </CardContent>
-        <CardFooter className="flex justify-center border-t pt-4">
-             <Button asChild variant="ghost" size="sm">
-                <Link href="/backend/login">
-                    <Shield className="mr-2 h-4 w-4" />
-                    Admin Portal
-                </Link>
-            </Button>
-        </CardFooter>
       </Card>
     </div>
   );
