@@ -33,16 +33,17 @@ type BankDetailsFormValues = z.infer<typeof formSchema>;
 export default function BankDetailsSettings() {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const safeBankDetails = bankDetails || {};
 
   const form = useForm<BankDetailsFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      bankName: bankDetails.bankName || '',
-      branchName: bankDetails.branchName || '',
-      accountHolder: bankDetails.accountHolder || '',
-      accountType: bankDetails.accountType || '',
-      accountNumber: bankDetails.accountNumber || '',
-      branchCode: bankDetails.branchCode || '',
+      bankName: safeBankDetails.bankName || '',
+      branchName: safeBankDetails.branchName || '',
+      accountHolder: safeBankDetails.accountHolder || '',
+      accountType: safeBankDetails.accountType || '',
+      accountNumber: safeBankDetails.accountNumber || '',
+      branchCode: safeBankDetails.branchCode || '',
     },
   });
 
