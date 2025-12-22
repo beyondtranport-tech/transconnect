@@ -226,7 +226,7 @@ export default function BackendPage() {
                 Super Admin
               </span>
               <span className="text-xs text-sidebar-foreground/70">
-                beyondtransport@gmail.com
+                transconnect@gmail.com
               </span>
             </div>
             <Button
