@@ -61,12 +61,12 @@ service cloud.firestore {
     // ----------------------------------------------------------------------
 
     match /members/{memberId} {
+      // Corrected Rule: An owner can always read their own document. An admin can also read it.
       allow get: if isOwner(memberId) || isAdmin();
-      // Allow any signed-in user to see the list of members.
-      // This is necessary for the Firebase Console to function correctly.
+      // Allow any signed-in user to see the list of members for console functionality.
       allow list: if isSignedIn();
       // Allow creation for a new user setting their own doc.
-      // The special admin creation rules have been removed to prevent lockouts.
+      // Admin creation is now handled by making the user and then an admin updates the flag.
       allow create: if isOwner(memberId) && hasValidMemberId(memberId);
       
       // Allow admins to manage credits, and users to update their own allowed profile fields or specific membership details.
