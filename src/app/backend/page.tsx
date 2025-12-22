@@ -41,6 +41,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import ContributionsList from './contributions-list';
 import WalletManagementList from './wallet-management-list';
 import BankDetailsSettings from './bank-details-settings';
+import FinanceApplicationsList from './finance-applications-list';
 
 // Placeholder Content Components
 function DashboardContent() {
@@ -75,15 +76,6 @@ function RevenuePricingContent() {
         <div>
             <h1 className="text-2xl font-bold">Revenue Pricing</h1>
             <p className="mt-2 text-muted-foreground">Define and manage membership tiers and prices.</p>
-        </div>
-    )
-}
-
-function RevenueTransactionsContent() {
-    return (
-        <div>
-            <h1 className="text-2xl font-bold">Revenue Transactions</h1>
-            <p className="mt-2 text-muted-foreground">View all financial transactions on the platform.</p>
         </div>
     )
 }
@@ -127,7 +119,7 @@ export default function BackendPage() {
       case 'revenue-pricing':
         return <RevenuePricingContent />;
       case 'revenue-transactions':
-        return <RevenueTransactionsContent />;
+        return <FinanceApplicationsList />;
       case 'divisions':
         return <DivisionsContent />;
       case 'contributions':
