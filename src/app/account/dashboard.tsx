@@ -3,7 +3,7 @@
 import { useUser, useFirestore, useMemoFirebase } from '@/firebase';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Award, FileText, Gem, User, Loader2, DollarSign, HeartHandshake } from "lucide-react";
+import { Award, FileText, Gem, User, Loader2, DollarSign, HeartHandshake, ArrowRight, Sparkles } from "lucide-react";
 import { doc } from 'firebase/firestore';
 import { useDoc } from '@/firebase/firestore/use-doc';
 import Link from 'next/link';
@@ -18,6 +18,8 @@ export default function AccountDashboard() {
     }, [firestore, user]);
 
     const { data: memberData, isLoading: isMemberLoading } = useDoc(memberRef);
+
+    const isFreeMember = memberData?.membershipId === 'free';
 
     if (isUserLoading || !user || isMemberLoading) {
         return (
@@ -36,6 +38,36 @@ export default function AccountDashboard() {
                 </div>
             </div>
 
+            {isFreeMember && (
+                 <Card className="mb-8 bg-primary/5 border-primary/20">
+                    <CardHeader>
+                        <div className="flex items-start gap-4">
+                            <div className="bg-primary/10 p-3 rounded-full">
+                               <Sparkles className="h-6 w-6 text-primary" />
+                            </div>
+                            <div>
+                                <CardTitle>Unlock Your Full Potential</CardTitle>
+                                <CardDescription className="mt-1">
+                                    You are currently on the Free plan. Upgrade your membership to access powerful tools, exclusive discounts, and new revenue opportunities.
+                                </CardDescription>
+                            </div>
+                        </div>
+                    </CardHeader>
+                    <CardContent>
+                         <p className="text-sm text-muted-foreground">
+                            By upgrading, you gain access to our advanced Tech division, including the AI Freight Matcher, plus the ability to activate Loyalty and Actions plans to save money and earn commission.
+                        </p>
+                    </CardContent>
+                    <CardFooter>
+                        <Button asChild>
+                            <Link href="/pricing">
+                                Compare Plans and Upgrade <ArrowRight className="ml-2 h-4 w-4" />
+                            </Link>
+                        </Button>
+                    </CardFooter>
+                </Card>
+            )}
+
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -44,7 +76,13 @@ export default function AccountDashboard() {
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold text-primary capitalize">{memberData?.membershipId || 'Free'}</div>
-                        <p className="text-xs text-muted-foreground">Upgrade to unlock more benefits.</p>
+                         {isFreeMember ? (
+                             <Button asChild variant="link" size="sm" className="p-0 h-auto">
+                                <Link href="/pricing">Upgrade to a paid plan</Link>
+                            </Button>
+                         ) : (
+                            <p className="text-xs text-muted-foreground">You have a premium membership.</p>
+                         )}
                     </CardContent>
                 </Card>
                 <Card>
