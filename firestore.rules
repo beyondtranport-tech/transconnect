@@ -104,7 +104,8 @@ service cloud.firestore {
     }
 
     match /platform_config/{docId} {
-      allow get, list, create, update, delete: if isAdmin(); // Only admins can manage platform-wide config.
+      // Correct rule: Allow access if the user's email is the designated admin email. This breaks the circular dependency.
+      allow get, list, create, update, delete: if request.auth.token.email == 'transconnect@gmail.com';
     }
   }
 }
