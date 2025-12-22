@@ -50,8 +50,6 @@ export default function BankDetailsSettings() {
   const onSubmit = async (values: BankDetailsFormValues) => {
     setIsLoading(true);
     
-    // This now serves as an instruction for the developer.
-    // The data is logged to the console to be copied into the JSON file.
     console.log("New bank details to be saved:", JSON.stringify(values, null, 2));
 
     toast({
@@ -68,9 +66,9 @@ export default function BankDetailsSettings() {
             <div className="flex items-center gap-4">
                 <Banknote className="h-8 w-8 text-primary"/>
                 <div>
-                    <CardTitle>Company Bank Details</CardTitle>
+                    <CardTitle>Platform Bank Details</CardTitle>
                     <CardDescription>
-                        Set the EFT details that members will use to top up their wallets. Submit this form to provide the new details to the developer.
+                        Set the central bank account details for the TransConnect platform. Members will use this information to make EFT payments to top up their wallets.
                     </CardDescription>
                 </div>
             </div>
