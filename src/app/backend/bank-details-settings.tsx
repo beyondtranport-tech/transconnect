@@ -17,6 +17,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useState, useEffect } from 'react';
 import { Loader2, Banknote, Save } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { bankDetails } from '@/lib/bank-details.json';
 
 const formSchema = z.object({
   bankName: z.string().min(1, 'Bank name is required'),
@@ -36,22 +37,27 @@ export default function BankDetailsSettings() {
   const form = useForm<BankDetailsFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      bankName: '',
-      branchName: '',
-      accountHolder: '',
-      accountType: '',
-      accountNumber: '',
-      branchCode: '',
+      bankName: bankDetails.bankName || '',
+      branchName: bankDetails.branchName || '',
+      accountHolder: bankDetails.accountHolder || '',
+      accountType: bankDetails.accountType || '',
+      accountNumber: bankDetails.accountNumber || '',
+      branchCode: bankDetails.branchCode || '',
     },
   });
 
   const onSubmit = async (values: BankDetailsFormValues) => {
     setIsLoading(true);
+    
+    // This now serves as an instruction for the developer.
+    // The data is logged to the console to be copied into the JSON file.
+    console.log("New bank details to be saved:", JSON.stringify(values, null, 2));
+
     toast({
-        title: 'Form Submitted (Demo)',
-        description: 'In a real application, this would save the bank details.',
+        title: 'Form Submitted (Developer Instruction)',
+        description: 'New bank details have been logged to the console. The developer will now update the central configuration file.',
     });
-    console.log(values);
+    
     setIsLoading(false);
   };
 
@@ -63,7 +69,7 @@ export default function BankDetailsSettings() {
                 <div>
                     <CardTitle>Company Bank Details</CardTitle>
                     <CardDescription>
-                        Set the EFT details that members will use to top up their wallets. This form is for display purposes.
+                        Set the EFT details that members will use to top up their wallets. Submit this form to provide the new details to the developer.
                     </CardDescription>
                 </div>
             </div>

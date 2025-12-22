@@ -5,7 +5,7 @@ import { Suspense } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { useUser, useFirestore, useMemoFirebase } from '@/firebase';
-import { doc, setDoc, getDoc, updateDoc, arrayUnion, writeBatch } from 'firebase/firestore';
+import { doc, setDoc, getDoc, updateDoc, arrayUnion, writeBatch, collection } from 'firebase/firestore';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
@@ -14,6 +14,7 @@ import { useState, useEffect } from 'react';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import Link from 'next/link';
+import { bankDetails } from '@/lib/bank-details.json';
 
 const tiers = [
   { id: 'basic', name: 'Basic', price: { monthly: 375, annual: 375 * 12 * 0.85 } },
@@ -23,14 +24,6 @@ const tiers = [
 
 const formatPrice = (price: number) => {
     return new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(price);
-};
-
-const bankDetails = {
-    bankName: "First National Bank",
-    accountHolder: "TransConnect (Pty) Ltd",
-    accountNumber: "62800012345",
-    branchCode: "250655",
-    accountType: "Cheque",
 };
 
 function CheckoutComponent() {
@@ -206,4 +199,3 @@ export default function CheckoutPage() {
         </div>
     );
 }
-

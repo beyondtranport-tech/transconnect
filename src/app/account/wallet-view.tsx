@@ -4,11 +4,12 @@ import { useDoc, useFirestore, useMemoFirebase, useUser } from '@/firebase';
 import { doc, getDoc, DocumentData } from 'firebase/firestore';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Loader2, ClipboardCopy, Banknote } from 'lucide-react';
+import { Loader2, ClipboardCopy } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 import { useEffect, useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
+import { bankDetails } from '@/lib/bank-details.json';
 
 const statusColors: { [key: string]: 'default' | 'secondary' | 'destructive' | 'outline' } = {
   pending: 'secondary',
@@ -21,16 +22,6 @@ const statusColors: { [key: string]: 'default' | 'secondary' | 'destructive' | '
 
 const formatPrice = (price: number) => {
     return new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(price);
-};
-
-// Static bank details to avoid Firestore issues
-const staticBankDetails = {
-    bankName: "First National Bank",
-    branchName: "Sandton City",
-    accountHolder: "TransConnect (Pty) Ltd",
-    accountType: "Cheque",
-    accountNumber: "62800012345",
-    branchCode: "250655",
 };
 
 export default function WalletView() {
@@ -138,7 +129,7 @@ export default function WalletView() {
                 </CardHeader>
                 <CardContent>
                     <div className="space-y-3">
-                         {Object.entries(staticBankDetails).map(([key, value]) => (
+                         {Object.entries(bankDetails).map(([key, value]) => (
                             <div key={key} className="flex justify-between items-center text-sm">
                                 <span className="text-muted-foreground capitalize">{key.replace(/([A-Z])/g, ' $1').trim()}</span>
                                 <span className="font-mono">{value}</span>
