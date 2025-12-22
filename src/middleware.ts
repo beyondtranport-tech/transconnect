@@ -1,51 +1,63 @@
 
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { initializeApp, getApp, getApps } from 'firebase-admin/app';
+import { getAuth } from 'firebase-admin/auth';
 
 export const runtime = 'nodejs';
 
+const adminApp =
+  getApps().find((it) => it.name === 'admin') ||
+  initializeApp(
+    {
+      credential:
+        process.env.GOOGLE_APPLICATION_CREDENTIALS &&
+        JSON.parse(process.env.GOOGLE_APPLICATION_CREDENTIALS),
+    },
+    'admin'
+  );
+
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  const adminSession = request.cookies.get('admin-session')?.value;
+  const sessionCookie = request.cookies.get('__session')?.value;
 
-  // 1. If trying to access a protected backend route
   if (pathname.startsWith('/backend') && pathname !== '/backend/login') {
-    // If no session cookie, redirect to the admin login page
-    if (!adminSession) {
-      return NextResponse.redirect(new URL('/backend/login', request.url));
+    if (!sessionCookie) {
+      return NextResponse.redirect(new URL('/signin', request.url));
     }
 
     try {
-      // 2. Verify the session by checking its value against the env variable
-      const isValid = adminSession === process.env.SUPER_ADMIN_PASSWORD;
-      
-      if (!isValid) {
-        throw new Error("Invalid session");
+      const decodedToken = await getAuth(adminApp).verifySessionCookie(
+        sessionCookie,
+        true
+      );
+
+      if (decodedToken.email !== 'beyondtransport@gmail.com') {
+        throw new Error('Unauthorized');
       }
 
-      // 3. Session is valid, allow access
-      return NextResponse.next();
+      const adminPasswordCookie = request.cookies.get('admin-session')?.value;
+      if (adminPasswordCookie !== process.env.SUPER_ADMIN_PASSWORD) {
+         return NextResponse.redirect(new URL('/backend/login', request.url));
+      }
 
+      return NextResponse.next();
     } catch (error) {
-      // Session is invalid. Redirect to login.
-      const url = request.nextUrl.clone();
-      url.pathname = '/backend/login';
-      const response = NextResponse.redirect(url);
-      // Clear the invalid cookie
-      response.cookies.delete('admin-session');
-      return response;
+      return NextResponse.redirect(new URL('/signin', request.url));
     }
   }
-  
-  // If accessing the login page with a valid session, redirect to the dashboard
-  if (pathname === '/backend/login' && adminSession === process.env.SUPER_ADMIN_PASSWORD) {
-     return NextResponse.redirect(new URL('/backend', request.url));
+
+   if (pathname === '/backend/login') {
+     const adminPasswordCookie = request.cookies.get('admin-session')?.value;
+     if (adminPasswordCookie === process.env.SUPER_ADMIN_PASSWORD) {
+        return NextResponse.redirect(new URL('/backend', request.url));
+     }
   }
+
 
   return NextResponse.next();
 }
 
 export const config = {
-  // Match all backend routes
-  matcher: ['/backend/:path*'],
+  matcher: ['/backend/:path*', '/api/auth/session'],
 };
