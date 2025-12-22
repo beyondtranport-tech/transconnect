@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useDoc, useFirestore, useMemoFirebase, useUser } from '@/firebase';
@@ -24,6 +23,16 @@ const formatPrice = (price: number) => {
     return new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(price);
 };
 
+// Static bank details to avoid Firestore issues
+const staticBankDetails = {
+    bankName: "First National Bank",
+    branchName: "Sandton City",
+    accountHolder: "TransConnect (Pty) Ltd",
+    accountType: "Cheque",
+    accountNumber: "62800012345",
+    branchCode: "250655",
+};
+
 export default function WalletView() {
     const firestore = useFirestore();
     const { user } = useUser();
@@ -37,15 +46,8 @@ export default function WalletView() {
         return doc(firestore, 'members', user.uid);
     }, [firestore, user]);
     
-    const bankDetailsRef = useMemoFirebase(() => {
-        if (!firestore) return null;
-        return doc(firestore, 'platform_config', 'bank_details');
-    }, [firestore]);
-
     const { data: memberData, isLoading: isMemberLoading } = useDoc(memberDocRef);
-    const { data: bankDetails, isLoading: isBankDetailsLoading } = useDoc(bankDetailsRef);
-
-
+    
     useEffect(() => {
         const fetchApplications = async () => {
             if (!memberData || !memberData.financeApplicationIds || !firestore) {
@@ -135,37 +137,23 @@ export default function WalletView() {
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
-                    {isBankDetailsLoading && (
-                        <div className="flex justify-center items-center py-6">
-                            <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                        </div>
-                    )}
-                    {bankDetails && !isBankDetailsLoading && (
-                        <div className="space-y-3">
-                             {Object.entries(bankDetails).map(([key, value]) => (
-                                <div key={key} className="flex justify-between items-center text-sm">
-                                    <span className="text-muted-foreground capitalize">{key.replace(/([A-Z])/g, ' $1').trim()}</span>
-                                    <span className="font-mono">{value}</span>
-                                </div>
-                            ))}
-                            {user && (
-                                <div className="flex justify-between items-center text-sm pt-3 border-t">
-                                    <span className="text-muted-foreground font-semibold">Your Payment Reference</span>
-                                     <button onClick={() => copyToClipboard(user.uid)} className="font-mono text-primary hover:underline flex items-center gap-2">
-                                        {user.uid}
-                                        <ClipboardCopy className="h-4 w-4"/>
-                                    </button>
-                                </div>
-                            )}
-                        </div>
-                    )}
-                     {!bankDetails && !isBankDetailsLoading && (
-                        <div className="py-6 text-center text-muted-foreground">
-                            <Banknote className="h-8 w-8 mx-auto mb-2"/>
-                            <p>Bank details are not configured yet.</p>
-                            <p className="text-xs">Please contact support or check back later.</p>
-                        </div>
-                    )}
+                    <div className="space-y-3">
+                         {Object.entries(staticBankDetails).map(([key, value]) => (
+                            <div key={key} className="flex justify-between items-center text-sm">
+                                <span className="text-muted-foreground capitalize">{key.replace(/([A-Z])/g, ' $1').trim()}</span>
+                                <span className="font-mono">{value}</span>
+                            </div>
+                        ))}
+                        {user && (
+                            <div className="flex justify-between items-center text-sm pt-3 border-t">
+                                <span className="text-muted-foreground font-semibold">Your Payment Reference</span>
+                                 <button onClick={() => copyToClipboard(user.uid)} className="font-mono text-primary hover:underline flex items-center gap-2">
+                                    {user.uid}
+                                    <ClipboardCopy className="h-4 w-4"/>
+                                </button>
+                            </div>
+                        )}
+                    </div>
                 </CardContent>
             </Card>
 

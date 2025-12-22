@@ -14,14 +14,9 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Loader2, Banknote, Save } from 'lucide-react';
-import { useFirestore, useMemoFirebase } from '@/firebase';
-import { setDoc, doc } from 'firebase/firestore';
-import { errorEmitter } from '@/firebase/error-emitter';
-import { FirestorePermissionError } from '@/firebase/errors';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useDoc } from '@/firebase/firestore/use-doc';
 
 const formSchema = z.object({
   bankName: z.string().min(1, 'Bank name is required'),
@@ -37,14 +32,6 @@ type BankDetailsFormValues = z.infer<typeof formSchema>;
 export default function BankDetailsSettings() {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
-  const firestore = useFirestore();
-
-  const bankDetailsRef = useMemoFirebase(() => {
-    if (!firestore) return null;
-    return doc(firestore, 'platform_config', 'bank_details');
-  }, [firestore]);
-  
-  const { data: currentDetails, isLoading: isLoadingDetails } = useDoc(bankDetailsRef);
 
   const form = useForm<BankDetailsFormValues>({
     resolver: zodResolver(formSchema),
@@ -58,52 +45,15 @@ export default function BankDetailsSettings() {
     },
   });
 
-  useEffect(() => {
-    if (currentDetails) {
-        form.reset(currentDetails);
-    }
-  }, [currentDetails, form]);
-
   const onSubmit = async (values: BankDetailsFormValues) => {
     setIsLoading(true);
-
-    if (!firestore || !bankDetailsRef) {
-      toast({ variant: 'destructive', title: 'Error', description: 'Firestore not available.' });
-      setIsLoading(false);
-      return;
-    }
-    
-    setDoc(bankDetailsRef, values, { merge: true })
-      .then(() => {
-        toast({
-            title: 'Bank Details Saved!',
-            description: 'Your EFT details have been updated successfully.',
-        });
-      })
-      .catch((error) => {
-        const permissionError = new FirestorePermissionError({
-            path: bankDetailsRef.path,
-            operation: 'write',
-            requestResourceData: values,
-        });
-        errorEmitter.emit('permission-error', permissionError);
-        toast({
-            variant: 'destructive',
-            title: 'Save Failed',
-            description: 'You do not have permission to update these settings.',
-        });
-    }).finally(() => {
-        setIsLoading(false);
+    toast({
+        title: 'Form Submitted (Demo)',
+        description: 'In a real application, this would save the bank details.',
     });
+    console.log(values);
+    setIsLoading(false);
   };
-
-  if (isLoadingDetails) {
-    return (
-      <div className="flex justify-center items-center py-10 w-full">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
 
   return (
     <Card className="w-full max-w-2xl">
@@ -113,7 +63,7 @@ export default function BankDetailsSettings() {
                 <div>
                     <CardTitle>Company Bank Details</CardTitle>
                     <CardDescription>
-                        Set the EFT details that members will use to top up their wallets.
+                        Set the EFT details that members will use to top up their wallets. This form is for display purposes.
                     </CardDescription>
                 </div>
             </div>
