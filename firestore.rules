@@ -15,7 +15,7 @@ service cloud.firestore {
       allow get: if isOwner(memberId) || isAdmin();
       allow list: if isAdmin();
       allow create: if isOwner(memberId);
-      allow update: if isOwner(memberId) || isAdmin(); 
+      allow update: if (isOwner(memberId) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['firstName', 'lastName', 'phone', 'companyName'])) || isAdmin();
       allow delete: if isAdmin();
     }
 
@@ -40,7 +40,7 @@ service cloud.firestore {
 
     match /transactions/{transactionId} {
       allow get: if isOwner(resource.data.memberId) || isAdmin();
-      allow create: if isAdmin();
+      allow create: if isAdmin() && request.resource.data.memberId != null;
       allow update, delete: if isAdmin();
     }
 
