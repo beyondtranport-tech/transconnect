@@ -5,11 +5,23 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Calendar as CalendarIcon, PlusCircle, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
-import { DocumentData } from 'firebase/firestore';
+import { DocumentData, writeBatch, doc, collection, increment, serverTimestamp } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
-
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+import { Button } from '@/components/ui/button';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { useFirestore, useUser } from '@/firebase';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { cn } from '@/lib/utils';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const formatCurrency = (amount: number) => new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(amount);
 
@@ -18,6 +30,15 @@ const formatDate = (timestamp: any) => {
     if (timestamp && timestamp.toDate) return format(timestamp.toDate(), "yyyy-MM-dd HH:mm");
     return 'N/A';
 };
+
+const transactionSchema = z.object({
+  amount: z.coerce.number().positive('Amount must be a positive number'),
+  description: z.string().min(1, 'Description is required'),
+  date: z.date(),
+  type: z.enum(['credit', 'debit']),
+});
+
+type TransactionFormValues = z.infer<typeof transactionSchema>;
 
 interface MemberWalletProps {
     member: DocumentData;
@@ -28,10 +49,71 @@ export default function MemberWallet({ member, initialTransactions }: MemberWall
     const { toast } = useToast();
     const router = useRouter();
     const [isMounted, setIsMounted] = useState(false);
+    const firestore = useFirestore();
+    const { user } = useUser();
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    const form = useForm<TransactionFormValues>({
+        resolver: zodResolver(transactionSchema),
+        defaultValues: {
+            amount: 0,
+            description: '',
+            date: new Date(),
+            type: 'credit',
+        },
+    });
 
     useEffect(() => {
         setIsMounted(true);
     }, []);
+
+    const handleAddRecord = async (values: TransactionFormValues) => {
+        if (!firestore || !user) {
+            toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in to post.' });
+            return;
+        }
+
+        setIsSubmitting(true);
+        const batch = writeBatch(firestore);
+
+        const memberRef = doc(firestore, 'members', member.id);
+        const transactionAmount = values.type === 'credit' ? values.amount : -values.amount;
+
+        batch.set(memberRef, { walletBalance: increment(transactionAmount) }, { merge: true });
+
+        const transactionRef = doc(collection(firestore, 'transactions'));
+        batch.set(transactionRef, {
+            reconciliationId: 'manual-admin-entry',
+            memberId: member.id,
+            type: values.type,
+            amount: values.amount,
+            date: values.date,
+            description: values.description,
+            status: 'allocated',
+            chartOfAccountsCode: '7000-ManualAdjustment',
+            isAdjustment: true,
+            postedAt: serverTimestamp(),
+            postedBy: user.uid,
+            transactionId: `ADJ-${Date.now()}`
+        });
+
+        try {
+            await batch.commit();
+            toast({ title: 'Success!', description: 'Transaction has been posted and wallet has been updated.' });
+            form.reset();
+            router.refresh(); 
+        } catch (error: any) {
+            const permissionError = new FirestorePermissionError({
+                path: `members/${member.id}`,
+                operation: 'write',
+                requestResourceData: { amount: values.amount, description: values.description },
+            });
+            errorEmitter.emit('permission-error', permissionError);
+            toast({ variant: 'destructive', title: 'Posting Failed', description: error.message || "You may not have the required permissions." });
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
     
     // Calculate cumulative balance
     const openingBalanceRecord = {
@@ -46,7 +128,7 @@ export default function MemberWallet({ member, initialTransactions }: MemberWall
 
     const allRecords = [
         openingBalanceRecord, 
-        ...initialTransactions.map(tx => ({...tx, _sortDate: tx.date.toDate()}))
+        ...initialTransactions.map(tx => ({...tx, _sortDate: tx.date.toDate ? tx.date.toDate() : new Date(tx.date)}))
     ];
     const sortedTransactions = allRecords.sort((a, b) => a._sortDate.getTime() - b._sortDate.getTime());
 
@@ -74,11 +156,115 @@ export default function MemberWallet({ member, initialTransactions }: MemberWall
                         <div className="h-12 w-48 bg-muted animate-pulse rounded-md" />
                     )}
                 </CardContent>
-                 <CardFooter>
-                    <p className="text-xs text-muted-foreground">
-                        To add a manual credit or debit, please use the "Manual Adjustment" feature on the main Reconciliation page.
-                    </p>
-                </CardFooter>
+            </Card>
+
+            <Card>
+                <CardHeader>
+                    <CardTitle>Add Manual Transaction</CardTitle>
+                    <CardDescription>
+                        Manually add a credit or debit to this member's wallet. This will create a transaction record and update their balance.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <Form {...form}>
+                        <form onSubmit={form.handleSubmit(handleAddRecord)} className="space-y-4">
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                 <FormField
+                                    control={form.control}
+                                    name="type"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Type</FormLabel>
+                                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                <FormControl>
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="Select transaction type" />
+                                                </SelectTrigger>
+                                                </FormControl>
+                                                <SelectContent>
+                                                    <SelectItem value="credit">Credit</SelectItem>
+                                                    <SelectItem value="debit">Debit</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
+                                    name="amount"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Amount (R)</FormLabel>
+                                            <FormControl>
+                                                <Input type="number" step="0.01" {...field} />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
+                                    name="date"
+                                    render={({ field }) => (
+                                        <FormItem className="flex flex-col">
+                                         <FormLabel>Transaction Date</FormLabel>
+                                        <Popover>
+                                            <PopoverTrigger asChild>
+                                                <FormControl>
+                                                    <Button
+                                                        variant={"outline"}
+                                                        className={cn(
+                                                            "pl-3 text-left font-normal",
+                                                            !field.value && "text-muted-foreground"
+                                                        )}
+                                                    >
+                                                        {field.value ? (
+                                                            format(field.value, "PPP")
+                                                        ) : (
+                                                            <span>Pick a date</span>
+                                                        )}
+                                                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                                    </Button>
+                                                </FormControl>
+                                            </PopoverTrigger>
+                                            <PopoverContent className="w-auto p-0" align="start">
+                                                <Calendar
+                                                    mode="single"
+                                                    selected={field.value}
+                                                    onSelect={field.onChange}
+                                                    disabled={(date) =>
+                                                        date > new Date() || date < new Date("1900-01-01")
+                                                    }
+                                                    initialFocus
+                                                />
+                                            </PopoverContent>
+                                        </Popover>
+                                        <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                            </div>
+                            <FormField
+                                control={form.control}
+                                name="description"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Description</FormLabel>
+                                        <FormControl>
+                                            <Input placeholder="e.g., Manual correction for invoice #123" {...field} />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <Button type="submit" disabled={isSubmitting}>
+                                {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PlusCircle className="mr-2 h-4 w-4" />}
+                                Add Record
+                            </Button>
+                        </form>
+                    </Form>
+                </CardContent>
             </Card>
 
             <Card>
@@ -117,7 +303,7 @@ export default function MemberWallet({ member, initialTransactions }: MemberWall
                             <Loader2 className="h-8 w-8 animate-spin text-primary" />
                         </div>
                     )}
-                     {!isMounted && initialTransactions.length === 0 && (
+                     {isMounted && initialTransactions.length === 0 && (
                         <p className="text-center text-muted-foreground py-10">No transactions found for this member.</p>
                     )}
                 </CardContent>

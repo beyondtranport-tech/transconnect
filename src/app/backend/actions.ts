@@ -15,11 +15,25 @@ function initializeAdminApp(): App {
     }
     
     try {
+        // This is the recommended way to initialize in a serverless environment
+        // It will use the service account credentials from the environment variables
         return initializeApp({
-            credential: credential.applicationDefault(),
+             credential: credential.applicationDefault(),
         }, appName);
     } catch (error: any) {
-        console.error("Failed to initialize Firebase Admin SDK. Make sure Application Default Credentials are configured.", error);
+        if (process.env.NODE_ENV !== 'production') {
+            // For local development, you might use a service account file
+            // Make sure the path is correct and the file is not in a public folder
+            try {
+                const serviceAccount = require('../../../service-account.json');
+                 return initializeApp({
+                    credential: credential.cert(serviceAccount)
+                }, appName);
+            } catch (e) {
+                 console.error("Local service account not found or failed to initialize. Make sure 'service-account.json' is in the root and configured correctly.", e);
+            }
+        }
+        console.error("Failed to initialize Firebase Admin SDK. Make sure Application Default Credentials are configured for your environment.", error);
         throw new Error("Server configuration error. Could not connect to Firebase services.");
     }
 }
