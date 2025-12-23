@@ -133,6 +133,7 @@ export default function MembersList() {
                                 walletUrl.searchParams.set('lastName', member.lastName);
                                 walletUrl.searchParams.set('email', member.email);
                                 walletUrl.searchParams.set('walletBalance', member.walletBalance?.toString() ?? '0');
+                                walletUrl.searchParams.set('createdAt', member.createdAt?.toDate()?.toISOString() ?? new Date().toISOString());
 
                                 return (
                                 <TableRow key={member.id}>

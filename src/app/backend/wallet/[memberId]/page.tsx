@@ -16,12 +16,16 @@ function MemberWalletPageComponent() {
 
     const memberData = useMemo(() => {
         if (!memberId) return null;
+        
+        const createdAtParam = searchParams.get('createdAt');
+
         return {
             id: memberId,
             firstName: searchParams.get('firstName') || '',
             lastName: searchParams.get('lastName') || '',
             email: searchParams.get('email') || '',
             walletBalance: parseFloat(searchParams.get('walletBalance') || '0'),
+            createdAt: createdAtParam ? new Date(createdAtParam) : new Date(),
         };
     }, [memberId, searchParams]);
     

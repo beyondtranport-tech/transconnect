@@ -26,6 +26,7 @@ const formatCurrency = (amount: number) => new Intl.NumberFormat('en-ZA', { styl
 
 const formatDate = (timestamp: any) => {
     if (typeof timestamp === 'string') return timestamp;
+    if (timestamp instanceof Date) return format(timestamp, "yyyy-MM-dd HH:mm");
     if (timestamp && timestamp.toDate) return format(timestamp.toDate(), "yyyy-MM-dd HH:mm");
     return 'N/A';
 };
@@ -92,7 +93,7 @@ export default function MemberWallet({ member }: MemberWalletProps) {
         if (result.success) {
             toast({ title: 'Success!', description: 'Transaction has been posted and wallet has been updated.' });
             form.reset();
-            router.refresh(); 
+            // We don't need router.refresh() as useCollection will update the UI automatically.
         } else {
             toast({ variant: 'destructive', title: 'Posting Failed', description: result.error || "An unknown server error occurred." });
         }
@@ -103,12 +104,12 @@ export default function MemberWallet({ member }: MemberWalletProps) {
     // Calculate cumulative balance
     const openingBalanceRecord = {
         id: 'opening-balance',
-        date: new Date(new Date(member.createdAt?.toDate() || Date.now()).getTime() - 1000), // A second before creation
+        date: new Date(member.createdAt.getTime() - 1000),
         description: 'Opening Balance',
         transactionId: 'N/A',
         type: 'credit',
         amount: 0,
-        _sortDate: new Date(new Date(member.createdAt?.toDate() || Date.now()).getTime() - 1000), 
+        _sortDate: new Date(member.createdAt.getTime() - 1000), 
     };
 
     const allRecords = [
