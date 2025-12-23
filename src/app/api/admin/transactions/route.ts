@@ -5,12 +5,25 @@ import { getAuth } from 'firebase-admin/auth';
 
 let adminApp: App;
 if (!getApps().length) {
-  const serviceAccountString = process.env.FIREBASE_SERVICE_ACCOUNT_BASE64;
-  if (!serviceAccountString) {
-    throw new Error('FIREBASE_SERVICE_ACCOUNT_BASE64 environment variable is not set.');
+  try {
+      const serviceAccountString = process.env.FIREBASE_SERVICE_ACCOUNT_BASE64;
+      if (!serviceAccountString) {
+          throw new Error("FIREBASE_SERVICE_ACCOUNT_BASE64 environment variable is not set. This is required for server-side admin operations.");
+      }
+      const serviceAccount = JSON.parse(Buffer.from(serviceAccountString, 'base64').toString('utf-8'));
+      adminApp = initializeApp({
+          credential: cert(serviceAccount)
+      });
+  } catch (e: any) {
+      console.error("Firebase Admin SDK initialization failed:", e.message);
+      // Fallback for local dev if the env var isn't set, though it will likely fail on the server.
+      // This helps prevent crashes during local development if the env var is missing.
+      if (!getApps().length) {
+        adminApp = initializeApp();
+      } else {
+        adminApp = getApp();
+      }
   }
-  const serviceAccount = JSON.parse(Buffer.from(serviceAccountString, 'base64').toString('utf-8'));
-  adminApp = initializeApp({ credential: cert(serviceAccount) });
 } else {
   adminApp = getApp();
 }
@@ -56,12 +69,20 @@ export async function POST(request: Request) {
     
     await batch.commit();
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, transactionId: transactionRef.id });
 
   } catch (error: any) {
     console.error('Failed to create manual transaction:', error);
-    return NextResponse.json({ success: false, error: error.message || 'An unknown server error occurred.' }, { status: 500 });
+    
+    let errorMessage = 'An unknown server error occurred.';
+    if (error.code === 'auth/id-token-expired') {
+      errorMessage = 'Authentication token has expired. Please sign in again.';
+    } else if (error.message.includes('FIREBASE_SERVICE_ACCOUNT_BASE64')) {
+      errorMessage = 'Server configuration error: Service account is not configured correctly.';
+    } else if (error.message.includes('access token')) {
+      errorMessage = `Server authentication failed: ${error.message}`;
+    }
+
+    return NextResponse.json({ success: false, error: errorMessage }, { status: 500 });
   }
 }
-
-    
