@@ -41,11 +41,16 @@ export async function deleteUser(uid: string): Promise<{ success: boolean; error
 }
 
 export async function saveAndPostReconciliation(allocatedTransactions: any[], reconciliationId: string): Promise<{ success: boolean; error?: string }> {
-    try {
-        const adminApp = initializeAdminApp();
-        const firestore = getFirestore(adminApp);
-        const batch = firestore.batch();
+    // Initialize the admin app directly inside the server action for robustness.
+    if (getApps().length === 0) {
+        initializeApp({
+            credential: credential.applicationDefault()
+        });
+    }
+    const firestore = getFirestore();
+    const batch = firestore.batch();
 
+    try {
         for (const tx of allocatedTransactions) {
             // Only process credits with a valid member ID in the reference for now
             if (tx.type === 'credit' && tx.reference.length > 10) { // Simple check for UID-like reference
