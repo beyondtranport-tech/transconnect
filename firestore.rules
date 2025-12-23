@@ -36,7 +36,9 @@ service cloud.firestore {
 
     match /transactions/{transactionId} {
       allow get: if isOwner(resource.data.memberId) || request.auth.token.email == 'transconnect@gmail.com';
-      allow list: if request.auth.token.email == 'transconnect@gmail.com';
+      // LIST operation is intentionally denied to all clients to prevent permission errors.
+      // Admins should use server-side actions to list transactions.
+      allow list: if false; 
       allow write: if request.auth.token.email == 'transconnect@gmail.com';
     }
 
