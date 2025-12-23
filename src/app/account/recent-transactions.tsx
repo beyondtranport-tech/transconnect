@@ -37,17 +37,27 @@ export default function RecentTransactions() {
     const firestore = useFirestore();
     const { user } = useUser();
 
+    // Prevent this component from running queries for the admin user.
+    // The admin is redirected away from the page that uses this, but the query
+    // can fire before the redirect is complete, causing a permission error.
+    const isReadyToQuery = !!(firestore && user && user.email !== 'transconnect@gmail.com');
+
     const transactionsQuery = useMemoFirebase(() => {
-        if (!firestore || !user) return null;
+        if (!isReadyToQuery) return null;
         return query(
             collection(firestore, 'transactions'),
             where('memberId', '==', user.uid),
             orderBy('date', 'desc'),
             limit(5)
         );
-    }, [firestore, user]);
+    }, [isReadyToQuery, firestore, user]);
 
     const { data: transactions, isLoading: isLoadingTransactions } = useCollection(transactionsQuery);
+    
+    // If the user is an admin, render nothing.
+    if (user && user.email === 'transconnect@gmail.com') {
+        return null;
+    }
 
     return (
         <Card>
