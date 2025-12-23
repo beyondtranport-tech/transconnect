@@ -292,7 +292,7 @@ export default function MemberWallet({ member }: MemberWalletProps) {
                                         <TableCell className="capitalize">{tx.description}</TableCell>
                                         <TableCell className="font-mono text-xs">{tx.transactionId}</TableCell>
                                         <TableCell className={`text-right font-mono ${tx.amount === 0 ? '' : tx.type === 'credit' ? 'text-green-600' : 'text-destructive'}`}>
-                                            {tx.amount === 0 ? formatCurrency(0) : (tx.type === 'credit' ? `+${formatCurrency(tx.amount)}` : `-${formatCurrency(tx.amount)}`)}
+                                            {isClient ? (tx.amount === 0 ? formatCurrency(0) : (tx.type === 'credit' ? `+${formatCurrency(tx.amount)}` : `-${formatCurrency(tx.amount)}`)) : '...'}
                                         </TableCell>
                                         <TableCell className="text-right font-mono font-semibold">{isClient ? formatCurrency(tx.runningBalance) : '...'}</TableCell>
                                     </TableRow>
