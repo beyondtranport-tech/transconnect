@@ -8,7 +8,7 @@ service cloud.firestore {
     }
     
     match /members/{memberId} {
-      allow get: if isOwner(memberId);
+      allow get: if isOwner(memberId) || request.auth.token.email == 'transconnect@gmail.com';
       allow list: if request.auth.token.email == 'transconnect@gmail.com';
       allow create: if isOwner(memberId);
       allow update: if isOwner(memberId) || request.auth.token.email == 'transconnect@gmail.com';
@@ -34,10 +34,9 @@ service cloud.firestore {
       allow delete: if request.auth.token.email == 'transconnect@gmail.com';
     }
 
-    match /transactions/{transaction} {
-      allow list: if request.auth.token.email == 'transconnect@gmail.com';
+    match /transactions/{transactionId} {
+      allow list, create, update, delete: if request.auth.token.email == 'transconnect@gmail.com';
       allow get: if isOwner(resource.data.memberId) || request.auth.token.email == 'transconnect@gmail.com';
-      allow create, update, delete: if request.auth.token.email == 'transconnect@gmail.com';
     }
 
     match /platform_config/{docId} {
