@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -6,19 +7,19 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Calendar as CalendarIcon, PlusCircle } from 'lucide-react';
 import { format } from 'date-fns';
-import { DocumentData, writeBatch, doc, collection, serverTimestamp, increment } from 'firebase/firestore';
+import { DocumentData } from 'firebase/firestore';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { useUser, useFirestore } from '@/firebase';
+import { useUser } from '@/firebase';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { getTransactionsForMember } from '../../actions';
+import { getTransactionsForMember, createManualTransaction } from '../../actions';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { errorEmitter } from '@/firebase/error-emitter';
 
@@ -47,7 +48,6 @@ interface MemberWalletProps {
 export default function MemberWallet({ member }: MemberWalletProps) {
     const { toast } = useToast();
     const { user } = useUser();
-    const firestore = useFirestore();
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isClient, setIsClient] = useState(false);
     
@@ -88,64 +88,28 @@ export default function MemberWallet({ member }: MemberWalletProps) {
     });
 
     const handleAddRecord = async (values: TransactionFormValues) => {
-        if (!user || !firestore) {
-            toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in to perform this action.' });
-            return;
-        }
-        if (user.email !== 'transconnect@gmail.com') {
-             toast({ variant: 'destructive', title: 'Unauthorized', description: 'Only administrators can perform this action.' });
+        if (!user) {
+            toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in.' });
             return;
         }
 
         setIsSubmitting(true);
         
-        try {
-            const batch = writeBatch(firestore);
+        const result = await createManualTransaction(member.id, values, user.uid);
 
-            // 1. Update member's walletBalance
-            const memberRef = doc(firestore, 'members', member.id);
-            const transactionAmount = values.type === 'credit' ? values.amount : -values.amount;
-            batch.update(memberRef, { walletBalance: increment(transactionAmount) });
-            
-            // 2. Create new transaction record
-            const transactionRef = doc(collection(firestore, 'transactions'));
-            const newTransaction = {
-                reconciliationId: 'manual-admin-entry',
-                memberId: member.id,
-                type: values.type,
-                amount: values.amount,
-                date: values.date,
-                description: values.description,
-                status: 'allocated',
-                chartOfAccountsCode: '7000-ManualAdjustment',
-                isAdjustment: true,
-                postedAt: serverTimestamp(),
-                postedBy: user.uid,
-                transactionId: transactionRef.id 
-            };
-            batch.set(transactionRef, newTransaction);
-            
-            // Commit the batch
-            await batch.commit();
-
-            toast({ title: 'Success!', description: 'Transaction has been posted and wallet has been updated.' });
+        if (result.success) {
+             toast({ title: 'Success!', description: 'Transaction has been posted and wallet has been updated.' });
             form.reset();
             fetchTransactions(); // Refetch transactions to show the new record
-
-        } catch (e: any) {
-            const permissionError = new FirestorePermissionError({
-                path: `/members/${member.id}`,
-                operation: 'write',
-            });
-            errorEmitter.emit('permission-error', permissionError);
+        } else {
             toast({
                 variant: 'destructive',
                 title: 'Posting Failed',
-                description: e.message || 'You may not have the required permissions.'
+                description: result.error || 'An unknown server error occurred.'
             });
-        } finally {
-            setIsSubmitting(false);
         }
+
+        setIsSubmitting(false);
     };
     
     // Calculate cumulative balance
@@ -349,4 +313,6 @@ export default function MemberWallet({ member }: MemberWalletProps) {
         </div>
     );
 }
+    
+
     

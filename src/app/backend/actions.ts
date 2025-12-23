@@ -69,7 +69,7 @@ export async function getTransactionsForMember(memberId: string): Promise<{ succ
             return {
                 id: doc.id,
                 ...data,
-                date: (data.date as Timestamp).toDate().toISOString(),
+                date: (data.date instanceof Timestamp) ? data.date.toDate().toISOString() : data.date,
                 postedAt: data.postedAt ? (data.postedAt as Timestamp).toDate().toISOString() : null,
             };
         });
@@ -81,5 +81,40 @@ export async function getTransactionsForMember(memberId: string): Promise<{ succ
         return { success: false, error: error.message || 'An unknown server error occurred.' };
     }
 }
+
+export async function createManualTransaction(memberId: string, transaction: { amount: number, description: string, date: Date, type: 'credit' | 'debit' }, adminUid: string): Promise<{ success: boolean, error?: string }> {
+    try {
+        const firestore = getSafeFirestore();
+        const batch = firestore.batch();
+
+        const memberRef = firestore.collection('members').doc(memberId);
+        const transactionAmount = transaction.type === 'credit' ? transaction.amount : -transaction.amount;
+        batch.update(memberRef, { walletBalance: admin.firestore.FieldValue.increment(transactionAmount) });
+
+        const transactionRef = firestore.collection('transactions').doc();
+        batch.set(transactionRef, {
+            reconciliationId: 'manual-admin-entry',
+            memberId: memberId,
+            type: transaction.type,
+            amount: transaction.amount,
+            date: Timestamp.fromDate(transaction.date),
+            description: transaction.description,
+            status: 'allocated',
+            chartOfAccountsCode: '7000-ManualAdjustment',
+            isAdjustment: true,
+            postedAt: Timestamp.now(),
+            postedBy: adminUid,
+            transactionId: transactionRef.id
+        });
+
+        await batch.commit();
+        return { success: true };
+
+    } catch (error: any) {
+        console.error('Failed to create manual transaction:', error);
+        return { success: false, error: error.message || 'An unknown server error occurred.' };
+    }
+}
+    
 
     
