@@ -3,19 +3,15 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    function isOwner(uid) {
-      return request.auth != null && request.auth.uid == uid;
-    }
-
     function isAdmin() {
       return request.auth != null && request.auth.token.email == 'transconnect@gmail.com';
     }
     
     match /members/{memberId} {
-      allow get: if isOwner(memberId) || isAdmin();
+      allow get: if (request.auth != null && request.auth.uid == memberId) || isAdmin();
       allow list: if isAdmin();
-      allow create: if isOwner(memberId);
-      allow update: if (isOwner(memberId) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['firstName', 'lastName', 'phone', 'companyName'])) || isAdmin();
+      allow create: if request.auth != null && request.auth.uid == memberId;
+      allow update: if (request.auth != null && request.auth.uid == memberId && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['firstName', 'lastName', 'phone', 'companyName'])) || isAdmin();
       allow delete: if isAdmin();
     }
 
@@ -31,15 +27,16 @@ service cloud.firestore {
     }
     
      match /financeApplications/{applicationId} {
-      allow get: if isOwner(resource.data.applicantId) || isAdmin();
+      allow get: if (request.auth != null && request.auth.uid == resource.data.applicantId) || isAdmin();
       allow list: if isAdmin();
-      allow create: if isOwner(request.resource.data.applicantId);
-      allow update: if isOwner(resource.data.applicantId) || isAdmin();
+      allow create: if request.auth != null && request.auth.uid == request.resource.data.applicantId;
+      allow update: if (request.auth != null && request.auth.uid == resource.data.applicantId) || isAdmin();
       allow delete: if isAdmin();
     }
 
     match /transactions/{transactionId} {
-      allow get: if isOwner(resource.data.memberId) || isAdmin();
+      allow get: if (request.auth != null && request.auth.uid == resource.data.memberId) || isAdmin();
+      allow list: if isAdmin();
       allow create: if isAdmin() && request.resource.data.memberId != null;
       allow update, delete: if isAdmin();
     }
