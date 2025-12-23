@@ -146,11 +146,9 @@ export default function MembersList() {
                                         )}
                                     </TableCell>
                                     <TableCell className="text-right space-x-2">
-                                         <Button asChild variant="outline" size="sm" disabled>
-                                            <Link href={`/backend/wallet/${member.id}`}>
-                                                <Wallet className="h-4 w-4 mr-2" />
-                                                Manage Wallet
-                                            </Link>
+                                         <Button variant="outline" size="sm" disabled>
+                                            <Wallet className="h-4 w-4 mr-2" />
+                                            Manage Wallet
                                         </Button>
                                         <AlertDialog>
                                             <AlertDialogTrigger asChild>
