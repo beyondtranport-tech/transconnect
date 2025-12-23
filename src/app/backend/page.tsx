@@ -31,22 +31,23 @@ import {
   Wallet,
   Banknote,
   Book,
+  Loader2,
+  ShieldAlert,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import MembersList from './members-list';
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import ContributionsList from './contributions-list';
 import WalletManagementList from './wallet-management-list';
 import FinanceApplicationsList from './finance-applications-list';
-import { useAuth } from '@/firebase';
+import { useUser } from '@/firebase';
 import { signOut } from 'firebase/auth';
 import BankDetailsSettings from './bank-details-settings';
 import ChartOfAccountsSettings from './chart-of-accounts-settings';
-
 
 // Placeholder Content Components
 function DashboardContent() {
@@ -118,10 +119,23 @@ function ContributionsContent() {
 export default function BackendPage() {
   const router = useRouter();
   const [activeView, setActiveView] = useState('dashboard');
+  const { user, isUserLoading } = useUser();
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    if (!isUserLoading) {
+      if (!user || user.email !== 'transconnect@gmail.com') {
+        router.push('/signin');
+      } else {
+        setIsAdmin(true);
+      }
+    }
+  }, [user, isUserLoading, router]);
+
 
   const onLogout = () => {
-    // Clear the session cookie by calling our API route
-    document.cookie = 'admin-session=; path=/; max-age=0';
+    // This is a simplified logout for the backend, assuming no complex session management.
+    // For a real app, you might call a server action to invalidate a session.
     router.push('/');
   };
 
@@ -149,6 +163,37 @@ export default function BackendPage() {
       default:
         return <DashboardContent />;
     }
+  }
+  
+  if (isUserLoading) {
+    return (
+        <div className="flex justify-center items-center min-h-screen">
+            <Loader2 className="h-16 w-16 animate-spin text-primary" />
+        </div>
+    );
+  }
+  
+  if (!isAdmin) {
+       return (
+        <div className="container mx-auto px-4 py-16 flex justify-center items-center min-h-screen">
+            <Card className="w-full max-w-md text-center">
+                <CardHeader>
+                    <CardTitle className="flex justify-center items-center gap-2">
+                        <ShieldAlert className="h-8 w-8 text-destructive" />
+                        Access Denied
+                    </CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <p className="text-muted-foreground">You do not have permission to view this page. Please sign in with an administrator account.</p>
+                </CardContent>
+                <CardFooter>
+                    <Button asChild className="w-full">
+                        <Link href="/signin">Return to Sign In</Link>
+                    </Button>
+                </CardFooter>
+            </Card>
+        </div>
+    );
   }
 
   return (

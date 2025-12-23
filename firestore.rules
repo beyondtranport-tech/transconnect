@@ -15,7 +15,8 @@ service cloud.firestore {
     }
     
     function isAdmin() {
-      return isSignedIn() && request.auth.token.email == 'transconnect@gmail.com';
+      // This is the correct implementation for checking the admin user's email.
+      return request.auth.token.email == 'transconnect@gmail.com';
     }
 
     function hasValidMemberId(memberId) {
@@ -104,9 +105,8 @@ service cloud.firestore {
     }
 
     match /platform_config/{docId} {
-      // Allow any authenticated user to read/write for now to unblock development.
-      // TODO: Restrict this to only the admin user.
-      allow read, write: if isSignedIn();
+      // Only the admin user should be able to read and write to platform-wide configurations.
+      allow read, write: if isAdmin();
     }
   }
 }
