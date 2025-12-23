@@ -41,7 +41,7 @@ service cloud.firestore {
     match /transactions/{transactionId} {
       allow get: if isOwner(resource.data.memberId) || isAdmin();
       allow list: if false; 
-      allow write: if isAdmin();
+      allow create, update, delete: if isAdmin();
     }
 
     match /platform_config/{docId} {
