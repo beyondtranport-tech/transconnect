@@ -130,7 +130,7 @@ export default function MemberWalletPage() {
     if (!memberData) {
         return (
              <div className="w-full space-y-6">
-                <Button variant="outline" onClick={() => router.push('/backend')}>
+                <Button variant="outline" onClick={() => router.push('/backend/members')}>
                     <ArrowLeft className="mr-2 h-4 w-4" />
                     Back to Members List
                 </Button>
@@ -148,7 +148,7 @@ export default function MemberWalletPage() {
     
     return (
         <div className="w-full space-y-6">
-             <Button variant="outline" onClick={() => router.push('/backend')}>
+             <Button variant="outline" onClick={() => router.push('/backend/members')}>
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 Back to Members List
             </Button>

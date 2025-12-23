@@ -120,7 +120,7 @@ function ContributionsContent() {
 
 export default function BackendPage() {
   const router = useRouter();
-  const [activeView, setActiveView] = useState('dashboard');
+  const [activeView, setActiveView] = useState('members');
   const { user, isUserLoading } = useUser();
   const [isAdmin, setIsAdmin] = useState(false);
 

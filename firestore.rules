@@ -72,7 +72,7 @@ service cloud.firestore {
         allow get: if isOwner(resource.data.memberId);
         
         // A user can list transactions only if they are querying for their own memberId.
-        allow list: if (request.query.where.size() > 0 && request.query.where[0][0] == 'memberId' && request.query.where[0][2] == request.auth.uid) || request.auth.token.email == 'transconnect@gmail.com';
+        allow list: if (request.query.where[0][0] == 'memberId' && request.query.where[0][2] == request.auth.uid) || request.auth.token.email == 'transconnect@gmail.com';
         
         // A regular user can create their own transactions (e.g., wallet top-up). An admin can also create.
         allow create: if isOwner(request.resource.data.memberId) || request.auth.token.email == 'transconnect@gmail.com';
