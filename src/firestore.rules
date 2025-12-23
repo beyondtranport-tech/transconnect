@@ -40,9 +40,10 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
-    match /transactions/{transactionId} {
-      // Allow any authenticated user to list transactions. Admin access is gated in the UI.
-      allow list: if request.auth != null;
+    // This rule allows an admin to list all transactions for the backend dashboard.
+    // It is separate from the document-specific rule below.
+    match /transactions/{transaction} {
+      allow list: if request.auth.token.email == 'transconnect@gmail.com';
       allow get: if isOwner(resource.data.memberId) || isAdmin();
       allow create, update, delete: if isAdmin();
     }
