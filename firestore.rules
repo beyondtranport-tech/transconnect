@@ -52,9 +52,16 @@ service cloud.firestore {
         return isOwner(memberId) && isUpdatingAllowedFields();
     }
     
-    function isAdminManagingMember() {
-        // Admin can manage walletBalance and rewardPoints.
-        return isAdmin() && request.resource.data.keys().hasAny(['walletBalance', 'rewardPoints']);
+    function isAdminManagingWallet(memberId) {
+        // Allow admin to update walletBalance and financeApplicationIds together.
+        let isUpdatingWallet = request.resource.data.walletBalance != resource.data.walletBalance;
+        let isUpdatingAppIds = request.resource.data.financeApplicationIds != resource.data.financeApplicationIds;
+        
+        let allowedAdminKeys = ['walletBalance', 'financeApplicationIds'];
+        let incomingKeys = request.resource.data.keys();
+        let onlyAllowedKeys = incomingKeys.hasOnly(allowedAdminKeys);
+
+        return isAdmin() && (isUpdatingWallet || isUpdatingAppIds) && onlyAllowedKeys;
     }
 
     // ----------------------------------------------------------------------
@@ -71,7 +78,7 @@ service cloud.firestore {
       allow create: if isOwner(memberId) && hasValidMemberId(memberId);
       
       // Allow admins to manage credits, and users to update their own allowed profile fields or specific membership details.
-      allow update: if (isAdmin() && isAdminManagingMember()) || 
+      allow update: if isAdminManagingWallet(memberId) || 
                       isOwnerUpdatingAllowedFields(memberId) ||
                       isUpdatingOwnMembershipOrPoints(memberId);
 
@@ -97,8 +104,8 @@ service cloud.firestore {
       allow get: if isOwner(resource.data.applicantId) || isAdmin();
       // Only admins can list all applications.
       allow list: if isAdmin();
-      // A user can create an application for themselves.
-      allow create: if isOwner(request.resource.data.applicantId);
+      // A user can create an application for themselves or an admin can create one (for wallet top-ups).
+      allow create: if isOwner(request.resource.data.applicantId) || isAdmin();
       // The owner or an admin can update the application.
       allow update: if isAdmin() || isOwner(resource.data.applicantId);
       allow delete: if false; // Applications should not be deleted.
