@@ -37,17 +37,6 @@ const chartOfAccounts = [
     { code: '1100', name: 'Wallet Top-Up (Asset)' },
 ];
 
-
-// This is mock data that simulates the parsed CSV file.
-const parsedTransactions = [
-    { id: 1, date: '2024-07-15', description: 'EFT payment received', reference: 'MEMBER-UID-001', amount: 375.00, type: 'credit', status: 'pending', checked: true },
-    { id: 2, date: '2024-07-16', description: 'EFT payment received', reference: 'MEMBER-UID-002', amount: 425.00, type: 'credit', status: 'pending', checked: true },
-    { id: 3, date: '2024-07-18', description: 'Wallet top-up', reference: 'MEMBER-UID-003', amount: 1000.00, type: 'credit', status: 'pending', checked: true },
-    { id: 4, date: '2024-07-19', description: 'Bank Charges', reference: 'FEE-JULY24', amount: -150.00, type: 'debit', status: 'pending', checked: true },
-    { id: 5, date: '2024-07-20', description: 'Cash deposit', reference: 'MEMBER-UID-001', amount: 50.00, type: 'credit', status: 'pending', checked: true },
-    { id: 6, date: '2024-07-22', description: 'EFT payment received', reference: 'MEMBER-UID-004', amount: 475.00, type: 'credit', status: 'pending', checked: true },
-];
-
 const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-ZA', {
         style: 'currency',
@@ -56,15 +45,15 @@ const formatCurrency = (amount: number) => {
 };
 
 
-export default function TransactionAllocation({ statementName }: { statementName: string }) {
-    const [transactions, setTransactions] = useState(parsedTransactions);
+export default function TransactionAllocation({ statementData }: { statementData: any }) {
+    const [transactions, setTransactions] = useState(statementData.transactions.map((t: any) => ({...t, checked: true, status: 'pending'})));
     const { toast } = useToast();
-    const [openingBalance, setOpeningBalance] = useState(0);
-    const [closingBalance, setClosingBalance] = useState(0);
+    const [openingBalance, setOpeningBalance] = useState(statementData.openingBalance);
+    const [closingBalance, setClosingBalance] = useState(statementData.closingBalance);
 
     const handleAllocate = (transactionId: number) => {
         console.log(`Allocating transaction ${transactionId}`);
-        const updatedTransactions = transactions.map(t => 
+        const updatedTransactions = transactions.map((t: any) => 
             t.id === transactionId ? { ...t, status: 'allocated' } : t
         );
         setTransactions(updatedTransactions);
@@ -76,16 +65,16 @@ export default function TransactionAllocation({ statementName }: { statementName
     };
     
     const handleCheckChange = (transactionId: number, isChecked: boolean) => {
-        const updatedTransactions = transactions.map(t =>
+        const updatedTransactions = transactions.map((t:any) =>
             t.id === transactionId ? { ...t, checked: isChecked } : t
         );
         setTransactions(updatedTransactions);
     };
 
-    const checkedTransactions = transactions.filter(t => t.checked);
-    const totalCredits = checkedTransactions.filter(t => t.type === 'credit').reduce((sum, t) => sum + t.amount, 0);
-    const totalDebits = checkedTransactions.filter(t => t.type === 'debit').reduce((sum, t) => sum + t.amount, 0);
-    const calculatedClosingBalance = openingBalance + totalCredits + totalDebits; // Debits are negative
+    const checkedTransactions = transactions.filter((t: any) => t.checked);
+    const totalCredits = checkedTransactions.filter((t: any) => t.type === 'credit').reduce((sum: number, t: any) => sum + t.amount, 0);
+    const totalDebits = checkedTransactions.filter((t: any) => t.type === 'debit').reduce((sum: number, t: any) => sum + t.amount, 0);
+    const calculatedClosingBalance = openingBalance + totalCredits + totalDebits;
     const difference = closingBalance - calculatedClosingBalance;
 
     return (
@@ -96,7 +85,7 @@ export default function TransactionAllocation({ statementName }: { statementName
                     <div>
                         <CardTitle>Allocate Transactions</CardTitle>
                         <CardDescription>
-                            Reviewing statement: <span className="font-mono font-semibold">{statementName}</span>
+                            Reviewing statement: <span className="font-mono font-semibold">{statementData.statementName}</span>
                         </CardDescription>
                     </div>
                 </div>
@@ -140,7 +129,7 @@ export default function TransactionAllocation({ statementName }: { statementName
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {transactions.map((tx) => (
+                            {transactions.map((tx: any) => (
                                 <TableRow key={tx.id} className={tx.status === 'allocated' ? 'bg-green-100/50' : ''}>
                                     <TableCell className="text-center">
                                          <Checkbox
@@ -225,5 +214,3 @@ export default function TransactionAllocation({ statementName }: { statementName
         </Card>
     )
 }
-
-    

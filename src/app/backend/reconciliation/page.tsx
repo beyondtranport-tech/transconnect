@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,18 +9,22 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import TransactionAllocation from "./transaction-allocation";
+import statementData from './bank-statements/statement-2024-07-01-2024-07-31.json';
 
 const availableStatements = [
-    "statement-2024-07-01-2024-07-31.csv"
+    {
+        id: "statement-2024-07-01-2024-07-31.csv",
+        data: statementData
+    }
 ];
 
 export default function ReconciliationPage() {
-    const [selectedStatement, setSelectedStatement] = useState<string | null>(null);
-    const [processingStatement, setProcessingStatement] = useState<string | null>(null);
+    const [selectedStatementId, setSelectedStatementId] = useState<string | null>(null);
+    const [processingData, setProcessingData] = useState<any | null>(null);
     const { toast } = useToast();
 
     const handleProcess = () => {
-        if (!selectedStatement) {
+        if (!selectedStatementId) {
             toast({
                 variant: 'destructive',
                 title: "No statement selected",
@@ -27,17 +32,24 @@ export default function ReconciliationPage() {
             });
             return;
         }
+        
+        const statementToProcess = availableStatements.find(s => s.id === selectedStatementId);
+
+        if (!statementToProcess) {
+             toast({
+                variant: 'destructive',
+                title: "Statement not found",
+                description: "Could not find the data for the selected statement.",
+            });
+            return;
+        }
 
         toast({
             title: "Processing Started",
-            description: `Parsing and preparing statement: ${selectedStatement}`,
+            description: `Parsing and preparing statement: ${selectedStatementId}`,
         });
-
-        // In a real implementation, you would trigger the parsing
-        // and reconciliation logic here. For now, we'll just set the state
-        // to display the allocation component.
-        setProcessingStatement(selectedStatement);
-        console.log(`Processing statement: ${selectedStatement}`);
+        
+        setProcessingData(statementToProcess.data);
     }
 
     return (
@@ -51,7 +63,7 @@ export default function ReconciliationPage() {
                                 Select a bank statement from the list to begin reconciling transactions.
                             </CardDescription>
                         </div>
-                        <Button onClick={handleProcess} disabled={!selectedStatement}>
+                        <Button onClick={handleProcess} disabled={!selectedStatementId}>
                             <Check className="mr-2 h-4 w-4" />
                             Process Selected Statement
                         </Button>
@@ -62,20 +74,20 @@ export default function ReconciliationPage() {
                         <div className="space-y-4 rounded-md border p-4">
                             <h3 className="font-medium">Available Statements</h3>
                             {availableStatements.map(statement => (
-                                <div key={statement} className="flex items-center space-x-2">
+                                <div key={statement.id} className="flex items-center space-x-2">
                                     <Checkbox
-                                        id={statement}
-                                        checked={selectedStatement === statement}
+                                        id={statement.id}
+                                        checked={selectedStatementId === statement.id}
                                         onCheckedChange={(checked) => {
-                                            setSelectedStatement(checked ? statement : null);
+                                            setSelectedStatementId(checked ? statement.id : null);
                                             // If a statement is deselected, hide the processing view
                                             if (!checked) {
-                                                setProcessingStatement(null);
+                                                setProcessingData(null);
                                             }
                                         }}
                                     />
-                                    <Label htmlFor={statement} className="font-mono cursor-pointer">
-                                        {statement}
+                                    <Label htmlFor={statement.id} className="font-mono cursor-pointer">
+                                        {statement.id}
                                     </Label>
                                 </div>
                             ))}
@@ -88,8 +100,8 @@ export default function ReconciliationPage() {
                 </CardContent>
             </Card>
 
-            {processingStatement && (
-                <TransactionAllocation statementName={processingStatement} />
+            {processingData && (
+                <TransactionAllocation statementData={processingData} />
             )}
         </div>
     );
