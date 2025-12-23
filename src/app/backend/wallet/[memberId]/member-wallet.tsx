@@ -87,7 +87,7 @@ export default function MemberWallet({ member, initialTransactions }: MemberWall
 
             // 1. Update member's wallet balance
             const memberRef = doc(firestore, 'members', member.id);
-            batch.update(memberRef, { walletBalance: increment(transactionAmount) });
+            batch.set(memberRef, { walletBalance: increment(transactionAmount) }, { merge: true });
 
             // 2. Create the new transaction document
             const newTransactionRef = doc(collection(firestore, 'transactions'));
