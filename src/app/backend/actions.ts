@@ -3,7 +3,7 @@
 
 import { getApps, initializeApp, getApp, App, cert } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
-import { getFirestore, Timestamp } from 'firebase-admin/firestore';
+import { getFirestore, Timestamp, FieldValue } from 'firebase-admin/firestore';
 
 let adminApp: App;
 if (!getApps().length) {
@@ -18,7 +18,6 @@ if (!getApps().length) {
         });
     } catch (e) {
         console.error("Firebase Admin SDK initialization failed", e);
-        // We will proceed, and subsequent calls will fail with a clearer error
     }
 } else {
   adminApp = getApp();
@@ -89,7 +88,7 @@ export async function createManualTransaction(memberId: string, transaction: { a
 
         const memberRef = firestore.collection('members').doc(memberId);
         const transactionAmount = transaction.type === 'credit' ? transaction.amount : -transaction.amount;
-        batch.update(memberRef, { walletBalance: admin.firestore.FieldValue.increment(transactionAmount) });
+        batch.update(memberRef, { walletBalance: FieldValue.increment(transactionAmount) });
 
         const transactionRef = firestore.collection('transactions').doc();
         batch.set(transactionRef, {
@@ -115,6 +114,4 @@ export async function createManualTransaction(memberId: string, transaction: { a
         return { success: false, error: error.message || 'An unknown server error occurred.' };
     }
 }
-    
-
     
