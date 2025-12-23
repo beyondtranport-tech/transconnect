@@ -20,7 +20,7 @@ import { DocumentData } from 'firebase/firestore';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
-import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
+import { Form, FormControl, FormField, FormItem, FormMessage, FormLabel } from '@/components/ui/form';
 
 const formatCurrency = (amount: number) => new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(amount);
 const formatDate = (timestamp: any) => timestamp && timestamp.toDate ? format(timestamp.toDate(), "yyyy-MM-dd HH:mm") : 'N/A';
@@ -117,7 +117,7 @@ export default function MemberWallet({ member, initialTransactions }: MemberWall
 
     let runningBalance = 0;
     const transactionsWithBalance = sortedTransactions.map(tx => {
-        const amount = tx.type === 'credit' ? tx.amount : -tx.amount;
+        const amount = tx.amount === 0 ? 0 : (tx.type === 'credit' ? tx.amount : -tx.amount);
         runningBalance += amount;
         return { ...tx, runningBalance };
     }).reverse(); // Reverse back for descending chronological display
@@ -284,3 +284,5 @@ export default function MemberWallet({ member, initialTransactions }: MemberWall
         </div>
     );
 }
+
+    
