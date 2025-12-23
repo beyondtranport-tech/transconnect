@@ -1,83 +1,34 @@
 
 'use client';
 
-import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
-import { collection, query, where, orderBy, DocumentData } from 'firebase/firestore';
+import { useUser } from '@/firebase';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Loader2, ClipboardCopy, ArrowUp, ArrowDown, CreditCard } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
-import { format } from 'date-fns';
+import { Loader2, ClipboardCopy } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import bankDetailsData from '@/lib/bank-details.json';
-
-const statusColors: { [key: string]: 'default' | 'secondary' | 'destructive' | 'outline' } = {
-  pending: 'secondary',
-  under_review: 'outline',
-  matched: 'default',
-  rejected: 'destructive',
-  funded: 'default',
-  completed: 'default',
-  membership_payment: 'outline',
-};
+import { useState, useEffect } from 'react';
 
 const formatPrice = (price: number) => {
     return new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(price);
 };
 
 export default function WalletView() {
-    const firestore = useFirestore();
     const { user } = useUser();
     const { toast } = useToast();
+    const [isLoading, setIsLoading] = useState(true);
 
-    // Prevent this component from running queries for the admin user.
-    // The admin is redirected away from the page that uses this, but the query
-    // can fire before the redirect is complete, causing a permission error.
-    const isReadyToQuery = !!(firestore && user && user.email !== 'transconnect@gmail.com');
-
-    const transactionsQuery = useMemoFirebase(() => {
-        if (!isReadyToQuery) return null;
-        return query(
-            collection(firestore, 'transactions'),
-            where('memberId', '==', user.uid),
-            orderBy('date', 'desc')
-        );
-    }, [isReadyToQuery, firestore, user]);
-
-    const { data: transactions, isLoading: isLoadingTransactions } = useCollection(transactionsQuery);
+    useEffect(() => {
+        // Simulate loading for a moment to avoid flashing content
+        const timer = setTimeout(() => setIsLoading(false), 500);
+        return () => clearTimeout(timer);
+    }, []);
 
     const copyToClipboard = (text: string) => {
         navigator.clipboard.writeText(text).then(() => {
             toast({ title: "Copied!", description: `${text} copied to clipboard.`})
         });
     };
-
-    const formatDate = (timestamp: any) => {
-        if (timestamp && timestamp.toDate) {
-            return format(timestamp.toDate(), "yyyy-MM-dd HH:mm");
-        }
-        return 'N/A';
-    };
-    
-    const getTransactionType = (tx: DocumentData) => {
-        const type = tx.chartOfAccountsCode || tx.fundingType || 'general';
-        return type.replace(/_/g, ' ').replace(/\b\w/g, (l:string) => l.toUpperCase());
-    };
-    
-    const getAmount = (tx: DocumentData) => {
-        const amount = tx.amount || 0;
-        if (tx.type === 'credit') {
-            return `+ ${formatPrice(amount)}`;
-        }
-        return `- ${formatPrice(Math.abs(amount))}`;
-    }
-    
-    const getAmountClass = (tx: DocumentData) => {
-        if (tx.type === 'credit') {
-            return 'text-green-600';
-        }
-        return 'text-destructive';
-    }
 
     const safeBankDetails = bankDetailsData || {};
 
@@ -122,38 +73,14 @@ export default function WalletView() {
                     <CardDescription>A history of your credit top-up requests and other transactions.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    {isLoadingTransactions && (
+                    {isLoading && (
                         <div className="flex justify-center items-center py-10">
                             <Loader2 className="h-8 w-8 animate-spin text-primary" />
                         </div>
                     )}
                     
-                    {!isLoadingTransactions && transactions && (
-                        <div className="overflow-x-auto">
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>Date</TableHead>
-                                        <TableHead>Reference</TableHead>
-                                        <TableHead>Description</TableHead>
-                                        <TableHead className="text-right">Amount</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {transactions.map(tx => (
-                                        <TableRow key={tx.id}>
-                                            <TableCell>{formatDate(tx.date)}</TableCell>
-                                            <TableCell className="font-mono text-xs">{tx.transactionId}</TableCell>
-                                            <TableCell className="capitalize">{tx.description}</TableCell>
-                                            <TableCell className={`text-right font-mono ${getAmountClass(tx)}`}>{getAmount(tx)}</TableCell>
-                                        </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
-                        </div>
-                    )}
-                     {transactions && transactions.length === 0 && !isLoadingTransactions && (
-                        <p className="text-center text-muted-foreground py-10">You have no wallet transactions yet.</p>
+                    {!isLoading && (
+                       <p className="text-center text-muted-foreground py-10">Your transaction history is temporarily unavailable while we perform system upgrades.</p>
                     )}
                 </CardContent>
             </Card>
