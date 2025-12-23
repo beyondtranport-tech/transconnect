@@ -146,7 +146,7 @@ export default function MembersList() {
                                         )}
                                     </TableCell>
                                     <TableCell className="text-right space-x-2">
-                                         <Button asChild variant="outline" size="sm">
+                                         <Button asChild variant="outline" size="sm" disabled>
                                             <Link href={`/backend/wallet/${member.id}`}>
                                                 <Wallet className="h-4 w-4 mr-2" />
                                                 Manage Wallet
