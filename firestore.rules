@@ -42,11 +42,7 @@ service cloud.firestore {
     match /members/{memberId} {
       allow get, list: if isSignedIn();
       allow create: if isOwner(memberId) && hasValidMemberId(memberId);
-      
-      // An admin can update any member document.
-      // A regular user can only update a specific subset of their own fields.
       allow update: if isAdmin() || isOwnerUpdatingAllowedFields(memberId);
-
       allow delete: if isAdmin();
     }
 
@@ -75,16 +71,15 @@ service cloud.firestore {
     }
 
     match /transactions/{transactionId} {
-        // An admin can perform any read or write operation on any transaction.
-        allow read, write: if request.auth.email == 'transconnect@gmail.com';
-        // A non-admin user can only read transactions if they are the owner.
-        // This rule applies to `get` requests on single documents.
-        // List operations for non-admins must use a 'where' clause, which is handled in a separate rule.
-        allow get: if isSignedIn() && isOwner(resource.data.memberId);
-        // Non-admins can list transactions ONLY if they are querying for their own memberId.
-        allow list: if isSignedIn() && request.query.where.size() > 0 && request.query.where[0][0] == 'memberId' && request.query.where[0][2] == request.auth.uid;
-        // Only admins or the owner can create transactions.
-        allow create: if isOwner(request.resource.data.memberId) || request.auth.email == 'transconnect@gmail.com';
+        // Admins have full read/write access to all transactions.
+        allow read, write: if isAdmin();
+
+        // A regular user can only read their own transactions.
+        allow get: if isOwner(resource.data.memberId);
+        allow list: if request.query.where.size() > 0 && request.query.where[0][0] == 'memberId' && request.query.where[0][2] == request.auth.uid;
+        
+        // A regular user can only create their own transactions (e.g., wallet top-up request).
+        allow create: if isOwner(request.resource.data.memberId);
     }
 
     match /platform_config/{docId} {
