@@ -9,27 +9,29 @@ import { credential } from 'firebase-admin';
 // Helper function to initialize Firebase Admin SDK idempotently.
 function initializeAdminApp(): App {
     const appName = 'firebase-admin-app-transconnect-backend';
+    // Check if the app is already initialized
     const existingApp = getApps().find(app => app.name === appName);
     if (existingApp) {
         return existingApp;
     }
-    
+
     try {
+        // IMPORTANT: The service-account.json must be present in the root directory.
         const serviceAccount = require('../../../service-account.json');
-        return initializeApp({
+         return initializeApp({
             credential: cert(serviceAccount)
         }, appName);
-    } catch (e: any) {
-        if (e.code === 'MODULE_NOT_FOUND') {
+    } catch (error: any) {
+        if (error.code === 'MODULE_NOT_FOUND') {
             console.error(
-                "FATAL: service-account.json not found. \n" +
-                "Please download your service account key from the Firebase console and place it in the root of your project as 'service-account.json'.\n",
-                "Original error:", e
+              'FATAL: service-account.json not found in the project root.\n' +
+              'Please download your service account key from the Firebase console and place it in the root of your project as `service-account.json`.\n'
             );
-            throw new Error("Server configuration error: Failed to load service account credentials.");
+        } else {
+            console.error('Firebase Admin SDK initialization failed:', error);
         }
-        console.error("Firebase Admin SDK initialization failed.", e);
-        throw new Error("Server configuration error: Could not connect to Firebase services.");
+        // In case of any error during initialization, we throw to prevent the app from running with a misconfigured backend.
+        throw new Error('Server configuration error: Could not initialize Firebase Admin SDK.');
     }
 }
 
