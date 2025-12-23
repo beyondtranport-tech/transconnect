@@ -90,9 +90,7 @@ service cloud.firestore {
 
     match /transactions/{transactionId} {
       // An owner can read their own transactions, and an admin can read any.
-      allow get: if isRequestingUserAdmin() || isOwner(resource.data.memberId);
-      // Admins can list all transactions. Members can query for their own (requires query constraint).
-      allow list: if isRequestingUserAdmin();
+      allow get, list: if isRequestingUserAdmin() || isOwner(resource.data.memberId);
       // Only admins can create transactions.
       allow create: if isRequestingUserAdmin();
       // Transactions are immutable once created.
