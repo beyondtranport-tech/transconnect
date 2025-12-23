@@ -40,7 +40,7 @@ service cloud.firestore {
 
     match /transactions/{transactionId} {
         allow get: if isOwner(resource.data.memberId) || isAdmin();
-        allow list: if isAdmin() || (request.query.get('where')[0][0] == 'memberId' && request.query.get('where')[0][2] == request.auth.uid);
+        allow list: if isAdmin();
         allow create: if isOwner(request.resource.data.memberId) || isAdmin();
         allow update, delete: if isAdmin();
     }
