@@ -15,8 +15,8 @@ service cloud.firestore {
     }
     
     function isAdmin() {
-      // This is the correct implementation for checking the admin user's email.
-      return request.auth.token.email == 'transconnect@gmail.com';
+      // The admin's UID is checked directly for the most reliable authentication.
+      return request.auth.uid == 'u2oAVaU3wbUsxu4cMYgzHf5dVtt2';
     }
 
     function hasValidMemberId(memberId) {
@@ -106,7 +106,7 @@ service cloud.firestore {
 
     match /platform_config/{docId} {
       // Only the admin user should be able to read and write to platform-wide configurations.
-      allow read, write: if isAdmin();
+      allow read, write: if request.auth.uid == 'u2oAVaU3wbUsxu4cMYgzHf5dVtt2';
     }
   }
 }
