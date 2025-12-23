@@ -6,7 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Calendar as CalendarIcon, PlusCircle } from 'lucide-react';
 import { format } from 'date-fns';
-import { DocumentData, writeBatch, doc, collection, serverTimestamp, increment } from 'firebase/firestore';
+import { DocumentData } from 'firebase/firestore';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -16,17 +16,14 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useUser, useFirestore } from '@/firebase';
-import { FirestorePermissionError } from '@/firebase/errors';
-import { errorEmitter } from '@/firebase/error-emitter';
+import { useUser } from '@/firebase';
 import { Input } from '@/components/ui/input';
-import { getTransactionsForMember } from '../actions';
+import { getTransactionsForMember, createManualTransaction } from '../actions';
 
 const formatCurrency = (amount: number) => new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(amount);
 
 const formatDate = (timestamp: any) => {
     if (!timestamp) return 'N/A';
-    // The server action now sends ISO strings
     try {
         const date = new Date(timestamp);
         if (!isNaN(date.getTime())) {
@@ -56,7 +53,6 @@ interface MemberWalletProps {
 
 export default function MemberWallet({ member }: MemberWalletProps) {
     const { toast } = useToast();
-    const firestore = useFirestore();
     const { user } = useUser();
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isClient, setIsClient] = useState(false);
@@ -97,57 +93,26 @@ export default function MemberWallet({ member }: MemberWalletProps) {
     });
 
     const handleAddRecord = async (values: TransactionFormValues) => {
-        if (!firestore || !user) {
+        if (!user) {
             toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in.' });
             return;
         }
 
         setIsSubmitting(true);
-        try {
-            const batch = writeBatch(firestore);
-            
-            const memberRef = doc(firestore, 'members', member.id);
-            const transactionAmount = values.type === 'credit' ? values.amount : -values.amount;
-            batch.update(memberRef, { walletBalance: increment(transactionAmount) });
-
-            const transactionRef = doc(collection(firestore, 'transactions'));
-            const newTransaction = {
-                memberId: member.id,
-                reconciliationId: 'manual-admin-entry',
-                type: values.type,
-                amount: values.amount,
-                date: values.date,
-                description: values.description,
-                status: 'allocated',
-                chartOfAccountsCode: '7000-ManualAdjustment',
-                isAdjustment: true,
-                postedAt: serverTimestamp(),
-                transactionId: transactionRef.id
-            };
-            batch.set(transactionRef, newTransaction);
-
-            await batch.commit();
-            
-            // Optimistically update the UI
-            setTransactions(prev => [...prev, { ...newTransaction, id: transactionRef.id, date: newTransaction.date.toISOString() }]);
-
+        const result = await createManualTransaction(member.id, values, user.uid);
+        
+        if (result.success && result.data) {
+            setTransactions(prev => [...prev, result.data]);
             toast({ title: 'Success!', description: 'Transaction has been posted and wallet has been updated.' });
             form.reset();
-
-        } catch (e: any) {
-             const permissionError = new FirestorePermissionError({
-                path: `/members/${member.id} or /transactions`,
-                operation: 'write',
-            });
-            errorEmitter.emit('permission-error', permissionError);
+        } else {
             toast({
                 variant: 'destructive',
                 title: 'Posting Failed',
-                description: 'You do not have the required permissions for this action.',
+                description: result.error || 'An unknown server error occurred.',
             });
-        } finally {
-            setIsSubmitting(false);
         }
+        setIsSubmitting(false);
     };
     
     const openingBalanceRecord = {
