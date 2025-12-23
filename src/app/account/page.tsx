@@ -97,7 +97,11 @@ function AccountPageContent() {
   }, [initialView]);
 
   useEffect(() => {
-    if (!isUserLoading && !user) {
+    if (!isUserLoading && user) {
+      if (user.email === 'transconnect@gmail.com') {
+        router.push('/backend');
+      }
+    } else if (!isUserLoading && !user) {
       router.push('/signin');
     }
   }, [user, isUserLoading, router]);
@@ -136,7 +140,7 @@ function AccountPageContent() {
     }
   }
 
-  if (isUserLoading || !user) {
+  if (isUserLoading || !user || user.email === 'transconnect@gmail.com') {
     return (
         <div className="flex justify-center items-center min-h-[calc(100vh-8rem)]">
             <Loader2 className="h-16 w-16 animate-spin text-primary" />
