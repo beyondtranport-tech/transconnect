@@ -54,7 +54,7 @@ export default function RecentTransactions() {
 
     const { data: transactions, isLoading: isLoadingTransactions } = useCollection(transactionsQuery);
     
-    // If the user is an admin, render nothing.
+    // If the user is an admin, render nothing. This is the crucial guard.
     if (user && user.email === 'transconnect@gmail.com') {
         return null;
     }
