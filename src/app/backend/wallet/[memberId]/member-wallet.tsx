@@ -50,6 +50,11 @@ export default function MemberWallet({ member }: MemberWalletProps) {
     const { user } = useUser();
     const firestore = useFirestore();
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isClient, setIsClient] = useState(false);
+
+    useEffect(() => {
+        setIsClient(true);
+    }, []);
 
     const transactionsQuery = useMemoFirebase(() => {
         if (!firestore || !member.id) return null;
@@ -140,7 +145,7 @@ export default function MemberWallet({ member }: MemberWalletProps) {
                     {isLoadingTransactions ? (
                          <div className="h-12 w-48 bg-muted animate-pulse rounded-md mt-1" />
                     ): (
-                        <p className="text-4xl font-bold">{formatCurrency(member.walletBalance || 0)}</p>
+                        <p className="text-4xl font-bold">{isClient ? formatCurrency(member.walletBalance || 0) : 'R 0.00'}</p>
                     )}
                 </CardContent>
             </Card>
