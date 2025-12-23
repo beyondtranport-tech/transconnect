@@ -7,7 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Calendar as CalendarIcon, PlusCircle, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
-import { DocumentData, writeBatch, doc, collection, increment, serverTimestamp } from 'firebase/firestore';
+import { DocumentData } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -15,13 +15,12 @@ import * as z from 'zod';
 import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { useFirestore, useUser } from '@/firebase';
-import { errorEmitter } from '@/firebase/error-emitter';
-import { FirestorePermissionError } from '@/firebase/errors';
+import { useUser } from '@/firebase';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { createManualTransaction } from '../../actions';
 
 const formatCurrency = (amount: number) => new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(amount);
 
@@ -49,7 +48,6 @@ export default function MemberWallet({ member, initialTransactions }: MemberWall
     const { toast } = useToast();
     const router = useRouter();
     const [isMounted, setIsMounted] = useState(false);
-    const firestore = useFirestore();
     const { user } = useUser();
     const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -68,51 +66,31 @@ export default function MemberWallet({ member, initialTransactions }: MemberWall
     }, []);
 
     const handleAddRecord = async (values: TransactionFormValues) => {
-        if (!firestore || !user) {
-            toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in to post.' });
+        if (!user) {
+            toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in to perform this action.' });
             return;
         }
 
         setIsSubmitting(true);
-        const batch = writeBatch(firestore);
-
-        const memberRef = doc(firestore, 'members', member.id);
-        const transactionAmount = values.type === 'credit' ? values.amount : -values.amount;
-
-        batch.set(memberRef, { walletBalance: increment(transactionAmount) }, { merge: true });
-
-        const transactionRef = doc(collection(firestore, 'transactions'));
-        batch.set(transactionRef, {
-            reconciliationId: 'manual-admin-entry',
+        
+        const result = await createManualTransaction({
             memberId: member.id,
-            type: values.type,
             amount: values.amount,
-            date: values.date,
             description: values.description,
-            status: 'allocated',
-            chartOfAccountsCode: '7000-ManualAdjustment',
-            isAdjustment: true,
-            postedAt: serverTimestamp(),
-            postedBy: user.uid,
-            transactionId: `ADJ-${Date.now()}`
+            date: values.date,
+            type: values.type,
+            adminUserId: user.uid,
         });
 
-        try {
-            await batch.commit();
+        if (result.success) {
             toast({ title: 'Success!', description: 'Transaction has been posted and wallet has been updated.' });
             form.reset();
             router.refresh(); 
-        } catch (error: any) {
-            const permissionError = new FirestorePermissionError({
-                path: `members/${member.id}`,
-                operation: 'write',
-                requestResourceData: { amount: values.amount, description: values.description },
-            });
-            errorEmitter.emit('permission-error', permissionError);
-            toast({ variant: 'destructive', title: 'Posting Failed', description: error.message || "You may not have the required permissions." });
-        } finally {
-            setIsSubmitting(false);
+        } else {
+            toast({ variant: 'destructive', title: 'Posting Failed', description: result.error || "An unknown server error occurred." });
         }
+
+        setIsSubmitting(false);
     };
     
     // Calculate cumulative balance
