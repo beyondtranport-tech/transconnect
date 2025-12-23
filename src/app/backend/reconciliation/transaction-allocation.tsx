@@ -73,8 +73,8 @@ export default function TransactionAllocation({ statementData }: { statementData
 
     const checkedTransactions = transactions.filter((t: any) => t.checked);
     const totalCredits = checkedTransactions.filter((t: any) => t.type === 'credit').reduce((sum: number, t: any) => sum + t.amount, 0);
-    const totalDebits = checkedTransactions.filter((t: any) => t.type === 'debit').reduce((sum: number, t: any) => sum + t.amount, 0);
-    const calculatedClosingBalance = openingBalance + totalCredits + totalDebits;
+    const totalDebits = checkedTransactions.filter((t: any) => t.type === 'debit').reduce((sum: number, t: any) => sum + Math.abs(t.amount), 0);
+    const calculatedClosingBalance = openingBalance + totalCredits - totalDebits;
     const difference = closingBalance - calculatedClosingBalance;
 
     return (
