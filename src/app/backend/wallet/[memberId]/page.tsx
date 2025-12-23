@@ -7,14 +7,17 @@ import { Loader2, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import MemberWallet from './member-wallet';
-import { Suspense, useMemo, useEffect } from 'react';
+import { Suspense, useMemo, useEffect, useState } from 'react';
+import { useFirestore, useDoc, useMemoFirebase } from '@/firebase';
+import { doc } from 'firebase/firestore';
 
 function MemberWalletPageComponent() {
     const params = useParams();
     const searchParams = useSearchParams();
+    const firestore = useFirestore();
     const memberId = params.memberId as string;
 
-    const memberData = useMemo(() => {
+    const [memberData, setMemberData] = useState(() => {
         if (!memberId) return null;
         
         const createdAtParam = searchParams.get('createdAt');
@@ -27,7 +30,43 @@ function MemberWalletPageComponent() {
             walletBalance: parseFloat(searchParams.get('walletBalance') || '0'),
             createdAt: createdAtParam ? new Date(createdAtParam) : new Date(),
         };
-    }, [memberId, searchParams]);
+    });
+
+    // Real-time listener for the member's document to get live balance updates
+    const memberRef = useMemoFirebase(() => {
+        if (!firestore || !memberId) return null;
+        return doc(firestore, 'members', memberId);
+    }, [firestore, memberId]);
+
+    const { data: liveMemberData, isLoading } = useDoc(memberRef);
+
+    useEffect(() => {
+        if (liveMemberData) {
+            setMemberData(liveMemberData);
+        }
+    }, [liveMemberData]);
+    
+    // Listen for manual updates to refresh data
+    useEffect(() => {
+        const refreshData = () => {
+            if (memberRef) {
+                // This is a bit of a hack to force useDoc to re-fetch,
+                // but since it's a listener, just updating the local state is enough.
+                if (liveMemberData) setMemberData(liveMemberData);
+            }
+        };
+
+        window.addEventListener('walletUpdated', refreshData);
+        return () => window.removeEventListener('walletUpdated', refreshData);
+    }, [memberRef, liveMemberData]);
+
+    if (isLoading && !memberData) {
+         return (
+            <div className="flex justify-center items-center py-20">
+                <Loader2 className="h-12 w-12 animate-spin text-primary" />
+            </div>
+        );
+    }
     
     return (
         <div>

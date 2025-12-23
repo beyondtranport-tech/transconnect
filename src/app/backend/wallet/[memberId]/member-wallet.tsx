@@ -90,6 +90,9 @@ export default function MemberWallet({ member }: MemberWalletProps) {
 
             toast({ title: 'Success!', description: 'Transaction has been posted and wallet has been updated.' });
             form.reset();
+             // Manually trigger a refresh of the parent data if needed
+            window.dispatchEvent(new CustomEvent('walletUpdated'));
+
         } catch (error: any) {
             toast({
                 variant: 'destructive',
@@ -100,6 +103,10 @@ export default function MemberWallet({ member }: MemberWalletProps) {
             setIsSubmitting(false);
         }
     };
+    
+    if (!member) {
+        return <Loader2 className="h-8 w-8 animate-spin" />
+    }
 
     return (
         <div className="space-y-8">
