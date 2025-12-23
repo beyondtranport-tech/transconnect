@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -7,8 +8,9 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from '@/hooks/use-toast';
-import { Banknote, FileCheck, Scale } from 'lucide-react';
+import { Banknote, FileCheck, Scale, Loader2 } from 'lucide-react';
 import { Label } from '@/components/ui/label';
+import { saveAndPostReconciliation } from '../actions';
 
 const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-ZA', {
@@ -25,11 +27,12 @@ export default function TransactionAllocation({ statementData }: { statementData
     const [openingBalance, setOpeningBalance] = useState(statementData.openingBalance);
     const [closingBalance, setClosingBalance] = useState(statementData.closingBalance);
     
-    // State for calculated summary values
     const [totalCredits, setTotalCredits] = useState(0);
     const [totalDebits, setTotalDebits] = useState(0);
     const [calculatedClosingBalance, setCalculatedClosingBalance] = useState(0);
     const [difference, setDifference] = useState(0);
+    const [isPosting, setIsPosting] = useState(false);
+
     
     const handleAllocationChange = (transactionId: number) => {
         setTransactions(currentTransactions =>
@@ -54,7 +57,27 @@ export default function TransactionAllocation({ statementData }: { statementData
         );
     };
 
-    // Recalculate summary whenever transactions or balances change
+    const handleSaveAndPost = async () => {
+        setIsPosting(true);
+        const allocatedTransactions = transactions.filter((tx: any) => tx.status === 'allocated');
+        const result = await saveAndPostReconciliation(allocatedTransactions, statementData.statementName);
+
+        if (result.success) {
+            toast({
+                title: 'Success!',
+                description: 'Reconciliation has been posted and wallets have been updated.',
+            });
+        } else {
+             toast({
+                variant: 'destructive',
+                title: 'Posting Failed',
+                description: result.error,
+            });
+        }
+
+        setIsPosting(false);
+    }
+
     useEffect(() => {
         const allocatedTransactions = transactions.filter((t: any) => t.status === 'allocated');
         const newTotalCredits = allocatedTransactions.filter((t: any) => t.type === 'credit').reduce((sum: number, t: any) => sum + t.amount, 0);
@@ -112,7 +135,7 @@ export default function TransactionAllocation({ statementData }: { statementData
                             <TableRow>
                                 <TableHead className="w-[120px]">Date</TableHead>
                                 <TableHead>Description</TableHead>
-                                <TableHead className="w-[200px]">Reference</TableHead>
+                                <TableHead className="w-[250px]">Reference (Member UID)</TableHead>
                                 <TableHead className="text-right">Amount (R)</TableHead>
                                 <TableHead className="w-[120px] text-center">Status</TableHead>
                                 <TableHead className="w-[120px] text-right">Action</TableHead>
@@ -151,7 +174,7 @@ export default function TransactionAllocation({ statementData }: { statementData
                     </Table>
                 </div>
             </CardContent>
-            <CardFooter>
+            <CardFooter className="flex flex-col items-start gap-4">
                  <div className="w-full bg-muted p-4 rounded-lg">
                     <h4 className="font-semibold mb-3 text-lg">Reconciliation Summary</h4>
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
@@ -181,7 +204,13 @@ export default function TransactionAllocation({ statementData }: { statementData
                         </div>
                     </div>
                 </div>
+                 <Button onClick={handleSaveAndPost} disabled={Math.abs(difference) >= 0.01 || isPosting}>
+                    {isPosting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <FileCheck className="mr-2 h-4 w-4" />}
+                    Save &amp; Post Reconciliation
+                </Button>
             </CardFooter>
         </Card>
     )
 }
+
+    
