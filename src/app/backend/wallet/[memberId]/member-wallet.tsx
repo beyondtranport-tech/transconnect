@@ -9,7 +9,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore, useUser } from '@/firebase';
@@ -23,7 +22,18 @@ import { cn } from '@/lib/utils';
 import { Form, FormControl, FormField, FormItem, FormMessage, FormLabel } from '@/components/ui/form';
 
 const formatCurrency = (amount: number) => new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(amount);
-const formatDate = (timestamp: any) => timestamp && timestamp.toDate ? format(timestamp.toDate(), "yyyy-MM-dd HH:mm") : 'N/A';
+
+const formatDate = (timestamp: any) => {
+    // Handle the special case for the string-based opening balance date
+    if (typeof timestamp === 'string') {
+        return timestamp;
+    }
+    if (timestamp && timestamp.toDate) {
+        return format(timestamp.toDate(), "yyyy-MM-dd HH:mm");
+    }
+    return 'N/A';
+};
+
 
 const transactionSchema = z.object({
   date: z.date({
@@ -105,15 +115,21 @@ export default function MemberWallet({ member, initialTransactions }: MemberWall
     // Calculate cumulative balance
     const openingBalanceRecord = {
         id: 'opening-balance',
-        date: Timestamp.fromDate(new Date('2025-01-01')),
+        date: '2025-01-01 00:00', // Use a string to avoid timezone issues
         description: 'Opening Balance',
         transactionId: 'N/A',
         type: 'credit',
         amount: 0,
+        // Helper for sorting
+        _sortDate: new Date('2025-01-01T00:00:00Z'), 
     };
 
-    const allRecords = [openingBalanceRecord, ...initialTransactions];
-    const sortedTransactions = allRecords.sort((a, b) => a.date.toDate().getTime() - b.date.toDate().getTime());
+    // Add a consistent sorting key to all records
+    const allRecords = [
+        openingBalanceRecord, 
+        ...initialTransactions.map(tx => ({...tx, _sortDate: tx.date.toDate()}))
+    ];
+    const sortedTransactions = allRecords.sort((a, b) => a._sortDate.getTime() - b._sortDate.getTime());
 
     let runningBalance = 0;
     const transactionsWithBalance = sortedTransactions.map(tx => {
@@ -284,5 +300,3 @@ export default function MemberWallet({ member, initialTransactions }: MemberWall
         </div>
     );
 }
-
-    
