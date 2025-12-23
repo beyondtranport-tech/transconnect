@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -40,6 +40,11 @@ export default function MemberWallet({ member, initialTransactions }: MemberWall
     const firestore = useFirestore();
     const { user: adminUser } = useUser();
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isMounted, setIsMounted] = useState(false);
+
+    useEffect(() => {
+        setIsMounted(true);
+    }, []);
     
     const form = useForm<AdjustmentFormValues>({
         resolver: zodResolver(adjustmentSchema),
@@ -99,7 +104,11 @@ export default function MemberWallet({ member, initialTransactions }: MemberWall
                 </CardHeader>
                 <CardContent>
                     <p className="text-sm text-muted-foreground">Current Balance</p>
-                    <p className="text-4xl font-bold">{formatCurrency(member.walletBalance || 0)}</p>
+                    {isMounted ? (
+                        <p className="text-4xl font-bold">{formatCurrency(member.walletBalance || 0)}</p>
+                    ) : (
+                        <p className="text-4xl font-bold">R 0.00</p> 
+                    )}
                 </CardContent>
             </Card>
 
