@@ -107,11 +107,6 @@ function JoinFormComponent() {
         walletBalance: 0,
       };
 
-      // This is the special logic to make the specified user an admin upon signup.
-      if (values.email === 'transconnect@gmail.com') {
-        memberData.admin = true;
-      }
-
       if (userRole) {
         memberData.role = userRole;
       }

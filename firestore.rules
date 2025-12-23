@@ -14,29 +14,25 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == uid;
     }
     
-    function isAdmin() {
-        return isSignedIn() && request.auth.token.email == 'transconnect@gmail.com';
-    }
-    
     // ----------------------------------------------------------------------
     // Collection Rules
     // ----------------------------------------------------------------------
 
     match /members/{memberId} {
       // Admins can get any doc. Users can get their own.
-      allow get: if isOwner(memberId) || isAdmin();
+      allow get: if isOwner(memberId) || request.auth.token.email == 'transconnect@gmail.com';
       
       // Admins can list all members. Regular users cannot.
-      allow list: if isAdmin();
+      allow list: if request.auth.token.email == 'transconnect@gmail.com';
 
       // A user can create their own member document.
       allow create: if isOwner(memberId);
       
       // An admin can update any document. A user can only update their own.
-      allow update: if isOwner(memberId) || isAdmin();
+      allow update: if isOwner(memberId) || request.auth.token.email == 'transconnect@gmail.com';
 
       // Only admins can delete members.
-      allow delete: if isAdmin();
+      allow delete: if request.auth.token.email == 'transconnect@gmail.com';
     }
 
     match /memberships/{membershipId} {
@@ -50,41 +46,41 @@ service cloud.firestore {
       // A user can create a contribution for themselves.
       allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
       // Only admins can read the contributions list.
-      allow read: if isAdmin();
+      allow read: if request.auth.token.email == 'transconnect@gmail.com';
       // Contributions are immutable.
       allow update, delete: if false;
     }
     
      match /financeApplications/{applicationId} {
       // An applicant can get their own application, an admin can get any.
-      allow get: if isOwner(resource.data.applicantId) || isAdmin();
+      allow get: if isOwner(resource.data.applicantId) || request.auth.token.email == 'transconnect@gmail.com';
       // Only admins can list all applications.
-      allow list: if isAdmin();
+      allow list: if request.auth.token.email == 'transconnect@gmail.com';
       // Creation is allowed by the applicant for their own application, or by an admin.
-      allow create: if isOwner(request.resource.data.applicantId) || isAdmin();
+      allow create: if isOwner(request.resource.data.applicantId) || request.auth.token.email == 'transconnect@gmail.com';
       // Updates are allowed by the applicant or an admin.
-      allow update: if isOwner(resource.data.applicantId) || isAdmin();
+      allow update: if isOwner(resource.data.applicantId) || request.auth.token.email == 'transconnect@gmail.com';
       // Finance applications should not be deleted.
       allow delete: if false;
     }
 
     match /transactions/{transactionId} {
         // Admins have full read/write access to all transactions.
-        allow read, write: if isAdmin();
+        allow read, write: if request.auth.token.email == 'transconnect@gmail.com';
         
         // A regular user can only get their own transactions.
         allow get: if isOwner(resource.data.memberId);
         
         // A user can list transactions only if they are querying for their own memberId.
-        allow list: if request.query.where.size() > 0 && request.query.where[0][0] == 'memberId' && request.query.where[0][2] == request.auth.uid;
+        allow list: if (request.query.where.size() > 0 && request.query.where[0][0] == 'memberId' && request.query.where[0][2] == request.auth.uid) || request.auth.token.email == 'transconnect@gmail.com';
         
         // A regular user can create their own transactions (e.g., wallet top-up). An admin can also create.
-        allow create: if isOwner(request.resource.data.memberId) || isAdmin();
+        allow create: if isOwner(request.resource.data.memberId) || request.auth.token.email == 'transconnect@gmail.com';
     }
 
     match /platform_config/{docId} {
       // Only admins can read/write platform configuration.
-      allow read, write: if isAdmin();
+      allow read, write: if request.auth.token.email == 'transconnect@gmail.com';
     }
   }
 }
