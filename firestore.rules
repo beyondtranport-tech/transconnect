@@ -32,7 +32,7 @@ service cloud.firestore {
     }
     
     function isAdmin() {
-        return request.auth.email == 'transconnect@gmail.com';
+        return request.auth.token.email == 'transconnect@gmail.com';
     }
 
     // ----------------------------------------------------------------------
