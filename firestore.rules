@@ -38,19 +38,11 @@ service cloud.firestore {
       allow delete: if request.auth.token.email == 'transconnect@gmail.com';
     }
 
-    // Rule for members querying their OWN transactions.
-    // This enforces that any 'list' operation MUST include a 'where' clause on memberId.
     match /transactions/{transactionId} {
-        allow get: if isOwner(resource.data.memberId);
-        allow list: if request.query.where[0][0] == 'memberId' && request.query.where[0][2] == request.auth.uid;
-        allow create: if isOwner(request.resource.data.memberId);
-        allow update, delete: if false; // Regular users cannot update/delete transactions.
-    }
-    
-    // Separate, privileged rule for the Admin user.
-    // This allows the admin to read/write/list transactions without query constraints.
-    match /transactions/{transactionId} {
-        allow read, write: if request.auth.token.email == 'transconnect@gmail.com';
+        allow get: if isOwner(resource.data.memberId) || request.auth.token.email == 'transconnect@gmail.com';
+        allow list: if request.auth.token.email == 'transconnect@gmail.com' || (request.query.where[0][0] == 'memberId' && request.query.where[0][2] == request.auth.uid);
+        allow create: if isOwner(request.resource.data.memberId) || request.auth.token.email == 'transconnect@gmail.com';
+        allow update, delete: if request.auth.token.email == 'transconnect@gmail.com';
     }
 
     match /platform_config/{docId} {
