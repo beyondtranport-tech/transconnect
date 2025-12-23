@@ -59,7 +59,7 @@ service cloud.firestore {
       
       // An admin can update any member document.
       // A regular user can only update a specific subset of their own fields.
-      allow update: if (isRequestingUserAdmin()) || (isOwner(memberId) && isUpdatingAllowedFields());
+      allow update: if isRequestingUserAdmin() || isOwnerUpdatingAllowedFields(memberId);
 
       allow delete: if isRequestingUserAdmin();
     }
@@ -89,8 +89,12 @@ service cloud.firestore {
     }
 
     match /transactions/{transactionId} {
-      // Only admins can create, read, or list transactions.
-      allow read, list, create: if isRequestingUserAdmin();
+      // An owner can read their own transactions, and an admin can read any.
+      allow get: if isRequestingUserAdmin() || isOwner(resource.data.memberId);
+      // Admins can list all transactions. Members can query for their own (requires query constraint).
+      allow list: if isRequestingUserAdmin();
+      // Only admins can create transactions.
+      allow create: if isRequestingUserAdmin();
       // Transactions are immutable once created.
       allow update, delete: if false;
     }
