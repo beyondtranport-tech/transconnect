@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useForm } from 'react-hook-form';
@@ -17,7 +18,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useState, useEffect } from 'react';
 import { Loader2, Banknote, Save } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { bankDetails } from '@/lib/bank-details.json';
+import bankDetailsData from '@/lib/bank-details.json';
 
 const formSchema = z.object({
   bankName: z.string().min(1, 'Bank name is required'),
@@ -33,7 +34,7 @@ type BankDetailsFormValues = z.infer<typeof formSchema>;
 export default function BankDetailsSettings() {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
-  const safeBankDetails = bankDetails || {};
+  const safeBankDetails = bankDetailsData || {};
 
   const form = useForm<BankDetailsFormValues>({
     resolver: zodResolver(formSchema),
