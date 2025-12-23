@@ -4,7 +4,6 @@
 import { getApps, initializeApp, getApp, App, cert } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { getFirestore, Timestamp, FieldValue } from 'firebase-admin/firestore';
-import { credential } from 'firebase-admin';
 
 // Helper function to initialize Firebase Admin SDK idempotently.
 function initializeAdminApp(): App {
@@ -54,4 +53,33 @@ export async function deleteUser(uid: string): Promise<{ success: boolean; error
     console.error('Failed to delete user:', error);
     return { success: false, error: error.message || 'An unknown server error occurred during user deletion.' };
   }
+}
+
+export async function getTransactionsForMember(memberId: string): Promise<{ success: boolean; data?: any[]; error?: string }> {
+    try {
+        const adminApp = initializeAdminApp();
+        const firestore = getFirestore(adminApp);
+        const transactionsSnap = await firestore.collection('transactions').where('memberId', '==', memberId).orderBy('date', 'desc').get();
+        
+        if (transactionsSnap.empty) {
+            return { success: true, data: [] };
+        }
+        
+        const transactions = transactionsSnap.docs.map(doc => {
+            const data = doc.data();
+            return {
+                id: doc.id,
+                ...data,
+                // Convert Firestore Timestamps to ISO strings for serialization
+                date: (data.date as Timestamp).toDate().toISOString(),
+                postedAt: data.postedAt ? (data.postedAt as Timestamp).toDate().toISOString() : null,
+            };
+        });
+        
+        return { success: true, data: transactions };
+
+    } catch (error: any) {
+        console.error('Failed to get transactions:', error);
+        return { success: false, error: error.message || 'An unknown server error occurred.' };
+    }
 }

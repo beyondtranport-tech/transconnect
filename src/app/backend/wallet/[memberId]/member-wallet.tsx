@@ -14,13 +14,14 @@ import * as z from 'zod';
 import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { useUser, useFirestore } from '@/firebase';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
+import { getTransactionsForMember } from '../../actions';
 
 const formatCurrency = (amount: number) => new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(amount);
 
@@ -50,21 +51,28 @@ export default function MemberWallet({ member }: MemberWalletProps) {
     const firestore = useFirestore();
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isClient, setIsClient] = useState(false);
+    
+    const [transactions, setTransactions] = useState<any[] | null>(null);
+    const [isLoadingTransactions, setIsLoadingTransactions] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
         setIsClient(true);
-    }, []);
-
-    const transactionsQuery = useMemoFirebase(() => {
-        if (!firestore || !member.id) return null;
-        return query(
-            collection(firestore, 'transactions'),
-            where('memberId', '==', member.id),
-            orderBy('date', 'desc')
-        );
-    }, [firestore, member.id]);
-
-    const { data: transactions, isLoading: isLoadingTransactions, error } = useCollection(transactionsQuery);
+        if (member.id) {
+            setIsLoadingTransactions(true);
+            getTransactionsForMember(member.id)
+                .then(response => {
+                    if (response.success) {
+                        setTransactions(response.data || []);
+                    } else {
+                        setError(response.error || 'Failed to load transactions.');
+                    }
+                })
+                .finally(() => {
+                    setIsLoadingTransactions(false);
+                });
+        }
+    }, [member.id]);
 
     const form = useForm<TransactionFormValues>({
         resolver: zodResolver(transactionSchema),
@@ -114,6 +122,10 @@ export default function MemberWallet({ member }: MemberWalletProps) {
 
             toast({ title: 'Success!', description: 'Transaction has been posted and wallet has been updated.' });
             form.reset();
+            // Refetch transactions
+            getTransactionsForMember(member.id).then(response => {
+                if (response.success) setTransactions(response.data || []);
+            });
         } catch(e: any) {
             const permissionError = new FirestorePermissionError({
                 path: `/members/${member.id}`,
@@ -291,7 +303,7 @@ export default function MemberWallet({ member }: MemberWalletProps) {
                     ) : error ? (
                         <div className="text-destructive text-center py-10">
                            <p>Could not load transactions.</p>
-                           <p className="text-sm">{error.message}</p>
+                           <p className="text-sm">{error}</p>
                         </div>
                     ) : (
                         <Table>
