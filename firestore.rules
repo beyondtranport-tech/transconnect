@@ -13,7 +13,7 @@ service cloud.firestore {
     function isOwner(userId) {
       return isSignedIn() && request.auth.uid == userId;
     }
-
+    
     function isAdmin() {
       return request.auth.email == 'transconnect@gmail.com';
     }
@@ -76,10 +76,16 @@ service cloud.firestore {
     }
 
     match /transactions/{transactionId} {
-      // Admin has full access.
-      allow read, write: if request.auth.email == 'transconnect@gmail.com';
-      // Members can read their own transactions.
-      allow read: if request.auth != null && request.auth.uid == resource.data.memberId;
+        // An admin can perform any read or write operation on any transaction.
+        allow read, write: if request.auth.email == 'transconnect@gmail.com';
+        // A non-admin user can only read transactions if they are the owner.
+        // This rule applies to `get` requests on single documents.
+        // List operations for non-admins must use a 'where' clause, which is handled in a separate rule.
+        allow get: if isSignedIn() && isOwner(resource.data.memberId);
+        // Non-admins can list transactions ONLY if they are querying for their own memberId.
+        allow list: if isSignedIn() && request.query.where.size() > 0 && request.query.where[0][0] == 'memberId' && request.query.where[0][2] == request.auth.uid;
+        // Only admins or the owner can create transactions.
+        allow create: if isOwner(request.resource.data.memberId) || request.auth.email == 'transconnect@gmail.com';
     }
 
     match /platform_config/{docId} {
