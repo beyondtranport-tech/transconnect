@@ -15,7 +15,8 @@ service cloud.firestore {
     }
 
     function isAdmin() {
-      return request.auth.email == 'transconnect@gmail.com';
+      // Securely check for the 'admin' flag on the user's own document.
+      return isSignedIn() && get(/databases/$(database)/documents/members/$(request.auth.uid)).data.admin == true;
     }
 
     function hasValidMemberId(memberId) {
