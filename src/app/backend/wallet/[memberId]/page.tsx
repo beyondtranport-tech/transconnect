@@ -36,7 +36,7 @@ export default function MemberWalletPage() {
         return doc(firestore, 'members', memberId);
     }, [firestore, memberId]);
 
-    const { data: memberData, isLoading: isMemberLoading } = useDoc(memberData ? memberRef : null);
+    const { data: memberData, isLoading: isMemberLoading } = useDoc(memberRef);
 
     const transactionsQuery = useMemoFirebase(() => {
         if (!firestore || !memberId) return null;
@@ -52,8 +52,10 @@ export default function MemberWalletPage() {
     const allTransactions = useMemo(() => {
         const combined = [...(existingTransactions || []), ...newTransactions];
         combined.sort((a, b) => {
-            const dateA = a.date?.toDate ? a.date.toDate() : new Date(a.date);
-            const dateB = b.date?.toDate ? b.date.toDate() : new Date(b.date);
+            const dateA = a.date?.toDate ? a.date.toDate() : new Date();
+            const dateB = b.date?.toDate ? b.date.toDate() : new Date();
+            if(!a.date) return -1; // new transactions first
+            if(!b.date) return 1;
             return dateB.getTime() - dateA.getTime();
         });
         return combined;
@@ -62,10 +64,11 @@ export default function MemberWalletPage() {
     const openingBalance = memberData?.walletBalance || 0;
 
     const closingBalance = useMemo(() => {
-        return allTransactions.reduce((acc, tx) => {
-            return tx.type === 'credit' ? acc + tx.amount : acc - tx.amount;
-        }, 0);
-    }, [allTransactions]);
+        const newEntriesTotal = newTransactions.reduce((acc, tx) => {
+             return tx.type === 'credit' ? acc + tx.amount : acc - tx.amount;
+        }, 0)
+        return openingBalance + newEntriesTotal;
+    }, [openingBalance, newTransactions]);
 
     const handleAddJournalEntry = (entry: DocumentData) => {
         setNewTransactions(prev => [...prev, entry]);

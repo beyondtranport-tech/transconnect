@@ -13,7 +13,10 @@ const formatPrice = (price: number) => {
 
 const formatDate = (timestamp: any) => {
     if (!timestamp) return 'Staged';
-    const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+    const date = timestamp.toDate ? timestamp.toDate() : new Date();
+    if(timestamp && !timestamp.toDate) { // For newly added entries which are just objects
+        return 'Staged';
+    }
     return format(date, "yyyy-MM-dd HH:mm");
 };
 
