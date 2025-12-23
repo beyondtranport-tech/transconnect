@@ -4,6 +4,7 @@
 import { getApps, initializeApp, cert, getApp } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
+import { credential } from 'firebase-admin';
 
 // Helper function to initialize Firebase Admin SDK idempotently.
 function initializeAdminApp() {
@@ -14,8 +15,10 @@ function initializeAdminApp() {
   
   // This will use the GOOGLE_APPLICATION_CREDENTIALS environment variable
   // or Application Default Credentials from the hosting environment.
-  // It is critical to call initializeApp() without arguments in this environment.
-  return initializeApp();
+  // It is critical to call initializeApp() with the ADC credential in this environment.
+  return initializeApp({
+    credential: credential.applicationDefault(),
+  });
 }
 
 export async function deleteUser(uid: string): Promise<{ success: boolean; error?: string }> {
