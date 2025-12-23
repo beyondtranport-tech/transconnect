@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -19,7 +18,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { getTransactionsForMember, createManualTransaction } from '../../actions';
+import { getTransactionsForMember } from '../../actions';
 
 const formatCurrency = (amount: number) => new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(amount);
 
@@ -93,9 +92,21 @@ export default function MemberWallet({ member }: MemberWalletProps) {
 
         setIsSubmitting(true);
         
-        const result = await createManualTransaction(member.id, user.uid, values);
+        const response = await fetch('/api/admin/transactions', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                memberId: member.id,
+                adminUserId: user.uid,
+                transactionData: values,
+            }),
+        });
 
-        if (result.success) {
+        const result = await response.json();
+
+        if (response.ok) {
             toast({ title: 'Success!', description: 'Transaction has been posted and wallet has been updated.' });
             form.reset();
             // Refetch transactions to show the new record
@@ -308,3 +319,4 @@ export default function MemberWallet({ member }: MemberWalletProps) {
         </div>
     );
 }
+    

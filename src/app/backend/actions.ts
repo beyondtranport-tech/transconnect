@@ -3,55 +3,46 @@
 
 import { getApps, initializeApp, getApp, App, cert } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
-import { getFirestore, Timestamp, FieldValue, increment } from 'firebase-admin/firestore';
+import { getFirestore, Timestamp } from 'firebase-admin/firestore';
 
-let adminApp: App | null = null;
-let adminAppError: Error | null = null;
-
-try {
-  if (!getApps().some(app => app.name === 'firebase-admin-app-transconnect-backend')) {
-    // This environment variable is expected to be set with the base64-encoded service account JSON.
-    // In many modern hosting environments (like Vercel, Firebase App Hosting), you set this
-    // as a secret environment variable.
-    const serviceAccountString = process.env.FIREBASE_SERVICE_ACCOUNT_BASE64;
-    
-    if (serviceAccountString) {
+let adminApp: App;
+if (!getApps().length) {
+    try {
+        const serviceAccountString = process.env.FIREBASE_SERVICE_ACCOUNT_BASE64;
+        if (!serviceAccountString) {
+            throw new Error("FIREBASE_SERVICE_ACCOUNT_BASE64 env var is not set.");
+        }
         const serviceAccount = JSON.parse(Buffer.from(serviceAccountString, 'base64').toString('utf-8'));
         adminApp = initializeApp({
             credential: cert(serviceAccount)
-        }, 'firebase-admin-app-transconnect-backend');
-    } else {
-        // Fallback for local development or environments where file-based credentials are used.
-        // This relies on a `service-account.json` file being in the project root.
-        try {
-            const serviceAccount = require('../../../service-account.json');
-             adminApp = initializeApp({
-                credential: cert(serviceAccount)
-            }, 'firebase-admin-app-transconnect-backend');
-        } catch (fileError) {
-             throw new Error('Firebase service account credentials are not available. Please set the FIREBASE_SERVICE_ACCOUNT_BASE64 environment variable or place service-account.json in the project root.');
-        }
+        });
+    } catch (e) {
+        console.error("Firebase Admin SDK initialization failed", e);
+        // We will proceed, and subsequent calls will fail with a clearer error
     }
-  } else {
-    adminApp = getApp('firebase-admin-app-transconnect-backend');
-  }
-} catch (error: any) {
-    console.error("Failed to initialize Firebase Admin SDK:", error.message);
-    adminAppError = error;
+} else {
+  adminApp = getApp();
 }
 
-function getSafeAdminApp() {
-    if (adminAppError) throw adminAppError;
-    if (!adminApp) throw new Error("Firebase Admin SDK is not initialized.");
-    return adminApp;
+function getSafeFirestore() {
+    if (!adminApp) {
+        throw new Error("Firebase Admin SDK is not initialized. Check server logs for details.");
+    }
+    return getFirestore(adminApp);
+}
+
+function getSafeAuth() {
+    if (!adminApp) {
+        throw new Error("Firebase Admin SDK is not initialized. Check server logs for details.");
+    }
+    return getAuth(adminApp);
 }
 
 
 export async function deleteUser(uid: string): Promise<{ success: boolean; error?: string }> {
   try {
-    const app = getSafeAdminApp();
-    const auth = getAuth(app);
-    const firestore = getFirestore(app);
+    const auth = getSafeAuth();
+    const firestore = getSafeFirestore();
 
     await auth.deleteUser(uid);
     const memberDocRef = firestore.collection('members').doc(uid);
@@ -66,8 +57,7 @@ export async function deleteUser(uid: string): Promise<{ success: boolean; error
 
 export async function getTransactionsForMember(memberId: string): Promise<{ success: boolean; data?: any[]; error?: string }> {
     try {
-        const app = getSafeAdminApp();
-        const firestore = getFirestore(app);
+        const firestore = getSafeFirestore();
         const transactionsSnap = await firestore.collection('transactions').where('memberId', '==', memberId).orderBy('date', 'desc').get();
         
         if (transactionsSnap.empty) {
@@ -92,45 +82,4 @@ export async function getTransactionsForMember(memberId: string): Promise<{ succ
     }
 }
 
-
-export async function createManualTransaction(
-    memberId: string, 
-    adminUserId: string,
-    transactionData: { amount: number; description: string; date: Date; type: 'credit' | 'debit' }
-): Promise<{ success: boolean; error?: string }> {
-    try {
-        const app = getSafeAdminApp();
-        const firestore = getFirestore(app);
-        const batch = firestore.batch();
-        
-        const memberRef = firestore.collection('members').doc(memberId);
-        const transactionRef = firestore.collection('transactions').doc();
-        
-        const transactionAmount = transactionData.type === 'credit' ? transactionData.amount : -transactionData.amount;
-        
-        batch.update(memberRef, { walletBalance: increment(transactionAmount) });
-        
-        const newTransaction = {
-            reconciliationId: 'manual-admin-entry',
-            memberId: memberId,
-            type: transactionData.type,
-            amount: transactionData.amount,
-            date: Timestamp.fromDate(new Date(transactionData.date)),
-            description: transactionData.description,
-            status: 'allocated',
-            chartOfAccountsCode: '7000-ManualAdjustment',
-            isAdjustment: true,
-            postedAt: FieldValue.serverTimestamp(),
-            postedBy: adminUserId,
-            transactionId: transactionRef.id
-        };
-        batch.set(transactionRef, newTransaction);
-        
-        await batch.commit();
-        
-        return { success: true };
-    } catch (error: any) {
-        console.error('Failed to create manual transaction:', error);
-        return { success: false, error: error.message || 'An unknown server error occurred.' };
-    }
-}
+    
