@@ -204,7 +204,7 @@ export default function TransactionAllocation({ statementData }: { statementData
                         </div>
                     </div>
                 </div>
-                 <Button onClick={handleSaveAndPost} disabled={Math.abs(difference) >= 0.01 || isPosting}>
+                 <Button onClick={handleSaveAndPost} disabled={isPosting}>
                     {isPosting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <FileCheck className="mr-2 h-4 w-4" />}
                     Save &amp; Post Reconciliation
                 </Button>
@@ -212,5 +212,3 @@ export default function TransactionAllocation({ statementData }: { statementData
         </Card>
     )
 }
-
-    
