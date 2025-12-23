@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useForm } from 'react-hook-form';
@@ -17,7 +17,6 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-  CardFooter,
 } from '@/components/ui/card';
 import {
   Form,
@@ -29,7 +28,7 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Eye, EyeOff, Shield } from 'lucide-react';
+import { Loader2, Eye, EyeOff } from 'lucide-react';
 
 const formSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -38,8 +37,7 @@ const formSchema = z.object({
 
 type SignInFormValues = z.infer<typeof formSchema>;
 
-
-export default function SignInPage() {
+function SignInFormComponent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
@@ -141,74 +139,82 @@ export default function SignInPage() {
   };
 
   return (
-    <div className="container mx-auto flex min-h-[calc(100vh-8rem)] items-center justify-center px-4 py-16">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <CardTitle className="text-3xl font-bold font-headline">
-            Member Sign In
-          </CardTitle>
-          <CardDescription>
-            Access your TransConnect account.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <FormField
-                control={form.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Email</FormLabel>
-                    <FormControl>
-                      <Input placeholder="you@example.com" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="password"
-                render={({ field }) => (
-                  <FormItem>
-                    <div className="flex items-center justify-between">
-                        <FormLabel>Password</FormLabel>
-                        <button type="button" onClick={handlePasswordReset} className="text-sm font-medium text-primary hover:underline">
-                            Forgot password?
-                        </button>
-                    </div>
-                    <div className="relative">
-                        <FormControl>
-                          <Input type={showPassword ? "text" : "password"} {...field} />
-                        </FormControl>
-                        <button 
-                            type="button" 
-                            onClick={() => setShowPassword(!showPassword)}
-                            className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground"
-                            aria-label={showPassword ? "Hide password" : "Show password"}
-                        >
-                            {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                        </button>
-                    </div>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Sign In
-              </Button>
-            </form>
-          </Form>
-          <div className="mt-4 text-center text-sm">
-            Don&apos;t have an account?{' '}
-            <Link href="/join" className="underline">
-              Join Now
-            </Link>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
+    <Card className="w-full max-w-md">
+      <CardHeader className="text-center">
+        <CardTitle className="text-3xl font-bold font-headline">
+          Member Sign In
+        </CardTitle>
+        <CardDescription>
+          Access your TransConnect account.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <FormField
+              control={form.control}
+              name="email"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Email</FormLabel>
+                  <FormControl>
+                    <Input placeholder="you@example.com" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="password"
+              render={({ field }) => (
+                <FormItem>
+                  <div className="flex items-center justify-between">
+                      <FormLabel>Password</FormLabel>
+                      <button type="button" onClick={handlePasswordReset} className="text-sm font-medium text-primary hover:underline">
+                          Forgot password?
+                      </button>
+                  </div>
+                  <div className="relative">
+                      <FormControl>
+                        <Input type={showPassword ? "text" : "password"} {...field} />
+                      </FormControl>
+                      <button 
+                          type="button" 
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground"
+                          aria-label={showPassword ? "Hide password" : "Show password"}
+                      >
+                          {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                      </button>
+                  </div>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <Button type="submit" className="w-full" disabled={isLoading}>
+              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Sign In
+            </Button>
+          </form>
+        </Form>
+        <div className="mt-4 text-center text-sm">
+          Don&apos;t have an account?{' '}
+          <Link href="/join" className="underline">
+            Join Now
+          </Link>
+        </div>
+      </CardContent>
+    </Card>
   );
+}
+
+export default function SignInPage() {
+    return (
+        <div className="container mx-auto flex min-h-[calc(100vh-8rem)] items-center justify-center px-4 py-16">
+            <Suspense fallback={<Loader2 className="h-12 w-12 animate-spin text-primary" />}>
+                <SignInFormComponent />
+            </Suspense>
+        </div>
+    )
 }
