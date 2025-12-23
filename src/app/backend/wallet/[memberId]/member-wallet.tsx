@@ -7,19 +7,20 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Calendar as CalendarIcon, PlusCircle } from 'lucide-react';
 import { format } from 'date-fns';
-import { DocumentData } from 'firebase/firestore';
+import { DocumentData, collection, query, where, orderBy, writeBatch, doc, serverTimestamp, increment } from 'firebase/firestore';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { useUser } from '@/firebase';
+import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { createManualTransaction, getTransactionsForMember } from '../../actions';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
 
 const formatCurrency = (amount: number) => new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(amount);
 
@@ -46,33 +47,24 @@ interface MemberWalletProps {
 export default function MemberWallet({ member }: MemberWalletProps) {
     const { toast } = useToast();
     const { user } = useUser();
+    const firestore = useFirestore();
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isClient, setIsClient] = useState(false);
-    const [transactions, setTransactions] = useState<any[] | null>(null);
-    const [isLoadingTransactions, setIsLoadingTransactions] = useState(true);
-    const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
         setIsClient(true);
     }, []);
 
-    useEffect(() => {
-        const fetchTransactions = async () => {
-            if (!member.id) return;
-            setIsLoadingTransactions(true);
-            setError(null);
-            const result = await getTransactionsForMember(member.id);
-            if (result.success) {
-                setTransactions(result.data || []);
-            } else {
-                setError(result.error || 'Failed to load transactions.');
-                toast({ variant: 'destructive', title: 'Error', description: result.error });
-            }
-            setIsLoadingTransactions(false);
-        };
+    const transactionsQuery = useMemoFirebase(() => {
+        if (!firestore || !member.id) return null;
+        return query(
+            collection(firestore, 'transactions'),
+            where('memberId', '==', member.id),
+            orderBy('date', 'desc')
+        );
+    }, [firestore, member.id]);
 
-        fetchTransactions();
-    }, [member.id, toast]);
+    const { data: transactions, isLoading: isLoadingTransactions, error } = useCollection(transactionsQuery);
 
     const form = useForm<TransactionFormValues>({
         resolver: zodResolver(transactionSchema),
@@ -85,41 +77,59 @@ export default function MemberWallet({ member }: MemberWalletProps) {
     });
 
     const handleAddRecord = async (values: TransactionFormValues) => {
-        if (!user) {
+        if (!user || !firestore) {
             toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in to perform this action.' });
             return;
         }
 
         setIsSubmitting(true);
         
-        const result = await createManualTransaction({
-            memberId: member.id,
-            amount: values.amount,
-            description: values.description,
-            date: values.date,
-            type: values.type,
-            adminUserId: user.uid,
-        });
+        try {
+            const batch = writeBatch(firestore);
+            
+            const memberRef = doc(firestore, 'members', member.id);
+            const transactionRef = doc(collection(firestore, 'transactions'));
+            
+            const transactionAmount = values.type === 'credit' ? values.amount : -values.amount;
 
-        if (result.success) {
+            batch.update(memberRef, { walletBalance: increment(transactionAmount) });
+            
+            const transactionData = {
+                reconciliationId: 'manual-admin-entry',
+                memberId: member.id,
+                type: values.type,
+                amount: values.amount,
+                date: values.date,
+                description: values.description,
+                status: 'allocated',
+                chartOfAccountsCode: '7000-ManualAdjustment',
+                isAdjustment: true,
+                postedAt: serverTimestamp(),
+                postedBy: user.uid,
+                transactionId: `ADJ-${Date.now()}`
+            };
+            batch.set(transactionRef, transactionData);
+
+            await batch.commit();
+
             toast({ title: 'Success!', description: 'Transaction has been posted and wallet has been updated.' });
             form.reset();
-            // Refetch transactions after a successful update
-            const fetchResult = await getTransactionsForMember(member.id);
-            if (fetchResult.success) {
-                setTransactions(fetchResult.data || []);
-            }
-        } else {
-            toast({ variant: 'destructive', title: 'Posting Failed', description: result.error || "An unknown server error occurred." });
+        } catch(e: any) {
+            const permissionError = new FirestorePermissionError({
+                path: `/members/${member.id}`,
+                operation: 'write',
+            });
+            errorEmitter.emit('permission-error', permissionError);
+            toast({ variant: 'destructive', title: 'Posting Failed', description: "You might not have the correct permissions." });
+        } finally {
+            setIsSubmitting(false);
         }
-
-        setIsSubmitting(false);
     };
     
     // Calculate cumulative balance
     const openingBalanceRecord = {
         id: 'opening-balance',
-        date: new Date(member.createdAt.getTime() - 1000).toISOString(),
+        date: member.createdAt ? new Date(member.createdAt.getTime() - 1000).toISOString() : new Date().toISOString(),
         description: 'Opening Balance',
         transactionId: 'N/A',
         type: 'credit',
@@ -281,7 +291,7 @@ export default function MemberWallet({ member }: MemberWalletProps) {
                     ) : error ? (
                         <div className="text-destructive text-center py-10">
                            <p>Could not load transactions.</p>
-                           <p className="text-sm">{error}</p>
+                           <p className="text-sm">{error.message}</p>
                         </div>
                     ) : (
                         <Table>
