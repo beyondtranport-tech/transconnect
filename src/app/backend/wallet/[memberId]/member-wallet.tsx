@@ -15,7 +15,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useFirestore, useUser } from '@/firebase';
 import { writeBatch, doc, collection, serverTimestamp, increment, Timestamp } from 'firebase/firestore';
 import { Loader2, PlusCircle, Calendar as CalendarIcon } from 'lucide-react';
-import { format } from 'date-fns';
+import { format, parse } from 'date-fns';
 import { DocumentData } from 'firebase/firestore';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
@@ -150,22 +150,23 @@ export default function MemberWallet({ member, initialTransactions }: MemberWall
                                         <FormItem className="flex flex-col">
                                         <Popover>
                                             <PopoverTrigger asChild>
-                                            <FormControl>
-                                                <Button
-                                                variant={"outline"}
-                                                className={cn(
-                                                    "w-full pl-3 text-left font-normal",
-                                                    !field.value && "text-muted-foreground"
-                                                )}
-                                                >
-                                                {field.value ? (
-                                                    format(field.value, "PPP")
-                                                ) : (
-                                                    <span>Pick a date</span>
-                                                )}
-                                                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                                                </Button>
-                                            </FormControl>
+                                                <div className="relative">
+                                                     <FormControl>
+                                                        <Input
+                                                            value={field.value ? format(field.value, 'yyyy-MM-dd') : ''}
+                                                            onChange={(e) => {
+                                                                const date = parse(e.target.value, 'yyyy-MM-dd', new Date());
+                                                                if (!isNaN(date.getTime())) {
+                                                                    field.onChange(date);
+                                                                }
+                                                            }}
+                                                            placeholder="YYYY-MM-DD"
+                                                        />
+                                                     </FormControl>
+                                                     <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                                                        <CalendarIcon className="h-4 w-4 opacity-50" />
+                                                    </div>
+                                                </div>
                                             </PopoverTrigger>
                                             <PopoverContent className="w-auto p-0" align="start">
                                             <Calendar
