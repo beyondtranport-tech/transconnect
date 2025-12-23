@@ -1,9 +1,8 @@
-
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Check, Upload } from "lucide-react";
+import { Check, Upload, PlusCircle } from "lucide-react";
 import { useState } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
@@ -17,6 +16,14 @@ const availableStatements = [
         data: statementData
     }
 ];
+
+// A blank statement template for manual adjustments
+const manualAdjustmentTemplate = {
+    statementName: `manual-adjustment-${new Date().toISOString()}`,
+    openingBalance: 0,
+    closingBalance: 0,
+    transactions: []
+};
 
 export default function ReconciliationPage() {
     const [selectedStatementId, setSelectedStatementId] = useState<string | null>(null);
@@ -51,6 +58,15 @@ export default function ReconciliationPage() {
         
         setProcessingData(statementToProcess.data);
     }
+    
+    const handleManualAdjustment = () => {
+        toast({
+            title: "Manual Adjustment Mode",
+            description: "You can now add manual transactions below.",
+        });
+        setSelectedStatementId(null); // Deselect any statement
+        setProcessingData(manualAdjustmentTemplate);
+    }
 
     return (
         <div className="w-full space-y-8">
@@ -60,13 +76,19 @@ export default function ReconciliationPage() {
                         <div>
                             <CardTitle>Transaction Reconciliation</CardTitle>
                             <CardDescription>
-                                Select a bank statement from the list to begin reconciling transactions.
+                                Select a bank statement or start a manual adjustment session.
                             </CardDescription>
                         </div>
-                        <Button onClick={handleProcess} disabled={!selectedStatementId}>
-                            <Check className="mr-2 h-4 w-4" />
-                            Process Selected Statement
-                        </Button>
+                         <div className="flex gap-2">
+                             <Button onClick={handleManualAdjustment} variant="outline">
+                                <PlusCircle className="mr-2 h-4 w-4" />
+                                Manual Adjustment
+                            </Button>
+                            <Button onClick={handleProcess} disabled={!selectedStatementId}>
+                                <Check className="mr-2 h-4 w-4" />
+                                Process Selected Statement
+                            </Button>
+                        </div>
                     </div>
                 </CardHeader>
                 <CardContent>
@@ -80,10 +102,7 @@ export default function ReconciliationPage() {
                                         checked={selectedStatementId === statement.id}
                                         onCheckedChange={(checked) => {
                                             setSelectedStatementId(checked ? statement.id : null);
-                                            // If a statement is deselected, hide the processing view
-                                            if (!checked) {
-                                                setProcessingData(null);
-                                            }
+                                            setProcessingData(null); // Clear previous processing data
                                         }}
                                     />
                                     <Label htmlFor={statement.id} className="font-mono cursor-pointer">

@@ -9,19 +9,16 @@ import { credential } from 'firebase-admin';
 // Helper function to initialize Firebase Admin SDK idempotently.
 function initializeAdminApp(): App {
     const appName = 'firebase-admin-app-transconnect';
-    // Check if the app is already initialized
     const existingApp = getApps().find(app => app.name === appName);
     if (existingApp) {
         return existingApp;
     }
-    // If not initialized, create a new app instance
+    
     try {
         return initializeApp({
             credential: credential.applicationDefault(),
         }, appName);
     } catch (error: any) {
-        // This can happen in local dev environments where Application Default Credentials aren't set.
-        // It's better to log a clear error than to crash.
         console.error("Failed to initialize Firebase Admin SDK. Make sure Application Default Credentials are configured.", error);
         throw new Error("Server configuration error. Could not connect to Firebase services.");
     }
@@ -45,29 +42,4 @@ export async function deleteUser(uid: string): Promise<{ success: boolean; error
     console.error('Failed to delete user:', error);
     return { success: false, error: error.message || 'An unknown server error occurred during user deletion.' };
   }
-}
-
-// NOTE: This server action is no longer used for reconciliation posting.
-// The logic has been moved to the client-side `TransactionAllocation` component,
-// protected by new Firestore security rules.
-// This function is kept for potential future administrative tasks but is not currently active for posting.
-export async function saveAndPostReconciliation(allocatedTransactions: any[], reconciliationId: string): Promise<{ success: boolean; error?: string }> {
-    console.warn("`saveAndPostReconciliation` server action was called, but is deprecated. Wallet updates are now handled on the client.");
-    return { success: false, error: "This function is deprecated. Please update the client to handle posting." };
-}
-
-// This function is deprecated and has been replaced with client-side logic secured by Firestore rules.
-export async function createManualTransaction(
-    memberId: string, 
-    adminUid: string,
-    transactionData: {
-        date: Date;
-        type: 'credit' | 'debit';
-        amount: number;
-        description: string;
-        transactionId: string;
-    }
-): Promise<{ success: boolean; error?: string }> {
-    console.warn("`createManualTransaction` server action was called, but is deprecated. Wallet updates are now handled on the client.");
-    return { success: false, error: "This function is deprecated and should not be used." };
 }
