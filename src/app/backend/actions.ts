@@ -8,7 +8,7 @@ import { credential } from 'firebase-admin';
 
 // Helper function to initialize Firebase Admin SDK idempotently.
 function initializeAdminApp(): App {
-    const appName = 'firebase-admin-app';
+    const appName = 'firebase-admin-app-transconnect';
     // Check if the app is already initialized
     const existingApp = getApps().find(app => app.name === appName);
     if (existingApp) {
