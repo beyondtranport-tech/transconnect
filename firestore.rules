@@ -36,9 +36,10 @@ service cloud.firestore {
     }
     
     function isUpdatingAllowedFields() {
+      // Defines the exact set of fields a user is allowed to update on their own profile.
       let allowedToUpdate = ['firstName', 'lastName', 'phone', 'companyName'];
       let incomingKeys = request.resource.data.keys();
-      // This ensures a user can only update a subset of their own fields.
+      // This ensures a user can only update a subset of their own fields and nothing more.
       return incomingKeys.hasAll(allowedToUpdate) && incomingKeys.size() == allowedToUpdate.size();
     }
     
@@ -73,12 +74,16 @@ service cloud.firestore {
     }
     
      match /financeApplications/{applicationId} {
+      // An applicant can get their own application, an admin can get any.
       allow get: if isOwner(resource.data.applicantId) || isRequestingUserAdmin();
+      // Only admins can list all applications.
       allow list: if isRequestingUserAdmin();
-      // Allow creation by the applicant or an admin.
+      // Creation is allowed by the applicant or an admin. Admins create credit top-ups.
       allow create: if isOwner(request.resource.data.applicantId) || isRequestingUserAdmin();
-      allow update: if isRequestingUserAdmin() || isOwner(resource.data.applicantId);
-      allow delete: if false; // Applications should not be deleted.
+      // Updates are allowed by the applicant or an admin.
+      allow update: if isOwner(resource.data.applicantId) || isRequestingUserAdmin();
+      // Finance applications should not be deleted.
+      allow delete: if false;
     }
 
     match /transactions/{transactionId} {
