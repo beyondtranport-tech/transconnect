@@ -14,25 +14,21 @@ function initializeAdminApp(): App {
         return existingApp;
     }
     
-    // This will use the service account from environment variables in production (e.g., Google Cloud)
-    // For local dev, it falls back to a service-account.json file.
     try {
+        const serviceAccount = require('../../../service-account.json');
         return initializeApp({
-             credential: credential.applicationDefault(),
+            credential: cert(serviceAccount)
         }, appName);
-    } catch (error: any) {
-         if (process.env.NODE_ENV !== 'production') {
-            try {
-                const serviceAccount = require('../../../service-account.json');
-                 return initializeApp({
-                    credential: cert(serviceAccount)
-                }, appName);
-            } catch (e) {
-                 console.error("Could not initialize Firebase Admin SDK with service-account.json. Make sure the file exists in your project root.", e);
-                 throw new Error("Server configuration error: Local Firebase credentials failed.");
-            }
+    } catch (e: any) {
+        if (e.code === 'MODULE_NOT_FOUND') {
+            console.error(
+                "FATAL: service-account.json not found. \n" +
+                "Please download your service account key from the Firebase console and place it in the root of your project as 'service-account.json'.\n",
+                "Original error:", e
+            );
+            throw new Error("Server configuration error: Failed to load service account credentials.");
         }
-        console.error("Firebase Admin SDK initialization failed. Ensure Application Default Credentials are set.", error);
+        console.error("Firebase Admin SDK initialization failed.", e);
         throw new Error("Server configuration error: Could not connect to Firebase services.");
     }
 }
