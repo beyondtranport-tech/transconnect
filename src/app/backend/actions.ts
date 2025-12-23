@@ -106,3 +106,32 @@ export async function createManualTransaction(data: TransactionData): Promise<{ 
         return { success: false, error: error.message || 'An unknown server error occurred.' };
     }
 }
+
+export async function getTransactionsForMember(memberId: string): Promise<{ success: boolean; data?: any[]; error?: string }> {
+    try {
+        const adminApp = initializeAdminApp();
+        const firestore = getFirestore(adminApp);
+
+        const transactionsSnap = await firestore.collection('transactions')
+            .where('memberId', '==', memberId)
+            .orderBy('date', 'desc')
+            .get();
+        
+        if (transactionsSnap.empty) {
+            return { success: true, data: [] };
+        }
+
+        const transactions = transactionsSnap.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data(),
+            // Convert Firestore Timestamps to serializable strings
+            date: (doc.data().date as Timestamp).toDate().toISOString(),
+        }));
+
+        return { success: true, data: transactions };
+
+    } catch (error: any) {
+        console.error('Failed to get transactions for member:', error);
+        return { success: false, error: error.message || 'An unknown server error occurred.' };
+    }
+}

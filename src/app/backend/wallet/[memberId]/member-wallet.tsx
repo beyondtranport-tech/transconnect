@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -6,25 +7,24 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Calendar as CalendarIcon, PlusCircle } from 'lucide-react';
 import { format } from 'date-fns';
-import { DocumentData, collection, query, where, orderBy } from 'firebase/firestore';
-import { useRouter } from 'next/navigation';
+import { DocumentData } from 'firebase/firestore';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { useUser } from '@/firebase';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { createManualTransaction } from '../../actions';
+import { createManualTransaction, getTransactionsForMember } from '../../actions';
 
 const formatCurrency = (amount: number) => new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(amount);
 
 const formatDate = (timestamp: any) => {
-    if (typeof timestamp === 'string') return timestamp;
+    if (typeof timestamp === 'string') return format(new Date(timestamp), "yyyy-MM-dd HH:mm");
     if (timestamp instanceof Date) return format(timestamp, "yyyy-MM-dd HH:mm");
     if (timestamp && timestamp.toDate) return format(timestamp.toDate(), "yyyy-MM-dd HH:mm");
     return 'N/A';
@@ -45,26 +45,34 @@ interface MemberWalletProps {
 
 export default function MemberWallet({ member }: MemberWalletProps) {
     const { toast } = useToast();
-    const router = useRouter();
     const { user } = useUser();
-    const firestore = useFirestore();
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isClient, setIsClient] = useState(false);
+    const [transactions, setTransactions] = useState<any[] | null>(null);
+    const [isLoadingTransactions, setIsLoadingTransactions] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
         setIsClient(true);
     }, []);
 
-    const transactionsQuery = useMemoFirebase(() => {
-        if (!firestore || !member.id) return null;
-        return query(
-            collection(firestore, 'transactions'),
-            where('memberId', '==', member.id),
-            orderBy('date', 'desc')
-        );
-    }, [firestore, member.id]);
+    useEffect(() => {
+        const fetchTransactions = async () => {
+            if (!member.id) return;
+            setIsLoadingTransactions(true);
+            setError(null);
+            const result = await getTransactionsForMember(member.id);
+            if (result.success) {
+                setTransactions(result.data || []);
+            } else {
+                setError(result.error || 'Failed to load transactions.');
+                toast({ variant: 'destructive', title: 'Error', description: result.error });
+            }
+            setIsLoadingTransactions(false);
+        };
 
-    const { data: transactions, isLoading: isLoadingTransactions, error } = useCollection(transactionsQuery);
+        fetchTransactions();
+    }, [member.id, toast]);
 
     const form = useForm<TransactionFormValues>({
         resolver: zodResolver(transactionSchema),
@@ -75,7 +83,6 @@ export default function MemberWallet({ member }: MemberWalletProps) {
             type: 'credit',
         },
     });
-
 
     const handleAddRecord = async (values: TransactionFormValues) => {
         if (!user) {
@@ -97,7 +104,11 @@ export default function MemberWallet({ member }: MemberWalletProps) {
         if (result.success) {
             toast({ title: 'Success!', description: 'Transaction has been posted and wallet has been updated.' });
             form.reset();
-            // We don't need router.refresh() as useCollection will update the UI automatically.
+            // Refetch transactions after a successful update
+            const fetchResult = await getTransactionsForMember(member.id);
+            if (fetchResult.success) {
+                setTransactions(fetchResult.data || []);
+            }
         } else {
             toast({ variant: 'destructive', title: 'Posting Failed', description: result.error || "An unknown server error occurred." });
         }
@@ -108,20 +119,19 @@ export default function MemberWallet({ member }: MemberWalletProps) {
     // Calculate cumulative balance
     const openingBalanceRecord = {
         id: 'opening-balance',
-        date: new Date(member.createdAt.getTime() - 1000),
+        date: new Date(member.createdAt.getTime() - 1000).toISOString(),
         description: 'Opening Balance',
         transactionId: 'N/A',
         type: 'credit',
         amount: 0,
-        _sortDate: new Date(member.createdAt.getTime() - 1000), 
     };
 
-    const allRecords = [
+    const allRecords = transactions ? [
         openingBalanceRecord, 
-        ...(transactions || []).map(tx => ({...tx, _sortDate: tx.date.toDate ? tx.date.toDate() : new Date(tx.date)}))
-    ];
+        ...transactions
+    ] : [openingBalanceRecord];
 
-    const sortedTransactions = allRecords.sort((a, b) => a._sortDate.getTime() - b._sortDate.getTime());
+    const sortedTransactions = allRecords.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
     let runningBalance = 0;
     const transactionsWithBalance = sortedTransactions.map(tx => {
@@ -141,10 +151,10 @@ export default function MemberWallet({ member }: MemberWalletProps) {
                 </CardHeader>
                 <CardContent>
                     <p className="text-sm text-muted-foreground">Current Balance</p>
-                    {isLoadingTransactions ? (
+                    {isClient ? (
+                        <p className="text-4xl font-bold">{formatCurrency(member.walletBalance || 0)}</p>
+                    ) : (
                          <div className="h-12 w-48 bg-muted animate-pulse rounded-md mt-1" />
-                    ): (
-                        <p className="text-4xl font-bold">{isClient ? formatCurrency(member.walletBalance || 0) : '...'}</p>
                     )}
                 </CardContent>
             </Card>
@@ -271,7 +281,7 @@ export default function MemberWallet({ member }: MemberWalletProps) {
                     ) : error ? (
                         <div className="text-destructive text-center py-10">
                            <p>Could not load transactions.</p>
-                           <p className="text-sm">{error.message}</p>
+                           <p className="text-sm">{error}</p>
                         </div>
                     ) : (
                         <Table>
