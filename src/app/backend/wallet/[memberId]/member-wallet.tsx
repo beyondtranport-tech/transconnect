@@ -20,6 +20,9 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { Form, FormControl, FormField, FormItem, FormMessage, FormLabel } from '@/components/ui/form';
+import { createManualTransaction } from '../../actions';
+import { useRouter } from 'next/navigation';
+
 
 const formatCurrency = (amount: number) => new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(amount);
 
@@ -54,7 +57,7 @@ interface MemberWalletProps {
 
 export default function MemberWallet({ member, initialTransactions }: MemberWalletProps) {
     const { toast } = useToast();
-    const firestore = useFirestore();
+    const router = useRouter();
     const { user: adminUser } = useUser();
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isMounted, setIsMounted] = useState(false);
@@ -69,47 +72,26 @@ export default function MemberWallet({ member, initialTransactions }: MemberWall
     });
 
     const handleAddRecord = async (values: TransactionFormValues) => {
-        if (!firestore || !adminUser) {
+        if (!adminUser) {
             toast({ variant: 'destructive', title: 'Error', description: 'Not authenticated.' });
             return;
         }
 
         setIsSubmitting(true);
         
-        const batch = writeBatch(firestore);
-        const transactionAmount = values.type === 'credit' ? values.amount : -values.amount;
+        const result = await createManualTransaction(member.id, adminUser.uid, values);
 
-        // 1. Update member's wallet balance
-        const memberRef = doc(firestore, 'members', member.id);
-        batch.update(memberRef, { walletBalance: increment(transactionAmount) });
-
-        // 2. Create a new transaction document
-        const newTransactionRef = doc(collection(firestore, 'transactions'));
-        batch.set(newTransactionRef, {
-            memberId: member.id,
-            type: values.type,
-            amount: values.amount,
-            date: Timestamp.fromDate(values.date),
-            description: values.description,
-            status: 'allocated',
-            chartOfAccountsCode: '7000-ManualAdjustment',
-            isAdjustment: true,
-            postedBy: adminUser.uid,
-            transactionId: values.transactionId,
-            createdAt: serverTimestamp()
-        });
-
-        try {
-            await batch.commit();
+        if (result.success) {
             toast({ title: 'Success', description: 'Wallet has been updated and transaction recorded.' });
             form.reset({ type: 'credit', amount: 0, description: '', date: new Date(), transactionId: '' });
-            // Note: The UI will update automatically on the next page load or with a real-time listener.
-            // For now, we recommend a page refresh to see the new transaction.
-        } catch (error: any) {
-            toast({ variant: 'destructive', title: 'Error', description: error.message });
-        } finally {
-            setIsSubmitting(false);
+            // For a seamless update without a full page reload, we can optimistically update the state
+            // or simply use the router to refresh the data.
+            router.refresh();
+        } else {
+            toast({ variant: 'destructive', title: 'Error', description: result.error || 'An unknown server error occurred.' });
         }
+
+        setIsSubmitting(false);
     };
 
     // Calculate cumulative balance
@@ -307,4 +289,3 @@ export default function MemberWallet({ member, initialTransactions }: MemberWall
     );
 }
 
-    
