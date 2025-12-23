@@ -39,13 +39,9 @@ service cloud.firestore {
     }
 
     match /transactions/{transactionId} {
-        allow get: if isOwner(resource.data.memberId) || isAdmin();
-        allow update, delete: if isAdmin();
-    }
-
-    match /transactions {
-      allow list: if isAdmin();
-      allow create: if isAdmin() || isOwner(request.resource.data.memberId);
+      allow list, create: if isAdmin();
+      allow get: if isOwner(resource.data.memberId) || isAdmin();
+      allow update, delete: if isAdmin();
     }
 
     match /platform_config/{docId} {
