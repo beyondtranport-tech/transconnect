@@ -97,12 +97,14 @@ function AccountPageContent() {
   }, [initialView]);
 
   useEffect(() => {
-    if (!isUserLoading && user) {
-      if (user.email === 'transconnect@gmail.com') {
-        router.push('/backend');
+    if (!isUserLoading) {
+      if (user) {
+        if (user.email === 'transconnect@gmail.com') {
+          router.replace('/backend');
+        }
+      } else {
+        router.replace('/signin');
       }
-    } else if (!isUserLoading && !user) {
-      router.push('/signin');
     }
   }, [user, isUserLoading, router]);
 
