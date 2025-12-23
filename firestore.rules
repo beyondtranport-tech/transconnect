@@ -4,11 +4,12 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     function isAdmin() {
-      return request.auth != null && request.auth.token.admin == true;
+      // Use the email address for admin check as custom claims are not working.
+      return request.auth != null && request.auth.token.email == 'transconnect@gmail.com';
     }
     
     match /members/{memberId} {
-      allow get: if request.auth != null && (request.auth.uid == memberId || request.auth.token.admin == true);
+      allow get: if request.auth != null && (request.auth.uid == memberId || isAdmin());
       allow list: if isAdmin();
       allow create: if request.auth != null && request.auth.uid == memberId;
       allow update: if (request.auth != null && request.auth.uid == memberId) || isAdmin();
@@ -36,7 +37,7 @@ service cloud.firestore {
 
     match /transactions/{transactionId} {
       allow get: if (request.auth != null && request.auth.uid == resource.data.memberId) || isAdmin();
-      allow list: if request.auth != null && isAdmin();
+      allow list: if isAdmin();
       allow create: if isAdmin() && request.resource.data.memberId != null;
       allow update, delete: if isAdmin();
     }
