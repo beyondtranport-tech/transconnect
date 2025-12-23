@@ -65,8 +65,8 @@ function PlatformSettingsContent() {
                 <h1 className="text-2xl font-bold">Platform Settings</h1>
                 <p className="mt-2 text-muted-foreground">Manage central configurations for the TransConnect platform.</p>
             </div>
-            <ChartOfAccountsSettings />
             <BankDetailsSettings />
+            <ChartOfAccountsSettings />
         </div>
     )
 }
