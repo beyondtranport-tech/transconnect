@@ -2,7 +2,7 @@
 'use client';
 
 import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
-import { collection, query, orderBy, doc, updateDoc, arrayUnion } from 'firebase/firestore';
+import { collection, query, orderBy, doc, updateDoc, writeBatch, serverTimestamp, arrayUnion } from 'firebase/firestore';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Loader2, Edit, Check } from 'lucide-react';
@@ -21,6 +21,7 @@ export default function WalletManagementList() {
     const [editingMemberId, setEditingMemberId] = useState<string | null>(null);
     const [creditAmount, setCreditAmount] = useState<number>(0);
     const [isUpdating, setIsUpdating] = useState(false);
+    const [originalBalance, setOriginalBalance] = useState<number>(0);
 
     const membersCollectionRef = useMemoFirebase(() => {
         if (!firestore || !user) return null; // Don't fetch if no user
@@ -32,32 +33,60 @@ export default function WalletManagementList() {
     const handleEdit = (memberId: string, currentBalance: number) => {
         setEditingMemberId(memberId);
         setCreditAmount(currentBalance);
+        setOriginalBalance(currentBalance);
     };
 
     const handleCancel = () => {
         setEditingMemberId(null);
         setCreditAmount(0);
+        setOriginalBalance(0);
     };
 
     const handleUpdate = async (memberId: string) => {
-        if (!firestore) return;
+        if (!firestore || !user) return;
         setIsUpdating(true);
 
         const memberRef = doc(firestore, 'members', memberId);
-        const updateData = { walletBalance: Number(creditAmount) };
+        const amountDifference = Number(creditAmount) - originalBalance;
+        
+        if (amountDifference <= 0) {
+             toast({ variant: 'destructive', title: 'Invalid Amount', description: 'New balance must be greater than the original balance.' });
+             setIsUpdating(false);
+             return;
+        }
+
+        const financeAppRef = doc(collection(firestore, "financeApplications"));
+
+        const batch = writeBatch(firestore);
+
+        // 1. Update member's wallet balance
+        batch.update(memberRef, { walletBalance: Number(creditAmount) });
+
+        // 2. Create a financeApplication record for the credit top-up
+        batch.set(financeAppRef, {
+            applicantId: memberId,
+            status: 'funded', // Automatically approved as it's an admin action
+            fundingType: 'credit-top-up',
+            amountRequested: amountDifference,
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+        });
+        
+        // 3. Add the new application ID to the member's list of applications
+        batch.update(memberRef, { financeApplicationIds: arrayUnion(financeAppRef.id) });
         
         try {
-            await updateDoc(memberRef, updateData);
-            toast({ title: 'Success', description: 'Member wallet balance updated.' });
+            await batch.commit();
+            toast({ title: 'Success', description: 'Member wallet balance updated and transaction recorded.' });
             handleCancel(); 
         } catch (serverError) {
              const permissionError = new FirestorePermissionError({
                 path: memberRef.path,
                 operation: 'update',
-                requestResourceData: updateData,
+                requestResourceData: { walletBalance: Number(creditAmount) },
             });
             errorEmitter.emit('permission-error', permissionError);
-            toast({ variant: 'destructive', title: 'Update Failed', description: 'Permission denied.' });
+            toast({ variant: 'destructive', title: 'Update Failed', description: 'Permission denied. Ensure you have admin privileges.' });
         } finally {
             setIsUpdating(false);
         }
