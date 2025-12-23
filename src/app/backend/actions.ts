@@ -10,7 +10,6 @@ import { credential } from 'firebase-admin';
 function initializeAdminApp() {
   if (getApps().length === 0) {
     // This explicitly uses the Application Default Credentials from the hosting environment.
-    // This is the most reliable way to authenticate in a managed Google Cloud environment.
     initializeApp({
       credential: credential.applicationDefault(),
     });
@@ -25,7 +24,6 @@ export async function deleteUser(uid: string): Promise<{ success: boolean; error
     const firestore = getFirestore(adminApp);
 
     // Step 1: Delete the user from Firebase Authentication.
-    // This is the privileged operation that requires the Admin SDK.
     await auth.deleteUser(uid);
     
     // Step 2: Delete the user's document from the 'members' collection in Firestore.
@@ -35,7 +33,6 @@ export async function deleteUser(uid: string): Promise<{ success: boolean; error
     return { success: true };
   } catch (error: any) {
     console.error('Failed to delete user:', error);
-    // Return a more generic error to the client, but log the specific one on the server.
     return { success: false, error: error.message || 'An unknown server error occurred during user deletion.' };
   }
 }
