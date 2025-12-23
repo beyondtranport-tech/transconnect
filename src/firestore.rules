@@ -15,7 +15,8 @@ service cloud.firestore {
       allow get: if isOwner(memberId) || isAdmin();
       allow list: if isAdmin();
       allow create: if isOwner(memberId);
-      allow update: if isOwner(memberId) || isAdmin();
+      // Admin can update any member document (e.g., wallet balance)
+      allow update: if isOwner(memberId) || isAdmin(); 
       allow delete: if isAdmin();
     }
 
@@ -40,8 +41,10 @@ service cloud.firestore {
 
     match /transactions/{transactionId} {
       allow get: if isOwner(resource.data.memberId) || isAdmin();
-      allow list: if false; 
-      allow create, update, delete: if isAdmin();
+      // Allow admin to list transactions for a specific member, but not all transactions
+      allow list: if isAdmin() && request.query.keys().hasAny(['where']) && request.query.where[0][0] == 'memberId';
+      allow create: if isAdmin(); // Admin can create manual transactions
+      allow update, delete: if isAdmin();
     }
 
     match /platform_config/{docId} {

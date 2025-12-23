@@ -7,19 +7,17 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Calendar as CalendarIcon, PlusCircle } from 'lucide-react';
 import { format } from 'date-fns';
-import { DocumentData } from 'firebase/firestore';
+import { DocumentData, writeBatch, doc, collection, serverTimestamp, query, where, increment } from 'firebase/firestore';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { useUser } from '@/firebase';
+import { useFirestore, useUser, useCollection, useMemoFirebase } from '@/firebase';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { getTransactionsForMember, createManualTransaction } from '../../actions';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { errorEmitter } from '@/firebase/error-emitter';
 
@@ -48,34 +46,20 @@ interface MemberWalletProps {
 export default function MemberWallet({ member }: MemberWalletProps) {
     const { toast } = useToast();
     const { user } = useUser();
+    const firestore = useFirestore();
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isClient, setIsClient] = useState(false);
     
-    const [transactions, setTransactions] = useState<any[] | null>(null);
-    const [isLoadingTransactions, setIsLoadingTransactions] = useState(true);
-    const [error, setError] = useState<string | null>(null);
+    const transactionsQuery = useMemoFirebase(() => {
+        if (!firestore || !member.id) return null;
+        return query(collection(firestore, 'transactions'), where('memberId', '==', member.id));
+    }, [firestore, member.id]);
 
-    const fetchTransactions = async () => {
-        if (member.id) {
-            setIsLoadingTransactions(true);
-            getTransactionsForMember(member.id)
-                .then(response => {
-                    if (response.success) {
-                        setTransactions(response.data || []);
-                    } else {
-                        setError(response.error || 'Failed to load transactions.');
-                    }
-                })
-                .finally(() => {
-                    setIsLoadingTransactions(false);
-                });
-        }
-    };
+    const { data: transactions, isLoading: isLoadingTransactions, error } = useCollection(transactionsQuery);
 
     useEffect(() => {
         setIsClient(true);
-        fetchTransactions();
-    }, [member.id]);
+    }, []);
 
     const form = useForm<TransactionFormValues>({
         resolver: zodResolver(transactionSchema),
@@ -88,24 +72,53 @@ export default function MemberWallet({ member }: MemberWalletProps) {
     });
 
     const handleAddRecord = async (values: TransactionFormValues) => {
-        if (!user) {
+        if (!user || !firestore) {
             toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in.' });
             return;
         }
 
         setIsSubmitting(true);
         
-        const result = await createManualTransaction(member.id, values, user.uid);
+        try {
+            const batch = writeBatch(firestore);
 
-        if (result.success) {
-             toast({ title: 'Success!', description: 'Transaction has been posted and wallet has been updated.' });
+            // 1. Update member's wallet balance
+            const memberRef = doc(firestore, 'members', member.id);
+            const transactionAmount = values.type === 'credit' ? values.amount : -values.amount;
+            batch.update(memberRef, { walletBalance: increment(transactionAmount) });
+
+            // 2. Create a new transaction record
+            const transactionRef = doc(collection(firestore, 'transactions'));
+            batch.set(transactionRef, {
+                reconciliationId: 'manual-admin-entry',
+                memberId: member.id,
+                type: values.type,
+                amount: values.amount,
+                date: values.date,
+                description: values.description,
+                status: 'allocated',
+                chartOfAccountsCode: '7000-ManualAdjustment',
+                isAdjustment: true,
+                postedAt: serverTimestamp(),
+                postedBy: user.uid,
+                transactionId: transactionRef.id
+            });
+            
+            await batch.commit();
+
+            toast({ title: 'Success!', description: 'Transaction has been posted and wallet has been updated.' });
             form.reset();
-            fetchTransactions(); // Refetch transactions to show the new record
-        } else {
+
+        } catch (e: any) {
+            const permissionError = new FirestorePermissionError({
+                path: `/members/${member.id}`,
+                operation: 'write',
+            });
+            errorEmitter.emit('permission-error', permissionError);
             toast({
                 variant: 'destructive',
                 title: 'Posting Failed',
-                description: result.error || 'An unknown server error occurred.'
+                description: e.message || 'You may not have the required permissions for this operation.'
             });
         }
 
@@ -277,7 +290,7 @@ export default function MemberWallet({ member }: MemberWalletProps) {
                     ) : error ? (
                         <div className="text-destructive text-center py-10">
                            <p>Could not load transactions.</p>
-                           <p className="text-sm">{error}</p>
+                           <p className="text-sm">{error.message}</p>
                         </div>
                     ) : (
                         <Table>
