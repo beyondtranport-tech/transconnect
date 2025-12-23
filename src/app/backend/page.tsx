@@ -38,8 +38,8 @@ import {
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { useRouter } from 'next/navigation';
-import { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useState, useEffect, Suspense } from 'react';
 import MembersList from './members-list';
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
@@ -117,12 +117,17 @@ function ContributionsContent() {
     )
 }
 
-
-export default function BackendPage() {
+function BackendPageContent() {
   const router = useRouter();
-  const [activeView, setActiveView] = useState('members');
+  const searchParams = useSearchParams();
+  const initialView = searchParams.get('view') || 'members';
+  const [activeView, setActiveView] = useState(initialView);
   const { user, isUserLoading } = useUser();
   const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    setActiveView(initialView);
+  }, [initialView]);
 
   useEffect(() => {
     if (!isUserLoading) {
@@ -167,33 +172,10 @@ export default function BackendPage() {
     }
   }
   
-  if (isUserLoading) {
+  if (isUserLoading || !isAdmin) {
     return (
         <div className="flex justify-center items-center min-h-screen">
             <Loader2 className="h-16 w-16 animate-spin text-primary" />
-        </div>
-    );
-  }
-  
-  if (!isAdmin) {
-       return (
-        <div className="container mx-auto px-4 py-16 flex justify-center items-center min-h-screen">
-            <Card className="w-full max-w-md text-center">
-                <CardHeader>
-                    <CardTitle className="flex justify-center items-center gap-2">
-                        <ShieldAlert className="h-8 w-8 text-destructive" />
-                        Access Denied
-                    </CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <p className="text-muted-foreground">You do not have permission to view this page. Please sign in with an administrator account.</p>
-                </CardContent>
-                <CardFooter>
-                    <Button asChild className="w-full">
-                        <Link href="/signin">Return to Sign In</Link>
-                    </Button>
-                </CardFooter>
-            </Card>
         </div>
     );
   }
@@ -212,25 +194,25 @@ export default function BackendPage() {
         <SidebarContent>
           <SidebarGroup>
               <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Dashboard" isActive={activeView === 'dashboard'} onClick={() => setActiveView('dashboard')}>
+                <SidebarMenuButton tooltip="Dashboard" isActive={activeView === 'dashboard'} onClick={() => router.push('/backend?view=dashboard', { scroll: false })}>
                   <LayoutDashboard />
                   <span>Dashboard</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Members" isActive={activeView === 'members'} onClick={() => setActiveView('members')}>
+                <SidebarMenuButton tooltip="Members" isActive={activeView === 'members'} onClick={() => router.push('/backend?view=members', { scroll: false })}>
                   <Users />
                   <span>Members</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
                <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Contributions" isActive={activeView === 'contributions'} onClick={() => setActiveView('contributions')}>
+                <SidebarMenuButton tooltip="Contributions" isActive={activeView === 'contributions'} onClick={() => router.push('/backend?view=contributions', { scroll: false })}>
                   <HeartHandshake />
                   <span>Contributions</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
                <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Reconciliation" isActive={activeView === 'reconciliation'} onClick={() => setActiveView('reconciliation')}>
+                <SidebarMenuButton tooltip="Reconciliation" isActive={activeView === 'reconciliation'} onClick={() => router.push('/backend?view=reconciliation', { scroll: false })}>
                   <Combine />
                   <span>Reconciliation</span>
                 </SidebarMenuButton>
@@ -241,15 +223,15 @@ export default function BackendPage() {
                         <span>Platform</span>
                     </SidebarMenuButton>
                     <SidebarMenuSub>
-                        <SidebarMenuSubButton isActive={activeView === 'platform-settings'} onClick={() => setActiveView('platform-settings')}>
+                        <SidebarMenuSubButton isActive={activeView === 'platform-settings'} onClick={() => router.push('/backend?view=platform-settings', { scroll: false })}>
                             <Settings />
                             <span>Settings</span>
                         </SidebarMenuSubButton>
-                        <SidebarMenuSubButton isActive={activeView === 'platform-logs'} onClick={() => setActiveView('platform-logs')}>
+                        <SidebarMenuSubButton isActive={activeView === 'platform-logs'} onClick={() => router.push('/backend?view=platform-logs', { scroll: false })}>
                             <FileText />
                             <span>Logs</span>
                         </SidebarMenuSubButton>
-                        <SidebarMenuSubButton isActive={activeView === 'platform-tasks'} onClick={() => setActiveView('platform-tasks')}>
+                        <SidebarMenuSubButton isActive={activeView === 'platform-tasks'} onClick={() => router.push('/backend?view=platform-tasks', { scroll: false })}>
                             <ListTodo />
                             <span>Tasks</span>
                         </SidebarMenuSubButton>
@@ -261,18 +243,18 @@ export default function BackendPage() {
                         <span>Revenue</span>
                     </SidebarMenuButton>
                      <SidebarMenuSub>
-                        <SidebarMenuSubButton isActive={activeView === 'revenue-pricing'} onClick={() => setActiveView('revenue-pricing')}>
+                        <SidebarMenuSubButton isActive={activeView === 'revenue-pricing'} onClick={() => router.push('/backend?view=revenue-pricing', { scroll: false })}>
                             <TrendingUp />
                             <span>Pricing</span>
                         </SidebarMenuSubButton>
-                        <SidebarMenuSubButton isActive={activeView === 'revenue-transactions'} onClick={() => setActiveView('revenue-transactions')}>
+                        <SidebarMenuSubButton isActive={activeView === 'revenue-transactions'} onClick={() => router.push('/backend?view=revenue-transactions', { scroll: false })}>
                             <DollarSign />
                             <span>Transactions</span>
                         </SidebarMenuSubButton>
                     </SidebarMenuSub>
                 </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Divisions" isActive={activeView === 'divisions'} onClick={() => setActiveView('divisions')}>
+                <SidebarMenuButton tooltip="Divisions" isActive={activeView === 'divisions'} onClick={() => router.push('/backend?view=divisions', { scroll: false })}>
                   <Boxes />
                   <span>Divisions</span>
                 </SidebarMenuButton>
@@ -306,12 +288,18 @@ export default function BackendPage() {
       </Sidebar>
       <SidebarInset>
         <div className="p-6">
-          <div className="flex items-center justify-between">
             {renderContent()}
-            <SidebarTrigger className="md:hidden" />
-          </div>
         </div>
       </SidebarInset>
     </SidebarProvider>
   );
+}
+
+
+export default function Backend() {
+    return (
+        <Suspense fallback={<div className="flex justify-center items-center min-h-screen"><Loader2 className="h-16 w-16 animate-spin text-primary" /></div>}>
+            <BackendPageContent />
+        </Suspense>
+    )
 }
