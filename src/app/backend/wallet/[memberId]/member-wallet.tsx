@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -19,6 +20,7 @@ import { DocumentData } from 'firebase/firestore';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
+import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
 
 const formatCurrency = (amount: number) => new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(amount);
 const formatDate = (timestamp: any) => timestamp && timestamp.toDate ? format(timestamp.toDate(), "yyyy-MM-dd HH:mm") : 'N/A';
@@ -136,11 +138,12 @@ export default function MemberWallet({ member, initialTransactions }: MemberWall
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <form onSubmit={form.handleSubmit(handleAddRecord)} className="space-y-4">
-                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 items-start">
-                             <div className="space-y-2">
+                    <Form {...form}>
+                        <form onSubmit={form.handleSubmit(handleAddRecord)} className="space-y-4">
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 items-start">
+                                <div className="space-y-2">
                                 <Label>Transaction Date</Label>
-                                 <FormField
+                                    <FormField
                                     control={form.control}
                                     name="date"
                                     render={({ field }) => (
@@ -180,57 +183,61 @@ export default function MemberWallet({ member, initialTransactions }: MemberWall
                                         </FormItem>
                                     )}
                                     />
-                             </div>
-                              <div className="space-y-2">
+                                </div>
+                                <div className="space-y-2">
                                 <Label>Type</Label>
                                 <FormField
                                     control={form.control}
                                     name="type"
                                     render={({ field }) => (
-                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                            <FormControl>
-                                                <SelectTrigger>
-                                                    <SelectValue placeholder="Select type" />
-                                                </SelectTrigger>
-                                            </FormControl>
-                                            <SelectContent>
-                                                <SelectItem value="credit">Credit (Add Funds)</SelectItem>
-                                                <SelectItem value="debit">Debit (Remove Funds)</SelectItem>
-                                            </SelectContent>
-                                        </Select>
+                                        <FormItem>
+                                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                <FormControl>
+                                                    <SelectTrigger>
+                                                        <SelectValue placeholder="Select type" />
+                                                    </SelectTrigger>
+                                                </FormControl>
+                                                <SelectContent>
+                                                    <SelectItem value="credit">Credit (Add Funds)</SelectItem>
+                                                    <SelectItem value="debit">Debit (Remove Funds)</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                            <FormMessage />
+                                        </FormItem>
                                     )}
                                 />
-                             </div>
-                             <div className="space-y-2">
+                                </div>
+                                <div className="space-y-2">
                                 <Label>Amount (ZAR)</Label>
                                 <FormField
                                     control={form.control}
                                     name="amount"
-                                    render={({ field }) => <Input type="number" step="0.01" {...field} />}
+                                    render={({ field }) => <FormItem><FormControl><Input type="number" step="0.01" {...field} /></FormControl><FormMessage /></FormItem>}
                                 />
-                             </div>
-                             <div className="space-y-2 md:col-span-2">
+                                </div>
+                                <div className="space-y-2 md:col-span-2">
                                 <Label>Description</Label>
                                 <FormField
                                     control={form.control}
                                     name="description"
-                                    render={({ field }) => <Input placeholder="e.g., Prize money, refund, etc." {...field} />}
+                                    render={({ field }) => <FormItem><FormControl><Input placeholder="e.g., Prize money, refund, etc." {...field} /></FormControl><FormMessage /></FormItem>}
                                 />
-                             </div>
-                             <div className="space-y-2">
+                                </div>
+                                <div className="space-y-2">
                                 <Label>Reference / ID</Label>
                                 <FormField
                                     control={form.control}
                                     name="transactionId"
-                                    render={({ field }) => <Input placeholder="e.g., ADJ-001" {...field} />}
+                                    render={({ field }) => <FormItem><FormControl><Input placeholder="e.g., ADJ-001" {...field} /></FormControl><FormMessage /></FormItem>}
                                 />
-                             </div>
-                        </div>
-                        <Button type="submit" disabled={isSubmitting} className="mt-4">
-                            {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PlusCircle className="mr-2 h-4 w-4" />}
-                            Add Record
-                        </Button>
-                    </form>
+                                </div>
+                            </div>
+                            <Button type="submit" disabled={isSubmitting} className="mt-4">
+                                {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PlusCircle className="mr-2 h-4 w-4" />}
+                                Add Record
+                            </Button>
+                        </form>
+                    </Form>
                 </CardContent>
             </Card>
 
