@@ -5,10 +5,9 @@ import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebas
 import { collection, doc, query } from 'firebase/firestore';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Loader2, Trash2, Wallet } from 'lucide-react';
+import { Loader2, Wallet } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { deleteUser } from './actions';
 import { useToast } from '@/hooks/use-toast';
 import {
   AlertDialog,
@@ -34,35 +33,6 @@ export default function MembersList() {
     }, [firestore, user]);
     
     const { data: members, isLoading, error } = useCollection(membersCollectionRef);
-
-
-    const handleDelete = async (memberId: string, email: string | undefined) => {
-        // Prevent admin from deleting themselves
-        if (user?.uid === memberId) {
-            toast({
-                variant: "destructive",
-                title: "Action not allowed",
-                description: "Administrators cannot delete their own account.",
-            });
-            return;
-        }
-
-        // Call the server action to delete both Auth user and Firestore doc.
-        const result = await deleteUser(memberId);
-
-        if (result.success) {
-            toast({
-                title: "User Deleted",
-                description: `The user ${email || memberId} has been permanently removed.`,
-            });
-        } else {
-             toast({
-                variant: "destructive",
-                title: "Deletion Failed",
-                description: result.error || "Could not delete the user due to an unknown error.",
-            });
-        }
-    };
 
     const capitalize = (s: string) => s && s[0].toUpperCase() + s.slice(1);
 
@@ -124,12 +94,6 @@ export default function MembersList() {
                         <TableBody>
                             {members.map(member => {
                                 const walletUrl = new URL(`/backend/wallet/${member.id}`, window.location.origin);
-                                walletUrl.searchParams.set('firstName', member.firstName);
-                                walletUrl.searchParams.set('lastName', member.lastName);
-                                walletUrl.searchParams.set('email', member.email);
-                                walletUrl.searchParams.set('walletBalance', member.walletBalance?.toString() ?? '0');
-                                walletUrl.searchParams.set('createdAt', member.createdAt?.toDate()?.toISOString() ?? new Date().toISOString());
-
                                 return (
                                 <TableRow key={member.id}>
                                     <TableCell className="font-medium">{member.firstName} {member.lastName}</TableCell>
@@ -143,43 +107,19 @@ export default function MembersList() {
                                     </TableCell>
                                     <TableCell>
                                         {member.admin && <Badge variant="destructive">Admin</Badge>}
-                                        {member.role && !member.admin && (
+                                        {!member.admin && member.role && (
                                             <Badge variant="outline" className="capitalize">
-                                                {member.role}
+                                                {member.role.replace(/-/g, ' ')}
                                             </Badge>
                                         )}
                                     </TableCell>
                                     <TableCell className="text-right space-x-2">
                                          <Button variant="outline" size="sm" asChild>
-                                            <Link href={walletUrl.toString()}>
+                                            <Link href={walletUrl.pathname}>
                                                 <Wallet className="h-4 w-4 mr-2" />
                                                 Manage Wallet
                                             </Link>
                                         </Button>
-                                        <AlertDialog>
-                                            <AlertDialogTrigger asChild>
-                                                <Button variant="ghost" size="icon" disabled={user?.uid === member.id}>
-                                                    <Trash2 className="h-4 w-4 text-destructive" />
-                                                </Button>
-                                            </AlertDialogTrigger>
-                                            <AlertDialogContent>
-                                                <AlertDialogHeader>
-                                                    <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                                                    <AlertDialogDescription>
-                                                        This action cannot be undone. This will permanently delete the user <span className="font-bold">{member.email}</span> and all associated data from the authentication system and database.
-                                                    </AlertDialogDescription>
-                                                </AlertDialogHeader>
-                                                <AlertDialogFooter>
-                                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                    <AlertDialogAction
-                                                        onClick={() => handleDelete(member.id, member.email)}
-                                                        className="bg-destructive hover:bg-destructive/90"
-                                                    >
-                                                        Delete User
-                                                    </AlertDialogAction>
-                                                </AlertDialogFooter>
-                                            </AlertDialogContent>
-                                        </AlertDialog>
                                     </TableCell>
                                 </TableRow>
                             )})}
