@@ -31,160 +31,79 @@ const formSchema = z.object({
 });
 
 type CoAFormValues = z.infer<typeof formSchema>;
-type Account = { code: string; name: string };
+type Account = { code: string; name: string, series: string };
+
+const finalizedAccounts: Account[] = [
+    // 4000 Series: Core Membership & Subscription Revenue
+    { series: '4000: Core Membership & Subscription Revenue', code: '4010', name: 'Basic Membership Fees' },
+    { series: '4000: Core Membership & Subscription Revenue', code: '4020', name: 'Standard Membership Fees' },
+    { series: '4000: Core Membership & Subscription Revenue', code: '4030', name: 'Premium Membership Fees' },
+    { series: '4000: Core Membership & Subscription Revenue', code: '4110', name: 'Loyalty Plan Subscription Fees' },
+    { series: '4000: Core Membership & Subscription Revenue', code: '4120', name: 'Actions Plan Subscription Fees' },
+    { series: '4000: Core Membership & Subscription Revenue', code: '4130', name: 'Rewards Plan Subscription Fees' },
+
+    // 4200 Series: Mall Commission Revenue
+    { series: '4200: Mall Commission Revenue', code: '4210', name: 'Finance Mall (Successful Match Commission)' },
+    { series: '4200: Mall Commission Revenue', code: '4220', name: 'Supplier Mall (Transaction Commission)' },
+    { series: '4200: Mall Commission Revenue', code: '4230', name: 'Transporter Mall (Subcontracting Commission)' },
+    { series: '4200: Mall Commission Revenue', code: '4240', name: 'Buy & Sell Mall (Sales Commission)' },
+    { series: '4200: Mall Commission Revenue', code: '4250', name: 'Distribution Mall (Partnership Commission)' },
+    { series: '4200: Mall Commission Revenue', code: '4260', name: 'Warehouse Mall (Booking Commission)' },
+    { series: '4200: Mall Commission Revenue', code: '4270', name: 'Repurpose Mall (Sales Commission)' },
+
+    // 4300 Series: Marketplace Product Revenue
+    { series: '4300: Marketplace Product Revenue', code: '4310', name: 'Resold Partner Services (Gross Revenue)' },
+
+    // 4400 Series: Tech & SaaS Revenue
+    { series: '4400: Tech & SaaS Revenue', code: '4410', name: 'Wallet Transaction Fees (SaaS)' },
+];
+
 
 export default function ChartOfAccountsSettings() {
-  const { toast } = useToast();
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [accounts, setAccounts] = useState<Account[]>([]);
+  const [accounts, setAccounts] = useState<Account[]>(finalizedAccounts);
   
-  const firestore = useFirestore();
-  const { user, isUserLoading } = useUser();
-
-  const coaDocRef = useMemoFirebase(() => {
-    if (!firestore) return null;
-    return doc(firestore, 'platform_config', 'chart_of_accounts');
-  }, [firestore]);
-
-  const form = useForm<CoAFormValues>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      accountCode: '',
-      accountName: '',
-    },
-  });
-
-  const onSubmit = async (values: CoAFormValues) => {
-    if (!coaDocRef || !user) {
-        toast({ variant: 'destructive', title: 'Error', description: 'User or database not ready.' });
-        return;
-    };
-    setIsSubmitting(true);
-
-    const newAccount = { code: values.accountCode, name: values.accountName };
-    // Optimistic UI update first
-    const updatedAccounts = [...accounts, newAccount];
-    setAccounts(updatedAccounts);
-
-    const updateData = { accounts: updatedAccounts };
-
-    try {
-      // Perform the Firestore write operation. It may fail silently due to rules,
-      // but the UI will have updated.
-      await setDoc(coaDocRef, updateData, { merge: true });
-      toast({
-        title: 'Account Added',
-        description: `"${values.accountName}" has been added to your local view.`,
-      });
-      form.reset();
-    } catch (e: any) {
-        // This catch block will now handle submission errors.
-        toast({
-            variant: 'destructive',
-            title: 'Submission Failed',
-            description: 'Could not save the new account. Check permissions.',
-        });
-         const permissionError = new FirestorePermissionError({
-            path: coaDocRef.path,
-            operation: 'update',
-            requestResourceData: updateData,
-        });
-        errorEmitter.emit('permission-error', permissionError);
-        // Revert the optimistic update on failure
-        setAccounts(accounts);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-  
-  const renderContent = () => {
-    if (isUserLoading) {
-      return (
-        <TableRow>
-          <TableCell colSpan={2} className="h-24 text-center">
-            <Loader2 className="mx-auto h-6 w-6 animate-spin text-muted-foreground" />
-          </TableCell>
-        </TableRow>
-      );
-    }
-    
-    if (accounts.length === 0) {
-        return (
-            <TableRow>
-                <TableCell colSpan={2} className="h-24 text-center text-muted-foreground">
-                    No accounts defined yet. Add one above.
-                </TableCell>
-            </TableRow>
-        );
-    }
-
-    return accounts.map((acc: Account) => (
-        <TableRow key={acc.code}>
-            <TableCell className="font-mono">{acc.code}</TableCell>
-            <TableCell className="font-medium">{acc.name}</TableCell>
-        </TableRow>
-    ));
-  }
+  const groupedAccounts = accounts.reduce((acc, account) => {
+    (acc[account.series] = acc[account.series] || []).push(account);
+    return acc;
+  }, {} as Record<string, Account[]>);
 
 
   return (
-    <Card className="w-full max-w-2xl">
+    <Card className="w-full max-w-4xl">
         <CardHeader>
             <div className="flex items-center gap-4">
                 <Book className="h-8 w-8 text-primary"/>
                 <div>
-                    <CardTitle>Chart of Accounts</CardTitle>
+                    <CardTitle>Finalized Chart of Accounts</CardTitle>
                     <CardDescription>
-                        Define the income streams for transaction reconciliation.
+                        Below are the defined income streams for transaction reconciliation.
                     </CardDescription>
                 </div>
             </div>
         </CardHeader>
         <CardContent>
-            <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="flex items-end gap-4 mb-6">
-                <FormField
-                control={form.control}
-                name="accountCode"
-                render={({ field }) => (
-                    <FormItem className="flex-1">
-                    <FormLabel>Account Code</FormLabel>
-                    <FormControl>
-                        <Input placeholder="e.g., 4000" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                    </FormItem>
-                )}
-                />
-                <FormField
-                control={form.control}
-                name="accountName"
-                render={({ field }) => (
-                    <FormItem className="flex-1">
-                    <FormLabel>Account Name</FormLabel>
-                    <FormControl>
-                        <Input placeholder="e.g., Membership Income" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                    </FormItem>
-                )}
-                />
-                <Button type="submit" disabled={isSubmitting || isUserLoading || !user} className="h-10">
-                    {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <PlusCircle className="h-4 w-4" />}
-                </Button>
-            </form>
-            </Form>
-
             <div className="border rounded-md">
                 <Table>
                     <TableHeader>
                         <TableRow>
-                            <TableHead className="w-[120px]">Code</TableHead>
-                            <TableHead>Name</TableHead>
+                            <TableHead className="w-[150px]">Account Code</TableHead>
+                            <TableHead>Account Name</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {renderContent()}
+                        {Object.entries(groupedAccounts).map(([series, accounts]) => (
+                            <React.Fragment key={series}>
+                                <TableRow className="bg-muted/50">
+                                    <TableCell colSpan={2} className="font-bold text-primary">{series}</TableCell>
+                                </TableRow>
+                                {accounts.map((acc) => (
+                                     <TableRow key={acc.code}>
+                                        <TableCell className="font-mono pl-8">{acc.code}</TableCell>
+                                        <TableCell className="font-medium">{acc.name}</TableCell>
+                                    </TableRow>
+                                ))}
+                            </React.Fragment>
+                        ))}
                     </TableBody>
                 </Table>
             </div>
