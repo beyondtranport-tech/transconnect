@@ -88,6 +88,7 @@ export default function MembersList() {
                                 <TableHead>Phone</TableHead>
                                 <TableHead>Membership</TableHead>
                                 <TableHead>Role</TableHead>
+                                <TableHead className="text-right">Actions</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -110,6 +111,24 @@ export default function MembersList() {
                                                 {member.role.replace(/-/g, ' ')}
                                             </Badge>
                                         )}
+                                    </TableCell>
+                                     <TableCell className="text-right">
+                                         {member.email !== 'transconnect@gmail.com' && (
+                                            <Button asChild variant="outline" size="sm">
+                                                <Link href={{
+                                                    pathname: `/backend/wallet/${member.id}`,
+                                                    query: { 
+                                                        firstName: member.firstName,
+                                                        lastName: member.lastName,
+                                                        email: member.email,
+                                                        walletBalance: member.walletBalance,
+                                                        createdAt: new Date(member.createdAt?.toDate() || Date.now()).toISOString(),
+                                                     }
+                                                }}>
+                                                    <Wallet className="mr-2 h-4 w-4" /> Manage Wallet
+                                                </Link>
+                                            </Button>
+                                         )}
                                     </TableCell>
                                 </TableRow>
                             )})}
