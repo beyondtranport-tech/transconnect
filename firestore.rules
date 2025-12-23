@@ -89,8 +89,10 @@ service cloud.firestore {
     }
 
     match /transactions/{transactionId} {
-      allow get: if isOwner(resource.data.memberId) || isRequestingUserAdmin();
-      allow list: if isRequestingUserAdmin();
+      // Members can read transactions where their UID matches the memberId field.
+      allow get: if isSignedIn() && (isOwner(resource.data.memberId) || isRequestingUserAdmin());
+      // Admins can list all transactions. Regular users can only list their own.
+      allow list: if (isSignedIn() && request.query.where.size() > 0 && request.query.where[0][0] == 'memberId' && request.query.where[0][2] == request.auth.uid) || isRequestingUserAdmin();
       allow create: if isSignedIn();
       allow update, delete: if isRequestingUserAdmin();
     }
