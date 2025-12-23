@@ -18,7 +18,7 @@ import { cn } from '@/lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useUser } from '@/firebase';
 import { Input } from '@/components/ui/input';
-import { getTransactionsForMember, createManualTransaction } from '../actions';
+import { getTransactionsForMember, createManualTransaction } from '../../actions';
 
 const formatCurrency = (amount: number) => new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(amount);
 
