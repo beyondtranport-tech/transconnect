@@ -15,7 +15,8 @@ export default function AccountDashboard() {
     const firestore = useFirestore();
 
     const memberRef = useMemoFirebase(() => {
-        // Only construct the doc ref if the user is loaded and exists.
+        // **CRITICAL FIX**: Only construct the doc ref if the user is loaded and exists.
+        // This prevents a race condition where useDoc is called before authentication is resolved.
         if (isUserLoading || !firestore || !user) return null;
         return doc(firestore, 'members', user.uid);
     }, [firestore, user, isUserLoading]);
