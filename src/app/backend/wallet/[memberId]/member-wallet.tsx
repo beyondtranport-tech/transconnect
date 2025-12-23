@@ -145,7 +145,7 @@ export default function MemberWallet({ member }: MemberWalletProps) {
                     {isLoadingTransactions ? (
                          <div className="h-12 w-48 bg-muted animate-pulse rounded-md mt-1" />
                     ): (
-                        <p className="text-4xl font-bold">{isClient ? formatCurrency(member.walletBalance || 0) : 'R 0.00'}</p>
+                        <p className="text-4xl font-bold">{isClient ? formatCurrency(member.walletBalance || 0) : `R ${member.walletBalance?.toFixed(2) || '0.00'}`}</p>
                     )}
                 </CardContent>
             </Card>
@@ -288,13 +288,13 @@ export default function MemberWallet({ member }: MemberWalletProps) {
                             <TableBody>
                                 {transactionsWithBalance.map(tx => (
                                     <TableRow key={tx.id}>
-                                        <TableCell>{formatDate(tx.date)}</TableCell>
+                                        <TableCell>{isClient ? formatDate(tx.date) : '...'}</TableCell>
                                         <TableCell className="capitalize">{tx.description}</TableCell>
                                         <TableCell className="font-mono text-xs">{tx.transactionId}</TableCell>
                                         <TableCell className={`text-right font-mono ${tx.amount === 0 ? '' : tx.type === 'credit' ? 'text-green-600' : 'text-destructive'}`}>
                                             {tx.amount === 0 ? formatCurrency(0) : (tx.type === 'credit' ? `+${formatCurrency(tx.amount)}` : `-${formatCurrency(tx.amount)}`)}
                                         </TableCell>
-                                        <TableCell className="text-right font-mono font-semibold">{formatCurrency(tx.runningBalance)}</TableCell>
+                                        <TableCell className="text-right font-mono font-semibold">{isClient ? formatCurrency(tx.runningBalance) : '...'}</TableCell>
                                     </TableRow>
                                 ))}
                             </TableBody>
