@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import {
@@ -33,6 +34,7 @@ import {
   Book,
   Loader2,
   ShieldAlert,
+  Combine,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -48,6 +50,7 @@ import { useUser } from '@/firebase';
 import { signOut } from 'firebase/auth';
 import BankDetailsSettings from './bank-details-settings';
 import ChartOfAccountsSettings from './chart-of-accounts-settings';
+import ReconciliationPage from './reconciliation/page';
 
 // Placeholder Content Components
 function DashboardContent() {
@@ -159,6 +162,8 @@ export default function BackendPage() {
         return <ContributionsContent />;
       case 'wallet-management':
         return <WalletManagementList />;
+      case 'reconciliation':
+        return <ReconciliationPage />;
       case 'dashboard':
       default:
         return <DashboardContent />;
@@ -231,6 +236,12 @@ export default function BackendPage() {
                 <SidebarMenuButton tooltip="Wallet Management" isActive={activeView === 'wallet-management'} onClick={() => setActiveView('wallet-management')}>
                   <Wallet />
                   <span>Wallet Management</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+               <SidebarMenuItem>
+                <SidebarMenuButton tooltip="Reconciliation" isActive={activeView === 'reconciliation'} onClick={() => setActiveView('reconciliation')}>
+                  <Combine />
+                  <span>Reconciliation</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
                 <SidebarMenuItem>
