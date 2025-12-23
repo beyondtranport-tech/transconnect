@@ -5,31 +5,19 @@ import { getApps, initializeApp, getApp, App, cert } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { getFirestore, Timestamp, FieldValue, increment } from 'firebase-admin/firestore';
 
+// Statically import the service account key.
+// IMPORTANT: The service-account.json must be present in the project root.
+import serviceAccount from '../../../service-account.json';
+
 let adminApp: App;
 
-// This async block ensures that Firebase Admin is initialized only once
-// using a modern, bundler-friendly dynamic import for credentials.
+// Initialize Firebase Admin SDK only once.
 if (!getApps().some(app => app.name === 'firebase-admin-app-transconnect-backend')) {
-  try {
-    // IMPORTANT: The service-account.json must be present in the project root.
-    const serviceAccount = await import('../../../service-account.json');
-    adminApp = initializeApp({
-        credential: cert(serviceAccount)
-    }, 'firebase-admin-app-transconnect-backend');
-  } catch (error: any) {
-    if (error.code === 'MODULE_NOT_FOUND') {
-        console.error(
-          'FATAL: service-account.json not found in the project root.\n' +
-          'Please download your service account key from the Firebase console and place it in the root of your project as `service-account.json`.\n'
-        );
-    } else {
-        console.error('Firebase Admin SDK initialization failed:', error);
-    }
-    // In case of any error during initialization, we throw to prevent the app from running with a misconfigured backend.
-    throw new Error('Server configuration error: Could not initialize Firebase Admin SDK.');
-  }
+  adminApp = initializeApp({
+    credential: cert(serviceAccount)
+  }, 'firebase-admin-app-transconnect-backend');
 } else {
-    adminApp = getApp('firebase-admin-app-transconnect-backend');
+  adminApp = getApp('firebase-admin-app-transconnect-backend');
 }
 
 
@@ -124,3 +112,4 @@ export async function createManualTransaction(
         return { success: false, error: error.message || 'An unknown server error occurred.' };
     }
 }
+
