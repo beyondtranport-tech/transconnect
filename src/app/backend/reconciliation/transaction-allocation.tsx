@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -6,7 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge';
+import { Badge } from "@/components/ui/badge";
 import { useToast } from '@/hooks/use-toast';
 import { Banknote, FileCheck } from 'lucide-react';
 
