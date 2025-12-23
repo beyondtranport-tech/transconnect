@@ -40,22 +40,22 @@ export default function TransactionAllocation({ statementData }: { statementData
     
     const handleAllocationChange = (transactionId: number) => {
         let wasAllocated = false;
-        setTransactions(currentTransactions => {
-            const updated = currentTransactions.map((tx: any) => {
-                if (tx.id === transactionId) {
-                    const newStatus = tx.status === 'allocated' ? 'pending' : 'allocated';
-                    if (newStatus === 'allocated') {
-                       wasAllocated = true;
-                    }
-                    return { ...tx, status: newStatus };
+        const updatedTransactions = transactions.map((tx: any) => {
+            if (tx.id === transactionId) {
+                const newStatus = tx.status === 'allocated' ? 'pending' : 'allocated';
+                if (newStatus === 'allocated') {
+                    wasAllocated = true;
                 }
-                return tx;
-            });
-             if(wasAllocated) {
-                toast({ title: `Transaction ${transactionId} allocated.` });
+                return { ...tx, status: newStatus };
             }
-            return updated;
+            return tx;
         });
+
+        setTransactions(updatedTransactions);
+
+        if (wasAllocated) {
+            toast({ title: `Transaction ${transactionId} allocated.` });
+        }
     };
 
     const handleReferenceChange = (transactionId: number, newReference: string) => {
@@ -132,7 +132,7 @@ export default function TransactionAllocation({ statementData }: { statementData
     useEffect(() => {
         const allocatedTransactions = transactions.filter((t: any) => t.status === 'allocated');
         const newTotalCredits = allocatedTransactions.filter((t: any) => t.type === 'credit').reduce((sum: number, t: any) => sum + t.amount, 0);
-        const newTotalDebits = allocatedTransactions.filter((t: any) => t.type === 'debit').reduce((sum: number, t: any) => sum + Math.abs(t.amount), 0);
+        const newTotalDebits = allocatedTransactions.filter((t: any) => t.type === 'debit').reduce((sum: number, t: any) => sum + t.amount, 0);
         
         // Correct calculation should be opening + credits - debits
         const newCalculatedClosingBalance = openingBalance + newTotalCredits + newTotalDebits;
