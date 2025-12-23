@@ -183,7 +183,7 @@ function JoinFormComponent() {
           Join TransConnect
         </CardTitle>
         <CardDescription>
-          Create your free account to get started.
+          Create your free account to get started. Membership is free for the first year.
         </CardDescription>
       </CardHeader>
       <CardContent>
