@@ -35,8 +35,9 @@ service cloud.firestore {
     }
 
     match /transactions/{transactionId} {
-      allow read, write: if request.auth.token.email == 'transconnect@gmail.com';
-      allow get: if isOwner(resource.data.memberId);
+      allow get: if isOwner(resource.data.memberId) || request.auth.token.email == 'transconnect@gmail.com';
+      allow list: if request.auth.token.email == 'transconnect@gmail.com';
+      allow write: if request.auth.token.email == 'transconnect@gmail.com';
     }
 
     match /platform_config/{docId} {
