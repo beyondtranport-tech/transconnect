@@ -46,7 +46,7 @@ const formatCurrency = (amount: number) => {
 
 
 export default function TransactionAllocation({ statementData }: { statementData: any }) {
-    const [transactions, setTransactions] = useState(statementData.transactions.map((t: any) => ({...t, checked: true, status: 'pending'})));
+    const [transactions, setTransactions] = useState(statementData.transactions.map((t: any) => ({...t, allocated: true })));
     const { toast } = useToast();
     const [openingBalance, setOpeningBalance] = useState(statementData.openingBalance);
     const [closingBalance, setClosingBalance] = useState(statementData.closingBalance);
@@ -56,33 +56,19 @@ export default function TransactionAllocation({ statementData }: { statementData
     const [totalDebits, setTotalDebits] = useState(0);
     const [calculatedClosingBalance, setCalculatedClosingBalance] = useState(0);
     const [difference, setDifference] = useState(0);
-
-
-    const handleAllocate = (transactionId: number) => {
-        console.log(`Allocating transaction ${transactionId}`);
-        const updatedTransactions = transactions.map((t: any) => 
-            t.id === transactionId ? { ...t, status: 'allocated' } : t
-        );
-        setTransactions(updatedTransactions);
-
-        toast({
-            title: "Transaction Allocated!",
-            description: `Transaction ID ${transactionId} has been marked as allocated.`,
-        });
-    };
     
-    const handleCheckChange = (transactionId: number, isChecked: boolean) => {
+    const handleAllocationChange = (transactionId: number, isAllocated: boolean) => {
         const updatedTransactions = transactions.map((t:any) =>
-            t.id === transactionId ? { ...t, checked: isChecked } : t
+            t.id === transactionId ? { ...t, allocated: isAllocated } : t
         );
         setTransactions(updatedTransactions);
     };
 
     // Recalculate summary whenever transactions or balances change
     useEffect(() => {
-        const checkedTransactions = transactions.filter((t: any) => t.checked);
-        const newTotalCredits = checkedTransactions.filter((t: any) => t.type === 'credit').reduce((sum: number, t: any) => sum + t.amount, 0);
-        const newTotalDebits = checkedTransactions.filter((t: any) => t.type === 'debit').reduce((sum: number, t: any) => sum + Math.abs(t.amount), 0);
+        const allocatedTransactions = transactions.filter((t: any) => t.allocated);
+        const newTotalCredits = allocatedTransactions.filter((t: any) => t.type === 'credit').reduce((sum: number, t: any) => sum + t.amount, 0);
+        const newTotalDebits = allocatedTransactions.filter((t: any) => t.type === 'debit').reduce((sum: number, t: any) => sum + Math.abs(t.amount), 0);
         const newCalculatedClosingBalance = openingBalance + newTotalCredits - newTotalDebits;
         const newDifference = closingBalance - newCalculatedClosingBalance;
 
@@ -141,16 +127,16 @@ export default function TransactionAllocation({ statementData }: { statementData
                                 <TableHead className="text-right">Amount (R)</TableHead>
                                 <TableHead className="w-[200px]">Member</TableHead>
                                 <TableHead className="w-[250px]">Chart of Accounts</TableHead>
-                                <TableHead className="text-center w-[150px]">Action</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                             {transactions.map((tx: any) => (
-                                <TableRow key={tx.id} className={tx.status === 'allocated' ? 'bg-green-100/50' : ''}>
+                                <TableRow key={tx.id} className={tx.allocated ? 'bg-green-100/50 dark:bg-green-900/20' : ''}>
                                     <TableCell className="text-center">
                                          <Checkbox
-                                            checked={tx.checked}
-                                            onCheckedChange={(isChecked) => handleCheckChange(tx.id, !!isChecked)}
+                                            checked={tx.allocated}
+                                            onCheckedChange={(isChecked) => handleAllocationChange(tx.id, !!isChecked)}
+                                            aria-label="Toggle transaction allocation"
                                         />
                                     </TableCell>
                                     <TableCell>{tx.date}</TableCell>
@@ -161,11 +147,11 @@ export default function TransactionAllocation({ statementData }: { statementData
                                         <Input 
                                             placeholder="Member ID or Email" 
                                             className="h-8 text-xs" 
-                                            disabled={tx.status === 'allocated'} 
+                                            disabled={!tx.allocated} 
                                         />
                                     </TableCell>
                                     <TableCell>
-                                        <Select disabled={tx.status === 'allocated'}>
+                                        <Select disabled={!tx.allocated}>
                                             <SelectTrigger className="h-8 text-xs">
                                                 <SelectValue placeholder="Select Account" />
                                             </SelectTrigger>
@@ -177,18 +163,6 @@ export default function TransactionAllocation({ statementData }: { statementData
                                                 ))}
                                             </SelectContent>
                                         </Select>
-                                    </TableCell>
-                                    <TableCell className="text-center">
-                                        {tx.status === 'pending' ? (
-                                             <Button size="sm" onClick={() => handleAllocate(tx.id)}>
-                                                Allocate
-                                            </Button>
-                                        ) : (
-                                            <Badge variant="default" className="bg-green-600 hover:bg-green-600">
-                                                <FileCheck className="mr-2 h-4 w-4" />
-                                                Allocated
-                                            </Badge>
-                                        )}
                                     </TableCell>
                                 </TableRow>
                             ))}
@@ -220,9 +194,9 @@ export default function TransactionAllocation({ statementData }: { statementData
                             <p className="text-muted-foreground">Entered Closing</p>
                             <p className="font-mono font-bold text-base">{formatCurrency(closingBalance)}</p>
                         </div>
-                         <div className={`space-y-1 border-t pt-2 ${difference === 0 ? 'bg-green-100' : 'bg-red-100'} p-2 rounded-md`}>
+                         <div className={`space-y-1 border-t pt-2 ${Math.abs(difference) < 0.01 ? 'bg-green-100 dark:bg-green-900/30' : 'bg-red-100 dark:bg-red-900/30'} p-2 rounded-md`}>
                             <p className="text-muted-foreground font-semibold">Difference</p>
-                            <p className={`font-mono font-extrabold text-lg ${difference === 0 ? 'text-green-700' : 'text-red-700'}`}>{formatCurrency(difference)}</p>
+                            <p className={`font-mono font-extrabold text-lg ${Math.abs(difference) < 0.01 ? 'text-green-700' : 'text-red-700'}`}>{formatCurrency(difference)}</p>
                         </div>
                     </div>
                 </div>
