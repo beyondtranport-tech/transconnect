@@ -1,7 +1,7 @@
 
 {
     "statementName": "statement-2024-07-01-2024-07-31.csv",
-    "openingBalance": 125430.50,
+    "openingBalance": 125055.50,
     "closingBalance": 132050.50,
     "transactions": [
         { "id": 1, "date": "2024-07-15", "description": "EFT payment received", "reference": "MEMBER-UID-001", "amount": 375.00, "type": "credit" },
