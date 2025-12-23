@@ -1,3 +1,4 @@
+
 import { Suspense } from 'react';
 import { notFound } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -5,7 +6,7 @@ import { Loader2, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import MemberWallet from './member-wallet';
-import { getMember } from '../actions';
+import { getMember } from '../../actions';
 
 // This is now a Server Component
 export default async function MemberWalletPage({ params }: { params: { memberId: string } }) {
