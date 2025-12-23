@@ -129,10 +129,6 @@ export default function AccountDashboard() {
                     </CardContent>
                 </Card>
             </div>
-
-            <div className="mt-12">
-                 <RecentTransactions />
-            </div>
         </div>
     );
 }
