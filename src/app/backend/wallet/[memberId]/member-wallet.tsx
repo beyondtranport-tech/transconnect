@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -5,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Calendar as CalendarIcon, PlusCircle } from 'lucide-react';
 import { format } from 'date-fns';
-import { DocumentData, writeBatch, doc, collection, serverTimestamp, increment } from 'firebase/firestore';
+import { DocumentData, writeBatch, doc, collection, serverTimestamp, increment, query, where } from 'firebase/firestore';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -15,8 +16,9 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
+import { useUser, useFirestore, useDoc, useMemoFirebase, useCollection } from '@/firebase';
 import { Input } from '@/components/ui/input';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 const formatCurrency = (amount: number) => new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(amount);
 
@@ -30,38 +32,28 @@ const transactionSchema = z.object({
 type TransactionFormValues = z.infer<typeof transactionSchema>;
 
 interface MemberWalletProps {
-    initialMember: DocumentData;
+    memberId: string;
 }
 
-export default function MemberWallet({ initialMember }: MemberWalletProps) {
+export default function MemberWallet({ memberId }: MemberWalletProps) {
     const { toast } = useToast();
     const { user } = useUser();
     const firestore = useFirestore();
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [isClient, setIsClient] = useState(false);
-
-    // Use the data passed from the server component as the initial state
-    const [member, setMember] = useState(initialMember);
 
     const memberRef = useMemoFirebase(() => {
-        if (!firestore || !member.id) return null;
-        return doc(firestore, 'members', member.id);
-    }, [firestore, member.id]);
+        if (!firestore || !memberId) return null;
+        return doc(firestore, 'members', memberId);
+    }, [firestore, memberId]);
 
-    // Use `useDoc` to get live updates after the initial render
-    const { data: liveMemberData } = useDoc(memberRef);
-
-    useEffect(() => {
-        setIsClient(true);
-    }, []);
-
-    // Update local state when live data changes
-    useEffect(() => {
-        if (liveMemberData) {
-            setMember(liveMemberData);
-        }
-    }, [liveMemberData]);
-
+    const { data: member, isLoading: isMemberLoading, error: memberError } = useDoc(memberRef);
+    
+    const transactionsQuery = useMemoFirebase(() => {
+        if (!firestore || !memberId) return null;
+        return query(collection(firestore, 'transactions'), where('memberId', '==', memberId));
+    }, [firestore, memberId]);
+    
+    const { data: transactions, isLoading: isTransactionsLoading, error: transactionsError } = useCollection(transactionsQuery);
 
     const form = useForm<TransactionFormValues>({
         resolver: zodResolver(transactionSchema),
@@ -74,8 +66,8 @@ export default function MemberWallet({ initialMember }: MemberWalletProps) {
     });
 
     const handleAddRecord = async (values: TransactionFormValues) => {
-        if (!user || !firestore) {
-            toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in.' });
+        if (!user || !firestore || !member) {
+            toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in and a member must be selected.' });
             return;
         }
 
@@ -83,9 +75,9 @@ export default function MemberWallet({ initialMember }: MemberWalletProps) {
         try {
             const batch = writeBatch(firestore);
 
-            const memberRef = doc(firestore, 'members', member.id);
+            const memberDocRef = doc(firestore, 'members', member.id);
             const transactionAmount = values.type === 'credit' ? values.amount : -values.amount;
-            batch.update(memberRef, { walletBalance: increment(transactionAmount) });
+            batch.update(memberDocRef, { walletBalance: increment(transactionAmount) });
 
             const transactionRef = doc(collection(firestore, 'transactions'));
             const newTransaction = {
@@ -110,7 +102,7 @@ export default function MemberWallet({ initialMember }: MemberWalletProps) {
             form.reset();
 
         } catch (error: any) {
-            toast({
+             toast({
                 variant: 'destructive',
                 title: 'Posting Failed',
                 description: error.message || 'An unknown server error occurred.',
@@ -120,8 +112,30 @@ export default function MemberWallet({ initialMember }: MemberWalletProps) {
         }
     };
     
+    if (isMemberLoading) {
+        return (
+            <div className="flex justify-center items-center py-20">
+                <Loader2 className="h-12 w-12 animate-spin text-primary" />
+            </div>
+        );
+    }
+    
+    if (memberError) {
+         return (
+            <Card>
+                <CardHeader>
+                    <CardTitle className="text-destructive">Error Loading Member</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <p className="text-muted-foreground">Could not load member data. You may not have the required permissions.</p>
+                    <p className="text-xs text-muted-foreground mt-2">{memberError.message}</p>
+                </CardContent>
+            </Card>
+        );
+    }
+
     if (!member) {
-        return <Loader2 className="h-8 w-8 animate-spin" />
+        return <p>Member not found.</p>
     }
 
     return (
@@ -135,11 +149,7 @@ export default function MemberWallet({ initialMember }: MemberWalletProps) {
                 </CardHeader>
                 <CardContent>
                     <p className="text-sm text-muted-foreground">Current Balance</p>
-                    {isClient ? (
-                        <p className="text-4xl font-bold">{formatCurrency(member.walletBalance || 0)}</p>
-                    ) : (
-                         <div className="h-12 w-48 bg-muted animate-pulse rounded-md mt-1" />
-                    )}
+                    <p className="text-4xl font-bold">{formatCurrency(member.walletBalance || 0)}</p>
                 </CardContent>
             </Card>
 
@@ -258,9 +268,46 @@ export default function MemberWallet({ initialMember }: MemberWalletProps) {
                     <CardDescription>A complete log of all wallet transactions for this member.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                   <div className="text-center py-10 text-muted-foreground">
-                     <p>Admin transaction history view is temporarily disabled while we resolve a permission issue.</p>
-                   </div>
+                   {isTransactionsLoading && (
+                        <div className="flex justify-center items-center py-10">
+                            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                        </div>
+                   )}
+                   {transactionsError && (
+                        <div className="text-destructive-foreground bg-destructive/90 p-4 rounded-md">
+                            <h4 className="font-semibold">Error loading transactions</h4>
+                            <p className="text-sm">{transactionsError.message}</p>
+                        </div>
+                   )}
+                   {transactions && !isTransactionsLoading && (
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Date</TableHead>
+                                    <TableHead>Description</TableHead>
+                                    <TableHead>Type</TableHead>
+                                    <TableHead className="text-right">Amount</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {transactions.map((tx) => (
+                                    <TableRow key={tx.id}>
+                                        <TableCell>{format(tx.date.toDate(), 'yyyy-MM-dd')}</TableCell>
+                                        <TableCell>{tx.description}</TableCell>
+                                        <TableCell>
+                                            <Badge variant={tx.type === 'credit' ? 'default' : 'destructive'}>{tx.type}</Badge>
+                                        </TableCell>
+                                        <TableCell className="text-right font-mono">{formatCurrency(tx.amount)}</TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                   )}
+                   {transactions?.length === 0 && !isTransactionsLoading && (
+                        <div className="text-center py-10 text-muted-foreground">
+                            <p>No transactions found for this member.</p>
+                        </div>
+                   )}
                 </CardContent>
             </Card>
         </div>

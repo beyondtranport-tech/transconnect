@@ -8,7 +8,7 @@ service cloud.firestore {
     }
     
     match /members/{memberId} {
-      allow get: if (request.auth != null && request.auth.uid == memberId) || isAdmin();
+      allow get: if request.auth != null && (request.auth.uid == memberId || request.auth.token.admin == true);
       allow list: if isAdmin();
       allow create: if request.auth != null && request.auth.uid == memberId;
       allow update: if (request.auth != null && request.auth.uid == memberId) || isAdmin();
@@ -36,7 +36,7 @@ service cloud.firestore {
 
     match /transactions/{transactionId} {
       allow get: if (request.auth != null && request.auth.uid == resource.data.memberId) || isAdmin();
-      allow list: if isAdmin();
+      allow list: if request.auth != null && isAdmin();
       allow create: if isAdmin() && request.resource.data.memberId != null;
       allow update, delete: if isAdmin();
     }
