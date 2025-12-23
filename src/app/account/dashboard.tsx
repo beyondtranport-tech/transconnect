@@ -13,20 +13,12 @@ import { useEffect, useState } from 'react';
 export default function AccountDashboard() {
     const { user, isUserLoading } = useUser();
     const firestore = useFirestore();
-    const [isReady, setIsReady] = useState(false);
-
-    useEffect(() => {
-        // Wait until user loading is complete before attempting to fetch data.
-        if (!isUserLoading) {
-            setIsReady(true);
-        }
-    }, [isUserLoading]);
 
     const memberRef = useMemoFirebase(() => {
         // Only construct the doc ref if the user is loaded and exists.
-        if (!isReady || !firestore || !user) return null;
+        if (isUserLoading || !firestore || !user) return null;
         return doc(firestore, 'members', user.uid);
-    }, [firestore, user, isReady]);
+    }, [firestore, user, isUserLoading]);
 
     const { data: memberData, isLoading: isMemberLoading } = useDoc(memberRef);
 
@@ -36,7 +28,7 @@ export default function AccountDashboard() {
         return new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(price);
     };
 
-    if (isUserLoading || !isReady || (isReady && isMemberLoading && !memberData)) {
+    if (isUserLoading || (user && isMemberLoading && !memberData)) {
         return (
             <div className="flex justify-center items-center min-h-[calc(100vh-8rem)] w-full">
                 <Loader2 className="h-12 w-12 animate-spin text-primary" />
