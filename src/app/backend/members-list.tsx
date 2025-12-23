@@ -36,9 +36,9 @@ export default function MembersList() {
     const { data: members, isLoading, error } = useCollection(membersCollectionRef);
 
     const transactionsCollectionRef = useMemoFirebase(() => {
-        if (!firestore || !user) return null;
+        if (!firestore || !user || isUserLoading) return null; // Guard against running query before user is loaded
         return query(collection(firestore, 'transactions'));
-    }, [firestore, user]);
+    }, [firestore, user, isUserLoading]);
 
     const { data: allTransactions, isLoading: isLoadingTransactions } = useCollection(transactionsCollectionRef);
 
@@ -205,5 +205,3 @@ export default function MembersList() {
         </Card>
     );
 }
-
-    
