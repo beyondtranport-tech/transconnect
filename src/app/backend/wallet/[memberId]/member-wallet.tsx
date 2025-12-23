@@ -5,9 +5,9 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Calendar as CalendarIcon, PlusCircle, Trash2 } from 'lucide-react';
+import { Loader2, Calendar as CalendarIcon, PlusCircle } from 'lucide-react';
 import { format } from 'date-fns';
-import { DocumentData } from 'firebase/firestore';
+import { DocumentData, collection, query, where, orderBy } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -15,7 +15,7 @@ import * as z from 'zod';
 import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { useUser } from '@/firebase';
+import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
@@ -41,15 +41,25 @@ type TransactionFormValues = z.infer<typeof transactionSchema>;
 
 interface MemberWalletProps {
     member: DocumentData;
-    initialTransactions: DocumentData[];
 }
 
-export default function MemberWallet({ member, initialTransactions }: MemberWalletProps) {
+export default function MemberWallet({ member }: MemberWalletProps) {
     const { toast } = useToast();
     const router = useRouter();
-    const [isMounted, setIsMounted] = useState(false);
     const { user } = useUser();
+    const firestore = useFirestore();
     const [isSubmitting, setIsSubmitting] = useState(false);
+
+    const transactionsQuery = useMemoFirebase(() => {
+        if (!firestore || !member.id) return null;
+        return query(
+            collection(firestore, 'transactions'),
+            where('memberId', '==', member.id),
+            orderBy('date', 'desc')
+        );
+    }, [firestore, member.id]);
+
+    const { data: transactions, isLoading: isLoadingTransactions, error } = useCollection(transactionsQuery);
 
     const form = useForm<TransactionFormValues>({
         resolver: zodResolver(transactionSchema),
@@ -61,9 +71,6 @@ export default function MemberWallet({ member, initialTransactions }: MemberWall
         },
     });
 
-    useEffect(() => {
-        setIsMounted(true);
-    }, []);
 
     const handleAddRecord = async (values: TransactionFormValues) => {
         if (!user) {
@@ -96,18 +103,19 @@ export default function MemberWallet({ member, initialTransactions }: MemberWall
     // Calculate cumulative balance
     const openingBalanceRecord = {
         id: 'opening-balance',
-        date: '2025-01-01 00:00',
+        date: new Date(new Date(member.createdAt?.toDate() || Date.now()).getTime() - 1000), // A second before creation
         description: 'Opening Balance',
         transactionId: 'N/A',
         type: 'credit',
         amount: 0,
-        _sortDate: new Date('2025-01-01T00:00:00Z'), 
+        _sortDate: new Date(new Date(member.createdAt?.toDate() || Date.now()).getTime() - 1000), 
     };
 
     const allRecords = [
         openingBalanceRecord, 
-        ...initialTransactions.map(tx => ({...tx, _sortDate: tx.date.toDate ? tx.date.toDate() : new Date(tx.date)}))
+        ...(transactions || []).map(tx => ({...tx, _sortDate: tx.date.toDate ? tx.date.toDate() : new Date(tx.date)}))
     ];
+
     const sortedTransactions = allRecords.sort((a, b) => a._sortDate.getTime() - b._sortDate.getTime());
 
     let runningBalance = 0;
@@ -128,10 +136,10 @@ export default function MemberWallet({ member, initialTransactions }: MemberWall
                 </CardHeader>
                 <CardContent>
                     <p className="text-sm text-muted-foreground">Current Balance</p>
-                    {isMounted ? (
+                    {isLoadingTransactions ? (
+                         <div className="h-12 w-48 bg-muted animate-pulse rounded-md mt-1" />
+                    ): (
                         <p className="text-4xl font-bold">{formatCurrency(member.walletBalance || 0)}</p>
-                    ) : (
-                        <div className="h-12 w-48 bg-muted animate-pulse rounded-md" />
                     )}
                 </CardContent>
             </Card>
@@ -251,7 +259,16 @@ export default function MemberWallet({ member, initialTransactions }: MemberWall
                     <CardDescription>A complete log of all wallet transactions for this member, with a running balance.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    {isMounted ? (
+                    {isLoadingTransactions ? (
+                         <div className="flex justify-center items-center py-10">
+                            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                        </div>
+                    ) : error ? (
+                        <div className="text-destructive text-center py-10">
+                           <p>Could not load transactions.</p>
+                           <p className="text-sm">{error.message}</p>
+                        </div>
+                    ) : (
                         <Table>
                             <TableHeader>
                                 <TableRow>
@@ -276,12 +293,8 @@ export default function MemberWallet({ member, initialTransactions }: MemberWall
                                 ))}
                             </TableBody>
                         </Table>
-                    ) : (
-                        <div className="flex justify-center items-center py-10">
-                            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                        </div>
                     )}
-                     {isMounted && initialTransactions.length === 0 && (
+                     {transactions && transactions.length === 0 && !isLoadingTransactions && (
                         <p className="text-center text-muted-foreground py-10">No transactions found for this member.</p>
                     )}
                 </CardContent>

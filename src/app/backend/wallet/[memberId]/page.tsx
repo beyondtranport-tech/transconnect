@@ -14,11 +14,6 @@ function MemberWalletPageComponent() {
     const searchParams = useSearchParams();
     const memberId = params.memberId as string;
 
-    // The component needs to be mounted on the client to safely access window.location
-    useEffect(() => {
-        // This effect can be used for client-side only logic if needed
-    }, []);
-
     const memberData = useMemo(() => {
         if (!memberId) return null;
         return {
@@ -29,28 +24,7 @@ function MemberWalletPageComponent() {
             walletBalance: parseFloat(searchParams.get('walletBalance') || '0'),
         };
     }, [memberId, searchParams]);
-
-    const transactions = useMemo(() => {
-        const transactionsParam = searchParams.get('transactions');
-        if (!transactionsParam) return [];
-        try {
-            // Firestore timestamps need to be revived after JSON serialization
-            const parsed = JSON.parse(transactionsParam);
-            return parsed.map((tx: any) => ({
-                ...tx,
-                date: tx.date ? {
-                    seconds: tx.date.seconds,
-                    nanoseconds: tx.date.nanoseconds,
-                    toDate: () => new Date(tx.date.seconds * 1000)
-                } : null
-            }));
-        } catch (e) {
-            console.error("Failed to parse transactions from URL", e);
-            return [];
-        }
-    }, [searchParams]);
     
-
     return (
         <div>
             <div className="mb-6">
@@ -63,7 +37,7 @@ function MemberWalletPageComponent() {
             </div>
             
             {memberData ? (
-                <MemberWallet member={memberData} initialTransactions={transactions || []} />
+                <MemberWallet member={memberData} />
             ) : (
                 <Card>
                     <CardHeader>
