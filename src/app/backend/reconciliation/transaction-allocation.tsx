@@ -50,6 +50,13 @@ export default function TransactionAllocation({ statementData }: { statementData
     const { toast } = useToast();
     const [openingBalance, setOpeningBalance] = useState(statementData.openingBalance);
     const [closingBalance, setClosingBalance] = useState(statementData.closingBalance);
+    
+    // State for calculated summary values
+    const [totalCredits, setTotalCredits] = useState(0);
+    const [totalDebits, setTotalDebits] = useState(0);
+    const [calculatedClosingBalance, setCalculatedClosingBalance] = useState(0);
+    const [difference, setDifference] = useState(0);
+
 
     const handleAllocate = (transactionId: number) => {
         console.log(`Allocating transaction ${transactionId}`);
@@ -71,11 +78,20 @@ export default function TransactionAllocation({ statementData }: { statementData
         setTransactions(updatedTransactions);
     };
 
-    const checkedTransactions = transactions.filter((t: any) => t.checked);
-    const totalCredits = checkedTransactions.filter((t: any) => t.type === 'credit').reduce((sum: number, t: any) => sum + t.amount, 0);
-    const totalDebits = checkedTransactions.filter((t: any) => t.type === 'debit').reduce((sum: number, t: any) => sum + Math.abs(t.amount), 0);
-    const calculatedClosingBalance = openingBalance + totalCredits - totalDebits;
-    const difference = closingBalance - calculatedClosingBalance;
+    // Recalculate summary whenever transactions or balances change
+    useEffect(() => {
+        const checkedTransactions = transactions.filter((t: any) => t.checked);
+        const newTotalCredits = checkedTransactions.filter((t: any) => t.type === 'credit').reduce((sum: number, t: any) => sum + t.amount, 0);
+        const newTotalDebits = checkedTransactions.filter((t: any) => t.type === 'debit').reduce((sum: number, t: any) => sum + Math.abs(t.amount), 0);
+        const newCalculatedClosingBalance = openingBalance + newTotalCredits - newTotalDebits;
+        const newDifference = closingBalance - newCalculatedClosingBalance;
+
+        setTotalCredits(newTotalCredits);
+        setTotalDebits(newTotalDebits);
+        setCalculatedClosingBalance(newCalculatedClosingBalance);
+        setDifference(newDifference);
+    }, [transactions, openingBalance, closingBalance]);
+
 
     return (
         <Card>
