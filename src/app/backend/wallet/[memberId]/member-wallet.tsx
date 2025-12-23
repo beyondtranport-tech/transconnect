@@ -6,7 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Calendar as CalendarIcon, PlusCircle } from 'lucide-react';
 import { format } from 'date-fns';
-import { DocumentData, writeBatch, doc, collection, serverTimestamp, increment } from 'firebase/firestore';
+import { DocumentData, writeBatch, doc, collection, serverTimestamp, increment, query, where } from 'firebase/firestore';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -16,7 +16,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useUser, useFirestore, useMemoFirebase } from '@/firebase';
+import { useUser, useFirestore, useMemoFirebase, useCollection } from '@/firebase';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { Input } from '@/components/ui/input';
@@ -25,23 +25,18 @@ const formatCurrency = (amount: number) => new Intl.NumberFormat('en-ZA', { styl
 
 const formatDate = (timestamp: any) => {
     if (!timestamp) return 'N/A';
-    // Check if it's an ISO string from our API route
-    if (typeof timestamp === 'string') {
+    if (timestamp && typeof timestamp.toDate === 'function') {
+        return format(timestamp.toDate(), "yyyy-MM-dd HH:mm");
+    }
+    try {
         const date = new Date(timestamp);
         if (!isNaN(date.getTime())) {
             return format(date, "yyyy-MM-dd HH:mm");
         }
-    }
-    // Check for Firebase Timestamp object
-    if (timestamp && typeof timestamp.toDate === 'function') {
-        return format(timestamp.toDate(), "yyyy-MM-dd HH:mm");
-    }
-    // Fallback for other date representations
-    try {
-        return format(new Date(timestamp), "yyyy-MM-dd HH:mm");
     } catch (e) {
-        return 'Invalid Date';
+        // Fallback for invalid date strings
     }
+    return 'Invalid Date';
 };
 
 const transactionSchema = z.object({
@@ -64,39 +59,26 @@ export default function MemberWallet({ member }: MemberWalletProps) {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isClient, setIsClient] = useState(false);
 
-    const [transactions, setTransactions] = useState<DocumentData[]>([]);
-    const [isLoadingTransactions, setIsLoadingTransactions] = useState(true);
-    const [transactionError, setTransactionError] = useState<Error | null>(null);
-
-     useEffect(() => {
+    useEffect(() => {
         setIsClient(true);
-        if (member.id) {
-            setIsLoadingTransactions(true);
-            setTransactionError(null);
-            fetch(`/api/admin/transactions?memberId=${member.id}`)
-                .then(res => {
-                    if (!res.ok) {
-                        throw new Error(`Failed to fetch transactions: ${res.statusText}`);
-                    }
-                    return res.json();
-                })
-                .then(data => {
-                    setTransactions(data);
-                })
-                .catch(err => {
-                    setTransactionError(err);
-                    toast({
-                        variant: 'destructive',
-                        title: 'Failed to load transaction history',
-                        description: err.message,
-                    });
-                })
-                .finally(() => {
-                    setIsLoadingTransactions(false);
-                });
-        }
-    }, [member.id, toast]);
+    }, []);
 
+    const transactionsQuery = useMemoFirebase(() => {
+        if (!firestore || !member.id) return null;
+        return query(collection(firestore, 'transactions'), where('memberId', '==', member.id));
+    }, [firestore, member.id]);
+    
+    const { data: transactions, isLoading: isLoadingTransactions, error: transactionError } = useCollection(transactionsQuery);
+
+    useEffect(() => {
+        if (transactionError) {
+            toast({
+                variant: 'destructive',
+                title: 'Failed to load transaction history',
+                description: transactionError.message,
+            });
+        }
+    }, [transactionError, toast]);
 
     const form = useForm<TransactionFormValues>({
         resolver: zodResolver(transactionSchema),
@@ -141,13 +123,11 @@ export default function MemberWallet({ member }: MemberWalletProps) {
             await batch.commit();
 
             toast({ title: 'Success!', description: 'Transaction has been posted and wallet has been updated.' });
-            // Refetch transactions after adding a new one
-            fetch(`/api/admin/transactions?memberId=${member.id}`).then(res => res.json()).then(setTransactions);
             form.reset();
 
         } catch (e: any) {
              const permissionError = new FirestorePermissionError({
-                path: `/members/${member.id} and /transactions`,
+                path: `/members/${member.id} or /transactions`,
                 operation: 'write',
             });
             errorEmitter.emit('permission-error', permissionError);
@@ -161,7 +141,6 @@ export default function MemberWallet({ member }: MemberWalletProps) {
         }
     };
     
-    // Calculate cumulative balance
     const openingBalanceRecord = {
         id: 'opening-balance',
         date: member.createdAt ? new Date(member.createdAt).toISOString() : new Date().toISOString(),
@@ -177,8 +156,8 @@ export default function MemberWallet({ member }: MemberWalletProps) {
     ] : [openingBalanceRecord];
 
     const sortedTransactions = allRecords.sort((a, b) => {
-        const dateA = new Date(a.date);
-        const dateB = new Date(b.date);
+        const dateA = a.date?.toDate ? a.date.toDate() : new Date(a.date);
+        const dateB = b.date?.toDate ? b.date.toDate() : new Date(b.date);
         return dateA.getTime() - dateB.getTime();
     });
 
