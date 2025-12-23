@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, Suspense } from 'react';
@@ -127,7 +128,7 @@ function JoinFormComponent() {
         description: "Welcome to TransConnect. You're now signed in.",
       });
 
-      const redirectUrl = '/account';
+      const redirectUrl = values.email === 'transconnect@gmail.com' ? '/backend' : '/account';
       router.push(redirectUrl);
 
     } catch (error: any) {

@@ -14,11 +14,6 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    function isAdmin() {
-      // Securely check for the 'admin' flag on the user's own document.
-      return isSignedIn() && get(/databases/$(database)/documents/members/$(request.auth.uid)).data.admin == true;
-    }
-
     function hasValidMemberId(memberId) {
       // Ensure the document ID matches the 'id' field within the document.
       return request.resource.data.id == memberId;
@@ -34,6 +29,10 @@ service cloud.firestore {
     
     function isOwnerUpdatingAllowedFields(memberId) {
         return isOwner(memberId) && isUpdatingAllowedFields();
+    }
+    
+    function isAdmin() {
+        return request.auth.email == 'transconnect@gmail.com';
     }
 
     // ----------------------------------------------------------------------
