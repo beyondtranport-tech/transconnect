@@ -103,7 +103,18 @@ export default function MemberWallet({ member, initialTransactions }: MemberWall
     };
 
     // Calculate cumulative balance
-    const sortedTransactions = [...initialTransactions].sort((a, b) => a.date.toDate() - b.date.toDate());
+    const openingBalanceRecord = {
+        id: 'opening-balance',
+        date: Timestamp.fromDate(new Date('2025-01-01')),
+        description: 'Opening Balance',
+        transactionId: 'N/A',
+        type: 'credit',
+        amount: 0,
+    };
+
+    const allRecords = [openingBalanceRecord, ...initialTransactions];
+    const sortedTransactions = allRecords.sort((a, b) => a.date.toDate().getTime() - b.date.toDate().getTime());
+
     let runningBalance = 0;
     const transactionsWithBalance = sortedTransactions.map(tx => {
         const amount = tx.type === 'credit' ? tx.amount : -tx.amount;
@@ -141,32 +152,31 @@ export default function MemberWallet({ member, initialTransactions }: MemberWall
                     <Form {...form}>
                         <form onSubmit={form.handleSubmit(handleAddRecord)} className="space-y-4">
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 items-start">
-                                <div className="space-y-2">
-                                <Label>Transaction Date</Label>
+                                
                                     <FormField
                                     control={form.control}
                                     name="date"
                                     render={({ field }) => (
                                         <FormItem className="flex flex-col">
+                                         <FormLabel>Transaction Date</FormLabel>
                                         <Popover>
                                             <PopoverTrigger asChild>
-                                                <div className="relative">
-                                                     <FormControl>
-                                                        <Input
-                                                            value={field.value ? format(field.value, 'yyyy-MM-dd') : ''}
-                                                            onChange={(e) => {
-                                                                const date = parse(e.target.value, 'yyyy-MM-dd', new Date());
-                                                                if (!isNaN(date.getTime())) {
-                                                                    field.onChange(date);
-                                                                }
-                                                            }}
-                                                            placeholder="YYYY-MM-DD"
-                                                        />
-                                                     </FormControl>
-                                                     <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                                                        <CalendarIcon className="h-4 w-4 opacity-50" />
-                                                    </div>
-                                                </div>
+                                                <FormControl>
+                                                    <Button
+                                                    variant={"outline"}
+                                                    className={cn(
+                                                        "w-full pl-3 text-left font-normal",
+                                                        !field.value && "text-muted-foreground"
+                                                    )}
+                                                    >
+                                                    {field.value ? (
+                                                        format(field.value, "PPP")
+                                                    ) : (
+                                                        <span>Pick a date</span>
+                                                    )}
+                                                    <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                                    </Button>
+                                                </FormControl>
                                             </PopoverTrigger>
                                             <PopoverContent className="w-auto p-0" align="start">
                                             <Calendar
@@ -184,14 +194,13 @@ export default function MemberWallet({ member, initialTransactions }: MemberWall
                                         </FormItem>
                                     )}
                                     />
-                                </div>
-                                <div className="space-y-2">
-                                <Label>Type</Label>
+                               
                                 <FormField
                                     control={form.control}
                                     name="type"
                                     render={({ field }) => (
                                         <FormItem>
+                                            <FormLabel>Type</FormLabel>
                                             <Select onValueChange={field.onChange} defaultValue={field.value}>
                                                 <FormControl>
                                                     <SelectTrigger>
@@ -207,31 +216,26 @@ export default function MemberWallet({ member, initialTransactions }: MemberWall
                                         </FormItem>
                                     )}
                                 />
-                                </div>
-                                <div className="space-y-2">
-                                <Label>Amount (ZAR)</Label>
+                               
                                 <FormField
                                     control={form.control}
                                     name="amount"
-                                    render={({ field }) => <FormItem><FormControl><Input type="number" step="0.01" {...field} /></FormControl><FormMessage /></FormItem>}
+                                    render={({ field }) => <FormItem><FormLabel>Amount (ZAR)</FormLabel><FormControl><Input type="number" step="0.01" {...field} /></FormControl><FormMessage /></FormItem>}
                                 />
-                                </div>
-                                <div className="space-y-2 md:col-span-2">
-                                <Label>Description</Label>
+                                <div className="md:col-span-2">
                                 <FormField
                                     control={form.control}
                                     name="description"
-                                    render={({ field }) => <FormItem><FormControl><Input placeholder="e.g., Prize money, refund, etc." {...field} /></FormControl><FormMessage /></FormItem>}
+                                    render={({ field }) => <FormItem><FormLabel>Description</FormLabel><FormControl><Input placeholder="e.g., Prize money, refund, etc." {...field} /></FormControl><FormMessage /></FormItem>}
                                 />
                                 </div>
-                                <div className="space-y-2">
-                                <Label>Reference / ID</Label>
+                                
                                 <FormField
                                     control={form.control}
                                     name="transactionId"
-                                    render={({ field }) => <FormItem><FormControl><Input placeholder="e.g., ADJ-001" {...field} /></FormControl><FormMessage /></FormItem>}
+                                    render={({ field }) => <FormItem><FormLabel>Reference / ID</FormLabel><FormControl><Input placeholder="e.g., ADJ-001" {...field} /></FormControl><FormMessage /></FormItem>}
                                 />
-                                </div>
+                                
                             </div>
                             <Button type="submit" disabled={isSubmitting} className="mt-4">
                                 {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PlusCircle className="mr-2 h-4 w-4" />}
@@ -264,8 +268,8 @@ export default function MemberWallet({ member, initialTransactions }: MemberWall
                                     <TableCell>{formatDate(tx.date)}</TableCell>
                                     <TableCell className="capitalize">{tx.description}</TableCell>
                                     <TableCell className="font-mono text-xs">{tx.transactionId}</TableCell>
-                                    <TableCell className={`text-right font-mono ${tx.type === 'credit' ? 'text-green-600' : 'text-destructive'}`}>
-                                        {tx.type === 'credit' ? `+${formatCurrency(tx.amount)}` : `-${formatCurrency(tx.amount)}`}
+                                    <TableCell className={`text-right font-mono ${tx.amount === 0 ? '' : tx.type === 'credit' ? 'text-green-600' : 'text-destructive'}`}>
+                                        {tx.amount === 0 ? formatCurrency(0) : (tx.type === 'credit' ? `+${formatCurrency(tx.amount)}` : `-${formatCurrency(tx.amount)}`)}
                                     </TableCell>
                                      <TableCell className="text-right font-mono font-semibold">{formatCurrency(tx.runningBalance)}</TableCell>
                                 </TableRow>
