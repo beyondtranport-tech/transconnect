@@ -101,14 +101,14 @@ function SignInFormComponent() {
         return;
     }
     try {
-      await signInWithEmailAndPassword(auth, values.email, values.password);
+      const userCredential = await signInWithEmailAndPassword(auth, values.email, values.password);
 
       toast({
         title: 'Signed In!',
         description: "Welcome back to TransConnect.",
       });
       
-      const isAdmin = values.email === 'transconnect@gmail.com';
+      const isAdmin = userCredential.user.email === 'transconnect@gmail.com';
       const redirectFromParams = searchParams.get('redirect');
 
       if (isAdmin) {
