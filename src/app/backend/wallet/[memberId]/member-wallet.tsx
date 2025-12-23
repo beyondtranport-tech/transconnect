@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -145,7 +144,7 @@ export default function MemberWallet({ member }: MemberWalletProps) {
                     {isLoadingTransactions ? (
                          <div className="h-12 w-48 bg-muted animate-pulse rounded-md mt-1" />
                     ): (
-                        <p className="text-4xl font-bold">{isClient ? formatCurrency(member.walletBalance || 0) : `R ${member.walletBalance?.toFixed(2) || '0.00'}`}</p>
+                        <p className="text-4xl font-bold">{isClient ? formatCurrency(member.walletBalance || 0) : '...'}</p>
                     )}
                 </CardContent>
             </Card>
