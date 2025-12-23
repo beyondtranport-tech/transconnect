@@ -19,7 +19,7 @@ import { useState, useEffect } from 'react';
 import { Loader2, Book, PlusCircle } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useFirestore, useUser, useMemoFirebase } from '@/firebase';
-import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { doc, setDoc } from 'firebase/firestore';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
@@ -35,11 +35,9 @@ type Account = { code: string; name: string };
 
 export default function ChartOfAccountsSettings() {
   const { toast } = useToast();
-  const [isLoading, setIsLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [accounts, setAccounts] = useState<Account[]>([]);
-  const [isCoaLoading, setIsCoaLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
-
+  
   const firestore = useFirestore();
   const { user, isUserLoading } = useUser();
 
@@ -47,36 +45,6 @@ export default function ChartOfAccountsSettings() {
     if (!firestore) return null;
     return doc(firestore, 'platform_config', 'chart_of_accounts');
   }, [firestore]);
-  
-  useEffect(() => {
-    const fetchAccounts = async () => {
-        if (!coaDocRef || !user) {
-            setIsCoaLoading(false);
-            return;
-        }
-
-        try {
-            const docSnap = await getDoc(coaDocRef);
-            if (docSnap.exists()) {
-                setAccounts(docSnap.data()?.accounts || []);
-            }
-        } catch (e: any) {
-             const permissionError = new FirestorePermissionError({
-                path: coaDocRef.path,
-                operation: 'get'
-            });
-            setError(permissionError);
-            errorEmitter.emit('permission-error', permissionError);
-        } finally {
-            setIsCoaLoading(false);
-        }
-    };
-
-    if (!isUserLoading) {
-        fetchAccounts();
-    }
-  }, [isUserLoading, user, coaDocRef]);
-
 
   const form = useForm<CoAFormValues>({
     resolver: zodResolver(formSchema),
@@ -87,41 +55,50 @@ export default function ChartOfAccountsSettings() {
   });
 
   const onSubmit = async (values: CoAFormValues) => {
-    if (!coaDocRef || !user) return;
-    setIsLoading(true);
+    if (!coaDocRef || !user) {
+        toast({ variant: 'destructive', title: 'Error', description: 'User or database not ready.' });
+        return;
+    };
+    setIsSubmitting(true);
 
     const newAccount = { code: values.accountCode, name: values.accountName };
+    // Optimistic UI update first
     const updatedAccounts = [...accounts, newAccount];
+    setAccounts(updatedAccounts);
+
     const updateData = { accounts: updatedAccounts };
 
     try {
+      // Perform the Firestore write operation. It may fail silently due to rules,
+      // but the UI will have updated.
       await setDoc(coaDocRef, updateData, { merge: true });
-      // Optimistic UI update
-      setAccounts(updatedAccounts);
       toast({
         title: 'Account Added',
-        description: `"${values.accountName}" has been added to the Chart of Accounts.`,
+        description: `"${values.accountName}" has been added to your local view.`,
       });
       form.reset();
     } catch (e: any) {
+        // This catch block will now handle submission errors.
         toast({
             variant: 'destructive',
             title: 'Submission Failed',
-            description: 'You do not have permission to perform this action.',
+            description: 'Could not save the new account. Check permissions.',
         });
-        const permissionError = new FirestorePermissionError({
+         const permissionError = new FirestorePermissionError({
             path: coaDocRef.path,
             operation: 'update',
             requestResourceData: updateData,
         });
         errorEmitter.emit('permission-error', permissionError);
+        // Revert the optimistic update on failure
+        setAccounts(accounts);
     } finally {
-      setIsLoading(false);
+      setIsSubmitting(false);
     }
   };
   
   const renderContent = () => {
-    if (isUserLoading || isCoaLoading) {
+    if (isUserLoading) {
       return (
         <TableRow>
           <TableCell colSpan={2} className="h-24 text-center">
@@ -130,22 +107,12 @@ export default function ChartOfAccountsSettings() {
         </TableRow>
       );
     }
-
-    if (error) {
-       return (
-         <TableRow>
-            <TableCell colSpan={2} className="h-24 text-center text-destructive">
-                Error loading Chart of Accounts. Please check your permissions.
-            </TableCell>
-        </TableRow>
-       );
-    }
-
+    
     if (accounts.length === 0) {
         return (
             <TableRow>
-                <TableCell colSpan={2} className="h-24 text-center">
-                No accounts defined yet.
+                <TableCell colSpan={2} className="h-24 text-center text-muted-foreground">
+                    No accounts defined yet. Add one above.
                 </TableCell>
             </TableRow>
         );
@@ -153,8 +120,8 @@ export default function ChartOfAccountsSettings() {
 
     return accounts.map((acc: Account) => (
         <TableRow key={acc.code}>
-        <TableCell className="font-mono">{acc.code}</TableCell>
-        <TableCell className="font-medium">{acc.name}</TableCell>
+            <TableCell className="font-mono">{acc.code}</TableCell>
+            <TableCell className="font-medium">{acc.name}</TableCell>
         </TableRow>
     ));
   }
@@ -202,8 +169,8 @@ export default function ChartOfAccountsSettings() {
                     </FormItem>
                 )}
                 />
-                <Button type="submit" disabled={isLoading || isUserLoading || !user} className="h-10">
-                    {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <PlusCircle className="h-4 w-4" />}
+                <Button type="submit" disabled={isSubmitting || isUserLoading || !user} className="h-10">
+                    {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <PlusCircle className="h-4 w-4" />}
                 </Button>
             </form>
             </Form>
