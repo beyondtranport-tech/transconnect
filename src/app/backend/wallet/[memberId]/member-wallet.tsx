@@ -12,7 +12,6 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 
@@ -33,6 +32,8 @@ export default function MemberWallet({ memberId }: { memberId: string }) {
     const [isPosting, setIsPosting] = useState(false);
     const [newRecordAmount, setNewRecordAmount] = useState<number | string>('');
     const [newRecordDescription, setNewRecordDescription] = useState('');
+    const [formattedBalance, setFormattedBalance] = useState<string | null>(null);
+
 
     const memberRef = useMemoFirebase(() => {
         if (!firestore || !memberId) return null;
@@ -40,6 +41,16 @@ export default function MemberWallet({ memberId }: { memberId: string }) {
     }, [firestore, memberId]);
 
     const { data: memberData, isLoading: isMemberLoading } = useDoc(memberRef);
+
+    useEffect(() => {
+        // This useEffect will run only on the client, after hydration
+        if (memberData !== null && memberData !== undefined) {
+            setFormattedBalance(formatCurrency(memberData.walletBalance ?? 0));
+        } else {
+            setFormattedBalance(formatCurrency(0));
+        }
+    }, [memberData]);
+
 
     const firstName = searchParams.get('firstName');
     const lastName = searchParams.get('lastName');
@@ -65,13 +76,10 @@ export default function MemberWallet({ memberId }: { memberId: string }) {
         
         const batch = writeBatch(firestore);
         
-        // 1. Update member's wallet balance
-        const memberRef = doc(firestore, 'members', memberId);
-        batch.update(memberRef, { walletBalance: increment(amount) });
-        
-        // 2. Create a new transaction document
+        const memberDocRef = doc(firestore, 'members', memberId);
         const transactionRef = doc(collection(firestore, 'transactions'));
-        const newTransaction = {
+        
+        const transactionData = {
             memberId: memberId,
             type: amount >= 0 ? 'credit' : 'debit',
             amount: Math.abs(amount),
@@ -84,7 +92,9 @@ export default function MemberWallet({ memberId }: { memberId: string }) {
             chartOfAccountsCode: '7000-ManualAdjustment',
             transactionId: transactionRef.id
         };
-        batch.set(transactionRef, newTransaction);
+
+        batch.update(memberDocRef, { walletBalance: increment(amount) });
+        batch.set(transactionRef, transactionData);
         
         try {
             await batch.commit();
@@ -95,9 +105,9 @@ export default function MemberWallet({ memberId }: { memberId: string }) {
             errorEmitter.emit(
                 'permission-error',
                 new FirestorePermissionError({
-                    path: `members/${memberId} & transactions`,
+                    path: `members/${memberId} & transactions collection`,
                     operation: 'write',
-                    requestResourceData: { walletUpdate: { walletBalance: increment(amount) }, transaction: newTransaction },
+                    requestResourceData: { walletUpdate: { walletBalance: increment(amount) }, transaction: transactionData },
                 })
             );
             toast({ variant: 'destructive', title: 'Posting Failed', description: error.message || 'Missing or insufficient permissions.' });
@@ -132,7 +142,7 @@ export default function MemberWallet({ memberId }: { memberId: string }) {
                 <CardContent>
                     <div className="flex items-baseline gap-2">
                          <h3 className="text-sm font-medium text-muted-foreground">Current Balance:</h3>
-                         <p className="text-3xl font-bold">{formatCurrency(memberData?.walletBalance ?? 0)}</p>
+                         <p className="text-3xl font-bold">{formattedBalance ?? 'R 0.00'}</p>
                     </div>
                 </CardContent>
             </Card>
@@ -177,4 +187,3 @@ export default function MemberWallet({ memberId }: { memberId: string }) {
         </div>
     );
 }
-
