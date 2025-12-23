@@ -15,6 +15,7 @@ export default function AccountDashboard() {
     const firestore = useFirestore();
 
     const memberRef = useMemoFirebase(() => {
+        // This is the critical guard: do not create the reference until user is loaded.
         if (isUserLoading || !firestore || !user) return null;
         return doc(firestore, 'members', user.uid);
     }, [firestore, user, isUserLoading]);
