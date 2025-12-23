@@ -40,11 +40,14 @@ service cloud.firestore {
 
     match /transactions/{transactionId} {
         allow get: if isOwner(resource.data.memberId) || isAdmin();
-        allow list: if isAdmin();
         // Allow admins to create transactions for any member.
         // Allow members to create their own (e.g., membership payments)
         allow create: if isAdmin() || isOwner(request.resource.data.memberId);
         allow update, delete: if isAdmin();
+    }
+    
+    match /transactions {
+        allow list: if isAdmin();
     }
 
     match /platform_config/{docId} {
