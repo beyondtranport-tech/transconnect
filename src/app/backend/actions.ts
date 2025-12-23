@@ -1,24 +1,21 @@
 
 'use server';
 
-import { getApps, initializeApp, cert, getApp } from 'firebase-admin/app';
+import { getApps, initializeApp, getApp } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import { credential } from 'firebase-admin';
 
 // Helper function to initialize Firebase Admin SDK idempotently.
 function initializeAdminApp() {
-  // Check if the default app is already initialized.
-  if (getApps().some(app => app.name === '[DEFAULT]')) {
-    return getApp();
+  if (getApps().length === 0) {
+    // This explicitly uses the Application Default Credentials from the hosting environment.
+    // This is the most reliable way to authenticate in a managed Google Cloud environment.
+    initializeApp({
+      credential: credential.applicationDefault(),
+    });
   }
-  
-  // This will use the GOOGLE_APPLICATION_CREDENTIALS environment variable
-  // or Application Default Credentials from the hosting environment.
-  // It is critical to call initializeApp() with the ADC credential in this environment.
-  return initializeApp({
-    credential: credential.applicationDefault(),
-  });
+  return getApp();
 }
 
 export async function deleteUser(uid: string): Promise<{ success: boolean; error?: string }> {
@@ -85,5 +82,3 @@ export async function saveAndPostReconciliation(allocatedTransactions: any[], re
         return { success: false, error: error.message || 'An unknown server error occurred during posting.' };
     }
 }
-
-    
