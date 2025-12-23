@@ -18,7 +18,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useState } from 'react';
 import { Loader2, Book, PlusCircle } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useFirestore, useDoc, useMemoFirebase } from '@/firebase';
+import { useFirestore, useDoc, useMemoFirebase, useUser } from '@/firebase';
 import { doc, setDoc } from 'firebase/firestore';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { errorEmitter } from '@/firebase/error-emitter';
@@ -36,11 +36,13 @@ export default function ChartOfAccountsSettings() {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const firestore = useFirestore();
+  const { user, isUserLoading } = useUser();
 
   const coaDocRef = useMemoFirebase(() => {
-    if (!firestore) return null;
+    // Do not attempt to create the reference until the user is loaded and confirmed.
+    if (!firestore || isUserLoading) return null;
     return doc(firestore, 'platform_config', 'chart_of_accounts');
-  }, [firestore]);
+  }, [firestore, isUserLoading]);
   
   const { data: coaData, isLoading: isCoaLoading, error } = useDoc(coaDocRef);
   
@@ -81,6 +83,47 @@ export default function ChartOfAccountsSettings() {
       setIsLoading(false);
     }
   };
+  
+  const renderContent = () => {
+    // Show a loader while the user object is loading or the CoA data is fetching.
+    if (isUserLoading || isCoaLoading) {
+      return (
+        <TableRow>
+          <TableCell colSpan={2} className="h-24 text-center">
+            <Loader2 className="mx-auto h-6 w-6 animate-spin text-muted-foreground" />
+          </TableCell>
+        </TableRow>
+      );
+    }
+
+    if (error) {
+       return (
+         <TableRow>
+            <TableCell colSpan={2} className="h-24 text-center text-destructive">
+                There was a problem loading Chart of Accounts. Ensure you have the correct permissions.
+            </TableCell>
+        </TableRow>
+       );
+    }
+
+    if (accounts.length === 0) {
+        return (
+            <TableRow>
+                <TableCell colSpan={2} className="h-24 text-center">
+                No accounts defined yet.
+                </TableCell>
+            </TableRow>
+        );
+    }
+
+    return accounts.map((acc: {code: string, name: string}) => (
+        <TableRow key={acc.code}>
+        <TableCell className="font-mono">{acc.code}</TableCell>
+        <TableCell className="font-medium">{acc.name}</TableCell>
+        </TableRow>
+    ));
+  }
+
 
   return (
     <Card className="w-full max-w-2xl">
@@ -124,7 +167,7 @@ export default function ChartOfAccountsSettings() {
                     </FormItem>
                 )}
                 />
-                <Button type="submit" disabled={isLoading} className="h-10">
+                <Button type="submit" disabled={isLoading || !user} className="h-10">
                     {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <PlusCircle className="h-4 w-4" />}
                 </Button>
             </form>
@@ -139,33 +182,7 @@ export default function ChartOfAccountsSettings() {
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {isCoaLoading && (
-                            <TableRow>
-                                <TableCell colSpan={2} className="h-24 text-center">
-                                    <Loader2 className="mx-auto h-6 w-6 animate-spin text-muted-foreground" />
-                                </TableCell>
-                            </TableRow>
-                        )}
-                        {error && (
-                            <TableRow>
-                                <TableCell colSpan={2} className="h-24 text-center text-destructive">
-                                    Error: {error.message}
-                                </TableCell>
-                            </TableRow>
-                        )}
-                        {!isCoaLoading && accounts.length === 0 && (
-                            <TableRow>
-                                <TableCell colSpan={2} className="h-24 text-center">
-                                No accounts defined yet.
-                                </TableCell>
-                            </TableRow>
-                        )}
-                        {accounts.map((acc: {code: string, name: string}) => (
-                             <TableRow key={acc.code}>
-                                <TableCell className="font-mono">{acc.code}</TableCell>
-                                <TableCell className="font-medium">{acc.name}</TableCell>
-                            </TableRow>
-                        ))}
+                        {renderContent()}
                     </TableBody>
                 </Table>
             </div>
