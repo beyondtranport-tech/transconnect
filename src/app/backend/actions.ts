@@ -15,7 +15,7 @@ function initializeAdminApp(): App {
     }
 
     try {
-        // IMPORTANT: The service-account.json must be present in the root directory.
+        // IMPORTANT: The service-account.json must be present in the project root.
         const serviceAccount = require('../../../service-account.json');
          return initializeApp({
             credential: cert(serviceAccount)
