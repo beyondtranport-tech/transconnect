@@ -25,8 +25,8 @@ import {
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { useRouter } from 'next/navigation';
-import { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useState, useEffect, Suspense } from 'react';
 import { useUser, useAuth } from '@/firebase';
 import { signOut } from 'firebase/auth';
 import AccountDashboard from './dashboard';
@@ -82,11 +82,19 @@ function SettingsContent() {
     )
 }
 
-export default function AccountPage() {
+
+function AccountPageContent() {
   const router = useRouter();
   const { user, isUserLoading } = useUser();
   const auth = useAuth();
-  const [activeView, setActiveView] = useState('dashboard');
+  
+  const searchParams = useSearchParams();
+  const initialView = searchParams.get('view') || 'dashboard';
+  const [activeView, setActiveView] = useState(initialView);
+  
+  useEffect(() => {
+    setActiveView(initialView);
+  }, [initialView]);
 
   useEffect(() => {
     if (!isUserLoading && !user) {
@@ -234,5 +242,14 @@ export default function AccountPage() {
         </div>
       </SidebarInset>
     </SidebarProvider>
+  );
+}
+
+
+export default function AccountPage() {
+  return (
+    <Suspense fallback={<div className="flex justify-center items-center min-h-[calc(100vh-8rem)]"><Loader2 className="h-16 w-16 animate-spin text-primary" /></div>}>
+      <AccountPageContent />
+    </Suspense>
   );
 }

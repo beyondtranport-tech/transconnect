@@ -7,6 +7,7 @@ import { Award, FileText, Gem, User, Loader2, DollarSign, HeartHandshake, ArrowR
 import { doc } from 'firebase/firestore';
 import { useDoc } from '@/firebase/firestore/use-doc';
 import Link from 'next/link';
+import RecentTransactions from './recent-transactions';
 
 export default function AccountDashboard() {
     const { user, isUserLoading } = useUser();
@@ -124,24 +125,8 @@ export default function AccountDashboard() {
             </div>
 
             <div className="mt-12">
-                 <Card>
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                           <DollarSign className="h-6 w-6" />
-                           Recent Transactions
-                        </CardTitle>
-                        <CardDescription>View your membership payments and marketplace history.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="text-center py-10">
-                        <p className="text-muted-foreground">You have no transactions yet.</p>
-                    </CardContent>
-                    <CardFooter>
-                        <Button variant="outline">View All Transactions</Button>
-                    </CardFooter>
-                </Card>
+                 <RecentTransactions />
             </div>
         </div>
     );
 }
-
-    
