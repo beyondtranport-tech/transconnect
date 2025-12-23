@@ -15,8 +15,8 @@ service cloud.firestore {
     }
     
     function isAdmin() {
-      // Check for a custom claim `admin` on the user's token.
-      // This is more secure and scalable than hardcoding UIDs.
+      // This function relies on a custom claim which is not being used in this application.
+      // It is kept for reference but isRequestingUserAdmin is the primary method.
       return request.auth.token.admin == true;
     }
     
@@ -38,8 +38,7 @@ service cloud.firestore {
     function isUpdatingAllowedFields() {
       let allowedToUpdate = ['firstName', 'lastName', 'phone', 'companyName'];
       let incomingKeys = request.resource.data.keys();
-      // This ensures a user can only update a subset of fields, and nothing more.
-      // It prevents them from adding fields like 'admin' or changing their membership.
+      // This ensures a user can only update a subset of their own fields.
       return incomingKeys.hasAll(allowedToUpdate) && incomingKeys.size() == allowedToUpdate.size();
     }
     
@@ -56,7 +55,7 @@ service cloud.firestore {
       allow list: if isRequestingUserAdmin();
       allow create: if isOwner(memberId) && hasValidMemberId(memberId);
       
-      // Allow admins to update any field, and users to update their own allowed fields.
+      // Allow admins to update any field, and users to update a specific subset of their own fields.
       allow update: if isRequestingUserAdmin() || isOwnerUpdatingAllowedFields(memberId);
 
       allow delete: if isRequestingUserAdmin();
