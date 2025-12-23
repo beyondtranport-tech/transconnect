@@ -15,7 +15,6 @@ service cloud.firestore {
       allow get: if isOwner(memberId) || isAdmin();
       allow list: if isAdmin();
       allow create: if isOwner(memberId);
-      // Admin can update any member document (e.g., wallet balance)
       allow update: if isOwner(memberId) || isAdmin(); 
       allow delete: if isAdmin();
     }
@@ -34,17 +33,17 @@ service cloud.firestore {
      match /financeApplications/{applicationId} {
       allow get: if isOwner(resource.data.applicantId) || isAdmin();
       allow list: if isAdmin();
-      allow create: if isOwner(request.resource.data.applicantId) || isAdmin();
+      allow create: if isOwner(request.resource.data.applicantId);
       allow update: if isOwner(resource.data.applicantId) || isAdmin();
       allow delete: if isAdmin();
     }
 
     match /transactions/{transactionId} {
       allow get: if isOwner(resource.data.memberId) || isAdmin();
-      // Allow admin to list transactions for a specific member, but not all transactions
-      allow list: if isAdmin() && request.query.keys().hasAny(['where']) && request.query.where[0][0] == 'memberId';
-      allow create: if isAdmin(); // Admin can create manual transactions
-      allow update, delete: if isAdmin();
+      // Admins can list transactions. The client-side query should filter by memberId.
+      allow list: if isAdmin();
+      // Allow admin to create/update/delete transactions.
+      allow write: if isAdmin();
     }
 
     match /platform_config/{docId} {
