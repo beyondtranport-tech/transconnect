@@ -40,7 +40,7 @@ import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import MembersList from './members-list';
 import Link from 'next/link';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import ContributionsList from './contributions-list';
 import WalletManagementList from './wallet-management-list';
 import FinanceApplicationsList from './finance-applications-list';
