@@ -67,10 +67,8 @@ service cloud.firestore {
       allow list: if isRequestingUserAdmin();
       allow create: if isOwner(memberId) && hasValidMemberId(memberId);
       
-      // Allow admins to update wallets, and users to update their own allowed fields.
-      allow update: if isRequestingUserAdmin() || 
-                      isOwnerUpdatingAllowedFields(memberId) ||
-                      isUpdatingOwnMembershipOrPoints(memberId);
+      // Allow admins to update any field, and users to update their own allowed fields.
+      allow update: if isRequestingUserAdmin() || isOwnerUpdatingAllowedFields(memberId);
 
       allow delete: if isRequestingUserAdmin();
     }
