@@ -57,8 +57,9 @@ service cloud.firestore {
       allow list: if isRequestingUserAdmin();
       allow create: if isOwner(memberId) && hasValidMemberId(memberId);
       
-      // Allow admins to update any field, and users to update a specific subset of their own fields.
-      allow update: if isRequestingUserAdmin() || isOwnerUpdatingAllowedFields(memberId);
+      // An admin can update any member document.
+      // A regular user can only update a specific subset of their own fields.
+      allow update: if (isRequestingUserAdmin()) || (isOwner(memberId) && isUpdatingAllowedFields());
 
       allow delete: if isRequestingUserAdmin();
     }
