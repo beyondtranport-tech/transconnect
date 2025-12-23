@@ -44,7 +44,6 @@ import MembersList from './members-list';
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import ContributionsList from './contributions-list';
-import WalletManagementList from './wallet-management-list';
 import FinanceApplicationsList from './finance-applications-list';
 import { useUser } from '@/firebase';
 import { signOut } from 'firebase/auth';
@@ -160,8 +159,6 @@ export default function BackendPage() {
         return <DivisionsContent />;
       case 'contributions':
         return <ContributionsContent />;
-      case 'wallet-management':
-        return <WalletManagementList />;
       case 'reconciliation':
         return <ReconciliationPage />;
       case 'dashboard':
@@ -230,12 +227,6 @@ export default function BackendPage() {
                 <SidebarMenuButton tooltip="Contributions" isActive={activeView === 'contributions'} onClick={() => setActiveView('contributions')}>
                   <HeartHandshake />
                   <span>Contributions</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Wallet Management" isActive={activeView === 'wallet-management'} onClick={() => setActiveView('wallet-management')}>
-                  <Wallet />
-                  <span>Wallet Management</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
                <SidebarMenuItem>

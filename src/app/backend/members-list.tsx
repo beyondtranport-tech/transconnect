@@ -5,7 +5,7 @@ import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebas
 import { collection, doc } from 'firebase/firestore';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Loader2, Trash2 } from 'lucide-react';
+import { Loader2, Trash2, Wallet } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { deleteUser } from './actions';
@@ -21,6 +21,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
+import Link from 'next/link';
 
 export default function MembersList() {
     const firestore = useFirestore();
@@ -32,7 +33,7 @@ export default function MembersList() {
         return collection(firestore, 'members');
     }, [firestore, user]);
     
-    const { data: members, isLoading, error, setData: setMembers } = useCollection(membersCollectionRef);
+    const { data: members, isLoading, error } = useCollection(membersCollectionRef);
 
     const handleDelete = async (memberId: string, email: string | undefined) => {
         // Prevent admin from deleting themselves
@@ -144,7 +145,13 @@ export default function MembersList() {
                                             </Badge>
                                         )}
                                     </TableCell>
-                                    <TableCell className="text-right">
+                                    <TableCell className="text-right space-x-2">
+                                         <Button asChild variant="outline" size="sm">
+                                            <Link href={`/backend/wallet/${member.id}`}>
+                                                <Wallet className="h-4 w-4 mr-2" />
+                                                Manage Wallet
+                                            </Link>
+                                        </Button>
                                         <AlertDialog>
                                             <AlertDialogTrigger asChild>
                                                 <Button variant="ghost" size="icon" disabled={user?.uid === member.id}>
