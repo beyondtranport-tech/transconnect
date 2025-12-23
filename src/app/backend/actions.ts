@@ -4,32 +4,46 @@
 import { getApps, initializeApp, getApp, App, cert } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { getFirestore, Timestamp, FieldValue, increment } from 'firebase-admin/firestore';
+import * as fs from 'fs';
+import * as path from 'path';
 
-// Statically import the service account key.
-// IMPORTANT: The service-account.json must be present in the project root.
-import serviceAccount from '../../../service-account.json';
+let adminApp: App | null = null;
+let adminAppError: Error | null = null;
 
-let adminApp: App;
+try {
+  if (!getApps().some(app => app.name === 'firebase-admin-app-transconnect-backend')) {
+    const serviceAccountPath = path.resolve(process.cwd(), 'service-account.json');
+    
+    if (fs.existsSync(serviceAccountPath)) {
+        const serviceAccount = JSON.parse(fs.readFileSync(serviceAccountPath, 'utf8'));
+        adminApp = initializeApp({
+            credential: cert(serviceAccount)
+        }, 'firebase-admin-app-transconnect-backend');
+    } else {
+        throw new Error('Firebase service-account.json not found in the project root. Backend administrative actions will fail. Please add your service account credentials to enable this functionality.');
+    }
+  } else {
+    adminApp = getApp('firebase-admin-app-transconnect-backend');
+  }
+} catch (error: any) {
+    console.error("Failed to initialize Firebase Admin SDK:", error.message);
+    adminAppError = error;
+}
 
-// Initialize Firebase Admin SDK only once.
-if (!getApps().some(app => app.name === 'firebase-admin-app-transconnect-backend')) {
-  adminApp = initializeApp({
-    credential: cert(serviceAccount)
-  }, 'firebase-admin-app-transconnect-backend');
-} else {
-  adminApp = getApp('firebase-admin-app-transconnect-backend');
+function getSafeAdminApp() {
+    if (adminAppError) throw adminAppError;
+    if (!adminApp) throw new Error("Firebase Admin SDK is not initialized.");
+    return adminApp;
 }
 
 
 export async function deleteUser(uid: string): Promise<{ success: boolean; error?: string }> {
   try {
-    const auth = getAuth(adminApp);
-    const firestore = getFirestore(adminApp);
+    const app = getSafeAdminApp();
+    const auth = getAuth(app);
+    const firestore = getFirestore(app);
 
-    // Step 1: Delete the user from Firebase Authentication.
     await auth.deleteUser(uid);
-    
-    // Step 2: Delete the user's document from the 'members' collection in Firestore.
     const memberDocRef = firestore.collection('members').doc(uid);
     await memberDocRef.delete();
 
@@ -42,7 +56,8 @@ export async function deleteUser(uid: string): Promise<{ success: boolean; error
 
 export async function getTransactionsForMember(memberId: string): Promise<{ success: boolean; data?: any[]; error?: string }> {
     try {
-        const firestore = getFirestore(adminApp);
+        const app = getSafeAdminApp();
+        const firestore = getFirestore(app);
         const transactionsSnap = await firestore.collection('transactions').where('memberId', '==', memberId).orderBy('date', 'desc').get();
         
         if (transactionsSnap.empty) {
@@ -54,7 +69,6 @@ export async function getTransactionsForMember(memberId: string): Promise<{ succ
             return {
                 id: doc.id,
                 ...data,
-                // Convert Firestore Timestamps to ISO strings for serialization
                 date: (data.date as Timestamp).toDate().toISOString(),
                 postedAt: data.postedAt ? (data.postedAt as Timestamp).toDate().toISOString() : null,
             };
@@ -75,8 +89,8 @@ export async function createManualTransaction(
     transactionData: { amount: number; description: string; date: Date; type: 'credit' | 'debit' }
 ): Promise<{ success: boolean; error?: string }> {
     try {
-        const firestore = getFirestore(adminApp);
-        
+        const app = getSafeAdminApp();
+        const firestore = getFirestore(app);
         const batch = firestore.batch();
         
         const memberRef = firestore.collection('members').doc(memberId);
@@ -84,10 +98,8 @@ export async function createManualTransaction(
         
         const transactionAmount = transactionData.type === 'credit' ? transactionData.amount : -transactionData.amount;
         
-        // 1. Update member's wallet balance
         batch.update(memberRef, { walletBalance: increment(transactionAmount) });
         
-        // 2. Create the new transaction record
         const newTransaction = {
             reconciliationId: 'manual-admin-entry',
             memberId: memberId,
@@ -100,7 +112,7 @@ export async function createManualTransaction(
             isAdjustment: true,
             postedAt: FieldValue.serverTimestamp(),
             postedBy: adminUserId,
-            transactionId: transactionRef.id // Use the auto-generated doc ID
+            transactionId: transactionRef.id
         };
         batch.set(transactionRef, newTransaction);
         
@@ -112,4 +124,3 @@ export async function createManualTransaction(
         return { success: false, error: error.message || 'An unknown server error occurred.' };
     }
 }
-
