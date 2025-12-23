@@ -18,8 +18,8 @@ import { useToast } from '@/hooks/use-toast';
 import { useState, useEffect } from 'react';
 import { Loader2, Book, PlusCircle } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useFirestore, useDoc, useMemoFirebase, useUser } from '@/firebase';
-import { doc, setDoc } from 'firebase/firestore';
+import { useFirestore, useUser, useMemoFirebase } from '@/firebase';
+import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
@@ -31,22 +31,52 @@ const formSchema = z.object({
 });
 
 type CoAFormValues = z.infer<typeof formSchema>;
+type Account = { code: string; name: string };
 
 export default function ChartOfAccountsSettings() {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const [accounts, setAccounts] = useState<Account[]>([]);
+  const [isCoaLoading, setIsCoaLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+
   const firestore = useFirestore();
   const { user, isUserLoading } = useUser();
 
   const coaDocRef = useMemoFirebase(() => {
-    // Do not attempt to create the reference until the user is loaded and confirmed.
-    if (!firestore || isUserLoading || !user) return null;
+    if (!firestore) return null;
     return doc(firestore, 'platform_config', 'chart_of_accounts');
-  }, [firestore, isUserLoading, user]);
+  }, [firestore]);
   
-  const { data: coaData, isLoading: isCoaLoading, error } = useDoc(coaDocRef);
-  
-  const accounts = coaData?.accounts || [];
+  useEffect(() => {
+    const fetchAccounts = async () => {
+        if (!coaDocRef || !user) {
+            setIsCoaLoading(false);
+            return;
+        }
+
+        try {
+            const docSnap = await getDoc(coaDocRef);
+            if (docSnap.exists()) {
+                setAccounts(docSnap.data()?.accounts || []);
+            }
+        } catch (e: any) {
+             const permissionError = new FirestorePermissionError({
+                path: coaDocRef.path,
+                operation: 'get'
+            });
+            setError(permissionError);
+            errorEmitter.emit('permission-error', permissionError);
+        } finally {
+            setIsCoaLoading(false);
+        }
+    };
+
+    if (!isUserLoading) {
+        fetchAccounts();
+    }
+  }, [isUserLoading, user, coaDocRef]);
+
 
   const form = useForm<CoAFormValues>({
     resolver: zodResolver(formSchema),
@@ -57,28 +87,34 @@ export default function ChartOfAccountsSettings() {
   });
 
   const onSubmit = async (values: CoAFormValues) => {
-    if (!coaDocRef) return;
+    if (!coaDocRef || !user) return;
     setIsLoading(true);
 
     const newAccount = { code: values.accountCode, name: values.accountName };
     const updatedAccounts = [...accounts, newAccount];
-
     const updateData = { accounts: updatedAccounts };
 
     try {
       await setDoc(coaDocRef, updateData, { merge: true });
+      // Optimistic UI update
+      setAccounts(updatedAccounts);
       toast({
         title: 'Account Added',
         description: `"${values.accountName}" has been added to the Chart of Accounts.`,
       });
       form.reset();
     } catch (e: any) {
-        // Fallback for direct errors, though the hook's emitter should catch it.
         toast({
             variant: 'destructive',
             title: 'Submission Failed',
-            description: 'You do not have permission to submit this data.',
+            description: 'You do not have permission to perform this action.',
         });
+        const permissionError = new FirestorePermissionError({
+            path: coaDocRef.path,
+            operation: 'update',
+            requestResourceData: updateData,
+        });
+        errorEmitter.emit('permission-error', permissionError);
     } finally {
       setIsLoading(false);
     }
@@ -95,12 +131,11 @@ export default function ChartOfAccountsSettings() {
       );
     }
 
-    // Direct error display instead of relying on the hook's state to throw
     if (error) {
        return (
          <TableRow>
             <TableCell colSpan={2} className="h-24 text-center text-destructive">
-                Error: {error.message}. Please check security rules for 'platform_config'.
+                Error loading Chart of Accounts. Please check your permissions.
             </TableCell>
         </TableRow>
        );
@@ -116,7 +151,7 @@ export default function ChartOfAccountsSettings() {
         );
     }
 
-    return accounts.map((acc: {code: string, name: string}) => (
+    return accounts.map((acc: Account) => (
         <TableRow key={acc.code}>
         <TableCell className="font-mono">{acc.code}</TableCell>
         <TableCell className="font-medium">{acc.name}</TableCell>
@@ -167,7 +202,7 @@ export default function ChartOfAccountsSettings() {
                     </FormItem>
                 )}
                 />
-                <Button type="submit" disabled={isLoading || !user} className="h-10">
+                <Button type="submit" disabled={isLoading || isUserLoading || !user} className="h-10">
                     {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <PlusCircle className="h-4 w-4" />}
                 </Button>
             </form>
