@@ -30,6 +30,7 @@ import {
   HeartHandshake,
   Wallet,
   Banknote,
+  Book,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -44,6 +45,7 @@ import FinanceApplicationsList from './finance-applications-list';
 import { useAuth } from '@/firebase';
 import { signOut } from 'firebase/auth';
 import BankDetailsSettings from './bank-details-settings';
+import ChartOfAccountsSettings from './chart-of-accounts-settings';
 
 
 // Placeholder Content Components
@@ -55,6 +57,20 @@ function DashboardContent() {
         </div>
     )
 }
+
+function PlatformSettingsContent() {
+    return (
+        <div className="space-y-8">
+             <div>
+                <h1 className="text-2xl font-bold">Platform Settings</h1>
+                <p className="mt-2 text-muted-foreground">Manage central configurations for the TransConnect platform.</p>
+            </div>
+            <ChartOfAccountsSettings />
+            <BankDetailsSettings />
+        </div>
+    )
+}
+
 
 function PlatformLogsContent() {
     return (
@@ -117,8 +133,8 @@ export default function BackendPage() {
         return <PlatformLogsContent />;
       case 'platform-tasks':
         return <PlatformTasksContent />;
-      case 'bank-details-settings':
-        return <BankDetailsSettings />;
+      case 'platform-settings':
+        return <PlatformSettingsContent />;
       case 'revenue-pricing':
         return <RevenuePricingContent />;
       case 'revenue-transactions':
@@ -178,6 +194,10 @@ export default function BackendPage() {
                         <span>Platform</span>
                     </SidebarMenuButton>
                     <SidebarMenuSub>
+                        <SidebarMenuSubButton isActive={activeView === 'platform-settings'} onClick={() => setActiveView('platform-settings')}>
+                            <Settings />
+                            <span>Settings</span>
+                        </SidebarMenuSubButton>
                         <SidebarMenuSubButton isActive={activeView === 'platform-logs'} onClick={() => setActiveView('platform-logs')}>
                             <FileText />
                             <span>Logs</span>
@@ -185,10 +205,6 @@ export default function BackendPage() {
                         <SidebarMenuSubButton isActive={activeView === 'platform-tasks'} onClick={() => setActiveView('platform-tasks')}>
                             <ListTodo />
                             <span>Tasks</span>
-                        </SidebarMenuSubButton>
-                        <SidebarMenuSubButton isActive={activeView === 'bank-details-settings'} onClick={() => setActiveView('bank-details-settings')}>
-                            <Banknote />
-                            <span>Bank Details</span>
                         </SidebarMenuSubButton>
                     </SidebarMenuSub>
                 </SidebarMenuItem>

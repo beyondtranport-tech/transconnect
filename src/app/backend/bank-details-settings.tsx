@@ -69,7 +69,7 @@ export default function BankDetailsSettings() {
                 <div>
                     <CardTitle>Platform Bank Details</CardTitle>
                     <CardDescription>
-                        Set the central bank account details for the TransConnect platform. Members will use this information to make EFT payments to top up their wallets.
+                        Set the central bank account details for EFT payments.
                     </CardDescription>
                 </div>
             </div>

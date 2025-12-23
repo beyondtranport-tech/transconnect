@@ -104,10 +104,8 @@ service cloud.firestore {
     }
 
     match /platform_config/{docId} {
-      // CORRECTED RULE: Allow access if the user's email is the designated admin email. This breaks the circular dependency.
-      allow get, list, create, update, delete: if request.auth != null && request.auth.token.email == 'transconnect@gmail.com';
+      // Only the admin should be able to read and write to the platform configuration.
+      allow read, write: if isAdmin();
     }
   }
 }
-
-    
