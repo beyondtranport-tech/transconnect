@@ -9,7 +9,7 @@ import { Loader2, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import MemberWallet from './member-wallet';
-import { Suspense } from 'react';
+import { Suspense, useMemo } from 'react';
 
 function MemberWalletPageComponent() {
     const params = useParams();
@@ -61,7 +61,7 @@ function MemberWalletPageComponent() {
                 <MemberWallet member={memberData} initialTransactions={transactions || []} />
             )}
 
-            {!areTransactionsLoading && !memberData.id && (
+            {!areTransactionsLoading && !memberData?.id && (
                 <Card>
                     <CardHeader>
                         <CardTitle>Member Not Found</CardTitle>
