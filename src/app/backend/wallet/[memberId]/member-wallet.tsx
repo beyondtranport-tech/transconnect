@@ -268,30 +268,36 @@ export default function MemberWallet({ member, initialTransactions }: MemberWall
                     <CardDescription>A complete log of all wallet transactions for this member, with a running balance.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Date</TableHead>
-                                <TableHead>Description</TableHead>
-                                <TableHead>Transaction ID</TableHead>
-                                <TableHead className="text-right">Amount</TableHead>
-                                <TableHead className="text-right">Balance</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {transactionsWithBalance.map(tx => (
-                                <TableRow key={tx.id}>
-                                    <TableCell>{formatDate(tx.date)}</TableCell>
-                                    <TableCell className="capitalize">{tx.description}</TableCell>
-                                    <TableCell className="font-mono text-xs">{tx.transactionId}</TableCell>
-                                    <TableCell className={`text-right font-mono ${tx.amount === 0 ? '' : tx.type === 'credit' ? 'text-green-600' : 'text-destructive'}`}>
-                                        {tx.amount === 0 ? formatCurrency(0) : (tx.type === 'credit' ? `+${formatCurrency(tx.amount)}` : `-${formatCurrency(tx.amount)}`)}
-                                    </TableCell>
-                                     <TableCell className="text-right font-mono font-semibold">{formatCurrency(tx.runningBalance)}</TableCell>
+                    {isMounted ? (
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Date</TableHead>
+                                    <TableHead>Description</TableHead>
+                                    <TableHead>Transaction ID</TableHead>
+                                    <TableHead className="text-right">Amount</TableHead>
+                                    <TableHead className="text-right">Balance</TableHead>
                                 </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
+                            </TableHeader>
+                            <TableBody>
+                                {transactionsWithBalance.map(tx => (
+                                    <TableRow key={tx.id}>
+                                        <TableCell>{formatDate(tx.date)}</TableCell>
+                                        <TableCell className="capitalize">{tx.description}</TableCell>
+                                        <TableCell className="font-mono text-xs">{tx.transactionId}</TableCell>
+                                        <TableCell className={`text-right font-mono ${tx.amount === 0 ? '' : tx.type === 'credit' ? 'text-green-600' : 'text-destructive'}`}>
+                                            {tx.amount === 0 ? formatCurrency(0) : (tx.type === 'credit' ? `+${formatCurrency(tx.amount)}` : `-${formatCurrency(tx.amount)}`)}
+                                        </TableCell>
+                                        <TableCell className="text-right font-mono font-semibold">{formatCurrency(tx.runningBalance)}</TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    ) : (
+                        <div className="flex justify-center items-center py-10">
+                            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                        </div>
+                    )}
                      {initialTransactions.length === 0 && (
                         <p className="text-center text-muted-foreground py-10">No transactions found for this member.</p>
                     )}
@@ -300,3 +306,5 @@ export default function MemberWallet({ member, initialTransactions }: MemberWall
         </div>
     );
 }
+
+    
