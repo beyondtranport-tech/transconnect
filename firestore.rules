@@ -59,9 +59,8 @@ service cloud.firestore {
     }
     
     function isAdminManagingWallet() {
-        // Allow an admin to update walletBalance and financeApplicationIds.
-        let allowedAdminKeys = ['walletBalance', 'financeApplicationIds'];
-        return isRequestingUserAdmin() && request.resource.data.keys().hasAny(allowedAdminKeys);
+      // Allow an admin to update any field if they are an admin.
+      return isRequestingUserAdmin();
     }
 
     // ----------------------------------------------------------------------
