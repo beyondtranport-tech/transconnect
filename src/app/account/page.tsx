@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -97,14 +98,15 @@ function AccountPageContent() {
   }, [initialView]);
 
   useEffect(() => {
-    if (!isUserLoading) {
-      if (user) {
-        if (user.email === 'transconnect@gmail.com') {
-          router.replace('/backend');
-        }
-      } else {
-        router.replace('/signin');
+    if (isUserLoading) {
+      return; // Do nothing while loading
+    }
+    if (user) {
+      if (user.email === 'transconnect@gmail.com') {
+        router.replace('/backend');
       }
+    } else {
+      router.replace('/signin');
     }
   }, [user, isUserLoading, router]);
 
@@ -142,6 +144,8 @@ function AccountPageContent() {
     }
   }
 
+  // This is the guard that prevents rendering for admin or non-users,
+  // showing a loader while the redirect effect runs.
   if (isUserLoading || !user || user.email === 'transconnect@gmail.com') {
     return (
         <div className="flex justify-center items-center min-h-[calc(100vh-8rem)]">
