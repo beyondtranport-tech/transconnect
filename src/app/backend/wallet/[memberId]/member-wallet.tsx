@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -11,24 +10,30 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore, useUser } from '@/firebase';
-import { writeBatch, doc, collection, serverTimestamp, increment } from 'firebase/firestore';
-import { Loader2, PlusCircle } from 'lucide-react';
+import { writeBatch, doc, collection, serverTimestamp, increment, Timestamp } from 'firebase/firestore';
+import { Loader2, PlusCircle, Calendar as CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { DocumentData } from 'firebase/firestore';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { cn } from '@/lib/utils';
 
 const formatCurrency = (amount: number) => new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(amount);
 const formatDate = (timestamp: any) => timestamp && timestamp.toDate ? format(timestamp.toDate(), "yyyy-MM-dd HH:mm") : 'N/A';
 
-const adjustmentSchema = z.object({
+const transactionSchema = z.object({
+  date: z.date({
+    required_error: "A date is required.",
+  }),
   type: z.enum(['credit', 'debit']),
   amount: z.coerce.number().positive('Amount must be positive'),
   description: z.string().min(1, 'Description is required'),
+  transactionId: z.string().min(1, 'A reference/ID is required'),
 });
 
-type AdjustmentFormValues = z.infer<typeof adjustmentSchema>;
+type TransactionFormValues = z.infer<typeof transactionSchema>;
 
 interface MemberWalletProps {
     member: DocumentData;
@@ -46,12 +51,12 @@ export default function MemberWallet({ member, initialTransactions }: MemberWall
         setIsMounted(true);
     }, []);
     
-    const form = useForm<AdjustmentFormValues>({
-        resolver: zodResolver(adjustmentSchema),
-        defaultValues: { type: 'credit', amount: 0, description: '' },
+    const form = useForm<TransactionFormValues>({
+        resolver: zodResolver(transactionSchema),
+        defaultValues: { type: 'credit', amount: 0, description: '', date: new Date(), transactionId: '' },
     });
 
-    const handleAdjustment = async (values: AdjustmentFormValues) => {
+    const handleAddRecord = async (values: TransactionFormValues) => {
         if (!firestore || !adminUser) {
             toast({ variant: 'destructive', title: 'Error', description: 'Not authenticated.' });
             return;
@@ -72,26 +77,37 @@ export default function MemberWallet({ member, initialTransactions }: MemberWall
             memberId: member.id,
             type: values.type,
             amount: values.amount,
-            date: serverTimestamp(),
+            date: Timestamp.fromDate(values.date),
             description: values.description,
             status: 'allocated',
             chartOfAccountsCode: '7000-ManualAdjustment',
             isAdjustment: true,
             postedBy: adminUser.uid,
-            transactionId: `ADJ-${newTransactionRef.id.substring(0, 8).toUpperCase()}`
+            transactionId: values.transactionId,
+            createdAt: serverTimestamp()
         });
 
         try {
             await batch.commit();
             toast({ title: 'Success', description: 'Wallet has been updated and transaction recorded.' });
-            form.reset();
-            // Note: The UI will update automatically thanks to the real-time listener on the parent page.
+            form.reset({ type: 'credit', amount: 0, description: '', date: new Date(), transactionId: '' });
+            // Note: The UI will update automatically on the next page load or with a real-time listener.
+            // For now, we recommend a page refresh to see the new transaction.
         } catch (error: any) {
             toast({ variant: 'destructive', title: 'Error', description: error.message });
         } finally {
             setIsSubmitting(false);
         }
     };
+
+    // Calculate cumulative balance
+    const sortedTransactions = [...initialTransactions].sort((a, b) => a.date.toDate() - b.date.toDate());
+    let runningBalance = 0;
+    const transactionsWithBalance = sortedTransactions.map(tx => {
+        const amount = tx.type === 'credit' ? tx.amount : -tx.amount;
+        runningBalance += amount;
+        return { ...tx, runningBalance };
+    }).reverse(); // Reverse back for descending chronological display
 
     return (
         <div className="space-y-8">
@@ -114,47 +130,114 @@ export default function MemberWallet({ member, initialTransactions }: MemberWall
 
             <Card>
                 <CardHeader>
-                    <CardTitle>Manual Wallet Adjustment</CardTitle>
+                    <CardTitle>Add New Transaction Record</CardTitle>
                     <CardDescription>
-                        Manually add a credit or debit to this member's wallet. This will create a corresponding transaction record.
+                        Manually add a credit or debit transaction to this member's wallet ledger.
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <form onSubmit={form.handleSubmit(handleAdjustment)} className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
-                        <div className="space-y-2">
-                            <Label htmlFor="type">Type</Label>
-                            <Select onValueChange={(value) => form.setValue('type', value as 'credit' | 'debit')} defaultValue="credit">
-                                <SelectTrigger id="type">
-                                    <SelectValue placeholder="Select type" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="credit">Credit (Add Funds)</SelectItem>
-                                    <SelectItem value="debit">Debit (Remove Funds)</SelectItem>
-                                </SelectContent>
-                            </Select>
+                    <form onSubmit={form.handleSubmit(handleAddRecord)} className="space-y-4">
+                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 items-start">
+                             <div className="space-y-2">
+                                <Label>Transaction Date</Label>
+                                 <FormField
+                                    control={form.control}
+                                    name="date"
+                                    render={({ field }) => (
+                                        <FormItem className="flex flex-col">
+                                        <Popover>
+                                            <PopoverTrigger asChild>
+                                            <FormControl>
+                                                <Button
+                                                variant={"outline"}
+                                                className={cn(
+                                                    "w-full pl-3 text-left font-normal",
+                                                    !field.value && "text-muted-foreground"
+                                                )}
+                                                >
+                                                {field.value ? (
+                                                    format(field.value, "PPP")
+                                                ) : (
+                                                    <span>Pick a date</span>
+                                                )}
+                                                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                                </Button>
+                                            </FormControl>
+                                            </PopoverTrigger>
+                                            <PopoverContent className="w-auto p-0" align="start">
+                                            <Calendar
+                                                mode="single"
+                                                selected={field.value}
+                                                onSelect={field.onChange}
+                                                disabled={(date) =>
+                                                date > new Date() || date < new Date("1900-01-01")
+                                                }
+                                                initialFocus
+                                            />
+                                            </PopoverContent>
+                                        </Popover>
+                                        <FormMessage />
+                                        </FormItem>
+                                    )}
+                                    />
+                             </div>
+                              <div className="space-y-2">
+                                <Label>Type</Label>
+                                <FormField
+                                    control={form.control}
+                                    name="type"
+                                    render={({ field }) => (
+                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                            <FormControl>
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="Select type" />
+                                                </SelectTrigger>
+                                            </FormControl>
+                                            <SelectContent>
+                                                <SelectItem value="credit">Credit (Add Funds)</SelectItem>
+                                                <SelectItem value="debit">Debit (Remove Funds)</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    )}
+                                />
+                             </div>
+                             <div className="space-y-2">
+                                <Label>Amount (ZAR)</Label>
+                                <FormField
+                                    control={form.control}
+                                    name="amount"
+                                    render={({ field }) => <Input type="number" step="0.01" {...field} />}
+                                />
+                             </div>
+                             <div className="space-y-2 md:col-span-2">
+                                <Label>Description</Label>
+                                <FormField
+                                    control={form.control}
+                                    name="description"
+                                    render={({ field }) => <Input placeholder="e.g., Prize money, refund, etc." {...field} />}
+                                />
+                             </div>
+                             <div className="space-y-2">
+                                <Label>Reference / ID</Label>
+                                <FormField
+                                    control={form.control}
+                                    name="transactionId"
+                                    render={({ field }) => <Input placeholder="e.g., ADJ-001" {...field} />}
+                                />
+                             </div>
                         </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="amount">Amount (ZAR)</Label>
-                            <Input id="amount" type="number" step="0.01" {...form.register('amount')} />
-                        </div>
-                        <div className="space-y-2">
-                             <Label htmlFor="description">Description</Label>
-                            <Input id="description" {...form.register('description')} placeholder="e.g., Prize money, refund, etc." />
-                        </div>
-                        <Button type="submit" disabled={isSubmitting}>
+                        <Button type="submit" disabled={isSubmitting} className="mt-4">
                             {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PlusCircle className="mr-2 h-4 w-4" />}
-                            Apply Adjustment
+                            Add Record
                         </Button>
                     </form>
-                    {form.formState.errors.amount && <p className="text-destructive text-sm mt-2">{form.formState.errors.amount.message}</p>}
-                    {form.formState.errors.description && <p className="text-destructive text-sm mt-2">{form.formState.errors.description.message}</p>}
                 </CardContent>
             </Card>
 
             <Card>
                 <CardHeader>
                     <CardTitle>Transaction History</CardTitle>
-                    <CardDescription>A complete log of all wallet transactions for this member.</CardDescription>
+                    <CardDescription>A complete log of all wallet transactions for this member, with a running balance.</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <Table>
@@ -164,10 +247,11 @@ export default function MemberWallet({ member, initialTransactions }: MemberWall
                                 <TableHead>Description</TableHead>
                                 <TableHead>Transaction ID</TableHead>
                                 <TableHead className="text-right">Amount</TableHead>
+                                <TableHead className="text-right">Balance</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {initialTransactions.map(tx => (
+                            {transactionsWithBalance.map(tx => (
                                 <TableRow key={tx.id}>
                                     <TableCell>{formatDate(tx.date)}</TableCell>
                                     <TableCell className="capitalize">{tx.description}</TableCell>
@@ -175,6 +259,7 @@ export default function MemberWallet({ member, initialTransactions }: MemberWall
                                     <TableCell className={`text-right font-mono ${tx.type === 'credit' ? 'text-green-600' : 'text-destructive'}`}>
                                         {tx.type === 'credit' ? `+${formatCurrency(tx.amount)}` : `-${formatCurrency(tx.amount)}`}
                                     </TableCell>
+                                     <TableCell className="text-right font-mono font-semibold">{formatCurrency(tx.runningBalance)}</TableCell>
                                 </TableRow>
                             ))}
                         </TableBody>

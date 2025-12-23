@@ -7,12 +7,17 @@ import { Loader2, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import MemberWallet from './member-wallet';
-import { Suspense, useMemo } from 'react';
+import { Suspense, useMemo, useEffect } from 'react';
 
 function MemberWalletPageComponent() {
     const params = useParams();
     const searchParams = useSearchParams();
     const memberId = params.memberId as string;
+
+    // The component needs to be mounted on the client to safely access window.location
+    useEffect(() => {
+        // This effect can be used for client-side only logic if needed
+    }, []);
 
     const memberData = useMemo(() => {
         if (!memberId) return null;
@@ -44,6 +49,7 @@ function MemberWalletPageComponent() {
             return [];
         }
     }, [searchParams]);
+    
 
     return (
         <div>
@@ -79,5 +85,3 @@ export default function MemberWalletPage() {
         </Suspense>
     )
 }
-
-    
