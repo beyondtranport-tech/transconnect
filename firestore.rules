@@ -40,7 +40,8 @@ service cloud.firestore {
     // ----------------------------------------------------------------------
 
     match /members/{memberId} {
-      allow get, list: if isSignedIn();
+      allow get: if isOwner(memberId) || isAdmin();
+      allow list: if isAdmin();
       allow create: if isOwner(memberId) && hasValidMemberId(memberId);
       allow update: if isAdmin() || isOwnerUpdatingAllowedFields(memberId);
       allow delete: if isAdmin();
