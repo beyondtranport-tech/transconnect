@@ -113,11 +113,12 @@ export default function SignInPage() {
       const isAdmin = values.email === 'transconnect@gmail.com';
       const redirectFromParams = searchParams.get('redirect');
 
-      if (redirectFromParams) {
+      if (isAdmin) {
+        router.push('/backend');
+      } else if (redirectFromParams) {
         router.push(redirectFromParams);
       } else {
-        const redirectUrl = isAdmin ? '/backend' : '/account';
-        router.push(redirectUrl);
+        router.push('/account');
       }
 
     } catch (error: any) {
