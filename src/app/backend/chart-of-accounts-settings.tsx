@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Loader2, Book, PlusCircle } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useFirestore, useDoc, useMemoFirebase, useUser } from '@/firebase';
@@ -40,9 +40,9 @@ export default function ChartOfAccountsSettings() {
 
   const coaDocRef = useMemoFirebase(() => {
     // Do not attempt to create the reference until the user is loaded and confirmed.
-    if (!firestore || isUserLoading) return null;
+    if (!firestore || isUserLoading || !user) return null;
     return doc(firestore, 'platform_config', 'chart_of_accounts');
-  }, [firestore, isUserLoading]);
+  }, [firestore, isUserLoading, user]);
   
   const { data: coaData, isLoading: isCoaLoading, error } = useDoc(coaDocRef);
   
@@ -73,19 +73,18 @@ export default function ChartOfAccountsSettings() {
       });
       form.reset();
     } catch (e: any) {
-        const permissionError = new FirestorePermissionError({
-            path: coaDocRef.path,
-            operation: 'update',
-            requestResourceData: updateData,
+        // Fallback for direct errors, though the hook's emitter should catch it.
+        toast({
+            variant: 'destructive',
+            title: 'Submission Failed',
+            description: 'You do not have permission to submit this data.',
         });
-        errorEmitter.emit('permission-error', permissionError);
     } finally {
       setIsLoading(false);
     }
   };
   
   const renderContent = () => {
-    // Show a loader while the user object is loading or the CoA data is fetching.
     if (isUserLoading || isCoaLoading) {
       return (
         <TableRow>
@@ -96,11 +95,12 @@ export default function ChartOfAccountsSettings() {
       );
     }
 
+    // Direct error display instead of relying on the hook's state to throw
     if (error) {
        return (
          <TableRow>
             <TableCell colSpan={2} className="h-24 text-center text-destructive">
-                There was a problem loading Chart of Accounts. Ensure you have the correct permissions.
+                Error: {error.message}. Please check security rules for 'platform_config'.
             </TableCell>
         </TableRow>
        );
