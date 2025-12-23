@@ -6,16 +6,12 @@ service cloud.firestore {
     function isSignedIn() {
       return request.auth != null;
     }
-
-    function isOwner(uid) {
-      return isSignedIn() && request.auth.uid == uid;
-    }
     
     match /members/{memberId} {
-      allow get: if isOwner(memberId) || request.auth.token.email == 'transconnect@gmail.com';
+      allow get: if request.auth.uid == memberId || request.auth.token.email == 'transconnect@gmail.com';
       allow list: if request.auth.token.email == 'transconnect@gmail.com';
-      allow create: if isOwner(memberId);
-      allow update: if isOwner(memberId) || request.auth.token.email == 'transconnect@gmail.com';
+      allow create: if request.auth.uid == memberId;
+      allow update: if request.auth.uid == memberId || request.auth.token.email == 'transconnect@gmail.com';
       allow delete: if request.auth.token.email == 'transconnect@gmail.com';
     }
 
@@ -31,17 +27,17 @@ service cloud.firestore {
     }
     
      match /financeApplications/{applicationId} {
-      allow get: if isOwner(resource.data.applicantId) || request.auth.token.email == 'transconnect@gmail.com';
+      allow get: if request.auth.uid == resource.data.applicantId || request.auth.token.email == 'transconnect@gmail.com';
       allow list: if request.auth.token.email == 'transconnect@gmail.com';
-      allow create: if isOwner(request.resource.data.applicantId) || request.auth.token.email == 'transconnect@gmail.com';
-      allow update: if isOwner(resource.data.applicantId) || request.auth.token.email == 'transconnect@gmail.com';
+      allow create: if request.auth.uid == request.resource.data.applicantId || request.auth.token.email == 'transconnect@gmail.com';
+      allow update: if request.auth.uid == resource.data.applicantId || request.auth.token.email == 'transconnect@gmail.com';
       allow delete: if request.auth.token.email == 'transconnect@gmail.com';
     }
 
     match /transactions/{transactionId} {
-        allow get: if isOwner(resource.data.memberId) || request.auth.token.email == 'transconnect@gmail.com';
+        allow get: if request.auth.uid == resource.data.memberId || request.auth.token.email == 'transconnect@gmail.com';
         allow list: if request.auth.token.email == 'transconnect@gmail.com' || (request.query.where[0][0] == 'memberId' && request.query.where[0][2] == request.auth.uid);
-        allow create: if isOwner(request.resource.data.memberId) || request.auth.token.email == 'transconnect@gmail.com';
+        allow create: if request.auth.uid == request.resource.data.memberId || request.auth.token.email == 'transconnect@gmail.com';
         allow update, delete: if request.auth.token.email == 'transconnect@gmail.com';
     }
 
