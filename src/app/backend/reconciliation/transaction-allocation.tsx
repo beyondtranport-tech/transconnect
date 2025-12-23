@@ -9,8 +9,8 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from '@/hooks/use-toast';
 import { Banknote, FileCheck, Scale, Loader2, PlusCircle, Trash2 } from 'lucide-react';
 import { Label } from '@/components/ui/label';
-import { useFirestore, useUser } from '@/firebase';
-import { writeBatch, doc, collection, increment, serverTimestamp } from 'firebase/firestore';
+import { useFirestore, useUser, useCollection, useMemoFirebase } from '@/firebase';
+import { writeBatch, doc, collection, increment, serverTimestamp, query } from 'firebase/firestore';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const formatCurrency = (amount: number) => {
@@ -25,10 +25,11 @@ type ManualTransaction = {
     id: number;
     date: string;
     description: string;
-    reference: string;
+    reference: string; // This will hold the Member UID
     amount: number;
     type: 'credit' | 'debit';
     status: 'allocated' | 'pending';
+    memberName?: string; // To display member name
 };
 
 export default function TransactionAllocation({ statementData }: { statementData: any }) {
@@ -36,9 +37,28 @@ export default function TransactionAllocation({ statementData }: { statementData
     const firestore = useFirestore();
     const { user } = useUser();
 
-    const [transactions, setTransactions] = useState<ManualTransaction[]>(
-        statementData.transactions.map((t: any) => ({ ...t, status: 'pending' }))
-    );
+    // 1. Fetch all members to create a mapping from UID to Name
+    const membersQuery = useMemoFirebase(() => {
+        if (!firestore) return null;
+        return query(collection(firestore, 'members'));
+    }, [firestore]);
+    const { data: members, isLoading: isLoadingMembers } = useCollection(membersQuery);
+
+    const memberMap = useMemo(() => {
+        if (!members) return new Map();
+        return new Map(members.map(m => [m.id, `${m.firstName} ${m.lastName}`]));
+    }, [members]);
+    
+    // 2. Initialize transactions state, adding memberName if UID exists in statement
+    const initialTransactions = useMemo(() => {
+        return statementData.transactions.map((t: any) => ({ 
+            ...t, 
+            status: 'pending',
+            memberName: memberMap.get(t.reference) || 'Unknown Member'
+        }));
+    }, [statementData.transactions, memberMap]);
+
+    const [transactions, setTransactions] = useState<ManualTransaction[]>(initialTransactions);
     const [openingBalance, setOpeningBalance] = useState(statementData.openingBalance);
     const [closingBalance, setClosingBalance] = useState(statementData.closingBalance);
     
@@ -47,6 +67,16 @@ export default function TransactionAllocation({ statementData }: { statementData
     const [calculatedClosingBalance, setCalculatedClosingBalance] = useState(0);
     const [difference, setDifference] = useState(0);
     const [isPosting, setIsPosting] = useState(false);
+
+    // When the memberMap is updated (i.e., members are loaded), update the member names in the transactions
+    useEffect(() => {
+        setTransactions(currentTxs => 
+            currentTxs.map(tx => ({
+                ...tx,
+                memberName: memberMap.get(tx.reference) || (tx.reference ? 'Unknown Member' : '')
+            }))
+        );
+    }, [memberMap]);
     
     const handleAllocationChange = (transactionId: number) => {
         let wasAllocated = false;
@@ -65,9 +95,16 @@ export default function TransactionAllocation({ statementData }: { statementData
 
     const handleFieldChange = (transactionId: number, field: keyof ManualTransaction, value: string | number) => {
         setTransactions(currentTransactions =>
-            currentTransactions.map(tx => 
-                tx.id === transactionId ? { ...tx, [field]: value } : tx
-            )
+            currentTransactions.map(tx => {
+                if (tx.id === transactionId) {
+                    const updatedTx = { ...tx, [field]: value };
+                    if (field === 'reference') {
+                        updatedTx.memberName = memberMap.get(value as string) || (value ? 'Unknown Member' : '');
+                    }
+                    return updatedTx;
+                }
+                return tx;
+            })
         );
     };
 
@@ -80,7 +117,8 @@ export default function TransactionAllocation({ statementData }: { statementData
             reference: '', // Member ID goes here
             amount: 0,
             type: 'credit',
-            status: 'allocated' // Manual entries are always allocated
+            status: 'allocated', // Manual entries are always allocated
+            memberName: ''
         };
         setTransactions([...transactions, newRow]);
     };
@@ -96,10 +134,10 @@ export default function TransactionAllocation({ statementData }: { statementData
         }
 
         setIsPosting(true);
-        const allocatedTransactions = transactions.filter(tx => tx.status === 'allocated' && tx.reference.length > 10);
+        const allocatedTransactions = transactions.filter(tx => tx.status === 'allocated' && memberMap.has(tx.reference));
         
         if (allocatedTransactions.length === 0) {
-            toast({ variant: 'destructive', title: 'No Transactions', description: 'No valid transactions were allocated to post. Ensure a Member UID is set.' });
+            toast({ variant: 'destructive', title: 'No Valid Transactions', description: 'No valid transactions were allocated to post. Ensure a valid Member UID is set.' });
             setIsPosting(false);
             return;
         }
@@ -158,6 +196,20 @@ export default function TransactionAllocation({ statementData }: { statementData
 
     const isManualMode = statementData.statementName.startsWith('manual-adjustment');
 
+    if (isLoadingMembers) {
+        return (
+            <Card>
+                <CardHeader>
+                    <CardTitle>Allocate Transactions</CardTitle>
+                </CardHeader>
+                <CardContent className="flex justify-center items-center py-10">
+                     <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                     <p className="ml-4 text-muted-foreground">Loading member data...</p>
+                </CardContent>
+            </Card>
+        )
+    }
+
     return (
         <Card>
             <CardHeader>
@@ -191,7 +243,7 @@ export default function TransactionAllocation({ statementData }: { statementData
                             <TableRow>
                                 <TableHead className="w-[120px]">Date</TableHead>
                                 <TableHead>Description</TableHead>
-                                <TableHead className="w-[250px]">Reference (Member UID)</TableHead>
+                                <TableHead className="w-[250px]">Member (UID or Name)</TableHead>
                                 <TableHead>Type</TableHead>
                                 <TableHead className="text-right">Amount (R)</TableHead>
                                 <TableHead className="w-[120px] text-center">Status</TableHead>
@@ -208,7 +260,13 @@ export default function TransactionAllocation({ statementData }: { statementData
                                          <Input value={tx.description} onChange={(e) => handleFieldChange(tx.id, 'description', e.target.value)} className="h-8 text-xs" />
                                     </TableCell>
                                     <TableCell>
-                                        <Input value={tx.reference} onChange={(e) => handleFieldChange(tx.id, 'reference', e.target.value)} className="h-8 text-xs font-mono" />
+                                        <Input 
+                                            value={tx.reference} 
+                                            onChange={(e) => handleFieldChange(tx.id, 'reference', e.target.value)} 
+                                            className={`h-8 text-xs font-mono ${tx.reference && !memberMap.has(tx.reference) ? 'border-destructive' : ''}`}
+                                            list="members-datalist"
+                                        />
+                                        <p className="text-xs text-muted-foreground mt-1 truncate">{tx.memberName}</p>
                                     </TableCell>
                                     <TableCell>
                                         <Select value={tx.type} onValueChange={(value: 'credit' | 'debit') => handleFieldChange(tx.id, 'type', value)}>
@@ -235,6 +293,9 @@ export default function TransactionAllocation({ statementData }: { statementData
                             ))}
                         </TableBody>
                     </Table>
+                    <datalist id="members-datalist">
+                        {members?.map(m => <option key={m.id} value={m.id}>{`${m.firstName} ${m.lastName} (${m.companyName})`}</option>)}
+                    </datalist>
                 </div>
                  <Button onClick={addManualRow} variant="outline" size="sm" className="mt-4"><PlusCircle className="mr-2 h-4 w-4" />Add Manual Record</Button>
             </CardContent>

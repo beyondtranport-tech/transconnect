@@ -34,11 +34,8 @@ service cloud.firestore {
       allow delete: if request.auth.token.email == 'transconnect@gmail.com';
     }
 
-    match /transactions/{path=**} {
-        allow read, write: if request.auth.token.email == 'transconnect@gmail.com';
-    }
-
     match /transactions/{transactionId} {
+      allow read, write: if request.auth.token.email == 'transconnect@gmail.com';
       allow get: if isOwner(resource.data.memberId);
     }
 
