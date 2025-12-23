@@ -1,14 +1,9 @@
-
 'use server';
 
 import { getApps, initializeApp, getApp, App, cert } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { getFirestore } from 'firebase-admin/firestore';
-
-// This file is being simplified to remove the failing transaction logic.
-// The createManualTransaction and getTransactionsForMember functions have been removed
-// as they were causing server authentication errors.
-// The logic has been moved to a client-side batch write in member-wallet.tsx with appropriate security rules.
+import { DocumentData } from 'firebase/firestore';
 
 let adminApp: App;
 if (!getApps().length) {
@@ -44,7 +39,6 @@ function getSafeAuth() {
     return getAuth(adminApp);
 }
 
-
 export async function deleteUser(uid: string): Promise<{ success: boolean; error?: string }> {
   try {
     const auth = getSafeAuth();
@@ -58,5 +52,26 @@ export async function deleteUser(uid: string): Promise<{ success: boolean; error
   } catch (error: any) {
     console.error('Failed to delete user:', error);
     return { success: false, error: error.message || 'An unknown server error occurred during user deletion.' };
+  }
+}
+
+export async function getTransactionsForMember(memberId: string): Promise<{ success: boolean; data?: any[]; error?: string }> {
+  try {
+    const firestore = getSafeFirestore();
+    const transactionsSnapshot = await firestore.collection('transactions').where('memberId', '==', memberId).get();
+    const transactions = transactionsSnapshot.docs.map(doc => {
+        const data = doc.data();
+        // Manually convert Timestamp to a serializable format (ISO string)
+        return {
+            ...data,
+            id: doc.id,
+            date: data.date.toDate().toISOString(),
+            postedAt: data.postedAt?.toDate().toISOString(),
+        };
+    });
+    return { success: true, data: transactions };
+  } catch (error: any) {
+    console.error('Failed to get transactions:', error);
+    return { success: false, error: error.message || 'An unknown server error occurred during transaction fetch.' };
   }
 }

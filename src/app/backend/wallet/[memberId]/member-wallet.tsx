@@ -6,7 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Calendar as CalendarIcon, PlusCircle } from 'lucide-react';
 import { format } from 'date-fns';
-import { DocumentData, writeBatch, doc, collection, serverTimestamp, increment, query, where } from 'firebase/firestore';
+import { DocumentData, writeBatch, doc, collection, serverTimestamp, increment } from 'firebase/firestore';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -16,18 +16,17 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useUser, useFirestore, useMemoFirebase, useCollection } from '@/firebase';
+import { useUser, useFirestore } from '@/firebase';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { Input } from '@/components/ui/input';
+import { getTransactionsForMember } from '../actions';
 
 const formatCurrency = (amount: number) => new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(amount);
 
 const formatDate = (timestamp: any) => {
     if (!timestamp) return 'N/A';
-    if (timestamp && typeof timestamp.toDate === 'function') {
-        return format(timestamp.toDate(), "yyyy-MM-dd HH:mm");
-    }
+    // The server action now sends ISO strings
     try {
         const date = new Date(timestamp);
         if (!isNaN(date.getTime())) {
@@ -35,6 +34,9 @@ const formatDate = (timestamp: any) => {
         }
     } catch (e) {
         // Fallback for invalid date strings
+    }
+     if (timestamp && typeof timestamp.toDate === 'function') {
+        return format(timestamp.toDate(), "yyyy-MM-dd HH:mm");
     }
     return 'Invalid Date';
 };
@@ -58,27 +60,31 @@ export default function MemberWallet({ member }: MemberWalletProps) {
     const { user } = useUser();
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isClient, setIsClient] = useState(false);
+    
+    const [transactions, setTransactions] = useState<any[]>([]);
+    const [isLoadingTransactions, setIsLoadingTransactions] = useState(true);
+    const [transactionError, setTransactionError] = useState<string | null>(null);
 
     useEffect(() => {
         setIsClient(true);
-    }, []);
-
-    const transactionsQuery = useMemoFirebase(() => {
-        if (!firestore || !member.id) return null;
-        return query(collection(firestore, 'transactions'), where('memberId', '==', member.id));
-    }, [firestore, member.id]);
-    
-    const { data: transactions, isLoading: isLoadingTransactions, error: transactionError } = useCollection(transactionsQuery);
-
-    useEffect(() => {
-        if (transactionError) {
-            toast({
-                variant: 'destructive',
-                title: 'Failed to load transaction history',
-                description: transactionError.message,
+        if (member.id) {
+            setIsLoadingTransactions(true);
+            getTransactionsForMember(member.id).then(result => {
+                if (result.success && result.data) {
+                    setTransactions(result.data);
+                } else {
+                    setTransactionError(result.error || 'Failed to fetch transactions.');
+                    toast({
+                        variant: 'destructive',
+                        title: 'Failed to load transaction history',
+                        description: `Failed to fetch transactions: ${result.error || ''}`,
+                    });
+                }
+                setIsLoadingTransactions(false);
             });
         }
-    }, [transactionError, toast]);
+    }, [member.id, toast]);
+
 
     const form = useForm<TransactionFormValues>({
         resolver: zodResolver(transactionSchema),
@@ -105,7 +111,7 @@ export default function MemberWallet({ member }: MemberWalletProps) {
             batch.update(memberRef, { walletBalance: increment(transactionAmount) });
 
             const transactionRef = doc(collection(firestore, 'transactions'));
-            batch.set(transactionRef, {
+            const newTransaction = {
                 memberId: member.id,
                 reconciliationId: 'manual-admin-entry',
                 type: values.type,
@@ -116,11 +122,14 @@ export default function MemberWallet({ member }: MemberWalletProps) {
                 chartOfAccountsCode: '7000-ManualAdjustment',
                 isAdjustment: true,
                 postedAt: serverTimestamp(),
-                postedBy: user.uid,
                 transactionId: transactionRef.id
-            });
+            };
+            batch.set(transactionRef, newTransaction);
 
             await batch.commit();
+            
+            // Optimistically update the UI
+            setTransactions(prev => [...prev, { ...newTransaction, id: transactionRef.id, date: newTransaction.date.toISOString() }]);
 
             toast({ title: 'Success!', description: 'Transaction has been posted and wallet has been updated.' });
             form.reset();
@@ -156,8 +165,8 @@ export default function MemberWallet({ member }: MemberWalletProps) {
     ] : [openingBalanceRecord];
 
     const sortedTransactions = allRecords.sort((a, b) => {
-        const dateA = a.date?.toDate ? a.date.toDate() : new Date(a.date);
-        const dateB = b.date?.toDate ? b.date.toDate() : new Date(b.date);
+        const dateA = new Date(a.date);
+        const dateB = new Date(b.date);
         return dateA.getTime() - dateB.getTime();
     });
 
@@ -309,7 +318,7 @@ export default function MemberWallet({ member }: MemberWalletProps) {
                     ) : transactionError ? (
                         <div className="text-destructive text-center py-10">
                            <p>Could not load transactions.</p>
-                           <p className="text-sm">{transactionError.message}</p>
+                           <p className="text-sm">{transactionError}</p>
                         </div>
                     ) : (
                         <Table>

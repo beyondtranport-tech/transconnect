@@ -40,7 +40,8 @@ service cloud.firestore {
 
     match /transactions/{transactionId} {
       allow get: if isOwner(resource.data.memberId) || isAdmin();
-      allow list: if isAdmin();
+      // Admin list is handled by server action, client list is disallowed.
+      allow list: if false; 
       allow create: if isAdmin();
       allow update, delete: if isAdmin();
     }
