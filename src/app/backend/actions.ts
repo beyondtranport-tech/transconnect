@@ -3,7 +3,7 @@
 
 import { getApps, initializeApp, getApp, App, cert } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
-import { getFirestore, Timestamp, FieldValue } from 'firebase-admin/firestore';
+import { getFirestore, Timestamp, FieldValue, increment } from 'firebase-admin/firestore';
 
 // Helper function to initialize Firebase Admin SDK idempotently.
 function initializeAdminApp(): App {
@@ -80,6 +80,52 @@ export async function getTransactionsForMember(memberId: string): Promise<{ succ
 
     } catch (error: any) {
         console.error('Failed to get transactions:', error);
+        return { success: false, error: error.message || 'An unknown server error occurred.' };
+    }
+}
+
+
+export async function createManualTransaction(
+    memberId: string, 
+    adminUserId: string,
+    transactionData: { amount: number; description: string; date: Date; type: 'credit' | 'debit' }
+): Promise<{ success: boolean; error?: string }> {
+    try {
+        const adminApp = initializeAdminApp();
+        const firestore = getFirestore(adminApp);
+        
+        const batch = firestore.batch();
+        
+        const memberRef = firestore.collection('members').doc(memberId);
+        const transactionRef = firestore.collection('transactions').doc();
+        
+        const transactionAmount = transactionData.type === 'credit' ? transactionData.amount : -transactionData.amount;
+        
+        // 1. Update member's wallet balance
+        batch.update(memberRef, { walletBalance: increment(transactionAmount) });
+        
+        // 2. Create the new transaction record
+        const newTransaction = {
+            reconciliationId: 'manual-admin-entry',
+            memberId: memberId,
+            type: transactionData.type,
+            amount: transactionData.amount,
+            date: Timestamp.fromDate(new Date(transactionData.date)),
+            description: transactionData.description,
+            status: 'allocated',
+            chartOfAccountsCode: '7000-ManualAdjustment',
+            isAdjustment: true,
+            postedAt: FieldValue.serverTimestamp(),
+            postedBy: adminUserId,
+            transactionId: transactionRef.id // Use the auto-generated doc ID
+        };
+        batch.set(transactionRef, newTransaction);
+        
+        await batch.commit();
+        
+        return { success: true };
+    } catch (error: any) {
+        console.error('Failed to create manual transaction:', error);
         return { success: false, error: error.message || 'An unknown server error occurred.' };
     }
 }

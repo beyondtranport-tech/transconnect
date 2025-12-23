@@ -7,21 +7,19 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Calendar as CalendarIcon, PlusCircle } from 'lucide-react';
 import { format } from 'date-fns';
-import { DocumentData, collection, query, where, orderBy, writeBatch, doc, serverTimestamp, increment } from 'firebase/firestore';
+import { DocumentData } from 'firebase/firestore';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { useUser, useFirestore } from '@/firebase';
+import { useUser } from '@/firebase';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { errorEmitter } from '@/firebase/error-emitter';
-import { FirestorePermissionError } from '@/firebase/errors';
-import { getTransactionsForMember } from '../../actions';
+import { getTransactionsForMember, createManualTransaction } from '../../actions';
 
 const formatCurrency = (amount: number) => new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(amount);
 
@@ -48,7 +46,6 @@ interface MemberWalletProps {
 export default function MemberWallet({ member }: MemberWalletProps) {
     const { toast } = useToast();
     const { user } = useUser();
-    const firestore = useFirestore();
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isClient, setIsClient] = useState(false);
     
@@ -56,8 +53,7 @@ export default function MemberWallet({ member }: MemberWalletProps) {
     const [isLoadingTransactions, setIsLoadingTransactions] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    useEffect(() => {
-        setIsClient(true);
+    const fetchTransactions = async () => {
         if (member.id) {
             setIsLoadingTransactions(true);
             getTransactionsForMember(member.id)
@@ -72,6 +68,11 @@ export default function MemberWallet({ member }: MemberWalletProps) {
                     setIsLoadingTransactions(false);
                 });
         }
+    };
+
+    useEffect(() => {
+        setIsClient(true);
+        fetchTransactions();
     }, [member.id]);
 
     const form = useForm<TransactionFormValues>({
@@ -85,57 +86,25 @@ export default function MemberWallet({ member }: MemberWalletProps) {
     });
 
     const handleAddRecord = async (values: TransactionFormValues) => {
-        if (!user || !firestore) {
+        if (!user) {
             toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in to perform this action.' });
             return;
         }
 
         setIsSubmitting(true);
         
-        try {
-            const batch = writeBatch(firestore);
-            
-            const memberRef = doc(firestore, 'members', member.id);
-            const transactionRef = doc(collection(firestore, 'transactions'));
-            
-            const transactionAmount = values.type === 'credit' ? values.amount : -values.amount;
+        const result = await createManualTransaction(member.id, user.uid, values);
 
-            batch.update(memberRef, { walletBalance: increment(transactionAmount) });
-            
-            const transactionData = {
-                reconciliationId: 'manual-admin-entry',
-                memberId: member.id,
-                type: values.type,
-                amount: values.amount,
-                date: values.date,
-                description: values.description,
-                status: 'allocated',
-                chartOfAccountsCode: '7000-ManualAdjustment',
-                isAdjustment: true,
-                postedAt: serverTimestamp(),
-                postedBy: user.uid,
-                transactionId: `ADJ-${Date.now()}`
-            };
-            batch.set(transactionRef, transactionData);
-
-            await batch.commit();
-
+        if (result.success) {
             toast({ title: 'Success!', description: 'Transaction has been posted and wallet has been updated.' });
             form.reset();
-            // Refetch transactions
-            getTransactionsForMember(member.id).then(response => {
-                if (response.success) setTransactions(response.data || []);
-            });
-        } catch(e: any) {
-            const permissionError = new FirestorePermissionError({
-                path: `/members/${member.id}`,
-                operation: 'write',
-            });
-            errorEmitter.emit('permission-error', permissionError);
-            toast({ variant: 'destructive', title: 'Posting Failed', description: "You might not have the correct permissions." });
-        } finally {
-            setIsSubmitting(false);
+            // Refetch transactions to show the new record
+            fetchTransactions();
+        } else {
+            toast({ variant: 'destructive', title: 'Posting Failed', description: result.error || 'An unknown error occurred.' });
         }
+
+        setIsSubmitting(false);
     };
     
     // Calculate cumulative balance
