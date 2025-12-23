@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useDoc, useFirestore, useMemoFirebase, useUser } from '@/firebase';
@@ -97,6 +98,9 @@ export default function WalletView() {
     const getTransactionType = (app: DocumentData) => {
         if (app.fundingType === 'membership_payment') {
             return 'Membership Payment';
+        }
+        if (app.fundingType === 'credit-top-up') {
+            return 'Admin Credit Top-Up';
         }
         return app.fundingType.replace(/_/g, ' ');
     }
