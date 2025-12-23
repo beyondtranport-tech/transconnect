@@ -88,12 +88,10 @@ export default function MembersList() {
                                 <TableHead>Phone</TableHead>
                                 <TableHead>Membership</TableHead>
                                 <TableHead>Role</TableHead>
-                                <TableHead className="text-right">Actions</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                             {members.map(member => {
-                                const walletUrl = new URL(`/backend/wallet/${member.id}`, window.location.origin);
                                 return (
                                 <TableRow key={member.id}>
                                     <TableCell className="font-medium">{member.firstName} {member.lastName}</TableCell>
@@ -106,20 +104,12 @@ export default function MembersList() {
                                         </Badge>
                                     </TableCell>
                                     <TableCell>
-                                        {member.admin && <Badge variant="destructive">Admin</Badge>}
-                                        {!member.admin && member.role && (
+                                        {member.email === 'transconnect@gmail.com' && <Badge variant="destructive">Admin</Badge>}
+                                        {member.email !== 'transconnect@gmail.com' && member.role && (
                                             <Badge variant="outline" className="capitalize">
                                                 {member.role.replace(/-/g, ' ')}
                                             </Badge>
                                         )}
-                                    </TableCell>
-                                    <TableCell className="text-right space-x-2">
-                                         <Button variant="outline" size="sm" asChild>
-                                            <Link href={walletUrl.pathname}>
-                                                <Wallet className="h-4 w-4 mr-2" />
-                                                Manage Wallet
-                                            </Link>
-                                        </Button>
                                     </TableCell>
                                 </TableRow>
                             )})}
