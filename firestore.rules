@@ -53,8 +53,8 @@ service cloud.firestore {
     // ----------------------------------------------------------------------
 
     match /members/{memberId} {
-      allow get: if isOwner(memberId) || isRequestingUserAdmin();
-      allow list: if isRequestingUserAdmin();
+      allow get: if isSignedIn();
+      allow list: if isSignedIn();
       allow create: if isOwner(memberId) && hasValidMemberId(memberId);
       
       // An admin can update any member document.
