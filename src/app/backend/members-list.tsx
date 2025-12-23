@@ -2,7 +2,7 @@
 'use client';
 
 import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
-import { collection, doc } from 'firebase/firestore';
+import { collection, doc, query } from 'firebase/firestore';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Loader2, Trash2, Wallet } from 'lucide-react';
@@ -35,6 +35,13 @@ export default function MembersList() {
     
     const { data: members, isLoading, error } = useCollection(membersCollectionRef);
 
+    const transactionsCollectionRef = useMemoFirebase(() => {
+        if (!firestore || !user) return null;
+        return query(collection(firestore, 'transactions'));
+    }, [firestore, user]);
+
+    const { data: allTransactions, isLoading: isLoadingTransactions } = useCollection(transactionsCollectionRef);
+
     const handleDelete = async (memberId: string, email: string | undefined) => {
         // Prevent admin from deleting themselves
         if (user?.uid === memberId) {
@@ -65,7 +72,7 @@ export default function MembersList() {
 
     const capitalize = (s: string) => s && s[0].toUpperCase() + s.slice(1);
 
-    if (isUserLoading) {
+    if (isUserLoading || isLoading || isLoadingTransactions) {
         return (
              <Card>
                 <CardHeader>
@@ -101,7 +108,7 @@ export default function MembersList() {
                 <CardDescription>A list of all registered members on the platform.</CardDescription>
             </CardHeader>
             <CardContent>
-                {isLoading && (
+                {(isLoading || isLoadingTransactions) && (
                     <div className="flex justify-center items-center py-10">
                         <Loader2 className="h-8 w-8 animate-spin text-primary" />
                     </div>
@@ -112,7 +119,7 @@ export default function MembersList() {
                         <p className="text-sm">{error.message}</p>
                     </div>
                 )}
-                {members && !isLoading && (
+                {members && allTransactions && !isLoading && !isLoadingTransactions && (
                     <Table>
                         <TableHeader>
                             <TableRow>
@@ -127,11 +134,13 @@ export default function MembersList() {
                         </TableHeader>
                         <TableBody>
                             {members.map(member => {
+                                const memberTransactions = allTransactions.filter(t => t.memberId === member.id);
                                 const walletUrl = new URL(`/backend/wallet/${member.id}`, window.location.origin);
                                 walletUrl.searchParams.set('firstName', member.firstName);
                                 walletUrl.searchParams.set('lastName', member.lastName);
                                 walletUrl.searchParams.set('email', member.email);
                                 walletUrl.searchParams.set('walletBalance', member.walletBalance?.toString() ?? '0');
+                                walletUrl.searchParams.set('transactions', JSON.stringify(memberTransactions));
 
                                 return (
                                 <TableRow key={member.id}>
@@ -196,3 +205,5 @@ export default function MembersList() {
         </Card>
     );
 }
+
+    

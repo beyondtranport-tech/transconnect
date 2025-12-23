@@ -1,10 +1,8 @@
 
 'use client';
 
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, query, where, orderBy } from 'firebase/firestore';
 import { useParams, useSearchParams } from 'next/navigation';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
@@ -15,9 +13,7 @@ function MemberWalletPageComponent() {
     const params = useParams();
     const searchParams = useSearchParams();
     const memberId = params.memberId as string;
-    const firestore = useFirestore();
 
-    // Read member data from URL search params instead of fetching from Firestore
     const memberData = useMemo(() => {
         if (!memberId) return null;
         return {
@@ -29,16 +25,25 @@ function MemberWalletPageComponent() {
         };
     }, [memberId, searchParams]);
 
-    const transactionsQuery = useMemoFirebase(() => {
-        if (!firestore || !memberId) return null;
-        return query(
-            collection(firestore, 'transactions'),
-            where('memberId', '==', memberId),
-            orderBy('date', 'desc')
-        );
-    }, [firestore, memberId]);
-
-    const { data: transactions, isLoading: areTransactionsLoading } = useCollection(transactionsQuery);
+    const transactions = useMemo(() => {
+        const transactionsParam = searchParams.get('transactions');
+        if (!transactionsParam) return [];
+        try {
+            // Firestore timestamps need to be revived after JSON serialization
+            const parsed = JSON.parse(transactionsParam);
+            return parsed.map((tx: any) => ({
+                ...tx,
+                date: tx.date ? {
+                    seconds: tx.date.seconds,
+                    nanoseconds: tx.date.nanoseconds,
+                    toDate: () => new Date(tx.date.seconds * 1000)
+                } : null
+            }));
+        } catch (e) {
+            console.error("Failed to parse transactions from URL", e);
+            return [];
+        }
+    }, [searchParams]);
 
     return (
         <div>
@@ -51,17 +56,9 @@ function MemberWalletPageComponent() {
                 </Button>
             </div>
             
-            {areTransactionsLoading && (
-                <div className="flex justify-center items-center py-20">
-                    <Loader2 className="h-12 w-12 animate-spin text-primary" />
-                </div>
-            )}
-            
-            {!areTransactionsLoading && memberData && (
+            {memberData ? (
                 <MemberWallet member={memberData} initialTransactions={transactions || []} />
-            )}
-
-            {!areTransactionsLoading && !memberData?.id && (
+            ) : (
                 <Card>
                     <CardHeader>
                         <CardTitle>Member Not Found</CardTitle>
@@ -82,3 +79,5 @@ export default function MemberWalletPage() {
         </Suspense>
     )
 }
+
+    
