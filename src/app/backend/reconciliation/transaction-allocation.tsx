@@ -1,41 +1,14 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from '@/hooks/use-toast';
 import { Banknote, FileCheck, Scale } from 'lucide-react';
 import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
-
-const chartOfAccounts = [
-    // 4000 Series: Core Membership & Subscription Revenue
-    { code: '4010', name: 'Basic Membership Fees' },
-    { code: '4020', name: 'Standard Membership Fees' },
-    { code: '4030', name: 'Premium Membership Fees' },
-    { code: '4110', name: 'Loyalty Plan Subscription Fees' },
-    { code: '4120', name: 'Actions Plan Subscription Fees' },
-    { code: '4130', name: 'Rewards Plan Subscription Fees' },
-    // 4200 Series: Mall Commission Revenue
-    { code: '4210', name: 'Finance Mall (Successful Match Commission)' },
-    { code: '4220', name: 'Supplier Mall (Transaction Commission)' },
-    { code: '4230', name: 'Transporter Mall (Subcontracting Commission)' },
-    { code: '4240', name: 'Buy & Sell Mall (Sales Commission)' },
-    { code: '4250', name: 'Distribution Mall (Partnership Commission)' },
-    { code: '4260', name: 'Warehouse Mall (Booking Commission)' },
-    { code: '4270', name: 'Repurpose Mall (Sales Commission)' },
-    // 4300 Series: Marketplace Product Revenue
-    { code: '4310', name: 'Resold Partner Services (Gross Revenue)' },
-    // 4400 Series: Tech & SaaS Revenue
-    { code: '4410', name: 'Wallet Transaction Fees (SaaS)' },
-    // A catch-all for wallet top-ups
-    { code: '1100', name: 'Wallet Top-Up (Asset)' },
-];
 
 const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-ZA', {
@@ -44,9 +17,10 @@ const formatCurrency = (amount: number) => {
     }).format(amount);
 };
 
-
 export default function TransactionAllocation({ statementData }: { statementData: any }) {
-    const [transactions, setTransactions] = useState(statementData.transactions.map((t: any) => ({...t, allocated: true })));
+    const [transactions, setTransactions] = useState(
+        statementData.transactions.map((t: any) => ({ ...t, status: 'pending' }))
+    );
     const { toast } = useToast();
     const [openingBalance, setOpeningBalance] = useState(statementData.openingBalance);
     const [closingBalance, setClosingBalance] = useState(statementData.closingBalance);
@@ -57,16 +31,32 @@ export default function TransactionAllocation({ statementData }: { statementData
     const [calculatedClosingBalance, setCalculatedClosingBalance] = useState(0);
     const [difference, setDifference] = useState(0);
     
-    const handleAllocationChange = (transactionId: number, isAllocated: boolean) => {
-        const updatedTransactions = transactions.map((t:any) =>
-            t.id === transactionId ? { ...t, allocated: isAllocated } : t
+    const handleAllocationChange = (transactionId: number) => {
+        setTransactions(currentTransactions =>
+            currentTransactions.map((tx: any) => {
+                if (tx.id === transactionId) {
+                    const newStatus = tx.status === 'allocated' ? 'pending' : 'allocated';
+                     if (newStatus === 'allocated') {
+                        toast({ title: `Transaction ${tx.id} allocated.` });
+                    }
+                    return { ...tx, status: newStatus };
+                }
+                return tx;
+            })
         );
-        setTransactions(updatedTransactions);
+    };
+
+    const handleReferenceChange = (transactionId: number, newReference: string) => {
+        setTransactions(currentTransactions =>
+            currentTransactions.map((tx: any) => 
+                tx.id === transactionId ? { ...tx, reference: newReference } : tx
+            )
+        );
     };
 
     // Recalculate summary whenever transactions or balances change
     useEffect(() => {
-        const allocatedTransactions = transactions.filter((t: any) => t.allocated);
+        const allocatedTransactions = transactions.filter((t: any) => t.status === 'allocated');
         const newTotalCredits = allocatedTransactions.filter((t: any) => t.type === 'credit').reduce((sum: number, t: any) => sum + t.amount, 0);
         const newTotalDebits = allocatedTransactions.filter((t: any) => t.type === 'debit').reduce((sum: number, t: any) => sum + Math.abs(t.amount), 0);
         const newCalculatedClosingBalance = openingBalance + newTotalCredits - newTotalDebits;
@@ -120,49 +110,40 @@ export default function TransactionAllocation({ statementData }: { statementData
                     <Table>
                         <TableHeader>
                             <TableRow>
-                                <TableHead className="w-[50px] text-center"><Scale className="h-4 w-4 mx-auto" /></TableHead>
                                 <TableHead className="w-[120px]">Date</TableHead>
                                 <TableHead>Description</TableHead>
-                                <TableHead>Reference</TableHead>
+                                <TableHead className="w-[200px]">Reference</TableHead>
                                 <TableHead className="text-right">Amount (R)</TableHead>
-                                <TableHead className="w-[200px]">Member</TableHead>
-                                <TableHead className="w-[250px]">Chart of Accounts</TableHead>
+                                <TableHead className="w-[120px] text-center">Status</TableHead>
+                                <TableHead className="w-[120px] text-right">Action</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                             {transactions.map((tx: any) => (
-                                <TableRow key={tx.id} className={tx.allocated ? 'bg-green-100/50 dark:bg-green-900/20' : ''}>
-                                    <TableCell className="text-center">
-                                         <Checkbox
-                                            checked={tx.allocated}
-                                            onCheckedChange={(isChecked) => handleAllocationChange(tx.id, !!isChecked)}
-                                            aria-label="Toggle transaction allocation"
-                                        />
-                                    </TableCell>
+                                <TableRow key={tx.id} className={tx.status === 'allocated' ? 'bg-green-100/50 dark:bg-green-900/20' : ''}>
                                     <TableCell>{tx.date}</TableCell>
                                     <TableCell>{tx.description}</TableCell>
-                                    <TableCell className="font-mono text-xs">{tx.reference}</TableCell>
-                                    <TableCell className={`text-right font-mono ${tx.type === 'credit' ? 'text-green-600' : 'text-destructive'}`}>{tx.amount.toFixed(2)}</TableCell>
                                     <TableCell>
-                                        <Input 
-                                            placeholder="Member ID or Email" 
-                                            className="h-8 text-xs" 
-                                            disabled={!tx.allocated} 
+                                        <Input
+                                          value={tx.reference}
+                                          onChange={(e) => handleReferenceChange(tx.id, e.target.value)}
+                                          className="h-8 text-xs font-mono"
                                         />
                                     </TableCell>
-                                    <TableCell>
-                                        <Select disabled={!tx.allocated}>
-                                            <SelectTrigger className="h-8 text-xs">
-                                                <SelectValue placeholder="Select Account" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                {chartOfAccounts.map(acc => (
-                                                    <SelectItem key={acc.code} value={acc.code}>
-                                                        {acc.code} - {acc.name}
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
+                                    <TableCell className={`text-right font-mono ${tx.type === 'credit' ? 'text-green-600' : 'text-destructive'}`}>{tx.amount.toFixed(2)}</TableCell>
+                                    <TableCell className="text-center">
+                                        <Badge variant={tx.status === 'allocated' ? 'default' : 'secondary'} className="capitalize">
+                                            {tx.status}
+                                        </Badge>
+                                    </TableCell>
+                                    <TableCell className="text-right">
+                                        <Button
+                                            variant={tx.status === 'allocated' ? 'outline' : 'default'}
+                                            size="sm"
+                                            onClick={() => handleAllocationChange(tx.id)}
+                                        >
+                                            {tx.status === 'allocated' ? 'Un-allocate' : 'Allocate'}
+                                        </Button>
                                     </TableCell>
                                 </TableRow>
                             ))}
@@ -179,11 +160,11 @@ export default function TransactionAllocation({ statementData }: { statementData
                             <p className="font-mono font-semibold">{formatCurrency(openingBalance)}</p>
                         </div>
                         <div className="space-y-1">
-                            <p className="text-muted-foreground">Total Credits</p>
+                            <p className="text-muted-foreground">Allocated Credits</p>
                             <p className="font-mono font-semibold text-green-600">{formatCurrency(totalCredits)}</p>
                         </div>
                         <div className="space-y-1">
-                            <p className="text-muted-foreground">Total Debits</p>
+                            <p className="text-muted-foreground">Allocated Debits</p>
                             <p className="font-mono font-semibold text-destructive">{formatCurrency(totalDebits)}</p>
                         </div>
                         <div className="space-y-1 border-t pt-2">
