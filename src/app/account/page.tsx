@@ -170,49 +170,49 @@ function AccountPageContent() {
         <SidebarContent>
           <SidebarGroup>
               <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Dashboard" isActive={activeView === 'dashboard'} onClick={() => setActiveView('dashboard')}>
+                <SidebarMenuButton tooltip="Dashboard" isActive={activeView === 'dashboard'} onClick={() => router.push('/account?view=dashboard', { scroll: false })}>
                   <LayoutDashboard />
                   <span>Dashboard</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton tooltip="My Profile" isActive={activeView === 'profile'} onClick={() => setActiveView('profile')}>
+                <SidebarMenuButton tooltip="My Profile" isActive={activeView === 'profile'} onClick={() => router.push('/account?view=profile', { scroll: false })}>
                   <User />
                   <span>My Profile</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
                <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Company" isActive={activeView === 'company'} onClick={() => setActiveView('company')}>
+                <SidebarMenuButton tooltip="Company" isActive={activeView === 'company'} onClick={() => router.push('/account?view=company', { scroll: false })}>
                   <Building />
                   <span>Company</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
                <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Staff" isActive={activeView === 'staff'} onClick={() => setActiveView('staff')}>
+                <SidebarMenuButton tooltip="Staff" isActive={activeView === 'staff'} onClick={() => router.push('/account?view=staff', { scroll: false })}>
                   <Users />
                   <span>Staff</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Wallet" isActive={activeView === 'wallet'} onClick={() => setActiveView('wallet')}>
+                <SidebarMenuButton tooltip="Wallet" isActive={activeView === 'wallet'} onClick={() => router.push('/account?view=wallet', { scroll: false })}>
                   <Wallet />
                   <span>Wallet</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Transactions" isActive={activeView === 'transactions'} onClick={() => setActiveView('transactions')}>
+                <SidebarMenuButton tooltip="Transactions" isActive={activeView === 'transactions'} onClick={() => router.push('/account?view=transactions', { scroll: false })}>
                   <DollarSign />
                   <span>Transactions</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Documents" isActive={activeView === 'documents'} onClick={() => setActiveView('documents')}>
+                <SidebarMenuButton tooltip="Documents" isActive={activeView === 'documents'} onClick={() => router.push('/account?view=documents', { scroll: false })}>
                   <FileText />
                   <span>Documents</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Settings" isActive={activeView === 'settings'} onClick={() => setActiveView('settings')}>
+                <SidebarMenuButton tooltip="Settings" isActive={activeView === 'settings'} onClick={() => router.push('/account?view=settings', { scroll: false })}>
                   <Settings />
                   <span>Settings</span>
                 </SidebarMenuButton>
@@ -245,10 +245,7 @@ function AccountPageContent() {
       </Sidebar>
       <SidebarInset>
         <div className="p-4 md:p-6">
-            <div className="flex justify-between items-center">
-                {renderContent()}
-                <SidebarTrigger className="md:hidden"/>
-            </div>
+          {renderContent()}
         </div>
       </SidebarInset>
     </SidebarProvider>
