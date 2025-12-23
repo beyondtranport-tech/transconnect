@@ -15,8 +15,6 @@ export default function AccountDashboard() {
     const firestore = useFirestore();
 
     const memberRef = useMemoFirebase(() => {
-        // **CRITICAL FIX**: Only construct the doc ref if the user is loaded and exists.
-        // This prevents a race condition where useDoc is called before authentication is resolved.
         if (isUserLoading || !firestore || !user) return null;
         return doc(firestore, 'members', user.uid);
     }, [firestore, user, isUserLoading]);
@@ -29,7 +27,7 @@ export default function AccountDashboard() {
         return new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(price);
     };
 
-    if (isUserLoading || (user && isMemberLoading && !memberData)) {
+    if (isUserLoading || (user && isMemberLoading)) {
         return (
             <div className="flex justify-center items-center min-h-[calc(100vh-8rem)] w-full">
                 <Loader2 className="h-12 w-12 animate-spin text-primary" />
