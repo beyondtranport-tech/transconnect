@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from '@/components/ui/button';
 import { Loader2, User, ArrowLeft, PlusCircle, Mail } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import AddJournalEntryDialog from './add-journal-entry-dialog';
 import WalletTransactions from './wallet-transactions';
 import { DocumentData } from 'firebase/firestore';
@@ -119,12 +119,31 @@ export default function MemberWalletPage() {
     };
 
 
-    if (isMemberLoading || !memberData) {
+    if (isMemberLoading) {
         return (
             <div className="flex h-full w-full items-center justify-center">
                 <Loader2 className="h-12 w-12 animate-spin text-primary" />
             </div>
         );
+    }
+     
+    if (!memberData) {
+        return (
+             <div className="w-full space-y-6">
+                <Button variant="outline" onClick={() => router.push('/backend')}>
+                    <ArrowLeft className="mr-2 h-4 w-4" />
+                    Back to Members List
+                </Button>
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Member Not Found</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <p>The requested member could not be found.</p>
+                    </CardContent>
+                </Card>
+            </div>
+        )
     }
     
     return (
