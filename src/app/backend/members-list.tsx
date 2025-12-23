@@ -102,11 +102,6 @@ export default function MembersList() {
                 <CardDescription>A list of all registered members on the platform.</CardDescription>
             </CardHeader>
             <CardContent>
-                {isLoading && (
-                    <div className="flex justify-center items-center py-10">
-                        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                    </div>
-                )}
                 {error && (
                      <div className="text-destructive-foreground bg-destructive/90 p-4 rounded-md">
                         <h4 className="font-semibold">Error loading members</h4>

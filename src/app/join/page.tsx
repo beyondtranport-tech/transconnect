@@ -36,6 +36,7 @@ import { Loader2, Eye, EyeOff, Building2, User } from 'lucide-react';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { Badge } from '@/components/ui/badge';
+import { getFunctions, httpsCallable } from 'firebase/functions';
 
 const formSchema = z.object({
   firstName: z.string().min(1, 'First name is required'),
@@ -91,6 +92,14 @@ function JoinFormComponent() {
       );
       const user = userCredential.user;
 
+      const isAdmin = values.email === 'transconnect@gmail.com';
+
+      if (isAdmin) {
+          const functions = getFunctions();
+          const addAdminRole = httpsCallable(functions, 'addAdminRole');
+          await addAdminRole({ email: values.email });
+      }
+
       await updateProfile(user, {
         displayName: `${values.firstName} ${values.lastName}`,
       });
@@ -105,7 +114,7 @@ function JoinFormComponent() {
         membershipId: 'free', // Default to a free plan
         rewardPoints: 0,
         walletBalance: 0,
-        admin: values.email === 'transconnect@gmail.com',
+        admin: isAdmin,
       };
 
       if (userRole) {
@@ -117,7 +126,6 @@ function JoinFormComponent() {
 
       const memberDocRef = doc(firestore, 'members', user.uid);
       
-      // Use non-blocking write and handle permissions error
       setDoc(memberDocRef, memberData)
         .catch((serverError) => {
           const permissionError = new FirestorePermissionError({
@@ -126,16 +134,16 @@ function JoinFormComponent() {
             requestResourceData: memberData,
           });
           errorEmitter.emit('permission-error', permissionError);
-          // The global listener will throw this, and Next.js will catch it.
         });
+      
+      await user.getIdToken(true); // Force refresh token to get custom claims
 
       toast({
         title: 'Account Created!',
         description: "Welcome to TransConnect. You're now signed in.",
       });
 
-      // Correct redirection logic
-      const redirectUrl = values.email === 'transconnect@gmail.com' ? '/backend' : '/account';
+      const redirectUrl = isAdmin ? '/backend' : '/account';
       router.push(redirectUrl);
 
     } catch (error: any) {
