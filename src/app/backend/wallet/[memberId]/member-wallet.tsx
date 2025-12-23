@@ -2,11 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Calendar as CalendarIcon, PlusCircle } from 'lucide-react';
 import { format } from 'date-fns';
-import { DocumentData, writeBatch, doc, collection, query, where, serverTimestamp, increment } from 'firebase/firestore';
+import { DocumentData, writeBatch, doc, collection, serverTimestamp, increment } from 'firebase/firestore';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -16,26 +15,10 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { useUser, useFirestore, useMemoFirebase } from '@/firebase';
 import { Input } from '@/components/ui/input';
 
 const formatCurrency = (amount: number) => new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(amount);
-
-const formatDate = (timestamp: any) => {
-    if (!timestamp) return 'N/A';
-    try {
-        const date = new Date(timestamp);
-        if (!isNaN(date.getTime())) {
-            return format(date, "yyyy-MM-dd HH:mm");
-        }
-    } catch (e) {
-        // Fallback for invalid date strings
-    }
-     if (timestamp && typeof timestamp.toDate === 'function') {
-        return format(timestamp.toDate(), "yyyy-MM-dd HH:mm");
-    }
-    return 'Invalid Date';
-};
 
 const transactionSchema = z.object({
   amount: z.coerce.number().positive('Amount must be a positive number'),
@@ -57,23 +40,9 @@ export default function MemberWallet({ member }: MemberWalletProps) {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isClient, setIsClient] = useState(false);
 
-    const transactionsQuery = useMemoFirebase(() => {
-        if (!firestore || !member.id) return null;
-        return query(collection(firestore, 'transactions'), where('memberId', '==', member.id));
-    }, [firestore, member.id]);
-
-    const { data: transactions, isLoading: isLoadingTransactions, error: transactionError } = useCollection(transactionsQuery);
-
     useEffect(() => {
         setIsClient(true);
-        if(transactionError){
-             toast({
-                variant: 'destructive',
-                title: 'Failed to load transaction history',
-                description: transactionError.message,
-            });
-        }
-    }, [transactionError, toast]);
+    }, []);
 
 
     const form = useForm<TransactionFormValues>({
@@ -131,33 +100,6 @@ export default function MemberWallet({ member }: MemberWalletProps) {
             setIsSubmitting(false);
         }
     };
-    
-    const openingBalanceRecord = {
-        id: 'opening-balance',
-        date: member.createdAt ? new Date(member.createdAt).toISOString() : new Date().toISOString(),
-        description: 'Opening Balance',
-        transactionId: 'N/A',
-        type: 'credit',
-        amount: 0,
-    };
-
-    const allRecords = transactions ? [
-        openingBalanceRecord, 
-        ...transactions
-    ] : [openingBalanceRecord];
-
-    const sortedTransactions = allRecords.sort((a, b) => {
-        const dateA = a.date?.toDate ? a.date.toDate() : new Date(a.date);
-        const dateB = b.date?.toDate ? b.date.toDate() : new Date(b.date);
-        return dateA.getTime() - dateB.getTime();
-    });
-
-    let runningBalance = 0;
-    const transactionsWithBalance = sortedTransactions.map(tx => {
-        const amount = tx.amount === 0 ? 0 : (tx.type === 'credit' ? tx.amount : -tx.amount);
-        runningBalance += amount;
-        return { ...tx, runningBalance };
-    }).reverse();
 
     return (
         <div className="space-y-8">
@@ -290,48 +232,12 @@ export default function MemberWallet({ member }: MemberWalletProps) {
             <Card>
                 <CardHeader>
                     <CardTitle>Transaction History</CardTitle>
-                    <CardDescription>A complete log of all wallet transactions for this member, with a running balance.</CardDescription>
+                    <CardDescription>A complete log of all wallet transactions for this member.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    {isLoadingTransactions ? (
-                         <div className="flex justify-center items-center py-10">
-                            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                        </div>
-                    ) : transactionError ? (
-                        <div className="text-destructive text-center py-10">
-                           <p>Could not load transactions.</p>
-                           <p className="text-sm">{transactionError.message}</p>
-                        </div>
-                    ) : (
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Date</TableHead>
-                                    <TableHead>Description</TableHead>
-                                    <TableHead>Transaction ID</TableHead>
-                                    <TableHead className="text-right">Amount</TableHead>
-                                    <TableHead className="text-right">Balance</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {transactionsWithBalance.length > 1 ? transactionsWithBalance.map(tx => (
-                                    <TableRow key={tx.id}>
-                                        <TableCell>{isClient ? formatDate(tx.date) : '...'}</TableCell>
-                                        <TableCell className="capitalize">{tx.description}</TableCell>
-                                        <TableCell className="font-mono text-xs">{tx.transactionId}</TableCell>
-                                        <TableCell className={`text-right font-mono ${tx.amount === 0 ? '' : tx.type === 'credit' ? 'text-green-600' : 'text-destructive'}`}>
-                                            {isClient ? (tx.amount === 0 ? formatCurrency(0) : (tx.type === 'credit' ? `+${formatCurrency(tx.amount)}` : `-${formatCurrency(tx.amount)}`)) : '...'}
-                                        </TableCell>
-                                        <TableCell className="text-right font-mono font-semibold">{isClient ? formatCurrency(tx.runningBalance) : '...'}</TableCell>
-                                    </TableRow>
-                                )) : (
-                                     <TableRow>
-                                        <TableCell colSpan={5} className="text-center text-muted-foreground py-10">No transactions found for this member.</TableCell>
-                                    </TableRow>
-                                )}
-                            </TableBody>
-                        </Table>
-                    )}
+                   <div className="text-center py-10 text-muted-foreground">
+                     <p>Admin transaction history view is temporarily disabled.</p>
+                   </div>
                 </CardContent>
             </Card>
         </div>
