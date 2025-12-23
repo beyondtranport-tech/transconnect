@@ -110,8 +110,15 @@ export default function SignInPage() {
         description: "Welcome back to TransConnect.",
       });
       
-      const redirectUrl = searchParams.get('redirect') || '/account';
-      router.push(redirectUrl);
+      const isAdmin = values.email === 'transconnect@gmail.com';
+      const redirectFromParams = searchParams.get('redirect');
+
+      if (redirectFromParams) {
+        router.push(redirectFromParams);
+      } else {
+        const redirectUrl = isAdmin ? '/backend' : '/account';
+        router.push(redirectUrl);
+      }
 
     } catch (error: any) {
       let title = 'An error occurred.';

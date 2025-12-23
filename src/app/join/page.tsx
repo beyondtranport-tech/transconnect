@@ -105,6 +105,7 @@ function JoinFormComponent() {
         membershipId: 'free', // Default to a free plan
         rewardPoints: 0,
         walletBalance: 0,
+        admin: values.email === 'transconnect@gmail.com',
       };
 
       if (userRole) {
@@ -116,13 +117,24 @@ function JoinFormComponent() {
 
       const memberDocRef = doc(firestore, 'members', user.uid);
       
-      await setDoc(memberDocRef, memberData);
+      // Use non-blocking write and handle permissions error
+      setDoc(memberDocRef, memberData)
+        .catch((serverError) => {
+          const permissionError = new FirestorePermissionError({
+            path: memberDocRef.path,
+            operation: 'create',
+            requestResourceData: memberData,
+          });
+          errorEmitter.emit('permission-error', permissionError);
+          // The global listener will throw this, and Next.js will catch it.
+        });
 
       toast({
         title: 'Account Created!',
         description: "Welcome to TransConnect. You're now signed in.",
       });
 
+      // Correct redirection logic
       const redirectUrl = values.email === 'transconnect@gmail.com' ? '/backend' : '/account';
       router.push(redirectUrl);
 
@@ -145,9 +157,9 @@ function JoinFormComponent() {
   
   const getRoleLabel = () => {
     if (!userRole) return null;
-    let label = userRole.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase());
+    let label = userRole.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
     if (financierType) {
-      label += ` (${financierType.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())})`;
+      label += ` (${financierType.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())})`;
     }
     return label;
   }
