@@ -126,7 +126,14 @@ export default function MembersList() {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {members.map(member => (
+                            {members.map(member => {
+                                const walletUrl = new URL(`/backend/wallet/${member.id}`, window.location.origin);
+                                walletUrl.searchParams.set('firstName', member.firstName);
+                                walletUrl.searchParams.set('lastName', member.lastName);
+                                walletUrl.searchParams.set('email', member.email);
+                                walletUrl.searchParams.set('walletBalance', member.walletBalance?.toString() ?? '0');
+
+                                return (
                                 <TableRow key={member.id}>
                                     <TableCell className="font-medium">{member.firstName} {member.lastName}</TableCell>
                                     <TableCell>{member.companyName}</TableCell>
@@ -147,7 +154,7 @@ export default function MembersList() {
                                     </TableCell>
                                     <TableCell className="text-right space-x-2">
                                          <Button variant="outline" size="sm" asChild>
-                                            <Link href={`/backend/wallet/${member.id}`}>
+                                            <Link href={walletUrl.toString()}>
                                                 <Wallet className="h-4 w-4 mr-2" />
                                                 Manage Wallet
                                             </Link>
@@ -178,7 +185,7 @@ export default function MembersList() {
                                         </AlertDialog>
                                     </TableCell>
                                 </TableRow>
-                            ))}
+                            )})}
                         </TableBody>
                     </Table>
                 )}
