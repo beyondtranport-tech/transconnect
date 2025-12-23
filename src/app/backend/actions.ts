@@ -1,19 +1,30 @@
 
 'use server';
 
-import { getApps, initializeApp, getApp } from 'firebase-admin/app';
+import { getApps, initializeApp, getApp, App } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { getFirestore, Timestamp,FieldValue } from 'firebase-admin/firestore';
 import { credential } from 'firebase-admin';
 
 // Helper function to initialize Firebase Admin SDK idempotently.
-function initializeAdminApp() {
-  if (getApps().length === 0) {
-    initializeApp({
-      credential: credential.applicationDefault(),
-    });
-  }
-  return getApp();
+function initializeAdminApp(): App {
+    const appName = 'firebase-admin-app';
+    // Check if the app is already initialized
+    const existingApp = getApps().find(app => app.name === appName);
+    if (existingApp) {
+        return existingApp;
+    }
+    // If not initialized, create a new app instance
+    try {
+        return initializeApp({
+            credential: credential.applicationDefault(),
+        }, appName);
+    } catch (error: any) {
+        // This can happen in local dev environments where Application Default Credentials aren't set.
+        // It's better to log a clear error than to crash.
+        console.error("Failed to initialize Firebase Admin SDK. Make sure Application Default Credentials are configured.", error);
+        throw new Error("Server configuration error. Could not connect to Firebase services.");
+    }
 }
 
 export async function deleteUser(uid: string): Promise<{ success: boolean; error?: string }> {
@@ -92,4 +103,3 @@ export async function saveAndPostReconciliation(allocatedTransactions: any[], re
     console.warn("`saveAndPostReconciliation` server action was called, but is deprecated. Wallet updates are now handled on the client.");
     return { success: false, error: "This function is deprecated. Please update the client to handle posting." };
 }
-
