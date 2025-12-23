@@ -10,7 +10,8 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from '@/hooks/use-toast';
 import { Banknote, FileCheck, Scale, Loader2 } from 'lucide-react';
 import { Label } from '@/components/ui/label';
-import { saveAndPostReconciliation } from '../actions';
+import { useFirestore, useUser } from '@/firebase';
+import { writeBatch, doc, collection, increment, serverTimestamp } from 'firebase/firestore';
 
 const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-ZA', {
@@ -20,10 +21,13 @@ const formatCurrency = (amount: number) => {
 };
 
 export default function TransactionAllocation({ statementData }: { statementData: any }) {
+    const { toast } = useToast();
+    const firestore = useFirestore();
+    const { user } = useUser();
+
     const [transactions, setTransactions] = useState(
         statementData.transactions.map((t: any) => ({ ...t, status: 'pending' }))
     );
-    const { toast } = useToast();
     const [openingBalance, setOpeningBalance] = useState(statementData.openingBalance);
     const [closingBalance, setClosingBalance] = useState(statementData.closingBalance);
     
@@ -36,26 +40,23 @@ export default function TransactionAllocation({ statementData }: { statementData
     
     const handleAllocationChange = (transactionId: number) => {
         let wasAllocated = false;
-        let newStatus = 'pending';
-
-        const updatedTransactions = transactions.map((tx: any) => {
-            if (tx.id === transactionId) {
-                newStatus = tx.status === 'allocated' ? 'pending' : 'allocated';
-                if (newStatus === 'allocated') {
-                    wasAllocated = true;
+        setTransactions(currentTransactions => {
+            const updated = currentTransactions.map((tx: any) => {
+                if (tx.id === transactionId) {
+                    const newStatus = tx.status === 'allocated' ? 'pending' : 'allocated';
+                    if (newStatus === 'allocated') {
+                       wasAllocated = true;
+                    }
+                    return { ...tx, status: newStatus };
                 }
-                return { ...tx, status: newStatus };
+                return tx;
+            });
+             if(wasAllocated) {
+                toast({ title: `Transaction ${transactionId} allocated.` });
             }
-            return tx;
+            return updated;
         });
-
-        setTransactions(updatedTransactions);
-
-        if (wasAllocated) {
-            toast({ title: `Transaction ${transactionId} allocated.` });
-        }
     };
-
 
     const handleReferenceChange = (transactionId: number, newReference: string) => {
         setTransactions(currentTransactions =>
@@ -66,31 +67,75 @@ export default function TransactionAllocation({ statementData }: { statementData
     };
 
     const handleSaveAndPost = async () => {
+        if (!firestore || !user) {
+            toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in to post.' });
+            return;
+        }
+
         setIsPosting(true);
         const allocatedTransactions = transactions.filter((tx: any) => tx.status === 'allocated');
-        const result = await saveAndPostReconciliation(allocatedTransactions, statementData.statementName);
+        
+        if (allocatedTransactions.length === 0) {
+            toast({ variant: 'destructive', title: 'No Transactions', description: 'No transactions were allocated to post.' });
+            setIsPosting(false);
+            return;
+        }
 
-        if (result.success) {
-            toast({
+        const batch = writeBatch(firestore);
+
+        for (const tx of allocatedTransactions) {
+             // Only process credits with a valid member ID in the reference for now
+            if (tx.type === 'credit' && tx.reference.length > 10) { // Simple check for UID-like reference
+                const memberId = tx.reference;
+                const memberRef = doc(firestore, 'members', memberId);
+                
+                // Use the increment FieldValue to safely update the member's wallet balance
+                batch.update(memberRef, {
+                    walletBalance: increment(tx.amount)
+                });
+            }
+
+            // Create a record in the main 'transactions' collection for audit purposes
+            const transactionRef = doc(collection(firestore, 'transactions'));
+            batch.set(transactionRef, {
+                reconciliationId: statementData.statementName,
+                memberId: tx.reference, // The reference from the bank statement
+                type: tx.type,
+                amount: tx.amount,
+                date: new Date(tx.date),
+                description: tx.description,
+                status: 'allocated',
+                chartOfAccountsCode: '4410', // Defaulting Wallet Top-up for now
+                isAdjustment: false,
+                postedAt: serverTimestamp(),
+                postedBy: user.uid,
+            });
+        }
+        
+        try {
+            await batch.commit();
+             toast({
                 title: 'Success!',
                 description: 'Reconciliation has been posted and wallets have been updated.',
             });
-        } else {
+        } catch (error: any) {
              toast({
                 variant: 'destructive',
                 title: 'Posting Failed',
-                description: result.error,
+                description: error.message || "You may not have the required permissions.",
             });
+        } finally {
+            setIsPosting(false);
         }
-
-        setIsPosting(false);
-    }
+    };
 
     useEffect(() => {
         const allocatedTransactions = transactions.filter((t: any) => t.status === 'allocated');
         const newTotalCredits = allocatedTransactions.filter((t: any) => t.type === 'credit').reduce((sum: number, t: any) => sum + t.amount, 0);
         const newTotalDebits = allocatedTransactions.filter((t: any) => t.type === 'debit').reduce((sum: number, t: any) => sum + Math.abs(t.amount), 0);
-        const newCalculatedClosingBalance = openingBalance + newTotalCredits - newTotalDebits;
+        
+        // Correct calculation should be opening + credits - debits
+        const newCalculatedClosingBalance = openingBalance + newTotalCredits + newTotalDebits;
         const newDifference = closingBalance - newCalculatedClosingBalance;
 
         setTotalCredits(newTotalCredits);
@@ -98,7 +143,6 @@ export default function TransactionAllocation({ statementData }: { statementData
         setCalculatedClosingBalance(newCalculatedClosingBalance);
         setDifference(newDifference);
     }, [transactions, openingBalance, closingBalance]);
-
 
     return (
         <Card>
@@ -196,7 +240,7 @@ export default function TransactionAllocation({ statementData }: { statementData
                         </div>
                         <div className="space-y-1">
                             <p className="text-muted-foreground">Allocated Debits</p>
-                            <p className="font-mono font-semibold text-destructive">{formatCurrency(totalDebits)}</p>
+                            <p className="font-mono font-semibold text-destructive">{formatCurrency(Math.abs(totalDebits))}</p>
                         </div>
                         <div className="space-y-1 border-t pt-2">
                             <p className="text-muted-foreground">Calculated Balance</p>
