@@ -40,7 +40,7 @@ service cloud.firestore {
 
     match /transactions/{transactionId} {
         allow get: if isOwner(resource.data.memberId) || request.auth.token.email == 'transconnect@gmail.com';
-        allow list: if request.auth.token.email == 'transconnect@gmail.com' || (request.query.where[0][0] == 'memberId' && request.query.where[0][2] == request.auth.uid);
+        allow list: if request.auth.token.email == 'transconnect@gmail.com' || (request.query.get('where')[0][0] == 'memberId' && request.query.get('where')[0][2] == request.auth.uid);
         allow create: if isOwner(request.resource.data.memberId) || request.auth.token.email == 'transconnect@gmail.com';
         allow update, delete: if request.auth.token.email == 'transconnect@gmail.com';
     }
