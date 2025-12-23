@@ -14,14 +14,15 @@ import { useToast } from '@/hooks/use-toast';
 import { useFirestore, useUser } from '@/firebase';
 import { writeBatch, doc, collection, serverTimestamp, increment, Timestamp } from 'firebase/firestore';
 import { Loader2, PlusCircle, Calendar as CalendarIcon } from 'lucide-react';
-import { format, parse } from 'date-fns';
+import { format } from 'date-fns';
 import { DocumentData } from 'firebase/firestore';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { Form, FormControl, FormField, FormItem, FormMessage, FormLabel } from '@/components/ui/form';
-import { createManualTransaction } from '../../actions';
 import { useRouter } from 'next/navigation';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
 
 
 const formatCurrency = (amount: number) => new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(amount);
@@ -59,6 +60,7 @@ export default function MemberWallet({ member, initialTransactions }: MemberWall
     const { toast } = useToast();
     const router = useRouter();
     const { user: adminUser } = useUser();
+    const firestore = useFirestore();
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isMounted, setIsMounted] = useState(false);
 
@@ -72,26 +74,56 @@ export default function MemberWallet({ member, initialTransactions }: MemberWall
     });
 
     const handleAddRecord = async (values: TransactionFormValues) => {
-        if (!adminUser) {
-            toast({ variant: 'destructive', title: 'Error', description: 'Not authenticated.' });
+        if (!adminUser || !firestore) {
+            toast({ variant: 'destructive', title: 'Error', description: 'Not authenticated or Firestore is unavailable.' });
             return;
         }
 
         setIsSubmitting(true);
         
-        const result = await createManualTransaction(member.id, adminUser.uid, values);
+        try {
+            const batch = writeBatch(firestore);
+            const transactionAmount = values.type === 'credit' ? values.amount : -values.amount;
 
-        if (result.success) {
+            // 1. Update member's wallet balance
+            const memberRef = doc(firestore, 'members', member.id);
+            batch.update(memberRef, { walletBalance: increment(transactionAmount) });
+
+            // 2. Create the new transaction document
+            const newTransactionRef = doc(collection(firestore, 'transactions'));
+            const transactionData = {
+                memberId: member.id,
+                type: values.type,
+                amount: values.amount,
+                date: Timestamp.fromDate(values.date),
+                description: values.description,
+                status: 'allocated',
+                chartOfAccountsCode: '7000-ManualAdjustment',
+                isAdjustment: true,
+                postedBy: adminUser.uid,
+                transactionId: values.transactionId,
+                createdAt: serverTimestamp()
+            };
+            batch.set(newTransactionRef, transactionData);
+
+            await batch.commit();
+
             toast({ title: 'Success', description: 'Wallet has been updated and transaction recorded.' });
             form.reset({ type: 'credit', amount: 0, description: '', date: new Date(), transactionId: '' });
-            // For a seamless update without a full page reload, we can optimistically update the state
-            // or simply use the router to refresh the data.
             router.refresh();
-        } else {
-            toast({ variant: 'destructive', title: 'Error', description: result.error || 'An unknown server error occurred.' });
-        }
 
-        setIsSubmitting(false);
+        } catch (error: any) {
+            const permissionError = new FirestorePermissionError({
+                path: `/members/${member.id}`,
+                operation: 'write',
+                requestResourceData: { amount: values.amount, description: values.description },
+            });
+            errorEmitter.emit('permission-error', permissionError);
+
+            toast({ variant: 'destructive', title: 'Error', description: error.message || 'An unknown server error occurred.' });
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     // Calculate cumulative balance
@@ -288,4 +320,3 @@ export default function MemberWallet({ member, initialTransactions }: MemberWall
         </div>
     );
 }
-
