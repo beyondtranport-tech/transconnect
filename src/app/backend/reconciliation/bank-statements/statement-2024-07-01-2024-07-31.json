@@ -4,12 +4,12 @@
     "openingBalance": 125055.50,
     "closingBalance": 130680.5,
     "transactions": [
-        { "id": 1, "date": "2024-07-15", "description": "EFT payment received", "reference": "MEMBER-UID-001", "amount": 375.00, "type": "credit" },
-        { "id": 2, "date": "2024-07-16", "description": "EFT payment received", "reference": "MEMBER-UID-002", "amount": 425.00, "type": "credit" },
-        { "id": 3, "date": "2024-07-18", "description": "Wallet top-up", "reference": "MEMBER-UID-003", "amount": 1000.00, "type": "credit" },
+        { "id": 1, "date": "2024-07-15", "description": "EFT payment received", "reference": "replace-with-real-uid-1", "amount": 375.00, "type": "credit" },
+        { "id": 2, "date": "2024-07-16", "description": "EFT payment received", "reference": "replace-with-real-uid-2", "amount": 425.00, "type": "credit" },
+        { "id": 3, "date": "2024-07-18", "description": "Wallet top-up", "reference": "replace-with-real-uid-3", "amount": 1000.00, "type": "credit" },
         { "id": 4, "date": "2024-07-19", "description": "Bank Charges", "reference": "FEE-JULY24", "amount": -150.00, "type": "debit" },
-        { "id": 5, "date": "2024-07-20", "description": "Cash deposit", "reference": "MEMBER-UID-001", "amount": 5000.00, "type": "credit" },
-        { "id": 6, "date": "2024-07-22", "description": "EFT payment received", "reference": "MEMBER-UID-004", "amount": 475.00, "type": "credit" },
+        { "id": 5, "date": "2024-07-20", "description": "Cash deposit", "reference": "replace-with-real-uid-1", "amount": 5000.00, "type": "credit" },
+        { "id": 6, "date": "2024-07-22", "description": "EFT payment received", "reference": "replace-with-real-uid-4", "amount": 475.00, "type": "credit" },
         { "id": 7, "date": "2024-07-25", "description": "Fuel expense", "reference": "BP-0725", "amount": -1500.00, "type": "debit" }
     ]
 }
