@@ -40,8 +40,8 @@ service cloud.firestore {
 
     match /transactions/{transactionId} {
       allow get: if isOwner(resource.data.memberId) || isAdmin();
-      // Admins can list transactions. The client-side query should filter by memberId.
-      allow list: if isAdmin();
+      // list is intentionally removed to force server-side fetching for admins
+      allow list: if false; 
       // Allow admin to create/update/delete transactions.
       allow write: if isAdmin();
     }

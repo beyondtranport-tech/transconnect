@@ -7,28 +7,31 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Calendar as CalendarIcon, PlusCircle } from 'lucide-react';
 import { format } from 'date-fns';
-import { DocumentData, writeBatch, doc, collection, serverTimestamp, query, where, increment } from 'firebase/firestore';
+import { DocumentData } from 'firebase/firestore';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { useFirestore, useUser, useCollection, useMemoFirebase } from '@/firebase';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { FirestorePermissionError } from '@/firebase/errors';
-import { errorEmitter } from '@/firebase/error-emitter';
 import { Input } from '@/components/ui/input';
+import { createManualTransaction, getTransactionsForMember } from '../../actions';
 
 const formatCurrency = (amount: number) => new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(amount);
 
 const formatDate = (timestamp: any) => {
+    if (!timestamp) return 'N/A';
+    // Firestore Timestamps from server actions might be serialized differently
+    if (timestamp._seconds) {
+        return format(new Date(timestamp._seconds * 1000), "yyyy-MM-dd HH:mm");
+    }
     if (typeof timestamp === 'string') return format(new Date(timestamp), "yyyy-MM-dd HH:mm");
     if (timestamp instanceof Date) return format(timestamp, "yyyy-MM-dd HH:mm");
     if (timestamp && timestamp.toDate) return format(timestamp.toDate(), "yyyy-MM-dd HH:mm");
-    return 'N/A';
+    return 'Invalid Date';
 };
 
 const transactionSchema = z.object({
@@ -46,21 +49,32 @@ interface MemberWalletProps {
 
 export default function MemberWallet({ member }: MemberWalletProps) {
     const { toast } = useToast();
-    const { user } = useUser();
-    const firestore = useFirestore();
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isClient, setIsClient] = useState(false);
-    
-    const transactionsQuery = useMemoFirebase(() => {
-        if (!firestore || !member.id) return null;
-        return query(collection(firestore, 'transactions'), where('memberId', '==', member.id));
-    }, [firestore, member.id]);
-
-    const { data: transactions, isLoading: isLoadingTransactions, error } = useCollection(transactionsQuery);
+    const [transactions, setTransactions] = useState<any[]>([]);
+    const [isLoadingTransactions, setIsLoadingTransactions] = useState(true);
+    const [transactionError, setTransactionError] = useState<string | null>(null);
 
     useEffect(() => {
         setIsClient(true);
-    }, []);
+        
+        async function fetchTransactions() {
+            setIsLoadingTransactions(true);
+            setTransactionError(null);
+            const result = await getTransactionsForMember(member.id);
+            if (result.success && result.data) {
+                setTransactions(result.data);
+            } else {
+                setTransactionError(result.error || 'Failed to load transactions.');
+            }
+            setIsLoadingTransactions(false);
+        }
+
+        if (member.id) {
+            fetchTransactions();
+        }
+
+    }, [member.id]);
 
     const form = useForm<TransactionFormValues>({
         resolver: zodResolver(transactionSchema),
@@ -73,56 +87,24 @@ export default function MemberWallet({ member }: MemberWalletProps) {
     });
 
     const handleAddRecord = async (values: TransactionFormValues) => {
-        if (!user || !firestore) {
-            toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in.' });
-            return;
-        }
-
         setIsSubmitting(true);
-        
-        try {
-            const batch = writeBatch(firestore);
+        const result = await createManualTransaction(member.id, values);
 
-            // 1. Update member's wallet balance
-            const memberRef = doc(firestore, 'members', member.id);
-            const transactionAmount = values.type === 'credit' ? values.amount : -values.amount;
-            batch.update(memberRef, { walletBalance: increment(transactionAmount) });
-
-            // 2. Create a new transaction record
-            const transactionRef = doc(collection(firestore, 'transactions'));
-            batch.set(transactionRef, {
-                reconciliationId: 'manual-admin-entry',
-                memberId: member.id,
-                type: values.type,
-                amount: values.amount,
-                date: values.date,
-                description: values.description,
-                status: 'allocated',
-                chartOfAccountsCode: '7000-ManualAdjustment',
-                isAdjustment: true,
-                postedAt: serverTimestamp(),
-                postedBy: user.uid,
-                transactionId: transactionRef.id
-            });
-            
-            await batch.commit();
-
+        if (result.success) {
             toast({ title: 'Success!', description: 'Transaction has been posted and wallet has been updated.' });
             form.reset();
-
-        } catch (e: any) {
-            const permissionError = new FirestorePermissionError({
-                path: `/members/${member.id}`,
-                operation: 'write',
-            });
-            errorEmitter.emit('permission-error', permissionError);
+            // Refetch transactions after a successful addition
+            const fetchResult = await getTransactionsForMember(member.id);
+            if (fetchResult.success && fetchResult.data) {
+                setTransactions(fetchResult.data);
+            }
+        } else {
             toast({
                 variant: 'destructive',
                 title: 'Posting Failed',
-                description: e.message || 'You may not have the required permissions for this operation.'
+                description: result.error || 'An unknown error occurred.'
             });
         }
-
         setIsSubmitting(false);
     };
     
@@ -141,7 +123,11 @@ export default function MemberWallet({ member }: MemberWalletProps) {
         ...transactions
     ] : [openingBalanceRecord];
 
-    const sortedTransactions = allRecords.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    const sortedTransactions = allRecords.sort((a, b) => {
+        const dateA = a.date._seconds ? new Date(a.date._seconds * 1000) : new Date(a.date);
+        const dateB = b.date._seconds ? new Date(b.date._seconds * 1000) : new Date(b.date);
+        return dateA.getTime() - dateB.getTime();
+    });
 
     let runningBalance = 0;
     const transactionsWithBalance = sortedTransactions.map(tx => {
@@ -288,10 +274,10 @@ export default function MemberWallet({ member }: MemberWalletProps) {
                          <div className="flex justify-center items-center py-10">
                             <Loader2 className="h-8 w-8 animate-spin text-primary" />
                         </div>
-                    ) : error ? (
+                    ) : transactionError ? (
                         <div className="text-destructive text-center py-10">
                            <p>Could not load transactions.</p>
-                           <p className="text-sm">{error.message}</p>
+                           <p className="text-sm">{transactionError}</p>
                         </div>
                     ) : (
                         <Table>
@@ -305,7 +291,7 @@ export default function MemberWallet({ member }: MemberWalletProps) {
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {transactionsWithBalance.map(tx => (
+                                {transactionsWithBalance.length > 1 ? transactionsWithBalance.map(tx => (
                                     <TableRow key={tx.id}>
                                         <TableCell>{isClient ? formatDate(tx.date) : '...'}</TableCell>
                                         <TableCell className="capitalize">{tx.description}</TableCell>
@@ -315,18 +301,16 @@ export default function MemberWallet({ member }: MemberWalletProps) {
                                         </TableCell>
                                         <TableCell className="text-right font-mono font-semibold">{isClient ? formatCurrency(tx.runningBalance) : '...'}</TableCell>
                                     </TableRow>
-                                ))}
+                                )) : (
+                                     <TableRow>
+                                        <TableCell colSpan={5} className="text-center text-muted-foreground py-10">No transactions found for this member.</TableCell>
+                                    </TableRow>
+                                )}
                             </TableBody>
                         </Table>
-                    )}
-                     {transactions && transactions.length === 0 && !isLoadingTransactions && (
-                        <p className="text-center text-muted-foreground py-10">No transactions found for this member.</p>
                     )}
                 </CardContent>
             </Card>
         </div>
     );
 }
-    
-
-    
