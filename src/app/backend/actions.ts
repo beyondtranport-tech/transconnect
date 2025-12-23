@@ -4,23 +4,33 @@
 import { getApps, initializeApp, getApp, App, cert } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { getFirestore, Timestamp, FieldValue, increment } from 'firebase-admin/firestore';
-import * as fs from 'fs';
-import * as path from 'path';
 
 let adminApp: App | null = null;
 let adminAppError: Error | null = null;
 
 try {
   if (!getApps().some(app => app.name === 'firebase-admin-app-transconnect-backend')) {
-    const serviceAccountPath = path.resolve(process.cwd(), 'service-account.json');
+    // This environment variable is expected to be set with the base64-encoded service account JSON.
+    // In many modern hosting environments (like Vercel, Firebase App Hosting), you set this
+    // as a secret environment variable.
+    const serviceAccountString = process.env.FIREBASE_SERVICE_ACCOUNT_BASE64;
     
-    if (fs.existsSync(serviceAccountPath)) {
-        const serviceAccount = JSON.parse(fs.readFileSync(serviceAccountPath, 'utf8'));
+    if (serviceAccountString) {
+        const serviceAccount = JSON.parse(Buffer.from(serviceAccountString, 'base64').toString('utf-8'));
         adminApp = initializeApp({
             credential: cert(serviceAccount)
         }, 'firebase-admin-app-transconnect-backend');
     } else {
-        throw new Error('Firebase service-account.json not found in the project root. Backend administrative actions will fail. Please add your service account credentials to enable this functionality.');
+        // Fallback for local development or environments where file-based credentials are used.
+        // This relies on a `service-account.json` file being in the project root.
+        try {
+            const serviceAccount = require('../../../service-account.json');
+             adminApp = initializeApp({
+                credential: cert(serviceAccount)
+            }, 'firebase-admin-app-transconnect-backend');
+        } catch (fileError) {
+             throw new Error('Firebase service account credentials are not available. Please set the FIREBASE_SERVICE_ACCOUNT_BASE64 environment variable or place service-account.json in the project root.');
+        }
     }
   } else {
     adminApp = getApp('firebase-admin-app-transconnect-backend');
