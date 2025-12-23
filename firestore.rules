@@ -26,7 +26,7 @@ service cloud.firestore {
       // Admins can get any doc. Users can get their own.
       allow get: if isOwner(memberId) || isAdmin();
       
-      // Admins can list all members.
+      // Admins can list all members. Regular users cannot.
       allow list: if isAdmin();
 
       // A user can create their own member document.
@@ -71,12 +71,12 @@ service cloud.firestore {
     match /transactions/{transactionId} {
         // Admins have full read/write access to all transactions.
         allow read, write: if isAdmin();
-
-        // A regular user can only read their own transactions.
+        
+        // A regular user can only get their own transactions.
         allow get: if isOwner(resource.data.memberId);
         
         // A user can list transactions only if they are querying for their own memberId.
-        allow list: if (request.query.where.size() > 0 && request.query.where[0][0] == 'memberId' && request.query.where[0][2] == request.auth.uid);
+        allow list: if request.query.where.size() > 0 && request.query.where[0][0] == 'memberId' && request.query.where[0][2] == request.auth.uid;
         
         // A regular user can create their own transactions (e.g., wallet top-up). An admin can also create.
         allow create: if isOwner(request.resource.data.memberId) || isAdmin();
