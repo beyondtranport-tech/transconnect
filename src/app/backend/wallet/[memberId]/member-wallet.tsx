@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Calendar as CalendarIcon, PlusCircle } from 'lucide-react';
 import { format } from 'date-fns';
@@ -15,7 +15,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useUser, useFirestore, useMemoFirebase } from '@/firebase';
+import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { Input } from '@/components/ui/input';
 
 const formatCurrency = (amount: number) => new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(amount);
@@ -30,19 +30,37 @@ const transactionSchema = z.object({
 type TransactionFormValues = z.infer<typeof transactionSchema>;
 
 interface MemberWalletProps {
-    member: DocumentData;
+    initialMember: DocumentData;
 }
 
-export default function MemberWallet({ member }: MemberWalletProps) {
+export default function MemberWallet({ initialMember }: MemberWalletProps) {
     const { toast } = useToast();
     const { user } = useUser();
     const firestore = useFirestore();
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isClient, setIsClient] = useState(false);
 
+    // Use the data passed from the server component as the initial state
+    const [member, setMember] = useState(initialMember);
+
+    const memberRef = useMemoFirebase(() => {
+        if (!firestore || !member.id) return null;
+        return doc(firestore, 'members', member.id);
+    }, [firestore, member.id]);
+
+    // Use `useDoc` to get live updates after the initial render
+    const { data: liveMemberData } = useDoc(memberRef);
+
     useEffect(() => {
         setIsClient(true);
     }, []);
+
+    // Update local state when live data changes
+    useEffect(() => {
+        if (liveMemberData) {
+            setMember(liveMemberData);
+        }
+    }, [liveMemberData]);
 
 
     const form = useForm<TransactionFormValues>({
@@ -90,8 +108,6 @@ export default function MemberWallet({ member }: MemberWalletProps) {
 
             toast({ title: 'Success!', description: 'Transaction has been posted and wallet has been updated.' });
             form.reset();
-             // Manually trigger a refresh of the parent data if needed
-            window.dispatchEvent(new CustomEvent('walletUpdated'));
 
         } catch (error: any) {
             toast({
@@ -243,7 +259,7 @@ export default function MemberWallet({ member }: MemberWalletProps) {
                 </CardHeader>
                 <CardContent>
                    <div className="text-center py-10 text-muted-foreground">
-                     <p>Admin transaction history view is temporarily disabled.</p>
+                     <p>Admin transaction history view is temporarily disabled while we resolve a permission issue.</p>
                    </div>
                 </CardContent>
             </Card>

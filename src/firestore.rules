@@ -11,7 +11,7 @@ service cloud.firestore {
       allow get: if (request.auth != null && request.auth.uid == memberId) || isAdmin();
       allow list: if isAdmin();
       allow create: if request.auth != null && request.auth.uid == memberId;
-      allow update: if (request.auth != null && request.auth.uid == memberId && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['firstName', 'lastName', 'phone', 'companyName'])) || isAdmin();
+      allow update: if (request.auth != null && request.auth.uid == memberId) || isAdmin();
       allow delete: if isAdmin();
     }
 
