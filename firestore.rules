@@ -10,8 +10,8 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    function isOwner(userId) {
-      return isSignedIn() && request.auth.uid == userId;
+    function isOwner(memberId) {
+      return isSignedIn() && request.auth.uid == memberId;
     }
 
     function hasValidMemberId(memberId) {
