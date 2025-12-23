@@ -35,19 +35,27 @@ export default function TransactionAllocation({ statementData }: { statementData
 
     
     const handleAllocationChange = (transactionId: number) => {
-        setTransactions(currentTransactions =>
-            currentTransactions.map((tx: any) => {
-                if (tx.id === transactionId) {
-                    const newStatus = tx.status === 'allocated' ? 'pending' : 'allocated';
-                     if (newStatus === 'allocated') {
-                        toast({ title: `Transaction ${tx.id} allocated.` });
-                    }
-                    return { ...tx, status: newStatus };
+        let wasAllocated = false;
+        let newStatus = 'pending';
+
+        const updatedTransactions = transactions.map((tx: any) => {
+            if (tx.id === transactionId) {
+                newStatus = tx.status === 'allocated' ? 'pending' : 'allocated';
+                if (newStatus === 'allocated') {
+                    wasAllocated = true;
                 }
-                return tx;
-            })
-        );
+                return { ...tx, status: newStatus };
+            }
+            return tx;
+        });
+
+        setTransactions(updatedTransactions);
+
+        if (wasAllocated) {
+            toast({ title: `Transaction ${transactionId} allocated.` });
+        }
     };
+
 
     const handleReferenceChange = (transactionId: number, newReference: string) => {
         setTransactions(currentTransactions =>
@@ -204,7 +212,7 @@ export default function TransactionAllocation({ statementData }: { statementData
                         </div>
                     </div>
                 </div>
-                 <Button onClick={handleSaveAndPost} disabled={isPosting}>
+                 <Button onClick={handleSaveAndPost} disabled={isPosting || Math.abs(difference) > 0.01}>
                     {isPosting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <FileCheck className="mr-2 h-4 w-4" />}
                     Save &amp; Post Reconciliation
                 </Button>
