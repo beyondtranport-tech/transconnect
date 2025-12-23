@@ -35,22 +35,11 @@ service cloud.firestore {
       return request.resource.data.id == resource.data.id;
     }
     
-    function isUpdatingOwnMembershipOrPoints(memberId) {
-      let isChangingMembership = request.resource.data.membershipId != resource.data.membershipId;
-      let isChangingPoints = request.resource.data.rewardPoints != resource.data.rewardPoints;
-      let isChangingAppIds = request.resource.data.financeApplicationIds != resource.data.financeApplicationIds;
-      let isChangingWallet = request.resource.data.walletBalance != resource.data.walletBalance;
-
-      let allowedFields = ['membershipId', 'rewardPoints', 'financeApplicationIds', 'walletBalance'];
-      let otherFieldsChanged = request.resource.data.diff(resource.data).affectedKeys()
-                                .filter(key => ! (key in allowedFields)).size() > 0;
-                                
-      return isOwner(memberId) && (isChangingMembership || isChangingPoints || isChangingAppIds || isChangingWallet) && !otherFieldsChanged;
-    }
-    
     function isUpdatingAllowedFields() {
       let allowedToUpdate = ['firstName', 'lastName', 'phone', 'companyName'];
       let incomingKeys = request.resource.data.keys();
+      // This ensures a user can only update a subset of fields, and nothing more.
+      // It prevents them from adding fields like 'admin' or changing their membership.
       return incomingKeys.hasAll(allowedToUpdate) && incomingKeys.size() == allowedToUpdate.size();
     }
     
