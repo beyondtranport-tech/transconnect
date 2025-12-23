@@ -7,6 +7,7 @@ import { useState } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
+import TransactionAllocation from "./transaction-allocation";
 
 const availableStatements = [
     "statement-2024-07-01-2024-07-31.csv"
@@ -14,6 +15,7 @@ const availableStatements = [
 
 export default function ReconciliationPage() {
     const [selectedStatement, setSelectedStatement] = useState<string | null>(null);
+    const [processingStatement, setProcessingStatement] = useState<string | null>(null);
     const { toast } = useToast();
 
     const handleProcess = () => {
@@ -28,11 +30,13 @@ export default function ReconciliationPage() {
 
         toast({
             title: "Processing Started",
-            description: `Processing statement: ${selectedStatement}`,
+            description: `Parsing and preparing statement: ${selectedStatement}`,
         });
 
         // In a real implementation, you would trigger the parsing
-        // and reconciliation logic here.
+        // and reconciliation logic here. For now, we'll just set the state
+        // to display the allocation component.
+        setProcessingStatement(selectedStatement);
         console.log(`Processing statement: ${selectedStatement}`);
     }
 
@@ -64,6 +68,10 @@ export default function ReconciliationPage() {
                                         checked={selectedStatement === statement}
                                         onCheckedChange={(checked) => {
                                             setSelectedStatement(checked ? statement : null);
+                                            // If a statement is deselected, hide the processing view
+                                            if (!checked) {
+                                                setProcessingStatement(null);
+                                            }
                                         }}
                                     />
                                     <Label htmlFor={statement} className="font-mono cursor-pointer">
@@ -79,6 +87,10 @@ export default function ReconciliationPage() {
                     )}
                 </CardContent>
             </Card>
+
+            {processingStatement && (
+                <TransactionAllocation statementName={processingStatement} />
+            )}
         </div>
     );
 }
