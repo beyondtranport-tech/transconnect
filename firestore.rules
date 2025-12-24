@@ -8,41 +8,41 @@ service cloud.firestore {
     }
     
     match /members/{memberId} {
-      allow get: if request.auth.uid == memberId || request.auth.token.email == 'transconnect@gmail.com';
-      allow list: if request.auth.token.email == 'transconnect@gmail.com';
+      allow get: if request.auth.uid == memberId || isAdmin();
+      allow list: if isAdmin();
       allow create: if request.auth != null && request.auth.uid == memberId;
-      allow update: if (request.auth != null && request.auth.uid == memberId) || request.auth.token.email == 'transconnect@gmail.com';
-      allow delete: if request.auth.token.email == 'transconnect@gmail.com';
+      allow update: if (request.auth != null && request.auth.uid == memberId) || isAdmin();
+      allow delete: if isAdmin();
     }
 
     match /memberships/{membershipId} {
       allow get, list: if request.auth != null;
-      allow write: if request.auth.token.email == 'transconnect@gmail.com'; 
+      allow write: if isAdmin(); 
     }
 
     match /contributions/{contributionId} {
       allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
-      allow read, list: if request.auth.token.email == 'transconnect@gmail.com';
-      allow update, delete: if request.auth.token.email == 'transconnect@gmail.com';
+      allow read, list: if isAdmin();
+      allow update, delete: if isAdmin();
     }
     
      match /financeApplications/{applicationId} {
-      allow get: if (request.auth != null && request.auth.uid == resource.data.applicantId) || request.auth.token.email == 'transconnect@gmail.com';
-      allow list: if request.auth.token.email == 'transconnect@gmail.com';
+      allow get: if (request.auth != null && request.auth.uid == resource.data.applicantId) || isAdmin();
+      allow list: if isAdmin();
       allow create: if request.auth != null && request.auth.uid == request.resource.data.applicantId;
-      allow update: if (request.auth != null && request.auth.uid == resource.data.applicantId) || request.auth.token.email == 'transconnect@gmail.com';
-      allow delete: if request.auth.token.email == 'transconnect@gmail.com';
+      allow update: if (request.auth != null && request.auth.uid == resource.data.applicantId) || isAdmin();
+      allow delete: if isAdmin();
     }
 
     match /transactions/{transactionId} {
-      allow get: if (request.auth != null && request.auth.uid == resource.data.memberId) || request.auth.token.email == 'transconnect@gmail.com';
-      allow list: if request.auth.token.email == 'transconnect@gmail.com';
-      allow create: if request.auth.token.email == 'transconnect@gmail.com' && request.resource.data.memberId != null;
-      allow update, delete: if request.auth.token.email == 'transconnect@gmail.com';
+      allow get: if (request.auth != null && request.auth.uid == resource.data.memberId) || isAdmin();
+      allow list: if isAdmin();
+      allow create: if isAdmin() && request.resource.data.memberId != null;
+      allow update, delete: if isAdmin();
     }
 
     match /platform_config/{docId} {
-      allow read, write: if request.auth.token.email == 'transconnect@gmail.com';
+      allow read, write: if isAdmin();
     }
   }
 }
