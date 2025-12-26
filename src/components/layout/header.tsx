@@ -43,17 +43,11 @@ export function Header() {
   const [isSheetOpen, setIsSheetOpen] = React.useState(false);
   const { user, isUserLoading } = useUser();
   const auth = useAuth();
-  const [isAdmin, setIsAdmin] = React.useState(false);
   const [isClient, setIsClient] = React.useState(false);
 
   React.useEffect(() => {
     setIsClient(true);
-    if (user && user.email === 'beyondtranport@gmail.com') {
-      setIsAdmin(true);
-    } else {
-      setIsAdmin(false);
-    }
-  }, [user]);
+  }, []);
 
   const handleSignOut = async () => {
     if (!auth) return;
@@ -68,6 +62,8 @@ export function Header() {
     if (!name) return "AC";
     return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
   };
+  
+  const isAdmin = user && user.email === 'beyondtranport@gmail.com';
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
