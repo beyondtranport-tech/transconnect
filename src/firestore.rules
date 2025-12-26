@@ -1,6 +1,7 @@
 
 rules_version = '2';
 service cloud.firestore {
+
   match /databases/{database}/documents {
 
     function isAdmin() {
@@ -8,7 +9,7 @@ service cloud.firestore {
     }
     
     match /members/{memberId} {
-      allow read: if request.auth.uid == memberId || isAdmin();
+      allow get, read: if request.auth.uid == memberId || isAdmin();
       allow list: if isAdmin();
       allow create: if request.auth != null && request.resource.data.id == request.auth.uid;
       allow update: if (request.auth != null && request.auth.uid == memberId) || isAdmin();
@@ -20,7 +21,9 @@ service cloud.firestore {
 
       match /versions/{versionId} {
         allow read, list: if request.auth.uid == memberId || isAdmin();
+        // Allow creating a version only if the user is updating their own member doc
         allow create: if request.auth.uid == memberId;
+        // No updates or deletes to preserve history
         allow update, delete: if false;
       }
       
@@ -30,6 +33,7 @@ service cloud.firestore {
       }
       
       match /financeApplications/{applicationId} {
+        // A user can perform any action on the finance applications within their own document space.
         allow read, list, create, update, delete: if request.auth.uid == memberId || isAdmin();
       }
     }
@@ -45,13 +49,14 @@ service cloud.firestore {
       allow update, delete: if isAdmin();
     }
     
-    // This top-level collection remains for admin use to view all applications.
+    // This top-level collection is now exclusively for admin use to view all applications across the platform.
     match /financeApplications/{applicationId} {
       allow read, list, get: if isAdmin();
-      // Users can no longer write to this global collection, only their subcollection.
+      // Users can no longer write to or query this global collection.
       allow create, update, delete: if false;
     }
 
+    // Top-level transactions collection is now admin-only
     match /transactions/{transactionId} {
         allow read, write: if isAdmin();
     }

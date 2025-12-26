@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
@@ -16,6 +15,7 @@ const statusColors: { [key: string]: 'default' | 'secondary' | 'destructive' | '
   matched: 'default',
   rejected: 'destructive',
   funded: 'default',
+  membership_payment: 'default'
 };
 
 const formatPrice = (price: number) => {

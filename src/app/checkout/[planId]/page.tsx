@@ -1,11 +1,10 @@
-
 'use client';
 
 import { Suspense } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { useUser, useFirestore, useMemoFirebase } from '@/firebase';
-import { doc, setDoc, getDoc, updateDoc, arrayUnion, writeBatch, collection } from 'firebase/firestore';
+import { doc, setDoc, getDoc, updateDoc, arrayUnion, writeBatch, collection, serverTimestamp } from 'firebase/firestore';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
@@ -86,20 +85,22 @@ function CheckoutComponent() {
     const memberUpdateData = { membershipId: plan.id, walletBalance: newBalance };
     batch.update(memberDocRef, memberUpdateData);
 
-    // 2. Create a transaction record in the member's financeApplications subcollection
-    const transactionRef = doc(collection(firestore, `members/${user.uid}/financeApplications`));
+    // 2. Create a transaction record in the member's transactions subcollection
+    const transactionRef = doc(collection(firestore, `members/${user.uid}/transactions`));
     const transactionData = {
-        applicantId: user.uid,
-        status: 'funded', // or 'completed'
-        fundingType: 'membership_payment',
-        amountRequested: -price, // Negative amount for payment
-        createdAt: new Date(),
-        updatedAt: new Date(),
+        memberId: user.uid,
+        type: 'debit',
+        amount: price,
+        date: serverTimestamp(),
+        description: `Membership payment: ${plan.name} (${cycle})`,
+        status: 'allocated',
+        chartOfAccountsCode: '4010', // Example code for membership fees
+        isAdjustment: false,
+        postedBy: 'system',
+        postedAt: serverTimestamp(),
+        transactionId: transactionRef.id
     };
     batch.set(transactionRef, transactionData);
-
-    // 3. Add the transaction ID to the member's record
-    batch.update(memberDocRef, { financeApplicationIds: arrayUnion(transactionRef.id) });
     
     try {
         await batch.commit();
