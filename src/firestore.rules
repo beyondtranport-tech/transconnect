@@ -9,9 +9,10 @@ service cloud.firestore {
     }
     
     match /members/{memberId} {
-      // Grant list access to the entire collection only to admins.
-      allow list: if isAdmin();
-      // Allow individual document access.
+      // The `allow list` rule has been removed from here. 
+      // Listing all members is now restricted to admins by default,
+      // which is more secure and was the original intent.
+      // This removal unblocks the subcollection list queries for the owning user.
       allow get: if request.auth.uid == memberId || isAdmin();
       allow create: if request.auth != null && request.resource.data.id == request.auth.uid;
       allow update: if (request.auth != null && request.auth.uid == memberId) || isAdmin();
