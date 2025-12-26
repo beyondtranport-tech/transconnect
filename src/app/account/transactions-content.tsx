@@ -8,7 +8,7 @@ import { Loader2, DollarSign, ClipboardCopy, FilePlus } from 'lucide-react';
 import { collection, query, orderBy, addDoc, serverTimestamp } from 'firebase/firestore';
 import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
-import { bankDetails } from '@/lib/bank-details.json';
+import bankDetailsData from '@/lib/bank-details.json';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -155,6 +155,7 @@ export default function TransactionsContent() {
     const { user, isUserLoading } = useUser();
     const firestore = useFirestore();
     const { toast } = useToast();
+    const bankDetails = bankDetailsData || {};
 
     const transactionsQuery = useMemoFirebase(() => {
         if (!firestore || !user) return null;
@@ -270,4 +271,3 @@ export default function TransactionsContent() {
         </div>
     );
 }
-
