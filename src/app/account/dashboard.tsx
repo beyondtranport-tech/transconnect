@@ -1,10 +1,9 @@
-
 'use client';
 
 import { useUser, useFirestore, useMemoFirebase } from '@/firebase';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Award, FileText, Gem, User, Loader2, DollarSign, HeartHandshake, ArrowRight, Sparkles, Wallet } from "lucide-react";
+import { Award, FileText, Gem, User, Loader2, DollarSign, HeartHandshake, ArrowRight, Sparkles, Wallet, ShieldAlert } from "lucide-react";
 import { doc } from 'firebase/firestore';
 import { useDoc } from '@/firebase/firestore/use-doc';
 import Link from 'next/link';
@@ -16,13 +15,14 @@ export default function AccountDashboard() {
     const firestore = useFirestore();
 
     const memberRef = useMemoFirebase(() => {
-        // This is the critical guard: do not create the reference until user is loaded.
         if (isUserLoading || !firestore || !user) return null;
         return doc(firestore, 'members', user.uid);
     }, [firestore, user, isUserLoading]);
 
     const { data: memberData, isLoading: isMemberLoading } = useDoc(memberRef);
-
+    
+    // Explicit Admin Check
+    const isAdmin = user && user.email === 'beyondtranport@gmail.com';
     const isFreeMember = memberData?.membershipId === 'free';
     
     const formatPrice = (price: number) => {
@@ -43,6 +43,32 @@ export default function AccountDashboard() {
 
     return (
         <div className="w-full">
+            {/* <<< START: ADMIN-ONLY BACKEND ACCESS CARD >>> */}
+            {isAdmin && (
+                <Card className="mb-8 border-destructive bg-destructive/10">
+                    <CardHeader>
+                        <div className="flex items-center gap-4">
+                            <ShieldAlert className="h-8 w-8 text-destructive" />
+                            <div>
+                                <CardTitle>Admin Backend Access</CardTitle>
+                                <CardDescription className="text-destructive/80">Direct access to the platform's administrative backend.</CardDescription>
+                            </div>
+                        </div>
+                    </CardHeader>
+                    <CardContent>
+                        <p className="text-muted-foreground">The navigation link in the avatar menu is currently broken. Use this button to access the backend while the issue is being resolved.</p>
+                    </CardContent>
+                    <CardFooter>
+                        <Button variant="destructive" asChild>
+                            <Link href="/backend">
+                                Go to Backend <ArrowRight className="ml-2 h-4 w-4" />
+                            </Link>
+                        </Button>
+                    </CardFooter>
+                </Card>
+            )}
+            {/* <<< END: ADMIN-ONLY BACKEND ACCESS CARD >>> */}
+
             <div className="flex items-center gap-4 mb-8">
                 <div>
                     <h1 className="text-3xl md:text-4xl font-bold font-headline">Dashboard</h1>
