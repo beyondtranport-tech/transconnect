@@ -40,6 +40,22 @@
             "type": "string",
             "description": "The VAT registration number of the company."
         },
+        "streetAddress": {
+          "type": "string",
+          "description": "The street address of the company."
+        },
+        "city": {
+          "type": "string",
+          "description": "The city of the company's address."
+        },
+        "province": {
+          "type": "string",
+          "description": "The province of the company's address."
+        },
+        "postalCode": {
+          "type": "string",
+          "description": "The postal code of the company's address."
+        },
         "membershipId": {
           "type": "string",
           "description": "Reference to Membership tier ID (e.g., 'professional'). (Relationship: Member 1:1 Membership)"

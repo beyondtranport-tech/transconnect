@@ -22,11 +22,16 @@ import { doc, updateDoc } from 'firebase/firestore';
 import { useDoc } from '@/firebase/firestore/use-doc';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
+import { Separator } from '@/components/ui/separator';
 
 const companyFormSchema = z.object({
   companyName: z.string().min(1, 'Company name is required'),
   registrationNumber: z.string().optional(),
   vatNumber: z.string().optional(),
+  streetAddress: z.string().optional(),
+  city: z.string().optional(),
+  province: z.string().optional(),
+  postalCode: z.string().optional(),
 });
 
 type CompanyFormValues = z.infer<typeof companyFormSchema>;
@@ -50,6 +55,10 @@ export default function CompanyContent() {
       companyName: '',
       registrationNumber: '',
       vatNumber: '',
+      streetAddress: '',
+      city: '',
+      province: '',
+      postalCode: '',
     },
   });
 
@@ -59,6 +68,10 @@ export default function CompanyContent() {
         companyName: memberData.companyName || '',
         registrationNumber: memberData.registrationNumber || '',
         vatNumber: memberData.vatNumber || '',
+        streetAddress: memberData.streetAddress || '',
+        city: memberData.city || '',
+        province: memberData.province || '',
+        postalCode: memberData.postalCode || '',
       });
     }
   }, [memberData, form]);
@@ -111,46 +124,116 @@ export default function CompanyContent() {
           </div>
         ) : (
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 max-w-lg">
-              <FormField
-                control={form.control}
-                name="companyName"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Company Name</FormLabel>
-                    <FormControl>
-                      <Input {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-               <FormField
-                control={form.control}
-                name="registrationNumber"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Company Registration Number</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g., 2024/123456/07" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-               <FormField
-                control={form.control}
-                name="vatNumber"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>VAT Number (Optional)</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g., 4000123456" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 max-w-2xl">
+              <div>
+                <h3 className="text-lg font-medium">Business Details</h3>
+                <Separator className="my-2" />
+                <div className="space-y-4 pt-2">
+                     <FormField
+                        control={form.control}
+                        name="companyName"
+                        render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Company Name</FormLabel>
+                            <FormControl>
+                            <Input {...field} />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                        )}
+                    />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <FormField
+                            control={form.control}
+                            name="registrationNumber"
+                            render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Company Registration Number</FormLabel>
+                                <FormControl>
+                                <Input placeholder="e.g., 2024/123456/07" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                            )}
+                        />
+                        <FormField
+                            control={form.control}
+                            name="vatNumber"
+                            render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>VAT Number (Optional)</FormLabel>
+                                <FormControl>
+                                <Input placeholder="e.g., 4000123456" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                            )}
+                        />
+                    </div>
+                 </div>
+              </div>
+
+               <div>
+                <h3 className="text-lg font-medium">Physical Address</h3>
+                <Separator className="my-2" />
+                <div className="space-y-4 pt-2">
+                     <FormField
+                        control={form.control}
+                        name="streetAddress"
+                        render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Street Address</FormLabel>
+                            <FormControl>
+                            <Input placeholder="123 Transport Lane" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                        )}
+                    />
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <FormField
+                            control={form.control}
+                            name="city"
+                            render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>City</FormLabel>
+                                <FormControl>
+                                <Input placeholder="Johannesburg" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                            )}
+                        />
+                        <FormField
+                            control={form.control}
+                            name="province"
+                            render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Province</FormLabel>
+                                <FormControl>
+                                <Input placeholder="Gauteng" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                            )}
+                        />
+                         <FormField
+                            control={form.control}
+                            name="postalCode"
+                            render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Postal Code</FormLabel>
+                                <FormControl>
+                                <Input placeholder="2196" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                            )}
+                        />
+                    </div>
+                 </div>
+              </div>
+
               <Button type="submit" disabled={isSaving}>
                 {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                 Save Changes
