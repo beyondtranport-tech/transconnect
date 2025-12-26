@@ -22,7 +22,6 @@ import {
   DollarSign,
   User,
   Building,
-  Wallet,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -32,7 +31,6 @@ import { useUser, useAuth } from '@/firebase';
 import { signOut } from 'firebase/auth';
 import AccountDashboard from './dashboard';
 import { Loader2 } from 'lucide-react';
-import WalletView from './wallet-view';
 import StaffContent from './staff-content';
 import ProfileContent from './profile-content';
 import CompanyContent from './company-content';
@@ -103,8 +101,6 @@ function AccountPageContent() {
         return <CompanyContent />;
       case 'staff':
         return <StaffContent />;
-      case 'wallet':
-        return <WalletView />;
       case 'transactions':
         return <TransactionsContent />;
       case 'documents':
@@ -164,12 +160,6 @@ function AccountPageContent() {
                 <SidebarMenuButton tooltip="Staff" isActive={activeView === 'staff'} onClick={() => router.push('/account?view=staff', { scroll: false })}>
                   <Users />
                   <span>Staff</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Wallet" isActive={activeView === 'wallet'} onClick={() => router.push('/account?view=wallet', { scroll: false })}>
-                  <Wallet />
-                  <span>Wallet</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
