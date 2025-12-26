@@ -33,6 +33,7 @@ import { signOut } from 'firebase/auth';
 import AccountDashboard from './dashboard';
 import { Loader2 } from 'lucide-react';
 import WalletView from './wallet-view';
+import StaffContent from './staff-content';
 
 function ProfileContent() {
     return (
@@ -50,14 +51,7 @@ function CompanyContent() {
         </div>
     )
 }
-function StaffContent() {
-    return (
-        <div>
-            <h1 className="text-2xl font-bold">Staff</h1>
-            <p className="mt-2 text-muted-foreground">This is where staff management will go.</p>
-        </div>
-    )
-}
+
 function TransactionsContent() {
     return (
         <div>
