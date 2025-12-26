@@ -9,11 +9,13 @@ service cloud.firestore {
     }
     
     match /members/{memberId} {
+      // Grant list access to the entire collection only to admins.
+      allow list: if isAdmin();
+      // Allow individual document access.
       allow get: if request.auth.uid == memberId || isAdmin();
       allow create: if request.auth != null && request.resource.data.id == request.auth.uid;
       allow update: if (request.auth != null && request.auth.uid == memberId) || isAdmin();
       allow delete: if isAdmin();
-      allow list: if isAdmin();
 
       match /staff/{staffId} {
         allow read, list, create, update, delete: if request.auth.uid == memberId || isAdmin();
