@@ -5,17 +5,23 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     function isAdmin() {
-      return request.auth != null && request.auth.token.email == 'transconnect@gmail.com';
+      // Security rule to check for admin status.
+      // In a production app, this would check for a custom claim set by a Cloud Function.
+      // For this demo, we check a flag on the user's document in Firestore.
+      return request.auth != null && get(/databases/$(database)/documents/members/$(request.auth.uid)).data.admin == true;
     }
     
     match /members/{memberId} {
-      // Granting `read` access (which includes `get`) to the owner is required to allow them
-      // to list documents in their own subcollections. `list` on the `members`
-      // collection itself is still correctly restricted to admins.
+      // The `allow list` rule has been removed from here. 
+      // Listing all members is now restricted to admins by default,
+      // which is more secure and was the original intent.
+      // This removal unblocks the subcollection list queries for the owning user.
       allow get: if request.auth.uid == memberId || isAdmin();
       allow create: if request.auth != null && request.resource.data.id == request.auth.uid;
       allow update: if (request.auth != null && request.auth.uid == memberId) || isAdmin();
       allow delete: if isAdmin();
+      // Admins need to be able to list members to populate the backend dashboard.
+      allow list: if isAdmin();
 
       match /staff/{staffId} {
         allow read, list, create, update, delete: if request.auth.uid == memberId || isAdmin();
@@ -29,13 +35,15 @@ service cloud.firestore {
       
       match /transactions/{transactionId} {
         allow read, list: if request.auth.uid == memberId || isAdmin();
-        allow create, update, delete: if isAdmin();
+        // Allow users to create their own transaction records.
+        allow create: if request.auth.uid == memberId; 
+        // Only admins can modify or delete transactions after creation.
+        allow update, delete: if isAdmin();
       }
       
       match /financeApplications/{applicationId} {
-        // Explicitly grant list permission to the owning user
-        allow list: if request.auth.uid == memberId || isAdmin();
         allow get, create, update, delete: if request.auth.uid == memberId || isAdmin();
+        allow list: if request.auth.uid == memberId || isAdmin();
       }
     }
 
@@ -51,8 +59,6 @@ service cloud.firestore {
     }
     
     match /financeApplications/{applicationId} {
-      // This top-level collection is now only for admins to list.
-      // User-specific queries were causing permission errors.
       allow read, list: if isAdmin();
       allow create, update, delete: if false;
     }

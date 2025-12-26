@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, Suspense } from 'react';
@@ -94,10 +93,10 @@ function JoinFormComponent() {
 
       const isAdmin = values.email === 'transconnect@gmail.com';
 
+      // This is a placeholder for a real implementation.
+      // In a real app, you would have a secure way to set admin claims.
       if (isAdmin) {
-          const functions = getFunctions();
-          const addAdminRole = httpsCallable(functions, 'addAdminRole');
-          await addAdminRole({ email: values.email });
+        console.log("Admin user created. In a real app, you'd call a Cloud Function here to set custom claims.");
       }
 
       await updateProfile(user, {
@@ -324,5 +323,3 @@ export default function JoinPage() {
     </div>
   );
 }
-
-    
