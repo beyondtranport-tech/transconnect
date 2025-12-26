@@ -45,7 +45,7 @@ import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import ContributionsList from './contributions-list';
 import FinanceApplicationsList from './finance-applications-list';
-import { useUser } from '@/firebase';
+import { useUser, useAuth } from '@/firebase';
 import { signOut } from 'firebase/auth';
 import BankDetailsSettings from './bank-details-settings';
 import ChartOfAccountsSettings from './chart-of-accounts-settings';
@@ -123,6 +123,7 @@ function BackendPageContent() {
   const initialView = searchParams.get('view') || 'members';
   const [activeView, setActiveView] = useState(initialView);
   const { user, isUserLoading } = useUser();
+  const auth = useAuth();
   const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
@@ -140,9 +141,9 @@ function BackendPageContent() {
   }, [user, isUserLoading, router]);
 
 
-  const onLogout = () => {
-    // This is a simplified logout for the backend, assuming no complex session management.
-    // For a real app, you might call a server action to invalidate a session.
+  const onLogout = async () => {
+    if (!auth) return;
+    await signOut(auth);
     router.push('/');
   };
 

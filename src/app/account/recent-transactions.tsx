@@ -49,7 +49,7 @@ export default function RecentTransactions() {
             </CardContent>
             <CardFooter>
                  <Button variant="outline" asChild>
-                    <Link href="/account?view=wallet">View Wallet Details</Link>
+                    <Link href="/account?view=transactions">View Full History</Link>
                 </Button>
             </CardFooter>
         </Card>

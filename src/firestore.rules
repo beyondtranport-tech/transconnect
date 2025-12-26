@@ -27,9 +27,7 @@ service cloud.firestore {
       
       match /transactions/{transactionId} {
         allow read, list: if request.auth.uid == memberId || isAdmin();
-        // Allow users to create their own transaction records.
-        allow create: if request.auth.uid == memberId; 
-        // Only admins can modify or delete transactions after creation.
+        allow create: if request.auth.uid == memberId;
         allow update, delete: if isAdmin();
       }
       
