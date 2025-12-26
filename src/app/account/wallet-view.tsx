@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useUser, useFirestore, useMemoFirebase, useCollection } from '@/firebase';
@@ -277,3 +278,5 @@ export default function WalletView() {
         </div>
     );
 }
+
+    

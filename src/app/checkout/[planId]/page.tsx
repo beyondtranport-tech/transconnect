@@ -1,10 +1,11 @@
+
 'use client';
 
 import { Suspense } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { useUser, useFirestore, useMemoFirebase } from '@/firebase';
-import { doc, setDoc, getDoc, updateDoc, arrayUnion, writeBatch, collection, serverTimestamp } from 'firebase/firestore';
+import { doc, getDoc, writeBatch, collection, serverTimestamp } from 'firebase/firestore';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
@@ -200,3 +201,5 @@ export default function CheckoutPage() {
         </div>
     );
 }
+
+    
