@@ -19,7 +19,7 @@ import { useState, useEffect } from 'react';
 import { Loader2, User, Save } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useUser, useFirestore, useMemoFirebase } from '@/firebase';
-import { doc, updateDoc } from 'firebase/firestore';
+import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { useDoc } from '@/firebase/firestore/use-doc';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
@@ -79,6 +79,7 @@ export default function ProfileContent() {
         firstName: values.firstName,
         lastName: values.lastName,
         phone: values.phone,
+        updatedAt: serverTimestamp(),
     };
     
     updateDoc(memberDocRef, dataToUpdate)
@@ -187,3 +188,5 @@ export default function ProfileContent() {
     </Card>
   );
 }
+
+    

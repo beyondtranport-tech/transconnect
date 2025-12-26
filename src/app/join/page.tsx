@@ -11,7 +11,7 @@ import {
   createUserWithEmailAndPassword,
   updateProfile,
 } from 'firebase/auth';
-import { doc, setDoc } from 'firebase/firestore';
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 
 import { useAuth, useFirestore } from '@/firebase';
 import { Button } from '@/components/ui/button';
@@ -115,6 +115,8 @@ function JoinFormComponent() {
         rewardPoints: 0,
         walletBalance: 0,
         admin: isAdmin,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
       };
 
       if (userRole) {
@@ -322,3 +324,5 @@ export default function JoinPage() {
     </div>
   );
 }
+
+    

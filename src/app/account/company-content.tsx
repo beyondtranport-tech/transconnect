@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useForm } from 'react-hook-form';
@@ -18,7 +19,7 @@ import { useState, useEffect } from 'react';
 import { Loader2, Building, Save } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useUser, useFirestore, useMemoFirebase } from '@/firebase';
-import { doc, updateDoc } from 'firebase/firestore';
+import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { useDoc } from '@/firebase/firestore/use-doc';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
@@ -84,7 +85,12 @@ export default function CompanyContent() {
       return;
     }
     
-    updateDoc(memberDocRef, values)
+    const dataToUpdate = {
+        ...values,
+        updatedAt: serverTimestamp(),
+    };
+
+    updateDoc(memberDocRef, dataToUpdate)
       .then(() => {
         toast({
           title: 'Company Info Updated',
@@ -95,7 +101,7 @@ export default function CompanyContent() {
         const permissionError = new FirestorePermissionError({
             path: memberDocRef.path,
             operation: 'update',
-            requestResourceData: values,
+            requestResourceData: dataToUpdate,
         });
         errorEmitter.emit('permission-error', permissionError);
         toast({
@@ -245,3 +251,5 @@ export default function CompanyContent() {
     </Card>
   );
 }
+
+    
