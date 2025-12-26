@@ -33,8 +33,10 @@ service cloud.firestore {
       }
       
       match /financeApplications/{applicationId} {
-        // A user can perform any action on the finance applications within their own document space.
-        allow read, list, create, update, delete: if request.auth.uid == memberId || isAdmin();
+        // A user can read, create, update, or delete their own applications.
+        allow get, create, update, delete: if request.auth.uid == memberId || isAdmin();
+        // A user can ONLY list their own applications.
+        allow list: if request.auth.uid == memberId || isAdmin();
       }
     }
 
@@ -66,5 +68,3 @@ service cloud.firestore {
     }
   }
 }
-
-    
