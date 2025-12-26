@@ -57,7 +57,7 @@ export default function AccountDashboard() {
                         </div>
                     </CardHeader>
                     <CardContent>
-                        <p className="text-muted-foreground">The navigation link in the avatar menu is currently broken. Use this button to access the backend while the issue is being resolved.</p>
+                        <p className="text-muted-foreground">The navigation link in the avatar menu may be broken. Use this button to access the backend.</p>
                     </CardContent>
                     <CardFooter>
                         <Button variant="destructive" asChild>
@@ -77,7 +77,7 @@ export default function AccountDashboard() {
                 </div>
             </div>
 
-            {isFreeMember && (
+            {isFreeMember && !isAdmin && (
                  <Card className="mb-8 bg-primary/5 border-primary/20">
                     <CardHeader>
                         <div className="flex items-start gap-4">
@@ -115,12 +115,12 @@ export default function AccountDashboard() {
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold text-primary capitalize">{memberData?.membershipId || 'Free'}</div>
-                         {isFreeMember ? (
+                         {isFreeMember && !isAdmin ? (
                              <Button asChild variant="link" size="sm" className="p-0 h-auto">
                                 <Link href="/pricing">Upgrade to a paid plan</Link>
                             </Button>
                          ) : (
-                            <p className="text-xs text-muted-foreground">You have a premium membership.</p>
+                            <p className="text-xs text-muted-foreground">{isAdmin ? 'Admin Account' : 'You have a premium membership.'}</p>
                          )}
                     </CardContent>
                 </Card>

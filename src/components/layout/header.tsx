@@ -63,6 +63,8 @@ export function Header() {
     return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
   };
 
+  const isAdmin = user && user.email === 'beyondtranport@gmail.com';
+
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 items-center justify-between">
@@ -130,7 +132,7 @@ export function Header() {
                   <DropdownMenuItem asChild>
                     <Link href="/account">Account</Link>
                   </DropdownMenuItem>
-                  {user && user.email === 'beyondtranport@gmail.com' && (
+                  {isAdmin && (
                       <DropdownMenuItem asChild>
                         <Link href="/backend" className='flex items-center'>
                           <ShieldCheck className="mr-2 h-4 w-4" />

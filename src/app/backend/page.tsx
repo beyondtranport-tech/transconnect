@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import {
@@ -133,7 +132,7 @@ function BackendPageContent() {
   useEffect(() => {
     if (!isUserLoading) {
       if (!user || user.email !== 'beyondtranport@gmail.com') {
-        router.push('/signin');
+        router.push('/signin?redirect=/backend');
       } else {
         setIsAdmin(true);
       }
