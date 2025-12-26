@@ -131,7 +131,7 @@ function BackendPageContent() {
 
   useEffect(() => {
     if (!isUserLoading) {
-      if (!user || user.email !== 'transconnect@gmail.com') {
+      if (!user || user.email !== 'beyondtranport@gmail.com') {
         router.push('/signin');
       } else {
         setIsAdmin(true);
@@ -271,7 +271,7 @@ function BackendPageContent() {
                 Super Admin
               </span>
               <span className="text-xs text-sidebar-foreground/70">
-                transconnect@gmail.com
+                beyondtranport@gmail.com
               </span>
             </div>
             <Button

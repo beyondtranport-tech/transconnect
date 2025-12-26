@@ -5,22 +5,14 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     function isAdmin() {
-      // Security rule to check for admin status.
-      // In a production app, this would check for a custom claim set by a Cloud Function.
-      // For this demo, we check a flag on the user's document in Firestore.
-      return request.auth != null && get(/databases/$(database)/documents/members/$(request.auth.uid)).data.admin == true;
+      return request.auth != null && request.auth.token.email == 'beyondtranport@gmail.com';
     }
     
     match /members/{memberId} {
-      // The `allow list` rule has been removed from here. 
-      // Listing all members is now restricted to admins by default,
-      // which is more secure and was the original intent.
-      // This removal unblocks the subcollection list queries for the owning user.
       allow get: if request.auth.uid == memberId || isAdmin();
       allow create: if request.auth != null && request.resource.data.id == request.auth.uid;
       allow update: if (request.auth != null && request.auth.uid == memberId) || isAdmin();
       allow delete: if isAdmin();
-      // Admins need to be able to list members to populate the backend dashboard.
       allow list: if isAdmin();
 
       match /staff/{staffId} {

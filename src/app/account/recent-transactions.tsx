@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useUser } from '@/firebase';
@@ -19,7 +20,7 @@ export default function RecentTransactions() {
     }, []);
 
     // If the user is an admin, render nothing. This is a crucial guard.
-    if (user && user.email === 'transconnect@gmail.com') {
+    if (user && user.email === 'beyondtranport@gmail.com') {
         return null;
     }
 

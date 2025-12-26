@@ -73,7 +73,7 @@ function AccountPageContent() {
       return; // Do nothing while loading
     }
     if (user) {
-      if (user.email === 'transconnect@gmail.com') {
+      if (user.email === 'beyondtranport@gmail.com') {
         router.replace('/backend');
       }
     } else {
@@ -115,7 +115,7 @@ function AccountPageContent() {
 
   // This is the guard that prevents rendering for admin or non-users,
   // showing a loader while the redirect effect runs.
-  if (isUserLoading || !user || user.email === 'transconnect@gmail.com') {
+  if (isUserLoading || !user || user.email === 'beyondtranport@gmail.com') {
     return (
         <div className="flex justify-center items-center min-h-[calc(100vh-8rem)]">
             <Loader2 className="h-16 w-16 animate-spin text-primary" />

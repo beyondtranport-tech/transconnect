@@ -105,15 +105,15 @@ export default function MembersList() {
                                         </Badge>
                                     </TableCell>
                                     <TableCell>
-                                        {member.email === 'transconnect@gmail.com' && <Badge variant="destructive">Admin</Badge>}
-                                        {member.email !== 'transconnect@gmail.com' && member.role && (
+                                        {member.email === 'beyondtranport@gmail.com' && <Badge variant="destructive">Admin</Badge>}
+                                        {member.email !== 'beyondtranport@gmail.com' && member.role && (
                                             <Badge variant="outline" className="capitalize">
                                                 {member.role.replace(/-/g, ' ')}
                                             </Badge>
                                         )}
                                     </TableCell>
                                      <TableCell className="text-right">
-                                         {member.email !== 'transconnect@gmail.com' && (
+                                         {member.email !== 'beyondtranport@gmail.com' && (
                                             <Button asChild variant="outline" size="sm">
                                                 <Link href={{
                                                     pathname: `/backend/wallet/${member.id}`,

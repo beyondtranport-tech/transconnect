@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, Suspense } from 'react';
@@ -91,7 +92,7 @@ function JoinFormComponent() {
       );
       const user = userCredential.user;
 
-      const isAdmin = values.email === 'transconnect@gmail.com';
+      const isAdmin = values.email === 'beyondtranport@gmail.com';
 
       // This is a placeholder for a real implementation.
       // In a real app, you would have a secure way to set admin claims.
