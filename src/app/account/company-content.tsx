@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useForm } from 'react-hook-form';
@@ -26,6 +25,8 @@ import { FirestorePermissionError } from '@/firebase/errors';
 
 const companyFormSchema = z.object({
   companyName: z.string().min(1, 'Company name is required'),
+  registrationNumber: z.string().optional(),
+  vatNumber: z.string().optional(),
 });
 
 type CompanyFormValues = z.infer<typeof companyFormSchema>;
@@ -47,6 +48,8 @@ export default function CompanyContent() {
     resolver: zodResolver(companyFormSchema),
     defaultValues: {
       companyName: '',
+      registrationNumber: '',
+      vatNumber: '',
     },
   });
 
@@ -54,6 +57,8 @@ export default function CompanyContent() {
     if (memberData) {
       form.reset({
         companyName: memberData.companyName || '',
+        registrationNumber: memberData.registrationNumber || '',
+        vatNumber: memberData.vatNumber || '',
       });
     }
   }, [memberData, form]);
@@ -115,6 +120,32 @@ export default function CompanyContent() {
                     <FormLabel>Company Name</FormLabel>
                     <FormControl>
                       <Input {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+               <FormField
+                control={form.control}
+                name="registrationNumber"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Company Registration Number</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g., 2024/123456/07" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+               <FormField
+                control={form.control}
+                name="vatNumber"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>VAT Number (Optional)</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g., 4000123456" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

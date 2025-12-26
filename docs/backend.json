@@ -32,6 +32,14 @@
           "type": "string",
           "description": "The registered business name of the member's transport business."
         },
+        "registrationNumber": {
+            "type": "string",
+            "description": "The official registration number of the company."
+        },
+        "vatNumber": {
+            "type": "string",
+            "description": "The VAT registration number of the company."
+        },
         "membershipId": {
           "type": "string",
           "description": "Reference to Membership tier ID (e.g., 'professional'). (Relationship: Member 1:1 Membership)"
