@@ -9,10 +9,10 @@ service cloud.firestore {
     }
     
     match /members/{memberId} {
-      // Granting `read` access to the owner is required to allow them to
-      // list documents in their own subcollections. `list` on the `members`
+      // Granting `read` access (which includes `get`) to the owner is required to allow them
+      // to list documents in their own subcollections. `list` on the `members`
       // collection itself is still correctly restricted to admins.
-      allow read: if request.auth.uid == memberId || isAdmin();
+      allow get: if request.auth.uid == memberId || isAdmin();
       allow create: if request.auth != null && request.resource.data.id == request.auth.uid;
       allow update: if (request.auth != null && request.auth.uid == memberId) || isAdmin();
       allow delete: if isAdmin();
@@ -33,8 +33,9 @@ service cloud.firestore {
       }
       
       match /financeApplications/{applicationId} {
-        allow get, create, update, delete: if request.auth.uid == memberId || isAdmin();
+        // Explicitly grant list permission to the owning user
         allow list: if request.auth.uid == memberId || isAdmin();
+        allow get, create, update, delete: if request.auth.uid == memberId || isAdmin();
       }
     }
 
@@ -50,6 +51,8 @@ service cloud.firestore {
     }
     
     match /financeApplications/{applicationId} {
+      // This top-level collection is now only for admins to list.
+      // User-specific queries were causing permission errors.
       allow read, list: if isAdmin();
       allow create, update, delete: if false;
     }
