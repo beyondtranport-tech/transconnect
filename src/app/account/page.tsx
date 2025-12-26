@@ -34,32 +34,11 @@ import AccountDashboard from './dashboard';
 import { Loader2 } from 'lucide-react';
 import WalletView from './wallet-view';
 import StaffContent from './staff-content';
+import ProfileContent from './profile-content';
+import CompanyContent from './company-content';
+import TransactionsContent from './transactions-content';
 
-function ProfileContent() {
-    return (
-        <div>
-            <h1 className="text-2xl font-bold">Profile</h1>
-            <p className="mt-2 text-muted-foreground">This is where profile editing will go.</p>
-        </div>
-    )
-}
-function CompanyContent() {
-    return (
-        <div>
-            <h1 className="text-2xl font-bold">Company</h1>
-            <p className="mt-2 text-muted-foreground">This is where company editing will go.</p>
-        </div>
-    )
-}
 
-function TransactionsContent() {
-    return (
-        <div>
-            <h1 className="text-2xl font-bold">Transactions</h1>
-            <p className="mt-2 text-muted-foreground">This is where transaction history will go.</p>
-        </div>
-    )
-}
 function DocumentsContent() {
     return (
         <div>
