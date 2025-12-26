@@ -131,7 +131,7 @@ function BackendPageContent() {
 
   useEffect(() => {
     if (!isUserLoading) {
-      if (!user || user.email !== 'beyondtranport@gmail.com') {
+      if (!user || user.email !== 'beyondtransport@gmail.com') {
         router.push('/signin?redirect=/backend');
       } else {
         setIsAdmin(true);
@@ -271,7 +271,7 @@ function BackendPageContent() {
                 Super Admin
               </span>
               <span className="text-xs text-sidebar-foreground/70">
-                beyondtranport@gmail.com
+                beyondtransport@gmail.com
               </span>
             </div>
             <Button

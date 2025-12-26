@@ -23,7 +23,7 @@ export default function AccountDashboard() {
     const { data: memberData, isLoading: isMemberLoading } = useDoc(memberRef);
     
     // Explicit Admin Check
-    const isAdmin = user && user.email === 'beyondtranport@gmail.com';
+    const isAdmin = user && user.email === 'beyondtransport@gmail.com';
     const isFreeMember = memberData?.membershipId === 'free';
     
     const formatPrice = (price: number) => {

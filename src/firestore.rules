@@ -5,7 +5,7 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     function isAdmin() {
-      return request.auth != null && request.auth.token.email == 'beyondtranport@gmail.com';
+      return request.auth != null && request.auth.token.email == 'beyondtransport@gmail.com';
     }
     
     match /members/{memberId} {

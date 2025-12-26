@@ -108,7 +108,7 @@ function SignInFormComponent() {
         description: "Welcome back to TransConnect.",
       });
       
-      const isAdmin = userCredential.user.email === 'transconnect@gmail.com';
+      const isAdmin = userCredential.user.email === 'beyondtransport@gmail.com';
       const redirectFromParams = searchParams.get('redirect');
 
       if (isAdmin) {
