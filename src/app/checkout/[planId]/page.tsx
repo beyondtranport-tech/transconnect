@@ -81,13 +81,13 @@ function CheckoutComponent() {
     const batch = writeBatch(firestore);
     
     // 1. Update member's balance and membership
-    const memberRef = doc(firestore, 'members', user.uid);
+    const memberDocRef = doc(firestore, 'members', user.uid);
     const newBalance = userBalance - price;
     const memberUpdateData = { membershipId: plan.id, walletBalance: newBalance };
-    batch.update(memberRef, memberUpdateData);
+    batch.update(memberDocRef, memberUpdateData);
 
-    // 2. Create a transaction record in financeApplications
-    const transactionRef = doc(collection(firestore, 'financeApplications'));
+    // 2. Create a transaction record in the member's financeApplications subcollection
+    const transactionRef = doc(collection(firestore, `members/${user.uid}/financeApplications`));
     const transactionData = {
         applicantId: user.uid,
         status: 'funded', // or 'completed'
@@ -99,7 +99,7 @@ function CheckoutComponent() {
     batch.set(transactionRef, transactionData);
 
     // 3. Add the transaction ID to the member's record
-    batch.update(memberRef, { financeApplicationIds: arrayUnion(transactionRef.id) });
+    batch.update(memberDocRef, { financeApplicationIds: arrayUnion(transactionRef.id) });
     
     try {
         await batch.commit();
@@ -107,7 +107,7 @@ function CheckoutComponent() {
         router.push('/account');
     } catch (serverError) {
         const permissionError = new FirestorePermissionError({
-            path: memberRef.path,
+            path: memberDocRef.path,
             operation: 'update',
             requestResourceData: { memberUpdate: memberUpdateData, transaction: transactionData },
         });
@@ -199,5 +199,3 @@ export default function CheckoutPage() {
         </div>
     );
 }
-
-    

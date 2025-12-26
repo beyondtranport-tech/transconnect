@@ -53,7 +53,8 @@ function RequestTopUp() {
         };
         
         try {
-            const financeAppsCollection = collection(firestore, 'financeApplications');
+            // Use the new subcollection path
+            const financeAppsCollection = collection(firestore, `members/${user.uid}/financeApplications`);
             addDoc(financeAppsCollection, applicationData).catch((serverError) => {
                 errorEmitter.emit('permission-error', new FirestorePermissionError({
                     path: financeAppsCollection.path,
@@ -107,7 +108,7 @@ function WalletHistory() {
     const { user, isUserLoading } = useUser();
     const firestore = useFirestore();
     
-    // Query for completed transactions
+    // Query for completed transactions from the subcollection
     const transactionsQuery = useMemoFirebase(() => {
         if (!firestore || !user) return null;
         return query(
@@ -117,12 +118,11 @@ function WalletHistory() {
     }, [firestore, user]);
     const { data: transactions, isLoading: isTransactionsLoading, error: transactionsError } = useCollection(transactionsQuery);
 
-    // Query for pending top-up requests
+    // Query for pending top-up requests from the subcollection
     const topUpRequestsQuery = useMemoFirebase(() => {
         if (!firestore || !user) return null;
         return query(
-            collection(firestore, 'financeApplications'),
-            where('applicantId', '==', user.uid),
+            collection(firestore, `members/${user.uid}/financeApplications`),
             where('fundingType', '==', 'credit-top-up'),
             orderBy('createdAt', 'desc')
         );
@@ -278,4 +278,3 @@ export default function WalletView() {
         </div>
     );
 }
-

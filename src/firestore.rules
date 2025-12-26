@@ -24,11 +24,13 @@ service cloud.firestore {
         allow update, delete: if false;
       }
       
-      // Rule for the transactions subcollection
       match /transactions/{transactionId} {
         allow read, list: if request.auth.uid == memberId || isAdmin();
-        allow create: if isAdmin(); // Only admin can create manual transactions
-        allow update, delete: if isAdmin();
+        allow create, update, delete: if isAdmin();
+      }
+      
+      match /financeApplications/{applicationId} {
+        allow read, list, create, update, delete: if request.auth.uid == memberId || isAdmin();
       }
     }
 
@@ -43,16 +45,13 @@ service cloud.firestore {
       allow update, delete: if isAdmin();
     }
     
-     match /financeApplications/{applicationId} {
-      allow get: if (request.auth != null && request.auth.uid == resource.data.applicantId) || isAdmin();
-      // Allow users to list their own finance applications, but not all applications.
-      allow list: if (request.auth != null && request.query.get("applicantId") == request.auth.uid) || isAdmin();
-      allow create: if request.auth != null && request.auth.uid == request.resource.data.applicantId;
-      allow update: if (request.auth != null && request.auth.uid == resource.data.applicantId) || isAdmin();
-      allow delete: if isAdmin();
+    // This top-level collection remains for admin use to view all applications.
+    match /financeApplications/{applicationId} {
+      allow read, list, get: if isAdmin();
+      // Users can no longer write to this global collection, only their subcollection.
+      allow create, update, delete: if false;
     }
 
-    // Top-level transactions collection is now admin-only and should not be used for member data
     match /transactions/{transactionId} {
         allow read, write: if isAdmin();
     }

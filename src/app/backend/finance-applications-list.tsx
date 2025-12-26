@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
@@ -24,6 +25,7 @@ const formatPrice = (price: number) => {
 export default function FinanceApplicationsList() {
     const firestore = useFirestore();
 
+    // Query the top-level collection for the admin backend
     const applicationsCollectionRef = useMemoFirebase(() => {
         if (!firestore) return null;
         return query(collection(firestore, 'financeApplications'), orderBy('createdAt', 'desc'));
@@ -41,8 +43,8 @@ export default function FinanceApplicationsList() {
     return (
         <Card>
             <CardHeader>
-                <CardTitle>Finance Applications</CardTitle>
-                <CardDescription>A list of all finance applications submitted by members.</CardDescription>
+                <CardTitle>Finance Applications (Admin View)</CardTitle>
+                <CardDescription>A list of all finance applications submitted by members across the platform.</CardDescription>
             </CardHeader>
             <CardContent>
                 {isLoading && (
