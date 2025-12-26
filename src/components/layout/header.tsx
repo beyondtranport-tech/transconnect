@@ -132,7 +132,7 @@ export function Header() {
                   <DropdownMenuItem asChild>
                     <Link href="/account">Account</Link>
                   </DropdownMenuItem>
-                  {isAdmin && (
+                  {user && user.email === 'beyondtranport@gmail.com' && (
                       <DropdownMenuItem asChild>
                         <Link href="/backend" className='flex items-center'>
                           <ShieldCheck className="mr-2 h-4 w-4" />
