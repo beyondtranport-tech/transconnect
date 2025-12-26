@@ -8,14 +8,22 @@ service cloud.firestore {
     }
     
     match /members/{memberId} {
-      allow get: if request.auth.uid == memberId || isAdmin();
-      allow read, list: if isAdmin();
+      allow get, read: if request.auth.uid == memberId || isAdmin();
+      allow list: if isAdmin();
       allow create: if request.auth != null && request.resource.data.id == request.auth.uid;
       allow update: if (request.auth != null && request.auth.uid == memberId) || isAdmin();
       allow delete: if isAdmin();
 
       match /staff/{staffId} {
         allow read, list, create, update, delete: if request.auth.uid == memberId || isAdmin();
+      }
+
+      match /versions/{versionId} {
+        allow read, list: if request.auth.uid == memberId || isAdmin();
+        // Allow creating a version only if the user is updating their own member doc
+        allow create: if request.auth.uid == memberId;
+        // No updates or deletes to preserve history
+        allow update, delete: if false;
       }
     }
 
