@@ -152,10 +152,11 @@ export default function TransactionAllocation({ statementData }: { statementData
             
             batch.update(memberRef, { walletBalance: increment(transactionAmount) });
 
-            const transactionRef = doc(collection(firestore, 'transactions'));
+            // Create transaction in the member's subcollection
+            const transactionRef = doc(collection(firestore, 'members', memberId, 'transactions'));
             batch.set(transactionRef, {
                 reconciliationId: statementData.statementName,
-                memberId: tx.reference,
+                memberId: tx.reference, // This is redundant in subcollection but good for consistency
                 type: tx.type,
                 amount: tx.amount,
                 date: new Date(tx.date),
@@ -165,7 +166,7 @@ export default function TransactionAllocation({ statementData }: { statementData
                 isAdjustment: true,
                 postedAt: serverTimestamp(),
                 postedBy: user.uid,
-                transactionId: `MAN-${Date.now()}-${tx.id}`
+                transactionId: transactionRef.id
             });
         }
         
@@ -322,3 +323,5 @@ export default function TransactionAllocation({ statementData }: { statementData
         </Card>
     )
 }
+
+    

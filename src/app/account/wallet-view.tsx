@@ -8,7 +8,7 @@ import { Loader2, ClipboardCopy } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import bankDetailsData from '@/lib/bank-details.json';
 import { useState, useEffect } from 'react';
-import { collection, query, where, orderBy } from 'firebase/firestore';
+import { collection, query, orderBy } from 'firebase/firestore';
 import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 
@@ -29,9 +29,9 @@ function WalletHistory() {
     
     const transactionsQuery = useMemoFirebase(() => {
         if (!firestore || !user) return null;
+        // Query the subcollection instead of the root collection
         return query(
-            collection(firestore, 'transactions'),
-            where('memberId', '==', user.uid),
+            collection(firestore, 'members', user.uid, 'transactions'),
             orderBy('date', 'desc')
         );
     }, [firestore, user]);
@@ -153,3 +153,5 @@ export default function WalletView() {
         </div>
     );
 }
+
+    

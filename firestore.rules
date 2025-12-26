@@ -26,6 +26,11 @@ service cloud.firestore {
         // No updates or deletes to preserve history
         allow update, delete: if false;
       }
+      
+      match /transactions/{transactionId} {
+        allow read, list: if request.auth.uid == memberId || isAdmin();
+        allow create, update, delete: if isAdmin();
+      }
     }
 
     match /memberships/{membershipId} {
@@ -47,11 +52,9 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    // Top-level transactions collection is now admin-only
     match /transactions/{transactionId} {
-      allow get: if (request.auth != null && request.auth.uid == resource.data.memberId) || isAdmin();
-      allow list: if (request.auth != null && request.query.where.memberId == request.auth.uid) || isAdmin();
-      allow create: if isAdmin();
-      allow update, delete: if isAdmin();
+        allow read, write: if isAdmin();
     }
 
     match /platform_config/{docId} {
@@ -59,3 +62,5 @@ service cloud.firestore {
     }
   }
 }
+
+    

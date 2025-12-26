@@ -77,7 +77,8 @@ export default function MemberWallet({ memberId }: { memberId: string }) {
         const batch = writeBatch(firestore);
         
         const memberDocRef = doc(firestore, 'members', memberId);
-        const transactionRef = doc(collection(firestore, 'transactions'));
+        // Write to the subcollection
+        const transactionRef = doc(collection(firestore, 'members', memberId, 'transactions'));
         
         const transactionData = {
             memberId: memberId,
@@ -105,7 +106,7 @@ export default function MemberWallet({ memberId }: { memberId: string }) {
             errorEmitter.emit(
                 'permission-error',
                 new FirestorePermissionError({
-                    path: `members/${memberId} & transactions collection`,
+                    path: `members/${memberId}/transactions`,
                     operation: 'write',
                     requestResourceData: { walletUpdate: { walletBalance: increment(amount) }, transaction: transactionData },
                 })
@@ -187,3 +188,5 @@ export default function MemberWallet({ memberId }: { memberId: string }) {
         </div>
     );
 }
+
+    

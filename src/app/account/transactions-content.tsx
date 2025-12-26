@@ -5,7 +5,7 @@ import { useUser, useFirestore, useMemoFirebase, useCollection } from '@/firebas
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Loader2, DollarSign } from 'lucide-react';
-import { collection, query, where, orderBy } from 'firebase/firestore';
+import { collection, query, orderBy, doc } from 'firebase/firestore';
 import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 
@@ -27,9 +27,9 @@ export default function TransactionsContent() {
     
     const transactionsQuery = useMemoFirebase(() => {
         if (!firestore || !user) return null;
+        // Query the subcollection instead of the root collection
         return query(
-            collection(firestore, 'transactions'),
-            where('memberId', '==', user.uid),
+            collection(firestore, 'members', user.uid, 'transactions'),
             orderBy('date', 'desc')
         );
     }, [firestore, user]);
@@ -96,3 +96,4 @@ export default function TransactionsContent() {
     );
 }
 
+    
