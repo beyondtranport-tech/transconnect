@@ -188,5 +188,3 @@ export default function MemberWallet({ memberId }: { memberId: string }) {
         </div>
     );
 }
-
-    
