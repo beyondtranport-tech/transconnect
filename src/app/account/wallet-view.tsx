@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useUser, useFirestore, useMemoFirebase, useCollection } from '@/firebase';
@@ -8,7 +7,7 @@ import { Loader2, ClipboardCopy, FilePlus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import bankDetailsData from '@/lib/bank-details.json';
 import { useState, useEffect, useMemo } from 'react';
-import { collection, query, orderBy, addDoc, serverTimestamp, where } from 'firebase/firestore';
+import { collection, query, orderBy, addDoc, serverTimestamp } from 'firebase/firestore';
 import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -117,50 +116,9 @@ function WalletHistory() {
         );
     }, [firestore, user]);
     const { data: transactions, isLoading: isTransactionsLoading, error: transactionsError } = useCollection(transactionsQuery);
-
-    // Query for pending top-up requests from the subcollection
-    const topUpRequestsQuery = useMemoFirebase(() => {
-        if (!firestore || !user) return null;
-        return query(
-            collection(firestore, `members/${user.uid}/financeApplications`),
-            where('fundingType', '==', 'credit-top-up'),
-            orderBy('createdAt', 'desc')
-        );
-    }, [firestore, user]);
-    const { data: topUpRequests, isLoading: isRequestsLoading, error: requestsError } = useCollection(topUpRequestsQuery);
-
-    // Merge and sort data
-    const combinedHistory = useMemo(() => {
-        const completed = transactions?.map(tx => ({
-            id: tx.id,
-            date: tx.date,
-            description: tx.description,
-            amount: tx.amount,
-            type: tx.type,
-            status: 'Completed',
-            isRequest: false
-        })) || [];
-
-        const pending = topUpRequests?.map(req => ({
-            id: req.id,
-            date: req.createdAt,
-            description: `Top-up Request (${req.status.replace(/_/g, ' ')})`,
-            amount: req.amountRequested,
-            type: 'credit',
-            status: req.status,
-            isRequest: true
-        })) || [];
-        
-        return [...completed, ...pending].sort((a, b) => {
-            const dateA = a.date?.toDate() || 0;
-            const dateB = b.date?.toDate() || 0;
-            return dateB - dateA;
-        });
-
-    }, [transactions, topUpRequests]);
-
-    const isLoading = isUserLoading || isTransactionsLoading || isRequestsLoading;
-    const error = transactionsError || requestsError;
+    
+    const isLoading = isUserLoading || isTransactionsLoading;
+    const error = transactionsError;
 
     if (isLoading) {
         return (
@@ -180,7 +138,7 @@ function WalletHistory() {
 
     return (
         <>
-            {combinedHistory && combinedHistory.length > 0 ? (
+            {transactions && transactions.length > 0 ? (
                 <Table>
                     <TableHeader>
                         <TableRow>
@@ -191,15 +149,15 @@ function WalletHistory() {
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {combinedHistory.map((item) => (
+                        {transactions.map((item) => (
                             <TableRow key={item.id}>
                                 <TableCell className="text-muted-foreground text-xs">{formatDate(item.date)}</TableCell>
                                 <TableCell>
                                     <p className="font-medium">{item.description}</p>
                                 </TableCell>
                                  <TableCell className="text-center">
-                                    <Badge variant={item.isRequest ? 'secondary' : 'default'} className="capitalize">
-                                        {item.isRequest ? item.status : 'Completed'}
+                                    <Badge variant='default' className="capitalize">
+                                        Completed
                                     </Badge>
                                 </TableCell>
                                 <TableCell className={`text-right font-mono font-semibold ${item.type === 'credit' ? 'text-green-600' : 'text-destructive'}`}>
@@ -278,5 +236,3 @@ export default function WalletView() {
         </div>
     );
 }
-
-    
