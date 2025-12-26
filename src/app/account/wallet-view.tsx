@@ -7,8 +7,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Loader2, ClipboardCopy, FilePlus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import bankDetailsData from '@/lib/bank-details.json';
-import { useState, useEffect } from 'react';
-import { collection, query, orderBy, addDoc, serverTimestamp } from 'firebase/firestore';
+import { useState, useEffect, useMemo } from 'react';
+import { collection, query, orderBy, addDoc, serverTimestamp, where } from 'firebase/firestore';
 import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -107,18 +107,60 @@ function WalletHistory() {
     const { user, isUserLoading } = useUser();
     const firestore = useFirestore();
     
+    // Query for completed transactions
     const transactionsQuery = useMemoFirebase(() => {
         if (!firestore || !user) return null;
-        // Query the subcollection instead of the root collection
         return query(
             collection(firestore, 'members', user.uid, 'transactions'),
             orderBy('date', 'desc')
         );
     }, [firestore, user]);
-    
-    const { data: transactions, isLoading: isTransactionsLoading, error } = useCollection(transactionsQuery);
+    const { data: transactions, isLoading: isTransactionsLoading, error: transactionsError } = useCollection(transactionsQuery);
 
-    const isLoading = isUserLoading || isTransactionsLoading;
+    // Query for pending top-up requests
+    const topUpRequestsQuery = useMemoFirebase(() => {
+        if (!firestore || !user) return null;
+        return query(
+            collection(firestore, 'financeApplications'),
+            where('applicantId', '==', user.uid),
+            where('fundingType', '==', 'credit-top-up'),
+            orderBy('createdAt', 'desc')
+        );
+    }, [firestore, user]);
+    const { data: topUpRequests, isLoading: isRequestsLoading, error: requestsError } = useCollection(topUpRequestsQuery);
+
+    // Merge and sort data
+    const combinedHistory = useMemo(() => {
+        const completed = transactions?.map(tx => ({
+            id: tx.id,
+            date: tx.date,
+            description: tx.description,
+            amount: tx.amount,
+            type: tx.type,
+            status: 'Completed',
+            isRequest: false
+        })) || [];
+
+        const pending = topUpRequests?.map(req => ({
+            id: req.id,
+            date: req.createdAt,
+            description: `Top-up Request (${req.status.replace(/_/g, ' ')})`,
+            amount: req.amountRequested,
+            type: 'credit',
+            status: req.status,
+            isRequest: true
+        })) || [];
+        
+        return [...completed, ...pending].sort((a, b) => {
+            const dateA = a.date?.toDate() || 0;
+            const dateB = b.date?.toDate() || 0;
+            return dateB - dateA;
+        });
+
+    }, [transactions, topUpRequests]);
+
+    const isLoading = isUserLoading || isTransactionsLoading || isRequestsLoading;
+    const error = transactionsError || requestsError;
 
     if (isLoading) {
         return (
@@ -138,25 +180,30 @@ function WalletHistory() {
 
     return (
         <>
-            {transactions && transactions.length > 0 ? (
+            {combinedHistory && combinedHistory.length > 0 ? (
                 <Table>
                     <TableHeader>
                         <TableRow>
                             <TableHead>Date</TableHead>
                             <TableHead>Description</TableHead>
+                            <TableHead className="text-center">Status</TableHead>
                             <TableHead className="text-right">Amount</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {transactions.map((tx) => (
-                            <TableRow key={tx.id}>
-                                <TableCell className="text-muted-foreground text-xs">{formatDate(tx.date)}</TableCell>
+                        {combinedHistory.map((item) => (
+                            <TableRow key={item.id}>
+                                <TableCell className="text-muted-foreground text-xs">{formatDate(item.date)}</TableCell>
                                 <TableCell>
-                                    <p className="font-medium">{tx.description}</p>
-                                    {tx.isAdjustment && <Badge variant="outline">Adjustment</Badge>}
+                                    <p className="font-medium">{item.description}</p>
                                 </TableCell>
-                                <TableCell className={`text-right font-mono font-semibold ${tx.type === 'credit' ? 'text-green-600' : 'text-destructive'}`}>
-                                    {tx.type === 'credit' ? '+' : '-'} {formatCurrency(tx.amount)}
+                                 <TableCell className="text-center">
+                                    <Badge variant={item.isRequest ? 'secondary' : 'default'} className="capitalize">
+                                        {item.isRequest ? item.status : 'Completed'}
+                                    </Badge>
+                                </TableCell>
+                                <TableCell className={`text-right font-mono font-semibold ${item.type === 'credit' ? 'text-green-600' : 'text-destructive'}`}>
+                                    {item.type === 'credit' ? '+' : '-'} {formatCurrency(item.amount)}
                                 </TableCell>
                             </TableRow>
                         ))}
@@ -168,6 +215,7 @@ function WalletHistory() {
         </>
     );
 }
+
 
 export default function WalletView() {
     const { user } = useUser();
@@ -231,4 +279,3 @@ export default function WalletView() {
     );
 }
 
-    

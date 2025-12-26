@@ -23,6 +23,13 @@ service cloud.firestore {
         allow create: if request.auth.uid == memberId;
         allow update, delete: if false;
       }
+      
+      // Rule for the transactions subcollection
+      match /transactions/{transactionId} {
+        allow read, list: if request.auth.uid == memberId || isAdmin();
+        allow create: if isAdmin(); // Only admin can create manual transactions
+        allow update, delete: if isAdmin();
+      }
     }
 
     match /memberships/{membershipId} {
@@ -38,18 +45,16 @@ service cloud.firestore {
     
      match /financeApplications/{applicationId} {
       allow get: if (request.auth != null && request.auth.uid == resource.data.applicantId) || isAdmin();
-      allow list: if isAdmin();
+      // Allow users to list their own finance applications
+      allow list: if (request.auth != null && request.query.where.get('applicantId') == request.auth.uid) || isAdmin();
       allow create: if request.auth != null && request.auth.uid == request.resource.data.applicantId;
       allow update: if (request.auth != null && request.auth.uid == resource.data.applicantId) || isAdmin();
       allow delete: if isAdmin();
     }
 
+    // Top-level transactions collection is now admin-only
     match /transactions/{transactionId} {
-      allow get: if (request.auth != null && request.auth.uid == resource.data.memberId) || isAdmin();
-      // Allow users to list their own transactions by filtering on memberId
-      allow list: if (request.auth != null && request.query.filters[0].field.stringValue == 'memberId' && request.query.filters[0].value.stringValue == request.auth.uid) || isAdmin();
-      allow create: if isAdmin();
-      allow update, delete: if isAdmin();
+        allow read, write: if isAdmin();
     }
 
     match /platform_config/{docId} {
