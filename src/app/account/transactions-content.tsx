@@ -8,7 +8,7 @@ import { Loader2, DollarSign, ClipboardCopy, FilePlus } from 'lucide-react';
 import { collection, query, orderBy, addDoc, serverTimestamp } from 'firebase/firestore';
 import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
-import bankDetailsData from '@/lib/bank-details.json';
+import { bankDetails } from '@/lib/bank-details.json';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -71,16 +71,25 @@ function LogPaymentDialog() {
             date: serverTimestamp(),
             status: 'pending_allocation',
             isAdjustment: true, // Marked as adjustment since it's a user-logged payment
-            memberId: user.uid,
         };
-
+        
         try {
             const transactionsCollectionRef = collection(firestore, `members/${user.uid}/transactions`);
-            const docRef = await addDoc(transactionsCollectionRef, transactionData);
             
-            // Non-blocking update to add the ID
-            addDoc(transactionsCollectionRef, { ...transactionData, transactionId: docRef.id })
-                .catch(err => console.error("Failed to self-update transactionId", err));
+            // This is a non-blocking write. We add the document and handle errors in the catch block.
+            addDoc(transactionsCollectionRef, transactionData)
+              .then(docRef => {
+                // You can perform non-essential follow-up actions here, like updating the doc with its own ID
+                console.log("Payment logged with ID: ", docRef.id);
+              })
+              .catch(serverError => {
+                const permissionError = new FirestorePermissionError({
+                  path: `members/${user.uid}/transactions`,
+                  operation: 'create',
+                  requestResourceData: transactionData,
+                });
+                errorEmitter.emit('permission-error', permissionError);
+              });
 
             toast({
                 title: 'Payment Logged',
@@ -88,13 +97,9 @@ function LogPaymentDialog() {
             });
             setIsOpen(false);
             form.reset();
-        } catch (serverError: any) {
-            errorEmitter.emit('permission-error', new FirestorePermissionError({
-                path: `members/${user.uid}/transactions`,
-                operation: 'create',
-                requestResourceData: transactionData,
-            }));
-            toast({ variant: 'destructive', title: 'Error', description: serverError.message });
+        } catch (error: any) {
+            // This catch block is for synchronous errors during form validation or setup
+            toast({ variant: 'destructive', title: 'Error', description: error.message });
         } finally {
             setIsLoading(false);
         }
@@ -104,7 +109,7 @@ function LogPaymentDialog() {
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
             <DialogTrigger asChild>
                 <Button>
-                    <FilePlus className="mr-2 h-4 w-4" /> Log EFT Payment
+                    <FilePlus className="mr-2 h-4 w-4" /> Add Transaction
                 </Button>
             </DialogTrigger>
             <DialogContent>
@@ -172,12 +177,12 @@ export default function TransactionsContent() {
                 <CardHeader>
                     <CardTitle>Top up your Wallet via EFT</CardTitle>
                     <CardDescription>
-                        To add funds, make an EFT payment using the details below. Then, log your payment using the button on the right.
+                        To add funds, make an EFT payment using the details below. Then, log your payment using the button in the history section below.
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
                     <div className="space-y-3">
-                        {Object.entries(bankDetailsData).map(([key, value]) => (
+                        {Object.entries(bankDetails).map(([key, value]) => (
                             <div key={key} className="flex justify-between items-center text-sm">
                                 <span className="text-muted-foreground capitalize">{key.replace(/([A-Z])/g, ' $1').trim()}</span>
                                 <span className="font-mono">{value}</span>
@@ -194,19 +199,21 @@ export default function TransactionsContent() {
                         )}
                     </div>
                 </CardContent>
-                 <CardFooter className="flex justify-between">
+                 <CardFooter>
                     <p className="text-xs text-muted-foreground">Your balance is updated by an admin after payment is confirmed.</p>
-                    <LogPaymentDialog />
                 </CardFooter>
             </Card>
 
             <Card>
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                       <DollarSign className="h-6 w-6" />
-                       Transaction History
-                    </CardTitle>
-                    <CardDescription>A complete record of your wallet transactions and pending payments.</CardDescription>
+                <CardHeader className="flex flex-row items-center justify-between">
+                    <div>
+                        <CardTitle className="flex items-center gap-2">
+                           <DollarSign className="h-6 w-6" />
+                           Transaction History
+                        </CardTitle>
+                        <CardDescription>A complete record of your wallet transactions and pending payments.</CardDescription>
+                    </div>
+                     <LogPaymentDialog />
                 </CardHeader>
                 <CardContent>
                     {isLoading && (
@@ -263,3 +270,4 @@ export default function TransactionsContent() {
         </div>
     );
 }
+
