@@ -8,11 +8,21 @@ service cloud.firestore {
     }
     
     match /members/{memberId} {
-      allow get: if request.auth.uid == memberId || isAdmin();
+      allow read: if request.auth.uid == memberId || isAdmin();
       allow list: if isAdmin();
-      allow create: if request.auth != null && request.auth.uid == memberId;
+      allow create: if request.auth != null && request.resource.data.id == request.auth.uid;
       allow update: if (request.auth != null && request.auth.uid == memberId) || isAdmin();
       allow delete: if isAdmin();
+
+      match /staff/{staffId} {
+        allow read, list, create, update, delete: if request.auth.uid == memberId || isAdmin();
+      }
+
+      match /versions/{versionId} {
+        allow read, list: if request.auth.uid == memberId || isAdmin();
+        allow create: if request.auth.uid == memberId;
+        allow update, delete: if false;
+      }
     }
 
     match /memberships/{membershipId} {
@@ -36,7 +46,8 @@ service cloud.firestore {
 
     match /transactions/{transactionId} {
       allow get: if (request.auth != null && request.auth.uid == resource.data.memberId) || isAdmin();
-      allow list: if isAdmin();
+      // Allow users to list their own transactions by filtering on memberId
+      allow list: if (request.auth != null && request.query.filters[0].field.stringValue == 'memberId' && request.query.filters[0].value.stringValue == request.auth.uid) || isAdmin();
       allow create: if isAdmin();
       allow update, delete: if isAdmin();
     }
