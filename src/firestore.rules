@@ -46,13 +46,13 @@ service cloud.firestore {
      match /financeApplications/{applicationId} {
       allow get: if (request.auth != null && request.auth.uid == resource.data.applicantId) || isAdmin();
       // Allow users to list their own finance applications
-      allow list: if (request.auth != null && request.query.where.applicantId == request.auth.uid) || isAdmin();
+      allow list: if (request.auth != null && request.query.applicantId == request.auth.uid) || isAdmin();
       allow create: if request.auth != null && request.auth.uid == request.resource.data.applicantId;
       allow update: if (request.auth != null && request.auth.uid == resource.data.applicantId) || isAdmin();
       allow delete: if isAdmin();
     }
 
-    // Top-level transactions collection is now admin-only
+    // Top-level transactions collection is now admin-only and should not be used for member data
     match /transactions/{transactionId} {
         allow read, write: if isAdmin();
     }
