@@ -20,6 +20,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(amount);
@@ -40,7 +41,7 @@ const statusColors: { [key: string]: 'default' | 'secondary' | 'destructive' | '
 
 const paymentFormSchema = z.object({
   amount: z.coerce.number().positive('Amount must be positive.'),
-  description: z.string().min(3, 'Please add a brief description.'),
+  description: z.string().min(1, 'Please select a payment reason.'),
 });
 
 type PaymentFormValues = z.infer<typeof paymentFormSchema>;
@@ -130,15 +131,30 @@ function LogPaymentDialog() {
                                 <FormMessage />
                             </FormItem>
                         )} />
-                        <FormField control={form.control} name="description" render={({ field }) => (
+                        <FormField
+                          control={form.control}
+                          name="description"
+                          render={({ field }) => (
                             <FormItem>
-                                <FormLabel>Description</FormLabel>
+                              <FormLabel>Reason for Payment</FormLabel>
+                              <Select onValueChange={field.onChange} defaultValue={field.value}>
                                 <FormControl>
-                                    <Input placeholder="e.g., Membership fee top-up" {...field} />
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Select a payment reason" />
+                                  </SelectTrigger>
                                 </FormControl>
-                                <FormMessage />
+                                <SelectContent>
+                                  <SelectItem value="Membership fee">Membership fee</SelectItem>
+                                  <SelectItem value="Funding (DMS) payment">Funding (DMS) payment</SelectItem>
+                                  <SelectItem value="Mall purchase">Mall purchase</SelectItem>
+                                  <SelectItem value="Marketplace purchase">Marketplace purchase</SelectItem>
+                                  <SelectItem value="Tech purchase">Tech purchase</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
                             </FormItem>
-                        )} />
+                          )}
+                        />
                         <DialogFooter>
                              <Button type="submit" disabled={isLoading}>
                                 {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : 'Save Record'}
