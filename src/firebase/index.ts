@@ -3,8 +3,9 @@
 
 import { firebaseConfig } from '@/firebase/config';
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
-import { getAuth, connectAuthEmulator, onIdTokenChanged } from 'firebase/auth';
-import { getFirestore, connectFirestoreEmulator } from 'firebase/firestore'
+import { getAuth, onIdTokenChanged } from 'firebase/auth';
+import { getFirestore } from 'firebase/firestore';
+import { getStorage } from 'firebase/storage'; // Import getStorage
 
 // IMPORTANT: DO NOT MODIFY THIS FUNCTION
 export function initializeFirebase() {
@@ -24,6 +25,7 @@ export function initializeFirebase() {
 
   const auth = getAuth(firebaseApp);
   const firestore = getFirestore(firebaseApp);
+  const storage = getStorage(firebaseApp); // Initialize storage
 
   // Set up a listener to store the ID token in a cookie
   onIdTokenChanged(auth, async (user) => {
@@ -41,14 +43,15 @@ export function initializeFirebase() {
   // The emulator connection logic is now removed.
   // The app will connect to live cloud services.
 
-  return { firebaseApp, auth, firestore };
+  return { firebaseApp, auth, firestore, storage }; // Return storage
 }
 
 export function getSdks(firebaseApp: FirebaseApp) {
   return {
     firebaseApp,
     auth: getAuth(firebaseApp),
-    firestore: getFirestore(firebaseApp)
+    firestore: getFirestore(firebaseApp),
+    storage: getStorage(firebaseApp) // Return storage
   };
 }
 

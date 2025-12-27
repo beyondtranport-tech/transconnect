@@ -10,8 +10,9 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
-import { useFirestore } from '@/firebase';
+import { useFirestore, useFirebaseApp, useUser } from '@/firebase';
 import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { getStorage, ref as storageRef, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { Loader2, Save, CheckCircle, LayoutGrid, List, Image as ImageIcon, Sparkles, PlusCircle, Edit, Trash2 } from 'lucide-react';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -522,38 +523,88 @@ const productSchema = z.object({
   description: z.string().optional(),
   price: z.coerce.number().positive("Price must be a positive number."),
   sku: z.string().optional(),
-  imageUrl: z.string().url("Please enter a valid URL.").optional().or(z.literal('')),
+  imageUrl: z.string().url("Please upload an image.").optional().or(z.literal('')),
 });
 type ProductFormValues = z.infer<typeof productSchema>;
 
 // The product type stored in the array
 type Product = ProductFormValues & { id: string };
 
-function ProductDialog({ onAddProduct }: { onAddProduct: (product: Product) => void }) {
+function ProductDialog({ onAddProduct, memberId }: { onAddProduct: (product: Product) => void, memberId: string }) {
     const [isOpen, setIsOpen] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
+    const [uploadProgress, setUploadProgress] = useState<number | null>(null);
+    const [imagePreview, setImagePreview] = useState<string | null>(null);
+    const [imageFile, setImageFile] = useState<File | null>(null);
     const { toast } = useToast();
+    const firebaseApp = useFirebaseApp();
 
     const form = useForm<ProductFormValues>({
         resolver: zodResolver(productSchema),
         defaultValues: { name: '', description: '', price: 0, sku: '', imageUrl: '' }
     });
 
-    const onSubmit = (values: ProductFormValues) => {
-        setIsSaving(true);
-        const newProduct: Product = {
-            ...values,
-            id: `prod_${Date.now()}`
-        };
-        onAddProduct(newProduct);
-        toast({ title: 'Product Staged', description: `${values.name} is ready to be saved.` });
-        setIsSaving(false);
-        setIsOpen(false);
+    const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (file) {
+            setImageFile(file);
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setImagePreview(reader.result as string);
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+    
+    const resetForm = () => {
         form.reset();
+        setImageFile(null);
+        setImagePreview(null);
+        setUploadProgress(null);
+        setIsSaving(false);
+    }
+
+    const onSubmit = async (values: ProductFormValues) => {
+        setIsSaving(true);
+        const newProductId = `prod_${Date.now()}`;
+
+        if (imageFile) {
+            const storage = getStorage(firebaseApp);
+            const imagePath = `products/${memberId}/${newProductId}/${imageFile.name}`;
+            const fileRef = storageRef(storage, imagePath);
+            const uploadTask = uploadBytesResumable(fileRef, imageFile);
+
+            uploadTask.on('state_changed',
+                (snapshot) => {
+                    const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                    setUploadProgress(progress);
+                },
+                (error) => {
+                    console.error("Upload failed:", error);
+                    toast({ variant: 'destructive', title: 'Image Upload Failed', description: error.message });
+                    setIsSaving(false);
+                },
+                () => {
+                    getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
+                        const newProduct: Product = { ...values, id: newProductId, imageUrl: downloadURL };
+                        onAddProduct(newProduct);
+                        toast({ title: 'Product Staged', description: `${values.name} is ready to be saved.` });
+                        setIsOpen(false);
+                        resetForm();
+                    });
+                }
+            );
+        } else {
+             const newProduct: Product = { ...values, id: newProductId };
+             onAddProduct(newProduct);
+             toast({ title: 'Product Staged', description: `${values.name} is ready to be saved.` });
+             setIsOpen(false);
+             resetForm();
+        }
     };
 
     return (
-        <Dialog open={isOpen} onOpenChange={setIsOpen}>
+        <Dialog open={isOpen} onOpenChange={(open) => { setIsOpen(open); if(!open) resetForm(); }}>
             <DialogTrigger asChild>
                 <Button variant="outline"><PlusCircle className="mr-2 h-4 w-4" /> Add Product</Button>
             </DialogTrigger>
@@ -567,11 +618,21 @@ function ProductDialog({ onAddProduct }: { onAddProduct: (product: Product) => v
                         <FormField control={form.control} name="name" render={({ field }) => (
                             <FormItem><FormLabel>Product Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
                         )} />
+                        <FormItem>
+                            <FormLabel>Product Image</FormLabel>
+                            <FormControl>
+                                <Input type="file" accept="image/*" onChange={handleFileChange} />
+                            </FormControl>
+                            {imagePreview && (
+                                <div className="mt-2 relative w-full aspect-video rounded-md overflow-hidden border">
+                                    <Image src={imagePreview} alt="Preview" fill className="object-cover" />
+                                </div>
+                            )}
+                            {uploadProgress !== null && <Progress value={uploadProgress} className="mt-2 h-2" />}
+                            <FormMessage />
+                        </FormItem>
                         <FormField control={form.control} name="description" render={({ field }) => (
                             <FormItem><FormLabel>Description</FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage /></FormItem>
-                        )} />
-                        <FormField control={form.control} name="imageUrl" render={({ field }) => (
-                            <FormItem><FormLabel>Image URL</FormLabel><FormControl><Input placeholder="https://example.com/image.png" {...field} /></FormControl><FormMessage /></FormItem>
                         )} />
                         <div className="grid grid-cols-2 gap-4">
                             <FormField control={form.control} name="price" render={({ field }) => (
@@ -638,7 +699,7 @@ function Step5Products({ member, onSave }: { member: any, onSave: (newData: any)
         <div className="space-y-6">
             <div className="flex justify-between items-center">
                 <p className="text-muted-foreground">Add products to your shop's catalogue.</p>
-                <ProductDialog onAddProduct={handleAddProduct} />
+                <ProductDialog onAddProduct={handleAddProduct} memberId={member.id} />
             </div>
             <Card>
                 <CardContent className="p-0">
