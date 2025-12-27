@@ -5,9 +5,8 @@ import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Loader2, Store, PlusCircle } from 'lucide-react';
-import { useUser, useFirestore, useMemoFirebase } from '@/firebase';
-import { useCollection } from '@/firebase/firestore/use-collection';
-import { collection, query, where, addDoc, serverTimestamp } from 'firebase/firestore';
+import { useUser, useFirestore, useMemoFirebase, useDoc } from '@/firebase';
+import { collection, query, where, addDoc, serverTimestamp, doc, updateDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import ShopWizard from './shop-wizard';
 
@@ -17,38 +16,49 @@ export default function ShopContent() {
   const { toast } = useToast();
   const [isCreating, setIsCreating] = useState(false);
 
-  const shopsQuery = useMemoFirebase(() => {
+  // 1. Get the member document to find the shopId
+  const memberDocRef = useMemoFirebase(() => {
     if (!firestore || !user) return null;
-    // Query the top-level shops collection for a shop owned by the current user
-    return query(collection(firestore, 'shops'), where('ownerId', '==', user.uid));
+    return doc(firestore, 'members', user.uid);
   }, [firestore, user]);
 
-  const { data: shops, isLoading: isShopsLoading } = useCollection(shopsQuery);
+  const { data: memberData, isLoading: isMemberLoading } = useDoc<{shopId?: string}>(memberDocRef);
 
-  const userShop = shops?.[0]; // Get the first shop, as a user should only have one
-  const isLoading = isUserLoading || isShopsLoading;
+  // 2. Based on the shopId from the member document, fetch the actual shop document
+  const shopDocRef = useMemoFirebase(() => {
+    if (!firestore || !memberData?.shopId) return null;
+    return doc(firestore, 'shops', memberData.shopId);
+  }, [firestore, memberData]);
+
+  const { data: userShop, isLoading: isShopLoading } = useDoc(shopDocRef);
+
+  const isLoading = isUserLoading || isMemberLoading || (!!memberData?.shopId && isShopLoading);
 
   const handleCreateShop = async () => {
-    if (!user || !firestore) {
+    if (!user || !firestore || !memberDocRef) {
       toast({ variant: 'destructive', title: 'You must be logged in to create a shop.' });
       return;
     }
     setIsCreating(true);
 
     try {
-      const shopsCollectionRef = collection(firestore, 'shops');
-      // Create a basic draft shop document
-      await addDoc(shopsCollectionRef, {
+      // Create the shop document first
+      const newShopRef = await addDoc(collection(firestore, 'shops'), {
         ownerId: user.uid,
         status: 'draft',
+        shopName: `${user.displayName || 'My'}'s New Shop`,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
-        shopName: `${user.displayName}'s New Shop`, // Default name
-        shopDescription: '',
-        category: '',
       });
+      
+      // Then, update the member document with the new shop's ID
+      await updateDoc(memberDocRef, {
+        shopId: newShopRef.id
+      });
+      
       toast({ title: 'Shop Draft Created!', description: "Let's get started with the details." });
     } catch (error: any) {
+      console.error("Error creating shop:", error);
       toast({ variant: 'destructive', title: 'Error Creating Shop', description: error.message });
     } finally {
       setIsCreating(false);
@@ -90,5 +100,3 @@ export default function ShopContent() {
     </Card>
   );
 }
-
-    
