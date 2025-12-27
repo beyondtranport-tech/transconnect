@@ -12,33 +12,33 @@ function isOwner(userId) {
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    // Member Collection
+    // Admin can list all members.
+    // Individual users can only read/update/delete their own document.
     match /members/{memberId} {
+      allow list: if isAdmin();
       allow read, update, delete: if isOwner(memberId) || isAdmin();
-      allow create: if request.auth != null; // Any authenticated user can create their own member document
+      allow create: if request.auth != null;
 
+      // Subcollections for a member
       match /versions/{versionId} {
         allow read, list, create: if isOwner(memberId) || isAdmin();
       }
 
       match /staff/{staffId} {
-        allow read, list, create, update, delete: if isOwner(memberId) || isAdmin();
+        allow crud: if isOwner(memberId) || isAdmin();
       }
 
       match /transactions/{transactionId} {
-        allow read, list, create, update, delete: if isOwner(memberId) || isAdmin();
+        allow crud: if isOwner(memberId) || isAdmin();
       }
 
       match /financeApplications/{applicationId} {
-        allow read, list, create, update, delete: if isOwner(memberId) || isAdmin();
+        allow crud: if isOwner(memberId) || isAdmin();
       }
     }
-
-    // Admin can list all members
-    match /members/{memberId} {
-        allow list: if isAdmin();
-    }
     
-    // Other collections
+    // Other top-level collections
     match /memberships/{membershipId} {
       allow read: if request.auth != null;
       allow write: if isAdmin();
@@ -52,6 +52,12 @@ service cloud.firestore {
     match /financeApplications/{applicationId} {
        allow create: if request.auth != null;
        allow read, list, update, delete: if isAdmin();
+    }
+    
+    // Generic helper for subcollection create operations.
+    // This simplifies rules like /members/{memberId}/staff/{staffId}
+    match /{path=**}/{document} {
+      allow crud: if isAdmin();
     }
   }
 }
