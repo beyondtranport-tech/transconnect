@@ -10,8 +10,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
-import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { doc, updateDoc, serverTimestamp, collection, addDoc } from 'firebase/firestore';
+import { useFirestore } from '@/firebase';
+import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { Loader2, Save, CheckCircle, LayoutGrid, List, Image as ImageIcon, Sparkles, PlusCircle, Edit, Trash2 } from 'lucide-react';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -519,10 +519,12 @@ const productSchema = z.object({
 });
 type ProductFormValues = z.infer<typeof productSchema>;
 
-function ProductDialog({ memberId }: { memberId: string }) {
+// The product type stored in the array
+type Product = ProductFormValues & { id: string };
+
+function ProductDialog({ onAddProduct }: { onAddProduct: (product: Product) => void }) {
     const [isOpen, setIsOpen] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
-    const firestore = useFirestore();
     const { toast } = useToast();
 
     const form = useForm<ProductFormValues>({
@@ -530,37 +532,19 @@ function ProductDialog({ memberId }: { memberId: string }) {
         defaultValues: { name: '', description: '', price: 0, sku: '' }
     });
 
-    const onSubmit = async (values: ProductFormValues) => {
+    const onSubmit = (values: ProductFormValues) => {
         setIsSaving(true);
-        const productsCollectionRef = collection(firestore, 'members', memberId, 'products');
-        
-        const productData = {
+        // We are no longer writing to Firestore here directly.
+        // We pass the new product up to the parent component (Step5Products).
+        const newProduct: Product = {
             ...values,
-            memberId: memberId,
-            createdAt: serverTimestamp(),
-            updatedAt: serverTimestamp(),
+            id: `prod_${Date.now()}` // Simple unique ID for local state management
         };
-
-        try {
-            await addDoc(productsCollectionRef, productData)
-                .catch(serverError => {
-                    const permissionError = new FirestorePermissionError({
-                        path: productsCollectionRef.path,
-                        operation: 'create',
-                        requestResourceData: productData
-                    });
-                    errorEmitter.emit('permission-error', permissionError);
-                    throw serverError; // re-throw to be caught by outer try-catch
-                });
-
-            toast({ title: 'Product Added!', description: `${values.name} has been added to your shop.` });
-            form.reset();
-            setIsOpen(false);
-        } catch (error: any) {
-            toast({ variant: 'destructive', title: 'Error Adding Product', description: error.message });
-        } finally {
-            setIsSaving(false);
-        }
+        onAddProduct(newProduct);
+        toast({ title: 'Product Staged', description: `${values.name} is ready to be saved with the rest of your shop updates.` });
+        setIsSaving(false);
+        setIsOpen(false);
+        form.reset();
     };
 
     return (
@@ -571,7 +555,7 @@ function ProductDialog({ memberId }: { memberId: string }) {
             <DialogContent>
                 <DialogHeader>
                     <DialogTitle>Add a New Product</DialogTitle>
-                    <DialogDescription>Fill out the details for your new product.</DialogDescription>
+                    <DialogDescription>Fill out the details for your new product. It will be saved when you click "Save & Continue".</DialogDescription>
                 </DialogHeader>
                 <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -591,7 +575,7 @@ function ProductDialog({ memberId }: { memberId: string }) {
                         </div>
                         <DialogFooter>
                             <Button type="submit" disabled={isSaving}>
-                                {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Save Product'}
+                                {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Add Product'}
                             </Button>
                         </DialogFooter>
                     </form>
@@ -601,21 +585,53 @@ function ProductDialog({ memberId }: { memberId: string }) {
     );
 }
 
-function Step5Products({ member, onSave }: { member: any, onSave: (newData?: any) => void }) {
+function Step5Products({ member, onSave }: { member: any, onSave: (newData: any) => void }) {
     const firestore = useFirestore();
+    const { toast } = useToast();
+    const [isSaving, setIsSaving] = useState(false);
+    
+    // Products are now managed in local state until saved.
+    const [products, setProducts] = useState<Product[]>(member.shop?.products || []);
 
-    const productsCollectionRef = useMemoFirebase(() => {
-        if (!firestore) return null;
-        return collection(firestore, 'members', member.id, 'products');
-    }, [firestore, member.id]);
+    const handleAddProduct = (newProduct: Product) => {
+        setProducts(currentProducts => [...currentProducts, newProduct]);
+    };
+    
+    const handleRemoveProduct = (productId: string) => {
+        setProducts(currentProducts => currentProducts.filter(p => p.id !== productId));
+    }
+    
+    const handleSave = async () => {
+        setIsSaving(true);
+        const memberDocRef = doc(firestore, 'members', member.id);
 
-    const { data: products, isLoading } = useCollection(productsCollectionRef);
+        const dataToUpdate = {
+            'shop.products': products,
+            'shop.updatedAt': serverTimestamp(),
+            updatedAt: serverTimestamp(),
+        };
+
+        try {
+            await updateDoc(memberDocRef, dataToUpdate);
+            toast({ title: 'Step 5 Saved!', description: 'Your product list has been updated.' });
+            onSave({ products }); // Pass the new product list to the main wizard state
+        } catch (serverError: any) {
+             const permissionError = new FirestorePermissionError({
+                path: memberDocRef.path, operation: 'update', requestResourceData: dataToUpdate,
+            });
+            errorEmitter.emit('permission-error', permissionError);
+            toast({ variant: 'destructive', title: 'Update Failed', description: serverError.message });
+        } finally {
+            setIsSaving(false);
+        }
+    }
+
 
     return (
         <div className="space-y-6">
             <div className="flex justify-between items-center">
                 <p className="text-muted-foreground">Add products to your shop's catalogue.</p>
-                <ProductDialog memberId={member.id} />
+                <ProductDialog onAddProduct={handleAddProduct} />
             </div>
             <Card>
                 <CardContent className="p-0">
@@ -629,27 +645,18 @@ function Step5Products({ member, onSave }: { member: any, onSave: (newData?: any
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {isLoading && (
-                                <TableRow>
-                                    <TableCell colSpan={4} className="text-center py-10">
-                                        <Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" />
-                                    </TableCell>
-                                </TableRow>
-                            )}
-                            {!isLoading && products && products.length > 0 ? (
+                            {products.length > 0 ? (
                                 products.map(product => (
                                     <TableRow key={product.id}>
                                         <TableCell className="font-medium">{product.name}</TableCell>
                                         <TableCell>{product.sku || 'N/A'}</TableCell>
                                         <TableCell className="text-right font-mono">R {product.price.toFixed(2)}</TableCell>
                                         <TableCell className="text-right">
-                                            <Button variant="ghost" size="icon"><Edit className="h-4 w-4" /></Button>
-                                            <Button variant="ghost" size="icon"><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                                            <Button variant="ghost" size="icon" onClick={() => handleRemoveProduct(product.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
                                         </TableCell>
                                     </TableRow>
                                 ))
-                            ) : null}
-                             {!isLoading && (!products || products.length === 0) && (
+                            ) : (
                                 <TableRow>
                                     <TableCell colSpan={4} className="text-center py-10 text-muted-foreground">
                                         You haven't added any products yet.
@@ -660,7 +667,8 @@ function Step5Products({ member, onSave }: { member: any, onSave: (newData?: any
                     </Table>
                 </CardContent>
             </Card>
-            <Button onClick={() => onSave()}>
+            <Button onClick={handleSave} disabled={isSaving}>
+                {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                 Save & Continue
             </Button>
         </div>
@@ -697,15 +705,15 @@ export default function ShopWizard({ member }: { member: any }) {
     const stepId = STEPS[currentStepIndex].id;
     switch (stepId) {
       case 'identity':
-        return <Step1CoreIdentity member={member} onSave={handleSaveAndNext} />;
+        return <Step1CoreIdentity member={{...member, shop: shopData}} onSave={handleSaveAndNext} />;
       case 'location':
-        return <Step2LocationContact member={member} onSave={handleSaveAndNext} />;
+        return <Step2LocationContact member={{...member, shop: shopData}} onSave={handleSaveAndNext} />;
       case 'branding':
-        return <Step3Branding member={member} onSave={handleSaveAndNext} />;
+        return <Step3Branding member={{...member, shop: shopData}} onSave={handleSaveAndNext} />;
       case 'seo':
-        return <Step4Seo member={member} onSave={handleSaveAndNext} />;
+        return <Step4Seo member={{...member, shop: shopData}} onSave={handleSaveAndNext} />;
       case 'products':
-        return <Step5Products member={member} onSave={handleSaveAndNext} />;
+        return <Step5Products member={{...member, shop: shopData}} onSave={handleSaveAndNext} />;
       case 'preview':
         return <div className="text-center p-8">Step 6: Final Preview & Submit for Review will go here.</div>;
       default:
@@ -753,3 +761,5 @@ export default function ShopWizard({ member }: { member: any }) {
     </div>
   );
 }
+
+    
