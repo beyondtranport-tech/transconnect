@@ -10,9 +10,6 @@ service cloud.firestore {
     
     // Specific rules for individual member documents
     match /members/{memberId} {
-      // Allow admin to do anything on individual documents
-      allow read, update, delete: if isAdmin();
-
       // Allow a user to get their own document
       allow get: if request.auth.uid == memberId;
 
@@ -21,6 +18,9 @@ service cloud.firestore {
       
       // Allow a user to update their own document (but not delete)
       allow update: if request.auth.uid == memberId;
+      
+      // Admin overrides for individual documents
+      allow read, update, delete: if isAdmin();
 
       match /staff/{staffId} {
         allow read, list, create, update, delete: if request.auth.uid == memberId || isAdmin();
@@ -44,7 +44,7 @@ service cloud.firestore {
       }
     }
     
-    // Broad rule for the entire 'members' collection
+    // Broad rule for the entire 'members' collection for admin listing
     match /members/{document=**} {
         // Only allow admin to list the entire collection and its subcollections
         allow list: if isAdmin();
