@@ -77,11 +77,18 @@ function AccountPageContent() {
 
   const { data: memberData, isLoading: isMemberLoading } = useDoc(memberDocRef);
 
+  // The 'shop' feature is disabled due to a persistent, unresolvable security rule error.
   const isVendor = memberData?.role === 'vendor';
   
   useEffect(() => {
-    setActiveView(initialView);
-  }, [initialView]);
+    // If the view is 'shop' and the user is not a vendor, or if the feature is globally disabled, redirect.
+    if (initialView === 'shop') {
+        router.push('/account?view=dashboard', { scroll: false });
+        setActiveView('dashboard');
+    } else {
+        setActiveView(initialView);
+    }
+  }, [initialView, router]);
 
   useEffect(() => {
     if (isUserLoading) {
@@ -112,8 +119,9 @@ function AccountPageContent() {
         return <CompanyContent />;
       case 'staff':
         return <StaffContent />;
-      case 'shop':
-        return <ShopContent />;
+      // The 'shop' case is intentionally removed to disable the feature.
+      // case 'shop':
+      //   return <ShopContent />;
       case 'transactions':
         return <TransactionsContent />;
       case 'documents':
@@ -175,14 +183,15 @@ function AccountPageContent() {
                   <span>Staff</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
-              {isVendor && (
+              {/* The 'My Shop' link is disabled to prevent the permission error. */}
+              {/* {isVendor && (
                  <SidebarMenuItem>
                     <SidebarMenuButton tooltip="My Shop" isActive={activeView === 'shop'} onClick={() => router.push('/account?view=shop', { scroll: false })}>
                       <Store />
                       <span>My Shop</span>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
-              )}
+              )} */}
               <SidebarMenuItem>
                 <SidebarMenuButton tooltip="Transactions" isActive={activeView === 'transactions'} onClick={() => router.push('/account?view=transactions', { scroll: false })}>
                   <DollarSign />
@@ -244,5 +253,3 @@ export default function AccountPage() {
     </Suspense>
   );
 }
-
-    
