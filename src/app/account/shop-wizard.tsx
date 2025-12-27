@@ -12,7 +12,7 @@ import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore } from '@/firebase';
 import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
-import { Loader2, Save } from 'lucide-react';
+import { Loader2, Save, CheckCircle, LayoutGrid, List, Image as ImageIcon } from 'lucide-react';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -20,6 +20,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { Separator } from '@/components/ui/separator';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { cn } from '@/lib/utils';
 
 
 const statusColors: { [key: string]: 'default' | 'secondary' | 'destructive' | 'outline' } = {
@@ -229,6 +231,148 @@ function Step2LocationContact({ shopData, memberId, onSave }: { shopData: any, m
   );
 }
 
+// ====== STEP 3: Branding & Appearance ======
+const templates = [
+  { id: 'modern-grid', name: 'Modern Grid', icon: LayoutGrid },
+  { id: 'classic-list', name: 'Classic List', icon: List },
+  { id: 'image-focused', name: 'Image Focused', icon: ImageIcon },
+];
+
+const themes = [
+  { id: 'forest-green', name: 'Forest Green', color: 'bg-green-700' },
+  { id: 'midnight-blue', name: 'Midnight Blue', color: 'bg-blue-800' },
+  { id: 'charcoal-gray', name: 'Charcoal Gray', color: 'bg-gray-700' },
+];
+
+const shopStep3Schema = z.object({
+  template: z.string().min(1, "Please select a template."),
+  theme: z.string().min(1, "Please select a color theme."),
+});
+
+type Step3FormValues = z.infer<typeof shopStep3Schema>;
+
+function Step3Branding({ shopData, memberId, onSave }: { shopData: any, memberId: string, onSave: (newData: any) => void }) {
+  const { toast } = useToast();
+  const firestore = useFirestore();
+  const [isSaving, setIsSaving] = useState(false);
+
+  const form = useForm<Step3FormValues>({
+    resolver: zodResolver(shopStep3Schema),
+    defaultValues: {
+      template: shopData.template || 'modern-grid',
+      theme: shopData.theme || 'forest-green',
+    }
+  });
+
+  const onSubmit = async (values: Step3FormValues) => {
+    setIsSaving(true);
+    const memberDocRef = doc(firestore, 'members', memberId);
+    
+    const dataToUpdate = {
+        shop: { ...shopData, ...values, updatedAt: serverTimestamp() },
+        updatedAt: serverTimestamp()
+    };
+
+    try {
+        await updateDoc(memberDocRef, dataToUpdate);
+        toast({ title: 'Step 3 Saved!', description: 'Your branding settings have been updated.' });
+        onSave(dataToUpdate.shop);
+    } catch (serverError: any) {
+        const permissionError = new FirestorePermissionError({
+            path: memberDocRef.path, operation: 'update', requestResourceData: dataToUpdate,
+        });
+        errorEmitter.emit('permission-error', permissionError);
+        toast({ variant: 'destructive', title: 'Update Failed', description: serverError.message });
+    } finally {
+        setIsSaving(false);
+    }
+  };
+
+  return (
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+        <FormField
+          control={form.control}
+          name="template"
+          render={({ field }) => (
+            <FormItem className="space-y-3">
+              <FormLabel className="text-base">Choose a layout template</FormLabel>
+              <FormControl>
+                <RadioGroup
+                  onValueChange={field.onChange}
+                  defaultValue={field.value}
+                  className="grid grid-cols-1 md:grid-cols-3 gap-4"
+                >
+                  {templates.map((template) => {
+                    const Icon = template.icon;
+                    return (
+                        <FormItem key={template.id}>
+                          <FormControl>
+                            <RadioGroupItem value={template.id} className="sr-only" />
+                          </FormControl>
+                          <Label
+                            htmlFor={template.id}
+                            className={cn(
+                              "flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground cursor-pointer",
+                              field.value === template.id && "border-primary"
+                            )}
+                          >
+                            <Icon className="h-10 w-10 mb-2" />
+                            {template.name}
+                          </Label>
+                        </FormItem>
+                    )
+                  })}
+                </RadioGroup>
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="theme"
+          render={({ field }) => (
+            <FormItem className="space-y-3">
+              <FormLabel className="text-base">Choose a color theme</FormLabel>
+              <FormControl>
+                <RadioGroup
+                  onValueChange={field.onChange}
+                  defaultValue={field.value}
+                  className="grid grid-cols-1 md:grid-cols-3 gap-4"
+                >
+                  {themes.map((theme) => (
+                    <FormItem key={theme.id}>
+                       <FormControl>
+                          <RadioGroupItem value={theme.id} id={theme.id} className="sr-only" />
+                      </FormControl>
+                      <Label
+                        htmlFor={theme.id}
+                        className={cn(
+                          "flex items-center gap-4 rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground cursor-pointer",
+                          field.value === theme.id && "border-primary"
+                        )}
+                      >
+                        <div className={cn("h-6 w-6 rounded-full", theme.color)} />
+                        {theme.name}
+                      </Label>
+                    </FormItem>
+                  ))}
+                </RadioGroup>
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <Button type="submit" disabled={isSaving}>
+          {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+          Save & Continue
+        </Button>
+      </form>
+    </Form>
+  );
+}
+
 
 // ====== WIZARD CONTROLLER ======
 const STEPS = [
@@ -259,7 +403,7 @@ export default function ShopWizard({ shop, memberId }: { shop: any, memberId: st
       case 'location':
         return <Step2LocationContact shopData={shopData} memberId={memberId} onSave={handleSaveAndNext} />;
       case 'branding':
-        return <div className="text-center p-8">Step 3: Branding & Appearance (Templates/Themes) will go here.</div>;
+        return <Step3Branding shopData={shopData} memberId={memberId} onSave={handleSaveAndNext} />;
       case 'seo':
         return <div className="text-center p-8">Step 4: SEO & Metadata Form will go here.</div>;
       case 'products':
