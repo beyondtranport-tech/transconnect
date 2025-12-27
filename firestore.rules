@@ -38,7 +38,8 @@ service cloud.firestore {
       }
       
       match /shops/{shopId} {
-        allow crud: if isOwner(memberId) || isAdmin();
+        allow list, write, delete: if isOwner(memberId) || isAdmin();
+        allow read: if isOwner(memberId) || isAdmin();
       }
     }
     
@@ -65,5 +66,3 @@ service cloud.firestore {
     }
   }
 }
-
-    
