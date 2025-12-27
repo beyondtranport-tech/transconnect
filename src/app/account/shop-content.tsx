@@ -5,8 +5,8 @@ import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Loader2, Store, PlusCircle } from 'lucide-react';
-import { useUser, useFirestore, useMemoFirebase, useCollection } from '@/firebase';
-import { collection, query, where, addDoc, serverTimestamp } from 'firebase/firestore';
+import { useUser, useFirestore, useMemoFirebase, useDoc } from '@/firebase';
+import { collection, doc, writeBatch, serverTimestamp } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import ShopWizard from './shop-wizard';
 
@@ -16,37 +16,56 @@ export default function ShopContent() {
   const { toast } = useToast();
   const [isCreating, setIsCreating] = useState(false);
 
-  // Query the 'shops' subcollection under the current user's member document.
-  const shopsCollectionRef = useMemoFirebase(() => {
+  // 1. Get the member document, which contains the shopId
+  const memberDocRef = useMemoFirebase(() => {
     if (!firestore || !user) return null;
-    return collection(firestore, `members/${user.uid}/shops`);
+    return doc(firestore, 'members', user.uid);
   }, [firestore, user]);
 
-  const { data: userShops, isLoading: areShopsLoading } = useCollection(shopsCollectionRef);
-  
-  // A user should only have one shop, so we take the first from the results.
-  const userShop = userShops?.[0];
+  const { data: memberData, isLoading: isMemberLoading } = useDoc(memberDocRef);
 
-  const isLoading = isUserLoading || areShopsLoading;
+  // 2. Based on the member's shopId, create a reference to the specific shop document
+  const shopDocRef = useMemoFirebase(() => {
+    if (!firestore || !memberData?.shopId) return null;
+    return doc(firestore, `members/${memberData.id}/shops/${memberData.shopId}`);
+  }, [firestore, memberData]);
+
+  // 3. Fetch the single shop document. This uses 'get' permission, not 'list'.
+  const { data: userShop, isLoading: isShopLoading } = useDoc(shopDocRef);
+
+  const isLoading = isUserLoading || isMemberLoading || isShopLoading;
 
   const handleCreateShop = async () => {
-    if (!user || !firestore || !shopsCollectionRef) {
+    if (!user || !firestore) {
       toast({ variant: 'destructive', title: 'You must be logged in to create a shop.' });
+      return;
+    }
+    // A member can only have one shop. Prevent creation if one already exists or is linked.
+    if (memberData?.shopId || userShop) {
+      toast({ variant: 'destructive', title: 'Shop Already Exists', description: 'You can only manage one shop per account.' });
       return;
     }
     setIsCreating(true);
 
     try {
-      // Create the shop document in the user's subcollection
-      await addDoc(shopsCollectionRef, {
-        ownerId: user.uid, // Redundant but good for consistency
+      const batch = writeBatch(firestore);
+
+      // A. Create the new shop document in the subcollection.
+      const newShopRef = doc(collection(firestore, `members/${user.uid}/shops`));
+      batch.set(newShopRef, {
+        id: newShopRef.id, // Store its own ID
+        ownerId: user.uid,
         status: 'draft',
         shopName: `${user.displayName || 'My'}'s New Shop`,
-        shopDescription: 'My new shop on TransConnect!',
-        category: 'General',
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       });
+
+      // B. Update the parent member document with the ID of the new shop.
+      const parentMemberRef = doc(firestore, 'members', user.uid);
+      batch.update(parentMemberRef, { shopId: newShopRef.id });
+
+      await batch.commit();
       
       toast({ title: 'Shop Draft Created!', description: "Let's get started with the details." });
     } catch (error: any) {
@@ -74,10 +93,8 @@ export default function ShopContent() {
             <Loader2 className="h-10 w-10 animate-spin text-primary" />
           </div>
         ) : userShop ? (
-          // If a shop exists, render the wizard to manage it
           <ShopWizard shop={userShop} />
         ) : (
-          // If no shop exists, show the "Create Shop" screen
           <div className="text-center py-20 border-2 border-dashed rounded-lg">
             <Store className="mx-auto h-12 w-12 text-muted-foreground" />
             <h3 className="mt-4 text-xl font-semibold">You don't have a shop yet.</h3>

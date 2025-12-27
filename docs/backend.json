@@ -62,7 +62,7 @@
         },
         "shopId": {
           "type": "string",
-          "description": "DEPRECATED. The ID of the shop owned by this member, linking to the /shops collection. Shop is now in a subcollection."
+          "description": "The ID of the shop owned by this member, linking to the shops subcollection."
         },
         "rewardPoints": {
           "type": "number",
