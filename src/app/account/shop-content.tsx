@@ -2,13 +2,207 @@
 'use client';
 
 import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, Store, PlusCircle } from 'lucide-react';
+import { Loader2, Store, PlusCircle, Save } from 'lucide-react';
 import { useUser, useFirestore, useMemoFirebase, useDoc } from '@/firebase';
-import { collection, doc, writeBatch, serverTimestamp } from 'firebase/firestore';
+import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
-import ShopWizard from './shop-wizard';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
+
+// 1. Zod Schema for the shop object (matches the backend.json entity)
+const shopSchema = z.object({
+  shopName: z.string().min(1, "Shop name is required."),
+  shopDescription: z.string().optional(),
+  category: z.string().min(1, "Please select a category."),
+  contactEmail: z.string().email("Invalid email").optional().or(z.literal('')),
+  contactPhone: z.string().optional(),
+  status: z.enum(["draft", "pending_review", "approved", "rejected"]),
+  template: z.string().optional(),
+  theme: z.string().optional(),
+  metaTitle: z.string().optional(),
+  metaDescription: z.string().optional(),
+  tags: z.array(z.string()).optional(),
+  // ownerId, createdAt, updatedAt are handled server-side or on creation
+});
+
+type ShopFormValues = z.infer<typeof shopSchema>;
+
+function ShopForm({ shopData, memberId }: { shopData: any, memberId: string }) {
+  const { toast } = useToast();
+  const firestore = useFirestore();
+  const [isSaving, setIsSaving] = useState(false);
+
+  const form = useForm<ShopFormValues>({
+    resolver: zodResolver(shopSchema),
+    defaultValues: {
+      shopName: shopData.shopName || '',
+      shopDescription: shopData.shopDescription || '',
+      category: shopData.category || '',
+      contactEmail: shopData.contactEmail || '',
+      contactPhone: shopData.contactPhone || '',
+      status: shopData.status || 'draft',
+      metaTitle: shopData.metaTitle || '',
+      metaDescription: shopData.metaDescription || '',
+    }
+  });
+  
+  const onSubmit = async (values: ShopFormValues) => {
+    setIsSaving(true);
+    if (!firestore || !memberId) {
+        toast({ variant: 'destructive', title: 'Error', description: 'Not logged in or database not available.' });
+        setIsSaving(false);
+        return;
+    }
+    
+    const memberDocRef = doc(firestore, 'members', memberId);
+    
+    // We update the 'shop' field within the member document
+    const dataToUpdate = {
+        shop: {
+          ...shopData, // Preserve existing fields like ownerId, createdAt
+          ...values,   // Overwrite with new form values
+          updatedAt: serverTimestamp()
+        },
+        // Also update the top-level member updatedAt timestamp
+        updatedAt: serverTimestamp()
+    };
+
+    try {
+        await updateDoc(memberDocRef, dataToUpdate);
+        toast({ title: 'Shop Updated', description: 'Your shop details have been saved.' });
+    } catch (serverError: any) {
+        const permissionError = new FirestorePermissionError({
+            path: memberDocRef.path,
+            operation: 'update',
+            requestResourceData: dataToUpdate,
+        });
+        errorEmitter.emit('permission-error', permissionError);
+        toast({
+            variant: 'destructive',
+            title: 'Update Failed',
+            description: serverError.message || 'You do not have permission to update your shop.',
+        });
+    } finally {
+        setIsSaving(false);
+    }
+  }
+
+  // Placeholder for Step 2 of the wizard
+  // In a real multi-step form, this would be a separate component or view
+  const renderStepContent = () => {
+    return (
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <FormField
+                control={form.control}
+                name="shopName"
+                render={({ field }) => (
+                <FormItem>
+                    <FormLabel>Shop Name</FormLabel>
+                    <FormControl><Input placeholder="My Awesome Shop" {...field} /></FormControl>
+                    <FormMessage />
+                </FormItem>
+                )}
+            />
+             <FormField
+                control={form.control}
+                name="shopDescription"
+                render={({ field }) => (
+                <FormItem>
+                    <FormLabel>Shop Description</FormLabel>
+                    <FormControl><Textarea placeholder="Describe what your shop sells..." {...field} /></FormControl>
+                    <FormMessage />
+                </FormItem>
+                )}
+            />
+            <FormField
+                control={form.control}
+                name="category"
+                render={({ field }) => (
+                <FormItem>
+                    <FormLabel>Primary Category</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                        <SelectTrigger><SelectValue placeholder="Select a category" /></SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                            <SelectItem value="Parts">Parts</SelectItem>
+                            <SelectItem value="Services">Services</SelectItem>
+                            <SelectItem value="Tires">Tires</SelectItem>
+                            <SelectItem value="Equipment">Equipment</SelectItem>
+                        </SelectContent>
+                    </Select>
+                    <FormMessage />
+                </FormItem>
+                )}
+            />
+            <div className="grid md:grid-cols-2 gap-4">
+                <FormField
+                    control={form.control}
+                    name="contactEmail"
+                    render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Public Contact Email</FormLabel>
+                        <FormControl><Input placeholder="sales@myshop.com" {...field} /></FormControl>
+                        <FormMessage />
+                    </FormItem>
+                    )}
+                />
+                <FormField
+                    control={form.control}
+                    name="contactPhone"
+                    render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Public Contact Phone</FormLabel>
+                        <FormControl><Input placeholder="011 123 4567" {...field} /></FormControl>
+                        <FormMessage />
+                    </FormItem>
+                    )}
+                />
+            </div>
+             <FormField
+                control={form.control}
+                name="metaTitle"
+                render={({ field }) => (
+                <FormItem>
+                    <FormLabel>SEO Title</FormLabel>
+                    <FormControl><Input placeholder="e.g., Quality Truck Parts | My Shop" {...field} /></FormControl>
+                    <FormMessage />
+                </FormItem>
+                )}
+            />
+             <FormField
+                control={form.control}
+                name="metaDescription"
+                render={({ field }) => (
+                <FormItem>
+                    <FormLabel>SEO Description</FormLabel>
+                    <FormControl><Textarea placeholder="Short description for search engines..." {...field} /></FormControl>
+                    <FormMessage />
+                </FormItem>
+                )}
+            />
+
+            <Button type="submit" disabled={isSaving}>
+                {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                Save Shop Details
+            </Button>
+        </form>
+      </Form>
+    );
+  };
+  
+  return renderStepContent();
+}
 
 export default function ShopContent() {
   const { user, isUserLoading } = useUser();
@@ -16,7 +210,7 @@ export default function ShopContent() {
   const { toast } = useToast();
   const [isCreating, setIsCreating] = useState(false);
 
-  // 1. Get the member document, which contains the shopId
+  // 1. Get the member document, which may or may not contain the shop object
   const memberDocRef = useMemoFirebase(() => {
     if (!firestore || !user) return null;
     return doc(firestore, 'members', user.uid);
@@ -24,52 +218,49 @@ export default function ShopContent() {
 
   const { data: memberData, isLoading: isMemberLoading } = useDoc(memberDocRef);
 
-  // 2. Based on the member's shopId, create a reference to the specific shop document
-  const shopDocRef = useMemoFirebase(() => {
-    if (!firestore || !memberData?.shopId) return null;
-    return doc(firestore, `members/${memberData.id}/shops/${memberData.shopId}`);
-  }, [firestore, memberData]);
-
-  // 3. Fetch the single shop document. This uses 'get' permission, not 'list'.
-  const { data: userShop, isLoading: isShopLoading } = useDoc(shopDocRef);
-
-  const isLoading = isUserLoading || isMemberLoading || isShopLoading;
+  const isLoading = isUserLoading || isMemberLoading;
+  
+  // The user's shop data is now just a field on the member document
+  const userShop = memberData?.shop;
 
   const handleCreateShop = async () => {
-    if (!user || !firestore) {
+    if (!user || !firestore || !memberDocRef) {
       toast({ variant: 'destructive', title: 'You must be logged in to create a shop.' });
       return;
     }
-    // A member can only have one shop. Prevent creation if one already exists or is linked.
-    if (memberData?.shopId || userShop) {
+    if (userShop) {
       toast({ variant: 'destructive', title: 'Shop Already Exists', description: 'You can only manage one shop per account.' });
       return;
     }
     setIsCreating(true);
 
-    try {
-      const batch = writeBatch(firestore);
-
-      // A. Create the new shop document in the subcollection.
-      const newShopRef = doc(collection(firestore, `members/${user.uid}/shops`));
-      batch.set(newShopRef, {
-        id: newShopRef.id, // Store its own ID
+    const newShopData = {
         ownerId: user.uid,
         status: 'draft',
         shopName: `${user.displayName || 'My'}'s New Shop`,
+        category: '',
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
+    };
+    
+    try {
+        // We just update the member document with a new 'shop' field.
+      await updateDoc(memberDocRef, { 
+        shop: newShopData,
+        // Also add a role to the member for easier identification
+        role: 'vendor',
+        updatedAt: serverTimestamp()
       });
-
-      // B. Update the parent member document with the ID of the new shop.
-      const parentMemberRef = doc(firestore, 'members', user.uid);
-      batch.update(parentMemberRef, { shopId: newShopRef.id });
-
-      await batch.commit();
       
       toast({ title: 'Shop Draft Created!', description: "Let's get started with the details." });
     } catch (error: any) {
       console.error("Error creating shop:", error);
+      const permissionError = new FirestorePermissionError({
+          path: memberDocRef.path,
+          operation: 'update',
+          requestResourceData: { shop: newShopData },
+      });
+      errorEmitter.emit('permission-error', permissionError);
       toast({ variant: 'destructive', title: 'Error Creating Shop', description: error.message || "Missing or insufficient permissions." });
     } finally {
       setIsCreating(false);
@@ -93,7 +284,7 @@ export default function ShopContent() {
             <Loader2 className="h-10 w-10 animate-spin text-primary" />
           </div>
         ) : userShop ? (
-          <ShopWizard shop={userShop} />
+          <ShopForm shopData={userShop} memberId={user!.uid} />
         ) : (
           <div className="text-center py-20 border-2 border-dashed rounded-lg">
             <Store className="mx-auto h-12 w-12 text-muted-foreground" />

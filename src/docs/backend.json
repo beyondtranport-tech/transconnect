@@ -1,0 +1,605 @@
+
+{
+  "entities": {
+    "Member": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Member",
+      "type": "object",
+      "description": "Represents a member of the TransConnect platform.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Member entity."
+        },
+        "firstName": {
+          "type": "string",
+          "description": "The first name of the member."
+        },
+        "lastName": {
+          "type": "string",
+          "description": "The last name of the member."
+        },
+        "email": {
+          "type": "string",
+          "description": "The email address of the member.",
+          "format": "email"
+        },
+        "phone": {
+          "type": "string",
+          "description": "The phone number of the member."
+        },
+        "companyName": {
+          "type": "string",
+          "description": "The registered business name of the member's transport business."
+        },
+        "registrationNumber": {
+            "type": "string",
+            "description": "The official registration number of the company."
+        },
+        "vatNumber": {
+            "type": "string",
+            "description": "The VAT registration number of the company."
+        },
+        "streetAddress": {
+          "type": "string",
+          "description": "The street address of the company."
+        },
+        "city": {
+          "type": "string",
+          "description": "The city of the company's address."
+        },
+        "province": {
+          "type": "string",
+          "description": "The province of the company's address."
+        },
+        "postalCode": {
+          "type": "string",
+          "description": "The postal code of the company's address."
+        },
+        "membershipId": {
+          "type": "string",
+          "description": "Reference to Membership tier ID (e.g., 'professional'). (Relationship: Member 1:1 Membership)"
+        },
+        "shop": {
+          "$ref": "#/backend/entities/Shop",
+          "description": "An embedded object containing all data for the member's shop. This is used for a 1:1 relationship."
+        },
+        "rewardPoints": {
+          "type": "number",
+          "description": "The number of reward points accumulated by the member for loyalty."
+        },
+        "walletBalance": {
+          "type": "number",
+          "description": "The cash balance in the member's wallet, in ZAR."
+        },
+        "createdAt": {
+            "type": "object",
+            "description": "The server timestamp when the member was created."
+        },
+        "updatedAt": {
+            "type": "object",
+            "description": "The server timestamp when the member was last updated."
+        }
+      },
+      "required": [
+        "id",
+        "firstName",
+        "lastName",
+        "email",
+        "phone",
+        "companyName",
+        "membershipId"
+      ]
+    },
+    "MemberVersion": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "MemberVersion",
+      "type": "object",
+      "description": "A historical snapshot of a Member's data at a specific point in time.",
+      "properties": {
+        "id": { "type": "string" },
+        "firstName": { "type": "string" },
+        "lastName": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "phone": { "type": "string" },
+        "companyName": { "type": "string" },
+        "registrationNumber": { "type": "string" },
+        "vatNumber": { "type": "string" },
+        "streetAddress": { "type": "string" },
+        "city": { "type": "string" },
+        "province": { "type": "string" },
+        "postalCode": { "type": "string" },
+        "membershipId": { "type": "string" },
+        "shop": { "$ref": "#/backend/entities/Shop" },
+        "rewardPoints": { "type": "number" },
+        "walletBalance": { "type": "number" },
+        "createdAt": { "type": "object" },
+        "updatedAt": { "type": "object" }
+      }
+    },
+    "Shop": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Shop",
+      "type": "object",
+      "description": "Represents a vendor's shop on the TransConnect platform. This definition is used for both the embedded object in the Member document AND the top-level /shops collection.",
+      "properties": {
+        "ownerId": {
+            "type": "string",
+            "description": "The UID of the Member who owns this shop."
+        },
+        "shopName": {
+            "type": "string",
+            "description": "The public name of the shop."
+        },
+        "shopDescription": {
+            "type": "string",
+            "description": "A brief description of the shop and what it sells."
+        },
+        "category": {
+            "type": "string",
+            "description": "The primary category of products or services offered (e.g., Parts, Services, Tires)."
+        },
+        "contactEmail": {
+            "type": "string",
+            "format": "email",
+            "description": "Public contact email for the shop."
+        },
+        "contactPhone": {
+            "type": "string",
+            "description": "Public contact phone number for the shop."
+        },
+        "status": {
+            "type": "string",
+            "enum": ["draft", "pending_review", "approved", "rejected"],
+            "description": "The approval status of the shop."
+        },
+        "template": { "type": "string", "description": "The chosen visual template for the shop page (e.g., 'modern-grid')." },
+        "theme": { "type": "string", "description": "The chosen color theme for the shop page (e.g., 'forest-green')." },
+        "metaTitle": { "type": "string", "description": "SEO-friendly title for the shop page." },
+        "metaDescription": { "type": "string", "description": "SEO-friendly description for search engines." },
+        "tags": { "type": "array", "items": { "type": "string" }, "description": "Searchable tags/keywords for the shop." },
+        "createdAt": {
+            "type": "object",
+            "description": "The server timestamp when the shop was created."
+        },
+        "updatedAt": {
+            "type": "object",
+            "description": "The server timestamp when the shop was last updated."
+        }
+      },
+      "required": ["ownerId", "shopName", "category", "status", "createdAt", "updatedAt"]
+    },
+    "Product": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Product",
+      "type": "object",
+      "description": "Represents a single product within a vendor's shop.",
+      "properties": {
+        "shopId": { "type": "string", "description": "The ID of the parent shop this product belongs to." },
+        "name": { "type": "string", "description": "The name of the product." },
+        "description": { "type": "string", "description": "A detailed description of the product." },
+        "price": { "type": "number", "description": "The price of the product in ZAR." },
+        "sku": { "type": "string", "description": "Stock Keeping Unit or other unique product identifier." },
+        "imageUrl": { "type": "string", "description": "URL to the product image in Firebase Storage." },
+        "createdAt": { "type": "object", "description": "Timestamp of creation." },
+        "updatedAt": { "type": "object", "description": "Timestamp of last update." }
+      },
+      "required": ["shopId", "name", "price"]
+    },
+    "Staff": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Staff",
+      "type": "object",
+      "description": "Represents a staff member associated with a Member's company.",
+      "properties": {
+        "firstName": {
+          "type": "string",
+          "description": "The first name of the staff member."
+        },
+        "lastName": {
+          "type": "string",
+          "description": "The last name of the staff member."
+        },
+        "email": {
+          "type": "string",
+          "description": "The email address of the staff member.",
+          "format": "email"
+        },
+        "role": {
+          "type": "string",
+          "description": "The role or position of the staff member (e.g., Driver, Admin)."
+        },
+        "memberId": {
+          "type": "string",
+          "description": "The UID of the parent Member this staff member belongs to."
+        },
+        "createdAt": {
+          "type": "object",
+          "description": "The server timestamp when the staff member was added."
+        }
+      },
+      "required": [
+        "firstName",
+        "lastName",
+        "email",
+        "role",
+        "memberId",
+        "createdAt"
+      ]
+    },
+    "Membership": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Membership",
+      "type": "object",
+      "description": "Represents a single tier of membership plan for the TransConnect platform (e.g., Member, Professional, Enterprise).",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Membership tier (e.g., 'professional')."
+        },
+        "name": {
+          "type": "string",
+          "description": "Display name of the membership plan (e.g., Professional)."
+        },
+        "description": {
+          "type": "string",
+          "description": "A short description of the ideal user for this plan."
+        },
+        "price": {
+          "type": "number",
+          "description": "Monthly price of the membership plan in ZAR. A value of 0 indicates a free plan. A null or undefined value indicates custom pricing."
+        },
+        "features": {
+          "type": "array",
+          "description": "A list of features included in this plan.",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "description"
+      ]
+    },
+    "Contribution": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Contribution",
+      "type": "object",
+      "description": "Represents a single data contribution from a member.",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "The UID of the contributing member."
+        },
+        "type": {
+          "type": "string",
+          "enum": ["fleet", "supplier", "client"],
+          "description": "The type of contribution."
+        },
+        "data": {
+          "type": "object",
+          "description": "The submitted data, which varies based on the contribution type."
+        },
+        "createdAt": {
+            "type": "object",
+            "description": "The server timestamp when the contribution was made."
+        }
+      },
+      "required": [
+        "userId",
+        "type",
+        "data",
+        "createdAt"
+      ]
+    },
+    "FinanceApplication": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Finance Application",
+      "type": "object",
+      "description": "Represents a finance application submitted by a member through the Finance Mall.",
+      "properties": {
+        "applicantId": {
+          "type": "string",
+          "description": "The UID of the member submitting the application."
+        },
+        "status": {
+          "type": "string",
+          "enum": ["pending", "under_review", "matched", "rejected", "funded", "membership_payment"],
+          "description": "The current status of the application."
+        },
+        "fundingType": {
+          "type": "string",
+          "enum": ["asset_finance", "working_capital", "partnership", "credit-top-up", "membership_payment"],
+          "description": "The type of funding requested."
+        },
+        "amountRequested": {
+          "type": "number",
+          "description": "The amount of funding requested in ZAR."
+        },
+        "businessDetails": {
+          "type": "object",
+          "description": "Information about the applicant's business."
+        },
+        "financials": {
+          "type": "object",
+          "description": "Financial information, such as turnover and profit."
+        },
+        "documents": {
+          "type": "array",
+          "description": "A list of URIs pointing to uploaded supporting documents in cloud storage.",
+          "items": {
+            "type": "string"
+          }
+        },
+        "createdAt": {
+            "type": "object",
+            "description": "The server timestamp when the application was submitted."
+        },
+         "updatedAt": {
+            "type": "object",
+            "description": "The server timestamp when the application was last updated."
+        }
+      },
+      "required": [
+        "applicantId",
+        "status",
+        "fundingType",
+        "amountRequested",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "Transaction": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Transaction",
+      "type": "object",
+      "description": "Represents a single financial transaction in the member's wallet ledger.",
+      "properties": {
+        "transactionId": {
+          "type": "string",
+          "description": "Unique, sequential identifier for the transaction (e.g., R0724-001, P0724-001, ADJ0724-001)."
+        },
+        "reconciliationId": {
+          "type": "string",
+          "description": "The ID of the reconciliation batch this transaction belongs to."
+        },
+        "type": {
+          "type": "string",
+          "enum": ["credit", "debit"],
+          "description": "The type of transaction."
+        },
+        "amount": {
+          "type": "number",
+          "description": "The value of the transaction in ZAR."
+        },
+        "date": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The server timestamp the transaction occurred."
+        },
+        "description": {
+          "type": "string",
+          "description": "The raw description from the bank statement or a manual entry."
+        },
+        "chartOfAccountsCode": {
+          "type": "string",
+          "description": "The accounting code for this transaction (e.g., '4000-MembershipFees')."
+        },
+        "status": {
+          "type": "string",
+          "enum": ["pending_allocation", "allocated", "reversal"],
+          "description": "The status of the transaction in the reconciliation process."
+        },
+        "isAdjustment": {
+          "type": "boolean",
+          "description": "A flag to identify manual corrections or adjustments."
+        }
+      },
+      "required": ["transactionId", "type", "amount", "date", "description", "status"]
+    },
+    "Reconciliation": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Reconciliation",
+      "type": "object",
+      "description": "Represents a single bank statement reconciliation batch.",
+      "properties": {
+        "reconciliationId": {
+          "type": "string",
+          "description": "Unique identifier for the reconciliation batch (e.g., RECON-2024-07-30)."
+        },
+        "statementPeriod": {
+          "type": "string",
+          "description": "The date range covered by the bank statement (e.g., '2024-07-01 to 2024-07-31')."
+        },
+        "openingBalance": {
+          "type": "number",
+          "description": "The opening balance from the bank statement."
+        },
+        "closingBalance": {
+          "type": "number",
+          "description": "The closing balance from the bank statement."
+        },
+        "status": {
+          "type": "string",
+          "enum": ["in_progress", "completed"],
+          "description": "The status of the reconciliation process."
+        },
+        "processedAt": {
+          "type": "object",
+          "description": "The server timestamp when the reconciliation was completed."
+        }
+      },
+      "required": ["reconciliationId", "statementPeriod", "openingBalance", "status"]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/members/{memberId}",
+        "definition": {
+          "entityName": "Member",
+          "schema": {
+            "$ref": "#/backend/entities/Member"
+          },
+          "description": "Stores member profiles. Access is restricted to the authenticated user (path-based ownership).",
+          "params": [
+            {
+              "name": "memberId",
+              "description": "The unique identifier of the member, matching the Firebase Auth UID."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/members/{memberId}/versions/{versionId}",
+        "definition": {
+            "entityName": "MemberVersion",
+            "schema": { "$ref": "#/backend/entities/MemberVersion" },
+            "description": "Stores historical snapshots of member data.",
+            "params": [
+                { "name": "memberId", "description": "The UID of the parent member." },
+                { "name": "versionId", "description": "The unique ID for the data version." }
+            ]
+        }
+      },
+      {
+        "path": "/members/{memberId}/staff/{staffId}",
+        "definition": {
+          "entityName": "Staff",
+          "schema": {
+            "$ref": "#/backend/entities/Staff"
+          },
+          "description": "Stores staff members associated with a parent member company.",
+          "params": [
+            {
+              "name": "memberId",
+              "description": "The UID of the parent member."
+            },
+            {
+              "name": "staffId",
+              "description": "The unique ID for the staff member document."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/members/{memberId}/transactions/{transactionId}",
+        "definition": {
+          "entityName": "Transaction",
+          "schema": {
+            "$ref": "#/backend/entities/Transaction"
+          },
+          "description": "Stores individual financial transactions for a member. Writable by admins, readable by the associated member.",
+          "params": [
+            {
+              "name": "memberId",
+              "description": "The UID of the parent member."
+            },
+            {
+              "name": "transactionId",
+              "description": "The unique identifier of the financial transaction."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/members/{memberId}/financeApplications/{applicationId}",
+        "definition": {
+          "entityName": "FinanceApplication",
+          "schema": {
+            "$ref": "#/backend/entities/FinanceApplication"
+          },
+          "description": "Stores finance applications within a member's own document space for security.",
+          "params": [
+             {
+              "name": "memberId",
+              "description": "The UID of the parent member."
+            },
+            {
+              "name": "applicationId",
+              "description": "The unique identifier of the finance application."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/shops/{shopId}",
+        "definition": {
+          "entityName": "Shop",
+          "schema": { "$ref": "#/backend/entities/Shop" },
+          "description": "Top-level collection for storing a public, read-only copy of approved shops. Managed by backend functions.",
+          "params": [{ "name": "shopId", "description": "The unique ID for the shop." }]
+        }
+      },
+      {
+        "path": "/shops/{shopId}/products/{productId}",
+        "definition": {
+          "entityName": "Product",
+          "schema": { "$ref": "#/backend/entities/Product" },
+          "description": "Subcollection for storing products belonging to a specific public shop.",
+          "params": [
+            { "name": "shopId", "description": "The ID of the parent shop." },
+            { "name": "productId", "description": "The unique ID for the product." }
+          ]
+        }
+      },
+      {
+        "path": "/memberships/{membershipId}",
+        "definition": {
+          "entityName": "Membership",
+          "schema": {
+            "$ref": "#/backend/entities/Membership"
+          },
+          "description": "Stores details of available membership plans (tiers), readable by all authenticated users.",
+          "params": [
+            {
+              "name": "membershipId",
+              "description": "The unique identifier of the membership plan (e.g. 'professional')."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/contributions/{contributionId}",
+        "definition": {
+          "entityName": "Contribution",
+          "schema": {
+            "$ref": "#/backend/entities/Contribution"
+          },
+          "description": "Stores anonymous data contributed by members across different categories (fleet, suppliers, etc.). Writable by any authenticated user, readable by admins.",
+          "params": [
+            {
+              "name": "contributionId",
+              "description": "The unique identifier of the contribution document."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/financeApplications/{applicationId}",
+        "definition": {
+          "entityName": "FinanceApplication",
+          "schema": {
+            "$ref": "#/backend/entities/FinanceApplication"
+          },
+          "description": "This top-level collection is now primarily for admin use to view all applications. Users write to their own subcollection.",
+          "params": [
+            {
+              "name": "applicationId",
+              "description": "The unique identifier of the finance application."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The data model for shops has been simplified to fix persistent security rule issues. The shop data is now an embedded object within the parent Member document, rather than a subcollection or separate top-level collection. This enforces a strict 1:1 relationship (one member has one shop) and allows the use of a simple, robust security rule where a member's ownership of their parent document grants them full control over their embedded shop data. A top-level '/shops' collection is still used to store public, read-only copies of approved shops, managed by backend processes."
+  }
+}

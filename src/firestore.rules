@@ -13,32 +13,28 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     // Member Collection
-    // This single rule block is now the source of truth for all member-owned data.
-    match /members/{memberId} {
-      allow list: if isAdmin();
-      allow read, update, delete: if isOwner(memberId) || isAdmin();
-      allow create: if request.auth != null;
-
-      // This rule grants the owner of the member document full access to all its subcollections.
-      // This is the definitive fix for the recurring subcollection permission errors.
-      match /{allSubcollections=**} {
-        allow read, write: if isOwner(memberId) || isAdmin();
-      }
+    // This grants an owner full read/write access to their own document and all its subcollections.
+    // This is the definitive rule for all member-owned data.
+    match /members/{memberId}/{allPaths=**} {
+      allow read, write: if isOwner(memberId) || isAdmin();
     }
     
-    // Shops collection with Admin Approval flow
-    // This top-level collection is now for public viewing of APPROVED shops only.
-    // Members no longer write here directly.
+    // Member Collection top-level rules
+    match /members/{memberId} {
+      allow list: if isAdmin();
+      // Allow any authenticated user to create their own member document
+      allow create: if request.auth != null && request.auth.uid == memberId;
+    }
+
+    // Public, read-only copy of approved shops
     match /shops/{shopId} {
-      // Anyone can see approved shops. Admins can see all.
+      // Allow public read access only if the shop status is 'approved'
       allow get, list: if resource.data.status == 'approved' || isAdmin();
-      
-      // Only Admins can create, update, or delete from the top-level public collection.
+      // Only admins can create, update, or delete in the public shops collection
       allow write: if isAdmin();
 
-      // Products are publicly readable if the parent shop is approved.
       match /products/{productId} {
-         allow read: if get(/databases/$(database)/documents/shops/$(shopId)).data.status == 'approved' || isAdmin();
+         allow get, list: if get(/databases/$(database)/documents/shops/$(shopId)).data.status == 'approved' || isAdmin();
          allow write: if isAdmin();
       }
     }
