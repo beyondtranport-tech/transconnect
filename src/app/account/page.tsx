@@ -77,18 +77,11 @@ function AccountPageContent() {
 
   const { data: memberData, isLoading: isMemberLoading } = useDoc(memberDocRef);
 
-  // The 'shop' feature is disabled due to a persistent, unresolvable security rule error.
   const isVendor = memberData?.role === 'vendor';
   
   useEffect(() => {
-    // If the view is 'shop' and the user is not a vendor, or if the feature is globally disabled, redirect.
-    if (initialView === 'shop') {
-        router.push('/account?view=dashboard', { scroll: false });
-        setActiveView('dashboard');
-    } else {
-        setActiveView(initialView);
-    }
-  }, [initialView, router]);
+    setActiveView(initialView);
+  }, [initialView]);
 
   useEffect(() => {
     if (isUserLoading) {
@@ -119,9 +112,9 @@ function AccountPageContent() {
         return <CompanyContent />;
       case 'staff':
         return <StaffContent />;
-      // The 'shop' case is intentionally removed to disable the feature.
-      // case 'shop':
-      //   return <ShopContent />;
+      case 'shop':
+        // Pass memberData down to ShopContent
+        return isVendor ? <ShopContent memberData={memberData} /> : <AccountDashboard />;
       case 'transactions':
         return <TransactionsContent />;
       case 'documents':
@@ -134,8 +127,6 @@ function AccountPageContent() {
     }
   }
 
-  // This is the guard that prevents rendering for non-users,
-  // showing a loader while the redirect effect runs.
   if (isUserLoading || !user || isMemberLoading) {
     return (
         <div className="flex justify-center items-center min-h-[calc(100vh-8rem)]">
@@ -183,15 +174,14 @@ function AccountPageContent() {
                   <span>Staff</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
-              {/* The 'My Shop' link is disabled to prevent the permission error. */}
-              {/* {isVendor && (
+              {isVendor && (
                  <SidebarMenuItem>
                     <SidebarMenuButton tooltip="My Shop" isActive={activeView === 'shop'} onClick={() => router.push('/account?view=shop', { scroll: false })}>
                       <Store />
                       <span>My Shop</span>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
-              )} */}
+              )}
               <SidebarMenuItem>
                 <SidebarMenuButton tooltip="Transactions" isActive={activeView === 'transactions'} onClick={() => router.push('/account?view=transactions', { scroll: false })}>
                   <DollarSign />

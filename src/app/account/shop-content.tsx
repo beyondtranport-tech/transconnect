@@ -20,12 +20,10 @@ import { useState, useEffect } from 'react';
 import { Loader2, Store, Save, PlusCircle, AlertCircle } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useUser, useFirestore, useMemoFirebase } from '@/firebase';
-import { doc, setDoc, serverTimestamp, collection } from 'firebase/firestore';
-import { useCollection } from '@/firebase/firestore/use-collection';
+import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 const shopFormSchema = z.object({
   shopName: z.string().min(3, 'Shop name must be at least 3 characters'),
@@ -37,19 +35,15 @@ const shopFormSchema = z.object({
 
 type ShopFormValues = z.infer<typeof shopFormSchema>;
 
-export default function ShopContent() {
+// Accept memberData as a prop
+export default function ShopContent({ memberData }: { memberData: any }) {
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
   const [isSaving, setIsSaving] = useState(false);
 
-  const shopsCollectionRef = useMemoFirebase(() => {
-    if (!firestore || !user) return null;
-    return collection(firestore, 'members', user.uid, 'shops');
-  }, [firestore, user]);
-
-  const { data: shops, isLoading: isShopsLoading } = useCollection(shopsCollectionRef);
-  const existingShop = shops?.[0]; // Assuming one shop per vendor for now
+  // The shop data is now nested within the member document
+  const existingShop = memberData?.shop;
 
   const form = useForm<ShopFormValues>({
     resolver: zodResolver(shopFormSchema),
@@ -63,8 +57,17 @@ export default function ShopContent() {
   });
 
   useEffect(() => {
+    // When memberData (and thus existingShop) changes, reset the form
     if (existingShop) {
-      form.reset(existingShop);
+      form.reset({
+        shopName: existingShop.shopName || '',
+        shopDescription: existingShop.shopDescription || '',
+        category: existingShop.category || '',
+        contactEmail: existingShop.contactEmail || '',
+        contactPhone: existingShop.contactPhone || '',
+      });
+    } else {
+        form.reset(); // Reset to defaults if no shop exists
     }
   }, [existingShop, form]);
 
@@ -76,18 +79,23 @@ export default function ShopContent() {
         return;
     }
     
-    // Use the existing shop ID or create a new one
-    const shopId = existingShop?.id || doc(collection(firestore, 'members', user.uid, 'shops')).id;
-    const shopDocRef = doc(firestore, 'members', user.uid, 'shops', shopId);
+    // We are updating the main member document now
+    const memberDocRef = doc(firestore, 'members', user.uid);
     
     const dataToSave = {
-      ...values,
-      ownerId: user.uid,
+      // Nest the shop data under a 'shop' field
+      shop: {
+        ...values,
+        ownerId: user.uid,
+        updatedAt: serverTimestamp(),
+        // Keep original creation date if it exists
+        createdAt: existingShop?.createdAt || serverTimestamp(), 
+      },
+      // Also update the top-level updatedAt for the member
       updatedAt: serverTimestamp(),
-      createdAt: existingShop?.createdAt || serverTimestamp(), // Preserve original creation date
     };
 
-    setDoc(shopDocRef, dataToSave, { merge: true })
+    updateDoc(memberDocRef, dataToSave)
       .then(() => {
         toast({
           title: 'Shop Updated',
@@ -96,8 +104,8 @@ export default function ShopContent() {
       })
       .catch((serverError) => {
         const permissionError = new FirestorePermissionError({
-            path: shopDocRef.path,
-            operation: 'write',
+            path: memberDocRef.path,
+            operation: 'update', // This is an update operation on the member doc
             requestResourceData: dataToSave,
         });
         errorEmitter.emit('permission-error', permissionError);
@@ -112,7 +120,7 @@ export default function ShopContent() {
       });
   };
 
-  const isLoading = isUserLoading || isShopsLoading;
+  const isLoading = isUserLoading;
 
   return (
     <Card>
@@ -216,5 +224,3 @@ export default function ShopContent() {
     </Card>
   );
 }
-
-    
