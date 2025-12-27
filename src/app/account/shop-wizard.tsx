@@ -43,10 +43,11 @@ const shopStep1Schema = z.object({
 
 type Step1FormValues = z.infer<typeof shopStep1Schema>;
 
-function Step1CoreIdentity({ shopData, memberId, shopId, onSave }: { shopData: any, memberId: string, shopId: string, onSave: (newData: any) => void }) {
+function Step1CoreIdentity({ member, onSave }: { member: any, onSave: (newData: any) => void }) {
   const { toast } = useToast();
   const firestore = useFirestore();
   const [isSaving, setIsSaving] = useState(false);
+  const shopData = member.shop || {};
 
   const form = useForm<Step1FormValues>({
     resolver: zodResolver(shopStep1Schema),
@@ -59,20 +60,23 @@ function Step1CoreIdentity({ shopData, memberId, shopId, onSave }: { shopData: a
 
   const onSubmit = async (values: Step1FormValues) => {
     setIsSaving(true);
-    const shopDocRef = doc(firestore, 'members', memberId, 'shops', shopId);
+    const memberDocRef = doc(firestore, 'members', member.id);
     
     const dataToUpdate = {
-        ...values,
-        updatedAt: serverTimestamp()
+        'shop.shopName': values.shopName,
+        'shop.shopDescription': values.shopDescription,
+        'shop.category': values.category,
+        'shop.updatedAt': serverTimestamp(),
+        updatedAt: serverTimestamp(),
     };
 
     try {
-        await updateDoc(shopDocRef, dataToUpdate);
+        await updateDoc(memberDocRef, dataToUpdate);
         toast({ title: 'Step 1 Saved!', description: 'Your core shop details have been updated.' });
-        onSave({ ...shopData, ...dataToUpdate });
+        onSave(values);
     } catch (serverError: any) {
         const permissionError = new FirestorePermissionError({
-            path: shopDocRef.path, operation: 'update', requestResourceData: dataToUpdate,
+            path: memberDocRef.path, operation: 'update', requestResourceData: dataToUpdate,
         });
         errorEmitter.emit('permission-error', permissionError);
         toast({ variant: 'destructive', title: 'Update Failed', description: serverError.message });
@@ -135,10 +139,11 @@ const shopStep2Schema = z.object({
 
 type Step2FormValues = z.infer<typeof shopStep2Schema>;
 
-function Step2LocationContact({ shopData, memberId, shopId, onSave }: { shopData: any, memberId: string, shopId: string, onSave: (newData: any) => void }) {
+function Step2LocationContact({ member, onSave }: { member: any, onSave: (newData: any) => void }) {
   const { toast } = useToast();
   const firestore = useFirestore();
   const [isSaving, setIsSaving] = useState(false);
+  const shopData = member.shop || {};
 
   const form = useForm<Step2FormValues>({
     resolver: zodResolver(shopStep2Schema),
@@ -154,17 +159,26 @@ function Step2LocationContact({ shopData, memberId, shopId, onSave }: { shopData
 
   const onSubmit = async (values: Step2FormValues) => {
     setIsSaving(true);
-    const shopDocRef = doc(firestore, 'members', memberId, 'shops', shopId);
+    const memberDocRef = doc(firestore, 'members', member.id);
     
-    const dataToUpdate = { ...values, updatedAt: serverTimestamp() };
+    const dataToUpdate = {
+        'shop.contactEmail': values.contactEmail,
+        'shop.contactPhone': values.contactPhone,
+        'shop.streetAddress': values.streetAddress,
+        'shop.city': values.city,
+        'shop.province': values.province,
+        'shop.postalCode': values.postalCode,
+        'shop.updatedAt': serverTimestamp(),
+        updatedAt: serverTimestamp()
+    };
 
     try {
-        await updateDoc(shopDocRef, dataToUpdate);
+        await updateDoc(memberDocRef, dataToUpdate);
         toast({ title: 'Step 2 Saved!', description: 'Your location and contact info has been updated.' });
-        onSave({ ...shopData, ...dataToUpdate });
+        onSave(values);
     } catch (serverError: any) {
         const permissionError = new FirestorePermissionError({
-            path: shopDocRef.path, operation: 'update', requestResourceData: dataToUpdate,
+            path: memberDocRef.path, operation: 'update', requestResourceData: dataToUpdate,
         });
         errorEmitter.emit('permission-error', permissionError);
         toast({ variant: 'destructive', title: 'Update Failed', description: serverError.message });
@@ -247,10 +261,11 @@ const shopStep3Schema = z.object({
 
 type Step3FormValues = z.infer<typeof shopStep3Schema>;
 
-function Step3Branding({ shopData, memberId, shopId, onSave }: { shopData: any, memberId: string, shopId: string, onSave: (newData: any) => void }) {
+function Step3Branding({ member, onSave }: { member: any, onSave: (newData: any) => void }) {
   const { toast } = useToast();
   const firestore = useFirestore();
   const [isSaving, setIsSaving] = useState(false);
+  const shopData = member.shop || {};
 
   const form = useForm<Step3FormValues>({
     resolver: zodResolver(shopStep3Schema),
@@ -262,17 +277,22 @@ function Step3Branding({ shopData, memberId, shopId, onSave }: { shopData: any, 
 
   const onSubmit = async (values: Step3FormValues) => {
     setIsSaving(true);
-    const shopDocRef = doc(firestore, 'members', memberId, 'shops', shopId);
+    const memberDocRef = doc(firestore, 'members', member.id);
     
-    const dataToUpdate = { ...values, updatedAt: serverTimestamp() };
+    const dataToUpdate = { 
+        'shop.template': values.template,
+        'shop.theme': values.theme,
+        'shop.updatedAt': serverTimestamp(),
+        updatedAt: serverTimestamp() 
+    };
 
     try {
-        await updateDoc(shopDocRef, dataToUpdate);
+        await updateDoc(memberDocRef, dataToUpdate);
         toast({ title: 'Step 3 Saved!', description: 'Your branding settings have been updated.' });
-        onSave({ ...shopData, ...dataToUpdate });
+        onSave(values);
     } catch (serverError: any) {
         const permissionError = new FirestorePermissionError({
-            path: shopDocRef.path, operation: 'update', requestResourceData: dataToUpdate,
+            path: memberDocRef.path, operation: 'update', requestResourceData: dataToUpdate,
         });
         errorEmitter.emit('permission-error', permissionError);
         toast({ variant: 'destructive', title: 'Update Failed', description: serverError.message });
@@ -376,11 +396,12 @@ const shopStep4Schema = z.object({
 
 type Step4FormValues = z.infer<typeof shopStep4Schema>;
 
-function Step4Seo({ shopData, memberId, shopId, onSave }: { shopData: any, memberId: string, shopId: string, onSave: (newData: any) => void }) {
+function Step4Seo({ member, onSave }: { member: any, onSave: (newData: any) => void }) {
     const { toast } = useToast();
     const firestore = useFirestore();
     const [isSaving, setIsSaving] = useState(false);
     const [isGenerating, setIsGenerating] = useState(false);
+    const shopData = member.shop || {};
 
     const form = useForm<Step4FormValues>({
         resolver: zodResolver(shopStep4Schema),
@@ -412,22 +433,23 @@ function Step4Seo({ shopData, memberId, shopId, onSave }: { shopData: any, membe
 
     const onSubmit = async (values: Step4FormValues) => {
         setIsSaving(true);
-        const shopDocRef = doc(firestore, 'members', memberId, 'shops', shopId);
+        const memberDocRef = doc(firestore, 'members', member.id);
 
         const dataToUpdate = {
-            metaTitle: values.metaTitle,
-            metaDescription: values.metaDescription,
-            tags: values.tags,
-            updatedAt: serverTimestamp()
+            'shop.metaTitle': values.metaTitle,
+            'shop.metaDescription': values.metaDescription,
+            'shop.tags': values.tags,
+            'shop.updatedAt': serverTimestamp(),
+            updatedAt: serverTimestamp(),
         };
 
         try {
-            await updateDoc(shopDocRef, dataToUpdate);
+            await updateDoc(memberDocRef, dataToUpdate);
             toast({ title: 'Step 4 Saved!', description: 'Your SEO settings have been updated.' });
-            onSave({ ...shopData, ...dataToUpdate });
+            onSave(values);
         } catch (serverError: any) {
             const permissionError = new FirestorePermissionError({
-                path: shopDocRef.path, operation: 'update', requestResourceData: dataToUpdate,
+                path: memberDocRef.path, operation: 'update', requestResourceData: dataToUpdate,
             });
             errorEmitter.emit('permission-error', permissionError);
             toast({ variant: 'destructive', title: 'Update Failed', description: serverError.message });
@@ -497,7 +519,7 @@ const productSchema = z.object({
 });
 type ProductFormValues = z.infer<typeof productSchema>;
 
-function ProductDialog({ memberId, shopId }: { memberId: string, shopId: string }) {
+function ProductDialog({ memberId }: { memberId: string }) {
     const [isOpen, setIsOpen] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const firestore = useFirestore();
@@ -510,11 +532,11 @@ function ProductDialog({ memberId, shopId }: { memberId: string, shopId: string 
 
     const onSubmit = async (values: ProductFormValues) => {
         setIsSaving(true);
-        const productsCollectionRef = collection(firestore, 'members', memberId, 'shops', shopId, 'products');
+        const productsCollectionRef = collection(firestore, 'members', memberId, 'products');
         
         const productData = {
             ...values,
-            shopId: shopId,
+            memberId: memberId,
             createdAt: serverTimestamp(),
             updatedAt: serverTimestamp(),
         };
@@ -579,13 +601,13 @@ function ProductDialog({ memberId, shopId }: { memberId: string, shopId: string 
     );
 }
 
-function Step5Products({ memberId, shopId, onSave }: { memberId: string, shopId: string, onSave: (newData?: any) => void }) {
+function Step5Products({ member, onSave }: { member: any, onSave: (newData?: any) => void }) {
     const firestore = useFirestore();
 
     const productsCollectionRef = useMemoFirebase(() => {
         if (!firestore) return null;
-        return collection(firestore, 'members', memberId, 'shops', shopId, 'products');
-    }, [firestore, memberId, shopId]);
+        return collection(firestore, 'members', member.id, 'products');
+    }, [firestore, member.id]);
 
     const { data: products, isLoading } = useCollection(productsCollectionRef);
 
@@ -593,7 +615,7 @@ function Step5Products({ memberId, shopId, onSave }: { memberId: string, shopId:
         <div className="space-y-6">
             <div className="flex justify-between items-center">
                 <p className="text-muted-foreground">Add products to your shop's catalogue.</p>
-                <ProductDialog memberId={memberId} shopId={shopId} />
+                <ProductDialog memberId={member.id} />
             </div>
             <Card>
                 <CardContent className="p-0">
@@ -657,12 +679,15 @@ const STEPS = [
     { id: 'preview', title: 'Preview' },
 ];
 
-export default function ShopWizard({ shop, memberId, shopId }: { shop: any, memberId: string, shopId: string }) {
+export default function ShopWizard({ member }: { member: any }) {
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
-  const [shopData, setShopData] = useState(shop);
+  const [shopData, setShopData] = useState(member.shop || {});
 
   const handleSaveAndNext = (newData: any) => {
-    setShopData(newData);
+    // Update local state immediately for responsiveness
+    const updatedShopData = { ...shopData, ...newData };
+    setShopData(updatedShopData);
+
     if(currentStepIndex < STEPS.length - 1) {
         setCurrentStepIndex(currentStepIndex + 1);
     }
@@ -672,15 +697,15 @@ export default function ShopWizard({ shop, memberId, shopId }: { shop: any, memb
     const stepId = STEPS[currentStepIndex].id;
     switch (stepId) {
       case 'identity':
-        return <Step1CoreIdentity shopData={shopData} memberId={memberId} shopId={shopId} onSave={handleSaveAndNext} />;
+        return <Step1CoreIdentity member={member} onSave={handleSaveAndNext} />;
       case 'location':
-        return <Step2LocationContact shopData={shopData} memberId={memberId} shopId={shopId} onSave={handleSaveAndNext} />;
+        return <Step2LocationContact member={member} onSave={handleSaveAndNext} />;
       case 'branding':
-        return <Step3Branding shopData={shopData} memberId={memberId} shopId={shopId} onSave={handleSaveAndNext} />;
+        return <Step3Branding member={member} onSave={handleSaveAndNext} />;
       case 'seo':
-        return <Step4Seo shopData={shopData} memberId={memberId} shopId={shopId} onSave={handleSaveAndNext} />;
+        return <Step4Seo member={member} onSave={handleSaveAndNext} />;
       case 'products':
-        return <Step5Products memberId={memberId} shopId={shopId} onSave={handleSaveAndNext} />;
+        return <Step5Products member={member} onSave={handleSaveAndNext} />;
       case 'preview':
         return <div className="text-center p-8">Step 6: Final Preview & Submit for Review will go here.</div>;
       default:
@@ -688,12 +713,14 @@ export default function ShopWizard({ shop, memberId, shopId }: { shop: any, memb
     }
   };
 
+  const status = shopData.status || 'draft';
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-medium">Shop Setup Progress</h3>
-        <Badge variant={statusColors[shop.status] || 'secondary'} className="capitalize">
-            Status: {shop.status.replace(/_/g, ' ')}
+        <Badge variant={statusColors[status] || 'secondary'} className="capitalize">
+            Status: {status.replace(/_/g, ' ')}
         </Badge>
       </div>
 
@@ -718,7 +745,7 @@ export default function ShopWizard({ shop, memberId, shopId }: { shop: any, memb
         </Button>
       </div>
 
-       {shop.status === 'approved' && (
+       {status === 'approved' && (
            <div className="text-center p-4 bg-green-100 dark:bg-green-900/20 border border-green-300 dark:border-green-800 rounded-lg">
                 <p className="font-semibold text-green-800 dark:text-green-200">Your shop is live! Any changes you save will be visible to the public immediately.</p>
            </div>
