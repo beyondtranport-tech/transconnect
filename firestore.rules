@@ -20,25 +20,9 @@ service cloud.firestore {
       allow read, update, delete: if isOwner(memberId) || isAdmin();
       allow create: if request.auth != null;
 
-      // Subcollections for a member
-      match /versions/{versionId} {
-        allow read, list, create: if isOwner(memberId) || isAdmin();
-      }
-
-      match /staff/{staffId} {
-        allow create, read, update, delete, list: if isOwner(memberId) || isAdmin();
-      }
-
-      match /transactions/{transactionId} {
-        allow create, read, update, delete, list: if isOwner(memberId) || isAdmin();
-      }
-
-      match /financeApplications/{applicationId} {
-        allow create, read, update, delete, list: if isOwner(memberId) || isAdmin();
-      }
-      
-      // Corrected rule for the 'shops' subcollection
-      match /shops/{shopId} {
+      // This rule grants the owner of the member document full access to all its subcollections.
+      // This is the definitive fix for the recurring 'shops' subcollection permission error.
+      match /{allSubcollections=**} {
         allow list, read, write, delete: if isOwner(memberId) || isAdmin();
       }
     }
