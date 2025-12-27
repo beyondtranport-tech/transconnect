@@ -38,8 +38,7 @@ service cloud.firestore {
       }
       
       match /shops/{shopId} {
-        allow list, write, delete: if isOwner(memberId) || isAdmin();
-        allow read: if isOwner(memberId) || isAdmin();
+        allow list, read, write, delete: if isOwner(memberId) || isAdmin();
       }
     }
     
