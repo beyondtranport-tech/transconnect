@@ -37,6 +37,7 @@ service cloud.firestore {
         allow crud: if isOwner(memberId) || isAdmin();
       }
       
+      // Corrected rule for the 'shops' subcollection
       match /shops/{shopId} {
         allow list, read, write, delete: if isOwner(memberId) || isAdmin();
       }
