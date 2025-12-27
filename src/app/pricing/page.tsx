@@ -3,73 +3,138 @@
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Check } from 'lucide-react';
+import { Check, Star } from 'lucide-react';
 import Link from 'next/link';
 import { useUser } from '@/firebase';
+import { cn } from '@/lib/utils';
+import { useState } from 'react';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+
+const tiers = [
+  {
+    id: 'basic',
+    name: 'Basic',
+    price: { monthly: 375, annual: 375 * 12 * 0.85 },
+    description: 'Essential tools for owner-operators and small fleets getting started.',
+    features: [
+      'Access to All Malls',
+      'Marketplace Access',
+      'AI Freight Matcher (Basic)',
+      'Community Forum Access',
+      'Standard Support',
+    ],
+    isPopular: false,
+  },
+  {
+    id: 'standard',
+    name: 'Standard',
+    price: { monthly: 425, annual: 425 * 12 * 0.85 },
+    description: 'Advanced features for growing businesses looking to optimize.',
+    features: [
+      'All Basic features',
+      'AI Freight Matcher (Advanced)',
+      'Real-time Analytics Dashboard',
+      'Loyalty & Rewards Program Access',
+      'Priority Support',
+    ],
+    isPopular: true,
+  },
+  {
+    id: 'premium',
+    name: 'Premium',
+    price: { monthly: 475, annual: 475 * 12 * 0.85 },
+    description: 'Comprehensive solutions for established fleets and power users.',
+    features: [
+      'All Standard features',
+      'Dedicated Account Manager',
+      'API Access for Integrations',
+      'Actions Plan Included',
+      '24/7 Premium Support',
+    ],
+    isPopular: false,
+  },
+];
+
+const formatPrice = (price: number, perMonth = false) => {
+    const formatted = new Intl.NumberFormat('en-ZA', {
+        style: 'currency',
+        currency: 'ZAR'
+    }).format(price);
+    return perMonth ? `${formatted}/month` : formatted;
+};
 
 export default function MembershipPage() {
   const { user } = useUser();
-  const ctaLink = user ? '/account' : '/join';
+  const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('monthly');
 
   return (
     <div className="bg-background">
       <div className="container mx-auto px-4 py-16 md:py-24">
         <div className="text-center max-w-3xl mx-auto mb-12">
-          <h1 className="text-4xl md:text-5xl font-bold font-headline">A New Model for Connection</h1>
+          <h1 className="text-4xl md:text-5xl font-bold font-headline">Choose Your Plan</h1>
           <p className="mt-4 text-lg md:text-xl text-muted-foreground">
-            To build the strongest community, we are making our powerful ecosystem free to join for one year. No subscription fees, just value.
+            Select the perfect plan to fuel your business growth. All plans come with a 30-day money-back guarantee.
           </p>
         </div>
 
-        <div className="flex justify-center">
-            <Card className="w-full max-w-2xl shadow-2xl border-primary border-2">
-                 <CardHeader className="text-center">
-                    <CardTitle className="text-3xl font-bold">Free Membership</CardTitle>
-                    <CardDescription className="mt-2 text-base">
-                        Join for free for one year and gain access to all platform features.
-                    </CardDescription>
-                     <div className="flex items-baseline justify-center gap-1 pt-4">
-                        <span className="text-5xl font-extrabold tracking-tight">R0</span>
-                        <span className="text-muted-foreground">/ year</span>
+        <div className="flex justify-center items-center gap-4 mb-12">
+            <Label htmlFor="billing-switch">Monthly</Label>
+            <Switch
+                id="billing-switch"
+                checked={billingCycle === 'annual'}
+                onCheckedChange={(checked) => setBillingCycle(checked ? 'annual' : 'monthly')}
+            />
+            <Label htmlFor="billing-switch">
+                Annual <span className="text-primary font-semibold ml-1">(Save 15%)</span>
+            </Label>
+        </div>
+
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-7xl mx-auto">
+          {tiers.map((tier) => (
+            <Card key={tier.id} className={cn(
+                "flex flex-col shadow-lg transition-transform duration-300 hover:scale-105",
+                tier.isPopular ? "border-primary border-2 relative" : "border"
+            )}>
+                 {tier.isPopular && (
+                    <div className="absolute -top-4 right-4 bg-primary text-primary-foreground px-3 py-1 text-sm font-semibold rounded-full flex items-center gap-1">
+                        <Star className="h-4 w-4" />
+                        Most Popular
                     </div>
-                </CardHeader>
-                 <CardContent className="px-8">
-                     <p className="text-center text-muted-foreground">
-                        Our revenue is generated through small, transparent transaction fees within the ecosystem—so we only succeed when you do.
-                     </p>
-                    <ul className="mt-8 space-y-4">
-                        <li className="flex items-start">
-                            <div className="bg-green-100 rounded-full p-1 mr-4">
-                               <Check className="h-4 w-4 text-green-700" />
-                            </div>
-                            <span>Access to all <span className="font-semibold">Malls:</span> Supplier, Transporter, Finance, and more.</span>
-                        </li>
-                         <li className="flex items-start">
-                            <div className="bg-green-100 rounded-full p-1 mr-4">
-                               <Check className="h-4 w-4 text-green-700" />
-                            </div>
-                            <span>Full use of the <span className="font-semibold">Marketplace</span> to buy and sell.</span>
-                        </li>
-                         <li className="flex items-start">
-                            <div className="bg-green-100 rounded-full p-1 mr-4">
-                               <Check className="h-4 w-4 text-green-700" />
-                            </div>
-                            <span>Utilize our <span className="font-semibold">AI-powered Tech</span>, including the Freight Matcher.</span>
-                        </li>
-                         <li className="flex items-start">
-                            <div className="bg-green-100 rounded-full p-1 mr-4">
-                               <Check className="h-4 w-4 text-green-700" />
-                            </div>
-                            <span>Contribute anonymous fleet data to help us negotiate <span className="font-semibold">better deals for everyone</span>.</span>
-                        </li>
-                    </ul>
-                </CardContent>
-                <CardFooter className="p-6">
-                    <Button asChild className="w-full" size="lg">
-                        <Link href={ctaLink}>Join Free for One Year</Link>
-                    </Button>
-                </CardFooter>
+                 )}
+              <CardHeader className="text-center">
+                <CardTitle className="text-2xl font-bold">{tier.name}</CardTitle>
+                <CardDescription className="mt-2 text-base h-10">{tier.description}</CardDescription>
+                <div className="pt-4">
+                  <span className="text-4xl font-extrabold tracking-tight">
+                    {formatPrice(billingCycle === 'annual' ? tier.price.annual / 12 : tier.price.monthly)}
+                  </span>
+                  <span className="text-muted-foreground">/month</span>
+                  {billingCycle === 'annual' && (
+                     <p className="text-xs text-muted-foreground mt-1">Billed as {formatPrice(tier.price.annual)} per year</p>
+                  )}
+                </div>
+              </CardHeader>
+              <CardContent className="flex-grow">
+                <ul className="space-y-3">
+                  {tier.features.map((feature) => (
+                    <li key={feature} className="flex items-start">
+                      <Check className="h-5 w-5 text-green-500 mr-3 flex-shrink-0 mt-0.5" />
+                      <span className="text-muted-foreground">{feature}</span>
+                    </li>
+                  ))}
+                </ul>
+              </CardContent>
+              <CardFooter className="p-6">
+                <Button asChild className="w-full" size="lg" variant={tier.isPopular ? 'default' : 'outline'}>
+                  <Link href={`/checkout/${tier.id}?cycle=${billingCycle}`}>
+                    Choose {tier.name}
+                  </Link>
+                </Button>
+              </CardFooter>
             </Card>
+          ))}
         </div>
       </div>
     </div>
