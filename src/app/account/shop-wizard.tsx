@@ -22,6 +22,7 @@ import { FirestorePermissionError } from '@/firebase/errors';
 import { Separator } from '@/components/ui/separator';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { cn } from '@/lib/utils';
+import { Label } from '@/components/ui/label';
 
 
 const statusColors: { [key: string]: 'default' | 'secondary' | 'destructive' | 'outline' } = {
@@ -308,7 +309,7 @@ function Step3Branding({ shopData, memberId, onSave }: { shopData: any, memberId
                     return (
                         <FormItem key={template.id}>
                           <FormControl>
-                            <RadioGroupItem value={template.id} className="sr-only" />
+                            <RadioGroupItem value={template.id} id={template.id} className="sr-only" />
                           </FormControl>
                           <Label
                             htmlFor={template.id}
