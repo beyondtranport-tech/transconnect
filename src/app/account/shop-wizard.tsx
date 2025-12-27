@@ -19,6 +19,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
+import { Separator } from '@/components/ui/separator';
 
 
 const statusColors: { [key: string]: 'default' | 'secondary' | 'destructive' | 'outline' } = {
@@ -28,6 +29,7 @@ const statusColors: { [key: string]: 'default' | 'secondary' | 'destructive' | '
   rejected: 'destructive',
 };
 
+// ====== STEP 1: Core Identity ======
 const shopStep1Schema = z.object({
   shopName: z.string().min(1, "Shop name is required."),
   shopDescription: z.string().min(1, "Please provide a brief description for your shop."),
@@ -66,7 +68,7 @@ function Step1CoreIdentity({ shopData, memberId, onSave }: { shopData: any, memb
     try {
         await updateDoc(memberDocRef, dataToUpdate);
         toast({ title: 'Step 1 Saved!', description: 'Your core shop details have been updated.' });
-        onSave(dataToUpdate.shop); // Pass the updated shop data back to the parent wizard
+        onSave(dataToUpdate.shop);
     } catch (serverError: any) {
         const permissionError = new FirestorePermissionError({
             path: memberDocRef.path, operation: 'update', requestResourceData: dataToUpdate,
@@ -119,6 +121,116 @@ function Step1CoreIdentity({ shopData, memberId, onSave }: { shopData: any, memb
   );
 }
 
+
+// ====== STEP 2: Location & Contact ======
+const shopStep2Schema = z.object({
+  contactEmail: z.string().email("Invalid email address.").or(z.literal('')),
+  contactPhone: z.string().optional(),
+  streetAddress: z.string().optional(),
+  city: z.string().optional(),
+  province: z.string().optional(),
+  postalCode: z.string().optional(),
+});
+
+type Step2FormValues = z.infer<typeof shopStep2Schema>;
+
+function Step2LocationContact({ shopData, memberId, onSave }: { shopData: any, memberId: string, onSave: (newData: any) => void }) {
+  const { toast } = useToast();
+  const firestore = useFirestore();
+  const [isSaving, setIsSaving] = useState(false);
+
+  const form = useForm<Step2FormValues>({
+    resolver: zodResolver(shopStep2Schema),
+    defaultValues: {
+      contactEmail: shopData.contactEmail || '',
+      contactPhone: shopData.contactPhone || '',
+      streetAddress: shopData.streetAddress || '',
+      city: shopData.city || '',
+      province: shopData.province || '',
+      postalCode: shopData.postalCode || '',
+    }
+  });
+
+  const onSubmit = async (values: Step2FormValues) => {
+    setIsSaving(true);
+    const memberDocRef = doc(firestore, 'members', memberId);
+    
+    const dataToUpdate = {
+        shop: { ...shopData, ...values, updatedAt: serverTimestamp() },
+        updatedAt: serverTimestamp()
+    };
+
+    try {
+        await updateDoc(memberDocRef, dataToUpdate);
+        toast({ title: 'Step 2 Saved!', description: 'Your location and contact info has been updated.' });
+        onSave(dataToUpdate.shop);
+    } catch (serverError: any) {
+        const permissionError = new FirestorePermissionError({
+            path: memberDocRef.path, operation: 'update', requestResourceData: dataToUpdate,
+        });
+        errorEmitter.emit('permission-error', permissionError);
+        toast({ variant: 'destructive', title: 'Update Failed', description: serverError.message });
+    } finally {
+        setIsSaving(false);
+    }
+  };
+
+  return (
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+        <div>
+            <h3 className="text-lg font-medium">Contact Information</h3>
+            <Separator className="my-2" />
+             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                <FormField control={form.control} name="contactEmail" render={({ field }) => (
+                <FormItem>
+                    <FormLabel>Public Contact Email</FormLabel>
+                    <FormControl><Input placeholder="sales@myshop.co.za" {...field} /></FormControl>
+                    <FormMessage />
+                </FormItem>
+                )} />
+                <FormField control={form.control} name="contactPhone" render={({ field }) => (
+                <FormItem>
+                    <FormLabel>Public Contact Phone</FormLabel>
+                    <FormControl><Input placeholder="011 123 4567" {...field} /></FormControl>
+                    <FormMessage />
+                </FormItem>
+                )} />
+            </div>
+        </div>
+
+        <div>
+            <h3 className="text-lg font-medium">Shop Address</h3>
+            <Separator className="my-2" />
+            <div className="space-y-4 pt-2">
+                <FormField control={form.control} name="streetAddress" render={({ field }) => (
+                    <FormItem><FormLabel>Street Address</FormLabel><FormControl><Input placeholder="123 Transport Lane" {...field} /></FormControl><FormMessage /></FormItem>
+                )} />
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <FormField control={form.control} name="city" render={({ field }) => (
+                        <FormItem><FormLabel>City</FormLabel><FormControl><Input placeholder="Johannesburg" {...field} /></FormControl><FormMessage /></FormItem>
+                    )} />
+                    <FormField control={form.control} name="province" render={({ field }) => (
+                        <FormItem><FormLabel>Province</FormLabel><FormControl><Input placeholder="Gauteng" {...field} /></FormControl><FormMessage /></FormItem>
+                    )} />
+                    <FormField control={form.control} name="postalCode" render={({ field }) => (
+                        <FormItem><FormLabel>Postal Code</FormLabel><FormControl><Input placeholder="2196" {...field} /></FormControl><FormMessage /></FormItem>
+                    )} />
+                </div>
+            </div>
+        </div>
+        
+        <Button type="submit" disabled={isSaving}>
+          {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+          Save & Continue
+        </Button>
+      </form>
+    </Form>
+  );
+}
+
+
+// ====== WIZARD CONTROLLER ======
 const STEPS = [
     { id: 'identity', title: 'Core Identity' },
     { id: 'location', title: 'Location & Contact' },
@@ -145,7 +257,7 @@ export default function ShopWizard({ shop, memberId }: { shop: any, memberId: st
       case 'identity':
         return <Step1CoreIdentity shopData={shopData} memberId={memberId} onSave={handleSaveAndNext} />;
       case 'location':
-        return <div className="text-center p-8">Step 2: Location & Contact Form will go here.</div>;
+        return <Step2LocationContact shopData={shopData} memberId={memberId} onSave={handleSaveAndNext} />;
       case 'branding':
         return <div className="text-center p-8">Step 3: Branding & Appearance (Templates/Themes) will go here.</div>;
       case 'seo':
