@@ -12,7 +12,7 @@ import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore } from '@/firebase';
 import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
-import { Loader2, Save, CheckCircle, LayoutGrid, List, Image as ImageIcon } from 'lucide-react';
+import { Loader2, Save, CheckCircle, LayoutGrid, List, Image as ImageIcon, Sparkles } from 'lucide-react';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -23,6 +23,7 @@ import { Separator } from '@/components/ui/separator';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { cn } from '@/lib/utils';
 import { Label } from '@/components/ui/label';
+import { generateShopSeo } from '@/ai/flows/seo-flow';
 
 
 const statusColors: { [key: string]: 'default' | 'secondary' | 'destructive' | 'outline' } = {
@@ -375,12 +376,137 @@ function Step3Branding({ shopData, memberId, onSave }: { shopData: any, memberId
 }
 
 
+// ====== STEP 4: SEO & Metadata ======
+const shopStep4Schema = z.object({
+    metaTitle: z.string().optional(),
+    metaDescription: z.string().optional(),
+    tags: z.array(z.string()).optional(),
+});
+
+type Step4FormValues = z.infer<typeof shopStep4Schema>;
+
+function Step4Seo({ shopData, memberId, onSave }: { shopData: any, memberId: string, onSave: (newData: any) => void }) {
+    const { toast } = useToast();
+    const firestore = useFirestore();
+    const [isSaving, setIsSaving] = useState(false);
+    const [isGenerating, setIsGenerating] = useState(false);
+
+    const form = useForm<Step4FormValues>({
+        resolver: zodResolver(shopStep4Schema),
+        defaultValues: {
+            metaTitle: shopData.metaTitle || '',
+            metaDescription: shopData.metaDescription || '',
+            tags: shopData.tags || [],
+        }
+    });
+
+    const handleGenerateSeo = async () => {
+        setIsGenerating(true);
+        try {
+            const result = await generateShopSeo({
+                shopName: shopData.shopName,
+                shopDescription: shopData.shopDescription,
+            });
+            form.setValue('metaTitle', result.metaTitle);
+            form.setValue('metaDescription', result.metaDescription);
+            form.setValue('tags', result.tags);
+            toast({ title: 'AI Complete!', description: 'SEO metadata has been generated.' });
+        } catch (error) {
+            console.error("AI SEO Generation Error:", error);
+            toast({ variant: 'destructive', title: 'AI Error', description: 'Could not generate SEO content.' });
+        } finally {
+            setIsGenerating(false);
+        }
+    };
+
+    const onSubmit = async (values: Step4FormValues) => {
+        setIsSaving(true);
+        const memberDocRef = doc(firestore, 'members', memberId);
+
+        const dataToUpdate = {
+            shop: {
+                ...shopData,
+                metaTitle: values.metaTitle,
+                metaDescription: values.metaDescription,
+                tags: values.tags,
+                updatedAt: serverTimestamp()
+            },
+            updatedAt: serverTimestamp()
+        };
+
+        try {
+            await updateDoc(memberDocRef, dataToUpdate);
+            toast({ title: 'Step 4 Saved!', description: 'Your SEO settings have been updated.' });
+            onSave(dataToUpdate.shop);
+        } catch (serverError: any) {
+            const permissionError = new FirestorePermissionError({
+                path: memberDocRef.path, operation: 'update', requestResourceData: dataToUpdate,
+            });
+            errorEmitter.emit('permission-error', permissionError);
+            toast({ variant: 'destructive', title: 'Update Failed', description: serverError.message });
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    return (
+        <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                <Card className="bg-primary/5 border-primary/20">
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                            <Sparkles /> AI-Powered SEO Assistant
+                        </CardTitle>
+                        <CardDescription>
+                            Let our AI generate optimized SEO content based on your shop's name and description from Step 1.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <Button type="button" onClick={handleGenerateSeo} disabled={isGenerating}>
+                            {isGenerating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+                            Generate with AI
+                        </Button>
+                    </CardContent>
+                </Card>
+
+                <FormField control={form.control} name="metaTitle" render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Meta Title</FormLabel>
+                        <FormControl><Input placeholder="e.g., Quality Truck Parts in Johannesburg" {...field} /></FormControl>
+                        <FormMessage />
+                    </FormItem>
+                )} />
+                <FormField control={form.control} name="metaDescription" render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Meta Description</FormLabel>
+                        <FormControl><Textarea placeholder="A short, catchy description for search engines." {...field} /></FormControl>
+                        <FormMessage />
+                    </FormItem>
+                )} />
+                <FormField control={form.control} name="tags" render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Tags / Keywords</FormLabel>
+                        <FormControl><Input placeholder="e.g., truck parts, scania, heavy-duty" {...field} onChange={e => field.onChange(e.target.value.split(',').map(tag => tag.trim()))} /></FormControl>
+                        <FormMessage />
+                        <p className="text-sm text-muted-foreground">Separate tags with commas.</p>
+                    </FormItem>
+                )} />
+
+                <Button type="submit" disabled={isSaving}>
+                    {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                    Save & Continue
+                </Button>
+            </form>
+        </Form>
+    );
+}
+
 // ====== WIZARD CONTROLLER ======
 const STEPS = [
     { id: 'identity', title: 'Core Identity' },
     { id: 'location', title: 'Location & Contact' },
     { id: 'branding', title: 'Branding' },
-    { id: 'seo', title: 'SEO' },
+    { id: 'seo', title: 'SEO & Tags' },
     { id: 'products', title: 'Products' },
     { id: 'preview', title: 'Preview' },
 ];
@@ -406,7 +532,7 @@ export default function ShopWizard({ shop, memberId }: { shop: any, memberId: st
       case 'branding':
         return <Step3Branding shopData={shopData} memberId={memberId} onSave={handleSaveAndNext} />;
       case 'seo':
-        return <div className="text-center p-8">Step 4: SEO & Metadata Form will go here.</div>;
+        return <Step4Seo shopData={shopData} memberId={memberId} onSave={handleSaveAndNext} />;
       case 'products':
         return <div className="text-center p-8">Step 5: Product & Catalogue Management (with Image Upload) will go here.</div>;
       case 'preview':
