@@ -26,15 +26,15 @@ service cloud.firestore {
       }
 
       match /staff/{staffId} {
-        allow crud: if isOwner(memberId) || isAdmin();
+        allow create, read, update, delete, list: if isOwner(memberId) || isAdmin();
       }
 
       match /transactions/{transactionId} {
-        allow crud: if isOwner(memberId) || isAdmin();
+        allow create, read, update, delete, list: if isOwner(memberId) || isAdmin();
       }
 
       match /financeApplications/{applicationId} {
-        allow crud: if isOwner(memberId) || isAdmin();
+        allow create, read, update, delete, list: if isOwner(memberId) || isAdmin();
       }
       
       // Corrected rule for the 'shops' subcollection
@@ -57,12 +57,6 @@ service cloud.firestore {
     match /financeApplications/{applicationId} {
        allow create: if request.auth != null;
        allow read, list, update, delete: if isAdmin();
-    }
-    
-    // Generic helper for subcollection create operations.
-    // This simplifies rules like /members/{memberId}/staff/{staffId}
-    match /{path=**}/{document} {
-      allow crud: if isAdmin();
     }
   }
 }
