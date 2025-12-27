@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -47,6 +46,8 @@ export default function ShopContent() {
         ownerId: user.uid,
         status: 'draft',
         shopName: `${user.displayName || 'My'}'s New Shop`,
+        shopDescription: 'My new shop on TransConnect!',
+        category: 'General',
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       });
@@ -59,7 +60,7 @@ export default function ShopContent() {
       toast({ title: 'Shop Draft Created!', description: "Let's get started with the details." });
     } catch (error: any) {
       console.error("Error creating shop:", error);
-      toast({ variant: 'destructive', title: 'Error Creating Shop', description: error.message });
+      toast({ variant: 'destructive', title: 'Error Creating Shop', description: error.message || "Missing or insufficient permissions." });
     } finally {
       setIsCreating(false);
     }

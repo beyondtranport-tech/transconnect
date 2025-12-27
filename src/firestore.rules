@@ -26,13 +26,13 @@ service cloud.firestore {
     
     // Shops collection with Admin Approval flow
     match /shops/{shopId} {
-      // Public can read approved shops, owner can read their own regardless of status.
+      // Anyone can read an approved shop. The owner can read their own shop regardless of status.
       allow get: if (resource.data.status == 'approved') || 
                    (request.auth != null && request.auth.uid == resource.data.ownerId) ||
                    isAdmin();
       
       // Public can list approved shops. Admins can list all shops.
-      allow list: if resource.data.status == 'approved' || isAdmin();
+      allow list: if isAdmin();
 
       // A user can create a shop, but must set themselves as owner and status to draft
       allow create: if request.auth != null 
