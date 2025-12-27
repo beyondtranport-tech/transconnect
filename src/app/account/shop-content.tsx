@@ -1,226 +1,94 @@
 
 'use client';
 
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
-import { Button } from '@/components/ui/button';
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { useToast } from '@/hooks/use-toast';
-import { useState, useEffect } from 'react';
-import { Loader2, Store, Save, PlusCircle, AlertCircle } from 'lucide-react';
+import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Loader2, Store, PlusCircle } from 'lucide-react';
 import { useUser, useFirestore, useMemoFirebase } from '@/firebase';
-import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
-import { errorEmitter } from '@/firebase/error-emitter';
-import { FirestorePermissionError } from '@/firebase/errors';
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { useCollection } from '@/firebase/firestore/use-collection';
+import { collection, query, where, addDoc, serverTimestamp } from 'firebase/firestore';
+import { useToast } from '@/hooks/use-toast';
+import ShopWizard from './shop-wizard';
 
-const shopFormSchema = z.object({
-  shopName: z.string().min(3, 'Shop name must be at least 3 characters'),
-  shopDescription: z.string().optional(),
-  category: z.string().min(1, 'Category is required'),
-  contactEmail: z.string().email('Please enter a valid email address').optional().or(z.literal('')),
-  contactPhone: z.string().optional(),
-});
-
-type ShopFormValues = z.infer<typeof shopFormSchema>;
-
-// Accept memberData as a prop
-export default function ShopContent({ memberData }: { memberData: any }) {
+export default function ShopContent() {
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
-  const [isSaving, setIsSaving] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
 
-  // The shop data is now nested within the member document
-  const existingShop = memberData?.shop;
+  const shopsQuery = useMemoFirebase(() => {
+    if (!firestore || !user) return null;
+    // Query the top-level shops collection for a shop owned by the current user
+    return query(collection(firestore, 'shops'), where('ownerId', '==', user.uid));
+  }, [firestore, user]);
 
-  const form = useForm<ShopFormValues>({
-    resolver: zodResolver(shopFormSchema),
-    defaultValues: {
-      shopName: '',
-      shopDescription: '',
-      category: '',
-      contactEmail: '',
-      contactPhone: '',
-    },
-  });
+  const { data: shops, isLoading: isShopsLoading } = useCollection(shopsQuery);
 
-  useEffect(() => {
-    // When memberData (and thus existingShop) changes, reset the form
-    if (existingShop) {
-      form.reset({
-        shopName: existingShop.shopName || '',
-        shopDescription: existingShop.shopDescription || '',
-        category: existingShop.category || '',
-        contactEmail: existingShop.contactEmail || '',
-        contactPhone: existingShop.contactPhone || '',
-      });
-    } else {
-        form.reset(); // Reset to defaults if no shop exists
+  const userShop = shops?.[0]; // Get the first shop, as a user should only have one
+  const isLoading = isUserLoading || isShopsLoading;
+
+  const handleCreateShop = async () => {
+    if (!user || !firestore) {
+      toast({ variant: 'destructive', title: 'You must be logged in to create a shop.' });
+      return;
     }
-  }, [existingShop, form]);
+    setIsCreating(true);
 
-  const onSubmit = async (values: ShopFormValues) => {
-    setIsSaving(true);
-    if (!firestore || !user) {
-        toast({ variant: 'destructive', title: 'Error', description: 'Not logged in.' });
-        setIsSaving(false);
-        return;
-    }
-    
-    // We are updating the main member document now
-    const memberDocRef = doc(firestore, 'members', user.uid);
-    
-    const dataToSave = {
-      // Nest the shop data under a 'shop' field
-      shop: {
-        ...values,
+    try {
+      const shopsCollectionRef = collection(firestore, 'shops');
+      // Create a basic draft shop document
+      await addDoc(shopsCollectionRef, {
         ownerId: user.uid,
+        status: 'draft',
+        createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
-        // Keep original creation date if it exists
-        createdAt: existingShop?.createdAt || serverTimestamp(), 
-      },
-      // Also update the top-level updatedAt for the member
-      updatedAt: serverTimestamp(),
-    };
-
-    updateDoc(memberDocRef, dataToSave)
-      .then(() => {
-        toast({
-          title: 'Shop Updated',
-          description: 'Your shop information has been successfully saved.',
-        });
-      })
-      .catch((serverError) => {
-        const permissionError = new FirestorePermissionError({
-            path: memberDocRef.path,
-            operation: 'update', // This is an update operation on the member doc
-            requestResourceData: dataToSave,
-        });
-        errorEmitter.emit('permission-error', permissionError);
-        toast({
-            variant: 'destructive',
-            title: 'Update Failed',
-            description: 'You do not have permission to update your shop.',
-        });
-      })
-      .finally(() => {
-        setIsSaving(false);
+        shopName: `${user.displayName}'s New Shop`, // Default name
+        shopDescription: '',
+        category: '',
       });
+      toast({ title: 'Shop Draft Created!', description: "Let's get started with the details." });
+    } catch (error: any) {
+      toast({ variant: 'destructive', title: 'Error Creating Shop', description: error.message });
+    } finally {
+      setIsCreating(false);
+    }
   };
-
-  const isLoading = isUserLoading;
 
   return (
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2"><Store /> My Shop</CardTitle>
-        <CardDescription>Manage your public-facing shop profile on TransConnect.</CardDescription>
+        <CardDescription>
+          {userShop 
+            ? `Manage your shop: ${userShop.shopName}`
+            : "Create and manage your public-facing shop on TransConnect."
+          }
+        </CardDescription>
       </CardHeader>
       <CardContent>
         {isLoading ? (
-          <div className="flex justify-center items-center py-10">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <div className="flex justify-center items-center py-20">
+            <Loader2 className="h-10 w-10 animate-spin text-primary" />
           </div>
+        ) : userShop ? (
+          // If a shop exists, render the wizard to manage it
+          <ShopWizard shop={userShop} />
         ) : (
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 max-w-2xl">
-              {!existingShop && (
-                <Alert>
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertTitle>Set up your shop!</AlertTitle>
-                  <AlertDescription>
-                    You don't have a shop yet. Fill out the form below to create one.
-                  </AlertDescription>
-                </Alert>
-              )}
-              <FormField
-                control={form.control}
-                name="shopName"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Shop Name</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g., Quality Truck Parts" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="shopDescription"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Shop Description</FormLabel>
-                    <FormControl>
-                      <Textarea placeholder="Tell customers about your shop..." {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="category"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Primary Category</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g., Diesel Parts, Tires, Maintenance" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="contactEmail"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Contact Email</FormLabel>
-                        <FormControl>
-                          <Input placeholder="sales@mypartsshop.com" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="contactPhone"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Contact Phone</FormLabel>
-                        <FormControl>
-                          <Input placeholder="011 123 4567" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-              </div>
-
-              <Button type="submit" disabled={isSaving}>
-                {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : (existingShop ? <Save className="mr-2 h-4 w-4" /> : <PlusCircle className="mr-2 h-4 w-4" />)}
-                {existingShop ? 'Save Changes' : 'Create Shop'}
-              </Button>
-            </form>
-          </Form>
+          // If no shop exists, show the "Create Shop" screen
+          <div className="text-center py-20 border-2 border-dashed rounded-lg">
+            <Store className="mx-auto h-12 w-12 text-muted-foreground" />
+            <h3 className="mt-4 text-xl font-semibold">You don't have a shop yet.</h3>
+            <p className="mt-2 text-muted-foreground">Ready to start selling? Create your shop to get started.</p>
+            <Button onClick={handleCreateShop} disabled={isCreating} className="mt-6">
+              {isCreating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PlusCircle className="mr-2 h-4 w-4" />}
+              Create My Shop
+            </Button>
+          </div>
         )}
       </CardContent>
     </Card>
   );
 }
+
+    

@@ -113,8 +113,7 @@ function AccountPageContent() {
       case 'staff':
         return <StaffContent />;
       case 'shop':
-        // Pass memberData down to ShopContent
-        return isVendor ? <ShopContent memberData={memberData} /> : <AccountDashboard />;
+        return isVendor ? <ShopContent /> : <AccountDashboard />;
       case 'transactions':
         return <TransactionsContent />;
       case 'documents':
@@ -243,3 +242,5 @@ export default function AccountPage() {
     </Suspense>
   );
 }
+
+    

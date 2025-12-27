@@ -23,7 +23,29 @@ service cloud.firestore {
       // This rule grants the owner of the member document full access to all its subcollections.
       // This is the definitive fix for the recurring 'shops' subcollection permission error.
       match /{allSubcollections=**} {
-        allow list, read, write, delete: if isOwner(memberId) || isAdmin();
+        allow read, write: if isOwner(memberId) || isAdmin();
+      }
+    }
+    
+    // Shops collection with Admin Approval flow
+    match /shops/{shopId} {
+      // Anyone can see approved shops
+      allow list, read: if resource.data.status == 'approved' || isAdmin();
+      // Only owner can see their own draft/pending shop
+      allow get: if isOwner(resource.data.ownerId) || isAdmin();
+      
+      // A user can create a shop, but must set themselves as owner and status to draft
+      allow create: if request.auth != null 
+                    && request.resource.data.ownerId == request.auth.uid
+                    && request.resource.data.status == 'draft';
+      
+      // Owner can update their shop, but cannot approve it themselves
+      allow update: if (isOwner(resource.data.ownerId) && request.resource.data.status != 'approved') || isAdmin();
+
+      // Products subcollection
+      match /products/{productId} {
+         // Owner of the shop has full control over their products
+         allow read, write, delete: if isOwner(get(/databases/$(database)/documents/shops/$(shopId)).data.ownerId) || isAdmin();
       }
     }
     
@@ -44,3 +66,5 @@ service cloud.firestore {
     }
   }
 }
+
+    
