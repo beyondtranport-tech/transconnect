@@ -1,17 +1,16 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Loader2, Store, PlusCircle } from 'lucide-react';
-import { useUser, useFirestore, useMemoFirebase, useCollection } from '@/firebase';
-import { collection, addDoc, serverTimestamp, query, limit } from 'firebase/firestore';
+import { useUser, useFirestore, useMemoFirebase, useDoc } from '@/firebase';
+import { collection, addDoc, serverTimestamp, doc, writeBatch } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import ShopWizard from './shop-wizard';
-
 
 export default function ShopContent() {
   const { user, isUserLoading } = useUser();
@@ -19,56 +18,69 @@ export default function ShopContent() {
   const { toast } = useToast();
   const [isCreating, setIsCreating] = useState(false);
 
-  // Query the user's private shop subcollection. We only expect one, so we limit to 1.
-  const shopsCollectionRef = useMemoFirebase(() => {
+  // 1. Get the member data first to find the shopId
+  const memberDocRef = useMemoFirebase(() => {
     if (!firestore || !user) return null;
-    return query(collection(firestore, 'members', user.uid, 'shops'), limit(1));
+    return doc(firestore, 'members', user.uid);
   }, [firestore, user]);
 
-  const { data: shops, isLoading: isShopsLoading } = useCollection(shopsCollectionRef);
+  const { data: memberData, isLoading: isMemberLoading } = useDoc(memberDocRef);
 
-  const isLoading = isUserLoading || isShopsLoading;
+  // 2. Based on the memberData, create a reference to the specific shop document
+  const shopDocRef = useMemoFirebase(() => {
+    if (!firestore || !user || !memberData?.shopId) return null;
+    return doc(firestore, 'members', user.uid, 'shops', memberData.shopId);
+  }, [firestore, user, memberData]);
+
+  // 3. Fetch the single shop document
+  const { data: userShop, isLoading: isShopLoading } = useDoc(shopDocRef);
+
+  const isLoading = isUserLoading || isMemberLoading || (memberData?.shopId && isShopLoading);
   
-  // The user's shop is the first (and only) document in the collection.
-  const userShop = shops && shops.length > 0 ? shops[0] : null;
-
   const handleCreateShop = async () => {
     if (!user || !firestore) {
       toast({ variant: 'destructive', title: 'You must be logged in to create a shop.' });
       return;
     }
-    if (userShop) {
+    if (memberData?.shopId) {
       toast({ variant: 'destructive', title: 'Shop Already Exists', description: 'You can only manage one shop per account.' });
       return;
     }
     setIsCreating(true);
 
+    const batch = writeBatch(firestore);
+
+    // Reference to the new shop document in the subcollection
+    const newShopRef = doc(collection(firestore, 'members', user.uid, 'shops'));
+    
+    // The data for the new shop
     const newShopData = {
-        ownerId: user.uid,
-        status: 'draft',
-        shopName: `${user.displayName || 'My'}'s New Shop`,
-        category: '',
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
+      ownerId: user.uid,
+      status: 'draft',
+      shopName: `${user.displayName || 'My'}'s New Shop`,
+      category: '',
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
     };
+
+    // Add the new shop to the batch
+    batch.set(newShopRef, newShopData);
+
+    // Update the parent member document with the new shop's ID
+    const memberRef = doc(firestore, 'members', user.uid);
+    batch.update(memberRef, { shopId: newShopRef.id });
     
     try {
-        const shopCollection = collection(firestore, 'members', user.uid, 'shops');
-        
-        await addDoc(shopCollection, newShopData)
-          .catch((serverError) => {
-            const permissionError = new FirestorePermissionError({
-                path: shopCollection.path,
-                operation: 'create',
-                requestResourceData: newShopData,
-            });
-            errorEmitter.emit('permission-error', permissionError);
-          });
-      
+      await batch.commit();
       toast({ title: 'Shop Draft Created!', description: "Let's get started with the details." });
-    } catch (error: any) {
-      console.error("Error creating shop:", error);
-      toast({ variant: 'destructive', title: 'Error Creating Shop', description: error.message || "An unexpected error occurred." });
+    } catch (serverError: any) {
+      const permissionError = new FirestorePermissionError({
+        path: `members/${user.uid}`,
+        operation: 'write',
+        requestResourceData: { shopData: newShopData, memberUpdate: { shopId: newShopRef.id } },
+      });
+      errorEmitter.emit('permission-error', permissionError);
+      toast({ variant: 'destructive', title: 'Error Creating Shop', description: serverError.message || "An unexpected error occurred." });
     } finally {
       setIsCreating(false);
     }
@@ -90,9 +102,9 @@ export default function ShopContent() {
           <div className="flex justify-center items-center py-20">
             <Loader2 className="h-10 w-10 animate-spin text-primary" />
           </div>
-        ) : userShop ? (
+        ) : userShop && memberData?.shopId ? (
           // Pass the shop data and ID to the wizard
-          <ShopWizard shop={userShop} memberId={user!.uid} shopId={userShop.id} />
+          <ShopWizard shop={userShop} memberId={user!.uid} shopId={memberData.shopId} />
         ) : (
           <div className="text-center py-20 border-2 border-dashed rounded-lg">
             <Store className="mx-auto h-12 w-12 text-muted-foreground" />
