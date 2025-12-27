@@ -60,10 +60,6 @@
           "type": "string",
           "description": "Reference to Membership tier ID (e.g., 'professional'). (Relationship: Member 1:1 Membership)"
         },
-        "shop": {
-          "$ref": "#/backend/entities/Shop",
-          "description": "An embedded object containing all data for the member's shop. This is used for a 1:1 relationship."
-        },
         "rewardPoints": {
           "type": "number",
           "description": "The number of reward points accumulated by the member for loyalty."
@@ -110,7 +106,6 @@
         "province": { "type": "string" },
         "postalCode": { "type": "string" },
         "membershipId": { "type": "string" },
-        "shop": { "$ref": "#/backend/entities/Shop" },
         "rewardPoints": { "type": "number" },
         "walletBalance": { "type": "number" },
         "createdAt": { "type": "object" },
@@ -121,7 +116,7 @@
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Shop",
       "type": "object",
-      "description": "Represents a vendor's shop on the TransConnect platform. This definition is used for both the embedded object in the Member document AND the top-level /shops collection.",
+      "description": "Represents a vendor's shop on the TransConnect platform. This definition is used for the /members/{memberId}/shops subcollection AND the top-level /shops collection.",
       "properties": {
         "ownerId": {
             "type": "string",
@@ -530,6 +525,31 @@
           ]
         }
       },
+       {
+        "path": "/members/{memberId}/shops/{shopId}",
+        "definition": {
+          "entityName": "Shop",
+          "schema": { "$ref": "#/backend/entities/Shop" },
+          "description": "Subcollection for storing the shop belonging to a member. The member has full control.",
+          "params": [
+            { "name": "memberId", "description": "The ID of the parent member." },
+            { "name": "shopId", "description": "The unique ID for the shop." }
+          ]
+        }
+      },
+       {
+        "path": "/members/{memberId}/shops/{shopId}/products/{productId}",
+        "definition": {
+          "entityName": "Product",
+          "schema": { "$ref": "#/backend/entities/Product" },
+          "description": "Subcollection for storing products belonging to a specific shop owned by a member.",
+          "params": [
+            { "name": "memberId", "description": "The ID of the parent member." },
+            { "name": "shopId", "description": "The ID of the parent shop." },
+            { "name": "productId", "description": "The unique ID for the product." }
+          ]
+        }
+      },
       {
         "path": "/shops/{shopId}",
         "definition": {
@@ -600,6 +620,6 @@
         }
       }
     ],
-    "reasoning": "The data model for shops has been simplified to fix persistent security rule issues. The shop data is now an embedded object within the parent Member document, rather than a subcollection or separate top-level collection. This enforces a strict 1:1 relationship (one member has one shop) and allows the use of a simple, robust security rule where a member's ownership of their parent document grants them full control over their embedded shop data. A top-level '/shops' collection is still used to store public, read-only copies of approved shops, managed by backend processes."
+    "reasoning": "The data model now uses a dual-collection strategy for shops to ensure security and functionality. A user's shop is created and managed within a subcollection at `/members/{memberId}/shops`, which is fully controlled by the owner via a recursive security rule. A top-level `/shops` collection exists to hold public, read-only copies of *approved* shops. This separation prevents users from listing each other's draft shops while allowing a public, queryable marketplace. A backend process (e.g., Cloud Function, not implemented here) would be responsible for copying an approved shop from the member's subcollection to the public top-level collection."
   }
 }

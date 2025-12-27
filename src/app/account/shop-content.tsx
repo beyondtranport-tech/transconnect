@@ -5,8 +5,8 @@ import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Loader2, Store, PlusCircle } from 'lucide-react';
-import { useUser, useFirestore, useMemoFirebase, useDoc } from '@/firebase';
-import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { useUser, useFirestore, useMemoFirebase, useCollection } from '@/firebase';
+import { collection, addDoc, serverTimestamp, query, limit } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
@@ -19,21 +19,21 @@ export default function ShopContent() {
   const { toast } = useToast();
   const [isCreating, setIsCreating] = useState(false);
 
-  // 1. Get the member document, which may or may not contain the shop object
-  const memberDocRef = useMemoFirebase(() => {
+  // Query the user's private shop subcollection. We only expect one, so we limit to 1.
+  const shopsCollectionRef = useMemoFirebase(() => {
     if (!firestore || !user) return null;
-    return doc(firestore, 'members', user.uid);
+    return query(collection(firestore, 'members', user.uid, 'shops'), limit(1));
   }, [firestore, user]);
 
-  const { data: memberData, isLoading: isMemberLoading } = useDoc(memberDocRef);
+  const { data: shops, isLoading: isShopsLoading } = useCollection(shopsCollectionRef);
 
-  const isLoading = isUserLoading || isMemberLoading;
+  const isLoading = isUserLoading || isShopsLoading;
   
-  // The user's shop data is now just a field on the member document
-  const userShop = memberData?.shop;
+  // The user's shop is the first (and only) document in the collection.
+  const userShop = shops && shops.length > 0 ? shops[0] : null;
 
   const handleCreateShop = async () => {
-    if (!user || !firestore || !memberDocRef) {
+    if (!user || !firestore) {
       toast({ variant: 'destructive', title: 'You must be logged in to create a shop.' });
       return;
     }
@@ -53,24 +53,22 @@ export default function ShopContent() {
     };
     
     try {
-        // We just update the member document with a new 'shop' field.
-      await updateDoc(memberDocRef, { 
-        shop: newShopData,
-        // Also add a role to the member for easier identification
-        role: 'vendor',
-        updatedAt: serverTimestamp()
-      });
+        const shopCollection = collection(firestore, 'members', user.uid, 'shops');
+        
+        await addDoc(shopCollection, newShopData)
+          .catch((serverError) => {
+            const permissionError = new FirestorePermissionError({
+                path: shopCollection.path,
+                operation: 'create',
+                requestResourceData: newShopData,
+            });
+            errorEmitter.emit('permission-error', permissionError);
+          });
       
       toast({ title: 'Shop Draft Created!', description: "Let's get started with the details." });
     } catch (error: any) {
       console.error("Error creating shop:", error);
-      const permissionError = new FirestorePermissionError({
-          path: memberDocRef.path,
-          operation: 'update',
-          requestResourceData: { shop: newShopData },
-      });
-      errorEmitter.emit('permission-error', permissionError);
-      toast({ variant: 'destructive', title: 'Error Creating Shop', description: error.message || "Missing or insufficient permissions." });
+      toast({ variant: 'destructive', title: 'Error Creating Shop', description: error.message || "An unexpected error occurred." });
     } finally {
       setIsCreating(false);
     }
@@ -93,8 +91,8 @@ export default function ShopContent() {
             <Loader2 className="h-10 w-10 animate-spin text-primary" />
           </div>
         ) : userShop ? (
-          // Render the multi-step wizard instead of the single form
-          <ShopWizard shop={userShop} memberId={user!.uid} />
+          // Pass the shop data and ID to the wizard
+          <ShopWizard shop={userShop} memberId={user!.uid} shopId={userShop.id} />
         ) : (
           <div className="text-center py-20 border-2 border-dashed rounded-lg">
             <Store className="mx-auto h-12 w-12 text-muted-foreground" />

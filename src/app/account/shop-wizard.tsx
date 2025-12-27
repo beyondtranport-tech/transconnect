@@ -10,9 +10,9 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
-import { useFirestore } from '@/firebase';
-import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
-import { Loader2, Save, CheckCircle, LayoutGrid, List, Image as ImageIcon, Sparkles } from 'lucide-react';
+import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { doc, updateDoc, serverTimestamp, collection, addDoc } from 'firebase/firestore';
+import { Loader2, Save, CheckCircle, LayoutGrid, List, Image as ImageIcon, Sparkles, PlusCircle, Edit, Trash2 } from 'lucide-react';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -24,7 +24,8 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { cn } from '@/lib/utils';
 import { Label } from '@/components/ui/label';
 import { generateShopSeo } from '@/ai/flows/seo-flow';
-
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 const statusColors: { [key: string]: 'default' | 'secondary' | 'destructive' | 'outline' } = {
   draft: 'secondary',
@@ -42,7 +43,7 @@ const shopStep1Schema = z.object({
 
 type Step1FormValues = z.infer<typeof shopStep1Schema>;
 
-function Step1CoreIdentity({ shopData, memberId, onSave }: { shopData: any, memberId: string, onSave: (newData: any) => void }) {
+function Step1CoreIdentity({ shopData, memberId, shopId, onSave }: { shopData: any, memberId: string, shopId: string, onSave: (newData: any) => void }) {
   const { toast } = useToast();
   const firestore = useFirestore();
   const [isSaving, setIsSaving] = useState(false);
@@ -58,24 +59,20 @@ function Step1CoreIdentity({ shopData, memberId, onSave }: { shopData: any, memb
 
   const onSubmit = async (values: Step1FormValues) => {
     setIsSaving(true);
-    const memberDocRef = doc(firestore, 'members', memberId);
+    const shopDocRef = doc(firestore, 'members', memberId, 'shops', shopId);
     
     const dataToUpdate = {
-        shop: {
-          ...shopData,
-          ...values,
-          updatedAt: serverTimestamp()
-        },
+        ...values,
         updatedAt: serverTimestamp()
     };
 
     try {
-        await updateDoc(memberDocRef, dataToUpdate);
+        await updateDoc(shopDocRef, dataToUpdate);
         toast({ title: 'Step 1 Saved!', description: 'Your core shop details have been updated.' });
-        onSave(dataToUpdate.shop);
+        onSave({ ...shopData, ...dataToUpdate });
     } catch (serverError: any) {
         const permissionError = new FirestorePermissionError({
-            path: memberDocRef.path, operation: 'update', requestResourceData: dataToUpdate,
+            path: shopDocRef.path, operation: 'update', requestResourceData: dataToUpdate,
         });
         errorEmitter.emit('permission-error', permissionError);
         toast({ variant: 'destructive', title: 'Update Failed', description: serverError.message });
@@ -138,7 +135,7 @@ const shopStep2Schema = z.object({
 
 type Step2FormValues = z.infer<typeof shopStep2Schema>;
 
-function Step2LocationContact({ shopData, memberId, onSave }: { shopData: any, memberId: string, onSave: (newData: any) => void }) {
+function Step2LocationContact({ shopData, memberId, shopId, onSave }: { shopData: any, memberId: string, shopId: string, onSave: (newData: any) => void }) {
   const { toast } = useToast();
   const firestore = useFirestore();
   const [isSaving, setIsSaving] = useState(false);
@@ -157,20 +154,17 @@ function Step2LocationContact({ shopData, memberId, onSave }: { shopData: any, m
 
   const onSubmit = async (values: Step2FormValues) => {
     setIsSaving(true);
-    const memberDocRef = doc(firestore, 'members', memberId);
+    const shopDocRef = doc(firestore, 'members', memberId, 'shops', shopId);
     
-    const dataToUpdate = {
-        shop: { ...shopData, ...values, updatedAt: serverTimestamp() },
-        updatedAt: serverTimestamp()
-    };
+    const dataToUpdate = { ...values, updatedAt: serverTimestamp() };
 
     try {
-        await updateDoc(memberDocRef, dataToUpdate);
+        await updateDoc(shopDocRef, dataToUpdate);
         toast({ title: 'Step 2 Saved!', description: 'Your location and contact info has been updated.' });
-        onSave(dataToUpdate.shop);
+        onSave({ ...shopData, ...dataToUpdate });
     } catch (serverError: any) {
         const permissionError = new FirestorePermissionError({
-            path: memberDocRef.path, operation: 'update', requestResourceData: dataToUpdate,
+            path: shopDocRef.path, operation: 'update', requestResourceData: dataToUpdate,
         });
         errorEmitter.emit('permission-error', permissionError);
         toast({ variant: 'destructive', title: 'Update Failed', description: serverError.message });
@@ -253,7 +247,7 @@ const shopStep3Schema = z.object({
 
 type Step3FormValues = z.infer<typeof shopStep3Schema>;
 
-function Step3Branding({ shopData, memberId, onSave }: { shopData: any, memberId: string, onSave: (newData: any) => void }) {
+function Step3Branding({ shopData, memberId, shopId, onSave }: { shopData: any, memberId: string, shopId: string, onSave: (newData: any) => void }) {
   const { toast } = useToast();
   const firestore = useFirestore();
   const [isSaving, setIsSaving] = useState(false);
@@ -268,20 +262,17 @@ function Step3Branding({ shopData, memberId, onSave }: { shopData: any, memberId
 
   const onSubmit = async (values: Step3FormValues) => {
     setIsSaving(true);
-    const memberDocRef = doc(firestore, 'members', memberId);
+    const shopDocRef = doc(firestore, 'members', memberId, 'shops', shopId);
     
-    const dataToUpdate = {
-        shop: { ...shopData, ...values, updatedAt: serverTimestamp() },
-        updatedAt: serverTimestamp()
-    };
+    const dataToUpdate = { ...values, updatedAt: serverTimestamp() };
 
     try {
-        await updateDoc(memberDocRef, dataToUpdate);
+        await updateDoc(shopDocRef, dataToUpdate);
         toast({ title: 'Step 3 Saved!', description: 'Your branding settings have been updated.' });
-        onSave(dataToUpdate.shop);
+        onSave({ ...shopData, ...dataToUpdate });
     } catch (serverError: any) {
         const permissionError = new FirestorePermissionError({
-            path: memberDocRef.path, operation: 'update', requestResourceData: dataToUpdate,
+            path: shopDocRef.path, operation: 'update', requestResourceData: dataToUpdate,
         });
         errorEmitter.emit('permission-error', permissionError);
         toast({ variant: 'destructive', title: 'Update Failed', description: serverError.message });
@@ -385,7 +376,7 @@ const shopStep4Schema = z.object({
 
 type Step4FormValues = z.infer<typeof shopStep4Schema>;
 
-function Step4Seo({ shopData, memberId, onSave }: { shopData: any, memberId: string, onSave: (newData: any) => void }) {
+function Step4Seo({ shopData, memberId, shopId, onSave }: { shopData: any, memberId: string, shopId: string, onSave: (newData: any) => void }) {
     const { toast } = useToast();
     const firestore = useFirestore();
     const [isSaving, setIsSaving] = useState(false);
@@ -421,26 +412,22 @@ function Step4Seo({ shopData, memberId, onSave }: { shopData: any, memberId: str
 
     const onSubmit = async (values: Step4FormValues) => {
         setIsSaving(true);
-        const memberDocRef = doc(firestore, 'members', memberId);
+        const shopDocRef = doc(firestore, 'members', memberId, 'shops', shopId);
 
         const dataToUpdate = {
-            shop: {
-                ...shopData,
-                metaTitle: values.metaTitle,
-                metaDescription: values.metaDescription,
-                tags: values.tags,
-                updatedAt: serverTimestamp()
-            },
+            metaTitle: values.metaTitle,
+            metaDescription: values.metaDescription,
+            tags: values.tags,
             updatedAt: serverTimestamp()
         };
 
         try {
-            await updateDoc(memberDocRef, dataToUpdate);
+            await updateDoc(shopDocRef, dataToUpdate);
             toast({ title: 'Step 4 Saved!', description: 'Your SEO settings have been updated.' });
-            onSave(dataToUpdate.shop);
+            onSave({ ...shopData, ...dataToUpdate });
         } catch (serverError: any) {
             const permissionError = new FirestorePermissionError({
-                path: memberDocRef.path, operation: 'update', requestResourceData: dataToUpdate,
+                path: shopDocRef.path, operation: 'update', requestResourceData: dataToUpdate,
             });
             errorEmitter.emit('permission-error', permissionError);
             toast({ variant: 'destructive', title: 'Update Failed', description: serverError.message });
@@ -486,7 +473,7 @@ function Step4Seo({ shopData, memberId, onSave }: { shopData: any, memberId: str
                 <FormField control={form.control} name="tags" render={({ field }) => (
                     <FormItem>
                         <FormLabel>Tags / Keywords</FormLabel>
-                        <FormControl><Input placeholder="e.g., truck parts, scania, heavy-duty" {...field} onChange={e => field.onChange(e.target.value.split(',').map(tag => tag.trim()))} /></FormControl>
+                        <FormControl><Input placeholder="e.g., truck parts, scania, heavy-duty" value={field.value?.join(', ') || ''} onChange={e => field.onChange(e.target.value.split(',').map(tag => tag.trim()))} /></FormControl>
                         <FormMessage />
                         <p className="text-sm text-muted-foreground">Separate tags with commas.</p>
                     </FormItem>
@@ -501,6 +488,165 @@ function Step4Seo({ shopData, memberId, onSave }: { shopData: any, memberId: str
     );
 }
 
+// ====== STEP 5: Products ======
+const productSchema = z.object({
+  name: z.string().min(1, "Product name is required."),
+  description: z.string().optional(),
+  price: z.coerce.number().positive("Price must be a positive number."),
+  sku: z.string().optional(),
+});
+type ProductFormValues = z.infer<typeof productSchema>;
+
+function ProductDialog({ memberId, shopId }: { memberId: string, shopId: string }) {
+    const [isOpen, setIsOpen] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
+    const firestore = useFirestore();
+    const { toast } = useToast();
+
+    const form = useForm<ProductFormValues>({
+        resolver: zodResolver(productSchema),
+        defaultValues: { name: '', description: '', price: 0, sku: '' }
+    });
+
+    const onSubmit = async (values: ProductFormValues) => {
+        setIsSaving(true);
+        const productsCollectionRef = collection(firestore, 'members', memberId, 'shops', shopId, 'products');
+        
+        const productData = {
+            ...values,
+            shopId: shopId,
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+        };
+
+        try {
+            await addDoc(productsCollectionRef, productData)
+                .catch(serverError => {
+                    const permissionError = new FirestorePermissionError({
+                        path: productsCollectionRef.path,
+                        operation: 'create',
+                        requestResourceData: productData
+                    });
+                    errorEmitter.emit('permission-error', permissionError);
+                    throw serverError; // re-throw to be caught by outer try-catch
+                });
+
+            toast({ title: 'Product Added!', description: `${values.name} has been added to your shop.` });
+            form.reset();
+            setIsOpen(false);
+        } catch (error: any) {
+            toast({ variant: 'destructive', title: 'Error Adding Product', description: error.message });
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    return (
+        <Dialog open={isOpen} onOpenChange={setIsOpen}>
+            <DialogTrigger asChild>
+                <Button variant="outline"><PlusCircle className="mr-2 h-4 w-4" /> Add Product</Button>
+            </DialogTrigger>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Add a New Product</DialogTitle>
+                    <DialogDescription>Fill out the details for your new product.</DialogDescription>
+                </DialogHeader>
+                <Form {...form}>
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                        <FormField control={form.control} name="name" render={({ field }) => (
+                            <FormItem><FormLabel>Product Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                        )} />
+                        <FormField control={form.control} name="description" render={({ field }) => (
+                            <FormItem><FormLabel>Description</FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage /></FormItem>
+                        )} />
+                        <div className="grid grid-cols-2 gap-4">
+                            <FormField control={form.control} name="price" render={({ field }) => (
+                                <FormItem><FormLabel>Price (ZAR)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
+                            )} />
+                            <FormField control={form.control} name="sku" render={({ field }) => (
+                                <FormItem><FormLabel>SKU (Optional)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                            )} />
+                        </div>
+                        <DialogFooter>
+                            <Button type="submit" disabled={isSaving}>
+                                {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Save Product'}
+                            </Button>
+                        </DialogFooter>
+                    </form>
+                </Form>
+            </DialogContent>
+        </Dialog>
+    );
+}
+
+function Step5Products({ memberId, shopId, onSave }: { memberId: string, shopId: string, onSave: (newData?: any) => void }) {
+    const firestore = useFirestore();
+
+    const productsCollectionRef = useMemoFirebase(() => {
+        if (!firestore) return null;
+        return collection(firestore, 'members', memberId, 'shops', shopId, 'products');
+    }, [firestore, memberId, shopId]);
+
+    const { data: products, isLoading } = useCollection(productsCollectionRef);
+
+    return (
+        <div className="space-y-6">
+            <div className="flex justify-between items-center">
+                <p className="text-muted-foreground">Add products to your shop's catalogue.</p>
+                <ProductDialog memberId={memberId} shopId={shopId} />
+            </div>
+            <Card>
+                <CardContent className="p-0">
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Name</TableHead>
+                                <TableHead>SKU</TableHead>
+                                <TableHead className="text-right">Price</TableHead>
+                                <TableHead className="text-right">Actions</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {isLoading && (
+                                <TableRow>
+                                    <TableCell colSpan={4} className="text-center py-10">
+                                        <Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" />
+                                    </TableCell>
+                                </TableRow>
+                            )}
+                            {!isLoading && products && products.length > 0 ? (
+                                products.map(product => (
+                                    <TableRow key={product.id}>
+                                        <TableCell className="font-medium">{product.name}</TableCell>
+                                        <TableCell>{product.sku || 'N/A'}</TableCell>
+                                        <TableCell className="text-right font-mono">R {product.price.toFixed(2)}</TableCell>
+                                        <TableCell className="text-right">
+                                            <Button variant="ghost" size="icon"><Edit className="h-4 w-4" /></Button>
+                                            <Button variant="ghost" size="icon"><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                                        </TableCell>
+                                    </TableRow>
+                                ))
+                            ) : null}
+                             {!isLoading && (!products || products.length === 0) && (
+                                <TableRow>
+                                    <TableCell colSpan={4} className="text-center py-10 text-muted-foreground">
+                                        You haven't added any products yet.
+                                    </TableCell>
+                                </TableRow>
+                            )}
+                        </TableBody>
+                    </Table>
+                </CardContent>
+            </Card>
+            <Button onClick={() => onSave()}>
+                Save & Continue
+            </Button>
+        </div>
+    );
+}
+
+
+
 // ====== WIZARD CONTROLLER ======
 const STEPS = [
     { id: 'identity', title: 'Core Identity' },
@@ -511,7 +657,7 @@ const STEPS = [
     { id: 'preview', title: 'Preview' },
 ];
 
-export default function ShopWizard({ shop, memberId }: { shop: any, memberId: string }) {
+export default function ShopWizard({ shop, memberId, shopId }: { shop: any, memberId: string, shopId: string }) {
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [shopData, setShopData] = useState(shop);
 
@@ -526,15 +672,15 @@ export default function ShopWizard({ shop, memberId }: { shop: any, memberId: st
     const stepId = STEPS[currentStepIndex].id;
     switch (stepId) {
       case 'identity':
-        return <Step1CoreIdentity shopData={shopData} memberId={memberId} onSave={handleSaveAndNext} />;
+        return <Step1CoreIdentity shopData={shopData} memberId={memberId} shopId={shopId} onSave={handleSaveAndNext} />;
       case 'location':
-        return <Step2LocationContact shopData={shopData} memberId={memberId} onSave={handleSaveAndNext} />;
+        return <Step2LocationContact shopData={shopData} memberId={memberId} shopId={shopId} onSave={handleSaveAndNext} />;
       case 'branding':
-        return <Step3Branding shopData={shopData} memberId={memberId} onSave={handleSaveAndNext} />;
+        return <Step3Branding shopData={shopData} memberId={memberId} shopId={shopId} onSave={handleSaveAndNext} />;
       case 'seo':
-        return <Step4Seo shopData={shopData} memberId={memberId} onSave={handleSaveAndNext} />;
+        return <Step4Seo shopData={shopData} memberId={memberId} shopId={shopId} onSave={handleSaveAndNext} />;
       case 'products':
-        return <div className="text-center p-8">Step 5: Product & Catalogue Management (with Image Upload) will go here.</div>;
+        return <Step5Products memberId={memberId} shopId={shopId} onSave={handleSaveAndNext} />;
       case 'preview':
         return <div className="text-center p-8">Step 6: Final Preview & Submit for Review will go here.</div>;
       default:
