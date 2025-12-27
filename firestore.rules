@@ -8,18 +8,19 @@ service cloud.firestore {
       return request.auth != null && request.auth.token.email == 'beyondtransport@gmail.com';
     }
     
-    // Rule for the entire 'members' collection
-    match /members/{document=**} {
-      allow read, write: if isAdmin();
-    }
-
     // Specific rules for individual member documents
     match /members/{memberId} {
+      // Allow admin to do anything on individual documents
+      allow read, update, delete: if isAdmin();
+
+      // Allow a user to get their own document
       allow get: if request.auth.uid == memberId;
+
+      // Allow a user to create their own document, ensuring the ID matches their UID
       allow create: if request.auth != null && request.resource.data.id == request.auth.uid;
+      
+      // Allow a user to update their own document (but not delete)
       allow update: if request.auth.uid == memberId;
-      // Admin writes are covered by the rule above. No need for delete here for non-admins.
-      allow delete: if false;
 
       match /staff/{staffId} {
         allow read, list, create, update, delete: if request.auth.uid == memberId || isAdmin();
@@ -42,6 +43,13 @@ service cloud.firestore {
         allow list: if request.auth.uid == memberId || isAdmin();
       }
     }
+    
+    // Broad rule for the entire 'members' collection
+    match /members/{document=**} {
+        // Only allow admin to list the entire collection and its subcollections
+        allow list: if isAdmin();
+    }
+
 
     match /memberships/{membershipId} {
       allow get, list: if request.auth != null;
