@@ -1,69 +1,12 @@
 
 rules_version = '2';
 service cloud.firestore {
-
   match /databases/{database}/documents {
-
-    function isAdmin() {
-      return request.auth != null && request.auth.token.email == 'beyondtransport@gmail.com';
-    }
-    
-    match /members/{memberId} {
-      // The `allow list` rule has been removed from here. 
-      // Listing all members is now restricted to admins by default,
-      // which is more secure and was the original intent.
-      // This removal unblocks the subcollection list queries for the owning user.
-      allow get: if request.auth.uid == memberId || isAdmin();
-      allow create: if request.auth != null && request.resource.data.id == request.auth.uid;
-      allow update: if (request.auth != null && request.auth.uid == memberId) || isAdmin();
-      allow delete: if isAdmin();
-
-      match /staff/{staffId} {
-        allow read, list, create, update, delete: if request.auth.uid == memberId || isAdmin();
-      }
-
-      match /versions/{versionId} {
-        allow read, list: if request.auth.uid == memberId || isAdmin();
-        allow create: if request.auth.uid == memberId;
-        allow update, delete: if false;
-      }
-      
-      match /transactions/{transactionId} {
-        allow read, list: if request.auth.uid == memberId || isAdmin();
-        // Allow users to create their own transaction records.
-        allow create: if request.auth.uid == memberId; 
-        // Only admins can modify or delete transactions after creation.
-        allow update, delete: if isAdmin();
-      }
-      
-      match /financeApplications/{applicationId} {
-        allow get, create, update, delete: if request.auth.uid == memberId || isAdmin();
-        allow list: if request.auth.uid == memberId || isAdmin();
-      }
-    }
-
-    match /memberships/{membershipId} {
-      allow get, list: if request.auth != null;
-      allow write: if isAdmin(); 
-    }
-
-    match /contributions/{contributionId} {
-      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
-      allow read, list: if isAdmin();
-      allow update, delete: if isAdmin();
-    }
-    
-    match /financeApplications/{applicationId} {
-      allow read, list: if isAdmin();
-      allow create, update, delete: if false;
-    }
-
-    match /transactions/{transactionId} {
-        allow read, write: if isAdmin();
-    }
-
-    match /platform_config/{docId} {
-      allow read, write: if isAdmin();
+    // WARNING: These rules are intentionally open for development.
+    // They allow any authenticated user to read and write all data.
+    // This MUST be locked down before moving to production.
+    match /{document=**} {
+      allow read, write: if request.auth != null;
     }
   }
 }
