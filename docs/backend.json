@@ -112,6 +112,48 @@
         "updatedAt": { "type": "object" }
       }
     },
+    "Shop": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Shop",
+      "type": "object",
+      "description": "Represents a vendor's shop on the TransConnect platform.",
+      "properties": {
+        "ownerId": {
+            "type": "string",
+            "description": "The UID of the Member who owns this shop."
+        },
+        "shopName": {
+            "type": "string",
+            "description": "The public name of the shop."
+        },
+        "shopDescription": {
+            "type": "string",
+            "description": "A brief description of the shop and what it sells."
+        },
+        "category": {
+            "type": "string",
+            "description": "The primary category of products or services offered (e.g., Parts, Services, Tires)."
+        },
+        "contactEmail": {
+            "type": "string",
+            "format": "email",
+            "description": "Public contact email for the shop."
+        },
+        "contactPhone": {
+            "type": "string",
+            "description": "Public contact phone number for the shop."
+        },
+        "createdAt": {
+            "type": "object",
+            "description": "The server timestamp when the shop was created."
+        },
+        "updatedAt": {
+            "type": "object",
+            "description": "The server timestamp when the shop was last updated."
+        }
+      },
+      "required": ["ownerId", "shopName", "category", "createdAt", "updatedAt"]
+    },
     "Staff": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Staff",
@@ -453,6 +495,18 @@
               "name": "applicationId",
               "description": "The unique identifier of the finance application."
             }
+          ]
+        }
+      },
+      {
+        "path": "/members/{memberId}/shops/{shopId}",
+        "definition": {
+          "entityName": "Shop",
+          "schema": { "$ref": "#/backend/entities/Shop" },
+          "description": "Stores the shop profile for a vendor member.",
+          "params": [
+            { "name": "memberId", "description": "The UID of the parent member." },
+            { "name": "shopId", "description": "The unique ID for the shop." }
           ]
         }
       },

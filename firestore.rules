@@ -36,6 +36,10 @@ service cloud.firestore {
       match /financeApplications/{applicationId} {
         allow crud: if isOwner(memberId) || isAdmin();
       }
+      
+      match /shops/{shopId} {
+        allow crud: if isOwner(memberId) || isAdmin();
+      }
     }
     
     // Other top-level collections
@@ -61,3 +65,5 @@ service cloud.firestore {
     }
   }
 }
+
+    

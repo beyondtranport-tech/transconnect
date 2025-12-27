@@ -22,12 +22,13 @@ import {
   DollarSign,
   User,
   Building,
+  Store,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useState, useEffect, Suspense } from 'react';
-import { useUser, useAuth } from '@/firebase';
+import { useUser, useAuth, useMemoFirebase } from '@/firebase';
 import { signOut } from 'firebase/auth';
 import AccountDashboard from './dashboard';
 import { Loader2 } from 'lucide-react';
@@ -35,6 +36,10 @@ import StaffContent from './staff-content';
 import ProfileContent from './profile-content';
 import CompanyContent from './company-content';
 import TransactionsContent from './transactions-content';
+import ShopContent from './shop-content'; // Import the new component
+import { doc } from 'firebase/firestore';
+import { useDoc } from '@/firebase/firestore/use-doc';
+import { useFirestore } from '@/firebase';
 
 
 function DocumentsContent() {
@@ -59,10 +64,20 @@ function AccountPageContent() {
   const router = useRouter();
   const { user, isUserLoading } = useUser();
   const auth = useAuth();
+  const firestore = useFirestore();
   
   const searchParams = useSearchParams();
   const initialView = searchParams.get('view') || 'dashboard';
   const [activeView, setActiveView] = useState(initialView);
+
+  const memberDocRef = useMemoFirebase(() => {
+    if (!firestore || !user) return null;
+    return doc(firestore, 'members', user.uid);
+  }, [firestore, user]);
+
+  const { data: memberData, isLoading: isMemberLoading } = useDoc(memberDocRef);
+
+  const isVendor = memberData?.role === 'vendor';
   
   useEffect(() => {
     setActiveView(initialView);
@@ -97,6 +112,8 @@ function AccountPageContent() {
         return <CompanyContent />;
       case 'staff':
         return <StaffContent />;
+      case 'shop':
+        return <ShopContent />;
       case 'transactions':
         return <TransactionsContent />;
       case 'documents':
@@ -111,7 +128,7 @@ function AccountPageContent() {
 
   // This is the guard that prevents rendering for non-users,
   // showing a loader while the redirect effect runs.
-  if (isUserLoading || !user) {
+  if (isUserLoading || !user || isMemberLoading) {
     return (
         <div className="flex justify-center items-center min-h-[calc(100vh-8rem)]">
             <Loader2 className="h-16 w-16 animate-spin text-primary" />
@@ -158,6 +175,14 @@ function AccountPageContent() {
                   <span>Staff</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
+              {isVendor && (
+                 <SidebarMenuItem>
+                    <SidebarMenuButton tooltip="My Shop" isActive={activeView === 'shop'} onClick={() => router.push('/account?view=shop', { scroll: false })}>
+                      <Store />
+                      <span>My Shop</span>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+              )}
               <SidebarMenuItem>
                 <SidebarMenuButton tooltip="Transactions" isActive={activeView === 'transactions'} onClick={() => router.push('/account?view=transactions', { scroll: false })}>
                   <DollarSign />
@@ -219,3 +244,5 @@ export default function AccountPage() {
     </Suspense>
   );
 }
+
+    
