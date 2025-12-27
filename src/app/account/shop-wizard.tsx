@@ -26,6 +26,7 @@ import { Label } from '@/components/ui/label';
 import { generateShopSeo } from '@/ai/flows/seo-flow';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import Image from 'next/image';
 
 const statusColors: { [key: string]: 'default' | 'secondary' | 'destructive' | 'outline' } = {
   draft: 'secondary',
@@ -415,6 +416,11 @@ function Step4Seo({ member, onSave }: { member: any, onSave: (newData: any) => v
     const handleGenerateSeo = async () => {
         setIsGenerating(true);
         try {
+            if (!shopData.shopName || !shopData.shopDescription) {
+                toast({ variant: 'destructive', title: 'Missing Info', description: 'Please complete Step 1 with a shop name and description first.' });
+                setIsGenerating(false);
+                return;
+            }
             const result = await generateShopSeo({
                 shopName: shopData.shopName,
                 shopDescription: shopData.shopDescription,
@@ -516,6 +522,7 @@ const productSchema = z.object({
   description: z.string().optional(),
   price: z.coerce.number().positive("Price must be a positive number."),
   sku: z.string().optional(),
+  imageUrl: z.string().url("Please enter a valid URL.").optional().or(z.literal('')),
 });
 type ProductFormValues = z.infer<typeof productSchema>;
 
@@ -529,19 +536,17 @@ function ProductDialog({ onAddProduct }: { onAddProduct: (product: Product) => v
 
     const form = useForm<ProductFormValues>({
         resolver: zodResolver(productSchema),
-        defaultValues: { name: '', description: '', price: 0, sku: '' }
+        defaultValues: { name: '', description: '', price: 0, sku: '', imageUrl: '' }
     });
 
     const onSubmit = (values: ProductFormValues) => {
         setIsSaving(true);
-        // We are no longer writing to Firestore here directly.
-        // We pass the new product up to the parent component (Step5Products).
         const newProduct: Product = {
             ...values,
-            id: `prod_${Date.now()}` // Simple unique ID for local state management
+            id: `prod_${Date.now()}`
         };
         onAddProduct(newProduct);
-        toast({ title: 'Product Staged', description: `${values.name} is ready to be saved with the rest of your shop updates.` });
+        toast({ title: 'Product Staged', description: `${values.name} is ready to be saved.` });
         setIsSaving(false);
         setIsOpen(false);
         form.reset();
@@ -552,7 +557,7 @@ function ProductDialog({ onAddProduct }: { onAddProduct: (product: Product) => v
             <DialogTrigger asChild>
                 <Button variant="outline"><PlusCircle className="mr-2 h-4 w-4" /> Add Product</Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="sm:max-w-md">
                 <DialogHeader>
                     <DialogTitle>Add a New Product</DialogTitle>
                     <DialogDescription>Fill out the details for your new product. It will be saved when you click "Save & Continue".</DialogDescription>
@@ -564,6 +569,9 @@ function ProductDialog({ onAddProduct }: { onAddProduct: (product: Product) => v
                         )} />
                         <FormField control={form.control} name="description" render={({ field }) => (
                             <FormItem><FormLabel>Description</FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage /></FormItem>
+                        )} />
+                        <FormField control={form.control} name="imageUrl" render={({ field }) => (
+                            <FormItem><FormLabel>Image URL</FormLabel><FormControl><Input placeholder="https://example.com/image.png" {...field} /></FormControl><FormMessage /></FormItem>
                         )} />
                         <div className="grid grid-cols-2 gap-4">
                             <FormField control={form.control} name="price" render={({ field }) => (
@@ -590,7 +598,6 @@ function Step5Products({ member, onSave }: { member: any, onSave: (newData: any)
     const { toast } = useToast();
     const [isSaving, setIsSaving] = useState(false);
     
-    // Products are now managed in local state until saved.
     const [products, setProducts] = useState<Product[]>(member.shop?.products || []);
 
     const handleAddProduct = (newProduct: Product) => {
@@ -638,6 +645,7 @@ function Step5Products({ member, onSave }: { member: any, onSave: (newData: any)
                     <Table>
                         <TableHeader>
                             <TableRow>
+                                <TableHead className="w-[80px]">Image</TableHead>
                                 <TableHead>Name</TableHead>
                                 <TableHead>SKU</TableHead>
                                 <TableHead className="text-right">Price</TableHead>
@@ -648,6 +656,17 @@ function Step5Products({ member, onSave }: { member: any, onSave: (newData: any)
                             {products.length > 0 ? (
                                 products.map(product => (
                                     <TableRow key={product.id}>
+                                        <TableCell>
+                                            <div className="w-16 h-16 relative bg-muted rounded-md overflow-hidden">
+                                                {product.imageUrl ? (
+                                                    <Image src={product.imageUrl} alt={product.name} fill className="object-cover" />
+                                                ) : (
+                                                    <div className="flex items-center justify-center h-full">
+                                                        <ImageIcon className="h-6 w-6 text-muted-foreground" />
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </TableCell>
                                         <TableCell className="font-medium">{product.name}</TableCell>
                                         <TableCell>{product.sku || 'N/A'}</TableCell>
                                         <TableCell className="text-right font-mono">R {product.price.toFixed(2)}</TableCell>
@@ -658,7 +677,7 @@ function Step5Products({ member, onSave }: { member: any, onSave: (newData: any)
                                 ))
                             ) : (
                                 <TableRow>
-                                    <TableCell colSpan={4} className="text-center py-10 text-muted-foreground">
+                                    <TableCell colSpan={5} className="text-center py-10 text-muted-foreground">
                                         You haven't added any products yet.
                                     </TableCell>
                                 </TableRow>
@@ -692,7 +711,6 @@ export default function ShopWizard({ member }: { member: any }) {
   const [shopData, setShopData] = useState(member.shop || {});
 
   const handleSaveAndNext = (newData: any) => {
-    // Update local state immediately for responsiveness
     const updatedShopData = { ...shopData, ...newData };
     setShopData(updatedShopData);
 
