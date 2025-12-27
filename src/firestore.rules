@@ -32,7 +32,7 @@ service cloud.firestore {
                    isAdmin();
       
       // Public can list approved shops. Admins can list all shops.
-      allow list: if isAdmin();
+      allow list: if resource.data.status == 'approved' || isAdmin();
 
       // A user can create a shop, but must set themselves as owner and status to draft
       allow create: if request.auth != null 
