@@ -13,39 +13,33 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     // Member Collection
-    // Admin can list all members.
-    // Individual users can only read/update/delete their own document.
+    // This single rule block is now the source of truth for all member-owned data.
     match /members/{memberId} {
       allow list: if isAdmin();
       allow read, update, delete: if isOwner(memberId) || isAdmin();
       allow create: if request.auth != null;
 
       // This rule grants the owner of the member document full access to all its subcollections.
-      // This is the definitive fix for the recurring 'shops' subcollection permission error.
+      // This is the definitive fix for the recurring subcollection permission errors.
       match /{allSubcollections=**} {
         allow read, write: if isOwner(memberId) || isAdmin();
       }
     }
     
     // Shops collection with Admin Approval flow
+    // This top-level collection is now for public viewing of APPROVED shops only.
+    // Members no longer write here directly.
     match /shops/{shopId} {
-      // Anyone can see approved shops
-      allow list, read: if resource.data.status == 'approved' || isAdmin();
-      // Only owner can see their own draft/pending shop
-      allow get: if isOwner(resource.data.ownerId) || isAdmin();
+      // Anyone can see approved shops. Admins can see all.
+      allow get, list: if resource.data.status == 'approved' || isAdmin();
       
-      // A user can create a shop, but must set themselves as owner and status to draft
-      allow create: if request.auth != null 
-                    && request.resource.data.ownerId == request.auth.uid
-                    && request.resource.data.status == 'draft';
-      
-      // Owner can update their shop, but cannot approve it themselves
-      allow update: if (isOwner(resource.data.ownerId) && request.resource.data.status != 'approved') || isAdmin();
+      // Only Admins can create, update, or delete from the top-level public collection.
+      allow write: if isAdmin();
 
-      // Products subcollection
+      // Products are publicly readable if the parent shop is approved.
       match /products/{productId} {
-         // Owner of the shop has full control over their products
-         allow read, write, delete: if isOwner(get(/databases/$(database)/documents/shops/$(shopId)).data.ownerId) || isAdmin();
+         allow read: if get(/databases/$(database)/documents/shops/$(shopId)).data.status == 'approved' || isAdmin();
+         allow write: if isAdmin();
       }
     }
     
@@ -66,5 +60,3 @@ service cloud.firestore {
     }
   }
 }
-
-    
