@@ -761,5 +761,3 @@ export default function ShopWizard({ member }: { member: any }) {
     </div>
   );
 }
-
-    

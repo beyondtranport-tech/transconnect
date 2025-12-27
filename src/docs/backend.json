@@ -452,7 +452,7 @@
           "schema": {
             "$ref": "#/entities/Member"
           },
-          "description": "Stores member profiles. Access is restricted to the authenticated user (path-based ownership).",
+          "description": "Stores member profiles. Access is restricted to the authenticated user (path-based ownership). Shop data is embedded.",
           "params": [
             {
               "name": "memberId",
@@ -594,5 +594,3 @@
     "reasoning": "The data model has been flattened. Shop and product data are now embedded directly within the /members/{memberId} document. This eliminates the need for complex subcollection security rules and resolves the persistent permission errors. A top-level /shops collection can still be used for public, approved shop listings if needed in the future, populated by a backend process."
   }
 }
-
-    
