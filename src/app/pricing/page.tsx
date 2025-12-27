@@ -59,7 +59,9 @@ const tiers = [
 const formatPrice = (price: number, perMonth = false) => {
     const formatted = new Intl.NumberFormat('en-ZA', {
         style: 'currency',
-        currency: 'ZAR'
+        currency: 'ZAR',
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0
     }).format(price);
     return perMonth ? `${formatted}/month` : formatted;
 };
