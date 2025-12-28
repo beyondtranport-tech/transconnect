@@ -36,6 +36,8 @@ import {
   Combine,
   Store,
   Wrench,
+  CheckCircle,
+  XCircle,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -53,6 +55,7 @@ import ChartOfAccountsSettings from './chart-of-accounts-settings';
 import ReconciliationPage from './reconciliation/page';
 import DashboardContent from './dashboard-content';
 import ShopsList from './shops-list';
+import { checkAdminSdk } from './actions';
 
 
 // Placeholder Content Components
@@ -70,32 +73,57 @@ function PlatformSettingsContent() {
 }
 
 function DebugToolsContent() {
+    const [sdkStatus, setSdkStatus] = useState<{ loading: boolean; success: boolean; error?: string }>({ loading: true, success: false });
+
+    useEffect(() => {
+        const checkStatus = async () => {
+            setSdkStatus({ loading: true, success: false });
+            const result = await checkAdminSdk();
+            setSdkStatus({ loading: false, success: result.success, error: result.error });
+        };
+        checkStatus();
+    }, []);
+
     return (
         <div className="space-y-8">
              <div>
                 <h1 className="text-2xl font-bold">Debug Tools</h1>
-                <p className="mt-2 text-muted-foreground">Tools and settings for administrators to debug and manage the platform.</p>
+                <p className="mt-2 text-muted-foreground">Tools for diagnosing the admin backend configuration.</p>
             </div>
-            <Card className="border-yellow-500 bg-yellow-50 dark:bg-yellow-900/20">
+            <Card>
                 <CardHeader>
-                    <div className="flex items-center gap-4">
-                        <ShieldAlert className="h-8 w-8 text-yellow-700 dark:text-yellow-400" />
-                        <div>
-                            <CardTitle>Global Admin Override</CardTitle>
-                            <CardDescription>
-                                Your account has full read/write access to the entire database.
-                            </CardDescription>
-                        </div>
-                    </div>
+                    <CardTitle>Firebase Admin SDK Status</CardTitle>
+                    <CardDescription>
+                        This tool checks if the backend server has the correct credentials to perform admin actions like approving shops.
+                    </CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <p className="text-sm text-muted-foreground">
-                        A security rule is in place that grants the user with UID <strong>4CH2RmdJHUSE5Zqc8kPoaEaqgCW2</strong> (beyondtransport@gmail.com) complete administrative privileges. This rule bypasses all other security restrictions and is intended for debugging and administrative actions. It ensures you will not face "Missing or insufficient permissions" errors while managing the platform.
-                    </p>
+                    {sdkStatus.loading ? (
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                            <Loader2 className="h-5 w-5 animate-spin" />
+                            <span>Checking status...</span>
+                        </div>
+                    ) : sdkStatus.success ? (
+                        <div className="flex items-center gap-2 text-green-600">
+                            <CheckCircle className="h-5 w-5" />
+                            <span className="font-semibold">Admin SDK Initialized Successfully.</span>
+                        </div>
+                    ) : (
+                        <div className="flex flex-col gap-2 text-destructive">
+                            <div className="flex items-center gap-2 font-semibold">
+                                <XCircle className="h-5 w-5" />
+                                <span>Admin SDK Initialization Failed.</span>
+                            </div>
+                            <p className="text-sm font-mono bg-destructive/10 p-2 rounded-md">{sdkStatus.error}</p>
+                            <p className="text-sm mt-2">
+                                Please ensure the `FIREBASE_ADMIN_SDK_CONFIG_B64` environment variable is correctly set in your deployment environment.
+                            </p>
+                        </div>
+                    )}
                 </CardContent>
             </Card>
         </div>
-    )
+    );
 }
 
 

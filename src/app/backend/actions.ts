@@ -9,7 +9,7 @@ function getAdminApp(): { app: App | null, error: string | null } {
     const adminSdkConfigB64 = process.env.FIREBASE_ADMIN_SDK_CONFIG_B64;
 
     if (!adminSdkConfigB64) {
-        const error = "Admin SDK Error: FIREBASE_ADMIN_SDK_CONFIG_B64 is not defined in the environment.";
+        const error = "Admin SDK Error: FIREBASE_ADMIN_SDK_CONFIG_B64 is not defined in the environment. Please add it to your environment variables.";
         console.error(error);
         return { app: null, error };
     }
@@ -42,6 +42,15 @@ function getAdminApp(): { app: App | null, error: string | null } {
         return { app: null, error: `Firebase Admin SDK initialization failed: ${error.message}` };
     }
 }
+
+export async function checkAdminSdk(): Promise<{ success: boolean; error?: string }> {
+    const { app, error } = getAdminApp();
+    if (error || !app) {
+        return { success: false, error: error || 'Firebase Admin SDK could not be initialized.' };
+    }
+    return { success: true };
+}
+
 
 // Helper to convert Firestore Timestamps to JSON-serializable strings
 function serializeTimestamps(docData: any) {
@@ -162,7 +171,6 @@ export async function getShops(): Promise<{ success: boolean; data?: Shop[]; err
     const adminDb = getFirestore(app);
 
     try {
-        // Use a collection group query to get all shops from all members
         const shopsSnapshot = await adminDb.collectionGroup('shops').get();
         const shops = shopsSnapshot.docs.map(doc => {
             const data = doc.data();
@@ -172,7 +180,9 @@ export async function getShops(): Promise<{ success: boolean; data?: Shop[]; err
                 ...serializedData,
             } as Shop;
         });
-        return { success: true, data: shops };
+        // Client-side sorting
+        const sortedShops = shops.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        return { success: true, data: sortedShops };
     } catch (error: any) {
         console.error('Error fetching shops with admin SDK:', error);
         return { success: false, error: error.message };
