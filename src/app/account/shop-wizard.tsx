@@ -2,7 +2,7 @@
 'use client';
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
@@ -11,15 +11,13 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore, useUser, useStorage, useCollection, useMemoFirebase, getClientSideAuthToken } from '@/firebase';
-import { doc, updateDoc, serverTimestamp, setDoc, addDoc, deleteDoc, collection } from 'firebase/firestore';
+import { doc, collection } from 'firebase/firestore';
 import { ref as storageRef, uploadBytesResumable, getDownloadURL } from "firebase/storage";
-import { Loader2, Save, CheckCircle, LayoutGrid, List, Image as ImageIcon, Sparkles, PlusCircle, Edit, Trash2, Send, Eye, ShoppingCart, Mail, Phone } from 'lucide-react';
+import { Loader2, Save, CheckCircle, LayoutGrid, List, Image as ImageIcon, Sparkles, PlusCircle, Edit, Trash2, Send, Eye, ShoppingCart, Mail, Phone, UploadCloud } from 'lucide-react';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { errorEmitter } from '@/firebase/error-emitter';
-import { FirestorePermissionError } from '@/firebase/errors';
 import { Separator } from '@/components/ui/separator';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { cn } from '@/lib/utils';
@@ -28,6 +26,7 @@ import { generateShopSeo } from '@/ai/flows/seo-flow';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import Image from 'next/image';
+import { Carousel, CarouselContent, CarouselItem } from '@/components/ui/carousel';
 
 const statusColors: { [key: string]: 'default' | 'secondary' | 'destructive' | 'outline' } = {
   draft: 'secondary',
@@ -269,7 +268,7 @@ function ProductDialog({ shop, product, onSave, children }: { shop: any, product
         getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
           form.setValue('imageUrl', downloadURL, { shouldValidate: true });
           toast({ title: "Image uploaded!" });
-          setUploadProgress(null);
+          setUploadProgress(100); // Set to 100 to re-enable button
         });
       }
     );
@@ -406,28 +405,211 @@ function Step2Products({ shop, onSave }: { shop: any, onSave: (newData?: any) =>
   )
 }
 
+// ====== STEP 3: Promotions ======
+const promotionSchema = z.object({
+  title: z.string().optional(),
+  description: z.string().optional(),
+  imageUrl: z.string().optional(),
+});
 
-// ====== STEP 3: Appearance ======
 const shopStep3Schema = z.object({
-  template: z.string().min(1, "Please select a template"),
-  theme: z.string().min(1, "Please select a theme"),
+  heroBannerUrl: z.string().optional(),
+  promotions: z.array(promotionSchema).optional(),
 });
 type Step3FormValues = z.infer<typeof shopStep3Schema>;
 
-function Step3Appearance({ shop, onSave }: { shop: any, onSave: (newData: any) => void }) {
+function FileUploadInput({ onUpload, title }: { onUpload: (url: string) => void, title: string }) {
+    const { user } = useUser();
+    const storage = useStorage();
+    const { toast } = useToast();
+    const [uploadProgress, setUploadProgress] = useState<number | null>(null);
+    const [preview, setPreview] = useState<string | null>(null);
+
+    const handleUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (!file || !user || !storage) return;
+
+        setUploadProgress(0);
+        const imageRef = storageRef(storage, `shops/${user.uid}/${Date.now()}-${file.name}`);
+        const uploadTask = uploadBytesResumable(imageRef, file);
+
+        uploadTask.on('state_changed',
+            (snapshot) => {
+                const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                setUploadProgress(progress);
+            },
+            (error) => {
+                toast({ variant: "destructive", title: "Upload failed", description: error.message });
+                setUploadProgress(null);
+            },
+            () => {
+                getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
+                    onUpload(downloadURL);
+                    setPreview(downloadURL);
+                    setUploadProgress(100);
+                    toast({ title: `${title} Image Uploaded!` });
+                });
+            }
+        );
+    };
+
+    return (
+        <div className="space-y-2">
+            <Label>{title}</Label>
+            {preview ? (
+                <div className="relative aspect-video w-full">
+                    <Image src={preview} alt="Preview" fill className="object-cover rounded-md" />
+                </div>
+            ) : (
+                <div className="flex items-center justify-center w-full">
+                    <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-border border-dashed rounded-lg cursor-pointer bg-card hover:bg-accent">
+                        <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                            <UploadCloud className="w-8 h-8 mb-2 text-muted-foreground" />
+                            <p className="mb-2 text-sm text-muted-foreground"><span className="font-semibold">Click to upload</span></p>
+                        </div>
+                        <Input type="file" className="hidden" accept="image/*" onChange={handleUpload} />
+                    </label>
+                </div>
+            )}
+            {uploadProgress !== null && uploadProgress < 100 && <Progress value={uploadProgress} className="h-1 mt-2" />}
+        </div>
+    );
+}
+
+function Step3Promotions({ shop, onSave }: { shop: any, onSave: (newData: any) => void }) {
+    const { user } = useUser();
+    const { toast } = useToast();
+    const [isSaving, setIsSaving] = useState(false);
+
+    const form = useForm<Step3FormValues>({
+        resolver: zodResolver(shopStep3Schema),
+        defaultValues: {
+            heroBannerUrl: shop.heroBannerUrl || '',
+            promotions: shop.promotions || [],
+        },
+    });
+    
+    const { fields, append, remove, update } = useFieldArray({
+        control: form.control,
+        name: "promotions",
+    });
+    
+    useEffect(() => {
+        // Ensure there are always 3 promotion slots
+        const currentCount = fields.length;
+        if (currentCount < 3) {
+            for (let i = 0; i < 3 - currentCount; i++) {
+                append({ title: '', description: '', imageUrl: '' });
+            }
+        }
+    }, [fields, append]);
+
+
+    const onSubmit = async (values: Step3FormValues) => {
+        if (!user) return;
+        setIsSaving(true);
+        const dataToUpdate = { ...values, updatedAt: { _methodName: 'serverTimestamp' } };
+
+        try {
+            const token = await getClientSideAuthToken();
+            if (!token) throw new Error("Authentication token not found.");
+            
+            const response = await fetch('/api/updateUserDoc', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ path: `members/${user.uid}/shops/${shop.id}`, data: dataToUpdate }),
+            });
+
+            if (!response.ok) throw new Error((await response.json()).error || 'Failed to save.');
+
+            toast({ title: 'Step 3 Saved!', description: 'Your promotions have been updated.' });
+            onSave(values);
+        } catch (error: any) {
+            toast({ variant: 'destructive', title: 'Update Failed', description: error.message });
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    return (
+        <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+                <div>
+                    <h3 className="text-lg font-medium">Hero Banner</h3>
+                    <p className="text-sm text-muted-foreground">This is the main banner at the top of your shop page.</p>
+                    <div className="mt-4">
+                        <FormField
+                            control={form.control}
+                            name="heroBannerUrl"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormControl>
+                                        <FileUploadInput title="Hero Banner" onUpload={(url) => field.onChange(url)} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                    </div>
+                </div>
+
+                <Separator />
+
+                <div>
+                    <h3 className="text-lg font-medium">Promotional Blocks</h3>
+                    <p className="text-sm text-muted-foreground">Highlight specials, new arrivals, or key categories. (Up to 3)</p>
+                     <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-6">
+                        {fields.slice(0, 3).map((field, index) => (
+                           <Card key={field.id} className="p-4 space-y-4">
+                               <FormField control={form.control} name={`promotions.${index}.imageUrl`} render={({ field }) => (
+                                    <FormItem>
+                                        <FormControl>
+                                            <FileUploadInput title={`Promotion ${index + 1} Image`} onUpload={(url) => field.onChange(url)} />
+                                        </FormControl>
+                                    </FormItem>
+                                )}/>
+                                <FormField control={form.control} name={`promotions.${index}.title`} render={({ field }) => (
+                                    <FormItem><FormLabel>Title</FormLabel><FormControl><Input {...field} placeholder="e.g., Tire Sale" /></FormControl></FormItem>
+                                )}/>
+                                <FormField control={form.control} name={`promotions.${index}.description`} render={({ field }) => (
+                                    <FormItem><FormLabel>Description</FormLabel><FormControl><Textarea {...field} placeholder="e.g., 20% off all truck tires" /></FormControl></FormItem>
+                                )}/>
+                           </Card>
+                        ))}
+                    </div>
+                </div>
+
+                <Button type="submit" disabled={isSaving}>
+                    {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                    Save & Continue
+                </Button>
+            </form>
+        </Form>
+    );
+}
+
+
+// ====== STEP 4: Appearance ======
+const shopStep4Schema = z.object({
+  template: z.string().min(1, "Please select a template"),
+  theme: z.string().min(1, "Please select a theme"),
+});
+type Step4FormValues = z.infer<typeof shopStep4Schema>;
+
+function Step4Appearance({ shop, onSave }: { shop: any, onSave: (newData: any) => void }) {
   const { user } = useUser();
   const { toast } = useToast();
   const [isSaving, setIsSaving] = useState(false);
 
-  const form = useForm<Step3FormValues>({
-    resolver: zodResolver(shopStep3Schema),
+  const form = useForm<Step4FormValues>({
+    resolver: zodResolver(shopStep4Schema),
     defaultValues: {
       template: shop.template || 'modern-grid',
       theme: shop.theme || 'forest-green',
     }
   });
 
-  const onSubmit = async (values: Step3FormValues) => {
+  const onSubmit = async (values: Step4FormValues) => {
     if (!user) return;
     setIsSaving(true);
     const dataToUpdate = { ...values, updatedAt: { _methodName: 'serverTimestamp' } };
@@ -444,7 +626,7 @@ function Step3Appearance({ shop, onSave }: { shop: any, onSave: (newData: any) =
 
         if (!response.ok) throw new Error((await response.json()).error || 'Failed to save.');
 
-        toast({ title: 'Step 3 Saved!', description: 'Your shop appearance has been updated.' });
+        toast({ title: 'Step 4 Saved!', description: 'Your shop appearance has been updated.' });
         onSave(values);
     } catch (error: any) {
         toast({ variant: 'destructive', title: 'Update Failed', description: error.message });
@@ -504,22 +686,22 @@ function Step3Appearance({ shop, onSave }: { shop: any, onSave: (newData: any) =
   )
 }
 
-// ====== STEP 4: SEO ======
-const shopStep4Schema = z.object({
+// ====== STEP 5: SEO ======
+const shopStep5Schema = z.object({
   metaTitle: z.string().min(1, "Meta title is required"),
   metaDescription: z.string().min(1, "Meta description is required"),
   tags: z.array(z.string()).min(1, "At least one tag is required"),
 });
-type Step4FormValues = z.infer<typeof shopStep4Schema>;
+type Step5FormValues = z.infer<typeof shopStep5Schema>;
 
-function Step4Seo({ shop, onSave }: { shop: any, onSave: (newData: any) => void }) {
+function Step5Seo({ shop, onSave }: { shop: any, onSave: (newData: any) => void }) {
   const { user } = useUser();
   const { toast } = useToast();
   const [isSaving, setIsSaving] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
 
-  const form = useForm<Step4FormValues>({
-    resolver: zodResolver(shopStep4Schema),
+  const form = useForm<Step5FormValues>({
+    resolver: zodResolver(shopStep5Schema),
     defaultValues: {
       metaTitle: shop.metaTitle || '',
       metaDescription: shop.metaDescription || '',
@@ -547,7 +729,7 @@ function Step4Seo({ shop, onSave }: { shop: any, onSave: (newData: any) => void 
     }
   }
 
-  const onSubmit = async (values: Step4FormValues) => {
+  const onSubmit = async (values: Step5FormValues) => {
     if (!user) return;
     setIsSaving(true);
     const dataToUpdate = { ...values, updatedAt: { _methodName: 'serverTimestamp' } };
@@ -564,7 +746,7 @@ function Step4Seo({ shop, onSave }: { shop: any, onSave: (newData: any) => void 
 
         if (!response.ok) throw new Error((await response.json()).error || 'Failed to save.');
         
-        toast({ title: 'Step 4 Saved!', description: 'Your SEO settings have been updated.' });
+        toast({ title: 'Step 5 Saved!', description: 'Your SEO settings have been updated.' });
         onSave(values);
     } catch (error: any) {
         toast({ variant: 'destructive', title: 'Update Failed', description: error.message });
@@ -680,30 +862,55 @@ function ShopPreview({ shop, products }: { shop: any, products: any[] }) {
     
     return (
         <div className={cn("w-full h-full text-base", theme.bg, theme.text)}>
-            {/* Shop Navigation */}
             <header className="bg-white/80 backdrop-blur-sm sticky top-0 z-10 border-b">
                 <div className="container mx-auto px-6 py-3 flex justify-between items-center">
                     <h1 className={cn("text-xl font-bold", theme.primary)}>{shop.shopName}</h1>
                     <nav className="hidden md:flex items-center gap-6 text-sm font-medium">
-                        <a href="#" className="hover:text-gray-900">Home</a>
                         <a href="#products" className="hover:text-gray-900">Products</a>
+                        <a href="#promotions" className="hover:text-gray-900">Specials</a>
                         <a href="#contact" className="hover:text-gray-900">Contact</a>
                     </nav>
                 </div>
             </header>
 
-            {/* Main Content */}
             <main className="container mx-auto px-6 py-12">
-                {/* Hero Section */}
-                <section className="text-center py-16">
-                    <h2 className="text-4xl font-extrabold tracking-tight">{shop.shopName}</h2>
-                    <p className="mt-4 max-w-2xl mx-auto text-lg text-gray-600">{shop.shopDescription}</p>
-                    <div className="mt-4 flex justify-center flex-wrap gap-2">
-                        {shop.tags?.map((tag: string) => <Badge key={tag} variant="secondary">{tag}</Badge>)}
+                <section id="hero" className="relative w-full h-80 rounded-lg overflow-hidden mb-12">
+                    {shop.heroBannerUrl ? (
+                         <Image src={shop.heroBannerUrl} alt={`${shop.shopName} hero banner`} fill className="object-cover" />
+                    ) : (
+                        <div className="bg-gray-300 h-full w-full flex items-center justify-center">
+                            <ImageIcon className="h-24 w-24 text-gray-500" />
+                        </div>
+                    )}
+                     <div className="absolute inset-0 bg-black/40" />
+                     <div className="relative h-full flex flex-col items-center justify-center text-center text-white z-10 p-4">
+                        <h2 className="text-4xl font-extrabold tracking-tight">{shop.shopName}</h2>
+                        <p className="mt-4 max-w-2xl mx-auto text-lg">{shop.shopDescription}</p>
                     </div>
                 </section>
 
-                {/* Products Section */}
+                {shop.promotions && shop.promotions.filter((p:any) => p.title && p.imageUrl).length > 0 && (
+                    <section id="promotions" className="py-12">
+                        <h3 className="text-2xl font-bold text-center mb-8">Our Latest Promotions</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            {shop.promotions.filter((p:any) => p.title && p.imageUrl).map((promo: any, index: number) => (
+                                <Card key={index} className="overflow-hidden bg-white">
+                                    <div className="relative aspect-video">
+                                        <Image src={promo.imageUrl} alt={promo.title} fill className="object-cover" />
+                                    </div>
+                                    <CardHeader>
+                                        <CardTitle className="text-lg">{promo.title}</CardTitle>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <p className="text-sm text-gray-600">{promo.description}</p>
+                                    </CardContent>
+                                </Card>
+                            ))}
+                        </div>
+                    </section>
+                )}
+
+
                 <section id="products" className="py-12">
                     <h3 className="text-2xl font-bold text-center mb-8">Our Products</h3>
                     {products && products.length > 0 ? (
@@ -716,7 +923,6 @@ function ShopPreview({ shop, products }: { shop: any, products: any[] }) {
                     )}
                 </section>
                 
-                {/* Contact Section */}
                 <section id="contact" className="py-12 mt-12 border-t">
                      <h3 className="text-2xl font-bold text-center mb-8">Contact Us</h3>
                      <Card className="max-w-2xl mx-auto bg-white">
@@ -744,7 +950,6 @@ function ShopPreview({ shop, products }: { shop: any, products: any[] }) {
                 </section>
             </main>
             
-            {/* Footer */}
             <footer className="bg-white/80 border-t mt-12">
                 <div className="container mx-auto px-6 py-4 text-center text-sm text-gray-500">
                     <p>&copy; {new Date().getFullYear()} {shop.shopName}. All Rights Reserved.</p>
@@ -755,8 +960,8 @@ function ShopPreview({ shop, products }: { shop: any, products: any[] }) {
     );
 }
 
-// ====== STEP 5: Preview & Submit ======
-function Step5Preview({ shop, onSave }: { shop: any; onSave: (newData: any) => void }) {
+// ====== STEP 6: Preview & Submit ======
+function Step6Preview({ shop, onSave }: { shop: any; onSave: (newData: any) => void }) {
   const { toast } = useToast();
   const { user } = useUser();
   const firestore = useFirestore();
@@ -877,6 +1082,7 @@ function Step5Preview({ shop, onSave }: { shop: any; onSave: (newData: any) => v
 const STEPS = [
     { id: 'identity', title: 'Core Identity' },
     { id: 'products', title: 'Products'},
+    { id: 'promotions', title: 'Promotions' },
     { id: 'appearance', title: 'Appearance'},
     { id: 'seo', title: 'SEO & Tags'},
     { id: 'preview', title: 'Preview & Submit' },
@@ -902,12 +1108,14 @@ export default function ShopWizard({ shop }: { shop: any }) {
         return <Step1CoreIdentity shop={shopData} onSave={handleSaveAndNext} />;
       case 'products':
         return <Step2Products shop={shopData} onSave={handleSaveAndNext} />;
+      case 'promotions':
+        return <Step3Promotions shop={shopData} onSave={handleSaveAndNext} />;
       case 'appearance':
-        return <Step3Appearance shop={shopData} onSave={handleSaveAndNext} />;
+        return <Step4Appearance shop={shopData} onSave={handleSaveAndNext} />;
       case 'seo':
-        return <Step4Seo shop={shopData} onSave={handleSaveAndNext} />;
+        return <Step5Seo shop={shopData} onSave={handleSaveAndNext} />;
       case 'preview':
-        return <Step5Preview shop={shopData} onSave={handleSaveAndNext} />;
+        return <Step6Preview shop={shopData} onSave={handleSaveAndNext} />;
       default:
         return <div>Step not found</div>;
     }
@@ -953,3 +1161,5 @@ export default function ShopWizard({ shop }: { shop: any }) {
     </div>
   );
 }
+
+    

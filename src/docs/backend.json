@@ -127,51 +127,35 @@
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Shop",
       "type": "object",
-      "description": "Represents a vendor's shop on the TransConnect platform. This definition is used for the /members/{memberId}/shops subcollection AND the top-level /shops collection.",
+      "description": "Represents a vendor's shop on the TransConnect platform.",
       "properties": {
-        "ownerId": {
-            "type": "string",
-            "description": "The UID of the Member who owns this shop."
-        },
-        "shopName": {
-            "type": "string",
-            "description": "The public name of the shop."
-        },
-        "shopDescription": {
-            "type": "string",
-            "description": "A brief description of the shop and what it sells."
-        },
-        "category": {
-            "type": "string",
-            "description": "The primary category of products or services offered (e.g., Parts, Services, Tires)."
-        },
-        "contactEmail": {
-            "type": "string",
-            "format": "email",
-            "description": "Public contact email for the shop."
-        },
-        "contactPhone": {
-            "type": "string",
-            "description": "Public contact phone number for the shop."
-        },
-        "status": {
-            "type": "string",
-            "enum": ["draft", "pending_review", "approved", "rejected"],
-            "description": "The approval status of the shop."
-        },
-        "template": { "type": "string", "description": "The chosen visual template for the shop page (e.g., 'modern-grid')." },
-        "theme": { "type": "string", "description": "The chosen color theme for the shop page (e.g., 'forest-green')." },
-        "metaTitle": { "type": "string", "description": "SEO-friendly title for the shop page." },
-        "metaDescription": { "type": "string", "description": "SEO-friendly description for search engines." },
-        "tags": { "type": "array", "items": { "type": "string" }, "description": "Searchable tags/keywords for the shop." },
-        "createdAt": {
+        "ownerId": { "type": "string" },
+        "shopName": { "type": "string" },
+        "shopDescription": { "type": "string" },
+        "category": { "type": "string" },
+        "contactEmail": { "type": "string", "format": "email" },
+        "contactPhone": { "type": "string" },
+        "status": { "type": "string", "enum": ["draft", "pending_review", "approved", "rejected"] },
+        "template": { "type": "string" },
+        "theme": { "type": "string" },
+        "metaTitle": { "type": "string" },
+        "metaDescription": { "type": "string" },
+        "tags": { "type": "array", "items": { "type": "string" } },
+        "heroBannerUrl": { "type": "string", "description": "URL for the main hero banner image." },
+        "promotions": {
+          "type": "array",
+          "description": "A list of promotional items or specials.",
+          "items": {
             "type": "object",
-            "description": "The server timestamp when the shop was created."
+            "properties": {
+              "title": { "type": "string" },
+              "description": { "type": "string" },
+              "imageUrl": { "type": "string" }
+            }
+          }
         },
-        "updatedAt": {
-            "type": "object",
-            "description": "The server timestamp when the shop was last updated."
-        }
+        "createdAt": { "type": "object" },
+        "updatedAt": { "type": "object" }
       },
       "required": ["ownerId", "shopName", "category", "status", "createdAt", "updatedAt"]
     },
