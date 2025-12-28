@@ -15,7 +15,7 @@ interface FinanceApplication {
     fundingType: string;
     amountRequested: number;
     status: string;
-    createdAt: string; // Changed to string
+    createdAt: string;
 }
 
 const statusColors: { [key: string]: 'default' | 'secondary' | 'destructive' | 'outline' } = {
@@ -52,7 +52,8 @@ export default function FinanceApplicationsList() {
             try {
                 const result = await getFinanceApplications();
                 if (result.success && result.data) {
-                    setApplications(result.data);
+                    // The data from the server action is already serialized
+                    setApplications(result.data as FinanceApplication[]);
                 } else {
                     setError(result.error || 'Failed to fetch finance applications.');
                 }

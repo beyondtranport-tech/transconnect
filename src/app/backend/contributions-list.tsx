@@ -12,7 +12,7 @@ interface Contribution {
     id: string;
     userId: string;
     type: string;
-    createdAt: string; // Changed to string
+    createdAt: string;
     data: any;
 }
 
