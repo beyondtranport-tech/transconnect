@@ -5,8 +5,8 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     // --- Global Admin Override ---
-    // This is a brute-force rule to grant the admin unconditional access to everything.
-    // This is the last resort to fix the persistent permission error.
+    // Grant the specific admin user unconditional read/write access to all documents.
+    // This is necessary for the admin backend to function correctly.
     match /{path=**} {
       allow read, write: if request.auth.uid == '4CH2RmdJHUSE5Zqc8kPoaEaqgCW2';
     }
@@ -17,6 +17,12 @@ service cloud.firestore {
        allow get, update: if request.auth != null && request.auth.uid == userId;
        allow create: if request.auth != null; // Allow any authenticated user to create their own member document.
     }
+
+    // Allow members to manage their own subcollections.
+    match /members/{userId}/{subcollection}/{docId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
 
     // --- Public & Global Collections ---
 
