@@ -91,6 +91,7 @@ export default function MembersList() {
                         </TableHeader>
                         <TableBody>
                             {members.map(member => {
+                                const membership = member.membershipId || 'free';
                                 return (
                                 <TableRow key={member.id}>
                                     <TableCell className="font-medium">{member.firstName} {member.lastName}</TableCell>
@@ -98,8 +99,8 @@ export default function MembersList() {
                                     <TableCell>{member.email}</TableCell>
                                     <TableCell>{member.phone}</TableCell>
                                     <TableCell>
-                                        <Badge variant={member.membershipId === 'free' ? 'secondary' : 'default'} className="capitalize">
-                                            {member.membershipId}
+                                        <Badge variant={membership === 'free' ? 'secondary' : 'default'} className="capitalize">
+                                            {membership}
                                         </Badge>
                                     </TableCell>
                                     <TableCell>
