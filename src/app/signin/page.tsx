@@ -110,13 +110,15 @@ function SignInFormComponent() {
       
       const isAdmin = userCredential.user.email === 'beyondtransport@gmail.com';
       const redirectFromParams = searchParams.get('redirect');
-
+      
+      // The router.replace() will be called after the onIdTokenChanged listener has had a chance to run
+      // and set the cookie, thanks to the `await userCredential`.
       if (redirectFromParams) {
-        router.push(redirectFromParams);
+        router.replace(redirectFromParams);
       } else if (isAdmin) {
-        router.push('/backend');
+        router.replace('/backend');
       } else {
-        router.push('/account');
+        router.replace('/account');
       }
 
     } catch (error: any) {
