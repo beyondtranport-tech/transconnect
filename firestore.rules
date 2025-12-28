@@ -12,21 +12,21 @@ service cloud.firestore {
     function isOwner(userId) {
       return request.auth != null && request.auth.uid == userId;
     }
-    
+
     // --- Members Collection ---
-    // Admins can list all members. Users can create their own member document.
+    // A rule specifically for LISTING the collection. Only admins can do this.
     match /members {
       allow list: if isAdmin();
       allow create: if request.auth != null;
     }
 
-    // A user can read/update their own member document. Admins can do anything.
+    // A rule for GETTING or UPDATING a single member document.
     match /members/{userId} {
       allow get, update: if isOwner(userId) || isAdmin();
       allow delete: if isAdmin();
 
       // This grants access to all subcollections under a member's document
-      // (e.g., shops, transactions) for the owner or an admin.
+      // for the owner or an admin.
       match /{allPaths=**} {
         allow read, write: if isOwner(userId) || isAdmin();
       }
