@@ -11,17 +11,10 @@ service cloud.firestore {
       allow read, write: if request.auth.uid == '4CH2RmdJHUSE5Zqc8kPoaEaqgCW2';
     }
 
-    // --- Member Data Ownership ---
-    // A user can manage their own document and all subcollections within it.
-    // This single rule correctly handles create, read, update, and delete
-    // for a user's own data, including the shop subcollection.
-    match /members/{userId}/{path=**} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
-    }
-    
-    // Allow a user to create their own top-level member document on sign-up.
-    match /members/{userId} {
-      allow create: if request.auth != null && request.auth.uid == userId;
+    // TEMPORARY DIAGNOSTIC RULE: Allow any authenticated user to write anywhere.
+    // This is INSECURE and will be replaced immediately after the test.
+    match /{path=**} {
+      allow write: if request.auth != null;
     }
 
     // --- Public & Global Collections ---
@@ -36,17 +29,6 @@ service cloud.firestore {
     // Publicly readable collection for membership plans.
     match /memberships/{membershipId} {
       allow read: if request.auth != null;
-    }
-
-    // Any authenticated user can create a contribution.
-    // Admins can manage them via the global override rule.
-    match /contributions/{contributionId} {
-      allow create: if request.auth != null;
-    }
-    
-    // Admins can manage all finance applications. Users can create their own.
-    match /financeApplications/{applicationId} {
-       allow create: if request.auth != null;
     }
   }
 }
