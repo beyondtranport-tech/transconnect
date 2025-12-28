@@ -234,6 +234,19 @@ function ProductDialog({ shop, product, onSave, children }: { shop: any, product
     }
   };
 
+  const handleManualSubmit = async () => {
+    const isValid = await form.trigger();
+    if (isValid) {
+      form.handleSubmit(onSubmit)();
+    } else {
+      toast({
+        variant: "destructive",
+        title: "Invalid Form",
+        description: "Please fill out all required fields (Name, Description, and a valid Price) before saving.",
+      });
+    }
+  };
+
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file || !user || !storage) return;
@@ -297,7 +310,10 @@ function ProductDialog({ shop, product, onSave, children }: { shop: any, product
                     <FormMessage /></FormItem>
                 )} />
                 <DialogFooter>
-                    <Button type="submit" disabled={isSaving || (uploadProgress !== null && uploadProgress < 100)}>
+                    <Button 
+                      type="button" 
+                      onClick={handleManualSubmit}
+                      disabled={isSaving || (uploadProgress !== null && uploadProgress < 100)}>
                         {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Save className="mr-2 h-4 w-4" />}
                         Save Product
                     </Button>
@@ -761,5 +777,3 @@ export default function ShopWizard({ shop }: { shop: any }) {
     </div>
   );
 }
-
-    
