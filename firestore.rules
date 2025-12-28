@@ -18,17 +18,18 @@ service cloud.firestore {
     
     // --- Members Collection ---
 
-    // Rule for listing the entire collection.
+    // Rules for the collection itself
     match /members {
       // Only admins are allowed to list all member documents.
       allow list: if isAdmin();
       
       // Any authenticated user can create their own member document,
       // as long as they set themselves as the owner.
+      // This is placed here because create acts on the collection.
       allow create: if request.auth != null && request.resource.data.ownerId == request.auth.uid;
     }
 
-    // Rule for individual /members/{memberId} documents.
+    // Rules for individual /members/{memberId} documents.
     match /members/{memberId} {
       // An admin can read any member document. The company owner can read their own.
       allow get: if isAdmin() || isCompanyOwner(memberId);
