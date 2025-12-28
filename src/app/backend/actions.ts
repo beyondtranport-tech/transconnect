@@ -7,7 +7,8 @@ import { getFirestore } from 'firebase-admin/firestore';
 function getAdminApp(): { app: App | null, error: string | null } {
     const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
     const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
-    const privateKey = process.env.FIREBASE_PRIVATE_KEY;
+    // The private key needs to have its newlines properly formatted.
+    const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n');
 
     // Detailed logging for debugging
     console.log("--- Admin App Initialization ---");
@@ -34,17 +35,20 @@ function getAdminApp(): { app: App | null, error: string | null } {
     const serviceAccount = {
       projectId,
       clientEmail,
-      privateKey: privateKey.replace(/\\n/g, '\n'),
+      privateKey,
     };
     
-    if (getApps().some(app => app.name === 'admin')) {
-        return { app: getApps().find(app => app.name === 'admin')!, error: null };
+    // Use a unique name for the admin app to avoid conflicts
+    const adminAppName = 'firebase-admin-app-transconnect';
+    const existingApp = getApps().find(app => app.name === adminAppName);
+    if (existingApp) {
+        return { app: existingApp, error: null };
     }
     
     try {
         const app = initializeApp({
             credential: cert(serviceAccount),
-        }, 'admin');
+        }, adminAppName);
         console.log("--- Admin App Initialized Successfully ---");
         return { app, error: null };
     } catch (error: any) {
@@ -69,25 +73,18 @@ interface Contribution {
     [key: string]: any;
 }
 
-export async function getMembers(): Promise<{ success: boolean; data?: Member[]; error?: string }> {
-    const { app, error: initError } = getAdminApp();
-    if (initError || !app) {
-        return { success: false, error: initError || 'Firebase Admin SDK could not be initialized.' };
-    }
-    const adminDb = getFirestore(app);
-    
+// DIAGNOSTIC ACTION
+export async function getMembers(): Promise<{ success: boolean; data?: any; error?: string }> {
     try {
-        const membersSnapshot = await adminDb.collection('members').get();
-        const members = membersSnapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data(),
-        }));
-        return { success: true, data: members };
+        // Instead of fetching members, return the environment variables.
+        const envKeys = Object.keys(process.env);
+        return { success: true, data: envKeys };
     } catch (error: any) {
-        console.error('Error fetching members with admin SDK:', error);
-        return { success: false, error: error.message };
+        console.error('Error reading process.env:', error);
+        return { success: false, error: `Failed to read server environment: ${error.message}` };
     }
 }
+
 
 export async function getFinanceApplications(): Promise<{ success: boolean; data?: FinanceApplication[]; error?: string }> {
     const { app, error: initError } = getAdminApp();
