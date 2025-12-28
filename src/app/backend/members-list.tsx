@@ -47,7 +47,7 @@ export default function MembersList() {
         fetchMembers();
     }, []);
 
-    const capitalize = (s?: string) => s && s[0].toUpperCase() + s.slice(1);
+    const capitalize = (s: string) => s && s[0].toUpperCase() + s.slice(1);
 
     if (isLoading) {
         return (
@@ -105,7 +105,7 @@ export default function MembersList() {
                                     </TableCell>
                                     <TableCell>
                                         {member.email === 'beyondtransport@gmail.com' && <Badge variant="destructive">Admin</Badge>}
-                                        {member.email !== 'beyondtransport@gmail.com' && member.role && (
+                                        {member.email !== 'beyondtransport@gmail.com' && (
                                             <Badge variant="outline" className="capitalize">
                                                 {(member.role || '').replace(/-/g, ' ')}
                                             </Badge>
