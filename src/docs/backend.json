@@ -60,6 +60,10 @@
           "type": "string",
           "description": "Reference to Membership tier ID (e.g., 'professional'). (Relationship: Member 1:1 Membership)"
         },
+        "shopId": {
+          "type": "string",
+          "description": "The ID of the shop owned by this member, linking to the shops subcollection."
+        },
         "rewardPoints": {
           "type": "number",
           "description": "The number of reward points accumulated by the member for loyalty."
@@ -75,11 +79,6 @@
         "updatedAt": {
             "type": "object",
             "description": "The server timestamp when the member was last updated."
-        },
-        "shop": {
-          "type": "object",
-          "description": "Embedded shop data for this member.",
-          "$ref": "#/entities/Shop"
         }
       },
       "required": [
@@ -111,6 +110,7 @@
         "province": { "type": "string" },
         "postalCode": { "type": "string" },
         "membershipId": { "type": "string" },
+        "shopId": { "type": "string" },
         "rewardPoints": { "type": "number" },
         "walletBalance": { "type": "number" },
         "createdAt": { "type": "object" },
@@ -121,7 +121,7 @@
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Shop",
       "type": "object",
-      "description": "Represents a vendor's shop data, which can be embedded within a Member document or exist in a top-level collection.",
+      "description": "Represents a vendor's shop on the TransConnect platform. This definition is used for the /members/{memberId}/shops subcollection AND the top-level /shops collection.",
       "properties": {
         "ownerId": {
             "type": "string",
@@ -158,11 +158,6 @@
         "metaTitle": { "type": "string", "description": "SEO-friendly title for the shop page." },
         "metaDescription": { "type": "string", "description": "SEO-friendly description for search engines." },
         "tags": { "type": "array", "items": { "type": "string" }, "description": "Searchable tags/keywords for the shop." },
-        "products": {
-          "type": "array",
-          "description": "An array of product objects embedded within the shop data.",
-          "items": { "$ref": "#/entities/Product" }
-        },
         "createdAt": {
             "type": "object",
             "description": "The server timestamp when the shop was created."
@@ -178,16 +173,18 @@
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Product",
       "type": "object",
-      "description": "Represents a single product within a vendor's embedded shop data.",
+      "description": "Represents a single product within a vendor's shop.",
       "properties": {
-        "id": { "type": "string", "description": "Unique identifier for the product within the array." },
+        "shopId": { "type": "string", "description": "The ID of the parent shop this product belongs to." },
         "name": { "type": "string", "description": "The name of the product." },
         "description": { "type": "string", "description": "A detailed description of the product." },
         "price": { "type": "number", "description": "The price of the product in ZAR." },
         "sku": { "type": "string", "description": "Stock Keeping Unit or other unique product identifier." },
-        "imageUrl": { "type": "string", "description": "URL to the product image in Firebase Storage." }
+        "imageUrl": { "type": "string", "description": "URL to the product image in Firebase Storage." },
+        "createdAt": { "type": "object", "description": "Timestamp of creation." },
+        "updatedAt": { "type": "object", "description": "Timestamp of last update." }
       },
-      "required": ["id", "name", "price"]
+      "required": ["shopId", "name", "price"]
     },
     "Staff": {
       "$schema": "http://json-schema.org/draft-07/schema#",
@@ -450,9 +447,9 @@
         "definition": {
           "entityName": "Member",
           "schema": {
-            "$ref": "#/entities/Member"
+            "$ref": "#/backend/entities/Member"
           },
-          "description": "Stores member profiles. Access is restricted to the authenticated user (path-based ownership). Shop data is embedded.",
+          "description": "Stores member profiles. Access is restricted to the authenticated user (path-based ownership).",
           "params": [
             {
               "name": "memberId",
@@ -465,7 +462,7 @@
         "path": "/members/{memberId}/versions/{versionId}",
         "definition": {
             "entityName": "MemberVersion",
-            "schema": { "$ref": "#/entities/MemberVersion" },
+            "schema": { "$ref": "#/backend/entities/MemberVersion" },
             "description": "Stores historical snapshots of member data.",
             "params": [
                 { "name": "memberId", "description": "The UID of the parent member." },
@@ -478,7 +475,7 @@
         "definition": {
           "entityName": "Staff",
           "schema": {
-            "$ref": "#/entities/Staff"
+            "$ref": "#/backend/entities/Staff"
           },
           "description": "Stores staff members associated with a parent member company.",
           "params": [
@@ -498,7 +495,7 @@
         "definition": {
           "entityName": "Transaction",
           "schema": {
-            "$ref": "#/entities/Transaction"
+            "$ref": "#/backend/entities/Transaction"
           },
           "description": "Stores individual financial transactions for a member. Writable by admins, readable by the associated member.",
           "params": [
@@ -518,7 +515,7 @@
         "definition": {
           "entityName": "FinanceApplication",
           "schema": {
-            "$ref": "#/entities/FinanceApplication"
+            "$ref": "#/backend/entities/FinanceApplication"
           },
           "description": "Stores finance applications within a member's own document space for security.",
           "params": [
@@ -534,12 +531,36 @@
         }
       },
       {
+        "path": "/members/{memberId}/shops/{shopId}",
+        "definition": {
+          "entityName": "Shop",
+          "schema": { "$ref": "#/backend/entities/Shop" },
+          "description": "Subcollection for storing the shop belonging to a member. The member has full control.",
+          "params": [
+            { "name": "memberId", "description": "The ID of the parent member." },
+            { "name": "shopId", "description": "The unique ID for the shop." }
+          ]
+        }
+      },
+      {
         "path": "/shops/{shopId}",
         "definition": {
           "entityName": "Shop",
-          "schema": { "$ref": "#/entities/Shop" },
-          "description": "Top-level collection for storing a public, read-only copy of approved shops. Managed by a backend function.",
+          "schema": { "$ref": "#/backend/entities/Shop" },
+          "description": "Top-level collection for storing a public, read-only copy of approved shops. Managed by backend functions.",
           "params": [{ "name": "shopId", "description": "The unique ID for the shop." }]
+        }
+      },
+      {
+        "path": "/shops/{shopId}/products/{productId}",
+        "definition": {
+          "entityName": "Product",
+          "schema": { "$ref": "#/backend/entities/Product" },
+          "description": "Subcollection for storing products belonging to a specific public shop.",
+          "params": [
+            { "name": "shopId", "description": "The ID of the parent shop." },
+            { "name": "productId", "description": "The unique ID for the product." }
+          ]
         }
       },
       {
@@ -591,6 +612,6 @@
         }
       }
     ],
-    "reasoning": "The data model has been flattened. Shop data, including products, is now embedded directly within the /members/{memberId} document. This eliminates the need for complex subcollection security rules and resolves persistent permission errors. A top-level /shops collection is still used for public, approved shop listings, which would be populated by a backend process."
+    "reasoning": "The data model now uses a dual-collection strategy for shops to ensure security and functionality. A user's shop is created and managed within a subcollection at `/members/{memberId}/shops`, which is fully controlled by the owner via a recursive security rule. A top-level `/shops` collection exists to hold public, read-only copies of *approved* shops. This separation prevents users from listing each other's draft shops while allowing a public, queryable marketplace. A backend process (e.g., Cloud Function, not implemented here) would be responsible for copying an approved shop from the member's subcollection to the public top-level collection."
   }
 }
