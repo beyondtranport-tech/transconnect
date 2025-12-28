@@ -162,17 +162,13 @@ function ProductDialog({ shop, product, onSave, children }: { shop: any, product
   const form = useForm<ProductFormValues>({
     resolver: zodResolver(productSchema),
     defaultValues: product ? {
-        name: product.name,
-        description: product.description,
-        price: product.price,
-        sku: product.sku || '',
-        imageUrl: product.imageUrl || ''
+        ...product
     } : { name: '', description: '', price: undefined, sku: '', imageUrl: '' }
   });
   
   useEffect(() => {
     if (isOpen) {
-        setUploadProgress(null); // Reset upload progress when dialog opens
+        setUploadProgress(null); 
         if (product) {
             form.reset(product);
         } else {
@@ -279,7 +275,7 @@ function ProductDialog({ shop, product, onSave, children }: { shop: any, product
                 )} />
                 <div className="grid grid-cols-2 gap-4">
                     <FormField control={form.control} name="price" render={({ field }) => (
-                        <FormItem><FormLabel>Price (ZAR)</FormLabel><FormControl><Input type="number" step="0.01" {...field} onChange={e => field.onChange(parseFloat(e.target.value))} /></FormControl><FormMessage /></FormItem>
+                        <FormItem><FormLabel>Price (ZAR)</FormLabel><FormControl><Input type="number" step="0.01" {...field} /></FormControl><FormMessage /></FormItem>
                     )} />
                     <FormField control={form.control} name="sku" render={({ field }) => (
                         <FormItem><FormLabel>SKU (Optional)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
@@ -297,9 +293,7 @@ function ProductDialog({ shop, product, onSave, children }: { shop: any, product
                     <FormMessage /></FormItem>
                 )} />
                 <DialogFooter>
-                    <Button 
-                      type="submit"
-                      disabled={isSaving || (uploadProgress !== null && uploadProgress < 100)}>
+                    <Button type="submit" disabled={isSaving}>
                         {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Save className="mr-2 h-4 w-4" />}
                         Save Product
                     </Button>
@@ -763,3 +757,5 @@ export default function ShopWizard({ shop }: { shop: any }) {
     </div>
   );
 }
+
+    
