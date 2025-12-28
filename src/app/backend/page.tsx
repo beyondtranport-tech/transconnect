@@ -35,6 +35,7 @@ import {
   ShieldAlert,
   Combine,
   Store,
+  Wrench,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -64,6 +65,35 @@ function PlatformSettingsContent() {
             </div>
             <BankDetailsSettings />
             <ChartOfAccountsSettings />
+        </div>
+    )
+}
+
+function DebugToolsContent() {
+    return (
+        <div className="space-y-8">
+             <div>
+                <h1 className="text-2xl font-bold">Debug Tools</h1>
+                <p className="mt-2 text-muted-foreground">Tools and settings for administrators to debug and manage the platform.</p>
+            </div>
+            <Card className="border-yellow-500 bg-yellow-50 dark:bg-yellow-900/20">
+                <CardHeader>
+                    <div className="flex items-center gap-4">
+                        <ShieldAlert className="h-8 w-8 text-yellow-700 dark:text-yellow-400" />
+                        <div>
+                            <CardTitle>Global Admin Override</CardTitle>
+                            <CardDescription>
+                                Your account has full read/write access to the entire database.
+                            </CardDescription>
+                        </div>
+                    </div>
+                </CardHeader>
+                <CardContent>
+                    <p className="text-sm text-muted-foreground">
+                        A security rule is in place that grants the user with UID <strong>4CH2RmdJHUSE5Zqc8kPoaEaqgCW2</strong> (beyondtransport@gmail.com) complete administrative privileges. This rule bypasses all other security restrictions and is intended for debugging and administrative actions. It ensures you will not face "Missing or insufficient permissions" errors while managing the platform.
+                    </p>
+                </CardContent>
+            </Card>
         </div>
     )
 }
@@ -155,6 +185,8 @@ function BackendPageContent() {
         return <PlatformTasksContent />;
       case 'platform-settings':
         return <PlatformSettingsContent />;
+      case 'debug-tools':
+        return <DebugToolsContent />;
       case 'revenue-pricing':
         return <RevenuePricingContent />;
       case 'revenue-transactions':
@@ -261,6 +293,12 @@ function BackendPageContent() {
                 <SidebarMenuButton tooltip="Divisions" isActive={activeView === 'divisions'} onClick={() => router.push('/backend?view=divisions', { scroll: false })}>
                   <Boxes />
                   <span>Divisions</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+               <SidebarMenuItem>
+                <SidebarMenuButton tooltip="Debug Tools" isActive={activeView === 'debug-tools'} onClick={() => router.push('/backend?view=debug-tools', { scroll: false })}>
+                  <Wrench />
+                  <span>Debug Tools</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
           </SidebarGroup>

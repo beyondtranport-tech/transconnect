@@ -5,21 +5,23 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     // --- Global Admin Override ---
-    // Grant the specific admin user unconditional read/write access to all documents.
-    // This is necessary for the admin backend to function correctly.
+    // This rule grants the specific admin user (beyondtransport@gmail.com)
+    // unconditional read/write access to the entire database. It must be at the top.
     match /{path=**} {
       allow read, write: if request.auth.uid == '4CH2RmdJHUSE5Zqc8kPoaEaqgCW2';
     }
 
     // --- Members Collection ---
-    // This rule allows a non-admin user to read and update their OWN document only.
+    // A user can create their own member document.
+    // A user can only get or update their OWN document.
     match /members/{userId} {
        allow get, update: if request.auth != null && request.auth.uid == userId;
-       allow create: if request.auth != null; // Allow any authenticated user to create their own member document.
+       allow create: if request.auth != null;
     }
 
     // Allow members to fully manage their own subcollections (e.g., shops, transactions, etc.).
     // This grants permission to read, list, create, update, and delete documents within these subcollections.
+    // The recursive wildcard {docId=**} is crucial for granting permissions to list collections.
     match /members/{userId}/{subcollection}/{docId=**} {
         allow read, write: if request.auth != null && request.auth.uid == userId;
     }
@@ -27,17 +29,19 @@ service cloud.firestore {
 
     // --- Public & Global Collections ---
 
-    // Anyone can read approved shops. Admins can write (covered by global rule).
+    // Anyone can read approved shops from the public /shops collection.
+    // Admins have write access via the global override rule.
     match /shops/{shopId} {
       allow get, list: if resource.data.status == 'approved';
     }
     
-    // Publicly readable collection for membership plans
+    // Publicly readable collection for membership plans.
     match /memberships/{membershipId} {
       allow read: if request.auth != null;
     }
 
-    // Any authenticated user can create a contribution. Admins can manage them.
+    // Any authenticated user can create a contribution.
+    // Admins can manage them via the global override rule.
     match /contributions/{contributionId} {
       allow create: if request.auth != null;
     }
