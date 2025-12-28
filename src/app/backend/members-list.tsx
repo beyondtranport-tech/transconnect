@@ -106,7 +106,7 @@ export default function MembersList() {
                                         {member.email === 'beyondtransport@gmail.com' && <Badge variant="destructive">Admin</Badge>}
                                         {member.email !== 'beyondtransport@gmail.com' && member.role && (
                                             <Badge variant="outline" className="capitalize">
-                                                {member.role.replace(/-/g, ' ')}
+                                                {(member.role || '').replace(/-/g, ' ')}
                                             </Badge>
                                         )}
                                     </TableCell>
