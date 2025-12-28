@@ -2,7 +2,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useUser, useFirestore } from '@/firebase';
+import { useUser, useFirestore, FirestorePermissionError } from '@/firebase';
 import { collection, doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -37,11 +37,23 @@ export default function DebugToolsContent() {
     } catch (error: any) {
       // If it fails
       setTestResult('failure');
+      
+      let detailedDescription = `Permission denied. The security rule is incorrect. Error: ${error.message}`;
+      
+      // Check if it's our custom error to get more details
+      if (error instanceof FirestorePermissionError) {
+          detailedDescription = `Request denied. Details:\n${JSON.stringify(error.request, null, 2)}`;
+      }
+      
       toast({
         variant: 'destructive',
         title: 'Test Failed!',
-        description: `Permission denied. The security rule is incorrect. Error: ${error.message}`,
-        duration: 10000,
+        description: (
+            <pre className="mt-2 w-[340px] rounded-md bg-slate-950 p-4">
+                <code className="text-white text-xs">{detailedDescription}</code>
+            </pre>
+        ),
+        duration: 20000,
       });
     } finally {
       setIsTesting(false);
@@ -87,7 +99,7 @@ export default function DebugToolsContent() {
                   <p className="text-sm text-muted-foreground">
                     {testResult === 'success'
                       ? 'You have the correct permissions to create a shop.'
-                      : 'You do not have permission. The security rule needs to be fixed.'}
+                      : 'You do not have permission. Check the toast for detailed error info.'}
                   </p>
                 </div>
               </div>
