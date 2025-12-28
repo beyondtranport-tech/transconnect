@@ -1,4 +1,3 @@
-
 'use client';
 
 import { firebaseConfig } from '@/firebase/config';
@@ -29,18 +28,6 @@ export function initializeFirebase() {
   const storage = getStorage(firebaseApp); 
   const functions = getFunctions(firebaseApp); // Initialize functions
 
-  // Set up a listener to store the ID token in a cookie
-  onIdTokenChanged(auth, async (user) => {
-    const cookieName = 'firebaseIdToken';
-    if (user) {
-      const token = await user.getIdToken();
-      const secure = process.env.NODE_ENV === 'production' ? '; Secure' : '';
-      document.cookie = `${cookieName}=${token}; path=/; max-age=${60 * 55}${secure}`;
-    } else {
-      document.cookie = `${cookieName}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT`;
-    }
-  });
-
   return { firebaseApp, auth, firestore, storage, functions }; // Return functions
 }
 
@@ -48,7 +35,13 @@ export function initializeFirebase() {
 export async function getClientSideAuthToken(): Promise<string | null> {
     const auth = getAuth();
     if (auth.currentUser) {
-        return await getIdToken(auth.currentUser);
+        try {
+            // The `true` forces a token refresh if the current one is expiring soon.
+            return await getIdToken(auth.currentUser, true);
+        } catch (error) {
+            console.error("Error getting auth token:", error);
+            return null;
+        }
     }
     return null;
 }

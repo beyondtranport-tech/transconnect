@@ -4,11 +4,10 @@ import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Loader2, Store, PlusCircle } from 'lucide-react';
-import { useUser, useFirestore, useMemoFirebase, useDoc } from '@/firebase';
+import { useUser, useFirestore, useMemoFirebase, useDoc, getClientSideAuthToken } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import ShopWizard from './shop-wizard';
-import { getFunctions, httpsCallable } from 'firebase/functions';
 
 export default function ShopContent() {
   const { user, isUserLoading } = useUser();
@@ -27,6 +26,8 @@ export default function ShopContent() {
   // 2. Use the shopId from the member data to fetch the shop document
   const shopRef = useMemoFirebase(() => {
     if (!firestore || !user || !memberData?.shopId) return null;
+    // This path is correct because we are reading the user's own shop data.
+    // The security rules allow the owner to read their own subcollections.
     return doc(firestore, `members/${user.uid}/shops/${memberData.shopId}`);
   }, [firestore, user, memberData]);
 
@@ -35,32 +36,41 @@ export default function ShopContent() {
   const isLoading = isUserLoading || isMemberLoading;
 
   const handleCreateShop = async () => {
-    if (!user || !firestore) {
+    if (!user) {
       toast({ variant: 'destructive', title: 'You must be logged in to create a shop.' });
       return;
     }
     setIsCreating(true);
 
     try {
-      const functions = getFunctions(firestore.app);
-      const createShopFunction = httpsCallable(functions, 'createShop');
+      const token = await getClientSideAuthToken();
+      if (!token) {
+        throw new Error('Authentication token not found.');
+      }
       
-      const result = await createShopFunction();
+      const response = await fetch('/api/createShop', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
 
-      if ((result.data as any).success) {
+      const result = await response.json();
+
+      if (response.ok && result.success) {
         toast({ title: 'Shop Draft Created!', description: "Let's get started with the details." });
-        // Force a refresh of the member data to get the new shopId
-        forceRefresh(); 
+        forceRefresh();
       } else {
-        throw new Error((result.data as any).error || 'Failed to create shop via function.');
+        throw new Error(result.error || 'Failed to create shop.');
       }
 
     } catch (error: any) {
-      console.error("Error calling createShop function:", error);
-      toast({ 
-        variant: 'destructive', 
-        title: 'Error Creating Shop', 
-        description: error.message || "An unexpected error occurred while communicating with the backend." 
+      console.error("Error creating shop:", error);
+      toast({
+        variant: 'destructive',
+        title: 'Error Creating Shop',
+        description: error.message || "An unexpected error occurred."
       });
     } finally {
       setIsCreating(false);
