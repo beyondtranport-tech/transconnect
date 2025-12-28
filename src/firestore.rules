@@ -16,23 +16,22 @@ function isCompanyOwner(memberId) {
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Rule for the /members/{memberId} document itself.
+    // --- Members Collection ---
     match /members/{memberId} {
-      // An admin can read any member document. The company owner can read their own.
+      // Admins can list all documents in the collection. Regular users cannot.
+      allow list: if isAdmin();
+      
+      // An admin can read any member document. A company owner can read their own.
       allow get: if isAdmin() || isCompanyOwner(memberId);
       
-      // The company owner or an admin can update their document.
+      // Any authenticated user can create their OWN member document.
+      allow create: if request.auth != null && request.resource.data.ownerId == request.auth.uid;
+
+      // An admin or the company owner can update the document.
       allow update: if isAdmin() || isCompanyOwner(memberId);
       
       // Only an admin can delete a member document.
       allow delete: if isAdmin();
-      
-      // Any authenticated user can create their own member document,
-      // as long as they set themselves as the owner.
-      allow create: if request.auth != null && request.resource.data.ownerId == request.auth.uid;
-      
-      // Only admins are allowed to list all member documents.
-      allow list: if isAdmin();
     }
 
     // This is the definitive recursive rule for all member-owned subcollections.
@@ -71,5 +70,3 @@ service cloud.firestore {
     }
   }
 }
-
-    
