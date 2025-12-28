@@ -57,19 +57,56 @@ const tiers = [
   },
 ];
 
-const allFeatures = [
-    { name: 'Access to All Malls', basic: true, standard: true, premium: true },
-    { name: 'Marketplace Access', basic: true, standard: true, premium: true },
-    { name: 'Community Forum Access', basic: true, standard: true, premium: true },
-    { name: 'Standard Support', basic: true, standard: true, premium: true },
-    { name: 'AI Freight Matcher', basic: 'Basic', standard: 'Advanced', premium: 'Advanced' },
-    { name: 'Real-time Analytics Dashboard', basic: false, standard: true, premium: true },
-    { name: 'Loyalty & Rewards Program Access', basic: false, standard: true, premium: true },
-    { name: 'Priority Support', basic: false, standard: true, premium: true },
-    { name: 'Dedicated Account Manager', basic: false, standard: false, premium: true },
-    { name: 'API Access for Integrations', basic: false, standard: false, premium: true },
-    { name: 'Actions Plan Included', basic: false, standard: false, premium: true },
-    { name: '24/7 Premium Support', basic: false, standard: false, premium: true },
+const featureSections = [
+    {
+        name: 'Core Platform',
+        features: [
+            { name: 'Community Forum Access', basic: true, standard: true, premium: true },
+            { name: 'Standard Support', basic: true, standard: true, premium: true },
+        ]
+    },
+    {
+        name: 'Mall Division',
+        features: [
+             { name: 'Supplier Mall Access', basic: true, standard: true, premium: true },
+             { name: 'Transporter Mall Access', basic: true, standard: true, premium: true },
+             { name: 'Finance Mall Access', basic: true, standard: true, premium: true },
+             { name: 'Buy & Sell Mall', basic: true, standard: true, premium: true },
+             { name: 'Warehouse Mall', basic: false, standard: true, premium: true },
+             { name: 'Repurpose Mall', basic: false, standard: true, premium: true },
+             { name: 'Aftermarket Mall', basic: false, standard: true, premium: true },
+        ]
+    },
+     {
+        name: 'Marketplace Division',
+        features: [
+             { name: 'Access Partner Reseller Network', basic: true, standard: true, premium: true },
+        ]
+    },
+    {
+        name: 'Tech Division',
+        features: [
+            { name: 'AI Freight Matcher (Loads Mall)', basic: 'Basic', standard: 'Advanced', premium: 'Advanced' },
+            { name: 'Real-time Analytics Dashboard', basic: false, standard: true, premium: true },
+            { name: 'API Access for Integrations', basic: false, standard: false, premium: true },
+        ]
+    },
+    {
+        name: 'Connect Plans',
+        features: [
+            { name: 'Loyalty Plan Access', basic: false, standard: true, premium: true },
+            { name: 'Rewards Plan Access', basic: false, standard: true, premium: true },
+            { name: 'Actions Plan Included', basic: false, standard: false, premium: true },
+        ]
+    },
+    {
+        name: 'Service & Support',
+        features: [
+            { name: 'Priority Support', basic: false, standard: true, premium: true },
+            { name: 'Dedicated Account Manager', basic: false, standard: false, premium: true },
+            { name: '24/7 Premium Support', basic: false, standard: false, premium: true },
+        ]
+    },
 ];
 
 
@@ -81,6 +118,16 @@ const formatPrice = (price: number, perMonth = false) => {
         maximumFractionDigits: 0
     }).format(price);
     return perMonth ? `${formatted}/month` : formatted;
+};
+
+const renderCheckmark = (value: boolean | string) => {
+    if (typeof value === 'string') {
+        return <span className="font-semibold text-sm">{value}</span>;
+    }
+    if (value) {
+        return <Check className="h-5 w-5 text-green-500 mx-auto" />;
+    }
+    return <Minus className="h-5 w-5 text-muted-foreground mx-auto" />;
 };
 
 export default function MembershipPage() {
@@ -168,38 +215,27 @@ export default function MembershipPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-2/5">Feature</TableHead>
-                  <TableHead className="text-center">Basic</TableHead>
-                  <TableHead className="text-center">Standard</TableHead>
-                  <TableHead className="text-center">Premium</TableHead>
+                  <TableHead className="w-2/5 font-bold text-lg">Features</TableHead>
+                  {tiers.map(tier => (
+                    <TableHead key={tier.id} className="text-center font-bold text-lg">{tier.name}</TableHead>
+                  ))}
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {allFeatures.map((feature) => (
-                  <TableRow key={feature.name}>
-                    <TableCell className="font-medium">{feature.name}</TableCell>
-                    <TableCell className="text-center">
-                        {typeof feature.basic === 'boolean' ? (
-                            feature.basic ? <Check className="h-5 w-5 text-green-500 mx-auto" /> : <Minus className="h-5 w-5 text-muted-foreground mx-auto" />
-                        ) : (
-                            <span className="font-semibold text-sm">{feature.basic}</span>
-                        )}
-                    </TableCell>
-                    <TableCell className="text-center">
-                         {typeof feature.standard === 'boolean' ? (
-                            feature.standard ? <Check className="h-5 w-5 text-green-500 mx-auto" /> : <Minus className="h-5 w-5 text-muted-foreground mx-auto" />
-                        ) : (
-                            <span className="font-semibold text-sm">{feature.standard}</span>
-                        )}
-                    </TableCell>
-                    <TableCell className="text-center">
-                         {typeof feature.premium === 'boolean' ? (
-                            feature.premium ? <Check className="h-5 w-5 text-green-500 mx-auto" /> : <Minus className="h-5 w-5 text-muted-foreground mx-auto" />
-                        ) : (
-                            <span className="font-semibold text-sm">{feature.premium}</span>
-                        )}
-                    </TableCell>
-                  </TableRow>
+                {featureSections.map((section) => (
+                    <React.Fragment key={section.name}>
+                        <TableRow className="bg-muted/50">
+                            <TableCell colSpan={4} className="font-semibold text-primary">{section.name}</TableCell>
+                        </TableRow>
+                        {section.features.map((feature) => (
+                            <TableRow key={feature.name}>
+                                <TableCell className="font-medium pl-8">{feature.name}</TableCell>
+                                <TableCell className="text-center">{renderCheckmark(feature.basic)}</TableCell>
+                                <TableCell className="text-center">{renderCheckmark(feature.standard)}</TableCell>
+                                <TableCell className="text-center">{renderCheckmark(feature.premium)}</TableCell>
+                            </TableRow>
+                        ))}
+                    </React.Fragment>
                 ))}
               </TableBody>
             </Table>
