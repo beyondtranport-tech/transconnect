@@ -74,6 +74,10 @@ interface Contribution {
     [key: string]: any;
 }
 
+interface Shop {
+    id: string;
+    [key: string]: any;
+}
 
 export async function getMembers(): Promise<{ success: boolean; data?: Member[]; error?: string }> {
     const { app, error: initError } = getAdminApp();
@@ -144,6 +148,67 @@ export async function getContributions(): Promise<{ success: boolean; data?: Con
         return { success: true, data: contributions };
     } catch (error: any) {
         console.error('Error fetching contributions with admin SDK:', error);
+        return { success: false, error: error.message };
+    }
+}
+
+export async function getShops(): Promise<{ success: boolean; data?: Shop[]; error?: string }> {
+    const { app, error: initError } = getAdminApp();
+    if (initError || !app) {
+        return { success: false, error: initError || 'Firebase Admin SDK could not be initialized.' };
+    }
+    const adminDb = getFirestore(app);
+
+    try {
+        // Use a collection group query to get all shops from all members
+        const shopsSnapshot = await adminDb.collectionGroup('shops').orderBy('createdAt', 'desc').get();
+        const shops = shopsSnapshot.docs.map(doc => {
+            const data = doc.data();
+            const serializedData = serializeTimestamps(data);
+            return {
+                id: doc.id,
+                ...serializedData,
+            } as Shop;
+        });
+        return { success: true, data: shops };
+    } catch (error: any) {
+        console.error('Error fetching shops with admin SDK:', error);
+        return { success: false, error: error.message };
+    }
+}
+
+export async function approveShop(shopId: string, ownerId: string): Promise<{ success: boolean; error?: string }> {
+    const { app, error: initError } = getAdminApp();
+    if (initError || !app) {
+        return { success: false, error: initError || 'Firebase Admin SDK could not be initialized.' };
+    }
+    const adminDb = getFirestore(app);
+    
+    try {
+        const memberShopRef = adminDb.doc(`members/${ownerId}/shops/${shopId}`);
+        const publicShopRef = adminDb.doc(`shops/${shopId}`);
+        
+        const shopDoc = await memberShopRef.get();
+        if (!shopDoc.exists) {
+            throw new Error(`Shop with ID ${shopId} not found for member ${ownerId}.`);
+        }
+        
+        const shopData = shopDoc.data();
+        
+        const batch = adminDb.batch();
+        
+        // 1. Create/update the public shop document
+        batch.set(publicShopRef, { ...shopData, status: 'approved', updatedAt: Timestamp.now() });
+        
+        // 2. Update the member's shop status
+        batch.update(memberShopRef, { status: 'approved', updatedAt: Timestamp.now() });
+        
+        await batch.commit();
+        
+        return { success: true };
+
+    } catch (error: any) {
+        console.error(`Error approving shop ${shopId}:`, error);
         return { success: false, error: error.message };
     }
 }

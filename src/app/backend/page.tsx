@@ -34,6 +34,7 @@ import {
   Loader2,
   ShieldAlert,
   Combine,
+  Store,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -50,6 +51,7 @@ import BankDetailsSettings from './bank-details-settings';
 import ChartOfAccountsSettings from './chart-of-accounts-settings';
 import ReconciliationPage from './reconciliation/page';
 import DashboardContent from './dashboard-content';
+import ShopsList from './shops-list';
 
 
 // Placeholder Content Components
@@ -145,6 +147,8 @@ function BackendPageContent() {
         return <DashboardContent />;
       case 'members':
         return <MembersList />;
+      case 'shops':
+        return <ShopsList />;
       case 'platform-logs':
         return <PlatformLogsContent />;
       case 'platform-tasks':
@@ -197,6 +201,12 @@ function BackendPageContent() {
                 <SidebarMenuButton tooltip="Members" isActive={activeView === 'members'} onClick={() => router.push('/backend?view=members', { scroll: false })}>
                   <Users />
                   <span>Members</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton tooltip="Shops" isActive={activeView === 'shops'} onClick={() => router.push('/backend?view=shops', { scroll: false })}>
+                  <Store />
+                  <span>Shops</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
                <SidebarMenuItem>
