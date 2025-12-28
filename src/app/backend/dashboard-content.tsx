@@ -194,7 +194,7 @@ export default function DashboardContent() {
                 </Card>
                  <Card>
                     <CardHeader>
-                        <CardTitle>Recent Finance Applications</CardTitle>
+                        <CardTitle>Recent wallet transactions</CardTitle>
                     </CardHeader>
                     <CardContent>
                         <Table>
