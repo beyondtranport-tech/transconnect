@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
-import { useFirestore, useUser, useStorage, useCollection, useMemoFirebase } from '@/firebase';
+import { useFirestore, useUser, useStorage, useCollection, useMemoFirebase, getClientSideAuthToken } from '@/firebase';
 import { doc, updateDoc, serverTimestamp, setDoc, addDoc, deleteDoc, collection } from 'firebase/firestore';
 import { ref as storageRef, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { Loader2, Save, CheckCircle, LayoutGrid, List, Image as ImageIcon, Sparkles, PlusCircle, Edit, Trash2, Send } from 'lucide-react';
@@ -61,25 +61,42 @@ function Step1CoreIdentity({ shop, onSave }: { shop: any, onSave: (newData: any)
   });
 
   const onSubmit = async (values: Step1FormValues) => {
-    if (!user || !firestore) return;
+    if (!user) return;
     setIsSaving(true);
-    const shopDocRef = doc(firestore, `members/${user.uid}/shops/${shop.id}`);
     
     const dataToUpdate = {
         ...values,
-        updatedAt: serverTimestamp(),
+        // We use a placeholder string that our API route can recognize and convert
+        // into a real Firestore server timestamp.
+        updatedAt: { _methodName: 'serverTimestamp' },
     };
 
     try {
-        await updateDoc(shopDocRef, dataToUpdate);
+        const token = await getClientSideAuthToken();
+        if (!token) throw new Error("Authentication token not found.");
+
+        const response = await fetch('/api/updateUserDoc', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                path: `members/${user.uid}/shops/${shop.id}`,
+                data: dataToUpdate
+            }),
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+            throw new Error(result.error || 'Failed to update shop.');
+        }
+
         toast({ title: 'Step 1 Saved!', description: 'Your core shop details have been updated.' });
         onSave(values);
-    } catch (serverError: any) {
-        const permissionError = new FirestorePermissionError({
-            path: shopDocRef.path, operation: 'update', requestResourceData: dataToUpdate,
-        });
-        errorEmitter.emit('permission-error', permissionError);
-        toast({ variant: 'destructive', title: 'Update Failed', description: serverError.message });
+    } catch (error: any) {
+        toast({ variant: 'destructive', title: 'Update Failed', description: error.message });
     } finally {
         setIsSaving(false);
     }
@@ -352,16 +369,24 @@ function Step3Appearance({ shop, onSave }: { shop: any, onSave: (newData: any) =
   const onSubmit = async (values: Step3FormValues) => {
     if (!user || !firestore) return;
     setIsSaving(true);
-    const shopDocRef = doc(firestore, `members/${user.uid}/shops/${shop.id}`);
-    
-    const dataToUpdate = { ...values, updatedAt: serverTimestamp() };
+    const dataToUpdate = { ...values, updatedAt: { _methodName: 'serverTimestamp' } };
 
     try {
-        await updateDoc(shopDocRef, dataToUpdate);
+        const token = await getClientSideAuthToken();
+        if (!token) throw new Error("Authentication token not found.");
+        
+        const response = await fetch('/api/updateUserDoc', {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ path: `members/${user.uid}/shops/${shop.id}`, data: dataToUpdate }),
+        });
+
+        if (!response.ok) throw new Error((await response.json()).error || 'Failed to save.');
+
         toast({ title: 'Step 3 Saved!', description: 'Your shop appearance has been updated.' });
         onSave(values);
-    } catch (serverError: any) {
-        toast({ variant: 'destructive', title: 'Update Failed', description: serverError.message });
+    } catch (error: any) {
+        toast({ variant: 'destructive', title: 'Update Failed', description: error.message });
     } finally {
         setIsSaving(false);
     }
@@ -464,16 +489,24 @@ function Step4Seo({ shop, onSave }: { shop: any, onSave: (newData: any) => void 
   const onSubmit = async (values: Step4FormValues) => {
     if (!user || !firestore) return;
     setIsSaving(true);
-    const shopDocRef = doc(firestore, `members/${user.uid}/shops/${shop.id}`);
-    
-    const dataToUpdate = { ...values, updatedAt: serverTimestamp() };
+    const dataToUpdate = { ...values, updatedAt: { _methodName: 'serverTimestamp' } };
 
     try {
-        await updateDoc(shopDocRef, dataToUpdate);
+        const token = await getClientSideAuthToken();
+        if (!token) throw new Error("Authentication token not found.");
+        
+        const response = await fetch('/api/updateUserDoc', {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ path: `members/${user.uid}/shops/${shop.id}`, data: dataToUpdate }),
+        });
+
+        if (!response.ok) throw new Error((await response.json()).error || 'Failed to save.');
+        
         toast({ title: 'Step 4 Saved!', description: 'Your SEO settings have been updated.' });
         onSave(values);
-    } catch (serverError: any) {
-        toast({ variant: 'destructive', title: 'Update Failed', description: serverError.message });
+    } catch (error: any) {
+        toast({ variant: 'destructive', title: 'Update Failed', description: error.message });
     } finally {
         setIsSaving(false);
     }
@@ -523,40 +556,40 @@ function Step4Seo({ shop, onSave }: { shop: any, onSave: (newData: any) => void 
 // ====== STEP 5: Preview & Submit ======
 function Step5Preview({ shop, onSave }: { shop: any; onSave: (newData: any) => void }) {
   const { toast } = useToast();
-  const firestore = useFirestore();
   const { user } = useUser();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmitForReview = async () => {
-    if (!user || !firestore) return;
+    if (!user) return;
 
     setIsSubmitting(true);
-    const shopDocRef = doc(firestore, `members/${user.uid}/shops/${shop.id}`);
-    
-    // Backend function will handle copying to /shops
     const dataToUpdate = {
       status: 'pending_review',
-      updatedAt: serverTimestamp(),
+      updatedAt: { _methodName: 'serverTimestamp' },
     };
 
     try {
-      await updateDoc(shopDocRef, dataToUpdate);
+      const token = await getClientSideAuthToken();
+      if (!token) throw new Error("Authentication token not found.");
+      
+      const response = await fetch('/api/updateUserDoc', {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ path: `members/${user.uid}/shops/${shop.id}`, data: dataToUpdate }),
+      });
+
+      if (!response.ok) throw new Error((await response.json()).error || 'Failed to submit.');
+
       toast({
         title: 'Shop Submitted!',
         description: 'Your shop is now pending review by our admin team.',
       });
       onSave({ status: 'pending_review' });
-    } catch (serverError: any) {
-      const permissionError = new FirestorePermissionError({
-        path: shopDocRef.path,
-        operation: 'update',
-        requestResourceData: dataToUpdate,
-      });
-      errorEmitter.emit('permission-error', permissionError);
+    } catch (error: any) {
       toast({
         variant: 'destructive',
         title: 'Submission Failed',
-        description: serverError.message,
+        description: error.message,
       });
     } finally {
       setIsSubmitting(false);
