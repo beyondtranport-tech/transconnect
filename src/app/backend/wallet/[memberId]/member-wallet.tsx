@@ -16,15 +16,14 @@ import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 
 const formatCurrency = (amount: number) => new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(amount);
-const formatDate = (dateString: string | null) => {
-    if (!dateString) return 'N/A';
-    return new Date(dateString).toLocaleDateString('en-ZA', {
+const formatDate = (timestamp: any) => {
+    if (!timestamp || !timestamp.toDate) return 'N/A';
+    return timestamp.toDate().toLocaleDateString('en-ZA', {
         year: 'numeric', month: 'long', day: 'numeric'
     });
 }
 
 export default function MemberWallet({ memberId }: { memberId: string }) {
-    const searchParams = useSearchParams();
     const { toast } = useToast();
     const firestore = useFirestore();
     const { user: adminUser } = useUser();
@@ -34,7 +33,6 @@ export default function MemberWallet({ memberId }: { memberId: string }) {
     const [newRecordDescription, setNewRecordDescription] = useState('');
     const [formattedBalance, setFormattedBalance] = useState<string | null>(null);
 
-
     const memberRef = useMemoFirebase(() => {
         if (!firestore || !memberId) return null;
         return doc(firestore, 'members', memberId);
@@ -43,7 +41,6 @@ export default function MemberWallet({ memberId }: { memberId: string }) {
     const { data: memberData, isLoading: isMemberLoading } = useDoc(memberRef);
 
     useEffect(() => {
-        // This useEffect will run only on the client, after hydration
         if (memberData !== null && memberData !== undefined) {
             setFormattedBalance(formatCurrency(memberData.walletBalance ?? 0));
         } else {
@@ -51,12 +48,7 @@ export default function MemberWallet({ memberId }: { memberId: string }) {
         }
     }, [memberData]);
 
-
-    const firstName = searchParams.get('firstName');
-    const lastName = searchParams.get('lastName');
-    const email = searchParams.get('email');
-    
-    const getInitials = (fName: string | null, lName: string | null) => {
+    const getInitials = (fName?: string, lName?: string) => {
         if (!fName || !lName) return "U";
         return (fName[0] + lName[0]).toUpperCase();
     }
@@ -77,14 +69,13 @@ export default function MemberWallet({ memberId }: { memberId: string }) {
         const batch = writeBatch(firestore);
         
         const memberDocRef = doc(firestore, 'members', memberId);
-        // Write to the subcollection
         const transactionRef = doc(collection(firestore, 'members', memberId, 'transactions'));
         
         const transactionData = {
             memberId: memberId,
             type: amount >= 0 ? 'credit' : 'debit',
             amount: Math.abs(amount),
-            date: new Date(),
+            date: serverTimestamp(),
             description: newRecordDescription,
             status: 'allocated',
             isAdjustment: true,
@@ -99,7 +90,7 @@ export default function MemberWallet({ memberId }: { memberId: string }) {
         
         try {
             await batch.commit();
-            toast({ title: 'Success!', description: `Wallet updated and transaction recorded for ${firstName}.` });
+            toast({ title: 'Success!', description: `Wallet updated and transaction recorded for ${memberData?.firstName}.` });
             setNewRecordAmount('');
             setNewRecordDescription('');
         } catch (error: any) {
@@ -127,15 +118,15 @@ export default function MemberWallet({ memberId }: { memberId: string }) {
                 <CardHeader>
                     <div className="flex items-center gap-4">
                         <Avatar className="h-16 w-16">
-                            <AvatarFallback>{getInitials(firstName, lastName)}</AvatarFallback>
+                            <AvatarFallback>{getInitials(memberData?.firstName, memberData?.lastName)}</AvatarFallback>
                         </Avatar>
                         <div>
-                             <CardTitle className="text-3xl">{firstName} {lastName}</CardTitle>
+                             <CardTitle className="text-3xl">{memberData?.firstName} {memberData?.lastName}</CardTitle>
                              <CardDescription className="flex items-center gap-2 mt-1">
-                                <Mail className="h-4 w-4" /> {email}
+                                <Mail className="h-4 w-4" /> {memberData?.email}
                              </CardDescription>
                              <CardDescription className="flex items-center gap-2">
-                                <Calendar className="h-4 w-4" /> Joined: {formatDate(searchParams.get('createdAt'))}
+                                <Calendar className="h-4 w-4" /> Joined: {formatDate(memberData?.createdAt)}
                             </CardDescription>
                         </div>
                     </div>

@@ -115,16 +115,7 @@ export default function MembersList() {
                                      <TableCell className="text-right">
                                          {member.email !== 'beyondtransport@gmail.com' && (
                                             <Button asChild variant="outline" size="sm">
-                                                <Link href={{
-                                                    pathname: `/backend/wallet/${member.id}`,
-                                                    query: { 
-                                                        firstName: member.firstName,
-                                                        lastName: member.lastName,
-                                                        email: member.email,
-                                                        walletBalance: member.walletBalance,
-                                                        createdAt: new Date(member.createdAt?.toDate() || Date.now()).toISOString(),
-                                                     }
-                                                }}>
+                                                <Link href={`/backend/wallet/${member.id}`}>
                                                     <Wallet className="mr-2 h-4 w-4" /> Manage Wallet
                                                 </Link>
                                             </Button>
