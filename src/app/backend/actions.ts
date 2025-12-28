@@ -29,6 +29,11 @@ interface Member {
     [key: string]: any;
 }
 
+interface FinanceApplication {
+    id: string;
+    [key: string]: any;
+}
+
 export async function getMembers(): Promise<{ success: boolean; data?: Member[]; error?: string }> {
     try {
         const membersSnapshot = await adminDb.collection('members').get();
@@ -39,6 +44,20 @@ export async function getMembers(): Promise<{ success: boolean; data?: Member[];
         return { success: true, data: members };
     } catch (error: any) {
         console.error('Error fetching members with admin SDK:', error);
+        return { success: false, error: error.message };
+    }
+}
+
+export async function getFinanceApplications(): Promise<{ success: boolean; data?: FinanceApplication[]; error?: string }> {
+    try {
+        const applicationsSnapshot = await adminDb.collection('financeApplications').orderBy('createdAt', 'desc').get();
+        const applications = applicationsSnapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data(),
+        }));
+        return { success: true, data: applications };
+    } catch (error: any) {
+        console.error('Error fetching finance applications with admin SDK:', error);
         return { success: false, error: error.message };
     }
 }
