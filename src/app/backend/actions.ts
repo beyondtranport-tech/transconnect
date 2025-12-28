@@ -3,13 +3,12 @@
 
 import { initializeApp, getApps, App, cert } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
-import { serviceAccount } from '@/firebase/service-account-credentials';
 
-// Ensure the service account has the necessary properties.
-const adminServiceAccount = {
-  projectId: serviceAccount.project_id,
-  clientEmail: serviceAccount.client_email,
-  privateKey: serviceAccount.private_key,
+// A placeholder for service account credentials. In a real environment, this should be securely managed.
+const serviceAccount = {
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+  privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
 };
 
 let adminApp: App;
@@ -17,7 +16,7 @@ let adminApp: App;
 // Initialize the Firebase Admin App if it doesn't already exist.
 if (!getApps().some(app => app.name === 'admin')) {
     adminApp = initializeApp({
-        credential: cert(adminServiceAccount),
+        credential: cert(serviceAccount),
     }, 'admin');
 } else {
     adminApp = getApps().find(app => app.name === 'admin')!;
