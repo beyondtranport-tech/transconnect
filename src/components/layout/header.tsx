@@ -134,9 +134,9 @@ export function Header() {
                   </DropdownMenuItem>
                   {isAdmin && (
                       <DropdownMenuItem asChild>
-                        <Link href="/backend" className='flex items-center'>
-                          <ShieldCheck className="mr-2 h-4 w-4" />
-                          Backend
+                        <Link href="/backend">
+                            <ShieldCheck className="mr-2 h-4 w-4" />
+                            Backend
                         </Link>
                       </DropdownMenuItem>
                   )}
