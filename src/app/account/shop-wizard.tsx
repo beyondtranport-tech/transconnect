@@ -163,7 +163,7 @@ function ProductDialog({ shop, product, onSave, children }: { shop: any, product
     resolver: zodResolver(productSchema),
     defaultValues: product ? {
         ...product
-    } : { name: '', description: '', price: undefined, sku: '', imageUrl: '' }
+    } : { name: '', description: '', price: '' as any, sku: '', imageUrl: '' }
   });
   
   useEffect(() => {
@@ -172,7 +172,7 @@ function ProductDialog({ shop, product, onSave, children }: { shop: any, product
         if (product) {
             form.reset(product);
         } else {
-            form.reset({ name: '', description: '', price: undefined, sku: '', imageUrl: '' });
+            form.reset({ name: '', description: '', price: '' as any, sku: '', imageUrl: '' });
         }
     }
   }, [isOpen, product, form]);
@@ -256,6 +256,10 @@ function ProductDialog({ shop, product, onSave, children }: { shop: any, product
       }
     );
   };
+  
+    const handleManualSubmit = async () => {
+        await onSubmit(form.getValues());
+    };
 
 
   return (
@@ -293,7 +297,7 @@ function ProductDialog({ shop, product, onSave, children }: { shop: any, product
                     <FormMessage /></FormItem>
                 )} />
                 <DialogFooter>
-                    <Button type="submit" disabled={isSaving}>
+                    <Button type="button" onClick={handleManualSubmit} disabled={isSaving}>
                         {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Save className="mr-2 h-4 w-4" />}
                         Save Product
                     </Button>
@@ -757,5 +761,3 @@ export default function ShopWizard({ shop }: { shop: any }) {
     </div>
   );
 }
-
-    
