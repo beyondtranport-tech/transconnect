@@ -561,54 +561,50 @@ function ProductDialog({ onAddProduct, memberId }: { onAddProduct: (product: Pro
         setImageFile(null);
         setImagePreview(null);
         setUploadProgress(null);
+        setIsSaving(false);
     }
 
-    const onSubmit = async (values: ProductFormValues) => {
+    const onSubmit = (values: ProductFormValues) => {
         setIsSaving(true);
         const newProductId = `prod_${Date.now()}`;
-        let finalImageUrl = '';
-
-        try {
-            if (imageFile) {
-                const storage = getStorage(firebaseApp);
-                const imagePath = `products/${memberId}/${newProductId}/${imageFile.name}`;
-                const fileRef = storageRef(storage, imagePath);
-                
-                // Use a promise to handle the upload task
-                await new Promise<void>((resolve, reject) => {
-                    const uploadTask = uploadBytesResumable(fileRef, imageFile);
-                    uploadTask.on('state_changed',
-                        (snapshot) => {
-                            const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-                            setUploadProgress(progress);
-                        },
-                        (error) => {
-                            console.error("Upload failed:", error);
-                            toast({ variant: 'destructive', title: 'Image Upload Failed', description: error.message });
-                            reject(error);
-                        },
-                        async () => {
-                            finalImageUrl = await getDownloadURL(uploadTask.snapshot.ref);
-                            resolve();
-                        }
-                    );
-                });
-            }
-            
-            const newProduct: Product = { ...values, id: newProductId, imageUrl: finalImageUrl };
+        
+        if (!imageFile) {
+            const newProduct: Product = { ...values, id: newProductId, imageUrl: '' };
             onAddProduct(newProduct);
             toast({ title: 'Product Staged', description: `${values.name} is ready to be saved.` });
             setIsOpen(false);
             resetForm();
-
-        } catch (error) {
-            console.error("Error staging product:", error);
-            toast({ variant: 'destructive', title: 'Error', description: 'Could not stage the product.' });
-        } finally {
-            setIsSaving(false); // This will now always run
+            setIsSaving(false); // Ensure saving is false
+            return;
         }
-    };
 
+        const storage = getStorage(firebaseApp);
+        const imagePath = `products/${memberId}/${newProductId}/${imageFile.name}`;
+        const fileRef = storageRef(storage, imagePath);
+        const uploadTask = uploadBytesResumable(fileRef, imageFile);
+
+        uploadTask.on('state_changed',
+            (snapshot) => {
+                const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                setUploadProgress(progress);
+            },
+            (error) => {
+                console.error("Upload failed:", error);
+                toast({ variant: 'destructive', title: 'Image Upload Failed', description: error.message });
+                setIsSaving(false); // Stop loading on error
+            },
+            async () => {
+                const finalImageUrl = await getDownloadURL(uploadTask.snapshot.ref);
+                const newProduct: Product = { ...values, id: newProductId, imageUrl: finalImageUrl };
+                
+                onAddProduct(newProduct);
+                toast({ title: 'Product Staged', description: `${values.name} is ready to be saved.` });
+                setIsOpen(false);
+                resetForm();
+                // isSaving is already reset in resetForm()
+            }
+        );
+    };
 
     return (
         <Dialog open={isOpen} onOpenChange={(open) => { setIsOpen(open); if(!open) resetForm(); }}>
