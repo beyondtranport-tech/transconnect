@@ -4,48 +4,40 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // --- Helper Functions ---
-    function isOwner(userId) {
-      return request.auth != null && request.auth.uid == userId;
-    }
-
-    // --- Members Collection ---
-    // Hardcoded admin UID to grant unconditional access. This is a brute-force fix.
-    match /members/{memberId=**} {
+    // --- Global Admin Override ---
+    // This is a brute-force rule to grant the admin unconditional access to everything.
+    // This is the last resort to fix the persistent permission error.
+    match /{path=**} {
       allow read, write: if request.auth.uid == '4CH2RmdJHUSE5Zqc8kPoaEaqgCW2';
     }
 
+    // --- Members Collection ---
     // This rule allows a non-admin user to read and update their OWN document only.
     match /members/{userId} {
-       allow get, update: if isOwner(userId);
+       allow get, update: if request.auth != null && request.auth.uid == userId;
        allow create: if request.auth != null; // Allow any authenticated user to create their own member document.
     }
 
-
     // --- Public & Global Collections ---
 
-    // Anyone can read approved shops. Admins can write.
+    // Anyone can read approved shops. Admins can write (covered by global rule).
     match /shops/{shopId} {
-      allow get, list: if resource.data.status == 'approved' || request.auth.uid == '4CH2RmdJHUSE5Zqc8kPoaEaqgCW2';
-      allow write: if request.auth.uid == '4CH2RmdJHUSE5Zqc8kPoaEaqgCW2';
+      allow get, list: if resource.data.status == 'approved';
     }
     
     // Publicly readable collection for membership plans
     match /memberships/{membershipId} {
       allow read: if request.auth != null;
-      allow write: if request.auth.uid == '4CH2RmdJHUSE5Zqc8kPoaEaqgCW2';
     }
 
     // Any authenticated user can create a contribution. Admins can manage them.
     match /contributions/{contributionId} {
       allow create: if request.auth != null;
-      allow read, update, delete, list: if request.auth.uid == '4CH2RmdJHUSE5Zqc8kPoaEaqgCW2';
     }
     
     // Admins can manage all finance applications. Users can create their own.
     match /financeApplications/{applicationId} {
        allow create: if request.auth != null;
-       allow read, list, update, delete: if request.auth.uid == '4CH2RmdJHUSE5Zqc8kPoaEaqgCW2';
     }
   }
 }
