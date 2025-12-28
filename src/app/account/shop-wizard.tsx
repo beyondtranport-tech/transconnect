@@ -13,7 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useFirestore, useFirebaseApp, useUser } from '@/firebase';
 import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { getStorage, ref as storageRef, uploadBytesResumable, getDownloadURL } from "firebase/storage";
-import { Loader2, Save, CheckCircle, LayoutGrid, List, Image as ImageIcon, Sparkles, PlusCircle, Edit, Trash2 } from 'lucide-react';
+import { Loader2, Save, CheckCircle, LayoutGrid, List, Image as ImageIcon, Sparkles, PlusCircle, Edit, Trash2, Send } from 'lucide-react';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -574,7 +574,6 @@ function ProductDialog({ onAddProduct, memberId }: { onAddProduct: (product: Pro
             toast({ title: 'Product Staged', description: `${values.name} is ready to be saved.` });
             setIsOpen(false);
             resetForm();
-            setIsSaving(false); // Ensure saving is false
             return;
         }
 
@@ -593,15 +592,18 @@ function ProductDialog({ onAddProduct, memberId }: { onAddProduct: (product: Pro
                 toast({ variant: 'destructive', title: 'Image Upload Failed', description: error.message });
                 setIsSaving(false); // Stop loading on error
             },
-            async () => {
-                const finalImageUrl = await getDownloadURL(uploadTask.snapshot.ref);
-                const newProduct: Product = { ...values, id: newProductId, imageUrl: finalImageUrl };
-                
-                onAddProduct(newProduct);
-                toast({ title: 'Product Staged', description: `${values.name} is ready to be saved.` });
-                setIsOpen(false);
-                resetForm();
-                // isSaving is already reset in resetForm()
+            () => {
+                getDownloadURL(uploadTask.snapshot.ref).then((finalImageUrl) => {
+                    const newProduct: Product = { ...values, id: newProductId, imageUrl: finalImageUrl };
+                    onAddProduct(newProduct);
+                    toast({ title: 'Product Staged', description: `${values.name} is ready to be saved.` });
+                    setIsOpen(false);
+                    resetForm();
+                }).catch((error) => {
+                    console.error("Failed to get download URL:", error);
+                    toast({ variant: 'destructive', title: 'Image URL Failed', description: error.message });
+                    setIsSaving(false);
+                });
             }
         );
     };
@@ -758,6 +760,100 @@ function Step5Products({ member, onSave }: { member: any, onSave: (newData: any)
     );
 }
 
+// ====== STEP 6: Preview & Submit ======
+function Step6Preview({ member, onSave }: { member: any; onSave: (newData: any) => void }) {
+  const { toast } = useToast();
+  const firestore = useFirestore();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const shopData = member.shop || {};
+
+  const handleSubmitForReview = async () => {
+    setIsSubmitting(true);
+    const memberDocRef = doc(firestore, 'members', member.id);
+
+    const dataToUpdate = {
+      'shop.status': 'pending_review',
+      'shop.updatedAt': serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    };
+
+    try {
+      await updateDoc(memberDocRef, dataToUpdate);
+      toast({
+        title: 'Shop Submitted!',
+        description: 'Your shop is now pending review by our admin team.',
+      });
+      onSave({ status: 'pending_review' }); // Update the local state
+    } catch (serverError: any) {
+      const permissionError = new FirestorePermissionError({
+        path: memberDocRef.path,
+        operation: 'update',
+        requestResourceData: dataToUpdate,
+      });
+      errorEmitter.emit('permission-error', permissionError);
+      toast({
+        variant: 'destructive',
+        title: 'Submission Failed',
+        description: serverError.message,
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="space-y-8">
+      <div>
+        <h3 className="text-lg font-medium">Shop Summary</h3>
+        <p className="text-sm text-muted-foreground">
+          Review all your shop details below. If everything looks correct, submit it for approval.
+        </p>
+      </div>
+
+      <div className="space-y-6">
+        {/* Core Identity */}
+        <Card>
+          <CardHeader><CardTitle>Core Identity</CardTitle></CardHeader>
+          <CardContent className="space-y-2 text-sm">
+            <p><strong className="text-muted-foreground w-32 inline-block">Shop Name:</strong> {shopData.shopName}</p>
+            <p><strong className="text-muted-foreground w-32 inline-block">Category:</strong> {shopData.category}</p>
+            <p><strong className="text-muted-foreground w-32 inline-block">Description:</strong> {shopData.shopDescription}</p>
+          </CardContent>
+        </Card>
+
+        {/* Branding */}
+        <Card>
+          <CardHeader><CardTitle>Branding</CardTitle></CardHeader>
+          <CardContent className="space-y-2 text-sm">
+             <p><strong className="text-muted-foreground w-32 inline-block">Template:</strong> {shopData.template}</p>
+             <p><strong className="text-muted-foreground w-32 inline-block">Theme:</strong> {shopData.theme}</p>
+          </CardContent>
+        </Card>
+
+        {/* Products */}
+        <Card>
+          <CardHeader><CardTitle>Products</CardTitle></CardHeader>
+          <CardContent>
+            <p>{shopData.products?.length || 0} product(s) added.</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="mt-8 pt-6 border-t">
+        {shopData.status === 'draft' || shopData.status === 'rejected' ? (
+          <Button onClick={handleSubmitForReview} disabled={isSubmitting}>
+            {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
+            Submit for Review
+          </Button>
+        ) : (
+          <div className="text-center p-4 bg-green-100 dark:bg-green-900/20 border border-green-300 dark:border-green-800 rounded-lg">
+             <p className="font-semibold text-green-800 dark:text-green-200">Your shop is currently {shopData.status === 'approved' ? 'approved and live' : 'pending review'}.</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
 
 
 // ====== WIZARD CONTROLLER ======
@@ -767,7 +863,7 @@ const STEPS = [
     { id: 'branding', title: 'Branding' },
     { id: 'seo', title: 'SEO & Tags' },
     { id: 'products', title: 'Products' },
-    { id: 'preview', title: 'Preview' },
+    { id: 'preview', title: 'Preview & Submit' },
 ];
 
 export default function ShopWizard({ member }: { member: any }) {
@@ -797,7 +893,7 @@ export default function ShopWizard({ member }: { member: any }) {
       case 'products':
         return <Step5Products member={{...member, shop: shopData}} onSave={handleSaveAndNext} />;
       case 'preview':
-        return <div className="text-center p-8">Step 6: Final Preview & Submit for Review will go here.</div>;
+        return <Step6Preview member={{...member, shop: shopData}} onSave={handleSaveAndNext} />;
       default:
         return <div>Step not found</div>;
     }

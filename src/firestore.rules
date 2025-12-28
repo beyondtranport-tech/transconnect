@@ -27,13 +27,10 @@ service cloud.firestore {
 
     // Public, read-only copy of approved shops
     match /shops/{shopId} {
-      allow get, list: if resource.data.status == 'approved' || isAdmin();
-      allow write: if isAdmin(); // Only admins can write to the public collection
-
-      match /products/{productId} {
-         allow get, list: if get(/databases/$(database)/documents/shops/$(shopId)).data.status == 'approved' || isAdmin();
-         allow write: if isAdmin();
-      }
+      // Anyone can read approved shops
+      allow get, list: if resource.data.status == 'approved';
+      // Only admins can create/update the public shop list
+      allow write: if isAdmin(); 
     }
     
     // Publicly readable collection for membership plans

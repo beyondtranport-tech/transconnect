@@ -121,7 +121,7 @@
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Shop",
       "type": "object",
-      "description": "Represents a vendor's shop data, embedded within a Member document.",
+      "description": "Represents a vendor's shop data, which can be embedded within a Member document or exist in a top-level collection.",
       "properties": {
         "ownerId": {
             "type": "string",
@@ -160,7 +160,7 @@
         "tags": { "type": "array", "items": { "type": "string" }, "description": "Searchable tags/keywords for the shop." },
         "products": {
           "type": "array",
-          "description": "A list of products in the shop.",
+          "description": "An array of product objects embedded within the shop data.",
           "items": { "$ref": "#/entities/Product" }
         },
         "createdAt": {
@@ -178,7 +178,7 @@
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Product",
       "type": "object",
-      "description": "Represents a single product within a vendor's shop.",
+      "description": "Represents a single product within a vendor's embedded shop data.",
       "properties": {
         "id": { "type": "string", "description": "Unique identifier for the product within the array." },
         "name": { "type": "string", "description": "The name of the product." },
@@ -538,7 +538,7 @@
         "definition": {
           "entityName": "Shop",
           "schema": { "$ref": "#/entities/Shop" },
-          "description": "Top-level collection for storing a public, read-only copy of approved shops. Managed by backend functions.",
+          "description": "Top-level collection for storing a public, read-only copy of approved shops. Managed by a backend function.",
           "params": [{ "name": "shopId", "description": "The unique ID for the shop." }]
         }
       },
@@ -591,6 +591,6 @@
         }
       }
     ],
-    "reasoning": "The data model has been flattened. Shop and product data are now embedded directly within the /members/{memberId} document. This eliminates the need for complex subcollection security rules and resolves the persistent permission errors. A top-level /shops collection can still be used for public, approved shop listings if needed in the future, populated by a backend process."
+    "reasoning": "The data model has been flattened. Shop data, including products, is now embedded directly within the /members/{memberId} document. This eliminates the need for complex subcollection security rules and resolves persistent permission errors. A top-level /shops collection is still used for public, approved shop listings, which would be populated by a backend process."
   }
 }
