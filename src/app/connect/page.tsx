@@ -7,12 +7,14 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Check, Gift, Heart, Zap, ArrowRight } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { placeholderImages } from "@/lib/placeholder-images.json";
+import data from "@/lib/placeholder-images.json";
 import { Slider } from "@/components/ui/slider";
 import { Label } from "@/components/ui/label";
 import { DataContributionModal } from "./data-contribution-modal";
 import React from "react";
 import * as gtag from '@/lib/gtag';
+
+const { placeholderImages } = data;
 
 const connectHeroImage = placeholderImages.find(p => p.id === 'tech-division');
 const opportunityImage = placeholderImages.find(p => p.id === 'mall-division');

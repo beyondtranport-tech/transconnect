@@ -3,9 +3,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import Image from "next/image";
 import Link from "next/link";
-import { placeholderImages } from "@/lib/placeholder-images.json";
+import data from "@/lib/placeholder-images.json";
 import { ArrowRight, Boxes, FileText, Heart, Shield, LifeBuoy, Gift } from "lucide-react";
 import * as React from "react";
+
+const { placeholderImages } = data;
 
 const incentivesHeroImage = placeholderImages.find(p => p.id === 'incentives-hero');
 

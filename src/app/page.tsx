@@ -3,9 +3,11 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { ArrowRight, Cpu, DollarSign, ShoppingBasket, Store } from 'lucide-react';
-import { placeholderImages } from '@/lib/placeholder-images.json';
+import data from '@/lib/placeholder-images.json';
 import * as React from 'react';
 import { divisions as divisionData } from '@/lib/data';
+
+const { placeholderImages } = data;
 
 const heroImage = placeholderImages.find(p => p.id === "hero-home");
 const techImage = placeholderImages.find(p => p.id === "tech-home");
@@ -133,5 +135,3 @@ export default function Home() {
     </div>
   );
 }
-
-    

@@ -1,13 +1,16 @@
+
 'use client';
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowRight, Filter, Handshake, Target, Sparkles, UserPlus } from "lucide-react";
 import Image from "next/image";
-import { placeholderImages } from "@/lib/placeholder-images.json";
+import data from "@/lib/placeholder-images.json";
 import Link from "next/link";
 import { useUser } from "@/firebase";
 import { useSearchParams } from "next/navigation";
+
+const { placeholderImages } = data;
 
 const financierHeroImage = placeholderImages.find(p => p.id === 'funding-division');
 

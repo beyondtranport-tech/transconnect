@@ -5,11 +5,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { placeholderImages } from "@/lib/placeholder-images.json";
+import data from "@/lib/placeholder-images.json";
 import { Building2, Search, Star, ArrowRight, Sparkles } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import * as gtag from '@/lib/gtag';
+
+const { placeholderImages } = data;
 
 const supplierMallImage = placeholderImages.find(p => p.id === 'mall-division');
 

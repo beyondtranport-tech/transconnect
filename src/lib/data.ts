@@ -1,6 +1,8 @@
 
 import type { Division, MarketplaceItem } from '@/lib/types';
-import { placeholderImages } from '@/lib/placeholder-images.json';
+import data from '@/lib/placeholder-images.json';
+
+const { placeholderImages } = data;
 
 const fundingImage = placeholderImages.find(p => p.id === 'funding-division')!;
 const mallImage = placeholderImages.find(p => p.id === 'mall-division')!;

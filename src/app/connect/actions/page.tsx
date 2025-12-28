@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -6,7 +7,9 @@ import { useUser } from '@/firebase';
 import { ArrowRight, Zap } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { placeholderImages } from '@/lib/placeholder-images.json';
+import data from '@/lib/placeholder-images.json';
+
+const { placeholderImages } = data;
 
 const actionsImage = placeholderImages.find(p => p.id === 'tech-division');
 

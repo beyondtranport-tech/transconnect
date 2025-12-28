@@ -1,7 +1,9 @@
 
 import { ShoppingCart, Truck, Handshake, Briefcase, Bot, Users, Code } from "lucide-react";
 import * as React from "react";
-import { placeholderImages } from '@/lib/placeholder-images.json';
+import data from '@/lib/placeholder-images.json';
+
+const { placeholderImages } = data;
 
 const roleImages = {
     vendor: placeholderImages.find(p => p.id === 'mall-division')!,

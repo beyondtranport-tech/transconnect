@@ -1,9 +1,11 @@
 
-import { placeholderImages } from "@/lib/placeholder-images.json";
+import data from "@/lib/placeholder-images.json";
 import { Truck, CheckCircle, Star, Sparkles } from "lucide-react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { notFound } from "next/navigation";
+
+const { placeholderImages } = data;
 
 const featuredTransporters = [
     { 

@@ -1,12 +1,14 @@
 
 import Image from "next/image";
-import { placeholderImages } from "@/lib/placeholder-images.json";
+import data from "@/lib/placeholder-images.json";
 import { Card, CardContent } from "@/components/ui/card";
 import { CheckCircle, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import React from "react";
 import { roles } from "@/lib/roles";
+
+const { placeholderImages } = data;
 
 const aboutHeroImage = placeholderImages.find(p => p.id === 'about-hero');
 
@@ -76,7 +78,7 @@ export default function AboutPage() {
         <section className="py-16 md:py-24 bg-background">
             <div className="container mx-auto px-4">
                 <div className="text-center max-w-3xl mx-auto mb-16">
-                    <h2 className="text-3xl md:text-4xl font-bold font-headline">Who is TransConnect For?</h2>
+                    <h2 className="text-3xl md:text-4xl font-bold font-headline">Who is TransConnect for?</h2>
                     <p className="mt-4 text-lg text-muted-foreground">
                         Our ecosystem is designed for every participant in the transport industry. Find your place and start connecting.
                     </p>

@@ -4,7 +4,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { ArrowRight, CheckCircle } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { placeholderImages } from "@/lib/placeholder-images.json";
+import data from "@/lib/placeholder-images.json";
+
+const { placeholderImages } = data;
 
 const fundingHeroImage = placeholderImages.find(p => p.id === 'funding-division');
 const assetFinanceImage = placeholderImages.find(p => p.id === 'funding-asset-finance');

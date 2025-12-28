@@ -3,11 +3,13 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { placeholderImages } from "@/lib/placeholder-images.json";
+import data from "@/lib/placeholder-images.json";
 import { Landmark, University, HandCoins, Building, Users, Sparkles, ArrowRight } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import * as gtag from '@/lib/gtag';
+
+const { placeholderImages } = data;
 
 const financeMallImage = placeholderImages.find(p => p.id === 'funding-division');
 

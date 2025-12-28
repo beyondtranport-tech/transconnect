@@ -6,9 +6,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { ArrowRight, Search, BarChart, Truck, Gift } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { placeholderImages } from "@/lib/placeholder-images.json";
+import data from "@/lib/placeholder-images.json";
 import * as React from "react";
 import * as gtag from '@/lib/gtag';
+
+const { placeholderImages } = data;
 
 const marketplaceHeroImage = placeholderImages.find(p => p.id === 'marketplace-division');
 

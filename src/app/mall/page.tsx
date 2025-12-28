@@ -6,11 +6,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { ArrowRight, ShoppingBasket, Building2, Truck, Landmark, PackageSearch, Store, Network, Warehouse, Recycle, Wrench } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { placeholderImages } from "@/lib/placeholder-images.json";
+import data from "@/lib/placeholder-images.json";
 import { marketplaceItems } from "@/lib/data";
 import { Badge } from "@/components/ui/badge";
 import * as React from "react";
 import { useState, useEffect } from 'react';
+
+const { placeholderImages } = data;
 
 const mallHeroImage = placeholderImages.find(p => p.id === 'mall-division');
 const fundingImage = placeholderImages.find(p => p.id === 'funding-division');

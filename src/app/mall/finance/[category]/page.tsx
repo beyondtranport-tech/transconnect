@@ -1,6 +1,7 @@
+
 'use client';
 
-import { placeholderImages } from "@/lib/placeholder-images.json";
+import data from "@/lib/placeholder-images.json";
 import { University, Landmark, HandCoins, Building, Users, Sparkles, Building2, ArrowRight } from "lucide-react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
@@ -9,6 +10,8 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/com
 import Link from "next/link";
 import * as React from "react";
 import * as gtag from '@/lib/gtag';
+
+const { placeholderImages } = data;
 
 const categoryDetails = {
     banks: { 
