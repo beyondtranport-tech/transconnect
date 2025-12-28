@@ -49,17 +49,10 @@ import { signOut } from 'firebase/auth';
 import BankDetailsSettings from './bank-details-settings';
 import ChartOfAccountsSettings from './chart-of-accounts-settings';
 import ReconciliationPage from './reconciliation/page';
+import DashboardContent from './dashboard-content';
+
 
 // Placeholder Content Components
-function DashboardContent() {
-    return (
-        <div>
-            <h1 className="text-2xl font-bold">Main Dashboard</h1>
-            <p className="mt-2 text-muted-foreground">Aggregated view of all platform metrics.</p>
-        </div>
-    )
-}
-
 function PlatformSettingsContent() {
     return (
         <div className="space-y-8">
@@ -119,7 +112,7 @@ function ContributionsContent() {
 function BackendPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const initialView = searchParams.get('view') || 'members';
+  const initialView = searchParams.get('view') || 'dashboard';
   const [activeView, setActiveView] = useState(initialView);
   const { user, isUserLoading } = useUser();
   const auth = useAuth();
@@ -148,6 +141,8 @@ function BackendPageContent() {
 
   const renderContent = () => {
     switch (activeView) {
+      case 'dashboard':
+        return <DashboardContent />;
       case 'members':
         return <MembersList />;
       case 'platform-logs':
@@ -166,7 +161,6 @@ function BackendPageContent() {
         return <ContributionsContent />;
       case 'reconciliation':
         return <ReconciliationPage />;
-      case 'dashboard':
       default:
         return <DashboardContent />;
     }
