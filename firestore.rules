@@ -13,8 +13,8 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     // This rule manages access to the member document itself.
-    // It allows an owner to read/update their own profile.
     // It allows any authenticated user to create their own profile document.
+    // It allows an owner or an admin to read/update/delete their own profile.
     match /members/{memberId} {
       allow get, update, delete: if isOwner(memberId) || isAdmin();
       allow create: if request.auth != null && request.resource.id == request.auth.uid;
