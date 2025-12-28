@@ -89,14 +89,19 @@ export default function MembersList() {
                         </TableHeader>
                         <TableBody>
                             {members.map(member => {
-                                // Defensive checks for all properties being rendered
-                                const firstName = member?.firstName || 'N/A';
-                                const lastName = member?.lastName || '';
-                                const companyName = member?.companyName || 'N/A';
-                                const email = member?.email || 'N/A';
-                                const phone = member?.phone || 'N/A';
-                                const membership = member?.membershipId || 'free';
-                                const roleText = (member?.role || 'Member').replace(/-/g, ' ');
+                                // Defensive check: if member is null or undefined, skip rendering this row.
+                                if (!member) {
+                                    return null;
+                                }
+
+                                // Defensive fallbacks for every single property
+                                const firstName = member.firstName || 'N/A';
+                                const lastName = member.lastName || '';
+                                const companyName = member.companyName || 'N/A';
+                                const email = member.email || 'N/A';
+                                const phone = member.phone || 'N/A';
+                                const membership = member.membershipId || 'free';
+                                const roleText = (member.role || 'Member').replace(/-/g, ' ');
 
                                 return (
                                 <TableRow key={member.id}>
