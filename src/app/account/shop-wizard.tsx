@@ -163,7 +163,7 @@ function ProductDialog({ shop, product, onSave, children }: { shop: any, product
     resolver: zodResolver(productSchema),
     defaultValues: product ? {
         ...product
-    } : { name: '', description: '', price: 0, sku: '', imageUrl: '' }
+    } : { name: '', description: '', price: '' as any, sku: '', imageUrl: '' }
   });
   
   useEffect(() => {
@@ -172,7 +172,7 @@ function ProductDialog({ shop, product, onSave, children }: { shop: any, product
         if (product) {
             form.reset(product);
         } else {
-            form.reset({ name: '', description: '', price: 0, sku: '', imageUrl: '' });
+            form.reset({ name: '', description: '', price: '' as any, sku: '', imageUrl: '' });
         }
     }
   }, [isOpen, product, form]);
@@ -718,12 +718,34 @@ function Step5Preview({ shop, onSave }: { shop: any; onSave: (newData: any) => v
 
   return (
     <div className="space-y-6">
-      <div>
-        <h3 className="text-lg font-medium">Final Review</h3>
-        <p className="text-sm text-muted-foreground">
-          Review your shop details below. Use the Preview button to see how it will look.
-        </p>
-      </div>
+        <div className="space-y-4">
+            <h3 className="text-lg font-medium">Shop Identity</h3>
+            <p><span className="font-semibold">Name:</span> {shop.shopName}</p>
+            <p><span className="font-semibold">Description:</span> {shop.shopDescription}</p>
+            <p><span className="font-semibold">Category:</span> {shop.category}</p>
+        </div>
+        <Separator />
+        <div className="space-y-4">
+            <h3 className="text-lg font-medium">Appearance</h3>
+            <p><span className="font-semibold">Template:</span> {shop.template}</p>
+            <p><span className="font-semibold">Theme:</span> {shop.theme}</p>
+        </div>
+        <Separator />
+        <div className="space-y-4">
+            <h3 className="text-lg font-medium">SEO & Tags</h3>
+            <p><span className="font-semibold">Meta Title:</span> {shop.metaTitle}</p>
+            <p><span className="font-semibold">Meta Description:</span> {shop.metaDescription}</p>
+            <p><span className="font-semibold">Tags:</span> {shop.tags?.join(', ')}</p>
+        </div>
+         <Separator />
+        <div className="space-y-4">
+            <h3 className="text-lg font-medium">Products ({products?.length || 0})</h3>
+             {areProductsLoading ? <Loader2 className="animate-spin" /> : (
+                <ul>
+                    {products?.map(p => <li key={p.id}>{p.name} - {formatPrice(p.price)}</li>)}
+                </ul>
+             )}
+        </div>
       
       <Dialog>
         <DialogTrigger asChild>
