@@ -18,20 +18,23 @@ service cloud.firestore {
     
     // --- Members Collection ---
 
-    // Rules for the collection itself
+    // Rules for the /members collection itself.
+    // This is where collection-level queries (list) are controlled.
     match /members {
       // Only admins are allowed to list all member documents.
+      // This rule does not use `get()` and is valid for `list` operations.
       allow list: if isAdmin();
       
       // Any authenticated user can create their own member document,
       // as long as they set themselves as the owner.
-      // This is placed here because create acts on the collection.
+      // This is placed here because create acts on the collection path.
       allow create: if request.auth != null && request.resource.data.ownerId == request.auth.uid;
     }
 
-    // Rules for individual /members/{memberId} documents.
+    // Rules for individual documents within the /members collection.
     match /members/{memberId} {
       // An admin can read any member document. The company owner can read their own.
+      // This `get` is for a single document read, so using the `isCompanyOwner` helper is valid here.
       allow get: if isAdmin() || isCompanyOwner(memberId);
       
       // The company owner or an admin can update their document.
