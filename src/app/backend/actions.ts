@@ -4,25 +4,26 @@
 import { initializeApp, getApps, App, cert } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 
-// A placeholder for service account credentials. In a real environment, this should be securely managed.
-const serviceAccount = {
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-  clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-  privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
-};
+function getAdminApp(): App | null {
+    if (!process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || !process.env.FIREBASE_CLIENT_EMAIL || !process.env.FIREBASE_PRIVATE_KEY) {
+        console.error("Firebase admin environment variables are not set.");
+        return null;
+    }
 
-let adminApp: App;
-
-// Initialize the Firebase Admin App if it doesn't already exist.
-if (!getApps().some(app => app.name === 'admin')) {
-    adminApp = initializeApp({
+    const serviceAccount = {
+      projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+      privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+    };
+    
+    if (getApps().some(app => app.name === 'admin')) {
+        return getApps().find(app => app.name === 'admin')!;
+    }
+    
+    return initializeApp({
         credential: cert(serviceAccount),
     }, 'admin');
-} else {
-    adminApp = getApps().find(app => app.name === 'admin')!;
 }
-
-const adminDb = getFirestore(adminApp);
 
 interface Member {
     id: string;
@@ -35,6 +36,12 @@ interface FinanceApplication {
 }
 
 export async function getMembers(): Promise<{ success: boolean; data?: Member[]; error?: string }> {
+    const adminApp = getAdminApp();
+    if (!adminApp) {
+        return { success: false, error: 'Firebase Admin SDK is not initialized. Missing environment variables.' };
+    }
+    const adminDb = getFirestore(adminApp);
+    
     try {
         const membersSnapshot = await adminDb.collection('members').get();
         const members = membersSnapshot.docs.map(doc => ({
@@ -49,6 +56,12 @@ export async function getMembers(): Promise<{ success: boolean; data?: Member[];
 }
 
 export async function getFinanceApplications(): Promise<{ success: boolean; data?: FinanceApplication[]; error?: string }> {
+    const adminApp = getAdminApp();
+    if (!adminApp) {
+        return { success: false, error: 'Firebase Admin SDK is not initialized. Missing environment variables.' };
+    }
+    const adminDb = getFirestore(adminApp);
+
     try {
         const applicationsSnapshot = await adminDb.collection('financeApplications').orderBy('createdAt', 'desc').get();
         const applications = applicationsSnapshot.docs.map(doc => ({
