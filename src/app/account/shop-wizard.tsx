@@ -1,11 +1,12 @@
 
 'use client';
 
+import React from 'react';
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
@@ -155,13 +156,14 @@ function ProductDialog({ shop, product, onSave, children }: { shop: any, product
   const storage = useStorage();
   const { toast } = useToast();
   const [isOpen, setIsOpen] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
 
   const form = useForm<ProductFormValues>({
     resolver: zodResolver(productSchema),
     defaultValues: product ? {
         ...product
-    } : { name: '', description: '', price: '' as any, sku: '', imageUrl: '' }
+    } : { name: '', description: '', price: 0, sku: '', imageUrl: '' }
   });
   
   useEffect(() => {
@@ -170,13 +172,14 @@ function ProductDialog({ shop, product, onSave, children }: { shop: any, product
         if (product) {
             form.reset(product);
         } else {
-            form.reset({ name: '', description: '', price: '' as any, sku: '', imageUrl: '' });
+            form.reset({ name: '', description: '', price: 0, sku: '', imageUrl: '' });
         }
     }
   }, [isOpen, product, form]);
 
   const onSubmit = async (values: ProductFormValues) => {
     if (!user) return;
+    setIsSaving(true);
     
     try {
         const token = await getClientSideAuthToken();
@@ -221,6 +224,8 @@ function ProductDialog({ shop, product, onSave, children }: { shop: any, product
         setIsOpen(false);
     } catch (error: any) {
         toast({ variant: 'destructive', title: 'Save Failed', description: error.message });
+    } finally {
+        setIsSaving(false);
     }
   };
 
@@ -286,8 +291,8 @@ function ProductDialog({ shop, product, onSave, children }: { shop: any, product
                     <FormMessage /></FormItem>
                 )} />
                 <DialogFooter>
-                    <Button type="submit" disabled={form.formState.isSubmitting || (uploadProgress !== null)}>
-                        {form.formState.isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Save className="mr-2 h-4 w-4" />}
+                    <Button type="submit" disabled={isSaving || form.formState.isSubmitting || (uploadProgress !== null && uploadProgress < 100)}>
+                        {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Save className="mr-2 h-4 w-4" />}
                         Save Product
                     </Button>
                 </DialogFooter>
@@ -663,7 +668,7 @@ function ShopPreview({ shop, products }: { shop: any, products: any[] }) {
 // ====== STEP 5: Preview & Submit ======
 function Step5Preview({ shop, onSave }: { shop: any; onSave: (newData: any) => void }) {
   const { toast } = useToast();
-  const { user, isUserLoading } = useUser();
+  const { user } = useUser();
   const firestore = useFirestore();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
