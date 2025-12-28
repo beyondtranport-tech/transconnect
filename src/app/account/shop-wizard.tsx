@@ -47,7 +47,6 @@ type Step1FormValues = z.infer<typeof shopStep1Schema>;
 
 function Step1CoreIdentity({ shop, onSave }: { shop: any, onSave: (newData: any) => void }) {
   const { user } = useUser();
-  const firestore = useFirestore();
   const { toast } = useToast();
   const [isSaving, setIsSaving] = useState(false);
 
@@ -66,8 +65,6 @@ function Step1CoreIdentity({ shop, onSave }: { shop: any, onSave: (newData: any)
     
     const dataToUpdate = {
         ...values,
-        // We use a placeholder string that our API route can recognize and convert
-        // into a real Firestore server timestamp.
         updatedAt: { _methodName: 'serverTimestamp' },
     };
 
@@ -354,7 +351,7 @@ const shopStep3Schema = z.object({
 type Step3FormValues = z.infer<typeof shopStep3Schema>;
 
 function Step3Appearance({ shop, onSave }: { shop: any, onSave: (newData: any) => void }) {
-  const { user, firestore } = useUser();
+  const { user } = useUser();
   const { toast } = useToast();
   const [isSaving, setIsSaving] = useState(false);
 
@@ -367,7 +364,7 @@ function Step3Appearance({ shop, onSave }: { shop: any, onSave: (newData: any) =
   });
 
   const onSubmit = async (values: Step3FormValues) => {
-    if (!user || !firestore) return;
+    if (!user) return;
     setIsSaving(true);
     const dataToUpdate = { ...values, updatedAt: { _methodName: 'serverTimestamp' } };
 
@@ -452,7 +449,7 @@ const shopStep4Schema = z.object({
 type Step4FormValues = z.infer<typeof shopStep4Schema>;
 
 function Step4Seo({ shop, onSave }: { shop: any, onSave: (newData: any) => void }) {
-  const { user, firestore } = useUser();
+  const { user } = useUser();
   const { toast } = useToast();
   const [isSaving, setIsSaving] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -487,7 +484,7 @@ function Step4Seo({ shop, onSave }: { shop: any, onSave: (newData: any) => void 
   }
 
   const onSubmit = async (values: Step4FormValues) => {
-    if (!user || !firestore) return;
+    if (!user) return;
     setIsSaving(true);
     const dataToUpdate = { ...values, updatedAt: { _methodName: 'serverTimestamp' } };
 
@@ -713,3 +710,5 @@ export default function ShopWizard({ shop }: { shop: any }) {
     </div>
   );
 }
+
+    
