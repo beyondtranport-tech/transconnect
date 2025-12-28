@@ -2,41 +2,68 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2 } from 'lucide-react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { Loader2, Users, Wallet } from 'lucide-react';
 import { getMembers } from './actions';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import Link from 'next/link';
+
+interface Member {
+    id: string;
+    firstName?: string;
+    lastName?: string;
+    email?: string;
+    companyName?: string;
+    membershipId?: string;
+    walletBalance?: number;
+    createdAt?: { toDate: () => Date };
+}
+
+const formatCurrency = (amount: number | undefined) => {
+    if (amount === undefined) return 'N/A';
+    return new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(amount);
+};
+
+const formatDate = (timestamp: any) => {
+    if (timestamp && timestamp.toDate) {
+        return timestamp.toDate().toLocaleDateString();
+    }
+    return 'N/A';
+};
 
 export default function MembersList() {
-    const [envKeys, setEnvKeys] = useState<string[] | null>(null);
+    const [members, setMembers] = useState<Member[] | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
-        async function fetchEnvKeys() {
+        async function fetchMembers() {
             setIsLoading(true);
             try {
                 const result = await getMembers();
                 if (result.success && result.data) {
-                    setEnvKeys(result.data);
+                    setMembers(result.data);
                 } else {
-                    setError(result.error || 'Failed to fetch server environment variables.');
+                    setError(result.error || 'Failed to fetch members.');
                 }
             } catch (e: any) {
-                setError(e.message || 'An unexpected error occurred while fetching env vars.');
+                setError(e.message || 'An unexpected error occurred while fetching members.');
             } finally {
                 setIsLoading(false);
             }
         }
 
-        fetchEnvKeys();
+        fetchMembers();
     }, []);
 
     if (isLoading) {
         return (
              <Card>
                 <CardHeader>
-                    <CardTitle>Server Environment Diagnostic</CardTitle>
-                    <CardDescription>Fetching server environment variables...</CardDescription>
+                    <CardTitle>Member Roster</CardTitle>
+                    <CardDescription>Fetching the list of all members...</CardDescription>
                 </CardHeader>
                 <CardContent className="flex justify-center items-center py-10">
                     <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -45,29 +72,72 @@ export default function MembersList() {
         );
     }
     
+    if (error) {
+        return (
+             <Card>
+                <CardHeader>
+                    <CardTitle>Member Roster</CardTitle>
+                    <CardDescription>Could not load members.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <div className="text-destructive-foreground bg-destructive/90 p-4 rounded-md">
+                        <h4 className="font-semibold">Error loading members</h4>
+                        <p className="text-sm">{error}</p>
+                    </div>
+                </CardContent>
+            </Card>
+        )
+    }
+    
     return (
         <Card>
             <CardHeader>
-                <CardTitle>Server Environment Diagnostic</CardTitle>
+                <CardTitle className="flex items-center gap-2"><Users /> Member Roster</CardTitle>
                 <CardDescription>
-                    The following environment variable keys are available on the server.
-                    Please check if `FIREBASE_PRIVATE_KEY` and other required variables are in this list.
+                    A list of all registered members on the TransConnect platform.
                 </CardDescription>
             </CardHeader>
             <CardContent>
-                {error && (
-                     <div className="text-destructive-foreground bg-destructive/90 p-4 rounded-md">
-                        <h4 className="font-semibold">Error fetching environment variables</h4>
-                        <p className="text-sm">{error}</p>
-                    </div>
-                )}
-                {envKeys && !isLoading && (
-                    <div className="bg-muted p-4 rounded-md font-mono text-xs space-y-1">
-                        {envKeys.length > 0 ? envKeys.map(key => (
-                            <div key={key}>{key}</div>
-                        )) : <p>No environment variables found.</p>}
-                    </div>
-                )}
+                 <div className="overflow-x-auto">
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Name</TableHead>
+                                <TableHead>Company</TableHead>
+                                <TableHead>Membership</TableHead>
+                                <TableHead>Joined</TableHead>
+                                <TableHead className="text-right">Actions</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {members && members.length > 0 ? members.map(member => (
+                                <TableRow key={member.id}>
+                                    <TableCell>
+                                        <div className="font-medium">{member.firstName || ''} {member.lastName || ''}</div>
+                                        <div className="text-sm text-muted-foreground">{member.email || ''}</div>
+                                    </TableCell>
+                                    <TableCell>{member.companyName}</TableCell>
+                                    <TableCell>
+                                        <Badge variant="outline" className="capitalize">{member.membershipId || 'N/A'}</Badge>
+                                    </TableCell>
+                                    <TableCell>{formatDate(member.createdAt)}</TableCell>
+                                    <TableCell className="text-right">
+                                        <Button asChild variant="ghost" size="sm">
+                                            <Link href={`/backend/wallet/${member.id}`}>
+                                                <Wallet className="mr-2 h-4 w-4" />
+                                                Wallet
+                                            </Link>
+                                        </Button>
+                                    </TableCell>
+                                </TableRow>
+                            )) : (
+                                <TableRow>
+                                    <TableCell colSpan={5} className="text-center h-24">No members found.</TableCell>
+                                </TableRow>
+                            )}
+                        </TableBody>
+                    </Table>
+                </div>
             </CardContent>
         </Card>
     );
