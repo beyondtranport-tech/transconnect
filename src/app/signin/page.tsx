@@ -103,11 +103,6 @@ function SignInFormComponent() {
     try {
       await signInWithEmailAndPassword(auth, values.email, values.password);
 
-      toast({
-        title: 'Signed In!',
-        description: "Welcome back to TransConnect.",
-      });
-
       // The onIdTokenChanged listener in firebase/index.ts handles setting the cookie.
       // After login, we simply refresh the page. The middleware will see the new cookie
       // and handle the redirect on the server-side, which is more reliable.
