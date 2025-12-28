@@ -111,10 +111,10 @@ function SignInFormComponent() {
       const isAdmin = userCredential.user.email === 'beyondtransport@gmail.com';
       const redirectFromParams = searchParams.get('redirect');
 
-      if (isAdmin) {
-        router.push('/backend');
-      } else if (redirectFromParams) {
+      if (redirectFromParams) {
         router.push(redirectFromParams);
+      } else if (isAdmin) {
+        router.push('/backend');
       } else {
         router.push('/account');
       }
