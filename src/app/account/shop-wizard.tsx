@@ -1,8 +1,7 @@
 
 'use client';
 
-import { useState, useMemo, useEffect, useCallback } from 'react';
-import React from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -222,7 +221,6 @@ function ProductDialog({ shop, product, onSave, children }: { shop: any, product
 
         onSave();
         setIsOpen(false);
-        form.reset();
     } catch (error: any) {
         toast({ variant: 'destructive', title: 'Save Failed', description: error.message });
     } finally {
@@ -604,8 +602,16 @@ function Step4Seo({ shop, onSave }: { shop: any, onSave: (newData: any) => void 
 // ====== STEP 5: Preview & Submit ======
 function Step5Preview({ shop, onSave }: { shop: any; onSave: (newData: any) => void }) {
   const { toast } = useToast();
-  const { user } = useUser();
+  const { user, isUserLoading } = useUser();
+  const firestore = useFirestore();
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const productsCollection = useMemoFirebase(() => {
+    if (!firestore || !user) return null;
+    return collection(firestore, `members/${user.uid}/shops/${shop.id}/products`);
+  }, [firestore, user, shop.id]);
+
+  const { data: products, isLoading: areProductsLoading } = useCollection(productsCollection);
 
   const handleSubmitForReview = async () => {
     if (!user) return;
@@ -645,7 +651,7 @@ function Step5Preview({ shop, onSave }: { shop: any; onSave: (newData: any) => v
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       <div>
         <h3 className="text-lg font-medium">Shop Summary</h3>
         <p className="text-sm text-muted-foreground">
@@ -653,7 +659,7 @@ function Step5Preview({ shop, onSave }: { shop: any; onSave: (newData: any) => v
         </p>
       </div>
 
-      <div className="space-y-6">
+      <div className="space-y-4">
         <Card>
           <CardHeader><CardTitle>Core Identity</CardTitle></CardHeader>
           <CardContent className="space-y-2 text-sm">
@@ -662,9 +668,51 @@ function Step5Preview({ shop, onSave }: { shop: any; onSave: (newData: any) => v
             <p><strong className="text-muted-foreground w-32 inline-block">Description:</strong> {shop.shopDescription}</p>
           </CardContent>
         </Card>
+        
+        <Card>
+          <CardHeader><CardTitle>Appearance</CardTitle></CardHeader>
+          <CardContent className="space-y-2 text-sm">
+            <p><strong className="text-muted-foreground w-32 inline-block">Template:</strong> <span className="capitalize">{shop.template?.replace('-', ' ')}</span></p>
+            <p><strong className="text-muted-foreground w-32 inline-block">Theme:</strong> <span className="capitalize">{shop.theme?.replace('-', ' ')}</span></p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader><CardTitle>SEO & Discovery</CardTitle></CardHeader>
+          <CardContent className="space-y-2 text-sm">
+            <p><strong className="text-muted-foreground w-32 inline-block">Meta Title:</strong> {shop.metaTitle}</p>
+            <p><strong className="text-muted-foreground w-32 inline-block">Meta Desc:</strong> {shop.metaDescription}</p>
+            <div className="flex items-start">
+                <strong className="text-muted-foreground w-32 inline-block flex-shrink-0">Tags:</strong> 
+                <div className="flex flex-wrap gap-1">
+                    {shop.tags?.map((tag: string) => <Badge key={tag} variant="secondary">{tag}</Badge>)}
+                </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+            <CardHeader><CardTitle>Products</CardTitle></CardHeader>
+            <CardContent>
+                {areProductsLoading ? (
+                     <div className="flex justify-center p-4"><Loader2 className="h-6 w-6 animate-spin text-primary"/></div>
+                ) : products && products.length > 0 ? (
+                    <ul className="space-y-2 text-sm">
+                        {products.map(p => (
+                            <li key={p.id} className="flex justify-between items-center p-2 bg-background rounded-md">
+                                <span>{p.name}</span>
+                                <span className="font-mono">R {p.price.toFixed(2)}</span>
+                            </li>
+                        ))}
+                    </ul>
+                ) : (
+                    <p className="text-sm text-muted-foreground text-center">No products have been added yet.</p>
+                )}
+            </CardContent>
+        </Card>
       </div>
 
-      <div className="mt-8 pt-6 border-t">
+      <div className="mt-6 pt-6 border-t">
         {shop.status === 'draft' || shop.status === 'rejected' ? (
           <Button onClick={handleSubmitForReview} disabled={isSubmitting}>
             {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
