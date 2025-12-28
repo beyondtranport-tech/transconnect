@@ -267,7 +267,7 @@ function ProductDialog({ shop, product, onSave, children }: { shop: any, product
       () => {
         getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
           form.setValue('imageUrl', downloadURL);
-          setUploadProgress(100); // Set to 100 to indicate completion
+          setUploadProgress(null); // Reset progress on completion
           toast({ title: "Image uploaded!" });
         });
       }
