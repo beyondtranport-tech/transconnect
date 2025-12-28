@@ -1,8 +1,8 @@
 
 'use client';
 
-import { useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useState, useMemo } from 'react';
+import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,9 +10,9 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
-import { useFirestore, useFirebaseApp, useUser } from '@/firebase';
-import { doc, updateDoc, serverTimestamp, setDoc } from 'firebase/firestore';
-import { getStorage, ref as storageRef, uploadBytesResumable, getDownloadURL } from "firebase/storage";
+import { useFirestore, useUser, useStorage, useCollection, useMemoFirebase } from '@/firebase';
+import { doc, updateDoc, serverTimestamp, setDoc, addDoc, deleteDoc, collection } from 'firebase/firestore';
+import { ref as storageRef, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { Loader2, Save, CheckCircle, LayoutGrid, List, Image as ImageIcon, Sparkles, PlusCircle, Edit, Trash2, Send } from 'lucide-react';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -126,8 +126,400 @@ function Step1CoreIdentity({ shop, onSave }: { shop: any, onSave: (newData: any)
   );
 }
 
-// ====== STEP 6: Preview & Submit ======
-function Step6Preview({ shop, onSave }: { shop: any; onSave: (newData: any) => void }) {
+// ====== STEP 2: Products ======
+const productSchema = z.object({
+  name: z.string().min(1, 'Product name is required'),
+  description: z.string().min(1, 'Description is required'),
+  price: z.coerce.number().positive('Price must be a positive number'),
+  sku: z.string().optional(),
+  imageUrl: z.string().optional(),
+});
+type ProductFormValues = z.infer<typeof productSchema>;
+
+function ProductDialog({ shop, product, onSave, children }: { shop: any, product?: any, onSave: () => void, children: React.ReactNode }) {
+  const { user, isUserLoading } = useUser();
+  const firestore = useFirestore();
+  const storage = useStorage();
+  const { toast } = useToast();
+  const [isOpen, setIsOpen] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<number | null>(null);
+
+  const form = useForm<ProductFormValues>({
+    resolver: zodResolver(productSchema),
+    defaultValues: product || { name: '', description: '', price: 0, sku: '' }
+  });
+
+  const onSubmit = async (values: ProductFormValues) => {
+    if (!user || !firestore) return;
+    setIsSaving(true);
+    
+    const productData = {
+        ...values,
+        shopId: shop.id,
+        updatedAt: serverTimestamp(),
+    };
+
+    try {
+        if (product?.id) { // Editing existing product
+            const productRef = doc(firestore, `shops/${shop.id}/products`, product.id);
+            await updateDoc(productRef, productData);
+            toast({ title: 'Product Updated!' });
+        } else { // Creating new product
+            const productsCollection = collection(firestore, `shops/${shop.id}/products`);
+            await addDoc(productsCollection, { ...productData, createdAt: serverTimestamp() });
+            toast({ title: 'Product Added!' });
+        }
+        onSave();
+        setIsOpen(false);
+        form.reset();
+    } catch (serverError: any) {
+        toast({ variant: 'destructive', title: 'Save Failed', description: serverError.message });
+    } finally {
+        setIsSaving(false);
+    }
+  };
+
+  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !user || !storage) return;
+
+    setUploadProgress(0);
+    const imageRef = storageRef(storage, `products/${user.uid}/${shop.id}/${file.name}`);
+    const uploadTask = uploadBytesResumable(imageRef, file);
+
+    uploadTask.on('state_changed',
+      (snapshot) => {
+        const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+        setUploadProgress(progress);
+      },
+      (error) => {
+        toast({ variant: "destructive", title: "Upload failed", description: error.message });
+        setUploadProgress(null);
+      },
+      () => {
+        getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
+          form.setValue('imageUrl', downloadURL);
+          setUploadProgress(null);
+          toast({ title: "Image uploaded!" });
+        });
+      }
+    );
+  };
+
+
+  return (
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogTrigger asChild>{children}</DialogTrigger>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>{product ? 'Edit Product' : 'Add New Product'}</DialogTitle>
+        </DialogHeader>
+        <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                <FormField control={form.control} name="name" render={({ field }) => (
+                    <FormItem><FormLabel>Product Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                )} />
+                <FormField control={form.control} name="description" render={({ field }) => (
+                    <FormItem><FormLabel>Description</FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage /></FormItem>
+                )} />
+                <div className="grid grid-cols-2 gap-4">
+                    <FormField control={form.control} name="price" render={({ field }) => (
+                        <FormItem><FormLabel>Price (ZAR)</FormLabel><FormControl><Input type="number" step="0.01" {...field} /></FormControl><FormMessage /></FormItem>
+                    )} />
+                    <FormField control={form.control} name="sku" render={({ field }) => (
+                        <FormItem><FormLabel>SKU (Optional)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                    )} />
+                </div>
+                 <FormField control={form.control} name="imageUrl" render={({ field }) => (
+                    <FormItem><FormLabel>Product Image</FormLabel>
+                    <FormControl>
+                        <div>
+                             <Input type="file" accept="image/*" onChange={handleImageUpload} className="mb-2" />
+                             {uploadProgress !== null && <Progress value={uploadProgress} className="h-2" />}
+                             {field.value && <Image src={field.value} alt="Product preview" width={100} height={100} className="mt-2 rounded-md object-cover" />}
+                        </div>
+                    </FormControl>
+                    <FormMessage /></FormItem>
+                )} />
+                <DialogFooter>
+                    <Button type="submit" disabled={isSaving || uploadProgress !== null}>
+                        {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Save className="mr-2 h-4 w-4" />}
+                        Save Product
+                    </Button>
+                </DialogFooter>
+            </form>
+        </Form>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+function Step2Products({ shop, onSave }: { shop: any, onSave: (newData?: any) => void }) {
+  const firestore = useFirestore();
+  const { user } = useUser();
+  const { toast } = useToast();
+
+  const productsCollection = useMemoFirebase(() => {
+    if (!firestore || !user) return null;
+    return collection(firestore, `shops/${shop.id}/products`);
+  }, [firestore, user, shop.id]);
+
+  const { data: products, isLoading, forceRefresh } = useCollection(productsCollection);
+  
+  const handleDelete = async (productId: string) => {
+    if (!firestore || !user) return;
+    try {
+        await deleteDoc(doc(firestore, `shops/${shop.id}/products`, productId));
+        toast({ title: 'Product Deleted' });
+        forceRefresh();
+    } catch (e: any) {
+        toast({ variant: 'destructive', title: 'Delete Failed', description: e.message });
+    }
+  }
+
+  return (
+    <div className="space-y-6">
+        <div className="flex justify-between items-center">
+            <h3 className="text-lg font-medium">Your Products</h3>
+            <ProductDialog shop={shop} onSave={forceRefresh}>
+                <Button><PlusCircle className="mr-2 h-4 w-4" /> Add Product</Button>
+            </ProductDialog>
+        </div>
+        
+        {isLoading ? (
+            <div className="flex justify-center p-8"><Loader2 className="h-8 w-8 animate-spin text-primary"/></div>
+        ) : products && products.length > 0 ? (
+            <Card>
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead>Name</TableHead><TableHead>Price</TableHead><TableHead className="text-right">Actions</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {products.map(p => (
+                            <TableRow key={p.id}>
+                                <TableCell className="font-medium">{p.name}</TableCell>
+                                <TableCell>R {p.price.toFixed(2)}</TableCell>
+                                <TableCell className="text-right space-x-2">
+                                     <ProductDialog shop={shop} product={p} onSave={forceRefresh}>
+                                        <Button variant="ghost" size="icon"><Edit className="h-4 w-4"/></Button>
+                                     </ProductDialog>
+                                     <Button variant="ghost" size="icon" onClick={() => handleDelete(p.id)}><Trash2 className="h-4 w-4 text-destructive"/></Button>
+                                </TableCell>
+                            </TableRow>
+                        ))}
+                    </TableBody>
+                </Table>
+            </Card>
+        ) : (
+            <div className="text-center p-8 border-2 border-dashed rounded-lg">
+                <p className="text-muted-foreground">You haven't added any products yet.</p>
+            </div>
+        )}
+        
+        <Button onClick={() => onSave()}>
+          Save & Continue
+        </Button>
+    </div>
+  )
+}
+
+
+// ====== STEP 3: Appearance ======
+const shopStep3Schema = z.object({
+  template: z.string().min(1, "Please select a template"),
+  theme: z.string().min(1, "Please select a theme"),
+});
+type Step3FormValues = z.infer<typeof shopStep3Schema>;
+
+function Step3Appearance({ shop, onSave }: { shop: any, onSave: (newData: any) => void }) {
+  const { user, firestore } = useUser();
+  const { toast } = useToast();
+  const [isSaving, setIsSaving] = useState(false);
+
+  const form = useForm<Step3FormValues>({
+    resolver: zodResolver(shopStep3Schema),
+    defaultValues: {
+      template: shop.template || 'modern-grid',
+      theme: shop.theme || 'forest-green',
+    }
+  });
+
+  const onSubmit = async (values: Step3FormValues) => {
+    if (!user || !firestore) return;
+    setIsSaving(true);
+    const shopDocRef = doc(firestore, `members/${user.uid}/shops/${shop.id}`);
+    
+    const dataToUpdate = { ...values, updatedAt: serverTimestamp() };
+
+    try {
+        await updateDoc(shopDocRef, dataToUpdate);
+        toast({ title: 'Step 3 Saved!', description: 'Your shop appearance has been updated.' });
+        onSave(values);
+    } catch (serverError: any) {
+        toast({ variant: 'destructive', title: 'Update Failed', description: serverError.message });
+    } finally {
+        setIsSaving(false);
+    }
+  };
+
+  return (
+    <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+            <FormField control={form.control} name="template" render={({ field }) => (
+                <FormItem className="space-y-3">
+                <FormLabel className="text-base">Shop Layout Template</FormLabel>
+                <FormControl>
+                    <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormItem>
+                        <Label className={cn("flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground", field.value === 'modern-grid' && "border-primary")}>
+                            <FormControl><RadioGroupItem value="modern-grid" className="sr-only" /></FormControl>
+                            <LayoutGrid className="h-12 w-12 mb-2" />
+                            <span className="font-bold">Modern Grid</span>
+                        </Label>
+                    </FormItem>
+                     <FormItem>
+                        <Label className={cn("flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground", field.value === 'classic-list' && "border-primary")}>
+                            <FormControl><RadioGroupItem value="classic-list" className="sr-only" /></FormControl>
+                            <List className="h-12 w-12 mb-2" />
+                            <span className="font-bold">Classic List</span>
+                        </Label>
+                    </FormItem>
+                    </RadioGroup>
+                </FormControl>
+                <FormMessage />
+                </FormItem>
+            )} />
+            <FormField control={form.control} name="theme" render={({ field }) => (
+                <FormItem>
+                    <FormLabel className="text-base">Color Theme</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl><SelectTrigger><SelectValue placeholder="Select a theme" /></SelectTrigger></FormControl>
+                        <SelectContent>
+                            <SelectItem value="forest-green">Forest Green (Default)</SelectItem>
+                            <SelectItem value="ocean-blue">Ocean Blue</SelectItem>
+                            <SelectItem value="industrial-grey">Industrial Grey</SelectItem>
+                            <SelectItem value="sunset-orange">Sunset Orange</SelectItem>
+                        </SelectContent>
+                    </Select>
+                    <FormMessage />
+                </FormItem>
+            )} />
+            <Button type="submit" disabled={isSaving}>
+                {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                Save & Continue
+            </Button>
+        </form>
+    </Form>
+  )
+}
+
+// ====== STEP 4: SEO ======
+const shopStep4Schema = z.object({
+  metaTitle: z.string().min(1, "Meta title is required"),
+  metaDescription: z.string().min(1, "Meta description is required"),
+  tags: z.array(z.string()).min(1, "At least one tag is required"),
+});
+type Step4FormValues = z.infer<typeof shopStep4Schema>;
+
+function Step4Seo({ shop, onSave }: { shop: any, onSave: (newData: any) => void }) {
+  const { user, firestore } = useUser();
+  const { toast } = useToast();
+  const [isSaving, setIsSaving] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
+
+  const form = useForm<Step4FormValues>({
+    resolver: zodResolver(shopStep4Schema),
+    defaultValues: {
+      metaTitle: shop.metaTitle || '',
+      metaDescription: shop.metaDescription || '',
+      tags: shop.tags || [],
+    }
+  });
+
+  const handleGenerateSeo = async () => {
+    setIsGenerating(true);
+    try {
+        const result = await generateShopSeo({
+            shopName: shop.shopName,
+            shopDescription: shop.shopDescription,
+        });
+        if (result) {
+            form.setValue('metaTitle', result.metaTitle);
+            form.setValue('metaDescription', result.metaDescription);
+            form.setValue('tags', result.tags);
+            toast({ title: 'SEO Content Generated!', description: 'Review and save the AI-generated content.' });
+        }
+    } catch(e: any) {
+        toast({ variant: 'destructive', title: 'AI Generation Failed', description: e.message });
+    } finally {
+        setIsGenerating(false);
+    }
+  }
+
+  const onSubmit = async (values: Step4FormValues) => {
+    if (!user || !firestore) return;
+    setIsSaving(true);
+    const shopDocRef = doc(firestore, `members/${user.uid}/shops/${shop.id}`);
+    
+    const dataToUpdate = { ...values, updatedAt: serverTimestamp() };
+
+    try {
+        await updateDoc(shopDocRef, dataToUpdate);
+        toast({ title: 'Step 4 Saved!', description: 'Your SEO settings have been updated.' });
+        onSave(values);
+    } catch (serverError: any) {
+        toast({ variant: 'destructive', title: 'Update Failed', description: serverError.message });
+    } finally {
+        setIsSaving(false);
+    }
+  };
+
+  return (
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <Card className="bg-primary/5 border-primary/20">
+            <CardContent className="p-4 flex items-center justify-between">
+                <p className="max-w-prose">Let our AI assistant generate SEO-friendly content for you based on your shop name and description.</p>
+                <Button type="button" onClick={handleGenerateSeo} disabled={isGenerating}>
+                    {isGenerating ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Sparkles className="mr-2 h-4 w-4" />}
+                    Generate with AI
+                </Button>
+            </CardContent>
+        </Card>
+        <FormField control={form.control} name="metaTitle" render={({ field }) => (
+          <FormItem><FormLabel>Meta Title</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+        )} />
+        <FormField control={form.control} name="metaDescription" render={({ field }) => (
+          <FormItem><FormLabel>Meta Description</FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage /></FormItem>
+        )} />
+        <FormField control={form.control} name="tags" render={({ field }) => (
+          <FormItem>
+            <FormLabel>Tags / Keywords</FormLabel>
+            <FormControl>
+                <Input 
+                    {...field} 
+                    value={Array.isArray(field.value) ? field.value.join(', ') : ''} 
+                    onChange={e => field.onChange(e.target.value.split(',').map(s => s.trim()))}
+                    placeholder="e.g., truck parts, scania, filters"
+                />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )} />
+        <Button type="submit" disabled={isSaving}>
+          {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+          Save & Continue
+        </Button>
+      </form>
+    </Form>
+  )
+}
+
+// ====== STEP 5: Preview & Submit ======
+function Step5Preview({ shop, onSave }: { shop: any; onSave: (newData: any) => void }) {
   const { toast } = useToast();
   const firestore = useFirestore();
   const { user } = useUser();
@@ -209,7 +601,9 @@ function Step6Preview({ shop, onSave }: { shop: any; onSave: (newData: any) => v
 // ====== WIZARD CONTROLLER ======
 const STEPS = [
     { id: 'identity', title: 'Core Identity' },
-    // Simplified for now
+    { id: 'products', title: 'Products'},
+    { id: 'appearance', title: 'Appearance'},
+    { id: 'seo', title: 'SEO & Tags'},
     { id: 'preview', title: 'Preview & Submit' },
 ];
 
@@ -231,8 +625,14 @@ export default function ShopWizard({ shop }: { shop: any }) {
     switch (stepId) {
       case 'identity':
         return <Step1CoreIdentity shop={shopData} onSave={handleSaveAndNext} />;
+      case 'products':
+        return <Step2Products shop={shopData} onSave={handleSaveAndNext} />;
+      case 'appearance':
+        return <Step3Appearance shop={shopData} onSave={handleSaveAndNext} />;
+      case 'seo':
+        return <Step4Seo shop={shopData} onSave={handleSaveAndNext} />;
       case 'preview':
-        return <Step6Preview shop={shopData} onSave={handleSaveAndNext} />;
+        return <Step5Preview shop={shopData} onSave={handleSaveAndNext} />;
       default:
         return <div>Step not found</div>;
     }

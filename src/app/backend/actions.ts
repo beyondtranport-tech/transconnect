@@ -3,6 +3,7 @@
 
 import { initializeApp, getApps, App, cert, ServiceAccount } from 'firebase-admin/app';
 import { getFirestore, Timestamp } from 'firebase-admin/firestore';
+import { getStorage } from 'firebase-admin/storage';
 
 function getAdminApp(): { app: App | null, error: string | null } {
     const adminSdkConfigB64 = process.env.FIREBASE_ADMIN_SDK_CONFIG_B64;
@@ -32,6 +33,7 @@ function getAdminApp(): { app: App | null, error: string | null } {
         
         const app = initializeApp({
             credential: cert(serviceAccount),
+            storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
         }, adminAppName);
         return { app, error: null };
 
