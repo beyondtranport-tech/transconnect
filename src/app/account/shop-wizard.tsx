@@ -170,12 +170,14 @@ function ProductDialog({ shop, product, onSave, children }: { shop: any, product
     } : { name: '', description: '', price: 0, sku: '', imageUrl: '' }
   });
   
-  // When dialog opens, reset form with product data if it exists
   React.useEffect(() => {
-    if (isOpen && product) {
-        form.reset(product);
-    } else if (isOpen && !product) {
-        form.reset({ name: '', description: '', price: 0, sku: '', imageUrl: '' });
+    if (isOpen) {
+        setUploadProgress(null); // Reset upload progress when dialog opens
+        if (product) {
+            form.reset(product);
+        } else {
+            form.reset({ name: '', description: '', price: 0, sku: '', imageUrl: '' });
+        }
     }
   }, [isOpen, product, form]);
 
@@ -759,3 +761,5 @@ export default function ShopWizard({ shop }: { shop: any }) {
     </div>
   );
 }
+
+    
