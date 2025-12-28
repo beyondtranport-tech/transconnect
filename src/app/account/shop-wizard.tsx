@@ -566,49 +566,49 @@ function ProductDialog({ onAddProduct, memberId }: { onAddProduct: (product: Pro
     const onSubmit = async (values: ProductFormValues) => {
         setIsSaving(true);
         const newProductId = `prod_${Date.now()}`;
+        let finalImageUrl = '';
 
         try {
             if (imageFile) {
                 const storage = getStorage(firebaseApp);
                 const imagePath = `products/${memberId}/${newProductId}/${imageFile.name}`;
                 const fileRef = storageRef(storage, imagePath);
-                const uploadTask = uploadBytesResumable(fileRef, imageFile);
-
-                uploadTask.on('state_changed',
-                    (snapshot) => {
-                        const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-                        setUploadProgress(progress);
-                    },
-                    (error) => {
-                        console.error("Upload failed:", error);
-                        toast({ variant: 'destructive', title: 'Image Upload Failed', description: error.message });
-                        setIsSaving(false); // Make sure to reset on error
-                    },
-                    () => {
-                        getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
-                            const newProduct: Product = { ...values, id: newProductId, imageUrl: downloadURL };
-                            onAddProduct(newProduct);
-                            toast({ title: 'Product Staged', description: `${values.name} is ready to be saved.` });
-                            setIsOpen(false);
-                            resetForm();
-                        });
-                    }
-                );
-            } else {
-                 const newProduct: Product = { ...values, id: newProductId };
-                 onAddProduct(newProduct);
-                 toast({ title: 'Product Staged', description: `${values.name} is ready to be saved.` });
-                 setIsOpen(false);
-                 resetForm();
+                
+                // Use a promise to handle the upload task
+                await new Promise<void>((resolve, reject) => {
+                    const uploadTask = uploadBytesResumable(fileRef, imageFile);
+                    uploadTask.on('state_changed',
+                        (snapshot) => {
+                            const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                            setUploadProgress(progress);
+                        },
+                        (error) => {
+                            console.error("Upload failed:", error);
+                            toast({ variant: 'destructive', title: 'Image Upload Failed', description: error.message });
+                            reject(error);
+                        },
+                        async () => {
+                            finalImageUrl = await getDownloadURL(uploadTask.snapshot.ref);
+                            resolve();
+                        }
+                    );
+                });
             }
-        } catch(error) {
+            
+            const newProduct: Product = { ...values, id: newProductId, imageUrl: finalImageUrl };
+            onAddProduct(newProduct);
+            toast({ title: 'Product Staged', description: `${values.name} is ready to be saved.` });
+            setIsOpen(false);
+            resetForm();
+
+        } catch (error) {
             console.error("Error staging product:", error);
             toast({ variant: 'destructive', title: 'Error', description: 'Could not stage the product.' });
         } finally {
-            // This block will execute regardless of whether an image was uploaded or not
-            setIsSaving(false);
+            setIsSaving(false); // This will now always run
         }
     };
+
 
     return (
         <Dialog open={isOpen} onOpenChange={(open) => { setIsOpen(open); if(!open) resetForm(); }}>
@@ -635,7 +635,7 @@ function ProductDialog({ onAddProduct, memberId }: { onAddProduct: (product: Pro
                                     <Image src={imagePreview} alt="Preview" fill className="object-cover" />
                                 </div>
                             )}
-                            {uploadProgress !== null && <Progress value={uploadProgress} className="mt-2 h-2" />}
+                            {uploadProgress !== null && uploadProgress < 100 && <Progress value={uploadProgress} className="mt-2 h-2" />}
                             <FormMessage />
                         </FormItem>
                         <FormField control={form.control} name="description" render={({ field }) => (
