@@ -77,8 +77,6 @@ function AccountPageContent() {
 
   const { data: memberData, isLoading: isMemberLoading } = useDoc(memberDocRef);
 
-  const isVendor = memberData?.role === 'vendor';
-  
   useEffect(() => {
     setActiveView(initialView);
   }, [initialView]);
@@ -113,7 +111,7 @@ function AccountPageContent() {
       case 'staff':
         return <StaffContent />;
       case 'shop':
-        return isVendor ? <ShopContent /> : <AccountDashboard />;
+        return <ShopContent />;
       case 'transactions':
         return <TransactionsContent />;
       case 'documents':
@@ -173,14 +171,12 @@ function AccountPageContent() {
                   <span>Staff</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
-              {isVendor && (
-                 <SidebarMenuItem>
-                    <SidebarMenuButton tooltip="My Shop" isActive={activeView === 'shop'} onClick={() => router.push('/account?view=shop', { scroll: false })}>
-                      <Store />
-                      <span>My Shop</span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-              )}
+              <SidebarMenuItem>
+                <SidebarMenuButton tooltip="My Shop" isActive={activeView === 'shop'} onClick={() => router.push('/account?view=shop', { scroll: false })}>
+                  <Store />
+                  <span>My Shop</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
               <SidebarMenuItem>
                 <SidebarMenuButton tooltip="Transactions" isActive={activeView === 'transactions'} onClick={() => router.push('/account?view=transactions', { scroll: false })}>
                   <DollarSign />
@@ -242,5 +238,3 @@ export default function AccountPage() {
     </Suspense>
   );
 }
-
-    
