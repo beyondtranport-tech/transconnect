@@ -1,39 +1,59 @@
 
 rules_version = '2';
 
+// --- Helper Functions ---
 function isAdmin() {
   return request.auth != null && request.auth.token.email == 'beyondtransport@gmail.com';
 }
 
-function isOwner(userId) {
-  return request.auth != null && request.auth.uid == userId;
+// Check if the requesting user is the owner of the company account.
+// It reads the `ownerId` field from the member document.
+function isCompanyOwner(memberId) {
+  return request.auth != null && get(/databases/$(database)/documents/members/$(memberId)).data.ownerId == request.auth.uid;
 }
 
+// --- Service Rules ---
 service cloud.firestore {
   match /databases/{database}/documents {
+    
+    // --- Members Collection ---
 
-    // Rule for the member document itself.
-    match /members/{memberId} {
-      // An owner or admin can read, update, or delete their own profile.
-      allow get, update, delete: if isOwner(memberId) || isAdmin();
-      // Any authenticated user can create their own member document.
-      allow create: if request.auth != null && request.resource.id == request.auth.uid;
-      // Only an admin can list all members.
+    // Rule for listing the entire collection.
+    match /members {
+      // Only admins are allowed to list all member documents.
       allow list: if isAdmin();
+      
+      // Any authenticated user can create their own member document,
+      // as long as they set themselves as the owner.
+      allow create: if request.auth != null && request.resource.data.ownerId == request.auth.uid;
+    }
+
+    // Rule for individual /members/{memberId} documents.
+    match /members/{memberId} {
+      // An admin can read any member document. The company owner can read their own.
+      allow get: if isAdmin() || isCompanyOwner(memberId);
+      
+      // The company owner or an admin can update their document.
+      allow update: if isAdmin() || isCompanyOwner(memberId);
+      
+      // Only an admin can delete a member document.
+      allow delete: if isAdmin();
     }
 
     // This is the definitive recursive rule for all member-owned subcollections.
-    // It grants the owner or an admin full read/write access to everything
-    // underneath the /members/{memberId} document (e.g., shops, transactions, etc.).
+    // It grants the company owner or an admin full read/write access to everything
+    // underneath the /members/{memberId} document (e.g., shops, transactions, staff).
     match /members/{memberId}/{allPaths=**} {
-      allow read, write: if isOwner(memberId) || isAdmin();
+      allow read, write: if isAdmin() || isCompanyOwner(memberId);
     }
     
+    // --- Public & Global Collections ---
+
     // Public, read-only copy of approved shops
     match /shops/{shopId} {
-      // Anyone can read approved shops
+      // Anyone can read approved shops, but admins can see all.
       allow get, list: if resource.data.status == 'approved' || isAdmin();
-      // Only admins can create/update the public shop list
+      // Only admins can create/update the public shop list (done by a backend function).
       allow write: if isAdmin(); 
     }
     
@@ -45,8 +65,8 @@ service cloud.firestore {
 
     // Collection for anonymous contributions
     match /contributions/{contributionId} {
-      allow create: if request.auth != null; // Any authenticated user can contribute
-      allow read, list, update, delete: if isAdmin(); // Only admins can manage them
+      allow create: if request.auth != null; // Any authenticated user can contribute.
+      allow read, list, update, delete: if isAdmin(); // Only admins can manage them.
     }
     
     // Top-level collection for finance applications, mainly for admin use
