@@ -1,5 +1,6 @@
 
 'use server';
+import 'dotenv/config';
 
 import { initializeApp, getApps, App, cert } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
@@ -20,9 +21,14 @@ function getAdminApp(): App | null {
         return getApps().find(app => app.name === 'admin')!;
     }
     
-    return initializeApp({
-        credential: cert(serviceAccount),
-    }, 'admin');
+    try {
+        return initializeApp({
+            credential: cert(serviceAccount),
+        }, 'admin');
+    } catch (error: any) {
+        console.error("Error initializing admin app:", error.message);
+        return null;
+    }
 }
 
 interface Member {
@@ -38,7 +44,7 @@ interface FinanceApplication {
 export async function getMembers(): Promise<{ success: boolean; data?: Member[]; error?: string }> {
     const adminApp = getAdminApp();
     if (!adminApp) {
-        return { success: false, error: 'Firebase Admin SDK is not initialized. Missing environment variables.' };
+        return { success: false, error: 'Firebase Admin SDK could not be initialized. Please check server logs and environment variables.' };
     }
     const adminDb = getFirestore(adminApp);
     
@@ -58,7 +64,7 @@ export async function getMembers(): Promise<{ success: boolean; data?: Member[];
 export async function getFinanceApplications(): Promise<{ success: boolean; data?: FinanceApplication[]; error?: string }> {
     const adminApp = getAdminApp();
     if (!adminApp) {
-        return { success: false, error: 'Firebase Admin SDK is not initialized. Missing environment variables.' };
+        return { success: false, error: 'Firebase Admin SDK could not be initialized. Please check server logs and environment variables.' };
     }
     const adminDb = getFirestore(adminApp);
 
