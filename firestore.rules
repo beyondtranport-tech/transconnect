@@ -20,10 +20,10 @@ service cloud.firestore {
     }
 
     // Allow members to fully manage their own subcollections (e.g., shops, transactions, etc.).
-    // This grants permission to read, list, create, update, and delete documents within these subcollections.
-    // The recursive wildcard {docId=**} is crucial for granting permissions to list collections.
+    // The recursive wildcard {docId=**} is crucial for granting permissions to list, read, update, and delete.
+    // An explicit 'create' is added to ensure document creation is permitted.
     match /members/{userId}/{subcollection}/{docId=**} {
-        allow read, write: if request.auth != null && request.auth.uid == userId;
+        allow create, read, update, delete: if request.auth != null && request.auth.uid == userId;
     }
 
 
