@@ -60,6 +60,7 @@ function JoinFormComponent() {
 
   const userRole = searchParams.get('role');
   const financierType = searchParams.get('type');
+  const redirectParam = searchParams.get('redirect');
 
   const form = useForm<JoinFormValues>({
     resolver: zodResolver(formSchema),
@@ -99,14 +100,14 @@ function JoinFormComponent() {
       });
 
       const memberData: any = {
-        id: user.uid, // The ID of the document is the user's UID
-        ownerId: user.uid, // The user creating the account is the owner
+        id: user.uid,
+        ownerId: user.uid,
         firstName: values.firstName,
         lastName: values.lastName,
         email: values.email,
         phone: values.phone,
         companyName: values.companyName,
-        membershipId: 'free', // Default to a free plan
+        membershipId: 'free',
         rewardPoints: 0,
         walletBalance: 0,
         admin: isAdmin,
@@ -121,29 +122,17 @@ function JoinFormComponent() {
         memberData.financierType = financierType;
       }
 
-      // The document ID for the member is the same as their auth UID.
       const memberDocRef = doc(firestore, 'members', user.uid);
       
-      // We are not awaiting this. If it fails, the error handler will catch it.
-      setDoc(memberDocRef, memberData)
-        .catch((serverError) => {
-          const permissionError = new FirestorePermissionError({
-            path: memberDocRef.path,
-            operation: 'create',
-            requestResourceData: memberData,
-          });
-          errorEmitter.emit('permission-error', permissionError);
-        });
-      
-      await user.getIdToken(true);
+      await setDoc(memberDocRef, memberData);
 
       toast({
         title: 'Account Created!',
-        description: "Welcome to TransConnect. You're now signed in.",
+        description: "Welcome to TransConnect. Redirecting you now...",
       });
 
-      const redirectUrl = isAdmin ? '/backend' : '/account';
-      router.push(redirectUrl);
+      const defaultRedirect = isAdmin ? '/backend' : '/account';
+      router.replace(redirectParam || defaultRedirect);
 
     } catch (error: any) {
       let title = 'An error occurred.';
@@ -151,6 +140,13 @@ function JoinFormComponent() {
       if (error.code === 'auth/email-already-in-use') {
         title = 'Email already in use.';
         description = 'Please sign in or use a different email address.';
+      } else {
+        const permissionError = new FirestorePermissionError({
+            path: `members/${auth.currentUser?.uid || 'unknown'}`,
+            operation: 'create',
+            requestResourceData: form.getValues(),
+        });
+        errorEmitter.emit('permission-error', permissionError);
       }
       toast({
         variant: 'destructive',
@@ -321,5 +317,3 @@ export default function JoinPage() {
     </div>
   );
 }
-
-    

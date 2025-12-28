@@ -132,7 +132,7 @@ function BackendPageContent() {
   useEffect(() => {
     if (!isUserLoading) {
       if (!user || user.email !== 'beyondtransport@gmail.com') {
-        router.push('/signin?redirect=/backend');
+        router.replace('/signin?redirect=/backend');
       } else {
         setIsAdmin(true);
       }

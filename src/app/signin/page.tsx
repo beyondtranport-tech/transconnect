@@ -101,12 +101,14 @@ function SignInFormComponent() {
         return;
     }
     try {
-      await signInWithEmailAndPassword(auth, values.email, values.password);
-
-      // The onIdTokenChanged listener in firebase/index.ts handles setting the cookie.
-      // After login, we simply refresh the page. The middleware will see the new cookie
-      // and handle the redirect on the server-side, which is more reliable.
-      router.refresh();
+      const userCredential = await signInWithEmailAndPassword(auth, values.email, values.password);
+      const isAdmin = userCredential.user.email === 'beyondtransport@gmail.com';
+      const redirectParam = searchParams.get('redirect');
+      
+      const defaultRedirect = isAdmin ? '/backend' : '/account';
+      
+      // Use router.replace to avoid adding the sign-in page to history
+      router.replace(redirectParam || defaultRedirect);
 
     } catch (error: any) {
       let title = 'An error occurred.';
