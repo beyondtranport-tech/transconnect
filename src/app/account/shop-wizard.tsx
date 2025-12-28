@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import React from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -167,7 +167,7 @@ function ProductDialog({ shop, product, onSave, children }: { shop: any, product
         price: product.price,
         sku: product.sku || '',
         imageUrl: product.imageUrl || ''
-    } : { name: '', description: '', price: '' as any, sku: '', imageUrl: '' }
+    } : { name: '', description: '', price: undefined, sku: '', imageUrl: '' }
   });
   
   useEffect(() => {
@@ -176,7 +176,7 @@ function ProductDialog({ shop, product, onSave, children }: { shop: any, product
         if (product) {
             form.reset(product);
         } else {
-            form.reset({ name: '', description: '', price: '' as any, sku: '', imageUrl: '' });
+            form.reset({ name: '', description: '', price: undefined, sku: '', imageUrl: '' });
         }
     }
   }, [isOpen, product, form]);
@@ -234,19 +234,6 @@ function ProductDialog({ shop, product, onSave, children }: { shop: any, product
     }
   };
 
-  const handleManualSubmit = async () => {
-    const isValid = await form.trigger();
-    if (isValid) {
-      form.handleSubmit(onSubmit)();
-    } else {
-      toast({
-        variant: "destructive",
-        title: "Invalid Form",
-        description: "Please fill out all required fields (Name, Description, and a valid Price) before saving.",
-      });
-    }
-  };
-
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file || !user || !storage) return;
@@ -267,7 +254,7 @@ function ProductDialog({ shop, product, onSave, children }: { shop: any, product
       () => {
         getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
           form.setValue('imageUrl', downloadURL);
-          setUploadProgress(null); // Reset progress on completion
+          setUploadProgress(null);
           toast({ title: "Image uploaded!" });
         });
       }
@@ -292,7 +279,7 @@ function ProductDialog({ shop, product, onSave, children }: { shop: any, product
                 )} />
                 <div className="grid grid-cols-2 gap-4">
                     <FormField control={form.control} name="price" render={({ field }) => (
-                        <FormItem><FormLabel>Price (ZAR)</FormLabel><FormControl><Input type="number" step="0.01" {...field} /></FormControl><FormMessage /></FormItem>
+                        <FormItem><FormLabel>Price (ZAR)</FormLabel><FormControl><Input type="number" step="0.01" {...field} onChange={e => field.onChange(parseFloat(e.target.value))} /></FormControl><FormMessage /></FormItem>
                     )} />
                     <FormField control={form.control} name="sku" render={({ field }) => (
                         <FormItem><FormLabel>SKU (Optional)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
@@ -311,8 +298,7 @@ function ProductDialog({ shop, product, onSave, children }: { shop: any, product
                 )} />
                 <DialogFooter>
                     <Button 
-                      type="button" 
-                      onClick={handleManualSubmit}
+                      type="submit"
                       disabled={isSaving || (uploadProgress !== null && uploadProgress < 100)}>
                         {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Save className="mr-2 h-4 w-4" />}
                         Save Product
@@ -710,14 +696,14 @@ export default function ShopWizard({ shop }: { shop: any }) {
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [shopData, setShopData] = useState(shop);
 
-  const handleSaveAndNext = (newData: any) => {
+  const handleSaveAndNext = useCallback((newData: any) => {
     const updatedShopData = { ...shopData, ...newData };
     setShopData(updatedShopData);
 
     if(currentStepIndex < STEPS.length - 1) {
         setCurrentStepIndex(currentStepIndex + 1);
     }
-  }
+  }, [currentStepIndex, shopData]);
 
   const renderStepContent = () => {
     const stepId = STEPS[currentStepIndex].id;
