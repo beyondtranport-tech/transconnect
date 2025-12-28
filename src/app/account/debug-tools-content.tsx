@@ -15,6 +15,7 @@ export default function DebugToolsContent() {
   const { toast } = useToast();
   const [isTesting, setIsTesting] = useState(false);
   const [testResult, setTestResult] = useState<'idle' | 'success' | 'failure'>('idle');
+  const [errorOutput, setErrorOutput] = useState('');
 
   const handleTestRule = async () => {
     if (!user || !firestore) {
@@ -23,6 +24,7 @@ export default function DebugToolsContent() {
     }
     setIsTesting(true);
     setTestResult('idle');
+    setErrorOutput('');
 
     try {
       // The path we want to test
@@ -42,18 +44,15 @@ export default function DebugToolsContent() {
       
       // Check if it's our custom error to get more details
       if (error instanceof FirestorePermissionError) {
-          detailedDescription = `Request denied. Details:\n${JSON.stringify(error.request, null, 2)}`;
+          detailedDescription = JSON.stringify(error.request, null, 2);
       }
+      
+      setErrorOutput(detailedDescription);
       
       toast({
         variant: 'destructive',
         title: 'Test Failed!',
-        description: (
-            <pre className="mt-2 w-[340px] rounded-md bg-slate-950 p-4">
-                <code className="text-white text-xs">{detailedDescription}</code>
-            </pre>
-        ),
-        duration: 20000,
+        description: "The request was denied by Firestore's security rules. See details below.",
       });
     } finally {
       setIsTesting(false);
@@ -86,21 +85,26 @@ export default function DebugToolsContent() {
               Test Shop Creation Rule
             </Button>
             {testResult !== 'idle' && (
-              <div className="mt-4 p-4 rounded-md flex items-center gap-3" style={{backgroundColor: testResult === 'success' ? 'hsl(var(--primary) / 0.1)' : 'hsl(var(--destructive) / 0.1)'}}>
+              <div className="mt-4 p-4 rounded-md flex items-start gap-3" style={{backgroundColor: testResult === 'success' ? 'hsl(var(--primary) / 0.1)' : 'hsl(var(--destructive) / 0.1)'}}>
                 {testResult === 'success' ? (
-                  <CheckCircle className="h-6 w-6 text-primary" />
+                  <CheckCircle className="h-6 w-6 text-primary flex-shrink-0" />
                 ) : (
-                  <XCircle className="h-6 w-6 text-destructive" />
+                  <XCircle className="h-6 w-6 text-destructive flex-shrink-0" />
                 )}
-                <div>
+                <div className="w-full">
                   <p className="font-semibold" style={{color: testResult === 'success' ? 'hsl(var(--primary))' : 'hsl(var(--destructive))'}}>
                     {testResult === 'success' ? 'Test Succeeded' : 'Test Failed'}
                   </p>
                   <p className="text-sm text-muted-foreground">
                     {testResult === 'success'
                       ? 'You have the correct permissions to create a shop.'
-                      : 'You do not have permission. Check the toast for detailed error info.'}
+                      : 'You do not have permission. The details of the failed request are below.'}
                   </p>
+                  {errorOutput && (
+                    <pre className="mt-2 w-full text-xs overflow-x-auto rounded-md bg-slate-950 p-4">
+                        <code className="text-white">{errorOutput}</code>
+                    </pre>
+                  )}
                 </div>
               </div>
             )}
