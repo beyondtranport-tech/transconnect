@@ -1,13 +1,21 @@
 
 'use client';
 
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, query, orderBy } from 'firebase/firestore';
+import { useState, useEffect } from 'react';
+import { getContributions } from './actions';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Loader2, Truck, Warehouse, Building } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
+
+interface Contribution {
+    id: string;
+    userId: string;
+    type: string;
+    createdAt: any;
+    data: any;
+}
 
 const typeConfig = {
     truck: { icon: Truck, color: 'default' as const, label: 'Truck' },
@@ -15,16 +23,30 @@ const typeConfig = {
     supplier: { icon: Building, color: 'outline' as const, label: 'Supplier' },
 }
 
-
 export default function ContributionsList() {
-    const firestore = useFirestore();
+    const [contributions, setContributions] = useState<Contribution[] | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
-    const contributionsCollectionRef = useMemoFirebase(() => {
-        if (!firestore) return null;
-        return query(collection(firestore, 'contributions'), orderBy('createdAt', 'desc'));
-    }, [firestore]);
-    
-    const { data: contributions, isLoading, error } = useCollection(contributionsCollectionRef);
+    useEffect(() => {
+        async function fetchContributions() {
+            setIsLoading(true);
+            try {
+                const result = await getContributions();
+                if (result.success && result.data) {
+                    setContributions(result.data as Contribution[]);
+                } else {
+                    setError(result.error || 'Failed to fetch contributions.');
+                }
+            } catch (e: any) {
+                setError(e.message || 'An unexpected error occurred.');
+            } finally {
+                setIsLoading(false);
+            }
+        }
+
+        fetchContributions();
+    }, []);
 
     const formatDate = (timestamp: any) => {
         if (timestamp && timestamp.toDate) {
@@ -56,7 +78,7 @@ export default function ContributionsList() {
                 {error && (
                      <div className="text-destructive-foreground bg-destructive/90 p-4 rounded-md">
                         <h4 className="font-semibold">Error loading contributions</h4>
-                        <p className="text-sm">{error.message}</p>
+                        <p className="text-sm">{error}</p>
                     </div>
                 )}
                 {contributions && !isLoading && (

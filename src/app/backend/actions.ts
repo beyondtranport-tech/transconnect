@@ -41,6 +41,11 @@ interface FinanceApplication {
     [key: string]: any;
 }
 
+interface Contribution {
+    id: string;
+    [key: string]: any;
+}
+
 export async function getMembers(): Promise<{ success: boolean; data?: Member[]; error?: string }> {
     const adminApp = getAdminApp();
     if (!adminApp) {
@@ -77,6 +82,26 @@ export async function getFinanceApplications(): Promise<{ success: boolean; data
         return { success: true, data: applications };
     } catch (error: any) {
         console.error('Error fetching finance applications with admin SDK:', error);
+        return { success: false, error: error.message };
+    }
+}
+
+export async function getContributions(): Promise<{ success: boolean; data?: Contribution[]; error?: string }> {
+    const adminApp = getAdminApp();
+    if (!adminApp) {
+        return { success: false, error: 'Firebase Admin SDK could not be initialized. Please check server logs and environment variables.' };
+    }
+    const adminDb = getFirestore(adminApp);
+
+    try {
+        const contributionsSnapshot = await adminDb.collection('contributions').orderBy('createdAt', 'desc').get();
+        const contributions = contributionsSnapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data(),
+        }));
+        return { success: true, data: contributions };
+    } catch (error: any) {
+        console.error('Error fetching contributions with admin SDK:', error);
         return { success: false, error: error.message };
     }
 }
