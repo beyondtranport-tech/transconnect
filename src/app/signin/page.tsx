@@ -101,25 +101,17 @@ function SignInFormComponent() {
         return;
     }
     try {
-      const userCredential = await signInWithEmailAndPassword(auth, values.email, values.password);
+      await signInWithEmailAndPassword(auth, values.email, values.password);
 
       toast({
         title: 'Signed In!',
         description: "Welcome back to TransConnect.",
       });
-      
-      const isAdmin = userCredential.user.email === 'beyondtransport@gmail.com';
-      const redirectFromParams = searchParams.get('redirect');
-      
-      // The router.replace() will be called after the onIdTokenChanged listener has had a chance to run
-      // and set the cookie, thanks to the `await userCredential`.
-      if (redirectFromParams) {
-        router.replace(redirectFromParams);
-      } else if (isAdmin) {
-        router.replace('/backend');
-      } else {
-        router.replace('/account');
-      }
+
+      // The onIdTokenChanged listener in firebase/index.ts handles setting the cookie.
+      // After login, we simply refresh the page. The middleware will see the new cookie
+      // and handle the redirect on the server-side, which is more reliable.
+      router.refresh();
 
     } catch (error: any) {
       let title = 'An error occurred.';
