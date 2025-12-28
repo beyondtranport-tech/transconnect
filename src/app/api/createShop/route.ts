@@ -47,7 +47,9 @@ export async function POST(req: NextRequest) {
     const batch = db.batch();
     
     batch.set(newShopRef, newShopData);
-    batch.update(memberRef, { shopId: newShopRef.id });
+    // Use set with merge:true instead of update for robustness.
+    // This will create the member document if it doesn't exist, or update it if it does.
+    batch.set(memberRef, { shopId: newShopRef.id }, { merge: true });
     
     await batch.commit();
 
