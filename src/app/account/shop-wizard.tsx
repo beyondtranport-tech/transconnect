@@ -1,9 +1,8 @@
 
 'use client';
 
-import React from 'react';
-import { useState, useMemo, useEffect, useCallback } from 'react';
-import { useForm, useFieldArray } from 'react-hook-form';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
@@ -14,7 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useFirestore, useUser, useStorage, useCollection, useMemoFirebase, getClientSideAuthToken } from '@/firebase';
 import { doc, updateDoc, serverTimestamp, setDoc, addDoc, deleteDoc, collection } from 'firebase/firestore';
 import { ref as storageRef, uploadBytesResumable, getDownloadURL } from "firebase/storage";
-import { Loader2, Save, CheckCircle, LayoutGrid, List, Image as ImageIcon, Sparkles, PlusCircle, Edit, Trash2, Send, Eye } from 'lucide-react';
+import { Loader2, Save, CheckCircle, LayoutGrid, List, Image as ImageIcon, Sparkles, PlusCircle, Edit, Trash2, Send, Eye, ShoppingCart, Mail, Phone } from 'lucide-react';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -42,6 +41,8 @@ const shopStep1Schema = z.object({
   shopName: z.string().min(1, "Shop name is required."),
   shopDescription: z.string().min(1, "Please provide a brief description for your shop."),
   category: z.string().min(1, "Please select a category."),
+  contactEmail: z.string().email("Please enter a valid email.").optional().or(z.literal('')),
+  contactPhone: z.string().optional(),
 });
 
 type Step1FormValues = z.infer<typeof shopStep1Schema>;
@@ -57,6 +58,8 @@ function Step1CoreIdentity({ shop, onSave }: { shop: any, onSave: (newData: any)
       shopName: shop.shopName || '',
       shopDescription: shop.shopDescription || '',
       category: shop.category || '',
+      contactEmail: shop.contactEmail || '',
+      contactPhone: shop.contactPhone || '',
     }
   });
 
@@ -132,6 +135,22 @@ function Step1CoreIdentity({ shop, onSave }: { shop: any, onSave: (newData: any)
             <FormMessage />
           </FormItem>
         )} />
+         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+             <FormField control={form.control} name="contactEmail" render={({ field }) => (
+                <FormItem>
+                    <FormLabel>Public Contact Email</FormLabel>
+                    <FormControl><Input placeholder="shop@example.com" {...field} /></FormControl>
+                    <FormMessage />
+                </FormItem>
+            )} />
+             <FormField control={form.control} name="contactPhone" render={({ field }) => (
+                <FormItem>
+                    <FormLabel>Public Contact Phone</FormLabel>
+                    <FormControl><Input placeholder="011 123 4567" {...field} /></FormControl>
+                    <FormMessage />
+                </FormItem>
+            )} />
+         </div>
         <Button type="submit" disabled={isSaving}>
           {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
           Save & Continue
@@ -162,7 +181,7 @@ function ProductDialog({ shop, product, onSave, children }: { shop: any, product
   const form = useForm<ProductFormValues>({
     resolver: zodResolver(productSchema),
     defaultValues: product ? {
-        ...product
+        ...product,
     } : { name: '', description: '', price: '' as any, sku: '', imageUrl: '' }
   });
   
@@ -601,43 +620,58 @@ const formatPrice = (price: number) => {
     return new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(price);
 };
 
+const themeColors: { [key: string]: { bg: string; text: string; primary: string } } = {
+    'forest-green': { bg: 'bg-green-50', text: 'text-green-900', primary: 'text-green-600' },
+    'ocean-blue': { bg: 'bg-blue-50', text: 'text-blue-900', primary: 'text-blue-600' },
+    'industrial-grey': { bg: 'bg-gray-100', text: 'text-gray-900', primary: 'text-gray-600' },
+    'sunset-orange': { bg: 'bg-orange-50', text: 'text-orange-900', primary: 'text-orange-600' },
+};
+
 function ShopPreview({ shop, products }: { shop: any, products: any[] }) {
-    const renderGrid = () => (
+    const theme = themeColors[shop.theme] || themeColors['forest-green'];
+
+    const renderProductGrid = () => (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {products.map(product => (
-                <Card key={product.id} className="overflow-hidden">
-                    <div className="relative aspect-square bg-muted">
-                        {product.imageUrl && <Image src={product.imageUrl} alt={product.name} fill className="object-cover" />}
+            {(products || []).map(product => (
+                <Card key={product.id} className="overflow-hidden bg-white">
+                    <div className="relative aspect-square bg-gray-200">
+                        {product.imageUrl ? 
+                            <Image src={product.imageUrl} alt={product.name} fill className="object-cover" /> :
+                            <div className="w-full h-full flex items-center justify-center"><ShoppingCart className="h-12 w-12 text-gray-400"/></div>
+                        }
                     </div>
                     <CardHeader>
                         <CardTitle className="text-base">{product.name}</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <p className="text-sm text-muted-foreground line-clamp-2">{product.description}</p>
+                        <p className="text-sm text-gray-600 line-clamp-2">{product.description}</p>
                     </CardContent>
                     <CardFooter className="flex justify-between items-center">
-                        <p className="font-bold">{formatPrice(product.price)}</p>
-                        <Button size="sm">Add</Button>
+                        <p className={cn("font-bold", theme.primary)}>{formatPrice(product.price)}</p>
+                        <Button size="sm" style={{ backgroundColor: `hsl(var(--primary))`, color: `hsl(var(--primary-foreground))` }}>Add to Cart</Button>
                     </CardFooter>
                 </Card>
             ))}
         </div>
     );
 
-    const renderList = () => (
+    const renderProductList = () => (
         <div className="space-y-4">
-            {products.map(product => (
-                 <Card key={product.id} className="flex items-center">
-                    <div className="relative h-24 w-24 flex-shrink-0 bg-muted">
-                        {product.imageUrl && <Image src={product.imageUrl} alt={product.name} fill className="object-cover rounded-l-lg" />}
+            {(products || []).map(product => (
+                 <Card key={product.id} className="flex items-center bg-white">
+                    <div className="relative h-24 w-24 flex-shrink-0 bg-gray-200">
+                       {product.imageUrl ? 
+                            <Image src={product.imageUrl} alt={product.name} fill className="object-cover rounded-l-lg" /> :
+                            <div className="w-full h-full flex items-center justify-center"><ShoppingCart className="h-8 w-8 text-gray-400"/></div>
+                        }
                     </div>
                     <CardContent className="p-4 flex-grow">
                         <h3 className="font-semibold">{product.name}</h3>
-                        <p className="text-sm text-muted-foreground line-clamp-1">{product.description}</p>
+                        <p className="text-sm text-gray-600 line-clamp-1">{product.description}</p>
                     </CardContent>
                     <div className="p-4 text-right">
-                         <p className="font-bold">{formatPrice(product.price)}</p>
-                         <Button size="sm" className="mt-1">Add</Button>
+                         <p className={cn("font-bold", theme.primary)}>{formatPrice(product.price)}</p>
+                         <Button size="sm" className="mt-1" style={{ backgroundColor: `hsl(var(--primary))`, color: `hsl(var(--primary-foreground))` }}>Add to Cart</Button>
                     </div>
                 </Card>
             ))}
@@ -645,22 +679,78 @@ function ShopPreview({ shop, products }: { shop: any, products: any[] }) {
     );
     
     return (
-        <div className="bg-background p-6 rounded-lg border">
-            <div className="mb-8 text-center">
-                <h2 className="text-3xl font-bold">{shop.shopName}</h2>
-                <p className="text-muted-foreground">{shop.shopDescription}</p>
-                 <div className="mt-2 flex justify-center flex-wrap gap-1">
-                    {shop.tags?.map((tag: string) => <Badge key={tag} variant="secondary">{tag}</Badge>)}
+        <div className={cn("w-full h-full text-base", theme.bg, theme.text)}>
+            {/* Shop Navigation */}
+            <header className="bg-white/80 backdrop-blur-sm sticky top-0 z-10 border-b">
+                <div className="container mx-auto px-6 py-3 flex justify-between items-center">
+                    <h1 className={cn("text-xl font-bold", theme.primary)}>{shop.shopName}</h1>
+                    <nav className="hidden md:flex items-center gap-6 text-sm font-medium">
+                        <a href="#" className="hover:text-gray-900">Home</a>
+                        <a href="#products" className="hover:text-gray-900">Products</a>
+                        <a href="#contact" className="hover:text-gray-900">Contact</a>
+                    </nav>
                 </div>
-            </div>
+            </header>
 
-            {products && products.length > 0 ? (
-                shop.template === 'classic-list' ? renderList() : renderGrid()
-            ) : (
-                <div className="text-center py-16 border-2 border-dashed rounded-lg">
-                    <p className="text-muted-foreground">No products have been added yet.</p>
+            {/* Main Content */}
+            <main className="container mx-auto px-6 py-12">
+                {/* Hero Section */}
+                <section className="text-center py-16">
+                    <h2 className="text-4xl font-extrabold tracking-tight">{shop.shopName}</h2>
+                    <p className="mt-4 max-w-2xl mx-auto text-lg text-gray-600">{shop.shopDescription}</p>
+                    <div className="mt-4 flex justify-center flex-wrap gap-2">
+                        {shop.tags?.map((tag: string) => <Badge key={tag} variant="secondary">{tag}</Badge>)}
+                    </div>
+                </section>
+
+                {/* Products Section */}
+                <section id="products" className="py-12">
+                    <h3 className="text-2xl font-bold text-center mb-8">Our Products</h3>
+                    {products && products.length > 0 ? (
+                        shop.template === 'classic-list' ? renderProductList() : renderProductGrid()
+                    ) : (
+                        <div className="text-center py-16 border-2 border-dashed rounded-lg bg-white">
+                            <ShoppingCart className="h-12 w-12 text-gray-400 mx-auto"/>
+                            <p className="mt-4 text-gray-500">No products have been added yet.</p>
+                        </div>
+                    )}
+                </section>
+                
+                {/* Contact Section */}
+                <section id="contact" className="py-12 mt-12 border-t">
+                     <h3 className="text-2xl font-bold text-center mb-8">Contact Us</h3>
+                     <Card className="max-w-2xl mx-auto bg-white">
+                         <CardContent className="p-6 text-center space-y-4">
+                            {(shop.contactEmail || shop.contactPhone) ? (
+                                <>
+                                    {shop.contactEmail && (
+                                        <div className="flex items-center justify-center gap-2">
+                                            <Mail className={cn("h-5 w-5", theme.primary)} />
+                                            <span>{shop.contactEmail}</span>
+                                        </div>
+                                    )}
+                                    {shop.contactPhone && (
+                                        <div className="flex items-center justify-center gap-2">
+                                            <Phone className={cn("h-5 w-5", theme.primary)} />
+                                            <span>{shop.contactPhone}</span>
+                                        </div>
+                                    )}
+                                </>
+                            ) : (
+                                <p className="text-gray-500">Contact information has not been provided.</p>
+                            )}
+                         </CardContent>
+                     </Card>
+                </section>
+            </main>
+            
+            {/* Footer */}
+            <footer className="bg-white/80 border-t mt-12">
+                <div className="container mx-auto px-6 py-4 text-center text-sm text-gray-500">
+                    <p>&copy; {new Date().getFullYear()} {shop.shopName}. All Rights Reserved.</p>
+                    <p className="mt-1">Powered by TransConnect</p>
                 </div>
-            )}
+            </footer>
         </div>
     );
 }
@@ -751,12 +841,12 @@ function Step5Preview({ shop, onSave }: { shop: any; onSave: (newData: any) => v
         <DialogTrigger asChild>
             <Button variant="outline"><Eye className="mr-2 h-4 w-4" /> Preview Shop</Button>
         </DialogTrigger>
-        <DialogContent className="max-w-4xl h-[80vh]">
-            <DialogHeader>
+        <DialogContent className="max-w-6xl h-[90vh] p-0 border-0">
+            <DialogHeader className="sr-only">
                 <DialogTitle>Shop Preview</DialogTitle>
                  <DialogDescription>This is how your shop will appear to customers.</DialogDescription>
             </DialogHeader>
-            <div className="overflow-y-auto pr-4 -mr-4">
+            <div className="w-full h-full overflow-y-auto">
                  {areProductsLoading ? (
                     <div className="flex justify-center items-center h-full"><Loader2 className="animate-spin" /></div>
                  ) : (
