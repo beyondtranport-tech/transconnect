@@ -1,29 +1,27 @@
 
 'use server';
 
-import { initializeApp, getApps, App } from 'firebase-admin/app';
+import { initializeApp, getApps, App, cert } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 import { serviceAccount } from '@/firebase/service-account-credentials';
 
+// Ensure the service account has the necessary properties.
+const adminServiceAccount = {
+  projectId: serviceAccount.project_id,
+  clientEmail: serviceAccount.client_email,
+  privateKey: serviceAccount.private_key,
+};
+
 let adminApp: App;
-if (!getApps().length) {
+
+// Initialize the Firebase Admin App if it doesn't already exist.
+if (!getApps().some(app => app.name === 'admin')) {
     adminApp = initializeApp({
-        credential: {
-            projectId: serviceAccount.project_id,
-            clientEmail: serviceAccount.client_email,
-            privateKey: serviceAccount.private_key,
-        },
+        credential: cert(adminServiceAccount),
     }, 'admin');
 } else {
-    adminApp = getApps().find(app => app.name === 'admin') || initializeApp({
-        credential: {
-            projectId: serviceAccount.project_id,
-            clientEmail: serviceAccount.client_email,
-            privateKey: serviceAccount.private_key,
-        },
-    }, 'admin');
+    adminApp = getApps().find(app => app.name === 'admin')!;
 }
-
 
 const adminDb = getFirestore(adminApp);
 
