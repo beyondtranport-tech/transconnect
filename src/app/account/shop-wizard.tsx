@@ -2,6 +2,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
+import React from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
