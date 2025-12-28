@@ -7,13 +7,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Loader2, Truck, Warehouse, Building } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { format } from 'date-fns';
 
 interface Contribution {
     id: string;
     userId: string;
     type: string;
-    createdAt: any;
+    createdAt: string; // Changed to string
     data: any;
 }
 
@@ -48,11 +47,13 @@ export default function ContributionsList() {
         fetchContributions();
     }, []);
 
-    const formatDate = (timestamp: any) => {
-        if (timestamp && timestamp.toDate) {
-            return format(timestamp.toDate(), "yyyy-MM-dd HH:mm");
+    const formatDate = (isoString: string | undefined) => {
+        if (!isoString) return 'N/A';
+        try {
+            return new Date(isoString).toLocaleString('en-ZA', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit'});
+        } catch (e) {
+            return 'Invalid Date';
         }
-        return 'N/A';
     };
     
     const renderCell = (item: any, field: string) => {

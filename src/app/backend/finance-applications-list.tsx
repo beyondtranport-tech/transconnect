@@ -7,7 +7,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Loader2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
 
 interface FinanceApplication {
@@ -16,7 +15,7 @@ interface FinanceApplication {
     fundingType: string;
     amountRequested: number;
     status: string;
-    createdAt: any;
+    createdAt: string; // Changed to string
 }
 
 const statusColors: { [key: string]: 'default' | 'secondary' | 'destructive' | 'outline' } = {
@@ -33,11 +32,13 @@ const formatPrice = (price: number) => {
     return new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(price);
 };
 
-const formatDate = (timestamp: any) => {
-    if (timestamp && timestamp.toDate) {
-        return format(timestamp.toDate(), "yyyy-MM-dd HH:mm");
+const formatDate = (isoString: string | undefined) => {
+    if (!isoString) return 'N/A';
+    try {
+        return new Date(isoString).toLocaleString('en-ZA', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit'});
+    } catch (e) {
+        return 'Invalid Date';
     }
-    return 'N/A';
 };
 
 export default function FinanceApplicationsList() {

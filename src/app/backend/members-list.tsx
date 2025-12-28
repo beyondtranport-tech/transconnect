@@ -18,7 +18,7 @@ interface Member {
     companyName?: string;
     membershipId?: string;
     walletBalance?: number;
-    createdAt?: { toDate: () => Date };
+    createdAt?: string; // Changed to string
 }
 
 const formatCurrency = (amount: number | undefined) => {
@@ -26,11 +26,13 @@ const formatCurrency = (amount: number | undefined) => {
     return new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(amount);
 };
 
-const formatDate = (timestamp: any) => {
-    if (timestamp && timestamp.toDate) {
-        return timestamp.toDate().toLocaleDateString();
+const formatDate = (isoString: string | undefined) => {
+    if (!isoString) return 'N/A';
+    try {
+        return new Date(isoString).toLocaleDateString('en-ZA');
+    } catch (e) {
+        return 'Invalid Date';
     }
-    return 'N/A';
 };
 
 export default function MembersList() {
