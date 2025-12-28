@@ -1,7 +1,6 @@
 
 'use client';
 
-import React from 'react';
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -156,7 +155,6 @@ function ProductDialog({ shop, product, onSave, children }: { shop: any, product
   const storage = useStorage();
   const { toast } = useToast();
   const [isOpen, setIsOpen] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
 
   const form = useForm<ProductFormValues>({
@@ -179,7 +177,6 @@ function ProductDialog({ shop, product, onSave, children }: { shop: any, product
 
   const onSubmit = async (values: ProductFormValues) => {
     if (!user) return;
-    setIsSaving(true);
     
     try {
         const token = await getClientSideAuthToken();
@@ -224,8 +221,6 @@ function ProductDialog({ shop, product, onSave, children }: { shop: any, product
         setIsOpen(false);
     } catch (error: any) {
         toast({ variant: 'destructive', title: 'Save Failed', description: error.message });
-    } finally {
-        setIsSaving(false);
     }
   };
 
@@ -248,29 +243,13 @@ function ProductDialog({ shop, product, onSave, children }: { shop: any, product
       },
       () => {
         getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
-          form.setValue('imageUrl', downloadURL);
+          form.setValue('imageUrl', downloadURL, { shouldValidate: true });
           toast({ title: "Image uploaded!" });
           setUploadProgress(null);
         });
       }
     );
   };
-  
-    const handleManualSubmit = async () => {
-        setIsSaving(true);
-        const isValid = await form.trigger();
-        if (isValid) {
-            await form.handleSubmit(onSubmit)();
-        } else {
-            toast({
-                variant: 'destructive',
-                title: 'Invalid Form',
-                description: 'Please fill out all required fields correctly.'
-            });
-        }
-        setIsSaving(false);
-    };
-
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -280,7 +259,7 @@ function ProductDialog({ shop, product, onSave, children }: { shop: any, product
           <DialogTitle>{product ? 'Edit Product' : 'Add New Product'}</DialogTitle>
         </DialogHeader>
         <Form {...form}>
-            <form onSubmit={(e) => { e.preventDefault(); handleManualSubmit();}} className="space-y-4">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                 <FormField control={form.control} name="name" render={({ field }) => (
                     <FormItem><FormLabel>Product Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
                 )} />
@@ -307,8 +286,8 @@ function ProductDialog({ shop, product, onSave, children }: { shop: any, product
                     <FormMessage /></FormItem>
                 )} />
                 <DialogFooter>
-                    <Button type="button" onClick={handleManualSubmit} disabled={isSaving || (uploadProgress !== null && uploadProgress < 100)}>
-                        {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Save className="mr-2 h-4 w-4" />}
+                    <Button type="submit" disabled={form.formState.isSubmitting || (uploadProgress !== null)}>
+                        {form.formState.isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Save className="mr-2 h-4 w-4" />}
                         Save Product
                     </Button>
                 </DialogFooter>
