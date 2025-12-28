@@ -54,52 +54,34 @@ export default function FundingPage() {
                 )}
                 <div className="absolute inset-0 bg-black/60" />
                 <div className="relative h-full flex flex-col items-center justify-center text-center text-primary-foreground z-10 p-4">
-                    <h1 className="text-4xl md:text-5xl font-bold font-headline">Start Your Finance Application</h1>
-                    <p className="mt-4 text-lg md:text-xl max-w-3xl">Select the type of funding that best suits your needs to begin. Our single application process connects you to a network of ideal lenders.</p>
+                    <h1 className="text-4xl md:text-5xl font-bold font-headline">Funding That Moves You Forward</h1>
+                    <p className="mt-4 text-lg md:text-xl max-w-3xl">Our single application process connects you to a network of ideal lenders who understand the transport industry.</p>
                 </div>
             </section>
 
              <section className="py-16 md:py-24 bg-background">
                 <div className="container mx-auto px-4">
                      <div className="max-w-4xl mx-auto text-center">
-                        <h2 className="text-3xl md:text-4xl font-bold font-headline">Our business is about empowering you through Finance.</h2>
-                        <p className="mt-6 text-lg text-muted-foreground">Are you:</p>
-                        <ul className="mt-4 space-y-2 text-left inline-block">
+                        <h2 className="text-3xl md:text-4xl font-bold font-headline">Are You Facing These Funding Roadblocks?</h2>
+                        <p className="mt-6 text-lg text-muted-foreground">If you're a transport operator, you know that traditional financing doesn't always fit. We understand the challenges you face.</p>
+                        <ul className="mt-6 space-y-2 text-left inline-block">
                              <li className="flex items-start">
                                 <CheckCircle className="h-6 w-6 text-primary mr-3 mt-1 flex-shrink-0" />
-                                <span>Tired of being turned down by banks that simply don’t understand your unique business needs?</span>
+                                <span>Tired of being turned down by banks that don’t understand your unique business needs?</span>
                             </li>
                              <li className="flex items-start">
                                 <CheckCircle className="h-6 w-6 text-primary mr-3 mt-1 flex-shrink-0" />
-                                <span>Frustrated with finance solutions that fall short of meeting your needs?</span>
+                                <span>Frustrated with rigid finance solutions that fall short of meeting your operational requirements?</span>
                             </li>
                              <li className="flex items-start">
                                 <CheckCircle className="h-6 w-6 text-primary mr-3 mt-1 flex-shrink-0" />
-                                <span>In need of finance that can be implemented fast?</span>
+                                <span>In need of funding that can be implemented fast to seize a new contract or opportunity?</span>
                             </li>
                         </ul>
-                         <p className="mt-6 text-xl font-semibold">Then you have landed in the right place!</p>
-                        <div className="mt-6 text-left space-y-4 text-muted-foreground">
-                            <p>We provide a broad range of finance products and unique industry specific finance solutions. Solutions that will work for your business. Our solutions are simple - designed to empower you to do what you do best - managing and growing your business.</p>
-                            <p>Frustrated with banks? We have the solution! We have changed funding to make it work for you. Our systems put you in control by providing you with your own account where you are in total control. We have built a tailored made funding fund you where others cannot. Register and become a client to experience our unique lending structures first hand. The only thing that is certain, our clients all have unique businesses and needs. Our vision is to help you by providing the right finance solutions, solutions that are simple.</p>
-                            <p>In addition to providing you stand alone products like loans, leases, factoring…. we with have designed unique industry focused solutions that provide industry solutions. We help you by not only financing you, but by also investing in the companies that provide services to your company. Services that you use day to day. Technology that makes your business more efficient. Expertise that gives you the upper hand. Making your job easier. Our expertise lies in our ability to take something that is un financeable, structure it correctly and convert it into something that can be financed. We don’t want to run your business, we just want to run how you convert your opportunities into finance opportunities that we can work with.</p>
-                        </div>
-                        <div className="mt-10 text-left">
-                            <h3 className="text-2xl font-bold font-headline mb-4 text-center">Our business is based on 3 structures</h3>
-                            <ul className="space-y-4">
-                                <li className="bg-card p-4 rounded-lg shadow-sm">
-                                    <h4 className="font-semibold text-lg text-primary">Agreement types</h4>
-                                    <p className="text-muted-foreground mt-1">These are standard generic agreements.</p>
-                                </li>
-                                <li className="bg-card p-4 rounded-lg shadow-sm">
-                                    <h4 className="font-semibold text-lg text-primary">Product type</h4>
-                                    <p className="text-muted-foreground mt-1">These are agreement types that have been customised to suite specific industries.</p>
-                                </li>
-                                <li className="bg-card p-4 rounded-lg shadow-sm">
-                                    <h4 className="font-semibold text-lg text-primary">Solution type</h4>
-                                    <p className="text-muted-foreground mt-1">These facilities that have multiple product types including collateral.</p>
-                                </li>
-                            </ul>
+                         <p className="mt-8 text-xl font-semibold">Then you have landed in the right place!</p>
+                        <div className="mt-8 text-left space-y-4 text-muted-foreground bg-card p-8 rounded-lg shadow-sm">
+                            <p className="text-lg">At TransConnect, our business is built on empowering yours through intelligent finance. We've redesigned the funding process to make it work for you, not against you. Our systems put you in control, providing access to a broad range of products and unique, industry-specific solutions designed to help you do what you do best—managing and growing your business.</p>
+                            <p className="text-lg">We see the opportunities that others miss. Our expertise lies in our ability to take something that seems 'un-financeable', structure it correctly, and convert it into a viable funding opportunity. We don’t want to run your business; we want to fuel it.</p>
                         </div>
                     </div>
                 </div>
@@ -116,7 +98,7 @@ export default function FundingPage() {
                     
                     <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
                        {methodology.map((item) => (
-                           <Card key={item.title} className="flex flex-col overflow-hidden">
+                           <Card key={item.title} className="flex flex-col overflow-hidden shadow-lg hover:shadow-xl transition-shadow">
                                 {item.image && (
                                     <div className="relative h-48">
                                          <Image
@@ -143,6 +125,42 @@ export default function FundingPage() {
                                 </CardFooter>
                            </Card>
                        ))}
+                    </div>
+                </div>
+            </section>
+
+             <section className="py-16 md:py-24 bg-background">
+                <div className="container mx-auto px-4">
+                     <div className="max-w-4xl mx-auto text-center">
+                        <h2 className="text-3xl md:text-4xl font-bold font-headline">Our Funding Structures</h2>
+                        <p className="mt-6 text-lg text-muted-foreground">Our business is based on three core structures, allowing us to build the perfect solution for any scenario.</p>
+                        
+                        <div className="mt-10 text-left grid grid-cols-1 md:grid-cols-3 gap-8">
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle>1. Agreement Types</CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <p className="text-muted-foreground">These are the foundational, standard finance agreements (leases, loans, etc.) that form the basis of our products.</p>
+                                </CardContent>
+                            </Card>
+                             <Card>
+                                <CardHeader>
+                                    <CardTitle>2. Product Types</CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <p className="text-muted-foreground">We take standard agreements and customize them into products tailored for specific industry needs, like invoice factoring for transporters.</p>
+                                </CardContent>
+                            </Card>
+                             <Card>
+                                <CardHeader>
+                                    <CardTitle>3. Solution Types</CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <p className="text-muted-foreground">For complex needs, we design comprehensive solutions that combine multiple product types and collateral into a single, cohesive funding facility.</p>
+                                </CardContent>
+                            </Card>
+                        </div>
                     </div>
                 </div>
             </section>
