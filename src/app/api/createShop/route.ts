@@ -1,26 +1,17 @@
 
-import { getApps, initializeApp, cert } from 'firebase-admin/app';
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import { NextRequest, NextResponse } from 'next/server';
 import { headers } from 'next/headers';
 import { getAuth } from 'firebase-admin/auth';
-
-// Initialize Firebase Admin SDK
-try {
-  const serviceAccount = JSON.parse(
-    process.env.FIREBASE_ADMIN_SDK_CONFIG_B64!
-  );
-  if (!getApps().length) {
-    initializeApp({
-      credential: cert(serviceAccount),
-    });
-  }
-} catch (e) {
-  console.error('Failed to initialize Firebase Admin SDK:', e);
-}
-
+import { getAdminApp } from '@/lib/firebase-admin';
 
 export async function POST(req: NextRequest) {
+  const { app, error: initError } = getAdminApp();
+  if (initError || !app) {
+    console.error('Failed to initialize Firebase Admin SDK in API route:', initError);
+    return NextResponse.json({ success: false, error: 'Internal Server Error: Could not connect to Firebase.' }, { status: 500 });
+  }
+
   const headersList = headers();
   const authorization = headersList.get('authorization');
   
@@ -31,11 +22,12 @@ export async function POST(req: NextRequest) {
   const idToken = authorization.split('Bearer ')[1];
 
   try {
-    const decodedToken = await getAuth().verifyIdToken(idToken);
+    const adminAuth = getAuth(app);
+    const decodedToken = await adminAuth.verifyIdToken(idToken);
     const uid = decodedToken.uid;
     const displayName = decodedToken.name || 'My';
 
-    const db = getFirestore();
+    const db = getFirestore(app);
     const memberRef = db.collection('members').doc(uid);
     const shopCollectionRef = memberRef.collection('shops');
     
