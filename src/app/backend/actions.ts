@@ -1,32 +1,57 @@
+
 'use server';
 
 import 'dotenv/config';
 import { initializeApp, getApps, App, cert } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 
-function getAdminApp(): App | null {
-    if (!process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || !process.env.FIREBASE_CLIENT_EMAIL || !process.env.FIREBASE_PRIVATE_KEY) {
-        console.error("Firebase admin environment variables are not set.");
-        return null;
+function getAdminApp(): { app: App | null, error: string | null } {
+    const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
+    const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
+    const privateKey = process.env.FIREBASE_PRIVATE_KEY;
+
+    // Detailed logging for debugging
+    console.log("--- Admin App Initialization ---");
+    console.log("Project ID available:", !!projectId);
+    console.log("Client Email available:", !!clientEmail);
+    console.log("Private Key available:", !!privateKey);
+    
+    if (!projectId) {
+        const error = "Admin SDK Error: NEXT_PUBLIC_FIREBASE_PROJECT_ID is not defined in .env file.";
+        console.error(error);
+        return { app: null, error };
+    }
+    if (!clientEmail) {
+        const error = "Admin SDK Error: FIREBASE_CLIENT_EMAIL is not defined in .env file.";
+        console.error(error);
+        return { app: null, error };
+    }
+    if (!privateKey) {
+        const error = "Admin SDK Error: FIREBASE_PRIVATE_KEY is not defined in .env file.";
+        console.error(error);
+        return { app: null, error };
     }
 
     const serviceAccount = {
-      projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-      privateKey: (process.env.FIREBASE_PRIVATE_KEY || '').replace(/\\n/g, '\n'),
+      projectId,
+      clientEmail,
+      privateKey: privateKey.replace(/\\n/g, '\n'),
     };
     
     if (getApps().some(app => app.name === 'admin')) {
-        return getApps().find(app => app.name === 'admin')!;
+        return { app: getApps().find(app => app.name === 'admin')!, error: null };
     }
     
     try {
-        return initializeApp({
+        const app = initializeApp({
             credential: cert(serviceAccount),
         }, 'admin');
+        console.log("--- Admin App Initialized Successfully ---");
+        return { app, error: null };
     } catch (error: any) {
+        console.error("--- Admin App Initialization Failed ---");
         console.error("Error initializing admin app:", error.message);
-        return null;
+        return { app: null, error: `Firebase Admin SDK initialization failed: ${error.message}` };
     }
 }
 
@@ -46,11 +71,11 @@ interface Contribution {
 }
 
 export async function getMembers(): Promise<{ success: boolean; data?: Member[]; error?: string }> {
-    const adminApp = getAdminApp();
-    if (!adminApp) {
-        return { success: false, error: 'Firebase Admin SDK could not be initialized. Please check server logs and environment variables.' };
+    const { app, error: initError } = getAdminApp();
+    if (initError || !app) {
+        return { success: false, error: initError || 'Firebase Admin SDK could not be initialized.' };
     }
-    const adminDb = getFirestore(adminApp);
+    const adminDb = getFirestore(app);
     
     try {
         const membersSnapshot = await adminDb.collection('members').get();
@@ -66,11 +91,11 @@ export async function getMembers(): Promise<{ success: boolean; data?: Member[];
 }
 
 export async function getFinanceApplications(): Promise<{ success: boolean; data?: FinanceApplication[]; error?: string }> {
-    const adminApp = getAdminApp();
-    if (!adminApp) {
-        return { success: false, error: 'Firebase Admin SDK could not be initialized. Please check server logs and environment variables.' };
+    const { app, error: initError } = getAdminApp();
+    if (initError || !app) {
+        return { success: false, error: initError || 'Firebase Admin SDK could not be initialized.' };
     }
-    const adminDb = getFirestore(adminApp);
+    const adminDb = getFirestore(app);
 
     try {
         const applicationsSnapshot = await adminDb.collection('financeApplications').orderBy('createdAt', 'desc').get();
@@ -86,11 +111,11 @@ export async function getFinanceApplications(): Promise<{ success: boolean; data
 }
 
 export async function getContributions(): Promise<{ success: boolean; data?: Contribution[]; error?: string }> {
-    const adminApp = getAdminApp();
-    if (!adminApp) {
-        return { success: false, error: 'Firebase Admin SDK could not be initialized. Please check server logs and environment variables.' };
+    const { app, error: initError } = getAdminApp();
+    if (initError || !app) {
+        return { success: false, error: initError || 'Firebase Admin SDK could not be initialized.' };
     }
-    const adminDb = getFirestore(adminApp);
+    const adminDb = getFirestore(app);
 
     try {
         const contributionsSnapshot = await adminDb.collection('contributions').orderBy('createdAt', 'desc').get();
