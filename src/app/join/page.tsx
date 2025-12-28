@@ -94,18 +94,13 @@ function JoinFormComponent() {
 
       const isAdmin = values.email === 'beyondtransport@gmail.com';
 
-      // This is a placeholder for a real implementation.
-      // In a real app, you would have a secure way to set admin claims.
-      if (isAdmin) {
-        console.log("Admin user created. In a real app, you'd call a Cloud Function here to set custom claims.");
-      }
-
       await updateProfile(user, {
         displayName: `${values.firstName} ${values.lastName}`,
       });
 
       const memberData: any = {
-        id: user.uid,
+        id: user.uid, // The ID of the document is the user's UID
+        ownerId: user.uid, // The user creating the account is the owner
         firstName: values.firstName,
         lastName: values.lastName,
         email: values.email,
@@ -126,8 +121,10 @@ function JoinFormComponent() {
         memberData.financierType = financierType;
       }
 
+      // The document ID for the member is the same as their auth UID.
       const memberDocRef = doc(firestore, 'members', user.uid);
       
+      // We are not awaiting this. If it fails, the error handler will catch it.
       setDoc(memberDocRef, memberData)
         .catch((serverError) => {
           const permissionError = new FirestorePermissionError({
@@ -138,7 +135,7 @@ function JoinFormComponent() {
           errorEmitter.emit('permission-error', permissionError);
         });
       
-      await user.getIdToken(true); // Force refresh token to get custom claims
+      await user.getIdToken(true);
 
       toast({
         title: 'Account Created!',
@@ -324,3 +321,5 @@ export default function JoinPage() {
     </div>
   );
 }
+
+    
