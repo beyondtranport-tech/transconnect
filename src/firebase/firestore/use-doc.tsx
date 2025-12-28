@@ -1,16 +1,12 @@
-
 'use client';
     
 import { useState, useEffect, useCallback } from 'react';
 import {
   DocumentReference,
-  onSnapshot,
   DocumentData,
   FirestoreError,
-  DocumentSnapshot,
 } from 'firebase/firestore';
-import { errorEmitter } from '@/firebase/error-emitter';
-import { FirestorePermissionError } from '@/firebase/errors';
+import { getClientSideAuthToken } from '@/firebase';
 
 /** Utility type to add an 'id' field to a given type T. */
 type WithId<T> = T & { id: string };
@@ -22,22 +18,21 @@ type WithId<T> = T & { id: string };
 export interface UseDocResult<T> {
   data: WithId<T> | null; // Document data with ID, or null.
   isLoading: boolean;       // True if loading.
-  error: FirestoreError | Error | null; // Error object, or null.
+  error: Error | null; // Error object, or null.
   forceRefresh: () => void; // Function to manually trigger a re-fetch.
 }
 
 /**
- * React hook to subscribe to a single Firestore document in real-time.
- * Handles nullable references.
- * 
- * IMPORTANT! YOU MUST MEMOIZE the inputted memoizedTargetRefOrQuery or BAD THINGS WILL HAPPEN
- * use useMemo to memoize it per React guidence.  Also make sure that it's dependencies are stable
- * references
+ * React hook to fetch a single Firestore document via a secure API route.
+ * This hook is designed to bypass client-side security rule issues by fetching
+ * data through a backend endpoint that uses the Firebase Admin SDK.
+ * It does NOT provide real-time updates.
  *
+ * IMPORTANT! YOU MUST MEMOIZE the inputted docRef or BAD THINGS WILL HAPPEN
  *
  * @template T Optional type for document data. Defaults to any.
- * @param {DocumentReference<DocumentData> | null | undefined} docRef -
- * The Firestore DocumentReference. Waits if null/undefined.
+ * @param {DocumentReference<DocumentData> | null | undefined} memoizedDocRef -
+ * The Firestore DocumentReference. The path of this object is used for the API call.
  * @returns {UseDocResult<T>} Object with data, isLoading, error.
  */
 export function useDoc<T = any>(
@@ -47,7 +42,7 @@ export function useDoc<T = any>(
 
   const [data, setData] = useState<StateDataType>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [error, setError] = useState<FirestoreError | Error | null>(null);
+  const [error, setError] = useState<Error | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
 
   const forceRefresh = useCallback(() => {
@@ -62,39 +57,46 @@ export function useDoc<T = any>(
       return;
     }
 
-    setIsLoading(true);
-    setError(null);
-    // Optional: setData(null); // Clear previous data instantly
+    const fetchData = async () => {
+        setIsLoading(true);
+        setError(null);
 
-    const unsubscribe = onSnapshot(
-      memoizedDocRef,
-      (snapshot: DocumentSnapshot<DocumentData>) => {
-        if (snapshot.exists()) {
-          setData({ ...(snapshot.data() as T), id: snapshot.id });
-        } else {
-          // Document does not exist
-          setData(null);
+        try {
+            const token = await getClientSideAuthToken();
+            if (!token) {
+                throw new Error("User is not authenticated.");
+            }
+
+            const path = memoizedDocRef.path;
+            
+            const response = await fetch('/api/getUserSubcollection', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ path, type: 'document' }),
+            });
+
+            const result = await response.json();
+
+            if (!response.ok) {
+                throw new Error(result.error || 'Failed to fetch document data.');
+            }
+
+            setData(result.data as WithId<T> | null);
+        } catch (e: any) {
+            console.error("useDoc fetch error:", e);
+            setError(e);
+            setData(null);
+        } finally {
+            setIsLoading(false);
         }
-        setError(null); // Clear any previous error on successful snapshot (even if doc doesn't exist)
-        setIsLoading(false);
-      },
-      (error: FirestoreError) => {
-        const contextualError = new FirestorePermissionError({
-          operation: 'get',
-          path: memoizedDocRef.path,
-        })
+    };
 
-        setError(contextualError)
-        setData(null)
-        setIsLoading(false)
+    fetchData();
 
-        // trigger global error propagation
-        errorEmitter.emit('permission-error', contextualError);
-      }
-    );
-
-    return () => unsubscribe();
-  }, [memoizedDocRef, refreshKey]); // Re-run if the memoizedDocRef or refreshKey changes.
+  }, [memoizedDocRef, refreshKey]);
 
   return { data, isLoading, error, forceRefresh };
 }

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Suspense } from 'react';
@@ -53,17 +52,25 @@ function CheckoutComponent() {
     }
   }, [user, isUserLoading, router, planId, cycle]);
 
-  useEffect(() => {
+  const fetchBalance = useCallback(async () => {
     if (memberRef) {
       setIsBalanceLoading(true);
-      getDoc(memberRef).then(docSnap => {
+      try {
+        const docSnap = await getDoc(memberRef);
         if (docSnap.exists()) {
           setUserBalance(docSnap.data().walletBalance || 0);
         }
+      } catch (e) {
+        console.error("Failed to fetch user balance:", e);
+      } finally {
         setIsBalanceLoading(false);
-      });
+      }
     }
   }, [memberRef]);
+
+  useEffect(() => {
+    fetchBalance();
+  }, [fetchBalance]);
   
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text).then(() => {
@@ -179,7 +186,7 @@ function CheckoutComponent() {
                         </div>
                     </CardContent>
                 </Card>
-                 <Button onClick={() => router.refresh()} className="w-full mt-6" variant="outline">
+                 <Button onClick={() => fetchBalance()} className="w-full mt-6" variant="outline">
                     I've made the payment, refresh balance
                 </Button>
             </div>
@@ -201,5 +208,3 @@ export default function CheckoutPage() {
         </div>
     );
 }
-
-    

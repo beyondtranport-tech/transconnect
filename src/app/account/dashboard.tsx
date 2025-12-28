@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useUser, useFirestore, useMemoFirebase } from '@/firebase';
@@ -20,7 +19,7 @@ export default function AccountDashboard() {
         return doc(firestore, 'members', user.uid);
     }, [firestore, user, isUserLoading]);
 
-    const { data: memberData, isLoading: isMemberLoading } = useDoc(memberRef);
+    const { data: memberData, isLoading: isMemberLoading, error } = useDoc(memberRef);
     
     // Explicit Admin Check
     const isAdmin = user && user.email === 'beyondtransport@gmail.com';
@@ -38,6 +37,25 @@ export default function AccountDashboard() {
         );
     }
     
+    if (error) {
+        return (
+            <div className="flex justify-center items-center min-h-[calc(100vh-8rem)] w-full">
+                <Card className="m-4">
+                    <CardHeader>
+                        <CardTitle className="text-destructive">Error Loading Dashboard</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <p>There was a problem fetching your account data.</p>
+                        <p className="text-xs text-muted-foreground mt-2">{error.message}</p>
+                    </CardContent>
+                    <CardFooter>
+                        <Button onClick={() => window.location.reload()}>Try Again</Button>
+                    </CardFooter>
+                </Card>
+            </div>
+        )
+    }
+
     if (!user) {
         return null; // or a message telling user to sign in
     }

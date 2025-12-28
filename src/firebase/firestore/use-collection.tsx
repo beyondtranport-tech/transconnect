@@ -1,17 +1,13 @@
-
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
 import {
   Query,
-  onSnapshot,
   DocumentData,
   FirestoreError,
-  QuerySnapshot,
   CollectionReference,
 } from 'firebase/firestore';
-import { errorEmitter } from '@/firebase/error-emitter';
-import { FirestorePermissionError } from '@/firebase/errors';
+import { getClientSideAuthToken } from '@/firebase';
 
 /** Utility type to add an 'id' field to a given type T. */
 export type WithId<T> = T & { id: string };
@@ -23,7 +19,7 @@ export type WithId<T> = T & { id: string };
 export interface UseCollectionResult<T> {
   data: WithId<T>[] | null; // Document data with ID, or null.
   isLoading: boolean;       // True if loading.
-  error: FirestoreError | Error | null; // Error object, or null.
+  error: Error | null; // Error object, or null.
   forceRefresh: () => void; // Function to manually trigger a re-fetch
 }
 
@@ -40,17 +36,16 @@ export interface InternalQuery extends Query<DocumentData> {
 }
 
 /**
- * React hook to subscribe to a Firestore collection or query in real-time.
- * Handles nullable references/queries.
- * 
+ * React hook to fetch a Firestore collection via a secure API route.
+ * This hook is designed to bypass client-side security rule issues by fetching
+ * data through a backend endpoint that uses the Firebase Admin SDK.
+ * It does NOT provide real-time updates.
  *
  * IMPORTANT! YOU MUST MEMOIZE the inputted memoizedTargetRefOrQuery or BAD THINGS WILL HAPPEN
- * use useMemo to memoize it per React guidence.  Also make sure that it's dependencies are stable
- * references
- *  
+ *
  * @template T Optional type for document data. Defaults to any.
- * @param {CollectionReference<DocumentData> | Query<DocumentData> | null | undefined} targetRefOrQuery -
- * The Firestore CollectionReference or Query. Waits if null/undefined.
+ * @param {CollectionReference<DocumentData> | Query<DocumentData> | null | undefined} memoizedTargetRefOrQuery -
+ * The Firestore CollectionReference or Query. The path of this object is used for the API call.
  * @returns {UseCollectionResult<T>} Object with data, isLoading, error.
  */
 export function useCollection<T = any>(
@@ -61,7 +56,7 @@ export function useCollection<T = any>(
 
   const [data, setData] = useState<StateDataType>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [error, setError] = useState<FirestoreError | Error | null>(null);
+  const [error, setError] = useState<Error | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
 
   const forceRefresh = useCallback(() => {
@@ -76,40 +71,47 @@ export function useCollection<T = any>(
       return;
     }
 
-    setIsLoading(true);
-    setError(null);
-
-    const unsubscribe = onSnapshot(
-      memoizedTargetRefOrQuery,
-      (snapshot: QuerySnapshot<DocumentData>) => {
-        const results: ResultItemType[] = [];
-        for (const doc of snapshot.docs) {
-          results.push({ ...(doc.data() as T), id: doc.id });
-        }
-        setData(results);
+    const fetchData = async () => {
+        setIsLoading(true);
         setError(null);
-        setIsLoading(false);
-      },
-      (error: FirestoreError) => {
-        const path: string =
-          memoizedTargetRefOrQuery.type === 'collection'
-            ? (memoizedTargetRefOrQuery as CollectionReference).path
-            : (memoizedTargetRefOrQuery as unknown as InternalQuery)._query.path.canonicalString()
 
-        const contextualError = new FirestorePermissionError({
-          operation: 'list',
-          path,
-        })
+        try {
+            const token = await getClientSideAuthToken();
+            if (!token) {
+                throw new Error("User is not authenticated.");
+            }
 
-        setError(contextualError)
-        setData(null)
-        setIsLoading(false)
+            const path: string =
+                memoizedTargetRefOrQuery.type === 'collection'
+                ? (memoizedTargetRefOrQuery as CollectionReference).path
+                : (memoizedTargetRefOrQuery as unknown as InternalQuery)._query.path.canonicalString()
+            
+            const response = await fetch('/api/getUserSubcollection', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ path, type: 'collection' }),
+            });
 
-        errorEmitter.emit('permission-error', contextualError);
-      }
-    );
+            const result = await response.json();
 
-    return () => unsubscribe();
+            if (!response.ok) {
+                throw new Error(result.error || 'Failed to fetch collection data.');
+            }
+
+            setData(result.data as ResultItemType[]);
+        } catch (e: any) {
+            console.error("useCollection fetch error:", e);
+            setError(e);
+            setData(null);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    fetchData();
   }, [memoizedTargetRefOrQuery, refreshKey]);
 
   return { data, isLoading, error, forceRefresh };
