@@ -1,64 +1,43 @@
 
 rules_version = '2';
 
-// --- Helper Functions ---
-function isAdmin() {
-  return request.auth != null && request.auth.token.email == 'beyondtransport@gmail.com';
-}
-
-// Check if the requesting user is the owner of the company account.
-// It reads the `ownerId` field from the member document.
-function isCompanyOwner(memberId) {
-  return request.auth != null && get(/databases/$(database)/documents/members/$(memberId)).data.ownerId == request.auth.uid;
-}
-
-// --- Service Rules ---
 service cloud.firestore {
   match /databases/{database}/documents {
+
+    // --- Helper Functions ---
+    function isAdmin() {
+      return request.auth != null && request.auth.token.email == 'beyondtransport@gmail.com';
+    }
+
+    function isOwner(userId) {
+      return request.auth != null && request.auth.uid == userId;
+    }
     
     // --- Members Collection ---
-
-    // Rules for the /members collection itself.
-    // This is where collection-level queries (list) are controlled.
+    // Admins can list all members. Users can create their own member document.
     match /members {
-      // Only admins are allowed to list all member documents.
-      // This rule does not use `get()` and is valid for `list` operations.
       allow list: if isAdmin();
-      
-      // Any authenticated user can create their own member document,
-      // as long as they set themselves as the owner.
-      // This is placed here because create acts on the collection path.
-      allow create: if request.auth != null && request.resource.data.ownerId == request.auth.uid;
+      allow create: if request.auth != null;
     }
 
-    // Rules for individual documents within the /members collection.
-    match /members/{memberId} {
-      // An admin can read any member document. The company owner can read their own.
-      // This `get` is for a single document read, so using the `isCompanyOwner` helper is valid here.
-      allow get: if isAdmin() || isCompanyOwner(memberId);
-      
-      // The company owner or an admin can update their document.
-      allow update: if isAdmin() || isCompanyOwner(memberId);
-      
-      // Only an admin can delete a member document.
+    // A user can read/update their own member document. Admins can do anything.
+    match /members/{userId} {
+      allow get, update: if isOwner(userId) || isAdmin();
       allow delete: if isAdmin();
+
+      // This grants access to all subcollections under a member's document
+      // (e.g., shops, transactions) for the owner or an admin.
+      match /{allPaths=**} {
+        allow read, write: if isOwner(userId) || isAdmin();
+      }
     }
 
-    // This is the definitive recursive rule for all member-owned subcollections.
-    // It grants the company owner or an admin full read/write access to everything
-    // underneath the /members/{memberId} document (e.g., shops, transactions, staff).
-    match /members/{memberId}/{allPaths=**} {
-      allow read, write: if isAdmin() || isCompanyOwner(memberId);
-    }
-    
     // --- Public & Global Collections ---
 
-    // Public, read-only copy of approved shops
+    // Anyone can read approved shops. Admins can write.
     match /shops/{shopId} {
-      // Anyone can read approved shops, but admins can see all.
       allow get, list: if resource.data.status == 'approved' || isAdmin();
-      // Only admins can create/update the public shop list (done by a backend function).
-      allow write: if isAdmin(); 
+      allow write: if isAdmin();
     }
     
     // Publicly readable collection for membership plans
@@ -67,13 +46,13 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
-    // Collection for anonymous contributions
+    // Any authenticated user can create a contribution. Admins can manage them.
     match /contributions/{contributionId} {
-      allow create: if request.auth != null; // Any authenticated user can contribute.
-      allow read, list, update, delete: if isAdmin(); // Only admins can manage them.
+      allow create: if request.auth != null;
+      allow read, update, delete, list: if isAdmin();
     }
     
-    // Top-level collection for finance applications, mainly for admin use
+    // Admins can manage all finance applications. Users can create their own.
     match /financeApplications/{applicationId} {
        allow create: if request.auth != null;
        allow read, list, update, delete: if isAdmin();
