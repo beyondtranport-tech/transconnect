@@ -1,42 +1,55 @@
 
 'use client';
 
-import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
-import { collection, doc, query } from 'firebase/firestore';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Loader2, Wallet } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { useToast } from '@/hooks/use-toast';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
 import Link from 'next/link';
+import { getMembers } from './actions';
+
+// Define the shape of a member object
+interface Member {
+    id: string;
+    firstName?: string;
+    lastName?: string;
+    companyName?: string;
+    email?: string;
+    phone?: string;
+    membershipId?: string;
+    role?: string;
+}
 
 export default function MembersList() {
-    const firestore = useFirestore();
-    const { user, isUserLoading } = useUser();
-    const { toast } = useToast();
+    const [members, setMembers] = useState<Member[] | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
-    const membersCollectionRef = useMemoFirebase(() => {
-        if (!firestore || !user) return null;
-        return query(collection(firestore, 'members'));
-    }, [firestore, user]);
-    
-    const { data: members, isLoading, error } = useCollection(membersCollectionRef);
+    useEffect(() => {
+        async function fetchMembers() {
+            setIsLoading(true);
+            try {
+                const result = await getMembers();
+                if (result.success && result.data) {
+                    setMembers(result.data);
+                } else {
+                    setError(result.error || 'Failed to fetch members.');
+                }
+            } catch (e: any) {
+                setError(e.message || 'An unexpected error occurred.');
+            } finally {
+                setIsLoading(false);
+            }
+        }
 
-    const capitalize = (s: string) => s && s[0].toUpperCase() + s.slice(1);
+        fetchMembers();
+    }, []);
 
-    if (isUserLoading || isLoading) {
+    const capitalize = (s?: string) => s && s[0].toUpperCase() + s.slice(1);
+
+    if (isLoading) {
         return (
              <Card>
                 <CardHeader>
@@ -50,21 +63,6 @@ export default function MembersList() {
         );
     }
     
-    if (!user) {
-         return (
-             <Card>
-                <CardHeader>
-                    <CardTitle>Members</CardTitle>
-                    <CardDescription>A list of all registered members on the platform.</CardDescription>
-                </CardHeader>
-                <CardContent className="text-center py-10">
-                    <p className="text-muted-foreground">Please log in to view member data.</p>
-                </CardContent>
-            </Card>
-        );
-    }
-
-
     return (
         <Card>
             <CardHeader>
@@ -75,7 +73,7 @@ export default function MembersList() {
                 {error && (
                      <div className="text-destructive-foreground bg-destructive/90 p-4 rounded-md">
                         <h4 className="font-semibold">Error loading members</h4>
-                        <p className="text-sm">{error.message}</p>
+                        <p className="text-sm">{error}</p>
                     </div>
                 )}
                 {members && !isLoading && (
