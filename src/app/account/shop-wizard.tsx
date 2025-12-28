@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import React from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -167,16 +167,16 @@ function ProductDialog({ shop, product, onSave, children }: { shop: any, product
         price: product.price,
         sku: product.sku || '',
         imageUrl: product.imageUrl || ''
-    } : { name: '', description: '', price: 0, sku: '', imageUrl: '' }
+    } : { name: '', description: '', price: '' as any, sku: '', imageUrl: '' }
   });
   
-  React.useEffect(() => {
+  useEffect(() => {
     if (isOpen) {
         setUploadProgress(null); // Reset upload progress when dialog opens
         if (product) {
             form.reset(product);
         } else {
-            form.reset({ name: '', description: '', price: 0, sku: '', imageUrl: '' });
+            form.reset({ name: '', description: '', price: '' as any, sku: '', imageUrl: '' });
         }
     }
   }, [isOpen, product, form]);
@@ -761,5 +761,3 @@ export default function ShopWizard({ shop }: { shop: any }) {
     </div>
   );
 }
-
-    
