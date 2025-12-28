@@ -11,6 +11,7 @@ import { useState } from 'react';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import * as React from 'react';
 
 const tiers = [
   {
