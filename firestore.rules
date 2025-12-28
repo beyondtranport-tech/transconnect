@@ -12,24 +12,18 @@ function isOwner(userId) {
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // This rule manages access to the member document itself.
-    // It allows an owner or an admin to read/update/delete their own profile.
+    // This rule allows a user to create their own member document, and allows an owner
+    // or an admin to read, update, or delete it.
     match /members/{memberId} {
       allow get, update, delete: if isOwner(memberId) || isAdmin();
       allow create: if request.auth != null && request.resource.id == request.auth.uid;
       allow list: if isAdmin();
+    }
 
-      // This is the explicit rule for the shops subcollection that was failing.
-      // By nesting it here, we make it absolutely clear that it is tied to the memberId.
-      match /shops/{shopId} {
-        allow read, write: if isOwner(memberId) || isAdmin();
-      }
-
-      // This is the definitive rule for all OTHER member-owned data in subcollections.
-      // It grants the owner or an admin full access to everything else under their member document.
-      match /{allOtherPaths=**} {
-         allow read, write: if isOwner(memberId) || isAdmin();
-      }
+    // This is the definitive rule for all member-owned data *within* subcollections.
+    // It grants the owner or an admin full read/write access.
+    match /members/{memberId}/{allPaths=**} {
+      allow read, write: if isOwner(memberId) || isAdmin();
     }
     
     // Public, read-only copy of approved shops
