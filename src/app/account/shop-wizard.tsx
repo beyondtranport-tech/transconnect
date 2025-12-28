@@ -151,8 +151,7 @@ const productSchema = z.object({
 type ProductFormValues = z.infer<typeof productSchema>;
 
 function ProductDialog({ shop, product, onSave, children }: { shop: any, product?: any, onSave: () => void, children: React.ReactNode }) {
-  const { user, isUserLoading } = useUser();
-  const firestore = useFirestore();
+  const { user } = useUser();
   const storage = useStorage();
   const { toast } = useToast();
   const [isOpen, setIsOpen] = useState(false);
@@ -161,36 +160,72 @@ function ProductDialog({ shop, product, onSave, children }: { shop: any, product
 
   const form = useForm<ProductFormValues>({
     resolver: zodResolver(productSchema),
-    defaultValues: product || { name: '', description: '', price: 0, sku: '' }
+    defaultValues: product ? {
+        name: product.name,
+        description: product.description,
+        price: product.price,
+        sku: product.sku || '',
+        imageUrl: product.imageUrl || ''
+    } : { name: '', description: '', price: 0, sku: '', imageUrl: '' }
   });
+  
+  // When dialog opens, reset form with product data if it exists
+  React.useEffect(() => {
+    if (isOpen && product) {
+        form.reset(product);
+    } else if (isOpen && !product) {
+        form.reset({ name: '', description: '', price: 0, sku: '', imageUrl: '' });
+    }
+  }, [isOpen, product, form]);
 
   const onSubmit = async (values: ProductFormValues) => {
-    if (!user || !firestore) return;
+    if (!user) return;
     setIsSaving(true);
     
-    const productData = {
-        ...values,
-        shopId: shop.id,
-        ownerId: user.uid, // Add ownerId to product
-        updatedAt: serverTimestamp(),
-    };
-
     try {
-        const productCollectionPath = `shops/${shop.id}/products`;
-        if (product?.id) { // Editing existing product in member's subcollection
-            const productRef = doc(firestore, `members/${user.uid}/${productCollectionPath}`, product.id);
-            await updateDoc(productRef, productData);
-            toast({ title: 'Product Updated!' });
+        const token = await getClientSideAuthToken();
+        if (!token) throw new Error("Authentication token not found.");
+        
+        let response;
+        if (product?.id) { // Editing existing product
+            const productData = {
+                ...values,
+                shopId: shop.id,
+                ownerId: user.uid,
+                updatedAt: { _methodName: 'serverTimestamp' },
+            };
+            response = await fetch('/api/updateUserDoc', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ path: `members/${user.uid}/shops/${shop.id}/products/${product.id}`, data: productData }),
+            });
+            if (response.ok) toast({ title: 'Product Updated!' });
         } else { // Creating new product
-            const productsCollection = collection(firestore, `members/${user.uid}/${productCollectionPath}`);
-            await addDoc(productsCollection, { ...productData, createdAt: serverTimestamp() });
-            toast({ title: 'Product Added!' });
+             const productData = {
+                ...values,
+                shopId: shop.id,
+                ownerId: user.uid,
+                createdAt: { _methodName: 'serverTimestamp' },
+                updatedAt: { _methodName: 'serverTimestamp' },
+            };
+            response = await fetch('/api/addUserDoc', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ collectionPath: `members/${user.uid}/shops/${shop.id}/products`, data: productData }),
+            });
+            if (response.ok) toast({ title: 'Product Added!' });
         }
+
+        if (!response.ok) {
+            const result = await response.json();
+            throw new Error(result.error || 'Failed to save product.');
+        }
+
         onSave();
         setIsOpen(false);
         form.reset();
-    } catch (serverError: any) {
-        toast({ variant: 'destructive', title: 'Save Failed', description: serverError.message });
+    } catch (error: any) {
+        toast({ variant: 'destructive', title: 'Save Failed', description: error.message });
     } finally {
         setIsSaving(false);
     }
@@ -201,7 +236,7 @@ function ProductDialog({ shop, product, onSave, children }: { shop: any, product
     if (!file || !user || !storage) return;
 
     setUploadProgress(0);
-    const imageRef = storageRef(storage, `products/${user.uid}/${shop.id}/${file.name}`);
+    const imageRef = storageRef(storage, `products/${user.uid}/${shop.id}/${Date.now()}-${file.name}`);
     const uploadTask = uploadBytesResumable(imageRef, file);
 
     uploadTask.on('state_changed',
@@ -272,8 +307,8 @@ function ProductDialog({ shop, product, onSave, children }: { shop: any, product
 }
 
 function Step2Products({ shop, onSave }: { shop: any, onSave: (newData?: any) => void }) {
-  const firestore = useFirestore();
   const { user } = useUser();
+  const firestore = useFirestore();
   const { toast } = useToast();
 
   const productsCollection = useMemoFirebase(() => {
@@ -284,9 +319,22 @@ function Step2Products({ shop, onSave }: { shop: any, onSave: (newData?: any) =>
   const { data: products, isLoading, forceRefresh } = useCollection(productsCollection);
   
   const handleDelete = async (productId: string) => {
-    if (!firestore || !user) return;
+    if (!user) return;
     try {
-        await deleteDoc(doc(firestore, `members/${user.uid}/shops/${shop.id}/products`, productId));
+        const token = await getClientSideAuthToken();
+        if (!token) throw new Error("Authentication token not found.");
+        
+        const response = await fetch('/api/deleteUserDoc', {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ path: `members/${user.uid}/shops/${shop.id}/products/${productId}` }),
+        });
+
+        if (!response.ok) {
+            const result = await response.json();
+            throw new Error(result.error || 'Failed to delete product.');
+        }
+
         toast({ title: 'Product Deleted' });
         forceRefresh();
     } catch (e: any) {
@@ -710,5 +758,3 @@ export default function ShopWizard({ shop }: { shop: any }) {
     </div>
   );
 }
-
-    
