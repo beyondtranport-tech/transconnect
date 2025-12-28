@@ -3,10 +3,10 @@
 
 import { firebaseConfig } from '@/firebase/config';
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
-import { getAuth, onIdTokenChanged } from 'firebase/auth';
+import { getAuth, onIdTokenChanged, getIdToken } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
-import { useRouter } from 'next/navigation';
+import { getFunctions } from 'firebase/functions'; // Import getFunctions
 
 // IMPORTANT: DO NOT MODIFY THIS FUNCTION
 export function initializeFirebase() {
@@ -27,37 +27,32 @@ export function initializeFirebase() {
   const auth = getAuth(firebaseApp);
   const firestore = getFirestore(firebaseApp);
   const storage = getStorage(firebaseApp); 
+  const functions = getFunctions(firebaseApp); // Initialize functions
 
   // Set up a listener to store the ID token in a cookie
   onIdTokenChanged(auth, async (user) => {
     const cookieName = 'firebaseIdToken';
     if (user) {
       const token = await user.getIdToken();
-      // Set cookie for server-side verification in middleware
-      // The secure flag should be set in production
       const secure = process.env.NODE_ENV === 'production' ? '; Secure' : '';
-      document.cookie = `${cookieName}=${token}; path=/; max-age=${60 * 55}${secure}`; // 55 min expiry
+      document.cookie = `${cookieName}=${token}; path=/; max-age=${60 * 55}${secure}`;
     } else {
-      // Clear cookie on sign out
       document.cookie = `${cookieName}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT`;
     }
   });
 
-
-  // The emulator connection logic is now removed.
-  // The app will connect to live cloud services.
-
-  return { firebaseApp, auth, firestore, storage }; 
+  return { firebaseApp, auth, firestore, storage, functions }; // Return functions
 }
 
-export function getSdks(firebaseApp: FirebaseApp) {
-  return {
-    firebaseApp,
-    auth: getAuth(firebaseApp),
-    firestore: getFirestore(firebaseApp),
-    storage: getStorage(firebaseApp)
-  };
+
+export async function getClientSideAuthToken(): Promise<string | null> {
+    const auth = getAuth();
+    if (auth.currentUser) {
+        return await getIdToken(auth.currentUser);
+    }
+    return null;
 }
+
 
 export * from './provider';
 export * from './client-provider';
@@ -65,3 +60,4 @@ export * from './firestore/use-collection';
 export * from './firestore/use-doc';
 export * from './errors';
 export * from './error-emitter';
+

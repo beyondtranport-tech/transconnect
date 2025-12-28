@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -6,11 +5,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Loader2, Store, PlusCircle } from 'lucide-react';
 import { useUser, useFirestore, useMemoFirebase, useDoc } from '@/firebase';
-import { collection, doc, setDoc, serverTimestamp, updateDoc } from 'firebase/firestore';
+import { doc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
-import { errorEmitter } from '@/firebase/error-emitter';
-import { FirestorePermissionError } from '@/firebase/errors';
 import ShopWizard from './shop-wizard';
+import { getFunctions, httpsCallable } from 'firebase/functions';
 
 export default function ShopContent() {
   const { user, isUserLoading } = useUser();
@@ -24,7 +22,7 @@ export default function ShopContent() {
     return doc(firestore, `members/${user.uid}`);
   }, [firestore, user]);
 
-  const { data: memberData, isLoading: isMemberLoading } = useDoc(memberRef);
+  const { data: memberData, isLoading: isMemberLoading, forceRefresh } = useDoc(memberRef);
 
   // 2. Use the shopId from the member data to fetch the shop document
   const shopRef = useMemoFirebase(() => {
@@ -41,48 +39,35 @@ export default function ShopContent() {
       toast({ variant: 'destructive', title: 'You must be logged in to create a shop.' });
       return;
     }
-    if (memberData?.shopId) {
-      toast({ variant: 'destructive', title: 'Shop Already Exists', description: 'You can only manage one shop per account.' });
-      return;
-    }
     setIsCreating(true);
-    
+
     try {
-      // Create a new unique ID for the shop
-      const shopId = doc(collection(firestore, 'temp')).id;
-      const newShopRef = doc(firestore, `members/${user.uid}/shops`, shopId);
+      const functions = getFunctions(firestore.app);
+      const createShopFunction = httpsCallable(functions, 'createShop');
       
-      const newShopData = {
-        ownerId: user.uid,
-        status: 'draft',
-        shopName: `${user.displayName || 'My'}'s New Shop`,
-        category: '',
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-        id: shopId, // Storing the ID within the document itself
-      };
+      const result = await createShopFunction();
 
-      await setDoc(newShopRef, newShopData);
-      
-      // Update the member document with the new shopId
-      await updateDoc(memberRef!, { shopId: shopId });
+      if ((result.data as any).success) {
+        toast({ title: 'Shop Draft Created!', description: "Let's get started with the details." });
+        // Force a refresh of the member data to get the new shopId
+        forceRefresh(); 
+      } else {
+        throw new Error((result.data as any).error || 'Failed to create shop via function.');
+      }
 
-      toast({ title: 'Shop Draft Created!', description: "Let's get started with the details." });
-    } catch (serverError: any) {
-      const permissionError = new FirestorePermissionError({
-        path: `members/${user.uid}/shops`,
-        operation: 'create',
-        requestResourceData: { shopName: `${user.displayName || 'My'}'s New Shop` },
+    } catch (error: any) {
+      console.error("Error calling createShop function:", error);
+      toast({ 
+        variant: 'destructive', 
+        title: 'Error Creating Shop', 
+        description: error.message || "An unexpected error occurred while communicating with the backend." 
       });
-      errorEmitter.emit('permission-error', permissionError);
-      toast({ variant: 'destructive', title: 'Error Creating Shop', description: serverError.message || "An unexpected error occurred." });
     } finally {
       setIsCreating(false);
     }
   };
 
-  // Determine if a shop exists based on memberData and potentially the shop fetch itself
-  const shopExists = !!memberData?.shopId && (isShopLoading || !!userShop);
+  const shopExists = !!memberData?.shopId;
 
   return (
     <Card>
@@ -101,8 +86,6 @@ export default function ShopContent() {
             <Loader2 className="h-10 w-10 animate-spin text-primary" />
           </div>
         ) : shopExists ? (
-            // If we know a shop should exist but it's still loading, show a loader.
-            // Otherwise, show the wizard.
             isShopLoading ? (
                 <div className="flex justify-center items-center py-20">
                     <Loader2 className="h-10 w-10 animate-spin text-primary" />
@@ -122,7 +105,7 @@ export default function ShopContent() {
             <Store className="mx-auto h-12 w-12 text-muted-foreground" />
             <h3 className="mt-4 text-xl font-semibold">You don't have a shop yet.</h3>
             <p className="mt-2 text-muted-foreground">Ready to start selling? Create your shop to get started.</p>
-            <Button onClick={handleCreateShop} disabled={isCreating} className="mt-6">
+            <Button onClick={handleCreateShop} disabled={isCreating}>
               {isCreating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PlusCircle className="mr-2 h-4 w-4" />}
               Create My Shop
             </Button>
