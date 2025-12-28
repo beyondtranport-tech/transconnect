@@ -163,7 +163,7 @@ export async function getShops(): Promise<{ success: boolean; data?: Shop[]; err
 
     try {
         // Use a collection group query to get all shops from all members
-        const shopsSnapshot = await adminDb.collectionGroup('shops').orderBy('createdAt', 'desc').get();
+        const shopsSnapshot = await adminDb.collectionGroup('shops').get();
         const shops = shopsSnapshot.docs.map(doc => {
             const data = doc.data();
             const serializedData = serializeTimestamps(data);

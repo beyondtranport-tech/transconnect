@@ -38,7 +38,9 @@ export default function ShopsList() {
         try {
             const result = await getShops();
             if (result.success && result.data) {
-                setShops(result.data as Shop[]);
+                // Sort the data by date on the client-side
+                const sortedShops = result.data.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+                setShops(sortedShops as Shop[]);
             } else {
                 setError(result.error || 'Failed to fetch shops.');
             }
