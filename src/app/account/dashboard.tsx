@@ -43,7 +43,7 @@ export default function AccountDashboard() {
     }
 
     return (
-        <div className="w-full">
+        <div className="w-full space-y-8">
             {/* <<< START: ADMIN-ONLY BACKEND ACCESS CARD >>> */}
             {isAdmin && (
                 <Card className="mb-8 border-destructive bg-destructive/10">
@@ -70,7 +70,7 @@ export default function AccountDashboard() {
             )}
             {/* <<< END: ADMIN-ONLY BACKEND ACCESS CARD >>> */}
 
-            <div className="flex items-center gap-4 mb-8">
+            <div className="flex items-center gap-4">
                 <div>
                     <h1 className="text-3xl md:text-4xl font-bold font-headline">Dashboard</h1>
                     <p className="text-lg text-muted-foreground">Welcome back, {memberData?.firstName || 'Member'}!</p>
@@ -78,7 +78,7 @@ export default function AccountDashboard() {
             </div>
 
             {isFreeMember && !isAdmin && (
-                 <Card className="mb-8 bg-primary/5 border-primary/20">
+                 <Card className="bg-primary/5 border-primary/20">
                     <CardHeader>
                         <div className="flex items-start gap-4">
                             <div className="bg-primary/10 p-3 rounded-full">
@@ -156,6 +156,10 @@ export default function AccountDashboard() {
                         </Button>
                     </CardContent>
                 </Card>
+            </div>
+            
+            <div className="mt-8">
+                <RecentTransactions />
             </div>
         </div>
     );
