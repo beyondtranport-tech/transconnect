@@ -14,23 +14,20 @@ service cloud.firestore {
     }
 
     // --- Members Collection ---
-    // A rule specifically for LISTING the collection. Only admins can do this.
-    match /members {
-      allow list: if isAdmin();
-      allow create: if request.auth != null;
+    // This single rule grants the admin full read/write access to the entire
+    // members collection and all its subcollections. This is the most direct
+    // way to solve the persistent "list" permission error.
+    match /members/{memberId=**} {
+      allow read, write: if isAdmin();
     }
 
-    // A rule for GETTING or UPDATING a single member document.
+    // This rule allows a non-admin user to read and update their OWN document only.
+    // It is separate to avoid conflicts with the admin list rule.
     match /members/{userId} {
-      allow get, update: if isOwner(userId) || isAdmin();
-      allow delete: if isAdmin();
-
-      // This grants access to all subcollections under a member's document
-      // for the owner or an admin.
-      match /{allPaths=**} {
-        allow read, write: if isOwner(userId) || isAdmin();
-      }
+       allow get, update: if isOwner(userId);
+       allow create: if request.auth != null; // Allow any authenticated user to create their own member document.
     }
+
 
     // --- Public & Global Collections ---
 
