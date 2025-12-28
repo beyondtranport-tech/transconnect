@@ -89,29 +89,37 @@ export default function MembersList() {
                         </TableHeader>
                         <TableBody>
                             {members.map(member => {
-                                const membership = member.membershipId || 'free';
+                                // Defensive checks for all properties being rendered
+                                const firstName = member?.firstName || 'N/A';
+                                const lastName = member?.lastName || '';
+                                const companyName = member?.companyName || 'N/A';
+                                const email = member?.email || 'N/A';
+                                const phone = member?.phone || 'N/A';
+                                const membership = member?.membershipId || 'free';
+                                const roleText = (member?.role || 'Member').replace(/-/g, ' ');
+
                                 return (
                                 <TableRow key={member.id}>
-                                    <TableCell className="font-medium">{member.firstName} {member.lastName}</TableCell>
-                                    <TableCell>{member.companyName}</TableCell>
-                                    <TableCell>{member.email}</TableCell>
-                                    <TableCell>{member.phone}</TableCell>
+                                    <TableCell className="font-medium">{firstName} {lastName}</TableCell>
+                                    <TableCell>{companyName}</TableCell>
+                                    <TableCell>{email}</TableCell>
+                                    <TableCell>{phone}</TableCell>
                                     <TableCell>
                                         <Badge variant={membership === 'free' ? 'secondary' : 'default'} className="capitalize">
                                             {membership}
                                         </Badge>
                                     </TableCell>
                                     <TableCell>
-                                        {member.email === 'beyondtransport@gmail.com' ? (
+                                        {email === 'beyondtransport@gmail.com' ? (
                                             <Badge variant="destructive">Admin</Badge>
                                         ) : (
                                             <Badge variant="outline" className="capitalize">
-                                                {member.role ? member.role.replace(/-/g, ' ') : 'Member'}
+                                                {roleText}
                                             </Badge>
                                         )}
                                     </TableCell>
                                      <TableCell className="text-right">
-                                         {member.email !== 'beyondtransport@gmail.com' && (
+                                         {email !== 'beyondtransport@gmail.com' && (
                                             <Button asChild variant="outline" size="sm">
                                                 <Link href={`/backend/wallet/${member.id}`}>
                                                     <Wallet className="mr-2 h-4 w-4" /> Manage Wallet
