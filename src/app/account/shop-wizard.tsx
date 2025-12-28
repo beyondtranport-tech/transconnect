@@ -254,7 +254,7 @@ function ProductDialog({ shop, product, onSave, children }: { shop: any, product
       () => {
         getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
           form.setValue('imageUrl', downloadURL);
-          setUploadProgress(null);
+          setUploadProgress(100); // Set to 100 to indicate completion
           toast({ title: "Image uploaded!" });
         });
       }
@@ -297,7 +297,7 @@ function ProductDialog({ shop, product, onSave, children }: { shop: any, product
                     <FormMessage /></FormItem>
                 )} />
                 <DialogFooter>
-                    <Button type="submit" disabled={isSaving || uploadProgress !== null}>
+                    <Button type="submit" disabled={isSaving || (uploadProgress !== null && uploadProgress < 100)}>
                         {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Save className="mr-2 h-4 w-4" />}
                         Save Product
                     </Button>
@@ -761,3 +761,5 @@ export default function ShopWizard({ shop }: { shop: any }) {
     </div>
   );
 }
+
+    
