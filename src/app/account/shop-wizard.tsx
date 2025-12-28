@@ -1,7 +1,8 @@
 
 'use client';
 
-import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import React, 'use-client';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -13,7 +14,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useFirestore, useUser, useStorage, useCollection, useMemoFirebase, getClientSideAuthToken } from '@/firebase';
 import { doc, updateDoc, serverTimestamp, setDoc, addDoc, deleteDoc, collection } from 'firebase/firestore';
 import { ref as storageRef, uploadBytesResumable, getDownloadURL } from "firebase/storage";
-import { Loader2, Save, CheckCircle, LayoutGrid, List, Image as ImageIcon, Sparkles, PlusCircle, Edit, Trash2, Send } from 'lucide-react';
+import { Loader2, Save, CheckCircle, LayoutGrid, List, Image as ImageIcon, Sparkles, PlusCircle, Edit, Trash2, Send, Eye } from 'lucide-react';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -256,7 +257,16 @@ function ProductDialog({ shop, product, onSave, children }: { shop: any, product
   };
   
     const handleManualSubmit = async () => {
-        await onSubmit(form.getValues());
+        const isFormValid = await form.trigger();
+        if(isFormValid) {
+            await onSubmit(form.getValues());
+        } else {
+            toast({
+                variant: 'destructive',
+                title: 'Invalid Form',
+                description: 'Please fill out all required fields correctly.',
+            });
+        }
     };
 
 
@@ -599,6 +609,76 @@ function Step4Seo({ shop, onSave }: { shop: any, onSave: (newData: any) => void 
   )
 }
 
+// ====== PREVIEW COMPONENT ======
+const formatPrice = (price: number) => {
+    if (typeof price !== 'number') return 'N/A';
+    return new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(price);
+};
+
+function ShopPreview({ shop, products }: { shop: any, products: any[] }) {
+    const renderGrid = () => (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {products.map(product => (
+                <Card key={product.id} className="overflow-hidden">
+                    <div className="relative aspect-square bg-muted">
+                        {product.imageUrl && <Image src={product.imageUrl} alt={product.name} fill className="object-cover" />}
+                    </div>
+                    <CardHeader>
+                        <CardTitle className="text-base">{product.name}</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <p className="text-sm text-muted-foreground line-clamp-2">{product.description}</p>
+                    </CardContent>
+                    <CardFooter className="flex justify-between items-center">
+                        <p className="font-bold">{formatPrice(product.price)}</p>
+                        <Button size="sm">Add</Button>
+                    </CardFooter>
+                </Card>
+            ))}
+        </div>
+    );
+
+    const renderList = () => (
+        <div className="space-y-4">
+            {products.map(product => (
+                 <Card key={product.id} className="flex items-center">
+                    <div className="relative h-24 w-24 flex-shrink-0 bg-muted">
+                        {product.imageUrl && <Image src={product.imageUrl} alt={product.name} fill className="object-cover rounded-l-lg" />}
+                    </div>
+                    <CardContent className="p-4 flex-grow">
+                        <h3 className="font-semibold">{product.name}</h3>
+                        <p className="text-sm text-muted-foreground line-clamp-1">{product.description}</p>
+                    </CardContent>
+                    <div className="p-4 text-right">
+                         <p className="font-bold">{formatPrice(product.price)}</p>
+                         <Button size="sm" className="mt-1">Add</Button>
+                    </div>
+                </Card>
+            ))}
+        </div>
+    );
+    
+    return (
+        <div className="bg-background p-6 rounded-lg border">
+            <div className="mb-8 text-center">
+                <h2 className="text-3xl font-bold">{shop.shopName}</h2>
+                <p className="text-muted-foreground">{shop.shopDescription}</p>
+                 <div className="mt-2 flex justify-center flex-wrap gap-1">
+                    {shop.tags?.map((tag: string) => <Badge key={tag} variant="secondary">{tag}</Badge>)}
+                </div>
+            </div>
+
+            {products && products.length > 0 ? (
+                shop.template === 'classic-list' ? renderList() : renderGrid()
+            ) : (
+                <div className="text-center py-16 border-2 border-dashed rounded-lg">
+                    <p className="text-muted-foreground">No products have been added yet.</p>
+                </div>
+            )}
+        </div>
+    );
+}
+
 // ====== STEP 5: Preview & Submit ======
 function Step5Preview({ shop, onSave }: { shop: any; onSave: (newData: any) => void }) {
   const { toast } = useToast();
@@ -653,65 +733,31 @@ function Step5Preview({ shop, onSave }: { shop: any; onSave: (newData: any) => v
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-lg font-medium">Shop Summary</h3>
+        <h3 className="text-lg font-medium">Final Review</h3>
         <p className="text-sm text-muted-foreground">
-          Review all your shop details below. If everything looks correct, submit it for approval.
+          Review your shop details below. Use the Preview button to see how it will look.
         </p>
       </div>
-
-      <div className="space-y-4">
-        <Card>
-          <CardHeader><CardTitle>Core Identity</CardTitle></CardHeader>
-          <CardContent className="space-y-2 text-sm">
-            <p><strong className="text-muted-foreground w-32 inline-block">Shop Name:</strong> {shop.shopName}</p>
-            <p><strong className="text-muted-foreground w-32 inline-block">Category:</strong> {shop.category}</p>
-            <p><strong className="text-muted-foreground w-32 inline-block">Description:</strong> {shop.shopDescription}</p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader><CardTitle>Appearance</CardTitle></CardHeader>
-          <CardContent className="space-y-2 text-sm">
-            <p><strong className="text-muted-foreground w-32 inline-block">Template:</strong> <span className="capitalize">{shop.template?.replace('-', ' ')}</span></p>
-            <p><strong className="text-muted-foreground w-32 inline-block">Theme:</strong> <span className="capitalize">{shop.theme?.replace('-', ' ')}</span></p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader><CardTitle>SEO & Discovery</CardTitle></CardHeader>
-          <CardContent className="space-y-2 text-sm">
-            <p><strong className="text-muted-foreground w-32 inline-block">Meta Title:</strong> {shop.metaTitle}</p>
-            <p><strong className="text-muted-foreground w-32 inline-block">Meta Desc:</strong> {shop.metaDescription}</p>
-            <div className="flex items-start">
-                <strong className="text-muted-foreground w-32 inline-block flex-shrink-0">Tags:</strong> 
-                <div className="flex flex-wrap gap-1">
-                    {shop.tags?.map((tag: string) => <Badge key={tag} variant="secondary">{tag}</Badge>)}
-                </div>
+      
+      <Dialog>
+        <DialogTrigger asChild>
+            <Button variant="outline"><Eye className="mr-2 h-4 w-4" /> Preview Shop</Button>
+        </DialogTrigger>
+        <DialogContent className="max-w-4xl h-[80vh]">
+            <DialogHeader>
+                <DialogTitle>Shop Preview</DialogTitle>
+                 <DialogDescription>This is how your shop will appear to customers.</DialogDescription>
+            </DialogHeader>
+            <div className="overflow-y-auto pr-4 -mr-4">
+                 {areProductsLoading ? (
+                    <div className="flex justify-center items-center h-full"><Loader2 className="animate-spin" /></div>
+                 ) : (
+                    <ShopPreview shop={shop} products={products || []} />
+                 )}
             </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-            <CardHeader><CardTitle>Products</CardTitle></CardHeader>
-            <CardContent>
-                {areProductsLoading ? (
-                     <div className="flex justify-center p-4"><Loader2 className="h-6 w-6 animate-spin text-primary"/></div>
-                ) : products && products.length > 0 ? (
-                    <ul className="space-y-2 text-sm">
-                        {products.map(p => (
-                            <li key={p.id} className="flex justify-between items-center p-2 bg-background rounded-md">
-                                <span>{p.name}</span>
-                                <span className="font-mono">R {p.price.toFixed(2)}</span>
-                            </li>
-                        ))}
-                    </ul>
-                ) : (
-                    <p className="text-sm text-muted-foreground text-center">No products have been added yet.</p>
-                )}
-            </CardContent>
-        </Card>
-      </div>
-
+        </DialogContent>
+      </Dialog>
+      
       <div className="mt-6 pt-6 border-t">
         {shop.status === 'draft' || shop.status === 'rejected' ? (
           <Button onClick={handleSubmitForReview} disabled={isSubmitting}>
