@@ -157,16 +157,18 @@ function ProductDialog({ shop, product, onSave, children }: { shop: any, product
     const productData = {
         ...values,
         shopId: shop.id,
+        ownerId: user.uid, // Add ownerId to product
         updatedAt: serverTimestamp(),
     };
 
     try {
-        if (product?.id) { // Editing existing product
-            const productRef = doc(firestore, `shops/${shop.id}/products`, product.id);
+        const productCollectionPath = `shops/${shop.id}/products`;
+        if (product?.id) { // Editing existing product in member's subcollection
+            const productRef = doc(firestore, `members/${user.uid}/${productCollectionPath}`, product.id);
             await updateDoc(productRef, productData);
             toast({ title: 'Product Updated!' });
         } else { // Creating new product
-            const productsCollection = collection(firestore, `shops/${shop.id}/products`);
+            const productsCollection = collection(firestore, `members/${user.uid}/${productCollectionPath}`);
             await addDoc(productsCollection, { ...productData, createdAt: serverTimestamp() });
             toast({ title: 'Product Added!' });
         }
@@ -262,7 +264,7 @@ function Step2Products({ shop, onSave }: { shop: any, onSave: (newData?: any) =>
 
   const productsCollection = useMemoFirebase(() => {
     if (!firestore || !user) return null;
-    return collection(firestore, `shops/${shop.id}/products`);
+    return collection(firestore, `members/${user.uid}/shops/${shop.id}/products`);
   }, [firestore, user, shop.id]);
 
   const { data: products, isLoading, forceRefresh } = useCollection(productsCollection);
@@ -270,7 +272,7 @@ function Step2Products({ shop, onSave }: { shop: any, onSave: (newData?: any) =>
   const handleDelete = async (productId: string) => {
     if (!firestore || !user) return;
     try {
-        await deleteDoc(doc(firestore, `shops/${shop.id}/products`, productId));
+        await deleteDoc(doc(firestore, `members/${user.uid}/shops/${shop.id}/products`, productId));
         toast({ title: 'Product Deleted' });
         forceRefresh();
     } catch (e: any) {
