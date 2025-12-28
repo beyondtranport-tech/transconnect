@@ -23,7 +23,6 @@ import {
   User,
   Building,
   Store,
-  Wrench,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -41,7 +40,6 @@ import ShopContent from './shop-content'; // Import the new component
 import { doc } from 'firebase/firestore';
 import { useDoc } from '@/firebase/firestore/use-doc';
 import { useFirestore } from '@/firebase';
-import DebugToolsContent from './debug-tools-content';
 
 
 function DocumentsContent() {
@@ -120,8 +118,6 @@ function AccountPageContent() {
         return <DocumentsContent />;
       case 'settings':
         return <SettingsContent />;
-      case 'debug-tools':
-        return <DebugToolsContent />;
       case 'dashboard':
       default:
         return <AccountDashboard />;
@@ -197,12 +193,6 @@ function AccountPageContent() {
                 <SidebarMenuButton tooltip="Settings" isActive={activeView === 'settings'} onClick={() => router.push('/account?view=settings', { scroll: false })}>
                   <Settings />
                   <span>Settings</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Debug Tools" isActive={activeView === 'debug-tools'} onClick={() => router.push('/account?view=debug-tools', { scroll: false })}>
-                  <Wrench />
-                  <span>Debug Tools</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
           </SidebarGroup>
