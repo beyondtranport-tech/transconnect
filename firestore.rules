@@ -12,16 +12,19 @@ function isOwner(userId) {
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // This rule allows a user to create their own member document, and allows an owner
-    // or an admin to read, update, or delete it.
+    // Rule for the member document itself.
     match /members/{memberId} {
+      // An owner or admin can read, update, or delete their own profile.
       allow get, update, delete: if isOwner(memberId) || isAdmin();
+      // Any authenticated user can create their own member document.
       allow create: if request.auth != null && request.resource.id == request.auth.uid;
+      // Only an admin can list all members.
       allow list: if isAdmin();
     }
 
-    // This is the definitive rule for all member-owned data *within* subcollections.
-    // It grants the owner or an admin full read/write access.
+    // This is the definitive recursive rule for all member-owned subcollections.
+    // It grants the owner or an admin full read/write access to everything
+    // underneath the /members/{memberId} document (e.g., shops, transactions, etc.).
     match /members/{memberId}/{allPaths=**} {
       allow read, write: if isOwner(memberId) || isAdmin();
     }
