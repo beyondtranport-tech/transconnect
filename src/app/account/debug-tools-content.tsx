@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2, Wrench, CheckCircle, XCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { errorEmitter } from '@/firebase/error-emitter';
 
 export default function DebugToolsContent() {
   const { user } = useUser();
@@ -40,12 +41,15 @@ export default function DebugToolsContent() {
       // If it fails
       setTestResult('failure');
       
-      let detailedDescription = `Permission denied. The security rule is incorrect. Error: ${error.message}`;
-      
-      // Check if it's our custom error to get more details
-      if (error instanceof FirestorePermissionError) {
-          detailedDescription = JSON.stringify(error.request, null, 2);
-      }
+      // Create our custom error which builds the request context
+      const permissionError = new FirestorePermissionError({
+        path: `members/${user.uid}/shops/${doc(collection(firestore, 'temp')).id}`,
+        operation: 'create',
+        requestResourceData: { test: true },
+      });
+
+      // Now, the detailed JSON is available in permissionError.request
+      const detailedDescription = JSON.stringify(permissionError.request, null, 2);
       
       setErrorOutput(detailedDescription);
       
