@@ -3,13 +3,14 @@
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Check, Star } from 'lucide-react';
+import { Check, Star, Minus } from 'lucide-react';
 import Link from 'next/link';
 import { useUser } from '@/firebase';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 const tiers = [
   {
@@ -55,6 +56,22 @@ const tiers = [
     isPopular: false,
   },
 ];
+
+const allFeatures = [
+    { name: 'Access to All Malls', basic: true, standard: true, premium: true },
+    { name: 'Marketplace Access', basic: true, standard: true, premium: true },
+    { name: 'Community Forum Access', basic: true, standard: true, premium: true },
+    { name: 'Standard Support', basic: true, standard: true, premium: true },
+    { name: 'AI Freight Matcher', basic: 'Basic', standard: 'Advanced', premium: 'Advanced' },
+    { name: 'Real-time Analytics Dashboard', basic: false, standard: true, premium: true },
+    { name: 'Loyalty & Rewards Program Access', basic: false, standard: true, premium: true },
+    { name: 'Priority Support', basic: false, standard: true, premium: true },
+    { name: 'Dedicated Account Manager', basic: false, standard: false, premium: true },
+    { name: 'API Access for Integrations', basic: false, standard: false, premium: true },
+    { name: 'Actions Plan Included', basic: false, standard: false, premium: true },
+    { name: '24/7 Premium Support', basic: false, standard: false, premium: true },
+];
+
 
 const formatPrice = (price: number, perMonth = false) => {
     const formatted = new Intl.NumberFormat('en-ZA', {
@@ -139,6 +156,56 @@ export default function MembershipPage() {
           ))}
         </div>
       </div>
+      <section className="py-16 md:py-24 bg-card">
+        <div className="container mx-auto px-4">
+          <div className="text-center max-w-3xl mx-auto mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold font-headline">Compare Features</h2>
+            <p className="mt-4 text-lg text-muted-foreground">
+              Find the right set of tools for your business needs.
+            </p>
+          </div>
+          <div className="max-w-5xl mx-auto border rounded-lg overflow-hidden">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-2/5">Feature</TableHead>
+                  <TableHead className="text-center">Basic</TableHead>
+                  <TableHead className="text-center">Standard</TableHead>
+                  <TableHead className="text-center">Premium</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {allFeatures.map((feature) => (
+                  <TableRow key={feature.name}>
+                    <TableCell className="font-medium">{feature.name}</TableCell>
+                    <TableCell className="text-center">
+                        {typeof feature.basic === 'boolean' ? (
+                            feature.basic ? <Check className="h-5 w-5 text-green-500 mx-auto" /> : <Minus className="h-5 w-5 text-muted-foreground mx-auto" />
+                        ) : (
+                            <span className="font-semibold text-sm">{feature.basic}</span>
+                        )}
+                    </TableCell>
+                    <TableCell className="text-center">
+                         {typeof feature.standard === 'boolean' ? (
+                            feature.standard ? <Check className="h-5 w-5 text-green-500 mx-auto" /> : <Minus className="h-5 w-5 text-muted-foreground mx-auto" />
+                        ) : (
+                            <span className="font-semibold text-sm">{feature.standard}</span>
+                        )}
+                    </TableCell>
+                    <TableCell className="text-center">
+                         {typeof feature.premium === 'boolean' ? (
+                            feature.premium ? <Check className="h-5 w-5 text-green-500 mx-auto" /> : <Minus className="h-5 w-5 text-muted-foreground mx-auto" />
+                        ) : (
+                            <span className="font-semibold text-sm">{feature.premium}</span>
+                        )}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }
