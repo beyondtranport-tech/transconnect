@@ -11,7 +11,7 @@ import Image from "next/image";
 import Link from "next/link";
 import * as gtag from '@/lib/gtag';
 import { usePublicCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, where } from 'firebase/firestore';
+import { collection, query, where, getFirestore, getApp } from 'firebase/firestore';
 
 const { placeholderImages } = data;
 
