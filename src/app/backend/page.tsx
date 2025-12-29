@@ -103,7 +103,7 @@ function FundingDivisionContent() {
             setIsLoading(true);
             const result = await getFinanceApplications();
             if (result.success && result.data) {
-                const apps = result.data; // The action now pre-filters for us.
+                const apps = result.data;
                 const totalFunded = apps.filter(app => app.status === 'funded').reduce((sum, app) => sum + (app.amountRequested || 0), 0);
                 const totalRequested = apps.reduce((sum, app) => sum + (app.amountRequested || 0), 0);
                 setStats({ applications: apps.length, totalRequested, totalFunded });
@@ -140,7 +140,7 @@ function FundingDivisionContent() {
                     <Table>
                         <TableHeader><TableRow><TableCell>Applicant ID</TableCell><TableCell>Type</TableCell><TableCell>Amount</TableCell><TableCell>Status</TableCell><TableCell>Date</TableCell></TableRow></TableHeader>
                         <TableBody>
-                            {applications.length > 0 ? applications.slice(0, 10).map(app => (
+                            {applications.length > 0 ? applications.map(app => (
                                 <TableRow key={app.id}>
                                     <TableCell className="font-mono text-xs">{app.applicantId}</TableCell>
                                     <TableCell className="capitalize">{app.fundingType?.replace(/_/g, ' ')}</TableCell>
@@ -619,3 +619,5 @@ export default function Backend() {
         </Suspense>
     )
 }
+
+    
