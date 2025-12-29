@@ -241,7 +241,7 @@ export default function DashboardContent() {
                                         <TableCell>{formatPrice(app.amountRequested)}</TableCell>
                                         <TableCell className="text-right">
                                             <Button variant="outline" size="sm" asChild>
-                                                <Link href="/backend?view=revenue-transactions">Review</Link>
+                                                <Link href={`/backend/wallet/${app.applicantId}`}>Review</Link>
                                             </Button>
                                         </TableCell>
                                     </TableRow>

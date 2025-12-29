@@ -217,13 +217,13 @@ function BackendPageContent() {
         return <DebugToolsContent />;
       case 'revenue-pricing':
         return <RevenuePricingContent />;
-      case 'revenue-transactions':
+      case 'wallet-transactions':
         return <FinanceApplicationsList />;
       case 'divisions':
         return <DivisionsContent />;
       case 'contributions':
         return <ContributionsContent />;
-      case 'reconciliation':
+      case 'wallet-reconciliation':
         return <ReconciliationPage />;
       default:
         return <DashboardContent />;
@@ -275,12 +275,24 @@ function BackendPageContent() {
                   <span>Contributions</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
+              
                <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Reconciliation" isActive={activeView === 'reconciliation'} onClick={() => router.push('/backend?view=reconciliation', { scroll: false })}>
-                  <Combine />
-                  <span>Reconciliation</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
+                    <SidebarMenuButton tooltip="Wallet">
+                        <Wallet />
+                        <span>Wallet</span>
+                    </SidebarMenuButton>
+                     <SidebarMenuSub>
+                        <SidebarMenuSubButton isActive={activeView === 'wallet-transactions'} onClick={() => router.push('/backend?view=wallet-transactions', { scroll: false })}>
+                            <DollarSign />
+                            <span>Transactions</span>
+                        </SidebarMenuSubButton>
+                        <SidebarMenuSubButton isActive={activeView === 'wallet-reconciliation'} onClick={() => router.push('/backend?view=wallet-reconciliation', { scroll: false })}>
+                            <Combine />
+                            <span>Reconciliation</span>
+                        </SidebarMenuSubButton>
+                    </SidebarMenuSub>
+                </SidebarMenuItem>
+
                 <SidebarMenuItem>
                     <SidebarMenuButton tooltip="Platform">
                         <Server />
@@ -310,10 +322,6 @@ function BackendPageContent() {
                         <SidebarMenuSubButton isActive={activeView === 'revenue-pricing'} onClick={() => router.push('/backend?view=revenue-pricing', { scroll: false })}>
                             <TrendingUp />
                             <span>Pricing</span>
-                        </SidebarMenuSubButton>
-                        <SidebarMenuSubButton isActive={activeView === 'revenue-transactions'} onClick={() => router.push('/backend?view=revenue-transactions', { scroll: false })}>
-                            <DollarSign />
-                            <span>Transactions</span>
                         </SidebarMenuSubButton>
                     </SidebarMenuSub>
                 </SidebarMenuItem>
