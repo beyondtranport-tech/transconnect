@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Button } from "@/components/ui/button";
@@ -6,25 +5,42 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import data from "@/lib/placeholder-images.json";
-import { Building2, Search, Star, ArrowRight, Sparkles, Loader2 } from "lucide-react";
+import { Building2, Search, ArrowRight, Sparkles, Loader2 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import * as gtag from '@/lib/gtag';
-import { usePublicCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, where, getFirestore } from 'firebase/firestore';
-import { getApp } from 'firebase/app';
+import { useState, useEffect } from 'react';
+import { getApprovedShops } from './actions';
 
 const { placeholderImages } = data;
 
 const supplierMallImage = placeholderImages.find(p => p.id === 'mall-division');
 
 export default function SupplierMallPage() {
-    // This query is now self-contained and does not depend on an external firestore instance.
-    const shopsQuery = useMemoFirebase(() => {
-        return query(collection(getFirestore(getApp()), 'shops'), where('status', '==', 'approved'));
+    const [suppliers, setSuppliers] = useState<any[] | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        async function fetchShops() {
+            setIsLoading(true);
+            setError(null);
+            try {
+                const result = await getApprovedShops();
+                if (result.success) {
+                    setSuppliers(result.data || []);
+                } else {
+                    setError(result.error || 'An unknown error occurred.');
+                }
+            } catch (e: any) {
+                setError(e.message);
+            } finally {
+                setIsLoading(false);
+            }
+        }
+        fetchShops();
     }, []);
 
-    const { data: suppliers, isLoading } = usePublicCollection(shopsQuery);
 
     const handleSupplierClick = (supplierId: string) => {
         gtag.event({
@@ -111,6 +127,11 @@ export default function SupplierMallPage() {
                     {isLoading ? (
                         <div className="flex justify-center items-center py-20">
                             <Loader2 className="h-12 w-12 animate-spin text-primary" />
+                        </div>
+                    ) : error ? (
+                        <div className="text-center py-20 text-destructive border-2 border-destructive/50 rounded-lg bg-destructive/10">
+                            <h3 className="text-xl font-semibold">Error Loading Suppliers</h3>
+                            <p className="mt-2 text-sm">{error}</p>
                         </div>
                     ) : suppliers && suppliers.length > 0 ? (
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
