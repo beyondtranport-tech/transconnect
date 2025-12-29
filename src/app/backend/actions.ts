@@ -147,17 +147,18 @@ export async function getFinanceApplications(): Promise<{ success: boolean; data
 
     try {
         const appMap = new Map<string, FinanceApplication>();
+        const formalFundingTypes = ["asset_finance", "working_capital", "partnership", "credit-top-up", "membership_payment"];
 
-        // 1. Query the top-level collection
-        const topLevelSnapshot = await adminDb.collection('financeApplications').get();
+        // 1. Query the top-level collection for formal funding types
+        const topLevelSnapshot = await adminDb.collection('financeApplications').where('fundingType', 'in', formalFundingTypes).get();
         topLevelSnapshot.docs.forEach(doc => {
             const data = doc.data();
             const serializedData = serializeTimestamps(data);
             appMap.set(doc.id, { id: doc.id, ...serializedData } as FinanceApplication);
         });
 
-        // 2. Query the subcollections using a collection group query
-        const subCollectionSnapshot = await adminDb.collectionGroup('financeApplications').get();
+        // 2. Query the subcollections using a collection group query for formal funding types
+        const subCollectionSnapshot = await adminDb.collectionGroup('financeApplications').where('fundingType', 'in', formalFundingTypes).get();
         subCollectionSnapshot.docs.forEach(doc => {
             // Avoid adding duplicates if the ID already exists from the top-level query
             if (!appMap.has(doc.id)) {
