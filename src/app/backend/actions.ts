@@ -147,20 +147,25 @@ export async function getFinanceApplications(): Promise<{ success: boolean; data
 
     try {
         const appMap = new Map<string, FinanceApplication>();
-        const formalFundingTypes = ["asset_finance", "working_capital", "partnership", "credit-top-up", "membership_payment"];
+        
+        // 1. Get all members to iterate through them
+        const membersSnapshot = await adminDb.collection('members').get();
 
-        // 1. Query the top-level collection for formal funding types
-        const topLevelSnapshot = await adminDb.collection('financeApplications').where('fundingType', 'in', formalFundingTypes).get();
+        // 2. For each member, query their financeApplications subcollection
+        for (const memberDoc of membersSnapshot.docs) {
+            const memberId = memberDoc.id;
+            const subCollectionSnapshot = await adminDb.collection(`members/${memberId}/financeApplications`).get();
+            subCollectionSnapshot.forEach(doc => {
+                const data = doc.data();
+                const serializedData = serializeTimestamps(data);
+                appMap.set(doc.id, { id: doc.id, ...serializedData } as FinanceApplication);
+            });
+        }
+        
+        // 3. Query the top-level collection as a fallback or for admin-created apps
+        const topLevelSnapshot = await adminDb.collection('financeApplications').get();
         topLevelSnapshot.docs.forEach(doc => {
-            const data = doc.data();
-            const serializedData = serializeTimestamps(data);
-            appMap.set(doc.id, { id: doc.id, ...serializedData } as FinanceApplication);
-        });
-
-        // 2. Query the subcollections using a collection group query for formal funding types
-        const subCollectionSnapshot = await adminDb.collectionGroup('financeApplications').where('fundingType', 'in', formalFundingTypes).get();
-        subCollectionSnapshot.docs.forEach(doc => {
-            // Avoid adding duplicates if the ID already exists from the top-level query
+            // Avoid adding duplicates if the ID already exists from the subcollection query
             if (!appMap.has(doc.id)) {
                 const data = doc.data();
                 const serializedData = serializeTimestamps(data);
@@ -328,3 +333,5 @@ export async function getAllTransactions(): Promise<{ success: boolean; data?: a
         return { success: false, error: error.message };
     }
 }
+
+    
