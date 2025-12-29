@@ -3,42 +3,42 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { ArrowRight, CheckCircle } from "lucide-react";
+import { ArrowRight, CheckCircle, Landmark, Book, FileText, Repeat } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import data from "@/lib/placeholder-images.json";
 import { useUser } from "@/firebase";
+import * as React from "react";
 
 const { placeholderImages } = data;
 
 const fundingHeroImage = placeholderImages.find(p => p.id === 'funding-division');
-const assetFinanceImage = placeholderImages.find(p => p.id === 'funding-asset-finance');
-const workingCapitalImage = placeholderImages.find(p => p.id === 'funding-working-capital');
-const partnershipImage = placeholderImages.find(p => p.id === 'funding-partnership');
 
-
-const methodology = [
+const agreementTypes = [
     {
-        id: "asset-finance",
-        title: "Asset Finance",
-        description: "Secure financing for new trucks, trailers, or equipment. We offer competitive rates and flexible terms tailored to the transport industry.",
-        cta: "Apply for Asset Finance",
-        image: assetFinanceImage,
+        id: "loans",
+        title: "Loans",
+        icon: Landmark,
+        description: "Traditional loan structures for asset acquisition or working capital, with defined terms and repayment schedules.",
     },
     {
-        id: "working-capital",
-        title: "Working Capital",
-        description: "Access short-term loans to manage cash flow, cover operational expenses, or seize immediate opportunities without disrupting your capital.",
-        cta: "Apply for Working Capital",
-        image: workingCapitalImage,
+        id: "installment-sale",
+        title: "Installment Sale",
+        icon: Book,
+        description: "Finance the purchase of an asset over time. Ownership transfers to you after the final payment is made.",
     },
     {
-        id: "partnership",
-        title: "Partnership",
-        description: "We invest directly in your business, becoming a partner in your growth. This model is for established businesses looking for strategic capital.",
-        cta: "Explore Partnership",
-        image: partnershipImage,
-    }
+        id: "rental",
+        title: "Rental",
+        icon: Repeat,
+        description: "Rent assets for a specified period, providing flexibility without the long-term commitment of ownership.",
+    },
+    {
+        id: "discounting",
+        title: "Discounting",
+        icon: FileText,
+        description: "Unlock the value of your existing contracts and invoices to improve cash flow and fund operations.",
+    },
 ]
 
 export default function FundingPage() {
@@ -92,83 +92,39 @@ export default function FundingPage() {
                 </div>
             </section>
             
-            <section id="start-journey" className="py-16 md:py-24 bg-card">
+             <section id="start-journey" className="py-16 md:py-24 bg-card">
                 <div className="container mx-auto px-4">
                      <div className="text-center max-w-3xl mx-auto">
-                        <h2 className="text-3xl md:text-4xl font-bold font-headline">What Do You Need to Fund?</h2>
+                        <h2 className="text-3xl md:text-4xl font-bold font-headline">Our Funding Structures</h2>
                         <p className="mt-4 text-lg text-muted-foreground">
-                            Choose the statement that best describes your current need to begin a tailored application process.
+                            Our business is based on three core structures, allowing us to build the perfect solution for any scenario. Choose an agreement type to begin.
                         </p>
                     </div>
                     
-                    <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-                       {methodology.map((item) => {
-                            const link = user ? `/funding/apply?type=${item.id}` : `/join?redirect=/funding/apply?type=${item.id}`;
-                           return (
-                               <Card key={item.title} className="flex flex-col overflow-hidden shadow-lg hover:shadow-xl transition-shadow">
-                                    {item.image && (
-                                        <div className="relative h-48">
-                                            <Image
-                                                src={item.image.imageUrl}
-                                                alt={item.title}
-                                                fill
-                                                className="object-cover"
-                                                data-ai-hint={item.image.imageHint}
-                                            />
-                                        </div>
-                                    )}
+                    <div className="mt-12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-7xl mx-auto">
+                       {agreementTypes.map((item) => {
+                            const Icon = item.icon;
+                            return (
+                               <Card key={item.title} className="flex flex-col overflow-hidden shadow-lg hover:shadow-primary/20 transition-shadow duration-300">
                                     <CardHeader>
-                                        <CardTitle>{item.title}</CardTitle>
+                                        <div className="flex items-center gap-4">
+                                            <Icon className="h-8 w-8 text-primary" />
+                                            <CardTitle>{item.title}</CardTitle>
+                                        </div>
                                     </CardHeader>
                                     <CardContent className="flex-grow">
                                         <p className="text-muted-foreground">{item.description}</p>
                                     </CardContent>
                                     <CardFooter>
                                         <Button asChild className="w-full">
-                                            <Link href={link}>
-                                                {item.cta} <ArrowRight className="ml-2 h-4 w-4" />
+                                            <Link href={`/funding/products?agreement=${item.id}`}>
+                                                View Products <ArrowRight className="ml-2 h-4 w-4" />
                                             </Link>
                                         </Button>
                                     </CardFooter>
                                </Card>
                            )
                         })}
-                    </div>
-                </div>
-            </section>
-
-             <section className="py-16 md:py-24 bg-background">
-                <div className="container mx-auto px-4">
-                     <div className="max-w-4xl mx-auto text-center">
-                        <h2 className="text-3xl md:text-4xl font-bold font-headline">Our Funding Structures</h2>
-                        <p className="mt-6 text-lg text-muted-foreground">Our business is based on three core structures, allowing us to build the perfect solution for any scenario.</p>
-                        
-                        <div className="mt-10 text-left grid grid-cols-1 md:grid-cols-3 gap-8">
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle>1. Agreement Types</CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                    <p className="text-muted-foreground">These are the foundational, standard finance agreements (leases, loans, etc.) that form the basis of our products.</p>
-                                </CardContent>
-                            </Card>
-                             <Card>
-                                <CardHeader>
-                                    <CardTitle>2. Product Types</CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                    <p className="text-muted-foreground">We take standard agreements and customize them into products tailored for specific industry needs, like invoice factoring for transporters.</p>
-                                </CardContent>
-                            </Card>
-                             <Card>
-                                <CardHeader>
-                                    <CardTitle>3. Solution Types</CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                    <p className="text-muted-foreground">For complex needs, we design comprehensive solutions that combine multiple product types and collateral into a single, cohesive funding facility.</p>
-                                </CardContent>
-                            </Card>
-                        </div>
                     </div>
                 </div>
             </section>
