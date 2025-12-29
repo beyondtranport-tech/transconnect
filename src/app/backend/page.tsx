@@ -157,6 +157,41 @@ function RevenuePricingContent() {
     )
 }
 
+// START: New Division Placeholders
+function FundingDivisionContent() {
+    return (
+        <div>
+            <h1 className="text-2xl font-bold">Funding Division Dashboard</h1>
+            <p className="mt-2 text-muted-foreground">Metrics and management tools for the Funding division will be displayed here.</p>
+        </div>
+    )
+}
+function MallDivisionContent() {
+    return (
+        <div>
+            <h1 className="text-2xl font-bold">Mall Division Dashboard</h1>
+            <p className="mt-2 text-muted-foreground">Metrics and management tools for the Mall division will be displayed here.</p>
+        </div>
+    )
+}
+function MarketplaceDivisionContent() {
+    return (
+        <div>
+            <h1 className="text-2xl font-bold">Marketplace Division Dashboard</h1>
+            <p className="mt-2 text-muted-foreground">Metrics and management tools for the Marketplace division will be displayed here.</p>
+        </div>
+    )
+}
+function TechDivisionContent() {
+    return (
+        <div>
+            <h1 className="text-2xl font-bold">Tech Division Dashboard</h1>
+            <p className="mt-2 text-muted-foreground">Metrics and management tools for the Tech division will be displayed here.</p>
+        </div>
+    )
+}
+// END: New Division Placeholders
+
 function DivisionsContent() {
     return (
         <div>
@@ -224,6 +259,14 @@ function BackendPageContent() {
         return <WalletTransactionsList />;
       case 'divisions':
         return <DivisionsContent />;
+      case 'divisions-funding':
+        return <FundingDivisionContent />;
+      case 'divisions-mall':
+        return <MallDivisionContent />;
+      case 'divisions-marketplace':
+        return <MarketplaceDivisionContent />;
+      case 'divisions-tech':
+        return <TechDivisionContent />;
       case 'contributions':
         return <ContributionsContent />;
       case 'wallet-reconciliation':
