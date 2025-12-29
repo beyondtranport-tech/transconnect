@@ -124,7 +124,7 @@ export async function getMemberById(memberId: string): Promise<{ success: boolea
         const memberRef = adminDb.collection('members').doc(memberId);
         const docSnap = await memberRef.get();
 
-        if (docSnap.exists) {
+        if (docSnap.exists()) {
             const data = docSnap.data();
             const serializedData = serializeTimestamps(data);
             return { success: true, data: { id: docSnap.id, ...serializedData } as Member };
@@ -146,6 +146,7 @@ export async function getFinanceApplications(): Promise<{ success: boolean; data
     const adminDb = getFirestore(app);
 
     try {
+        // This now correctly points to the top-level collection for admin viewing
         const applicationsSnapshot = await adminDb.collection('financeApplications').orderBy('createdAt', 'desc').get();
         const applications = applicationsSnapshot.docs.map(doc => {
             const data = doc.data();
@@ -161,6 +162,7 @@ export async function getFinanceApplications(): Promise<{ success: boolean; data
         return { success: false, error: error.message };
     }
 }
+
 
 export async function getContributions(): Promise<{ success: boolean; data?: Contribution[]; error?: string }> {
     const { app, error: initError } = getAdminApp();

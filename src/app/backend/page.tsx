@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -47,7 +46,7 @@ import MembersList from './members-list';
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import ContributionsList from './contributions-list';
-import FinanceApplicationsList from './finance-applications-list';
+import WalletTransactionsList from './wallet-transactions-list'; // UPDATED
 import { useUser, useAuth } from '@/firebase';
 import { signOut } from 'firebase/auth';
 import BankDetailsSettings from './bank-details-settings';
@@ -218,7 +217,7 @@ function BackendPageContent() {
       case 'revenue-pricing':
         return <RevenuePricingContent />;
       case 'wallet-transactions':
-        return <FinanceApplicationsList />;
+        return <WalletTransactionsList />;
       case 'divisions':
         return <DivisionsContent />;
       case 'contributions':
