@@ -40,7 +40,7 @@ export default function RecentEnquiries() {
         if (!firestore || !user) return null;
         return query(
             collection(firestore, 'members', user.uid, 'financeApplications'), 
-            where('fundingType', 'not-in', ['wallet_top_up', 'membership_payment']),
+            where('fundingType', 'not-in', ['wallet_top_up', 'membership_payment', 'credit-top-up']),
             orderBy('fundingType'), // Firestore requires an orderBy when using a not-in filter
             orderBy('createdAt', 'desc'), 
             limit(5)
