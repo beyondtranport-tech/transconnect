@@ -55,9 +55,9 @@ export default function TransactionAllocation({ statementData }: { statementData
         return statementData.transactions.map((t: any) => ({ 
             ...t, 
             status: 'pending',
-            memberName: memberMap.get(t.reference) || 'Unknown Member'
+            memberName: 'Loading...' // Set a temporary loading state
         }));
-    }, [statementData.transactions, memberMap]);
+    }, [statementData.transactions]);
 
     const [transactions, setTransactions] = useState<ManualTransaction[]>(initialTransactions);
     const [openingBalance, setOpeningBalance] = useState(statementData.openingBalance);
@@ -69,14 +69,16 @@ export default function TransactionAllocation({ statementData }: { statementData
     const [difference, setDifference] = useState(0);
     const [isPosting, setIsPosting] = useState(false);
 
-    // When the memberMap is updated (i.e., members are loaded), update the member names in the transactions
+    // This effect now correctly populates the member names once the memberMap is ready.
     useEffect(() => {
-        setTransactions(currentTxs => 
-            currentTxs.map(tx => ({
-                ...tx,
-                memberName: memberMap.get(tx.reference) || (tx.reference ? 'Unknown Member' : '')
-            }))
-        );
+        if (memberMap.size > 0) {
+            setTransactions(currentTxs => 
+                currentTxs.map(tx => ({
+                    ...tx,
+                    memberName: memberMap.get(tx.reference) || (tx.reference ? 'Unknown Member' : '')
+                }))
+            );
+        }
     }, [memberMap]);
     
     const handleAllocationChange = (transactionId: number) => {
