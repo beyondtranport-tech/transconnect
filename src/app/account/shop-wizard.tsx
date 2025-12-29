@@ -421,7 +421,7 @@ const shopStep3Schema = z.object({
 });
 type Step3FormValues = z.infer<typeof shopStep3Schema>;
 
-function ImageGalleryDialog({ onSelect, children }: { onSelect: (url: string) => void, children: React.ReactNode }) {
+function ImageGalleryDialog({ category, onSelect, children }: { category: string, onSelect: (url: string) => void, children: React.ReactNode }) {
     const [isOpen, setIsOpen] = useState(false);
 
     const handleSelect = (imageUrl: string) => {
@@ -429,16 +429,23 @@ function ImageGalleryDialog({ onSelect, children }: { onSelect: (url: string) =>
         setIsOpen(false);
     };
 
+    const filteredImages = useMemo(() => {
+        if (!category) return placeholderImages.filter(img => img.category === 'General');
+        return placeholderImages.filter(img => img.category === category || img.category === 'General');
+    }, [category]);
+
+
     return (
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
             <DialogTrigger asChild>{children}</DialogTrigger>
             <DialogContent className="max-w-4xl">
                 <DialogHeader>
                     <DialogTitle>Choose an Image from the Gallery</DialogTitle>
+                    <DialogDescription>Showing images for category: <span className="font-semibold text-primary">{category || 'General'}</span></DialogDescription>
                 </DialogHeader>
                 <ScrollArea className="h-[60vh]">
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 p-4">
-                        {placeholderImages.map((img) => (
+                        {filteredImages.map((img) => (
                             <button
                                 key={img.id}
                                 onClick={() => handleSelect(img.imageUrl)}
@@ -457,7 +464,7 @@ function ImageGalleryDialog({ onSelect, children }: { onSelect: (url: string) =>
     );
 }
 
-function ImagePicker({ onUpload, title, currentImage }: { onUpload: (url: string) => void, title: string, currentImage?: string | null }) {
+function ImagePicker({ onUpload, title, currentImage, category }: { onUpload: (url: string) => void, title: string, currentImage?: string | null, category: string }) {
     const { user } = useUser();
     const storage = useStorage();
     const { toast } = useToast();
@@ -513,7 +520,7 @@ function ImagePicker({ onUpload, title, currentImage }: { onUpload: (url: string
                             <UploadCloud className="mr-2 h-4 w-4" />
                             Upload Image
                          </Button>
-                        <ImageGalleryDialog onSelect={(url) => { onUpload(url); setPreview(url); }}>
+                        <ImageGalleryDialog category={category} onSelect={(url) => { onUpload(url); setPreview(url); }}>
                            <Button type="button" variant="ghost">
                              <GalleryHorizontal className="mr-2 h-4 w-4" />
                              Choose from Gallery
@@ -595,7 +602,7 @@ function Step3Promotions({ shop, onSave }: { shop: any, onSave: (newData: any) =
                             render={({ field }) => (
                                 <FormItem>
                                     <FormControl>
-                                        <ImagePicker title="Hero Banner" onUpload={(url) => field.onChange(url)} currentImage={field.value} />
+                                        <ImagePicker title="Hero Banner" onUpload={(url) => field.onChange(url)} currentImage={field.value} category={shop.category} />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -615,7 +622,7 @@ function Step3Promotions({ shop, onSave }: { shop: any, onSave: (newData: any) =
                                <FormField control={form.control} name={`promotions.${index}.imageUrl`} render={({ field: imageField }) => (
                                     <FormItem>
                                         <FormControl>
-                                            <ImagePicker title={`Promotion ${index + 1} Image`} onUpload={(url) => imageField.onChange(url)} currentImage={imageField.value} />
+                                            <ImagePicker title={`Promotion ${index + 1} Image`} onUpload={(url) => imageField.onChange(url)} currentImage={imageField.value} category={shop.category} />
                                         </FormControl>
                                     </FormItem>
                                 )}/>
