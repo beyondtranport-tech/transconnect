@@ -1,10 +1,13 @@
 
+'use client';
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { ArrowRight, CheckCircle } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import data from "@/lib/placeholder-images.json";
+import { useUser } from "@/firebase";
 
 const { placeholderImages } = data;
 
@@ -16,29 +19,31 @@ const partnershipImage = placeholderImages.find(p => p.id === 'funding-partnersh
 
 const methodology = [
     {
+        id: "asset-finance",
         title: "Asset Finance",
         description: "Secure financing for new trucks, trailers, or equipment. We offer competitive rates and flexible terms tailored to the transport industry.",
         cta: "Apply for Asset Finance",
-        link: "/join",
         image: assetFinanceImage,
     },
     {
+        id: "working-capital",
         title: "Working Capital",
         description: "Access short-term loans to manage cash flow, cover operational expenses, or seize immediate opportunities without disrupting your capital.",
         cta: "Apply for Working Capital",
-        link: "/join",
         image: workingCapitalImage,
     },
     {
+        id: "partnership",
         title: "Partnership",
         description: "We invest directly in your business, becoming a partner in your growth. This model is for established businesses looking for strategic capital.",
         cta: "Explore Partnership",
-        link: "/join",
         image: partnershipImage,
     }
 ]
 
 export default function FundingPage() {
+    const { user } = useUser();
+
     return (
         <div>
             <section className="relative w-full h-80 bg-card">
@@ -97,34 +102,37 @@ export default function FundingPage() {
                     </div>
                     
                     <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-                       {methodology.map((item) => (
-                           <Card key={item.title} className="flex flex-col overflow-hidden shadow-lg hover:shadow-xl transition-shadow">
-                                {item.image && (
-                                    <div className="relative h-48">
-                                         <Image
-                                            src={item.image.imageUrl}
-                                            alt={item.title}
-                                            fill
-                                            className="object-cover"
-                                            data-ai-hint={item.image.imageHint}
-                                        />
-                                    </div>
-                                )}
-                                <CardHeader>
-                                    <CardTitle>{item.title}</CardTitle>
-                                </CardHeader>
-                                <CardContent className="flex-grow">
-                                    <p className="text-muted-foreground">{item.description}</p>
-                                </CardContent>
-                                <CardFooter>
-                                    <Button asChild className="w-full">
-                                        <Link href={item.link}>
-                                            {item.cta} <ArrowRight className="ml-2 h-4 w-4" />
-                                        </Link>
-                                    </Button>
-                                </CardFooter>
-                           </Card>
-                       ))}
+                       {methodology.map((item) => {
+                            const link = user ? `/funding/apply?type=${item.id}` : `/join?redirect=/funding/apply?type=${item.id}`;
+                           return (
+                               <Card key={item.title} className="flex flex-col overflow-hidden shadow-lg hover:shadow-xl transition-shadow">
+                                    {item.image && (
+                                        <div className="relative h-48">
+                                            <Image
+                                                src={item.image.imageUrl}
+                                                alt={item.title}
+                                                fill
+                                                className="object-cover"
+                                                data-ai-hint={item.image.imageHint}
+                                            />
+                                        </div>
+                                    )}
+                                    <CardHeader>
+                                        <CardTitle>{item.title}</CardTitle>
+                                    </CardHeader>
+                                    <CardContent className="flex-grow">
+                                        <p className="text-muted-foreground">{item.description}</p>
+                                    </CardContent>
+                                    <CardFooter>
+                                        <Button asChild className="w-full">
+                                            <Link href={link}>
+                                                {item.cta} <ArrowRight className="ml-2 h-4 w-4" />
+                                            </Link>
+                                        </Button>
+                                    </CardFooter>
+                               </Card>
+                           )
+                        })}
                     </div>
                 </div>
             </section>
