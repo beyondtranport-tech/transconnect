@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -8,15 +7,14 @@ import {
   collection,
   query,
   getDocs,
-  onSnapshot,
 } from 'firebase/firestore';
 import { useFirestore } from '@/firebase/provider';
 import type { WithId, UseCollectionResult, InternalQuery } from './use-collection';
 
 /**
  * React hook to fetch a Firestore collection for public pages.
- * This hook fetches data directly on the client and provides real-time updates.
- * It does NOT require user authentication.
+ * This hook fetches data directly on the client.
+ * It does NOT provide real-time updates.
  *
  * IMPORTANT! YOU MUST MEMOIZE the inputted memoizedTargetRefOrQuery or BAD THINGS WILL HAPPEN
  *
@@ -48,29 +46,27 @@ export function usePublicCollection<T = any>(
       return;
     }
 
-    setIsLoading(true);
-    
-    const q = memoizedTargetRefOrQuery as Query;
-    
-    const unsubscribe = onSnapshot(q, 
-        (querySnapshot) => {
+    const fetchData = async () => {
+        setIsLoading(true);
+        setError(null);
+        try {
+            const q = memoizedTargetRefOrQuery as Query;
+            const querySnapshot = await getDocs(q);
             const data = querySnapshot.docs.map(doc => ({
                 id: doc.id,
                 ...doc.data(),
             })) as ResultItemType[];
             setData(data);
-            setIsLoading(false);
-            setError(null);
-        },
-        (e) => {
-            console.error("usePublicCollection onSnapshot error:", e);
-            setError(e);
+        } catch (e) {
+            console.error("usePublicCollection error:", e);
+            setError(e as Error);
             setData(null);
+        } finally {
             setIsLoading(false);
         }
-    );
+    };
 
-    return () => unsubscribe();
+    fetchData();
     
   }, [memoizedTargetRefOrQuery, refreshKey]);
 
