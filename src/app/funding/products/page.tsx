@@ -28,14 +28,16 @@ const productsData = {
         title: "Installment Sale Products",
         icon: FileText,
         items: [
-            { id: "asset-finance", title: "Vehicle Installment Sale", description: "Purchase a vehicle over a fixed period with predictable monthly payments. Ownership is transferred upon completion." }
+            { id: "installment-sale-term", title: "Term Agreement", description: "Finance an asset over a fixed period with regular, equal installments. Ownership transfers after the final payment." },
+            { id: "installment-sale-balloon", title: "Balloon Payment", description: "Lower your monthly installments by deferring a larger, lump-sum payment to the end of the agreement term." }
         ]
     },
     rental: {
-        title: "Rental Products",
+        title: "Rental / Lease Products",
         icon: Repeat,
         items: [
-             { id: "asset-finance", title: "Fleet Rental Solutions", description: "Rent trucks and trailers for short or long-term contracts. A flexible way to scale your fleet without the capital outlay." }
+             { id: "rental-term", title: "Term Agreement", description: "Rent an asset for a fixed period with predictable payments. Provides access to assets without the commitment of ownership." },
+             { id: "rental-balloon", title: "Balloon (Residual) Agreement", description: "Structure a lease with lower monthly payments and a final residual value payment, offering flexibility at the end of the term." }
         ]
     },
     discounting: {
