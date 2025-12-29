@@ -296,7 +296,7 @@
         },
         "status": {
           "type": "string",
-          "enum": ["pending", "under_review", "matched", "rejected", "funded", "membership_payment"],
+          "enum": ["quote", "pending", "under_review", "matched", "rejected", "funded"],
           "description": "The current status of the application."
         },
         "fundingType": {

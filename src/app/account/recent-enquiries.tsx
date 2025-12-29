@@ -7,7 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Loader2, Landmark, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { collection, query, orderBy, limit } from 'firebase/firestore';
+import { collection, query, where, orderBy, limit } from 'firebase/firestore';
 import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 
@@ -24,6 +24,7 @@ const formatDate = (timestamp: any) => {
 };
 
 const statusColors: { [key: string]: 'default' | 'secondary' | 'destructive' | 'outline' } = {
+  quote: 'outline',
   pending: 'secondary',
   under_review: 'outline',
   matched: 'default',
@@ -39,6 +40,8 @@ export default function RecentEnquiries() {
         if (!firestore || !user) return null;
         return query(
             collection(firestore, 'members', user.uid, 'financeApplications'), 
+            where('fundingType', 'not-in', ['wallet_top_up', 'membership_payment']),
+            orderBy('fundingType'), // Firestore requires an orderBy when using a not-in filter
             orderBy('createdAt', 'desc'), 
             limit(5)
         );
