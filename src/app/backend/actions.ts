@@ -146,17 +146,38 @@ export async function getFinanceApplications(): Promise<{ success: boolean; data
     const adminDb = getFirestore(app);
 
     try {
-        // This now correctly points to the top-level collection for admin viewing
-        const applicationsSnapshot = await adminDb.collection('financeApplications').orderBy('createdAt', 'desc').get();
-        const applications = applicationsSnapshot.docs.map(doc => {
+        const appMap = new Map<string, FinanceApplication>();
+
+        // 1. Query the top-level collection
+        const topLevelSnapshot = await adminDb.collection('financeApplications').get();
+        topLevelSnapshot.docs.forEach(doc => {
             const data = doc.data();
             const serializedData = serializeTimestamps(data);
-            return {
-                id: doc.id,
-                ...serializedData,
-            } as FinanceApplication;
+            appMap.set(doc.id, { id: doc.id, ...serializedData } as FinanceApplication);
         });
-        return { success: true, data: applications };
+
+        // 2. Query the subcollections using a collection group query
+        const subCollectionSnapshot = await adminDb.collectionGroup('financeApplications').get();
+        subCollectionSnapshot.docs.forEach(doc => {
+            // Avoid adding duplicates if the ID already exists from the top-level query
+            if (!appMap.has(doc.id)) {
+                const data = doc.data();
+                const serializedData = serializeTimestamps(data);
+                appMap.set(doc.id, { id: doc.id, ...serializedData } as FinanceApplication);
+            }
+        });
+        
+        const allApps = Array.from(appMap.values());
+
+        // Sort by creation date, most recent first
+        const sortedApps = allApps.sort((a, b) => {
+            const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+            const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+            return dateB - dateA;
+        });
+
+        return { success: true, data: sortedApps };
+
     } catch (error: any) {
         console.error('Error fetching finance applications with admin SDK:', error);
         return { success: false, error: error.message };
