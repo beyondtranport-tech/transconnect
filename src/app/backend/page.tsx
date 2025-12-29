@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -37,6 +38,9 @@ import {
   Wrench,
   CheckCircle,
   XCircle,
+  ShoppingBasket,
+  Cpu,
+  Landmark,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -157,7 +161,7 @@ function DivisionsContent() {
     return (
         <div>
             <h1 className="text-2xl font-bold">Divisions Management</h1>
-            <p className="mt-2 text-muted-foreground">Manage settings for Funding, Mall, Marketplace, and Tech.</p>
+            <p className="mt-2 text-muted-foreground">Select a division from the sidebar to manage its settings, tasks, and logs.</p>
         </div>
     )
 }
@@ -291,6 +295,31 @@ function BackendPageContent() {
                         </SidebarMenuSubButton>
                     </SidebarMenuSub>
                 </SidebarMenuItem>
+                
+                 <SidebarMenuItem>
+                    <SidebarMenuButton tooltip="Divisions" isActive={activeView.startsWith('divisions')}>
+                        <Boxes />
+                        <span>Divisions</span>
+                    </SidebarMenuButton>
+                     <SidebarMenuSub>
+                        <SidebarMenuSubButton isActive={activeView === 'divisions-funding'} onClick={() => router.push('/backend?view=divisions-funding', { scroll: false })}>
+                            <Landmark />
+                            <span>Funding</span>
+                        </SidebarMenuSubButton>
+                        <SidebarMenuSubButton isActive={activeView === 'divisions-mall'} onClick={() => router.push('/backend?view=divisions-mall', { scroll: false })}>
+                            <ShoppingBasket />
+                            <span>Mall</span>
+                        </SidebarMenuSubButton>
+                         <SidebarMenuSubButton isActive={activeView === 'divisions-marketplace'} onClick={() => router.push('/backend?view=divisions-marketplace', { scroll: false })}>
+                            <Store />
+                            <span>Marketplace</span>
+                        </SidebarMenuSubButton>
+                         <SidebarMenuSubButton isActive={activeView === 'divisions-tech'} onClick={() => router.push('/backend?view=divisions-tech', { scroll: false })}>
+                            <Cpu />
+                            <span>Tech</span>
+                        </SidebarMenuSubButton>
+                    </SidebarMenuSub>
+                </SidebarMenuItem>
 
                 <SidebarMenuItem>
                     <SidebarMenuButton tooltip="Platform">
@@ -324,12 +353,6 @@ function BackendPageContent() {
                         </SidebarMenuSubButton>
                     </SidebarMenuSub>
                 </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Divisions" isActive={activeView === 'divisions'} onClick={() => router.push('/backend?view=divisions', { scroll: false })}>
-                  <Boxes />
-                  <span>Divisions</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
                <SidebarMenuItem>
                 <SidebarMenuButton tooltip="Debug Tools" isActive={activeView === 'debug-tools'} onClick={() => router.push('/backend?view=debug-tools', { scroll: false })}>
                   <Wrench />
