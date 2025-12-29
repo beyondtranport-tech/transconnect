@@ -78,6 +78,8 @@ export function useCollection<T = any>(
         try {
             const token = await getClientSideAuthToken();
             if (!token) {
+                // For useCollection, we assume authentication is always required.
+                // For public data, use usePublicCollection.
                 throw new Error("User is not authenticated.");
             }
 

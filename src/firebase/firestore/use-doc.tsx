@@ -62,17 +62,16 @@ export function useDoc<T = any>(
         setError(null);
 
         try {
+            // Public data can be fetched without a token. The API route will handle this.
             const token = await getClientSideAuthToken();
-            if (!token) {
-                throw new Error("User is not authenticated.");
-            }
 
             const path = memoizedDocRef.path;
             
             const response = await fetch('/api/getUserSubcollection', {
                 method: 'POST',
                 headers: {
-                    'Authorization': `Bearer ${token}`,
+                    // Conditionally add the Authorization header
+                    ...(token && { 'Authorization': `Bearer ${token}` }),
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({ path, type: 'document' }),
