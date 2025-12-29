@@ -171,23 +171,56 @@ export async function getShops(): Promise<{ success: boolean; data?: Shop[]; err
     const adminDb = getFirestore(app);
 
     try {
-        const shopsSnapshot = await adminDb.collectionGroup('shops').get();
-        const shops = shopsSnapshot.docs.map(doc => {
+        // Use a Collection Group query to get all shops from subcollections
+        const memberShopsSnapshot = await adminDb.collectionGroup('shops').get();
+        
+        const shopMap = new Map<string, Shop>();
+
+        memberShopsSnapshot.docs.forEach(doc => {
             const data = doc.data();
             const serializedData = serializeTimestamps(data);
-            return {
+            const shop = {
                 id: doc.id,
                 ...serializedData,
             } as Shop;
+            // The collectionGroup query will find shops under 'members'
+            // We give priority to these as they are the source of truth
+            shopMap.set(shop.id, shop);
         });
-        // Client-side sorting
-        const sortedShops = shops.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+        // Now, separately query the top-level 'shops' collection for any approved shops
+        // This ensures we get approved shops that might not have been picked up if the member doc was odd.
+        const publicShopsSnapshot = await adminDb.collection('shops').get();
+        publicShopsSnapshot.docs.forEach(doc => {
+            // Only add to the map if it doesn't already exist from the more specific query
+            if (!shopMap.has(doc.id)) {
+                 const data = doc.data();
+                 const serializedData = serializeTimestamps(data);
+                 const shop = {
+                    id: doc.id,
+                    ...serializedData,
+                 } as Shop;
+                 shopMap.set(shop.id, shop);
+            }
+        });
+
+        const allShops = Array.from(shopMap.values());
+        
+        // Sort the combined list by creation date
+        const sortedShops = allShops.sort((a, b) => {
+            const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+            const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+            return dateB - dateA;
+        });
+        
         return { success: true, data: sortedShops };
+
     } catch (error: any) {
         console.error('Error fetching shops with admin SDK:', error);
         return { success: false, error: error.message };
     }
 }
+
 
 export async function approveShop(shopId: string, ownerId: string): Promise<{ success: boolean; error?: string }> {
     const { app, error: initError } = getAdminApp();
