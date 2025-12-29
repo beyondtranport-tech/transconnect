@@ -71,15 +71,13 @@ export default function TransactionAllocation({ statementData }: { statementData
 
     // This effect now correctly populates the member names once the memberMap is ready.
     useEffect(() => {
-        if (memberMap.size > 0) {
-            setTransactions(currentTxs => 
-                currentTxs.map(tx => ({
-                    ...tx,
-                    memberName: memberMap.get(tx.reference) || (tx.reference ? 'Unknown Member' : '')
-                }))
-            );
-        }
-    }, [memberMap]);
+        setTransactions(currentTxs => 
+            currentTxs.map(tx => ({
+                ...tx,
+                memberName: memberMap.get(tx.reference) || (tx.reference ? 'Unknown Member' : '')
+            }))
+        );
+    }, [memberMap, initialTransactions]);
     
     const handleAllocationChange = (transactionId: number) => {
         let wasAllocated = false;
