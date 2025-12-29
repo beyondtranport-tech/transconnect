@@ -10,7 +10,7 @@ import { Building2, Search, Star, ArrowRight, Sparkles, Loader2 } from "lucide-r
 import Image from "next/image";
 import Link from "next/link";
 import * as gtag from '@/lib/gtag';
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { usePublicCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query, where } from 'firebase/firestore';
 
 const { placeholderImages } = data;
@@ -25,7 +25,7 @@ export default function SupplierMallPage() {
         return query(collection(firestore, 'shops'), where('status', '==', 'approved'));
     }, [firestore]);
 
-    const { data: suppliers, isLoading } = useCollection(shopsQuery);
+    const { data: suppliers, isLoading } = usePublicCollection(shopsQuery);
 
     const handleSupplierClick = (supplierId: string) => {
         gtag.event({
