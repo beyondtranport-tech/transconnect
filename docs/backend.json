@@ -9,7 +9,11 @@
       "properties": {
         "id": {
           "type": "string",
-          "description": "Unique identifier for the Member entity."
+          "description": "Unique identifier for the Member entity, typically matching the Firebase Auth UID of the owner."
+        },
+        "ownerId": {
+          "type": "string",
+          "description": "The Firebase Auth UID of the user who owns and manages this company account."
         },
         "firstName": {
           "type": "string",
@@ -83,6 +87,7 @@
       },
       "required": [
         "id",
+        "ownerId",
         "firstName",
         "lastName",
         "email",
@@ -98,6 +103,7 @@
       "description": "A historical snapshot of a Member's data at a specific point in time.",
       "properties": {
         "id": { "type": "string" },
+        "ownerId": { "type": "string" },
         "firstName": { "type": "string" },
         "lastName": { "type": "string" },
         "email": { "type": "string", "format": "email" },
@@ -121,51 +127,35 @@
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Shop",
       "type": "object",
-      "description": "Represents a vendor's shop on the TransConnect platform. This definition is used for the /members/{memberId}/shops subcollection AND the top-level /shops collection.",
+      "description": "Represents a vendor's shop on the TransConnect platform.",
       "properties": {
-        "ownerId": {
-            "type": "string",
-            "description": "The UID of the Member who owns this shop."
-        },
-        "shopName": {
-            "type": "string",
-            "description": "The public name of the shop."
-        },
-        "shopDescription": {
-            "type": "string",
-            "description": "A brief description of the shop and what it sells."
-        },
-        "category": {
-            "type": "string",
-            "description": "The primary category of products or services offered (e.g., Parts, Services, Tires)."
-        },
-        "contactEmail": {
-            "type": "string",
-            "format": "email",
-            "description": "Public contact email for the shop."
-        },
-        "contactPhone": {
-            "type": "string",
-            "description": "Public contact phone number for the shop."
-        },
-        "status": {
-            "type": "string",
-            "enum": ["draft", "pending_review", "approved", "rejected"],
-            "description": "The approval status of the shop."
-        },
-        "template": { "type": "string", "description": "The chosen visual template for the shop page (e.g., 'modern-grid')." },
-        "theme": { "type": "string", "description": "The chosen color theme for the shop page (e.g., 'forest-green')." },
-        "metaTitle": { "type": "string", "description": "SEO-friendly title for the shop page." },
-        "metaDescription": { "type": "string", "description": "SEO-friendly description for search engines." },
-        "tags": { "type": "array", "items": { "type": "string" }, "description": "Searchable tags/keywords for the shop." },
-        "createdAt": {
+        "ownerId": { "type": "string" },
+        "shopName": { "type": "string" },
+        "shopDescription": { "type": "string" },
+        "category": { "type": "string" },
+        "contactEmail": { "type": "string", "format": "email" },
+        "contactPhone": { "type": "string" },
+        "status": { "type": "string", "enum": ["draft", "pending_review", "approved", "rejected"] },
+        "template": { "type": "string" },
+        "theme": { "type": "string" },
+        "metaTitle": { "type": "string" },
+        "metaDescription": { "type": "string" },
+        "tags": { "type": "array", "items": { "type": "string" } },
+        "heroBannerUrl": { "type": "string", "description": "URL for the main hero banner image." },
+        "promotions": {
+          "type": "array",
+          "description": "A list of promotional items or specials.",
+          "items": {
             "type": "object",
-            "description": "The server timestamp when the shop was created."
+            "properties": {
+              "title": { "type": "string" },
+              "description": { "type": "string" },
+              "imageUrl": { "type": "string" }
+            }
+          }
         },
-        "updatedAt": {
-            "type": "object",
-            "description": "The server timestamp when the shop was last updated."
-        }
+        "createdAt": { "type": "object" },
+        "updatedAt": { "type": "object" }
       },
       "required": ["ownerId", "shopName", "category", "status", "createdAt", "updatedAt"]
     },
@@ -447,7 +437,7 @@
         "definition": {
           "entityName": "Member",
           "schema": {
-            "$ref": "#/backend/entities/Member"
+            "$ref": "#/entities/Member"
           },
           "description": "Stores member profiles. Access is restricted to the authenticated user (path-based ownership).",
           "params": [
@@ -462,7 +452,7 @@
         "path": "/members/{memberId}/versions/{versionId}",
         "definition": {
             "entityName": "MemberVersion",
-            "schema": { "$ref": "#/backend/entities/MemberVersion" },
+            "schema": { "$ref": "#/entities/MemberVersion" },
             "description": "Stores historical snapshots of member data.",
             "params": [
                 { "name": "memberId", "description": "The UID of the parent member." },
@@ -475,7 +465,7 @@
         "definition": {
           "entityName": "Staff",
           "schema": {
-            "$ref": "#/backend/entities/Staff"
+            "$ref": "#/entities/Staff"
           },
           "description": "Stores staff members associated with a parent member company.",
           "params": [
@@ -495,7 +485,7 @@
         "definition": {
           "entityName": "Transaction",
           "schema": {
-            "$ref": "#/backend/entities/Transaction"
+            "$ref": "#/entities/Transaction"
           },
           "description": "Stores individual financial transactions for a member. Writable by admins, readable by the associated member.",
           "params": [
@@ -515,7 +505,7 @@
         "definition": {
           "entityName": "FinanceApplication",
           "schema": {
-            "$ref": "#/backend/entities/FinanceApplication"
+            "$ref": "#/entities/FinanceApplication"
           },
           "description": "Stores finance applications within a member's own document space for security.",
           "params": [
@@ -534,7 +524,7 @@
         "path": "/members/{memberId}/shops/{shopId}",
         "definition": {
           "entityName": "Shop",
-          "schema": { "$ref": "#/backend/entities/Shop" },
+          "schema": { "$ref": "#/entities/Shop" },
           "description": "Subcollection for storing the shop belonging to a member. The member has full control.",
           "params": [
             { "name": "memberId", "description": "The ID of the parent member." },
@@ -546,7 +536,7 @@
         "path": "/shops/{shopId}",
         "definition": {
           "entityName": "Shop",
-          "schema": { "$ref": "#/backend/entities/Shop" },
+          "schema": { "$ref": "#/entities/Shop" },
           "description": "Top-level collection for storing a public, read-only copy of approved shops. Managed by backend functions.",
           "params": [{ "name": "shopId", "description": "The unique ID for the shop." }]
         }
@@ -555,7 +545,7 @@
         "path": "/shops/{shopId}/products/{productId}",
         "definition": {
           "entityName": "Product",
-          "schema": { "$ref": "#/backend/entities/Product" },
+          "schema": { "$ref": "#/entities/Product" },
           "description": "Subcollection for storing products belonging to a specific public shop.",
           "params": [
             { "name": "shopId", "description": "The ID of the parent shop." },
@@ -568,7 +558,7 @@
         "definition": {
           "entityName": "Membership",
           "schema": {
-            "$ref": "#/backend/entities/Membership"
+            "$ref": "#/entities/Membership"
           },
           "description": "Stores details of available membership plans (tiers), readable by all authenticated users.",
           "params": [
@@ -584,7 +574,7 @@
         "definition": {
           "entityName": "Contribution",
           "schema": {
-            "$ref": "#/backend/entities/Contribution"
+            "$ref": "#/entities/Contribution"
           },
           "description": "Stores anonymous data contributed by members across different categories (fleet, suppliers, etc.). Writable by any authenticated user, readable by admins.",
           "params": [
@@ -600,7 +590,7 @@
         "definition": {
           "entityName": "FinanceApplication",
           "schema": {
-            "$ref": "#/backend/entities/FinanceApplication"
+            "$ref": "#/entities/FinanceApplication"
           },
           "description": "This top-level collection is now primarily for admin use to view all applications. Users write to their own subcollection.",
           "params": [

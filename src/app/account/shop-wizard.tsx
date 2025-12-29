@@ -26,7 +26,6 @@ import { generateShopSeo } from '@/ai/flows/seo-flow';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import Image from 'next/image';
-import { Carousel, CarouselContent, CarouselItem } from '@/components/ui/carousel';
 
 const statusColors: { [key: string]: 'default' | 'secondary' | 'destructive' | 'outline' } = {
   draft: 'secondary',
@@ -268,7 +267,7 @@ function ProductDialog({ shop, product, onSave, children }: { shop: any, product
         getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
           form.setValue('imageUrl', downloadURL, { shouldValidate: true });
           toast({ title: "Image uploaded!" });
-          setUploadProgress(100); // Set to 100 to re-enable button
+          setUploadProgress(100);
         });
       }
     );
@@ -418,12 +417,17 @@ const shopStep3Schema = z.object({
 });
 type Step3FormValues = z.infer<typeof shopStep3Schema>;
 
-function FileUploadInput({ onUpload, title }: { onUpload: (url: string) => void, title: string }) {
+function FileUploadInput({ onUpload, title, currentImage }: { onUpload: (url: string) => void, title: string, currentImage?: string | null }) {
     const { user } = useUser();
     const storage = useStorage();
     const { toast } = useToast();
     const [uploadProgress, setUploadProgress] = useState<number | null>(null);
-    const [preview, setPreview] = useState<string | null>(null);
+    const [preview, setPreview] = useState<string | null>(currentImage || null);
+
+    useEffect(() => {
+        setPreview(currentImage || null);
+    }, [currentImage]);
+
 
     const handleUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
@@ -459,6 +463,7 @@ function FileUploadInput({ onUpload, title }: { onUpload: (url: string) => void,
             {preview ? (
                 <div className="relative aspect-video w-full">
                     <Image src={preview} alt="Preview" fill className="object-cover rounded-md" />
+                     <Button variant="destructive" size="sm" className="absolute top-2 right-2" onClick={() => { setPreview(null); onUpload(''); }}>Change</Button>
                 </div>
             ) : (
                 <div className="flex items-center justify-center w-full">
@@ -544,7 +549,7 @@ function Step3Promotions({ shop, onSave }: { shop: any, onSave: (newData: any) =
                             render={({ field }) => (
                                 <FormItem>
                                     <FormControl>
-                                        <FileUploadInput title="Hero Banner" onUpload={(url) => field.onChange(url)} />
+                                        <FileUploadInput title="Hero Banner" onUpload={(url) => field.onChange(url)} currentImage={field.value} />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -561,10 +566,10 @@ function Step3Promotions({ shop, onSave }: { shop: any, onSave: (newData: any) =
                      <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-6">
                         {fields.slice(0, 3).map((field, index) => (
                            <Card key={field.id} className="p-4 space-y-4">
-                               <FormField control={form.control} name={`promotions.${index}.imageUrl`} render={({ field }) => (
+                               <FormField control={form.control} name={`promotions.${index}.imageUrl`} render={({ field: imageField }) => (
                                     <FormItem>
                                         <FormControl>
-                                            <FileUploadInput title={`Promotion ${index + 1} Image`} onUpload={(url) => field.onChange(url)} />
+                                            <FileUploadInput title={`Promotion ${index + 1} Image`} onUpload={(url) => imageField.onChange(url)} currentImage={imageField.value} />
                                         </FormControl>
                                     </FormItem>
                                 )}/>
@@ -1161,5 +1166,3 @@ export default function ShopWizard({ shop }: { shop: any }) {
     </div>
   );
 }
-
-    
