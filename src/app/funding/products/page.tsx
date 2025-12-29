@@ -1,13 +1,16 @@
 
 'use client';
 
-import { Suspense } from 'react';
+import { Suspense, useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
-import { Landmark, ArrowRight, Truck, Briefcase, FileText, Repeat } from "lucide-react";
+import { Landmark, ArrowRight, Truck, Briefcase, FileText, Repeat, Calculator } from "lucide-react";
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import * as React from 'react';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Slider } from '@/components/ui/slider';
+import { Label } from '@/components/ui/label';
 
 const productsData = {
     loans: {
@@ -52,6 +55,81 @@ const productsData = {
     }
 };
 
+const formatPrice = (price: number) => {
+    const formattedPrice = new Intl.NumberFormat('en-ZA', {
+        style: 'currency',
+        currency: 'ZAR',
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0,
+    }).format(price);
+    return formattedPrice.replace(/\s/g, ' ');
+};
+
+function QuoteCalculator({ product }: { product: { id: string; title: string } }) {
+    const [amount, setAmount] = useState(500000);
+    const [rate, setRate] = useState(15);
+    const [term, setTerm] = useState(60);
+    const [monthlyPayment, setMonthlyPayment] = useState(0);
+    const [totalRepayment, setTotalRepayment] = useState(0);
+
+    useEffect(() => {
+        const monthlyRate = rate / 100 / 12;
+        if (monthlyRate > 0) {
+            const payment = amount * (monthlyRate * Math.pow(1 + monthlyRate, term)) / (Math.pow(1 + monthlyRate, term) - 1);
+            setMonthlyPayment(payment);
+            setTotalRepayment(payment * term);
+        } else {
+            setMonthlyPayment(amount / term);
+            setTotalRepayment(amount);
+        }
+    }, [amount, rate, term]);
+
+    return (
+        <DialogContent>
+            <DialogHeader>
+                <DialogTitle>Quote Calculator: {product.title}</DialogTitle>
+                <DialogDescription>
+                    Adjust the sliders to estimate your payments. This is an estimate and not a formal offer.
+                </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-6 py-4">
+                <div>
+                    <div className="flex justify-between items-center mb-2">
+                        <Label htmlFor="amount-slider">Loan Amount</Label>
+                        <span className="font-bold">{formatPrice(amount)}</span>
+                    </div>
+                    <Slider id="amount-slider" min={10000} max={5000000} step={10000} value={[amount]} onValueChange={(v) => setAmount(v[0])} />
+                </div>
+                <div>
+                    <div className="flex justify-between items-center mb-2">
+                        <Label htmlFor="rate-slider">Interest Rate (p.a.)</Label>
+                        <span className="font-bold">{rate.toFixed(1)}%</span>
+                    </div>
+                    <Slider id="rate-slider" min={5} max={30} step={0.5} value={[rate]} onValueChange={(v) => setRate(v[0])} />
+                </div>
+                <div>
+                    <div className="flex justify-between items-center mb-2">
+                        <Label htmlFor="term-slider">Loan Term (Months)</Label>
+                        <span className="font-bold">{term}</span>
+                    </div>
+                    <Slider id="term-slider" min={12} max={120} step={6} value={[term]} onValueChange={(v) => setTerm(v[0])} />
+                </div>
+
+                <div className="border-t border-dashed pt-4 space-y-2">
+                    <div className="flex justify-between items-center">
+                        <p className="font-semibold">Estimated Monthly Payment:</p>
+                        <p className="text-xl font-bold text-primary">{formatPrice(monthlyPayment)}</p>
+                    </div>
+                    <div className="flex justify-between items-center text-sm">
+                        <p className="text-muted-foreground">Total Repayment:</p>
+                        <p className="font-mono text-muted-foreground">{formatPrice(totalRepayment)}</p>
+                    </div>
+                </div>
+            </div>
+        </DialogContent>
+    );
+}
+
 function ProductTypesContent() {
     const searchParams = useSearchParams();
     const agreement = searchParams.get('agreement') as keyof typeof productsData;
@@ -72,21 +150,30 @@ function ProductTypesContent() {
             {data.items.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
                     {data.items.map(product => (
-                        <Card key={product.id} className="flex flex-col">
-                            <CardHeader>
-                                <CardTitle>{product.title}</CardTitle>
-                            </CardHeader>
-                            <CardContent className="flex-grow">
-                                <CardDescription>{product.description}</CardDescription>
-                            </CardContent>
-                            <CardFooter>
-                                <Button asChild className="w-full">
-                                    <Link href={`/funding/apply?type=${product.id}`}>
-                                        Apply Now <ArrowRight className="ml-2 h-4 w-4" />
-                                    </Link>
-                                </Button>
-                            </CardFooter>
-                        </Card>
+                        <Dialog key={product.id}>
+                            <Card className="flex flex-col">
+                                <CardHeader>
+                                    <CardTitle>{product.title}</CardTitle>
+                                </CardHeader>
+                                <CardContent className="flex-grow">
+                                    <CardDescription>{product.description}</CardDescription>
+                                </CardContent>
+                                <CardFooter className="flex flex-col sm:flex-row gap-2">
+                                     <DialogTrigger asChild>
+                                        <Button variant="outline" className="w-full">
+                                            <Calculator className="mr-2 h-4 w-4" />
+                                            Get Quote
+                                        </Button>
+                                    </DialogTrigger>
+                                    <Button asChild className="w-full">
+                                        <Link href={`/funding/apply?type=${product.id}`}>
+                                            Start Enquiry <ArrowRight className="ml-2 h-4 w-4" />
+                                        </Link>
+                                    </Button>
+                                </CardFooter>
+                            </Card>
+                            <QuoteCalculator product={product} />
+                        </Dialog>
                     ))}
                 </div>
             ) : (
