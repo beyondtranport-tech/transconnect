@@ -1,68 +1,30 @@
 
-import data from "@/lib/placeholder-images.json";
-import { Building2, CheckCircle, Star, Sparkles } from "lucide-react";
+'use client';
+
+import { useDoc, useFirestore, useMemoFirebase } from '@/firebase';
+import { doc } from 'firebase/firestore';
+import { Building2, CheckCircle, Star, Sparkles, Loader2, Mail, Phone, MapPin } from "lucide-react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { notFound } from "next/navigation";
 
-const { placeholderImages } = data;
+function SupplierProfile({ params }: { params: { supplierId: string }}) {
+    const firestore = useFirestore();
 
-// In a real app, this data would be fetched from a database based on params.supplierId
-const featuredSuppliers = [
-    { 
-        id: "global-parts-inc",
-        name: "Global Parts Inc.", 
-        category: "Engine & Drivetrain",
-        rating: 4.5,
-        image: placeholderImages.find(p => p.id === 'tech-division'),
-        about: "With over 20 years of experience, Global Parts Inc. is a leading distributor of OEM and aftermarket parts for heavy-duty trucks. Our mission is to keep your fleet on the road with reliable parts, expert advice, and unbeatable service.",
-        productCategories: ["Engine Components", "Transmission Parts", "Axle & Differential", "Filters & Fluids"],
-        phone: "011 555 1234",
-        email: "sales@globalparts.co.za",
-        address: "42 Industrial Rd, Johannesburg",
-    },
-    { 
-        id: "tiremax-pro",
-        name: "TireMax Pro", 
-        category: "Tires & Wheels",
-        rating: 4.8,
-        image: placeholderImages.find(p => p.id === 'product-tires'),
-        about: "Your number one source for new and retreaded commercial tires. We offer leading brands and professional fitting services to maximize your uptime and tire lifespan.",
-        productCategories: ["Long-Haul Tires", "Regional Tires", "Retread Services", "Wheel Alignment"],
-        phone: "011 555 5678",
-        email: "contact@tiremax.co.za",
-        address: "15 Tire Ave, Johannesburg",
-    },
-    { 
-        id: "advanced-auto-electrical",
-        name: "Advanced Auto Electrical", 
-        category: "Electrical & Lighting",
-        rating: 4.2,
-        image: placeholderImages.find(p => p.id === 'tech-home'),
-        about: "Specialists in diagnosing and repairing complex electrical systems for modern trucks. From starters and alternators to full wiring harnesses, we've got you covered.",
-        productCategories: ["Alternators & Starters", "Lighting & Bulbs", "Batteries & Cables", "ECU Diagnostics"],
-        phone: "011 555 9012",
-        email: "service@advanced-ae.co.za",
-        address: "88 Circuit Lane, Johannesburg",
-    },
-    { 
-        id: "brake-clutch-specialists",
-        name: "Brake & Clutch Specialists", 
-        category: "Brakes & Suspension",
-        rating: 4.6,
-        image: placeholderImages.find(p => p.id === 'hero-home'),
-        about: "Safety is our priority. We are certified experts in brake, clutch, and suspension systems for all major truck brands, ensuring your vehicles are safe and compliant.",
-        productCategories: ["Brake Pads & Drums", "Clutch Kits", "Air Brake Systems", "Suspension Components"],
-        phone: "011 555 3456",
-        email: "info@bcs.co.za",
-        address: "101 Stop Street, Johannesburg",
-    },
-]
+    const supplierRef = useMemoFirebase(() => {
+        if (!firestore) return null;
+        return doc(firestore, 'shops', params.supplierId);
+    }, [firestore, params.supplierId]);
 
+    const { data: supplier, isLoading } = useDoc(supplierRef);
 
-export default function SupplierProfilePage({ params }: { params: { supplierId: string } }) {
-
-    const supplier = featuredSuppliers.find(s => s.id === params.supplierId);
+    if (isLoading) {
+        return (
+            <div className="flex justify-center items-center h-[60vh]">
+                <Loader2 className="h-12 w-12 animate-spin text-primary" />
+            </div>
+        )
+    }
 
     if (!supplier) {
         notFound();
@@ -73,14 +35,13 @@ export default function SupplierProfilePage({ params }: { params: { supplierId: 
              <div className="container mx-auto px-4">
                 <div className="max-w-6xl mx-auto border rounded-xl overflow-hidden shadow-2xl bg-background">
                     {/* Profile Header */}
-                    <div className="relative h-48 md:h-64">
-                            {supplier.image && (
+                    <div className="relative h-48 md:h-64 bg-muted">
+                        {supplier.heroBannerUrl && (
                             <Image
-                                src={supplier.image.imageUrl}
-                                alt={supplier.name}
+                                src={supplier.heroBannerUrl}
+                                alt={supplier.shopName}
                                 fill
                                 className="object-cover"
-                                data-ai-hint={supplier.image.imageHint}
                             />
                         )}
                         <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
@@ -90,7 +51,7 @@ export default function SupplierProfilePage({ params }: { params: { supplierId: 
                                     <Building2 className="h-10 w-10 text-primary" />
                                 </div>
                                 <div>
-                                    <h1 className="text-3xl font-bold text-white font-headline">{supplier.name}</h1>
+                                    <h1 className="text-3xl font-bold text-white font-headline">{supplier.shopName}</h1>
                                     <p className="text-white/90">{supplier.category}</p>
                                 </div>
                             </div>
@@ -102,47 +63,31 @@ export default function SupplierProfilePage({ params }: { params: { supplierId: 
                         <div className="md:col-span-2">
                             <h2 className="text-xl font-semibold font-headline">About Us</h2>
                             <p className="mt-2 text-muted-foreground">
-                                {supplier.about}
+                                {supplier.shopDescription || "No description provided."}
                             </p>
-
-                            <h3 className="mt-8 text-xl font-semibold font-headline">Product Categories</h3>
-                            <div className="mt-4 grid grid-cols-2 gap-4">
-                                {supplier.productCategories.map(cat => (
-                                    <div key={cat} className="flex items-center gap-2 p-3 bg-card rounded-md border">
-                                        <CheckCircle className="h-5 w-5 text-green-500" />
-                                        <span>{cat}</span>
-                                    </div>
-                                ))}
-                            </div>
                         </div>
                         <div className="bg-card p-6 rounded-lg border">
                             <h3 className="text-xl font-semibold font-headline">Contact Details</h3>
                             <ul className="mt-4 space-y-3 text-sm text-muted-foreground">
-                                <li><strong>Phone:</strong> {supplier.phone}</li>
-                                <li><strong>Email:</strong> {supplier.email}</li>
-                                <li><strong>Address:</strong> {supplier.address}</li>
+                                {supplier.contactPhone && <li><strong><Phone className="inline h-4 w-4 mr-2"/></strong> {supplier.contactPhone}</li>}
+                                {supplier.contactEmail && <li><strong><Mail className="inline h-4 w-4 mr-2"/></strong> {supplier.contactEmail}</li>}
+                                {/* Add address fields if they exist */}
                             </ul>
-                                <h3 className="mt-6 text-xl font-semibold font-headline">Member Rating</h3>
-                            <div className="flex items-center gap-1 mt-2">
-                                {[...Array(5)].map((_, i) => (
-                                    <Star 
-                                        key={i} 
-                                        className={`h-5 w-5 ${i < Math.floor(supplier.rating) ? 'text-yellow-400 fill-yellow-400' : 'text-yellow-400/50'}`} 
-                                    />
-                                ))}
-                                <span className="ml-2 text-sm text-muted-foreground">({supplier.rating.toFixed(1)}/5)</span>
-                            </div>
                         </div>
                     </div>
                 </div>
 
                 <div className="text-center mt-16">
-                    <Button size="lg">
+                    <Button size="lg" variant="outline">
                         <Sparkles className="mr-2 h-5 w-5" />
-                        Are you a supplier? Claim Your Profile Today!
+                        Want your shop featured? Join TransConnect!
                     </Button>
                 </div>
              </div>
         </div>
     );
+}
+
+export default function SupplierProfilePage({ params }: { params: { supplierId: string } }) {
+    return <SupplierProfile params={params} />;
 }

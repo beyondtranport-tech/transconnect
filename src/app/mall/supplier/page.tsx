@@ -6,47 +6,26 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import data from "@/lib/placeholder-images.json";
-import { Building2, Search, Star, ArrowRight, Sparkles } from "lucide-react";
+import { Building2, Search, Star, ArrowRight, Sparkles, Loader2 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import * as gtag from '@/lib/gtag';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { collection, query, where } from 'firebase/firestore';
 
 const { placeholderImages } = data;
 
 const supplierMallImage = placeholderImages.find(p => p.id === 'mall-division');
 
-const featuredSuppliers = [
-    { 
-        id: "global-parts-inc",
-        name: "Global Parts Inc.", 
-        category: "Engine & Drivetrain",
-        rating: 4.5,
-        image: placeholderImages.find(p => p.id === 'tech-division'),
-    },
-    { 
-        id: "tiremax-pro",
-        name: "TireMax Pro", 
-        category: "Tires & Wheels",
-        rating: 4.8,
-        image: placeholderImages.find(p => p.id === 'product-tires'),
-    },
-    { 
-        id: "advanced-auto-electrical",
-        name: "Advanced Auto Electrical", 
-        category: "Electrical & Lighting",
-        rating: 4.2,
-        image: placeholderImages.find(p => p.id === 'tech-home'),
-    },
-    { 
-        id: "brake-clutch-specialists",
-        name: "Brake & Clutch Specialists", 
-        category: "Brakes & Suspension",
-        rating: 4.6,
-        image: placeholderImages.find(p => p.id === 'hero-home'),
-    },
-]
-
 export default function SupplierMallPage() {
+    const firestore = useFirestore();
+
+    const shopsQuery = useMemoFirebase(() => {
+        if (!firestore) return null;
+        return query(collection(firestore, 'shops'), where('status', '==', 'approved'));
+    }, [firestore]);
+
+    const { data: suppliers, isLoading } = useCollection(shopsQuery);
 
     const handleSupplierClick = (supplierId: string) => {
         gtag.event({
@@ -124,50 +103,62 @@ export default function SupplierMallPage() {
              <section id="featured-suppliers" className="py-16 md:py-24 bg-card">
                 <div className="container mx-auto px-4">
                      <div className="text-center max-w-3xl mx-auto mb-12">
-                        <h2 className="text-3xl md:text-4xl font-bold font-headline">Featured Suppliers</h2>
+                        <h2 className="text-3xl md:text-4xl font-bold font-headline">Approved Suppliers</h2>
                         <p className="mt-4 text-lg text-muted-foreground">
                             Top-rated suppliers trusted by the TransConnect community.
                         </p>
                     </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-                        {featuredSuppliers.map(supplier => (
-                            <Card key={supplier.id} className="overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300 flex flex-col">
-                                {supplier.image && (
-                                    <div className="relative aspect-video">
-                                        <Image
-                                            src={supplier.image.imageUrl}
-                                            alt={supplier.name}
-                                            fill
-                                            className="object-cover"
-                                            data-ai-hint={supplier.image.imageHint}
-                                        />
+
+                    {isLoading ? (
+                        <div className="flex justify-center items-center py-20">
+                            <Loader2 className="h-12 w-12 animate-spin text-primary" />
+                        </div>
+                    ) : suppliers && suppliers.length > 0 ? (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+                            {suppliers.map(supplier => (
+                                <Card key={supplier.id} className="overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300 flex flex-col">
+                                    <div className="relative aspect-video bg-muted">
+                                        {supplier.heroBannerUrl ? (
+                                            <Image
+                                                src={supplier.heroBannerUrl}
+                                                alt={supplier.shopName}
+                                                fill
+                                                className="object-cover"
+                                            />
+                                        ) : (
+                                            <div className="flex items-center justify-center h-full">
+                                                <Building2 className="h-12 w-12 text-muted-foreground"/>
+                                            </div>
+                                        )}
                                     </div>
-                                )}
-                                <CardHeader>
-                                    <CardTitle className="text-xl">{supplier.name}</CardTitle>
-                                    <CardDescription>{supplier.category}</CardDescription>
-                                </CardHeader>
-                                <CardContent className="flex-grow">
-                                     <div className="flex items-center gap-1">
-                                        <Star className="h-5 w-5 text-yellow-400 fill-yellow-400" />
-                                        <span className="font-semibold">{supplier.rating.toFixed(1)}</span>
-                                        <span className="text-sm text-muted-foreground">/ 5.0</span>
-                                    </div>
-                                </CardContent>
-                                <CardFooter>
-                                    <Button asChild className="w-full" onClick={() => handleSupplierClick(supplier.id)}>
-                                        <Link href={`/mall/supplier/${supplier.id}`}>
-                                            View Profile <ArrowRight className="ml-2" />
-                                        </Link>
-                                    </Button>
-                                </CardFooter>
-                            </Card>
-                        ))}
-                    </div>
+                                    <CardHeader>
+                                        <CardTitle className="text-xl">{supplier.shopName}</CardTitle>
+                                        <CardDescription>{supplier.category}</CardDescription>
+                                    </CardHeader>
+                                    <CardContent className="flex-grow">
+                                        {/* Future content like rating can go here */}
+                                    </CardContent>
+                                    <CardFooter>
+                                        <Button asChild className="w-full" onClick={() => handleSupplierClick(supplier.id)}>
+                                            <Link href={`/mall/supplier/${supplier.id}`}>
+                                                View Profile <ArrowRight className="ml-2" />
+                                            </Link>
+                                        </Button>
+                                    </CardFooter>
+                                </Card>
+                            ))}
+                        </div>
+                    ) : (
+                         <div className="text-center py-20 border-2 border-dashed rounded-lg">
+                            <Building2 className="mx-auto h-12 w-12 text-muted-foreground" />
+                            <h3 className="mt-4 text-xl font-semibold">No suppliers found.</h3>
+                            <p className="mt-2 text-muted-foreground">Check back later as new suppliers are approved and added to the mall.</p>
+                        </div>
+                    )}
                      <div className="text-center mt-16">
                         <Button size="lg" onClick={handleClaimProfileClick}>
                             <Sparkles className="mr-2 h-5 w-5" />
-                            Are you a supplier? Claim Your Profile Today!
+                            Are you a supplier? Create Your Shop!
                         </Button>
                     </div>
                 </div>
