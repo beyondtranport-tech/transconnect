@@ -2,15 +2,18 @@
 'use client';
 
 import { Suspense, useState, useEffect } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
-import { Landmark, ArrowRight, Truck, Briefcase, FileText, Repeat, Calculator } from "lucide-react";
+import { Landmark, ArrowRight, Truck, Briefcase, FileText, Repeat, Calculator, Save, Mail } from "lucide-react";
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import * as React from 'react';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Slider } from '@/components/ui/slider';
 import { Label } from '@/components/ui/label';
+import { useUser, getClientSideAuthToken } from '@/firebase';
+import { useToast } from '@/hooks/use-toast';
+import { Loader2 } from 'lucide-react';
 
 const productsData = {
     loans: {
@@ -65,7 +68,11 @@ const formatPrice = (price: number) => {
     return formattedPrice.replace(/\s/g, ' ');
 };
 
-function QuoteCalculator({ product }: { product: { id: string; title: string } }) {
+function QuoteCalculator({ product, onQuoteSaved }: { product: { id: string; title: string }, onQuoteSaved: () => void }) {
+    const { user } = useUser();
+    const router = useRouter();
+    const { toast } = useToast();
+    const [isSaving, setIsSaving] = useState(false);
     const [amount, setAmount] = useState(500000);
     const [rate, setRate] = useState(15);
     const [term, setTerm] = useState(60);
@@ -83,6 +90,65 @@ function QuoteCalculator({ product }: { product: { id: string; title: string } }
             setTotalRepayment(amount);
         }
     }, [amount, rate, term]);
+
+    const handleSaveQuote = async () => {
+        if (!user) {
+            router.push(`/signin?redirect=/funding/products?agreement=${product.id.split('-')[0]}`);
+            return;
+        }
+        setIsSaving(true);
+        try {
+            const token = await getClientSideAuthToken();
+            if (!token) throw new Error("Authentication token not found.");
+
+            const quoteData = {
+                applicantId: user.uid,
+                status: 'pending',
+                fundingType: product.id,
+                amountRequested: amount,
+                businessDetails: {
+                    purpose: `Quote generated for ${product.title}`,
+                    quoteDetails: {
+                        amount,
+                        rate,
+                        term,
+                        monthlyPayment,
+                        totalRepayment,
+                    }
+                },
+                financials: {},
+                documents: [],
+                createdAt: { _methodName: 'serverTimestamp' },
+                updatedAt: { _methodName: 'serverTimestamp' },
+            };
+
+            const response = await fetch('/api/addUserDoc', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    collectionPath: `members/${user.uid}/financeApplications`,
+                    data: quoteData,
+                }),
+            });
+            
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.error || 'Failed to save quote.');
+
+            toast({
+                title: 'Quote Saved!',
+                description: 'Your quote has been saved to your profile and our team has been notified.',
+            });
+            onQuoteSaved();
+        } catch (error: any) {
+            toast({ variant: 'destructive', title: 'Save Failed', description: error.message });
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
 
     return (
         <DialogContent>
@@ -126,6 +192,12 @@ function QuoteCalculator({ product }: { product: { id: string; title: string } }
                     </div>
                 </div>
             </div>
+            <DialogFooter>
+                <Button onClick={handleSaveQuote} disabled={isSaving}>
+                    {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                    Save Quote
+                </Button>
+            </DialogFooter>
         </DialogContent>
     );
 }
@@ -133,6 +205,11 @@ function QuoteCalculator({ product }: { product: { id: string; title: string } }
 function ProductTypesContent() {
     const searchParams = useSearchParams();
     const agreement = searchParams.get('agreement') as keyof typeof productsData;
+    const [openDialogs, setOpenDialogs] = useState<Record<string, boolean>>({});
+
+    const handleQuoteSaved = (productId: string) => {
+        setOpenDialogs(prev => ({ ...prev, [productId]: false }));
+    };
 
     const data = productsData[agreement] || { title: "Products", icon: Landmark, items: [] };
     const Icon = data.icon;
@@ -150,7 +227,7 @@ function ProductTypesContent() {
             {data.items.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
                     {data.items.map(product => (
-                        <Dialog key={product.id}>
+                        <Dialog key={product.id} open={openDialogs[product.id] || false} onOpenChange={(isOpen) => setOpenDialogs(prev => ({...prev, [product.id]: isOpen}))}>
                             <Card className="flex flex-col">
                                 <CardHeader>
                                     <CardTitle>{product.title}</CardTitle>
@@ -172,7 +249,7 @@ function ProductTypesContent() {
                                     </Button>
                                 </CardFooter>
                             </Card>
-                            <QuoteCalculator product={product} />
+                            <QuoteCalculator product={product} onQuoteSaved={() => handleQuoteSaved(product.id)} />
                         </Dialog>
                     ))}
                 </div>

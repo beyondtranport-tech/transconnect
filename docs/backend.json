@@ -296,12 +296,12 @@
         },
         "status": {
           "type": "string",
-          "enum": ["pending", "under_review", "matched", "rejected", "funded", "membership_payment"],
+          "enum": ["quote", "pending", "under_review", "matched", "rejected", "funded", "membership_payment", "wallet_top_up"],
           "description": "The current status of the application."
         },
         "fundingType": {
           "type": "string",
-          "enum": ["asset_finance", "working_capital", "partnership", "credit-top-up", "membership_payment"],
+          "enum": ["asset_finance", "working_capital", "partnership", "credit-top-up", "membership_payment", "wallet_top_up"],
           "description": "The type of funding requested."
         },
         "amountRequested": {
