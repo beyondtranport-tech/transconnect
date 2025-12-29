@@ -10,7 +10,7 @@ import { Building2, Search, Star, ArrowRight, Sparkles, Loader2 } from "lucide-r
 import Image from "next/image";
 import Link from "next/link";
 import * as gtag from '@/lib/gtag';
-import { usePublicCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { usePublicCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, where } from 'firebase/firestore';
 
 const { placeholderImages } = data;
@@ -18,12 +18,10 @@ const { placeholderImages } = data;
 const supplierMallImage = placeholderImages.find(p => p.id === 'mall-division');
 
 export default function SupplierMallPage() {
-    const firestore = useFirestore();
-
+    // This query is now self-contained and does not depend on an external firestore instance.
     const shopsQuery = useMemoFirebase(() => {
-        if (!firestore) return null;
-        return query(collection(firestore, 'shops'), where('status', '==', 'approved'));
-    }, [firestore]);
+        return query(collection(getFirestore(getApp()), 'shops'), where('status', '==', 'approved'));
+    }, []);
 
     const { data: suppliers, isLoading } = usePublicCollection(shopsQuery);
 

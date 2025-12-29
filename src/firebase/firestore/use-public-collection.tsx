@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -14,7 +15,7 @@ import type { WithId, UseCollectionResult, InternalQuery } from './use-collectio
 
 /**
  * React hook to fetch a Firestore collection for public pages.
- * This hook fetches data directly on the client.
+ * This hook fetches data directly on the client and does NOT require user authentication.
  * It does NOT provide real-time updates.
  *
  * IMPORTANT! YOU MUST MEMOIZE the inputted memoizedTargetRefOrQuery or BAD THINGS WILL HAPPEN
@@ -34,38 +35,34 @@ export function usePublicCollection<T = any>(
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<Error | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
-  const app = useFirebaseApp(); // Get the initialized app
+  const app = useFirebaseApp(); // Get the initialized app from context
 
   const forceRefresh = useCallback(() => {
     setRefreshKey(oldKey => oldKey + 1);
   }, []);
 
   useEffect(() => {
-    if (!memoizedTargetRefOrQuery || !app) {
-      setData(null);
-      // Set loading to false only if we are not expecting to run.
-      // If app is not ready, we might be loading.
-      if (!app) {
-        setIsLoading(true);
-      } else {
-        setIsLoading(false);
-      }
-      setError(null);
-      return;
+    // Do nothing if the app isn't ready or there's no query.
+    if (!app || !memoizedTargetRefOrQuery) {
+        setIsLoading(!!memoizedTargetRefOrQuery); // Be in loading state if we expect a query but app is not ready
+        setData(null);
+        setError(null);
+        return;
     }
 
     const fetchData = async () => {
         setIsLoading(true);
         setError(null);
         try {
-            const db = getFirestore(app); // Get firestore instance from the app
+            // The query should already be created with a firestore instance.
+            // We can execute it directly.
             const q = memoizedTargetRefOrQuery as Query;
             const querySnapshot = await getDocs(q);
-            const data = querySnapshot.docs.map(doc => ({
+            const responseData = querySnapshot.docs.map(doc => ({
                 id: doc.id,
                 ...doc.data(),
             })) as ResultItemType[];
-            setData(data);
+            setData(responseData);
         } catch (e) {
             console.error("usePublicCollection error:", e);
             setError(e as Error);
@@ -77,7 +74,7 @@ export function usePublicCollection<T = any>(
 
     fetchData();
     
-  }, [memoizedTargetRefOrQuery, refreshKey, app]);
+  }, [memoizedTargetRefOrQuery, app, refreshKey]); // Depend on app and refreshKey
 
   return { data, isLoading, error, forceRefresh };
 }
