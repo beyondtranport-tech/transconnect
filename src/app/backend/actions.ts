@@ -1,4 +1,3 @@
-
 'use server';
 
 import { initializeApp, getApps, App, cert, ServiceAccount } from 'firebase-admin/app';
@@ -110,6 +109,30 @@ export async function getMembers(): Promise<{ success: boolean; data?: Member[];
         return { success: true, data: members };
     } catch (error: any) {
         console.error('Error fetching members with admin SDK:', error);
+        return { success: false, error: error.message };
+    }
+}
+
+export async function getMemberById(memberId: string): Promise<{ success: boolean; data?: Member; error?: string }> {
+    const { app, error: initError } = getAdminApp();
+    if (initError || !app) {
+        return { success: false, error: initError || 'Firebase Admin SDK could not be initialized.' };
+    }
+    const adminDb = getFirestore(app);
+
+    try {
+        const memberRef = adminDb.collection('members').doc(memberId);
+        const docSnap = await memberRef.get();
+
+        if (docSnap.exists) {
+            const data = docSnap.data();
+            const serializedData = serializeTimestamps(data);
+            return { success: true, data: { id: docSnap.id, ...serializedData } as Member };
+        } else {
+            return { success: false, error: 'Member not found.' };
+        }
+    } catch (error: any) {
+        console.error(`Error fetching member ${memberId}:`, error);
         return { success: false, error: error.message };
     }
 }

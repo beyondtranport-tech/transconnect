@@ -1,44 +1,65 @@
-
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useFirestore, useUser, useDoc, useMemoFirebase } from '@/firebase';
+import { useUser } from '@/firebase';
 import { doc, writeBatch, collection, increment, serverTimestamp } from 'firebase/firestore';
 import { Loader2, User, Wallet, Calendar, Mail, FileCheck } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { getMemberById } from '../actions';
+import { useFirestore } from '@/firebase'; // Keep for posting transactions
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 
+
 const formatCurrency = (amount: number) => new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(amount);
-const formatDate = (timestamp: any) => {
-    if (!timestamp || !timestamp.toDate) return 'N/A';
-    return timestamp.toDate().toLocaleDateString('en-ZA', {
+const formatDate = (isoString: any) => {
+    if (!isoString) return 'N/A';
+    return new Date(isoString).toLocaleDateString('en-ZA', {
         year: 'numeric', month: 'long', day: 'numeric'
     });
 }
 
 export default function MemberWallet({ memberId }: { memberId: string }) {
     const { toast } = useToast();
-    const firestore = useFirestore();
     const { user: adminUser } = useUser();
-    
+    const firestore = useFirestore();
+
     const [isPosting, setIsPosting] = useState(false);
     const [newRecordAmount, setNewRecordAmount] = useState<number | string>('');
     const [newRecordDescription, setNewRecordDescription] = useState('');
     const [formattedBalance, setFormattedBalance] = useState<string | null>(null);
 
-    const memberRef = useMemoFirebase(() => {
-        if (!firestore || !memberId) return null;
-        return doc(firestore, 'members', memberId);
-    }, [firestore, memberId]);
+    const [memberData, setMemberData] = useState<any | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
-    const { data: memberData, isLoading: isMemberLoading } = useDoc(memberRef);
+    const fetchMemberData = useCallback(async () => {
+        setIsLoading(true);
+        setError(null);
+        try {
+            const result = await getMemberById(memberId);
+            if (result.success) {
+                setMemberData(result.data);
+            } else {
+                setError(result.error || 'Failed to load member data.');
+            }
+        } catch (e: any) {
+            setError(e.message);
+        } finally {
+            setIsLoading(false);
+        }
+    }, [memberId]);
+
+    useEffect(() => {
+        fetchMemberData();
+    }, [fetchMemberData]);
+
 
     useEffect(() => {
         if (memberData !== null && memberData !== undefined) {
@@ -93,6 +114,7 @@ export default function MemberWallet({ memberId }: { memberId: string }) {
             toast({ title: 'Success!', description: `Wallet updated and transaction recorded for ${memberData?.firstName}.` });
             setNewRecordAmount('');
             setNewRecordDescription('');
+            fetchMemberData(); // Re-fetch data to show updated balance
         } catch (error: any) {
             errorEmitter.emit(
                 'permission-error',
@@ -108,9 +130,28 @@ export default function MemberWallet({ memberId }: { memberId: string }) {
         }
     };
 
-    if (isMemberLoading) {
+    if (isLoading) {
         return <div className="flex justify-center items-center min-h-[calc(100vh-8rem)]"><Loader2 className="h-12 w-12 animate-spin text-primary" /></div>;
     }
+
+    if (error) {
+         return (
+            <Card>
+                <CardHeader><CardTitle className="text-destructive">Error</CardTitle></CardHeader>
+                <CardContent><p>{error}</p></CardContent>
+            </Card>
+         );
+    }
+
+    if (!memberData) {
+        return (
+             <Card>
+                <CardHeader><CardTitle>Member Not Found</CardTitle></CardHeader>
+                <CardContent><p>No member found with the ID: {memberId}</p></CardContent>
+            </Card>
+        );
+    }
+
 
     return (
         <div className="space-y-8">
