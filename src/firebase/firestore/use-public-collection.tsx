@@ -7,8 +7,9 @@ import {
   collection,
   query,
   getDocs,
+  getFirestore,
 } from 'firebase/firestore';
-import { useFirestore } from '@/firebase/provider';
+import { useFirebaseApp } from '@/firebase/provider';
 import type { WithId, UseCollectionResult, InternalQuery } from './use-collection';
 
 /**
@@ -33,15 +34,22 @@ export function usePublicCollection<T = any>(
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<Error | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
+  const app = useFirebaseApp(); // Get the initialized app
 
   const forceRefresh = useCallback(() => {
     setRefreshKey(oldKey => oldKey + 1);
   }, []);
 
   useEffect(() => {
-    if (!memoizedTargetRefOrQuery) {
+    if (!memoizedTargetRefOrQuery || !app) {
       setData(null);
-      setIsLoading(false);
+      // Set loading to false only if we are not expecting to run.
+      // If app is not ready, we might be loading.
+      if (!app) {
+        setIsLoading(true);
+      } else {
+        setIsLoading(false);
+      }
       setError(null);
       return;
     }
@@ -50,6 +58,7 @@ export function usePublicCollection<T = any>(
         setIsLoading(true);
         setError(null);
         try {
+            const db = getFirestore(app); // Get firestore instance from the app
             const q = memoizedTargetRefOrQuery as Query;
             const querySnapshot = await getDocs(q);
             const data = querySnapshot.docs.map(doc => ({
@@ -68,7 +77,7 @@ export function usePublicCollection<T = any>(
 
     fetchData();
     
-  }, [memoizedTargetRefOrQuery, refreshKey]);
+  }, [memoizedTargetRefOrQuery, refreshKey, app]);
 
   return { data, isLoading, error, forceRefresh };
 }
