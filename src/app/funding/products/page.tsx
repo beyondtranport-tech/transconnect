@@ -14,8 +14,14 @@ const productsData = {
         title: "Loan Products",
         icon: Landmark,
         items: [
-            { id: "asset-finance", title: "Asset Finance", description: "Secure financing to purchase new or used vehicles and equipment. We fund trucks, trailers, and yellow metal." },
-            { id: "working-capital", title: "Working Capital", description: "Get a cash injection to cover operational expenses like fuel, salaries, and maintenance, ensuring your business runs smoothly." }
+            { id: "loan-pv-term", title: "Loan (PV) – term", description: "A present value loan repaid over a fixed term with regular installments." },
+            { id: "loan-pv-interest-only", title: "Loan (PV) - interest only", description: "Pay only the interest for a set period before principal payments begin." },
+            { id: "loan-pv-single-payment", title: "Loan (PV) - single payment", description: "A lump-sum loan that is repaid in a single future payment." },
+            { id: "loan-fl-term-daily", title: "Loan (FL) – term daily", description: "Future-value loan with daily repayments, suitable for businesses with consistent daily income." },
+            { id: "loan-fl-term-weekly", title: "Loan (FL) term weekly", description: "Future-value loan structured with weekly repayments to match business cash flow cycles." },
+            { id: "loan-fl-term-bi-monthly", title: "Loan (FL) term bi-monthly", description: "Future-value loan with repayments made twice a month." },
+            { id: "loan-fl-term-monthly", title: "Loan (FL) term monthly", description: "A standard future-value loan with monthly repayments over a set term." },
+            { id: "loan-revolving-credit", title: "Loan Revolving credit", description: "A flexible credit line that you can draw from, repay, and draw from again." },
         ]
     },
     'installment-sale': {
