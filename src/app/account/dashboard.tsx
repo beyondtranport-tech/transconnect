@@ -10,6 +10,7 @@ import { useDoc } from '@/firebase/firestore/use-doc';
 import Link from 'next/link';
 import RecentTransactions from './recent-transactions';
 import { useEffect, useState } from 'react';
+import RecentEnquiries from './recent-enquiries';
 
 export default function AccountDashboard() {
     const { user, isUserLoading } = useUser();
@@ -177,29 +178,12 @@ export default function AccountDashboard() {
                 </Card>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                 <Card className="md:col-span-1">
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2"><Landmark/> Access Funding</CardTitle>
-                        <CardDescription>Start your funding journey here. Get an instant quote or begin a formal enquiry.</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <p className="text-muted-foreground text-sm">
-                            Our platform connects you with a network of lenders who understand the transport industry.
-                        </p>
-                    </CardContent>
-                    <CardFooter className="flex flex-col sm:flex-row gap-2">
-                        <Button asChild className="w-full">
-                            <Link href="/funding">Start Your Enquiry</Link>
-                        </Button>
-                         <Button asChild variant="outline" className="w-full">
-                            <Link href="/funding">Get a Quote</Link>
-                        </Button>
-                    </CardFooter>
-                </Card>
-
-                <div className="md:col-span-1">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                 <div className="lg:col-span-1">
                     <RecentTransactions />
+                </div>
+                <div className="lg:col-span-2">
+                    <RecentEnquiries />
                 </div>
             </div>
         </div>
