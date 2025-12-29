@@ -71,7 +71,7 @@ export default function FinanceApplicationsList() {
     return (
         <Card>
             <CardHeader>
-                <CardTitle>Finance Applications (Admin View)</CardTitle>
+                <CardTitle>Wallet transactions</CardTitle>
                 <CardDescription>A list of all finance applications submitted by members across the platform.</CardDescription>
             </CardHeader>
             <CardContent>
