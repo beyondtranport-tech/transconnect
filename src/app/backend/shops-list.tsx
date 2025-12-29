@@ -1,14 +1,19 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { getShops, approveShop } from './actions';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Loader2, Store, CheckCircle } from 'lucide-react';
+import { Loader2, Store, CheckCircle, Eye } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { collection, doc } from 'firebase/firestore';
+import { ShopPreview } from '@/components/shop-preview';
+
 
 interface Shop {
     id: string;
@@ -17,6 +22,7 @@ interface Shop {
     category: string;
     status: 'draft' | 'pending_review' | 'approved' | 'rejected';
     createdAt: string;
+    [key: string]: any; // Allow other properties
 }
 
 const statusColors: { [key: string]: 'default' | 'secondary' | 'destructive' | 'outline' } = {
@@ -25,6 +31,39 @@ const statusColors: { [key: string]: 'default' | 'secondary' | 'destructive' | '
   approved: 'default',
   rejected: 'destructive',
 };
+
+function ShopPreviewDialog({ shop }: { shop: Shop }) {
+    const firestore = useFirestore();
+    
+    // We need to fetch the products for the preview from the member's private collection
+    const productsCollection = useMemoFirebase(() => {
+        if (!firestore) return null;
+        return collection(firestore, `members/${shop.ownerId}/shops/${shop.id}/products`);
+    }, [firestore, shop.ownerId, shop.id]);
+
+    const { data: products, isLoading } = useCollection(productsCollection);
+
+    return (
+        <Dialog>
+            <DialogTrigger asChild>
+                <Button variant="ghost" size="sm"><Eye className="mr-2 h-4 w-4" /> Preview</Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-6xl h-[90vh] p-0 border-0">
+                 <DialogHeader className="sr-only">
+                    <DialogTitle>Shop Preview: {shop.shopName}</DialogTitle>
+                    <DialogDescription>A preview of the shop as it will appear to customers.</DialogDescription>
+                </DialogHeader>
+                <div className="w-full h-full overflow-y-auto">
+                     {isLoading ? (
+                        <div className="flex justify-center items-center h-full"><Loader2 className="animate-spin h-10 w-10" /></div>
+                     ) : (
+                        <ShopPreview shop={shop} products={products || []} />
+                     )}
+                </div>
+            </DialogContent>
+        </Dialog>
+    )
+}
 
 export default function ShopsList() {
     const [shops, setShops] = useState<Shop[] | null>(null);
@@ -127,7 +166,8 @@ export default function ShopsList() {
                                                 {shop.status?.replace(/_/g, ' ') || 'N/A'}
                                             </Badge>
                                         </TableCell>
-                                        <TableCell className="text-right">
+                                        <TableCell className="text-right space-x-2">
+                                            <ShopPreviewDialog shop={shop} />
                                             {shop.status === 'pending_review' && (
                                                 <Button 
                                                     variant="default" 
