@@ -13,7 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useFirestore, useUser, useStorage, useCollection, useMemoFirebase, getClientSideAuthToken } from '@/firebase';
 import { doc, collection } from 'firebase/firestore';
 import { ref as storageRef, uploadBytesResumable, getDownloadURL } from "firebase/storage";
-import { Loader2, Save, CheckCircle, LayoutGrid, List, Image as ImageIcon, Sparkles, PlusCircle, Edit, Trash2, Send, Eye, ShoppingCart, Mail, Phone, UploadCloud } from 'lucide-react';
+import { Loader2, Save, CheckCircle, LayoutGrid, List, Image as ImageIcon, Sparkles, PlusCircle, Edit, Trash2, Send, Eye, ShoppingCart, Mail, Phone, UploadCloud, GalleryHorizontal } from 'lucide-react';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -26,6 +26,10 @@ import { generateShopSeo } from '@/ai/flows/seo-flow';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import Image from 'next/image';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import placeholderImageData from '@/lib/placeholder-images.json';
+const { placeholderImages } = placeholderImageData;
+
 
 const statusColors: { [key: string]: 'default' | 'secondary' | 'destructive' | 'outline' } = {
   draft: 'secondary',
@@ -308,7 +312,7 @@ function ProductDialog({ shop, product, onSave, children }: { shop: any, product
                     <FormMessage /></FormItem>
                 )} />
                 <DialogFooter>
-                    <Button type="submit" disabled={isSaving || form.formState.isSubmitting || (uploadProgress !== null && uploadProgress < 100)}>
+                     <Button type="submit" disabled={isSaving || form.formState.isSubmitting || (uploadProgress !== null && uploadProgress < 100)}>
                         {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Save className="mr-2 h-4 w-4" />}
                         Save Product
                     </Button>
@@ -417,17 +421,53 @@ const shopStep3Schema = z.object({
 });
 type Step3FormValues = z.infer<typeof shopStep3Schema>;
 
-function FileUploadInput({ onUpload, title, currentImage }: { onUpload: (url: string) => void, title: string, currentImage?: string | null }) {
+function ImageGalleryDialog({ onSelect, children }: { onSelect: (url: string) => void, children: React.ReactNode }) {
+    const [isOpen, setIsOpen] = useState(false);
+
+    const handleSelect = (imageUrl: string) => {
+        onSelect(imageUrl);
+        setIsOpen(false);
+    };
+
+    return (
+        <Dialog open={isOpen} onOpenChange={setIsOpen}>
+            <DialogTrigger asChild>{children}</DialogTrigger>
+            <DialogContent className="max-w-4xl">
+                <DialogHeader>
+                    <DialogTitle>Choose an Image from the Gallery</DialogTitle>
+                </DialogHeader>
+                <ScrollArea className="h-[60vh]">
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 p-4">
+                        {placeholderImages.map((img) => (
+                            <button
+                                key={img.id}
+                                onClick={() => handleSelect(img.imageUrl)}
+                                className="relative aspect-video rounded-md overflow-hidden group border-2 border-transparent hover:border-primary focus:border-primary focus:outline-none"
+                            >
+                                <Image src={img.imageUrl} alt={img.description} fill className="object-cover" />
+                                <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                    <CheckCircle className="h-8 w-8 text-white" />
+                                </div>
+                            </button>
+                        ))}
+                    </div>
+                </ScrollArea>
+            </DialogContent>
+        </Dialog>
+    );
+}
+
+function ImagePicker({ onUpload, title, currentImage }: { onUpload: (url: string) => void, title: string, currentImage?: string | null }) {
     const { user } = useUser();
     const storage = useStorage();
     const { toast } = useToast();
     const [uploadProgress, setUploadProgress] = useState<number | null>(null);
     const [preview, setPreview] = useState<string | null>(currentImage || null);
+    const fileInputRef = React.useRef<HTMLInputElement>(null);
 
     useEffect(() => {
         setPreview(currentImage || null);
     }, [currentImage]);
-
 
     const handleUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
@@ -460,23 +500,29 @@ function FileUploadInput({ onUpload, title, currentImage }: { onUpload: (url: st
     return (
         <div className="space-y-2">
             <Label>{title}</Label>
-            {preview ? (
-                <div className="relative aspect-video w-full">
-                    <Image src={preview} alt="Preview" fill className="object-cover rounded-md" />
-                     <Button variant="destructive" size="sm" className="absolute top-2 right-2" onClick={() => { setPreview(null); onUpload(''); }}>Change</Button>
-                </div>
-            ) : (
-                <div className="flex items-center justify-center w-full">
-                    <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-border border-dashed rounded-lg cursor-pointer bg-card hover:bg-accent">
-                        <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                            <UploadCloud className="w-8 h-8 mb-2 text-muted-foreground" />
-                            <p className="mb-2 text-sm text-muted-foreground"><span className="font-semibold">Click to upload</span></p>
-                        </div>
-                        <Input type="file" className="hidden" accept="image/*" onChange={handleUpload} />
-                    </label>
-                </div>
-            )}
-            {uploadProgress !== null && uploadProgress < 100 && <Progress value={uploadProgress} className="h-1 mt-2" />}
+            <Card className="p-4">
+                {preview ? (
+                    <div className="relative aspect-video w-full rounded-md overflow-hidden">
+                        <Image src={preview} alt="Preview" fill className="object-cover" />
+                        <Button variant="destructive" size="sm" className="absolute top-2 right-2" onClick={() => { setPreview(null); onUpload(''); }}>Change</Button>
+                    </div>
+                ) : (
+                    <div className="flex items-center justify-center w-full h-32 border-2 border-border border-dashed rounded-lg bg-card hover:bg-accent flex-col gap-2">
+                         <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleUpload} />
+                         <Button type="button" onClick={() => fileInputRef.current?.click()} variant="ghost">
+                            <UploadCloud className="mr-2 h-4 w-4" />
+                            Upload Image
+                         </Button>
+                        <ImageGalleryDialog onSelect={(url) => { onUpload(url); setPreview(url); }}>
+                           <Button type="button" variant="ghost">
+                             <GalleryHorizontal className="mr-2 h-4 w-4" />
+                             Choose from Gallery
+                           </Button>
+                        </ImageGalleryDialog>
+                    </div>
+                )}
+                 {uploadProgress !== null && uploadProgress < 100 && <Progress value={uploadProgress} className="h-1 mt-2" />}
+            </Card>
         </div>
     );
 }
@@ -549,7 +595,7 @@ function Step3Promotions({ shop, onSave }: { shop: any, onSave: (newData: any) =
                             render={({ field }) => (
                                 <FormItem>
                                     <FormControl>
-                                        <FileUploadInput title="Hero Banner" onUpload={(url) => field.onChange(url)} currentImage={field.value} />
+                                        <ImagePicker title="Hero Banner" onUpload={(url) => field.onChange(url)} currentImage={field.value} />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -569,7 +615,7 @@ function Step3Promotions({ shop, onSave }: { shop: any, onSave: (newData: any) =
                                <FormField control={form.control} name={`promotions.${index}.imageUrl`} render={({ field: imageField }) => (
                                     <FormItem>
                                         <FormControl>
-                                            <FileUploadInput title={`Promotion ${index + 1} Image`} onUpload={(url) => imageField.onChange(url)} currentImage={imageField.value} />
+                                            <ImagePicker title={`Promotion ${index + 1} Image`} onUpload={(url) => imageField.onChange(url)} currentImage={imageField.value} />
                                         </FormControl>
                                     </FormItem>
                                 )}/>
