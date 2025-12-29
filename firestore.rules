@@ -47,6 +47,7 @@ service cloud.firestore {
     // --- Public & Global Collections ---
 
     // Publicly readable collection for approved shops and their products.
+    // The `{path=**}` wildcard makes subcollections like 'products' also readable.
     // Admins have write access via the global override.
     match /shops/{shopId}/{path=**} {
       allow get, list: if true;
