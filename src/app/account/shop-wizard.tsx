@@ -691,7 +691,7 @@ function Step4Appearance({ shop, onSave }: { shop: any, onSave: (newData: any) =
   )
 }
 
-// ====== STEP 5: SEO ======
+// ====== STEP 5: SEO & PREVIEW ======
 const shopStep5Schema = z.object({
   metaTitle: z.string().min(1, "Meta title is required"),
   metaDescription: z.string().min(1, "Meta description is required"),
@@ -699,109 +699,6 @@ const shopStep5Schema = z.object({
 });
 type Step5FormValues = z.infer<typeof shopStep5Schema>;
 
-function Step5Seo({ shop, onSave }: { shop: any, onSave: (newData: any) => void }) {
-  const { user } = useUser();
-  const { toast } = useToast();
-  const [isSaving, setIsSaving] = useState(false);
-  const [isGenerating, setIsGenerating] = useState(false);
-
-  const form = useForm<Step5FormValues>({
-    resolver: zodResolver(shopStep5Schema),
-    defaultValues: {
-      metaTitle: shop.metaTitle || '',
-      metaDescription: shop.metaDescription || '',
-      tags: shop.tags || [],
-    }
-  });
-
-  const handleGenerateSeo = async () => {
-    setIsGenerating(true);
-    try {
-        const result = await generateShopSeo({
-            shopName: shop.shopName,
-            shopDescription: shop.shopDescription,
-        });
-        if (result) {
-            form.setValue('metaTitle', result.metaTitle);
-            form.setValue('metaDescription', result.metaDescription);
-            form.setValue('tags', result.tags);
-            toast({ title: 'SEO Content Generated!', description: 'Review and save the AI-generated content.' });
-        }
-    } catch(e: any) {
-        toast({ variant: 'destructive', title: 'AI Generation Failed', description: e.message });
-    } finally {
-        setIsGenerating(false);
-    }
-  }
-
-  const onSubmit = async (values: Step5FormValues) => {
-    if (!user) return;
-    setIsSaving(true);
-    const dataToUpdate = { ...values, updatedAt: { _methodName: 'serverTimestamp' } };
-
-    try {
-        const token = await getClientSideAuthToken();
-        if (!token) throw new Error("Authentication token not found.");
-        
-        const response = await fetch('/api/updateUserDoc', {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ path: `members/${user.uid}/shops/${shop.id}`, data: dataToUpdate }),
-        });
-
-        if (!response.ok) throw new Error((await response.json()).error || 'Failed to save.');
-        
-        toast({ title: 'Step 5 Saved!', description: 'Your SEO settings have been updated.' });
-        onSave(values);
-    } catch (error: any) {
-        toast({ variant: 'destructive', title: 'Update Failed', description: error.message });
-    } finally {
-        setIsSaving(false);
-    }
-  };
-
-  return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        <Card className="bg-primary/5 border-primary/20">
-            <CardContent className="p-4 flex items-center justify-between">
-                <p className="max-w-prose">Let our AI assistant generate SEO-friendly content for you based on your shop name and description.</p>
-                <Button type="button" onClick={handleGenerateSeo} disabled={isGenerating}>
-                    {isGenerating ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Sparkles className="mr-2 h-4 w-4" />}
-                    Generate with AI
-                </Button>
-            </CardContent>
-        </Card>
-        <FormField control={form.control} name="metaTitle" render={({ field }) => (
-          <FormItem><FormLabel>Meta Title</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
-        )} />
-        <FormField control={form.control} name="metaDescription" render={({ field }) => (
-          <FormItem><FormLabel>Meta Description</FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage /></FormItem>
-        )} />
-        <FormField control={form.control} name="tags" render={({ field }) => (
-          <FormItem>
-            <FormLabel>Tags / Keywords</FormLabel>
-            <FormControl>
-                <Input 
-                    {...field} 
-                    value={Array.isArray(field.value) ? field.value.join(', ') : ''} 
-                    onChange={e => field.onChange(e.target.value.split(',').map(s => s.trim()))}
-                    placeholder="e.g., truck parts, scania, filters"
-                />
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        )} />
-        <Button type="submit" disabled={isSaving}>
-          {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-          Save & Continue
-        </Button>
-      </form>
-    </Form>
-  )
-}
-
-// ====== PREVIEW COMPONENT ======
 const formatPrice = (price: number) => {
     if (typeof price !== 'number') return 'N/A';
     return new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(price);
@@ -965,11 +862,12 @@ function ShopPreview({ shop, products }: { shop: any, products: any[] }) {
     );
 }
 
-// ====== STEP 6: Preview & Submit ======
-function Step6Preview({ shop, onSave }: { shop: any; onSave: (newData: any) => void }) {
+function Step5SeoAndPreview({ shop, onSave }: { shop: any; onSave: (newData: any) => void }) {
   const { toast } = useToast();
   const { user } = useUser();
   const firestore = useFirestore();
+  const [isSaving, setIsSaving] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const productsCollection = useMemoFirebase(() => {
@@ -979,6 +877,61 @@ function Step6Preview({ shop, onSave }: { shop: any; onSave: (newData: any) => v
 
   const { data: products, isLoading: areProductsLoading } = useCollection(productsCollection);
 
+  const form = useForm<Step5FormValues>({
+    resolver: zodResolver(shopStep5Schema),
+    defaultValues: {
+      metaTitle: shop.metaTitle || '',
+      metaDescription: shop.metaDescription || '',
+      tags: shop.tags || [],
+    }
+  });
+
+  const handleGenerateSeo = async () => {
+    setIsGenerating(true);
+    try {
+        const result = await generateShopSeo({
+            shopName: shop.shopName,
+            shopDescription: shop.shopDescription,
+        });
+        if (result) {
+            form.setValue('metaTitle', result.metaTitle);
+            form.setValue('metaDescription', result.metaDescription);
+            form.setValue('tags', result.tags);
+            toast({ title: 'SEO Content Generated!', description: 'Review and save the AI-generated content.' });
+        }
+    } catch(e: any) {
+        toast({ variant: 'destructive', title: 'AI Generation Failed', description: e.message });
+    } finally {
+        setIsGenerating(false);
+    }
+  };
+
+  const onSubmit = async (values: Step5FormValues) => {
+    if (!user) return;
+    setIsSaving(true);
+    const dataToUpdate = { ...values, updatedAt: { _methodName: 'serverTimestamp' } };
+
+    try {
+        const token = await getClientSideAuthToken();
+        if (!token) throw new Error("Authentication token not found.");
+        
+        const response = await fetch('/api/updateUserDoc', {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ path: `members/${user.uid}/shops/${shop.id}`, data: dataToUpdate }),
+        });
+
+        if (!response.ok) throw new Error((await response.json()).error || 'Failed to save.');
+        
+        toast({ title: 'Step 5 Saved!', description: 'Your SEO settings have been updated.' });
+        onSave(values); // This will advance to the next step
+    } catch (error: any) {
+        toast({ variant: 'destructive', title: 'Update Failed', description: error.message });
+    } finally {
+        setIsSaving(false);
+    }
+  };
+  
   const handleSubmitForReview = async () => {
     if (!user) return;
 
@@ -1017,69 +970,80 @@ function Step6Preview({ shop, onSave }: { shop: any; onSave: (newData: any) => v
   };
 
   return (
-    <div className="space-y-6">
-        <div className="space-y-4">
-            <h3 className="text-lg font-medium">Shop Identity</h3>
-            <p><span className="font-semibold">Name:</span> {shop.shopName}</p>
-            <p><span className="font-semibold">Description:</span> {shop.shopDescription}</p>
-            <p><span className="font-semibold">Category:</span> {shop.category}</p>
-        </div>
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <Card className="bg-primary/5 border-primary/20">
+            <CardContent className="p-4 flex items-center justify-between">
+                <p className="max-w-prose">Let our AI assistant generate SEO-friendly content for you based on your shop name and description.</p>
+                <Button type="button" onClick={handleGenerateSeo} disabled={isGenerating}>
+                    {isGenerating ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Sparkles className="mr-2 h-4 w-4" />}
+                    Generate with AI
+                </Button>
+            </CardContent>
+        </Card>
+        <FormField control={form.control} name="metaTitle" render={({ field }) => (
+          <FormItem><FormLabel>Meta Title</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+        )} />
+        <FormField control={form.control} name="metaDescription" render={({ field }) => (
+          <FormItem><FormLabel>Meta Description</FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage /></FormItem>
+        )} />
+        <FormField control={form.control} name="tags" render={({ field }) => (
+          <FormItem>
+            <FormLabel>Tags / Keywords</FormLabel>
+            <FormControl>
+                <Input 
+                    {...field} 
+                    value={Array.isArray(field.value) ? field.value.join(', ') : ''} 
+                    onChange={e => field.onChange(e.target.value.split(',').map(s => s.trim()))}
+                    placeholder="e.g., truck parts, scania, filters"
+                />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )} />
+        
         <Separator />
-        <div className="space-y-4">
-            <h3 className="text-lg font-medium">Appearance</h3>
-            <p><span className="font-semibold">Template:</span> {shop.template}</p>
-            <p><span className="font-semibold">Theme:</span> {shop.theme}</p>
-        </div>
-        <Separator />
-        <div className="space-y-4">
-            <h3 className="text-lg font-medium">SEO & Tags</h3>
-            <p><span className="font-semibold">Meta Title:</span> {shop.metaTitle}</p>
-            <p><span className="font-semibold">Meta Description:</span> {shop.metaDescription}</p>
-            <p><span className="font-semibold">Tags:</span> {shop.tags?.join(', ')}</p>
-        </div>
-         <Separator />
-        <div className="space-y-4">
-            <h3 className="text-lg font-medium">Products ({products?.length || 0})</h3>
-             {areProductsLoading ? <Loader2 className="animate-spin" /> : (
-                <ul>
-                    {products?.map(p => <li key={p.id}>{p.name} - {formatPrice(p.price)}</li>)}
-                </ul>
-             )}
+
+        <div className="flex items-center gap-4">
+            <Button type="submit" disabled={isSaving}>
+                {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                Save
+            </Button>
+            <Dialog>
+                <DialogTrigger asChild>
+                    <Button variant="outline"><Eye className="mr-2 h-4 w-4" /> Preview Shop</Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-6xl h-[90vh] p-0 border-0">
+                    <DialogHeader className="sr-only">
+                        <DialogTitle>Shop Preview</DialogTitle>
+                         <DialogDescription>This is how your shop will appear to customers.</DialogDescription>
+                    </DialogHeader>
+                    <div className="w-full h-full overflow-y-auto">
+                         {areProductsLoading ? (
+                            <div className="flex justify-center items-center h-full"><Loader2 className="animate-spin" /></div>
+                         ) : (
+                            <ShopPreview shop={shop} products={products || []} />
+                         )}
+                    </div>
+                </DialogContent>
+            </Dialog>
         </div>
       
-      <Dialog>
-        <DialogTrigger asChild>
-            <Button variant="outline"><Eye className="mr-2 h-4 w-4" /> Preview Shop</Button>
-        </DialogTrigger>
-        <DialogContent className="max-w-6xl h-[90vh] p-0 border-0">
-            <DialogHeader className="sr-only">
-                <DialogTitle>Shop Preview</DialogTitle>
-                 <DialogDescription>This is how your shop will appear to customers.</DialogDescription>
-            </DialogHeader>
-            <div className="w-full h-full overflow-y-auto">
-                 {areProductsLoading ? (
-                    <div className="flex justify-center items-center h-full"><Loader2 className="animate-spin" /></div>
-                 ) : (
-                    <ShopPreview shop={shop} products={products || []} />
-                 )}
-            </div>
-        </DialogContent>
-      </Dialog>
-      
-      <div className="mt-6 pt-6 border-t">
-        {shop.status === 'draft' || shop.status === 'rejected' ? (
-          <Button onClick={handleSubmitForReview} disabled={isSubmitting}>
-            {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
-            Submit for Review
-          </Button>
-        ) : (
-          <div className="text-center p-4 bg-green-100 dark:bg-green-900/20 border border-green-300 dark:border-green-800 rounded-lg">
-             <p className="font-semibold text-green-800 dark:text-green-200">Your shop is currently {shop.status === 'approved' ? 'approved and live' : 'pending review'}.</p>
-          </div>
-        )}
-      </div>
-    </div>
-  );
+        <div className="mt-6 pt-6 border-t">
+            {shop.status === 'draft' || shop.status === 'rejected' ? (
+              <Button onClick={handleSubmitForReview} disabled={isSubmitting}>
+                {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
+                Submit for Review
+              </Button>
+            ) : (
+              <div className="text-center p-4 bg-green-100 dark:bg-green-900/20 border border-green-300 dark:border-green-800 rounded-lg">
+                 <p className="font-semibold text-green-800 dark:text-green-200">Your shop is currently {shop.status === 'approved' ? 'approved and live' : 'pending review'}.</p>
+              </div>
+            )}
+        </div>
+      </form>
+    </Form>
+  )
 }
 
 
@@ -1089,8 +1053,7 @@ const STEPS = [
     { id: 'products', title: 'Products'},
     { id: 'promotions', title: 'Promotions' },
     { id: 'appearance', title: 'Appearance'},
-    { id: 'seo', title: 'SEO & Tags'},
-    { id: 'preview', title: 'Preview & Submit' },
+    { id: 'seo', title: 'SEO & Preview'},
 ];
 
 export default function ShopWizard({ shop }: { shop: any }) {
@@ -1105,6 +1068,12 @@ export default function ShopWizard({ shop }: { shop: any }) {
         setCurrentStepIndex(currentStepIndex + 1);
     }
   }, [currentStepIndex, shopData]);
+  
+  const handleSave = useCallback((newData: any) => {
+    const updatedShopData = { ...shopData, ...newData };
+    setShopData(updatedShopData);
+  }, [shopData]);
+
 
   const renderStepContent = () => {
     const stepId = STEPS[currentStepIndex].id;
@@ -1118,9 +1087,7 @@ export default function ShopWizard({ shop }: { shop: any }) {
       case 'appearance':
         return <Step4Appearance shop={shopData} onSave={handleSaveAndNext} />;
       case 'seo':
-        return <Step5Seo shop={shopData} onSave={handleSaveAndNext} />;
-      case 'preview':
-        return <Step6Preview shop={shopData} onSave={handleSaveAndNext} />;
+        return <Step5SeoAndPreview shop={shopData} onSave={handleSave} />;
       default:
         return <div>Step not found</div>;
     }
