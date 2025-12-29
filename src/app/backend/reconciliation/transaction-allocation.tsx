@@ -317,11 +317,9 @@ export default function TransactionAllocation({ statementData }: { statementData
                 )}
                  <Button onClick={handleSaveAndPost} disabled={isPosting || (!isManualMode && Math.abs(difference) > 0.01)}>
                     {isPosting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <FileCheck className="mr-2 h-4 w-4" />}
-                    Save &amp; Post Transactions
+                    Save & Post Transactions
                 </Button>
             </CardFooter>
         </Card>
     )
 }
-
-    
