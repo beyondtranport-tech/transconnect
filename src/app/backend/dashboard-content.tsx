@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -80,7 +79,7 @@ export default function DashboardContent() {
                 }
                 
                 if (applicationsResult.success && applicationsResult.data) {
-                    const apps = applicationsResult.data;
+                    const apps = applicationsResult.data.filter(app => app.fundingType !== 'wallet_top_up');
                     const totalFunded = apps.filter(app => app.status === 'funded').reduce((sum, app) => sum + app.amountRequested, 0);
                     setStats(s => ({ ...s, applications: apps.length, totalFunded }));
                     setApplications(apps);
@@ -174,7 +173,7 @@ export default function DashboardContent() {
                         <div className="text-2xl font-bold">{formatPrice(stats.totalFunded)}</div>
                     </CardContent>
                 </Card>
-                <Link href="/backend?view=wallet-transactions">
+                <Link href="/backend?view=divisions-funding">
                     <Card className="hover:bg-accent transition-colors">
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                             <CardTitle className="text-sm font-medium">Finance Applications</CardTitle>
@@ -225,8 +224,8 @@ export default function DashboardContent() {
             <div className="grid gap-8 md:grid-cols-2">
                 <Card>
                     <CardHeader>
-                        <CardTitle className="flex items-center gap-2"><Clock className="h-5 w-5" /> Actionable Tasks</CardTitle>
-                        <CardDescription>Items that require your immediate attention.</CardDescription>
+                        <CardTitle className="flex items-center gap-2"><Clock className="h-5 w-5" /> Actionable Funding Tasks</CardTitle>
+                        <CardDescription>Formal funding applications that require your immediate attention.</CardDescription>
                     </CardHeader>
                     <CardContent>
                         <Table>
@@ -253,7 +252,7 @@ export default function DashboardContent() {
                                     </TableRow>
                                 )) : (
                                     <TableRow>
-                                        <TableCell colSpan={3} className="text-center h-24 text-muted-foreground">No pending applications.</TableCell>
+                                        <TableCell colSpan={3} className="text-center h-24 text-muted-foreground">No pending funding applications.</TableCell>
                                     </TableRow>
                                 )}
                             </TableBody>

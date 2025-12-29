@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -103,7 +102,7 @@ function FundingDivisionContent() {
             setIsLoading(true);
             const result = await getFinanceApplications();
             if (result.success && result.data) {
-                const apps = result.data;
+                const apps = result.data.filter(app => app.fundingType !== 'wallet_top_up' && app.fundingType !== 'membership_payment');
                 const totalFunded = apps.filter(app => app.status === 'funded').reduce((sum, app) => sum + app.amountRequested, 0);
                 const totalRequested = apps.reduce((sum, app) => sum + app.amountRequested, 0);
                 setStats({ applications: apps.length, totalRequested, totalFunded });
