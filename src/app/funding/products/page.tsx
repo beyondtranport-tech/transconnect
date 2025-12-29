@@ -44,8 +44,10 @@ const productsData = {
         title: "Discounting Products",
         icon: Briefcase,
         items: [
-            { id: "working-capital", title: "Invoice Discounting", description: "Unlock cash tied up in your unpaid invoices. Get immediate access to a percentage of the invoice value." },
-            { id: "working-capital", title: "Contract Discounting", description: "Finance your growth by leveraging your long-term customer contracts to secure upfront capital." }
+            { id: "disclosed-confirmed-factoring", title: "Disclosed confirmed factoring 75% advance", description: "Factoring with notification to the debtor, who confirms payment directly to the factor." },
+            { id: "disclosed-unconfirmed-factoring", title: "Disclosed un-confirmed factoring 0% advance", description: "Factoring where the debtor is notified, but doesn't confirm payment directly to the factor." },
+            { id: "invoice-discounting", title: "Invoice discounting 100% advance", description: "A confidential facility where you maintain control of your sales ledger and collections." },
+            { id: "rights-discounting", title: "Rights discounting", description: "Unlock the value of your contractual rights to future income streams." }
         ]
     }
 };
