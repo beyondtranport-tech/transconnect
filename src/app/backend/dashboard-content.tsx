@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -80,7 +79,7 @@ export default function DashboardContent() {
                 }
                 
                 if (applicationsResult.success && applicationsResult.data) {
-                    const apps = applicationsResult.data.filter(app => app.fundingType !== 'wallet_top_up' && app.fundingType !== 'membership_payment');
+                    const apps = applicationsResult.data.filter(app => app.fundingType !== 'wallet_top_up');
                     const totalFunded = apps.filter(app => app.status === 'funded').reduce((sum, app) => sum + app.amountRequested, 0);
                     setStats(s => ({ ...s, applications: apps.length, totalFunded }));
                     setApplications(apps);
@@ -122,8 +121,7 @@ export default function DashboardContent() {
     
     const pendingApplications = useMemo(() => {
         return applications
-            .filter(app => app.status === 'pending' || app.status === 'under_review')
-            .filter(app => app.fundingType !== 'wallet_top_up' && app.fundingType !== 'membership_payment')
+            .filter(app => (app.status === 'pending' || app.status === 'under_review') && app.fundingType !== 'wallet_top_up')
             .slice(0, 5);
     }, [applications]);
 

@@ -59,7 +59,7 @@ import ReconciliationPage from './reconciliation/page';
 import DashboardContent from './dashboard-content';
 import ShopsList from './shops-list';
 import { checkAdminSdk, getFinanceApplications, getShops } from './actions';
-import { Table, TableBody, TableCell, TableHeader, TableRow } from '@/components/ui/table';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 
 
@@ -102,7 +102,7 @@ function FundingDivisionContent() {
             setIsLoading(true);
             const result = await getFinanceApplications();
             if (result.success && result.data) {
-                const apps = result.data.filter(app => app.fundingType !== 'wallet_top_up' && app.fundingType !== 'membership_payment');
+                const apps = result.data.filter(app => app.fundingType !== 'wallet_top_up');
                 const totalFunded = apps.filter(app => app.status === 'funded').reduce((sum, app) => sum + app.amountRequested, 0);
                 const totalRequested = apps.reduce((sum, app) => sum + app.amountRequested, 0);
                 setStats({ applications: apps.length, totalRequested, totalFunded });

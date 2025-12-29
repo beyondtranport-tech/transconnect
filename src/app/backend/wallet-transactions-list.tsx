@@ -1,8 +1,7 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
-import { getMembers } from './actions'; // We'll need this to get all transactions
+import { getAllTransactions, getMembers } from './actions';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Loader2, DollarSign } from 'lucide-react';
@@ -50,31 +49,22 @@ export default function WalletTransactionsList() {
         async function fetchAllTransactions() {
             setIsLoading(true);
             try {
-                // We fetch all members first, as transactions are in a subcollection.
-                // The 'getTransactions' function needs to be added to actions.ts
-                const result = await getMembers(); // Assuming this is modified to return transactions
-                if (result.success && result.data) {
-                    // This is a placeholder. A new server action is needed to get all transactions.
-                    // For now, we'll simulate it.
-                    const allTransactions: Transaction[] = [];
-                    const memberMap = new Map(result.data.map(m => [m.id, `${m.firstName} ${m.lastName}`]));
+                const [transactionsResult, membersResult] = await Promise.all([
+                    getAllTransactions(),
+                    getMembers()
+                ]);
 
-                    // In a real implementation, a Cloud Function would aggregate this data
-                    // or a new server action would loop through members.
-                    // For now, let's leave it empty.
+                if (transactionsResult.success && transactionsResult.data && membersResult.success && membersResult.data) {
+                    const memberMap = new Map(membersResult.data.map(m => [m.id, `${m.firstName} ${m.lastName}`]));
                     
-                    // Add member names to transactions
-                    const transactionsWithNames = allTransactions.map(tx => ({
+                    const transactionsWithNames = transactionsResult.data.map(tx => ({
                         ...tx,
                         memberName: memberMap.get(tx.memberId) || 'Unknown Member'
                     }));
 
-                    // Sort by date, descending
-                    transactionsWithNames.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-                    
-                    setTransactions(transactionsWithNames);
+                    setTransactions(transactionsWithNames as Transaction[]);
                 } else {
-                    setError(result.error || 'Failed to fetch initial member data.');
+                    setError(transactionsResult.error || membersResult.error || 'Failed to fetch data.');
                 }
             } catch (e: any) {
                 setError(e.message || 'An unexpected error occurred.');

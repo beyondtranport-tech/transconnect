@@ -303,3 +303,27 @@ export async function approveShop(shopId: string, ownerId: string): Promise<{ su
         return { success: false, error: error.message };
     }
 }
+
+export async function getAllTransactions(): Promise<{ success: boolean; data?: any[]; error?: string }> {
+    const { app, error: initError } = getAdminApp();
+    if (initError || !app) {
+        return { success: false, error: initError || 'Firebase Admin SDK could not be initialized.' };
+    }
+    const adminDb = getFirestore(app);
+
+    try {
+        const transactionsSnapshot = await adminDb.collectionGroup('transactions').orderBy('date', 'desc').get();
+        const transactions = transactionsSnapshot.docs.map(doc => {
+            const data = doc.data();
+            const serializedData = serializeTimestamps(data);
+            return {
+                id: doc.id,
+                ...serializedData,
+            } as any;
+        });
+        return { success: true, data: transactions };
+    } catch (error: any) {
+        console.error('Error fetching all transactions with admin SDK:', error);
+        return { success: false, error: error.message };
+    }
+}
