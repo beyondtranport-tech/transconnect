@@ -1,3 +1,4 @@
+
 import { getFirestore, FieldValue, Timestamp } from 'firebase-admin/firestore';
 import { NextRequest, NextResponse } from 'next/server';
 import { headers } from 'next/headers';
@@ -49,11 +50,14 @@ export async function POST(req: NextRequest) {
     const adminAuth = getAuth(app);
     const decodedToken = await adminAuth.verifyIdToken(idToken);
     const uid = decodedToken.uid;
-    
-    // Security Check: Ensure the requested path belongs to the authenticated user.
-    // This assumes a path structure like "members/{userId}/..."
+    const userEmail = decodedToken.email;
+
+    // Security Check: Allow if the user is the admin OR if they are accessing their own data.
+    const isAdmin = userEmail === 'beyondtransport@gmail.com';
     const pathSegments = path.split('/');
-    if (pathSegments.length < 2 || pathSegments[0] !== 'members' || pathSegments[1] !== uid) {
+    const isOwner = pathSegments.length >= 2 && pathSegments[0] === 'members' && pathSegments[1] === uid;
+
+    if (!isAdmin && !isOwner) {
         return NextResponse.json({ success: false, error: 'Forbidden: You can only access your own data.' }, { status: 403 });
     }
 
