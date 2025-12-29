@@ -1,10 +1,10 @@
 
-import Image from "next/image";
 import { divisions } from "@/lib/data";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { ArrowRight, Cpu, DollarSign, ShoppingBasket, Store } from "lucide-react";
 import * as React from "react";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 
 const iconComponents: { [key: string]: React.ElementType } = {
     DollarSign,
@@ -20,42 +20,34 @@ export default function DivisionsPage() {
         <div className="text-center max-w-3xl mx-auto mb-12">
             <h1 className="text-4xl md:text-5xl font-bold font-headline">The TransConnect Ecosystem</h1>
             <p className="mt-4 text-lg md:text-xl text-muted-foreground">
-                Four interconnected divisions working together to power your business.
+                Four interconnected divisions working together to power your business. Explore a division to see its dashboard.
             </p>
         </div>
 
-        <div className="space-y-16">
-            {divisions.map((division, index) => {
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            {divisions.map((division) => {
                 const IconComponent = iconComponents[division.icon];
                 const href = ['marketplace', 'tech', 'funding', 'mall'].includes(division.id) ? `/${division.id}` : `/divisions#${division.id}`;
                 return (
-                    <div key={division.id} id={division.id} className="grid md:grid-cols-2 gap-8 md:gap-12 items-center">
-                        <div className={`relative aspect-video rounded-lg overflow-hidden shadow-lg ${index % 2 === 1 ? 'md:order-2' : ''}`}>
-                             {division.image && (
-                                <Image
-                                    src={division.image.imageUrl}
-                                    alt={division.image.description}
-                                    fill
-                                    className="object-cover"
-                                    data-ai-hint={division.image.imageHint}
-                                />
-                             )}
-                        </div>
-                        <div className={index % 2 === 1 ? 'md:order-1' : ''}>
-                            <div className="flex items-center gap-4">
-                                {IconComponent && <IconComponent className="h-10 w-10 text-primary" />}
-                                <h2 className="text-3xl font-bold font-headline">{division.title}</h2>
+                    <Card key={division.id} className="flex flex-col shadow-lg hover:shadow-primary/20 transition-shadow">
+                        <CardHeader className="flex-row items-start gap-4">
+                            {IconComponent && <IconComponent className="h-10 w-10 text-primary" />}
+                            <div className="flex-1">
+                                <CardTitle>{division.title.split(' ')[1]}</CardTitle>
+                                <CardDescription className="mt-1">{division.description}</CardDescription>
                             </div>
-                            <p className="mt-4 text-lg text-muted-foreground">
-                                {division.longDescription}
-                            </p>
-                            <Button asChild className="mt-6">
+                        </CardHeader>
+                        <CardContent className="flex-grow">
+                             {/* Can be used for more details in the future */}
+                        </CardContent>
+                        <CardFooter>
+                            <Button asChild className="w-full">
                                 <Link href={href}>
                                     Explore {division.title.split(' ')[1]} <ArrowRight className="ml-2 h-4 w-4" />
                                 </Link>
                             </Button>
-                        </div>
-                    </div>
+                        </CardFooter>
+                    </Card>
                 )
             })}
         </div>
