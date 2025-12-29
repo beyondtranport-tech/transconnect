@@ -41,16 +41,17 @@ import {
   ShoppingBasket,
   Cpu,
   Landmark,
+  ArrowRight,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, Suspense, useMemo } from 'react';
 import MembersList from './members-list';
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import ContributionsList from './contributions-list';
-import WalletTransactionsList from './wallet-transactions-list'; // UPDATED
+import WalletTransactionsList from './wallet-transactions-list';
 import { useUser, useAuth } from '@/firebase';
 import { signOut } from 'firebase/auth';
 import BankDetailsSettings from './bank-details-settings';
@@ -58,10 +59,209 @@ import ChartOfAccountsSettings from './chart-of-accounts-settings';
 import ReconciliationPage from './reconciliation/page';
 import DashboardContent from './dashboard-content';
 import ShopsList from './shops-list';
-import { checkAdminSdk } from './actions';
+import { checkAdminSdk, getFinanceApplications, getShops } from './actions';
+import { Table, TableBody, TableCell, TableHeader, TableRow } from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
 
 
-// Placeholder Content Components
+// --- START: Division Specific Dashboards ---
+
+const formatPrice = (price: number) => {
+    if (typeof price !== 'number') return 'N/A';
+    return new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR', notation: 'compact' }).format(price);
+};
+
+const formatDate = (isoString: string | undefined) => {
+    if (!isoString) return 'N/A';
+    try {
+        return new Date(isoString).toLocaleDateString('en-ZA', { month: 'short', day: 'numeric', year: 'numeric' });
+    } catch (e) {
+        return 'Invalid Date';
+    }
+};
+
+const statusColors: { [key: string]: 'default' | 'secondary' | 'destructive' | 'outline' } = {
+  pending: 'secondary',
+  under_review: 'outline',
+  matched: 'default',
+  rejected: 'destructive',
+  funded: 'default',
+  membership_payment: 'default',
+  draft: 'secondary',
+  pending_review: 'outline',
+  approved: 'default',
+};
+
+function FundingDivisionContent() {
+    const [stats, setStats] = useState({ applications: 0, totalRequested: 0, totalFunded: 0 });
+    const [applications, setApplications] = useState<any[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        async function loadData() {
+            setIsLoading(true);
+            const result = await getFinanceApplications();
+            if (result.success && result.data) {
+                const apps = result.data;
+                const totalFunded = apps.filter(app => app.status === 'funded').reduce((sum, app) => sum + app.amountRequested, 0);
+                const totalRequested = apps.reduce((sum, app) => sum + app.amountRequested, 0);
+                setStats({ applications: apps.length, totalRequested, totalFunded });
+                setApplications(apps);
+            } else {
+                setError(result.error || "Failed to load funding data.");
+            }
+            setIsLoading(false);
+        }
+        loadData();
+    }, []);
+
+    if (isLoading) {
+        return <div className="flex justify-center items-center py-20"><Loader2 className="h-12 w-12 animate-spin text-primary" /></div>;
+    }
+    if (error) {
+        return <div className="text-destructive-foreground bg-destructive/90 p-4 rounded-md"><h4 className="font-semibold">Error</h4><p>{error}</p></div>;
+    }
+
+    return (
+        <div className="space-y-8">
+            <h1 className="text-2xl font-bold">Funding Division Dashboard</h1>
+            <div className="grid gap-4 md:grid-cols-3">
+                <Card><CardHeader><CardTitle>Total Applications</CardTitle></CardHeader><CardContent><div className="text-2xl font-bold">{stats.applications}</div></CardContent></Card>
+                <Card><CardHeader><CardTitle>Total Value Requested</CardTitle></CardHeader><CardContent><div className="text-2xl font-bold">{formatPrice(stats.totalRequested)}</div></CardContent></Card>
+                <Card><CardHeader><CardTitle>Total Value Funded</CardTitle></CardHeader><CardContent><div className="text-2xl font-bold">{formatPrice(stats.totalFunded)}</div></CardContent></Card>
+            </div>
+             <Card>
+                <CardHeader><CardTitle>Recent Applications</CardTitle></CardHeader>
+                <CardContent>
+                    <Table>
+                        <TableHeader><TableRow><TableCell>Applicant ID</TableCell><TableCell>Type</TableCell><TableCell>Amount</TableCell><TableCell>Status</TableCell></TableRow></TableHeader>
+                        <TableBody>
+                            {applications.slice(0, 5).map(app => (
+                                <TableRow key={app.id}>
+                                    <TableCell className="font-mono text-xs">{app.applicantId}</TableCell>
+                                    <TableCell className="capitalize">{app.fundingType?.replace(/_/g, ' ')}</TableCell>
+                                    <TableCell>{formatPrice(app.amountRequested)}</TableCell>
+                                    <TableCell><Badge variant={statusColors[app.status] || 'secondary'} className="capitalize">{app.status?.replace(/_/g, ' ')}</Badge></TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                </CardContent>
+            </Card>
+        </div>
+    )
+}
+function MallDivisionContent() {
+    const [stats, setStats] = useState({ total: 0, pending: 0, approved: 0 });
+    const [shops, setShops] = useState<any[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        async function loadData() {
+            setIsLoading(true);
+            const result = await getShops();
+            if (result.success && result.data) {
+                const allShops = result.data;
+                setStats({
+                    total: allShops.length,
+                    pending: allShops.filter(s => s.status === 'pending_review').length,
+                    approved: allShops.filter(s => s.status === 'approved').length,
+                });
+                setShops(allShops);
+            } else {
+                setError(result.error || "Failed to load shop data.");
+            }
+            setIsLoading(false);
+        }
+        loadData();
+    }, []);
+
+    if (isLoading) {
+        return <div className="flex justify-center items-center py-20"><Loader2 className="h-12 w-12 animate-spin text-primary" /></div>;
+    }
+     if (error) {
+        return <div className="text-destructive-foreground bg-destructive/90 p-4 rounded-md"><h4 className="font-semibold">Error</h4><p>{error}</p></div>;
+    }
+
+    return (
+        <div className="space-y-8">
+            <h1 className="text-2xl font-bold">Mall Division Dashboard</h1>
+            <div className="grid gap-4 md:grid-cols-3">
+                <Card><CardHeader><CardTitle>Total Shops</CardTitle></CardHeader><CardContent><div className="text-2xl font-bold">{stats.total}</div></CardContent></Card>
+                <Card><CardHeader><CardTitle>Pending Approval</CardTitle></CardHeader><CardContent><div className="text-2xl font-bold">{stats.pending}</div></CardContent></Card>
+                <Card><CardHeader><CardTitle>Approved & Live</CardTitle></CardHeader><CardContent><div className="text-2xl font-bold">{stats.approved}</div></CardContent></Card>
+            </div>
+             <Card>
+                <CardHeader><CardTitle>Recently Created/Updated Shops</CardTitle></CardHeader>
+                <CardContent>
+                     <Table>
+                        <TableHeader><TableRow><TableCell>Shop Name</TableCell><TableCell>Owner ID</TableCell><TableCell>Category</TableCell><TableCell>Status</TableCell></TableRow></TableHeader>
+                        <TableBody>
+                            {shops.slice(0, 5).map(shop => (
+                                <TableRow key={shop.id}>
+                                    <TableCell className="font-medium">{shop.shopName}</TableCell>
+                                    <TableCell className="font-mono text-xs">{shop.ownerId}</TableCell>
+                                    <TableCell>{shop.category}</TableCell>
+                                    <TableCell><Badge variant={statusColors[shop.status] || 'secondary'} className="capitalize">{shop.status?.replace(/_/g, ' ')}</Badge></TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                </CardContent>
+            </Card>
+        </div>
+    )
+}
+
+function MarketplaceDivisionContent() {
+    return (
+        <div className="space-y-8">
+            <h1 className="text-2xl font-bold">Marketplace Division Dashboard</h1>
+            <Card>
+                <CardHeader>
+                    <CardTitle>Future Metrics</CardTitle>
+                    <CardDescription>This dashboard will provide insights into the partner reseller network.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    <p className="text-muted-foreground">Key performance indicators will include:</p>
+                    <ul className="list-disc list-inside text-muted-foreground space-y-2">
+                        <li>Total number of active reseller partners.</li>
+                        <li>Sales performance per partner service category (e.g., Digital Marketing, Data Services).</li>
+                        <li>Commission revenue generated through the marketplace.</li>
+                        <li>Most popular partner services.</li>
+                    </ul>
+                </CardContent>
+            </Card>
+        </div>
+    )
+}
+function TechDivisionContent() {
+    return (
+         <div className="space-y-8">
+            <h1 className="text-2xl font-bold">Tech Division Dashboard</h1>
+            <Card>
+                <CardHeader>
+                    <CardTitle>Future Metrics</CardTitle>
+                    <CardDescription>This dashboard will track the usage and performance of the technology suite.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    <p className="text-muted-foreground">Key performance indicators will include:</p>
+                    <ul className="list-disc list-inside text-muted-foreground space-y-2">
+                        <li>AI Freight Matcher: Number of searches per day, successful matches, and popular routes.</li>
+                        <li>Adoption rate of new tech features.</li>
+                        <li>API usage statistics for third-party developers.</li>
+                        <li>Performance metrics for real-time analytics dashboards.</li>
+                    </ul>
+                </CardContent>
+            </Card>
+        </div>
+    )
+}
+
+// --- END: Division Specific Dashboards ---
+
 function PlatformSettingsContent() {
     return (
         <div className="space-y-8">
@@ -156,41 +356,6 @@ function RevenuePricingContent() {
         </div>
     )
 }
-
-// START: New Division Placeholders
-function FundingDivisionContent() {
-    return (
-        <div>
-            <h1 className="text-2xl font-bold">Funding Division Dashboard</h1>
-            <p className="mt-2 text-muted-foreground">Metrics and management tools for the Funding division will be displayed here.</p>
-        </div>
-    )
-}
-function MallDivisionContent() {
-    return (
-        <div>
-            <h1 className="text-2xl font-bold">Mall Division Dashboard</h1>
-            <p className="mt-2 text-muted-foreground">Metrics and management tools for the Mall division will be displayed here.</p>
-        </div>
-    )
-}
-function MarketplaceDivisionContent() {
-    return (
-        <div>
-            <h1 className="text-2xl font-bold">Marketplace Division Dashboard</h1>
-            <p className="mt-2 text-muted-foreground">Metrics and management tools for the Marketplace division will be displayed here.</p>
-        </div>
-    )
-}
-function TechDivisionContent() {
-    return (
-        <div>
-            <h1 className="text-2xl font-bold">Tech Division Dashboard</h1>
-            <p className="mt-2 text-muted-foreground">Metrics and management tools for the Tech division will be displayed here.</p>
-        </div>
-    )
-}
-// END: New Division Placeholders
 
 function DivisionsContent() {
     return (
