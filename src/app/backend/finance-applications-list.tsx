@@ -8,6 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Loader2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import Link from 'next/link';
 
 interface FinanceApplication {
     id: string;
@@ -111,7 +112,9 @@ export default function FinanceApplicationsList() {
                                             </Badge>
                                         </TableCell>
                                         <TableCell className="text-right">
-                                            <Button variant="outline" size="sm">View Details</Button>
+                                            <Button variant="outline" size="sm" asChild>
+                                                <Link href={`/backend/wallet/${app.applicantId}`}>View Details</Link>
+                                            </Button>
                                         </TableCell>
                                     </TableRow>
                                 ))}
