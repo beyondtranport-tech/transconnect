@@ -358,21 +358,40 @@ export async function getAllTransactions(): Promise<{ success: boolean; data?: a
     const adminDb = getFirestore(app);
 
     try {
-        const transactionsSnapshot = await adminDb.collectionGroup('transactions').orderBy('date', 'desc').get();
-        const transactions = transactionsSnapshot.docs.map(doc => {
-            const data = doc.data();
-            const serializedData = serializeTimestamps(data);
-            return {
-                id: doc.id,
-                ...serializedData,
-            } as any;
+        // 1. Get all members
+        const membersSnapshot = await adminDb.collection('members').get();
+        const allTransactions = [];
+
+        // 2. For each member, query their transactions subcollection
+        for (const memberDoc of membersSnapshot.docs) {
+            const memberId = memberDoc.id;
+            const transactionsSnapshot = await adminDb.collection(`members/${memberId}/transactions`).get();
+            transactionsSnapshot.forEach(doc => {
+                const data = doc.data();
+                const serializedData = serializeTimestamps(data);
+                allTransactions.push({
+                    id: doc.id,
+                    ...serializedData,
+                } as any);
+            });
+        }
+        
+        // 3. Sort all transactions by date
+        const sortedTransactions = allTransactions.sort((a, b) => {
+            const dateA = a.date ? new Date(a.date).getTime() : 0;
+            const dateB = b.date ? new Date(b.date).getTime() : 0;
+            return dateB - dateA; // Most recent first
         });
-        return { success: true, data: transactions };
+
+
+        return { success: true, data: sortedTransactions };
     } catch (error: any) {
         console.error('Error fetching all transactions with admin SDK:', error);
         return { success: false, error: error.message };
     }
 }
+
+    
 
     
 
