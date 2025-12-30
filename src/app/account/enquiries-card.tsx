@@ -63,6 +63,22 @@ const fundingNeedsMap: { [key: string]: string } = {
     'equipment': 'Equipment',
     'vehicles': 'Vehicles',
     'cashflow': 'Cashflow',
+    'loan-pv-term': 'Loan (PV) – term',
+    'loan-pv-interest-only': 'Loan (PV) - interest only',
+    'loan-pv-single-payment': 'Loan (PV) - single payment',
+    'loan-fl-term-daily': 'Loan (FL) – term daily',
+    'loan-fl-term-weekly': 'Loan (FL) term weekly',
+    'loan-fl-term-bi-monthly': 'Loan (FL) term bi-monthly',
+    'loan-fl-term-monthly': 'Loan (FL) term monthly',
+    'loan-revolving-credit': 'Loan Revolving credit',
+    'installment-sale-term': 'Term Agreement',
+    'installment-sale-balloon': 'Balloon Payment',
+    'rental-term': 'Term Agreement',
+    'rental-balloon': 'Balloon (Residual) Agreement',
+    'disclosed-confirmed-factoring': 'Disclosed confirmed factoring 75% advance',
+    'disclosed-unconfirmed-factoring': 'Disclosed un-confirmed factoring 0% advance',
+    'invoice-discounting': 'Invoice discounting 100% advance',
+    'rights-discounting': 'Rights discounting',
 };
 
 const fundingReasonsMap: { [key: string]: string } = {
@@ -165,7 +181,7 @@ export default function EnquiriesCard() {
                                         <TableRow key={enquiry.id}>
                                             <TableCell className="text-muted-foreground text-xs whitespace-nowrap">{formatDate(enquiry.createdAt)}</TableCell>
                                             <TableCell>
-                                                <p className="font-medium capitalize">{fundingNeedsMap[enquiry.fundingNeed] || enquiry.fundingNeed?.replace(/-/g, ' ')}</p>
+                                                <p className="font-medium capitalize">{fundingNeedsMap[enquiry.fundingType] || enquiry.fundingType?.replace(/-/g, ' ')}</p>
                                             </TableCell>
                                             <TableCell>
                                                 <p className="font-medium capitalize">{fundingReasonsMap[enquiry.fundingReason] || enquiry.fundingReason}</p>
