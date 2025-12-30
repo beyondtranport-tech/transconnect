@@ -43,6 +43,53 @@ interface Shop {
     [key: string]: any;
 }
 
+export async function getAdminSdkDiagnostics(): Promise<{
+  isB64VarPresent: boolean;
+  isJsonParsable: boolean;
+  projectId?: string;
+  clientEmail?: string;
+  hasPrivateKey?: boolean;
+}> {
+  const adminSdkConfigB64 = process.env.FIREBASE_ADMIN_SDK_CONFIG_B64;
+  if (!adminSdkConfigB64) {
+    return { isB64VarPresent: false, isJsonParsable: false };
+  }
+
+  try {
+    const decodedConfig = Buffer.from(adminSdkConfigB64, 'base64').toString('utf-8');
+    const serviceAccount = JSON.parse(decodedConfig);
+    
+    return {
+      isB64VarPresent: true,
+      isJsonParsable: true,
+      projectId: serviceAccount.project_id,
+      clientEmail: serviceAccount.client_email,
+      hasPrivateKey: !!serviceAccount.private_key,
+    };
+  } catch (e) {
+    return { isB64VarPresent: true, isJsonParsable: false };
+  }
+}
+
+export async function testFirestoreConnection(): Promise<{ success: boolean; error?: string }> {
+    const { app, error: initError } = getAdminApp();
+    if (initError || !app) {
+        return { success: false, error: `Initialization failed: ${initError}` };
+    }
+    const adminDb = getFirestore(app);
+
+    try {
+        // Attempt to fetch a simple, small query.
+        // We query a non-existent collection to ensure it's fast and doesn't depend on data.
+        await adminDb.collection('__test_connection__').limit(1).get();
+        return { success: true };
+    } catch (error: any) {
+        // Provide the specific error code and message
+        return { success: false, error: `[${error.code}] ${error.details || error.message}` };
+    }
+}
+
+
 export async function getMembers(): Promise<{ success: boolean; data?: Member[]; error?: string }> {
     const { app, error: initError } = getAdminApp();
     if (initError || !app) {

@@ -1,55 +1,53 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Local Base64 Encoder</title>
+    <title>Base64 Encoder for Service Account</title>
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; background-color: #f4f4f9; color: #333; padding: 2rem; line-height: 1.6; }
-        .container { max-width: 800px; margin: auto; background: white; padding: 2rem; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
-        h1 { color: #1a1a1a; }
-        textarea { width: 100%; min-height: 150px; padding: 10px; border-radius: 6px; border: 1px solid #ccc; font-family: monospace; font-size: 14px; margin-top: 0.5rem; }
-        button { background-color: #007bff; color: white; border: none; padding: 12px 20px; border-radius: 6px; font-size: 16px; cursor: pointer; display: block; width: 100%; margin: 1rem 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"; background-color: #f8f9fa; color: #212529; line-height: 1.6; margin: 0; padding: 2rem; }
+        .container { max-width: 800px; margin: auto; background: #fff; padding: 2rem; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        h1 { color: #007bff; }
+        textarea { width: 100%; min-height: 200px; padding: 0.5rem; border: 1px solid #ced4da; border-radius: 4px; font-family: monospace; font-size: 14px; resize: vertical; }
+        button { background-color: #007bff; color: #fff; border: none; padding: 0.75rem 1.5rem; border-radius: 4px; font-size: 1rem; cursor: pointer; transition: background-color 0.2s; }
         button:hover { background-color: #0056b3; }
-        label { font-weight: bold; }
         .output-container { margin-top: 1.5rem; }
-        .warning { background-color: #fff3cd; border: 1px solid #ffeeba; color: #856404; padding: 1rem; border-radius: 6px; margin-top: 1rem; }
+        #output { background-color: #e9ecef; padding: 1rem; border-radius: 4px; word-wrap: break-word; white-space: pre-wrap; font-family: monospace; }
+        .instructions { background-color: #fff3cd; border: 1px solid #ffeeba; border-radius: 4px; padding: 1rem; margin-bottom: 2rem; }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Local Base64 Encoder</h1>
-        <p>This tool runs entirely in your browser. Your data is not sent to any server.</p>
-        
-        <div>
-            <label for="input-text">1. Paste your JSON service account file content here:</label>
-            <textarea id="input-text" placeholder="Paste the entire content of your downloaded .json file here..."></textarea>
+        <h1>Service Account to Base64 Encoder</h1>
+        <div class="instructions">
+            <p><strong>Instructions:</strong></p>
+            <ol>
+                <li>Download your service account JSON file from the Firebase Console (Project Settings > Service accounts > Generate new private key).</li>
+                <li>Open the downloaded JSON file and copy its <strong>entire content</strong>.</li>
+                <li>Paste the content into the text area below and click "Encode".</li>
+                <li>The result is the value for your <code>FIREBASE_ADMIN_SDK_CONFIG_B64</code> environment variable.</li>
+            </ol>
+            <p><strong>Note:</strong> This tool runs entirely in your browser. Your private key is never sent to any server.</p>
         </div>
-
-        <button onclick="encodeText()">2. Encode to Base64</button>
-
+        <textarea id="input" placeholder="Paste your service account JSON content here..."></textarea>
+        <button onclick="encode()" style="margin-top: 1rem;">Encode to Base64</button>
         <div class="output-container">
-            <label for="output-text">3. Copy the encoded result below:</label>
-            <textarea id="output-text" readonly placeholder="Your Base64 encoded string will appear here..."></textarea>
-        </div>
-
-        <div class="warning">
-            <strong>Security Note:</strong> This page is a local file on your computer. Your credentials are processed securely on your machine and are not transmitted over the internet.
+            <h2>Result:</h2>
+            <div id="output"></div>
         </div>
     </div>
-
     <script>
-        function encodeText() {
-            const inputText = document.getElementById('input-text').value;
-            if (!inputText) {
-                document.getElementById('output-text').value = "Error: Input text is empty.";
-                return;
-            }
+        function encode() {
+            const inputElement = document.getElementById('input');
+            const outputElement = document.getElementById('output');
             try {
-                const encodedString = btoa(inputText);
-                document.getElementById('output-text').value = encodedString;
-            } catch (error) {
-                document.getElementById('output-text').value = "Error during encoding: " + error.message;
+                // Ensure it's valid JSON before encoding
+                JSON.parse(inputElement.value);
+                const encoded = btoa(inputElement.value);
+                outputElement.textContent = encoded;
+            } catch (e) {
+                outputElement.textContent = 'Error: Invalid JSON. Please paste the entire content of your service account file. ' + e.message;
             }
         }
     </script>

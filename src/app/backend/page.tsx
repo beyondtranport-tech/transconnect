@@ -42,7 +42,7 @@ import {
   Cpu,
   Landmark,
   ArrowRight,
-  LineChart, // Import the new icon
+  LineChart,
   Key,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -64,6 +64,7 @@ import ShopsList from './shops-list';
 import { checkAdminSdk, getFinanceApplications, getShops } from './actions';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import DebugToolsContent from './debug-tools';
 
 
 // --- START: Division Specific Dashboards ---
@@ -298,79 +299,6 @@ function PlatformSettingsContent() {
         </div>
     )
 }
-
-function DebugToolsContent() {
-    const [sdkStatus, setSdkStatus] = useState<{ loading: boolean; success: boolean; error?: string }>({ loading: true, success: false });
-
-    useEffect(() => {
-        const checkStatus = async () => {
-            setSdkStatus({ loading: true, success: false });
-            const result = await checkAdminSdk();
-            setSdkStatus({ loading: false, success: result.success, error: result.error });
-        };
-        checkStatus();
-    }, []);
-
-    return (
-        <div className="space-y-8">
-             <div>
-                <h1 className="text-2xl font-bold">Debug Tools</h1>
-                <p className="mt-2 text-muted-foreground">Tools for diagnosing the admin backend configuration.</p>
-            </div>
-            <Card>
-                <CardHeader>
-                    <CardTitle>Firebase Admin SDK Status</CardTitle>
-                    <CardDescription>
-                        This tool checks if the backend server has the correct credentials to perform admin actions like approving shops.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
-                    {sdkStatus.loading ? (
-                        <div className="flex items-center gap-2 text-muted-foreground">
-                            <Loader2 className="h-5 w-5 animate-spin" />
-                            <span>Checking status...</span>
-                        </div>
-                    ) : sdkStatus.success ? (
-                        <div className="flex items-center gap-2 text-green-600">
-                            <CheckCircle className="h-5 w-5" />
-                            <span className="font-semibold">Admin SDK Initialized Successfully.</span>
-                        </div>
-                    ) : (
-                        <div className="flex flex-col gap-2 text-destructive">
-                            <div className="flex items-center gap-2 font-semibold">
-                                <XCircle className="h-5 w-5" />
-                                <span>Admin SDK Initialization Failed.</span>
-                            </div>
-                            <p className="text-sm font-mono bg-destructive/10 p-2 rounded-md">{sdkStatus.error}</p>
-                            <p className="text-sm mt-2">
-                                Please ensure the `FIREBASE_ADMIN_SDK_CONFIG_B64` environment variable is correctly set in your deployment environment.
-                            </p>
-                        </div>
-                    )}
-                </CardContent>
-            </Card>
-             <Card>
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2"><Key /> Base64 Encoder</CardTitle>
-                    <CardDescription>
-                        A secure, local tool to encode your service account JSON file for the environment variables.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <p className="text-sm text-muted-foreground">Use this tool to convert the JSON credentials file you downloaded from Firebase into a Base64 string required for the `FIREBASE_ADMIN_SDK_CONFIG_B64` variable.</p>
-                </CardContent>
-                <CardFooter>
-                    <Button asChild>
-                        <Link href="/tools/base64-encoder.html" target="_blank">
-                            Open Encoder Tool <ArrowRight className="ml-2 h-4 w-4" />
-                        </Link>
-                    </Button>
-                </CardFooter>
-            </Card>
-        </div>
-    );
-}
-
 
 function PlatformLogsContent() {
     return (
