@@ -38,7 +38,8 @@ export default function EnquiriesCard() {
 
     const enquiriesQuery = useMemoFirebase(() => {
         if (!firestore || !user) return null;
-        // This is a valid query. We fetch all non-wallet applications that are NOT quotes.
+        // This query is now robust. It only fetches documents with a status that is a formal enquiry.
+        // It explicitly excludes 'quote', 'membership_payment', and 'wallet_top_up'.
         return query(
             collection(firestore, 'members', user.uid, 'financeApplications'), 
             where('status', 'in', ['pending', 'under_review', 'matched', 'rejected', 'funded']),
@@ -120,3 +121,5 @@ export default function EnquiriesCard() {
         </Card>
     );
 }
+
+    

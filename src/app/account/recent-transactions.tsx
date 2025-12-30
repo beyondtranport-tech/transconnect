@@ -46,6 +46,8 @@ export default function RecentTransactions() {
 
     const pendingPaymentsQuery = useMemoFirebase(() => {
         if (!firestore || !user) return null;
+        // This query is now robust. It ONLY fetches documents that are explicitly for wallet payments.
+        // This prevents quotes or funding enquiries from ever appearing here.
         return query(
             collection(firestore, 'members', user.uid, 'financeApplications'),
             where('status', 'in', ['membership_payment', 'wallet_top_up']),
@@ -177,3 +179,5 @@ export default function RecentTransactions() {
         </Card>
     );
 }
+
+    
