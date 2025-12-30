@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useUser, useFirestore, useMemoFirebase } from '@/firebase';
@@ -10,7 +9,8 @@ import { useDoc } from '@/firebase/firestore/use-doc';
 import Link from 'next/link';
 import RecentTransactions from './recent-transactions';
 import { useEffect, useState } from 'react';
-import RecentEnquiries from './recent-enquiries';
+import EnquiriesCard from './enquiries-card';
+import QuotesCard from './quotes-card';
 
 export default function AccountDashboard() {
     const { user, isUserLoading } = useUser();
@@ -178,8 +178,12 @@ export default function AccountDashboard() {
                 </Card>
             </div>
             
-            <div className="space-y-8">
-                <RecentEnquiries />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <EnquiriesCard />
+                <QuotesCard />
+            </div>
+
+             <div className="space-y-8">
                 <RecentTransactions />
             </div>
         </div>

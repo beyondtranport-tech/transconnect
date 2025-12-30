@@ -1,10 +1,9 @@
-
 'use client';
 
 import { useUser, useFirestore, useMemoFirebase, useCollection } from '@/firebase';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Loader2, Landmark, FileText } from 'lucide-react';
+import { Loader2, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { collection, query, where, orderBy, limit } from 'firebase/firestore';
@@ -23,31 +22,22 @@ const formatDate = (timestamp: any) => {
     return 'N/A';
 };
 
-const statusColors: { [key: string]: 'default' | 'secondary' | 'destructive' | 'outline' } = {
-  quote: 'outline',
-  pending: 'secondary',
-  under_review: 'outline',
-  matched: 'default',
-  rejected: 'destructive',
-  funded: 'default'
-};
-
-export default function RecentEnquiries() {
+export default function QuotesCard() {
     const { user } = useUser();
     const firestore = useFirestore();
 
-    const enquiriesQuery = useMemoFirebase(() => {
+    const quotesQuery = useMemoFirebase(() => {
         if (!firestore || !user) return null;
+        // This query specifically fetches only documents with 'quote' status
         return query(
             collection(firestore, 'members', user.uid, 'financeApplications'), 
-            where('fundingType', 'not-in', ['wallet_top_up', 'membership_payment', 'credit-top-up']),
-            orderBy('fundingType'), // Firestore requires an orderBy when using a not-in filter
+            where('status', '==', 'quote'),
             orderBy('createdAt', 'desc'), 
             limit(5)
         );
     }, [firestore, user]);
 
-    const { data: enquiries, isLoading, error } = useCollection(enquiriesQuery);
+    const { data: quotes, isLoading, error } = useCollection(quotesQuery);
 
     if (user && user.email === 'beyondtransport@gmail.com') {
         return null;
@@ -58,15 +48,12 @@ export default function RecentEnquiries() {
             <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                    <FileText className="h-6 w-6" />
-                   Recent Funding Enquiries
+                   Quotes
                 </CardTitle>
-                <CardDescription>Your last 5 funding applications and their status.</CardDescription>
+                <CardDescription>Click the button to explore funding products and generate a quote. Your saved quotes are shown here.</CardDescription>
             </CardHeader>
             <CardContent>
                 <div className="flex flex-col sm:flex-row gap-2 mb-6">
-                    <Button asChild className="w-full">
-                        <Link href="/funding/apply">Start New Enquiry</Link>
-                    </Button>
                     <Button asChild variant="outline" className="w-full">
                         <Link href="/funding">Get a Quote</Link>
                     </Button>
@@ -79,12 +66,12 @@ export default function RecentEnquiries() {
                 
                 {error && (
                     <div className="text-center py-10 text-destructive">
-                        <p>Error loading enquiries: {error.message}</p>
+                        <p>Error loading quotes: {error.message}</p>
                     </div>
                 )}
 
-                {!isLoading && enquiries && (
-                    enquiries.length > 0 ? (
+                {!isLoading && quotes && (
+                    quotes.length > 0 ? (
                         <Table>
                             <TableHeader>
                                 <TableRow>
@@ -95,19 +82,19 @@ export default function RecentEnquiries() {
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {enquiries.map((enquiry) => (
-                                    <TableRow key={enquiry.id}>
-                                        <TableCell className="text-muted-foreground text-xs">{formatDate(enquiry.createdAt)}</TableCell>
+                                {quotes.map((quote) => (
+                                    <TableRow key={quote.id}>
+                                        <TableCell className="text-muted-foreground text-xs">{formatDate(quote.createdAt)}</TableCell>
                                         <TableCell>
-                                            <p className="font-medium capitalize">{enquiry.fundingType?.replace(/-/g, ' ')}</p>
+                                            <p className="font-medium capitalize">{quote.fundingType?.replace(/-/g, ' ')}</p>
                                         </TableCell>
                                         <TableCell>
-                                            <Badge variant={statusColors[enquiry.status] || 'secondary'} className="capitalize">
-                                                {enquiry.status.replace(/_/g, ' ')}
+                                            <Badge variant="outline" className="capitalize">
+                                                {quote.status.replace(/_/g, ' ')}
                                             </Badge>
                                         </TableCell>
                                         <TableCell className="text-right font-mono font-semibold">
-                                            {formatCurrency(enquiry.amountRequested)}
+                                            {formatCurrency(quote.amountRequested)}
                                         </TableCell>
                                     </TableRow>
                                 ))}
@@ -115,17 +102,11 @@ export default function RecentEnquiries() {
                         </Table>
                     ) : (
                         <div className="text-center py-10">
-                            <p className="text-muted-foreground">You have no funding enquiries yet.</p>
-                            <p className="text-sm text-muted-foreground">Enquiries you make will appear here.</p>
+                            <p className="text-muted-foreground">You have no saved quotes yet.</p>
                         </div>
                     )
                 )}
             </CardContent>
-            <CardFooter>
-                 <Button variant="outline" asChild>
-                    <Link href="/funding">View All Funding Options</Link>
-                </Button>
-            </CardFooter>
         </Card>
     );
 }
