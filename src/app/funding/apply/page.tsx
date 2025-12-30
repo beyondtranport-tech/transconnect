@@ -84,39 +84,31 @@ function ApplyForm() {
         const token = await getClientSideAuthToken();
         if (!token) throw new Error("Authentication token not found.");
         
-        const applicationData = {
+        const enquiryData = {
             applicantId: user.uid,
             status: 'pending',
             fundingType: values.fundingType,
             amountRequested: values.amountRequested,
-            businessDetails: {
-                purpose: values.purpose,
-            },
-            financials: {},
-            documents: [],
+            purpose: values.purpose,
             createdAt: { _methodName: 'serverTimestamp' },
-            updatedAt: { _methodName: 'serverTimestamp' },
         };
 
-        const response = await fetch('/api/addUserDoc', {
+        const response = await fetch('/api/createEnquiry', {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${token}`,
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({
-                collectionPath: `members/${user.uid}/financeApplications`,
-                data: applicationData,
-            }),
+            body: JSON.stringify({ data: enquiryData }),
         });
         
         const result = await response.json();
         if (!response.ok) {
-            throw new Error(result.error || 'Failed to submit application.');
+            throw new Error(result.error || 'Failed to submit enquiry.');
         }
 
         toast({
-            title: 'Application Submitted!',
+            title: 'Enquiry Submitted!',
             description: 'Thank you. A funding specialist will be in touch shortly.',
         });
         router.push('/account');

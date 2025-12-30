@@ -18,8 +18,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { errorEmitter } from '@/firebase/error-emitter';
-import { FirestorePermissionError } from '@/firebase/errors';
+import { getClientSideAuthToken } from '@/firebase';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const formatCurrency = (amount: number) => {
@@ -50,7 +49,6 @@ function LogPaymentDialog() {
     const [isOpen, setIsOpen] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const { user } = useUser();
-    const firestore = useFirestore();
     const { toast } = useToast();
 
     const form = useForm<PaymentFormValues>({
@@ -59,38 +57,35 @@ function LogPaymentDialog() {
     });
 
     const onSubmit = async (values: PaymentFormValues) => {
-        if (!user || !firestore) {
+        if (!user) {
             toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in.' });
             return;
         }
         setIsLoading(true);
 
-        const transactionData = {
-            type: 'credit',
+        const paymentData = {
             amount: values.amount,
             description: values.description,
-            date: serverTimestamp(),
-            status: 'pending_allocation',
-            isAdjustment: true, // Marked as adjustment since it's a user-logged payment
+            createdAt: { _methodName: 'serverTimestamp' },
+            status: 'pending',
+            applicantId: user.uid,
         };
         
         try {
-            const transactionsCollectionRef = collection(firestore, `members/${user.uid}/transactions`);
+            const token = await getClientSideAuthToken();
+            if (!token) throw new Error("Authentication token not found.");
             
-            // This is a non-blocking write. We add the document and handle errors in the catch block.
-            addDoc(transactionsCollectionRef, transactionData)
-              .then(docRef => {
-                // You can perform non-essential follow-up actions here, like updating the doc with its own ID
-                console.log("Payment logged with ID: ", docRef.id);
-              })
-              .catch(serverError => {
-                const permissionError = new FirestorePermissionError({
-                  path: `members/${user.uid}/transactions`,
-                  operation: 'create',
-                  requestResourceData: transactionData,
-                });
-                errorEmitter.emit('permission-error', permissionError);
-              });
+            const response = await fetch('/api/createWalletPayment', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ data: paymentData }),
+            });
+            
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.error || 'Failed to log payment.');
 
             toast({
                 title: 'Payment Logged',
@@ -99,7 +94,6 @@ function LogPaymentDialog() {
             setIsOpen(false);
             form.reset();
         } catch (error: any) {
-            // This catch block is for synchronous errors during form validation or setup
             toast({ variant: 'destructive', title: 'Error', description: error.message });
         } finally {
             setIsLoading(false);

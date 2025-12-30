@@ -103,35 +103,24 @@ function QuoteCalculator({ product, onQuoteSaved }: { product: { id: string; tit
 
             const quoteData = {
                 applicantId: user.uid,
-                status: 'quote',
                 fundingType: product.id,
                 amountRequested: amount,
-                businessDetails: {
-                    purpose: `Quote generated for ${product.title}`,
-                    quoteDetails: {
-                        amount,
-                        rate,
-                        term,
-                        monthlyPayment,
-                        totalRepayment,
-                    }
+                details: {
+                    rate,
+                    term,
+                    monthlyPayment,
+                    totalRepayment,
                 },
-                financials: {},
-                documents: [],
                 createdAt: { _methodName: 'serverTimestamp' },
-                updatedAt: { _methodName: 'serverTimestamp' },
             };
 
-            const response = await fetch('/api/addUserDoc', {
+            const response = await fetch('/api/createQuote', {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({
-                    collectionPath: `members/${user.uid}/financeApplications`,
-                    data: quoteData,
-                }),
+                body: JSON.stringify({ data: quoteData }),
             });
             
             const result = await response.json();
@@ -139,7 +128,7 @@ function QuoteCalculator({ product, onQuoteSaved }: { product: { id: string; tit
 
             toast({
                 title: 'Quote Saved!',
-                description: 'Your quote has been saved to your profile and our team has been notified.',
+                description: 'Your quote has been saved to your profile.',
             });
             onQuoteSaved();
         } catch (error: any) {
@@ -286,5 +275,3 @@ export default function ProductTypesPage() {
         </Suspense>
     );
 }
-
-    

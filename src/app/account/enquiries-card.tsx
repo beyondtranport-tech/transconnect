@@ -7,7 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Loader2, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { collection, query, where, orderBy, limit } from 'firebase/firestore';
+import { collection, query, orderBy, limit } from 'firebase/firestore';
 import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import { useMemo } from 'react';
@@ -38,11 +38,8 @@ export default function EnquiriesCard() {
 
     const enquiriesQuery = useMemoFirebase(() => {
         if (!firestore || !user) return null;
-        // This query is now robust. It only fetches documents with a status that is a formal enquiry.
-        // It explicitly excludes 'quote', 'membership_payment', and 'wallet_top_up'.
         return query(
-            collection(firestore, 'members', user.uid, 'financeApplications'), 
-            where('status', 'in', ['pending', 'under_review', 'matched', 'rejected', 'funded']),
+            collection(firestore, 'members', user.uid, 'enquiries'), 
             orderBy('createdAt', 'desc'),
             limit(5)
         );
@@ -121,5 +118,3 @@ export default function EnquiriesCard() {
         </Card>
     );
 }
-
-    

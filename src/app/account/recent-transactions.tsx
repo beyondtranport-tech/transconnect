@@ -7,10 +7,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Loader2, DollarSign, Wallet, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { collection, query, where, orderBy, limit } from 'firebase/firestore';
+import { collection, query, orderBy, limit } from 'firebase/firestore';
 import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
 
 const formatCurrency = (amount: number) => {
     if (typeof amount !== 'number') return 'N/A';
@@ -46,11 +45,8 @@ export default function RecentTransactions() {
 
     const pendingPaymentsQuery = useMemoFirebase(() => {
         if (!firestore || !user) return null;
-        // This query is now robust. It ONLY fetches documents that are explicitly for wallet payments.
-        // This prevents quotes or funding enquiries from ever appearing here.
         return query(
-            collection(firestore, 'members', user.uid, 'financeApplications'),
-            where('status', 'in', ['membership_payment', 'wallet_top_up']),
+            collection(firestore, 'members', user.uid, 'walletPayments'),
             orderBy('createdAt', 'desc'),
             limit(5)
         );
@@ -111,11 +107,11 @@ export default function RecentTransactions() {
                                                 <TableRow key={payment.id} className="bg-muted/30">
                                                     <TableCell className="text-muted-foreground text-xs">{formatDate(payment.createdAt)}</TableCell>
                                                     <TableCell>
-                                                        <p className="font-medium capitalize">{payment.fundingType.replace(/_/g, ' ')}</p>
+                                                        <p className="font-medium capitalize">{payment.description.replace(/_/g, ' ')}</p>
                                                         <Badge variant="secondary" className="mt-1">Pending Approval</Badge>
                                                     </TableCell>
                                                     <TableCell className="text-right font-mono font-semibold">
-                                                        {formatCurrency(payment.amountRequested)}
+                                                        {formatCurrency(payment.amount)}
                                                     </TableCell>
                                                 </TableRow>
                                             ))}
@@ -179,5 +175,3 @@ export default function RecentTransactions() {
         </Card>
     );
 }
-
-    

@@ -7,7 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Loader2, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { collection, query, where, orderBy, limit } from 'firebase/firestore';
+import { collection, query, orderBy, limit } from 'firebase/firestore';
 import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 
@@ -31,8 +31,7 @@ export default function QuotesCard() {
         if (!firestore || !user) return null;
         // This is a valid query: a '==' filter combined with a 'not-in' filter.
         return query(
-            collection(firestore, 'members', user.uid, 'financeApplications'), 
-            where('status', '==', 'quote'),
+            collection(firestore, 'members', user.uid, 'quotes'), 
             orderBy('createdAt', 'desc'), 
             limit(5)
         );
@@ -78,7 +77,6 @@ export default function QuotesCard() {
                                 <TableRow>
                                     <TableHead>Date</TableHead>
                                     <TableHead>Type</TableHead>
-                                    <TableHead>Status</TableHead>
                                     <TableHead className="text-right">Amount</TableHead>
                                 </TableRow>
                             </TableHeader>
@@ -88,11 +86,6 @@ export default function QuotesCard() {
                                         <TableCell className="text-muted-foreground text-xs">{formatDate(quote.createdAt)}</TableCell>
                                         <TableCell>
                                             <p className="font-medium capitalize">{quote.fundingType?.replace(/-/g, ' ')}</p>
-                                        </TableCell>
-                                        <TableCell>
-                                            <Badge variant="outline" className="capitalize">
-                                                {quote.status.replace(/_/g, ' ')}
-                                            </Badge>
                                         </TableCell>
                                         <TableCell className="text-right font-mono font-semibold">
                                             {formatCurrency(quote.amountRequested)}
