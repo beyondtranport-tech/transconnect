@@ -1,9 +1,8 @@
 
-
 'use client';
 
-import { Suspense } from 'react';
-import { useForm } from 'react-hook-form';
+import { Suspense, useState } from 'react';
+import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Button } from '@/components/ui/button';
@@ -17,29 +16,41 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { useState, useEffect } from 'react';
-import { Loader2, Landmark } from 'lucide-react';
+import { Loader2, Landmark, ArrowLeft, ArrowRight, Send } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useUser, getClientSideAuthToken } from '@/firebase';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { Progress } from '@/components/ui/progress';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
-const fundingTypes = {
-    'asset-finance': 'Asset Finance',
-    'working-capital': 'Working Capital',
-    'partnership': 'Partnership',
-    'credit-top-up': 'Credit Top-up',
-    'membership_payment': 'Membership Payment',
+const fundingNeeds = {
+  'business': 'My business',
+  'equipment': 'To finance equipment',
+  'vehicles': 'To finance vehicles',
+  'cashflow': 'Support my cashflow',
 };
 
-const formSchema = z.object({
-  fundingType: z.string().min(1, 'Please select a funding type.'),
-  amountRequested: z.coerce.number().positive('Please enter a valid amount.'),
-  purpose: z.string().min(10, 'Please provide a brief description of the funding purpose.'),
+const fundingReasons = {
+    problem: 'I have a problem (e.g., breakdown, bad debt)',
+    opportunity: 'I have an opportunity (e.g., new contract, growth)',
+}
+
+const step1Schema = z.object({
+  fundingNeed: z.string().min(1, 'Please select what you need funds for.'),
+});
+const step2Schema = z.object({
+  fundingReason: z.string().min(1, 'Please select a reason.'),
+  purpose: z.string().min(10, 'Please provide more detail.'),
+});
+const step3Schema = z.object({
+    amountRequested: z.coerce.number().positive('Please enter a valid amount.'),
 });
 
-type ApplicationFormValues = z.infer<typeof formSchema>;
+const combinedSchema = step1Schema.merge(step2Schema).merge(step3Schema);
+
+type ApplicationFormValues = z.infer<typeof combinedSchema>;
 
 function ApplyForm() {
   const { toast } = useToast();
@@ -47,34 +58,32 @@ function ApplyForm() {
   const searchParams = useSearchParams();
   const { user, isUserLoading } = useUser();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [currentStep, setCurrentStep] = useState(0);
 
-  const defaultFundingType = searchParams.get('type') || '';
-  const defaultAmount = searchParams.get('amount');
-
-  useEffect(() => {
-    if (!isUserLoading && !user) {
-      const redirectUrl = `/funding/apply${defaultFundingType ? `?type=${defaultFundingType}` : ''}${defaultAmount ? `&amount=${defaultAmount}` : ''}`;
-      router.replace(`/signin?redirect=${encodeURIComponent(redirectUrl)}`);
-    }
-  }, [user, isUserLoading, router, defaultFundingType, defaultAmount]);
-
-  const form = useForm<ApplicationFormValues>({
-    resolver: zodResolver(formSchema),
+  const methods = useForm<ApplicationFormValues>({
+    resolver: zodResolver(combinedSchema),
     defaultValues: {
-      fundingType: defaultFundingType || '',
-      amountRequested: defaultAmount ? Number(defaultAmount) : 0,
+      fundingNeed: '',
+      fundingReason: '',
       purpose: '',
+      amountRequested: 0,
     },
   });
   
-  useEffect(() => {
-      form.reset({
-          fundingType: defaultFundingType || '',
-          amountRequested: defaultAmount ? Number(defaultAmount) : 0,
-          purpose: '',
-      })
-  }, [defaultFundingType, defaultAmount, form]);
+  const processStep = async () => {
+    let isValid = false;
+    if (currentStep === 0) {
+        isValid = await methods.trigger("fundingNeed");
+    } else if (currentStep === 1) {
+        isValid = await methods.trigger(["fundingReason", "purpose"]);
+    } else if (currentStep === 2) {
+        isValid = await methods.trigger("amountRequested");
+    }
 
+    if (isValid && currentStep < 3) {
+      setCurrentStep(currentStep + 1);
+    }
+  };
 
   const onSubmit = async (values: ApplicationFormValues) => {
     setIsSubmitting(true);
@@ -83,6 +92,19 @@ function ApplyForm() {
       setIsSubmitting(false);
       return;
     }
+    
+    // Map user-centric need to a primary agreement type for backend processing
+    const getAgreementType = (need: string) => {
+        switch(need) {
+            case 'business': return 'loan';
+            case 'equipment':
+            case 'vehicles':
+                return 'installment-sale'; // or lease, default to one
+            case 'cashflow': return 'discounting';
+            default: return 'loan';
+        }
+    }
+
     try {
         const token = await getClientSideAuthToken();
         if (!token) throw new Error("Authentication token not found.");
@@ -90,25 +112,22 @@ function ApplyForm() {
         const enquiryData = {
             applicantId: user.uid,
             status: 'pending',
-            fundingType: values.fundingType,
+            fundingType: methods.getValues('fundingNeed'), // The user-centric type
+            agreementType: getAgreementType(methods.getValues('fundingNeed')), // The mapped agreement type
             amountRequested: values.amountRequested,
             purpose: values.purpose,
+            fundingReason: values.fundingReason,
             createdAt: { _methodName: 'serverTimestamp' },
         };
 
         const response = await fetch('/api/createEnquiry', {
             method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json',
-            },
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
             body: JSON.stringify({ data: enquiryData }),
         });
         
         const result = await response.json();
-        if (!response.ok) {
-            throw new Error(result.error || 'Failed to submit enquiry.');
-        }
+        if (!response.ok) throw new Error(result.error || 'Failed to submit enquiry.');
 
         toast({
             title: 'Enquiry Submitted!',
@@ -121,79 +140,145 @@ function ApplyForm() {
         setIsSubmitting(false);
     }
   };
-
+  
   if (isUserLoading || !user) {
     return <div className="flex justify-center items-center py-20"><Loader2 className="h-12 w-12 animate-spin text-primary" /></div>;
   }
+
+  const steps = [
+    { name: 'Need', fields: ['fundingNeed'] },
+    { name: 'Reason', fields: ['fundingReason', 'purpose'] },
+    { name: 'Amount', fields: ['amountRequested'] },
+    { name: 'Submit' },
+  ];
 
   return (
     <Card className="w-full max-w-2xl">
       <CardHeader>
         <CardTitle className="flex items-center gap-2"><Landmark /> Funding Application</CardTitle>
-        <CardDescription>Complete the form below to start the funding process. This creates an initial enquiry.</CardDescription>
+        <CardDescription>Let's find the right funding for you. Complete the steps below.</CardDescription>
+        <Progress value={((currentStep + 1) / steps.length) * 100} className="mt-4" />
       </CardHeader>
       <CardContent>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <FormField
-              control={form.control}
-              name="fundingType"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Type of Funding</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a funding type" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {Object.entries(fundingTypes).map(([id, name]) => (
-                        <SelectItem key={id} value={id}>{name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
+        <FormProvider {...methods}>
+          <form onSubmit={methods.handleSubmit(onSubmit)} className="space-y-8">
+            
+            {currentStep === 0 && (
+                 <FormField
+                  control={methods.control}
+                  name="fundingNeed"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-lg font-semibold">I need funds for:</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a reason..." />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {Object.entries(fundingNeeds).map(([id, name]) => (
+                            <SelectItem key={id} value={id}>{name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+            )}
+
+            {currentStep === 1 && (
+                <div className="space-y-6">
+                    <FormField
+                      control={methods.control}
+                      name="fundingReason"
+                      render={({ field }) => (
+                        <FormItem className="space-y-3">
+                          <FormLabel className="text-lg font-semibold">What is the primary reason for this funding?</FormLabel>
+                          <FormControl>
+                            <RadioGroup
+                              onValueChange={field.onChange}
+                              defaultValue={field.value}
+                              className="flex flex-col space-y-1"
+                            >
+                               {Object.entries(fundingReasons).map(([id, name]) => (
+                                <FormItem key={id} className="flex items-center space-x-3 space-y-0">
+                                    <FormControl>
+                                        <RadioGroupItem value={id} />
+                                    </FormControl>
+                                    <FormLabel className="font-normal">
+                                        {name}
+                                    </FormLabel>
+                                </FormItem>
+                               ))}
+                            </RadioGroup>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={methods.control}
+                      name="purpose"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Please provide more detail</FormLabel>
+                          <FormControl>
+                            <Textarea placeholder="e.g., To purchase a new 2022 Scania R 560 for a new long-term contract with XYZ Logistics." {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                </div>
+            )}
+            
+            {currentStep === 2 && (
+                 <FormField
+                  control={methods.control}
+                  name="amountRequested"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-lg font-semibold">Approximately how much funding do you need?</FormLabel>
+                      <FormControl>
+                        <Input type="number" placeholder="500000" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+            )}
+            
+            {currentStep === 3 && (
+                <div className="text-center">
+                    <h3 className="text-xl font-semibold">Ready to Submit?</h3>
+                    <p className="text-muted-foreground mt-2">Please review your information before submitting the enquiry.</p>
+                </div>
+            )}
+
+            <div className="flex justify-between items-center pt-4">
+              <Button type="button" variant="outline" onClick={() => setCurrentStep(currentStep - 1)} disabled={currentStep === 0}>
+                <ArrowLeft className="mr-2 h-4 w-4" /> Previous
+              </Button>
+              
+              {currentStep < steps.length - 1 ? (
+                <Button type="button" onClick={processStep}>
+                    Next <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              ) : (
+                <Button type="submit" disabled={isSubmitting}>
+                    {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Submit Enquiry <Send className="ml-2 h-4 w-4" />
+                </Button>
               )}
-            />
-            <FormField
-              control={form.control}
-              name="amountRequested"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Amount Requested (ZAR)</FormLabel>
-                  <FormControl>
-                    <Input type="number" placeholder="500000" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="purpose"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Purpose of Funding</FormLabel>
-                  <FormControl>
-                    <Textarea placeholder="e.g., To purchase a new 2022 Scania R 560 truck for a new long-term contract." {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Submit Enquiry
-            </Button>
+            </div>
           </form>
-        </Form>
+        </FormProvider>
       </CardContent>
     </Card>
   );
 }
-
 
 export default function ApplyPage() {
     return (
