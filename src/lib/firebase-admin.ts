@@ -5,9 +5,6 @@ import { initializeApp, getApps, App, cert, ServiceAccount } from 'firebase-admi
 // ensuring it's only created once.
 export function getAdminApp(): { app: App | null; error: string | null } {
   const adminSdkConfigB64 = process.env.FIREBASE_ADMIN_SDK_CONFIG_B64;
-  const privateKey = process.env.FIREBASE_PRIVATE_KEY;
-  const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
-  const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
 
   if (!adminSdkConfigB64) {
     const error = "Admin SDK Error: The FIREBASE_ADMIN_SDK_CONFIG_B64 environment variable is not defined.";
@@ -24,13 +21,7 @@ export function getAdminApp(): { app: App | null; error: string | null } {
   // If not initialized, create it
   try {
     const decodedConfig = Buffer.from(adminSdkConfigB64, 'base64').toString('utf-8');
-    const serviceAccountJSON = JSON.parse(decodedConfig);
-
-    const serviceAccount: ServiceAccount = {
-        projectId: serviceAccountJSON.project_id,
-        clientEmail: serviceAccountJSON.client_email,
-        privateKey: (serviceAccountJSON.private_key || '').replace(/\\n/g, '\n'),
-    };
+    const serviceAccount: ServiceAccount = JSON.parse(decodedConfig);
     
     const app = initializeApp({
       credential: cert(serviceAccount),
@@ -41,7 +32,7 @@ export function getAdminApp(): { app: App | null; error: string | null } {
 
   } catch (error: any) {
     console.error("Admin SDK Initialization Failed:", error.message);
-    const detailedError = `Firebase Admin SDK initialization failed: ${error.message}. Check if the service account details are correct.`;
+    const detailedError = `Firebase Admin SDK initialization failed: ${error.message}. Check if the FIREBASE_ADMIN_SDK_CONFIG_B64 environment variable is a valid Base64 encoded service account JSON.`;
     return { app: null, error: detailedError };
   }
 }
