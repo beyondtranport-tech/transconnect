@@ -33,7 +33,6 @@ export default function QuotesCard() {
         return query(
             collection(firestore, 'members', user.uid, 'financeApplications'), 
             where('status', '==', 'quote'),
-            where('fundingType', 'not-in', ['wallet_top_up', 'membership_payment', 'credit-top-up']),
             orderBy('createdAt', 'desc'), 
             limit(5)
         );

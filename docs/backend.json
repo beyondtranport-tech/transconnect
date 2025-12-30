@@ -301,7 +301,6 @@
         },
         "fundingType": {
           "type": "string",
-          "enum": ["asset_finance", "working_capital", "partnership", "credit-top-up", "membership_payment", "wallet_top_up"],
           "description": "The type of funding requested."
         },
         "amountRequested": {

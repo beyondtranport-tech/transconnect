@@ -41,7 +41,6 @@ export default function EnquiriesCard() {
         // This is a valid query. We fetch all non-wallet applications that are NOT quotes.
         return query(
             collection(firestore, 'members', user.uid, 'financeApplications'), 
-            where('fundingType', 'not-in', ['wallet_top_up', 'membership_payment', 'credit-top-up']),
             where('status', 'in', ['pending', 'under_review', 'matched', 'rejected', 'funded']),
             orderBy('createdAt', 'desc'),
             limit(5)

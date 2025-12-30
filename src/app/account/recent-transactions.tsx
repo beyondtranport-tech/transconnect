@@ -48,8 +48,7 @@ export default function RecentTransactions() {
         if (!firestore || !user) return null;
         return query(
             collection(firestore, 'members', user.uid, 'financeApplications'),
-            where('fundingType', 'in', ['wallet_top_up', 'membership_payment']),
-            where('status', 'in', ['pending', 'quote']),
+            where('status', 'in', ['membership_payment', 'wallet_top_up']),
             orderBy('createdAt', 'desc'),
             limit(5)
         );
