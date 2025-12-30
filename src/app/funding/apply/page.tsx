@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { Suspense, useState } from 'react';
+import React, { Suspense, useState, useEffect } from 'react';
 import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -37,26 +37,47 @@ const fundingReasons = {
     opportunity: 'I have an opportunity (e.g., new contract, growth)',
 }
 
-const step1Schema = z.object({
+const baseSchema = z.object({
   fundingNeed: z.string().min(1, 'Please select what you need funds for.'),
-});
-const step2Schema = z.object({
   fundingReason: z.string().min(1, 'Please select a reason.'),
   purpose: z.string().min(10, 'Please provide more detail.'),
-});
-const step3Schema = z.object({
-    amountRequested: z.coerce.number().positive('Please enter a valid amount.'),
+  amountRequested: z.coerce.number().positive('Please enter a valid amount.'),
+  foundVehicle: z.enum(['yes', 'no']).optional(),
+  vehicleMake: z.string().optional(),
+  vehicleModel: z.string().optional(),
+  vehicleYear: z.string().optional(),
+  vehicleVin: z.string().optional(),
+  supplierName: z.string().optional(),
+  supplierContact: z.string().optional(),
 });
 
-const combinedSchema = step1Schema.merge(step2Schema).merge(step3Schema);
+// Create a refined schema that makes vehicle fields required if foundVehicle is 'yes'
+const combinedSchema = baseSchema.superRefine((data, ctx) => {
+    if (data.fundingNeed === 'vehicles' && data.foundVehicle === 'yes') {
+        if (!data.vehicleMake) {
+            ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Vehicle make is required.", path: ["vehicleMake"] });
+        }
+        if (!data.vehicleModel) {
+            ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Vehicle model is required.", path: ["vehicleModel"] });
+        }
+        if (!data.vehicleYear) {
+            ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Vehicle year is required.", path: ["vehicleYear"] });
+        }
+        if (!data.supplierName) {
+            ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Supplier name is required.", path: ["supplierName"] });
+        }
+    }
+});
+
 
 type ApplicationFormValues = z.infer<typeof combinedSchema>;
 
-const steps = [
+const staticSteps = [
   { id: 'Need', name: 'Step 1: Your Need', fields: ['fundingNeed'] },
   { id: 'Reason', name: 'Step 2: The Reason', fields: ['fundingReason', 'purpose'] },
-  { id: 'Amount', name: 'Step 3: The Amount', fields: ['amountRequested'] },
-  { id: 'Submit', name: 'Step 4: Review & Submit' },
+  // Conditional steps will be inserted here
+  { id: 'Amount', name: 'Final Step: The Amount', fields: ['amountRequested'] },
+  { id: 'Submit', name: 'Final Step: Review & Submit' },
 ];
 
 
@@ -70,25 +91,55 @@ function ApplyForm() {
 
   const methods = useForm<ApplicationFormValues>({
     resolver: zodResolver(combinedSchema),
+    mode: 'onChange',
     defaultValues: {
       fundingNeed: searchParams.get('type') || '',
       fundingReason: '',
       purpose: '',
       amountRequested: Number(searchParams.get('amount')) || 0,
+      foundVehicle: undefined,
+      vehicleMake: '',
+      vehicleModel: '',
+      vehicleYear: '',
+      vehicleVin: '',
+      supplierName: '',
+      supplierContact: '',
     },
   });
-  
+
+  const fundingNeed = methods.watch('fundingNeed');
+  const foundVehicle = methods.watch('foundVehicle');
+
+  const dynamicSteps = React.useMemo(() => {
+    const steps = [...staticSteps];
+    if (fundingNeed === 'vehicles') {
+        const vehicleSteps = [
+            { id: 'Found', name: 'Step 3: Vehicle Status', fields: ['foundVehicle'] },
+        ];
+        if (foundVehicle === 'yes') {
+            vehicleSteps.push(
+                { id: 'Vehicle', name: 'Step 4: Vehicle Info', fields: ['vehicleMake', 'vehicleModel', 'vehicleYear', 'vehicleVin'] },
+                { id: 'Supplier', name: 'Step 5: Supplier Info', fields: ['supplierName', 'supplierContact'] }
+            );
+        }
+        // Insert the new steps after the "Reason" step (index 2)
+        steps.splice(2, 0, ...vehicleSteps);
+    }
+    // Re-label step numbers
+    return steps.map((step, index) => ({...step, name: step.name.replace(/Step \d+|Final Step/, `Step ${index + 1}`)}));
+  }, [fundingNeed, foundVehicle]);
+
+
   const processStep = async () => {
+    const currentStepConfig = dynamicSteps[currentStep];
     let isValid = false;
-    if (currentStep === 0) {
-        isValid = await methods.trigger("fundingNeed");
-    } else if (currentStep === 1) {
-        isValid = await methods.trigger(["fundingReason", "purpose"]);
-    } else if (currentStep === 2) {
-        isValid = await methods.trigger("amountRequested");
+    if (currentStepConfig.fields) {
+        isValid = await methods.trigger(currentStepConfig.fields as (keyof ApplicationFormValues)[]);
+    } else {
+        isValid = true; // For review step
     }
 
-    if (isValid && currentStep < steps.length - 1) {
+    if (isValid && currentStep < dynamicSteps.length - 1) {
       setCurrentStep(currentStep + 1);
     }
   };
@@ -117,13 +168,10 @@ function ApplyForm() {
         if (!token) throw new Error("Authentication token not found.");
         
         const enquiryData = {
+            ...values, // Send all collected data
             applicantId: user.uid,
             status: 'pending',
-            fundingType: methods.getValues('fundingNeed'),
-            agreementType: getAgreementType(methods.getValues('fundingNeed')),
-            amountRequested: values.amountRequested,
-            purpose: values.purpose,
-            fundingReason: values.fundingReason,
+            agreementType: getAgreementType(values.fundingNeed),
             createdAt: { _methodName: 'serverTimestamp' },
         };
 
@@ -152,21 +200,23 @@ function ApplyForm() {
     return <div className="flex justify-center items-center py-20"><Loader2 className="h-12 w-12 animate-spin text-primary" /></div>;
   }
 
+  const currentStepConfig = dynamicSteps[currentStep];
+
   return (
-    <Card className="w-full max-w-2xl">
+    <Card className="w-full max-w-3xl">
       <CardHeader>
         <CardTitle className="flex items-center gap-2"><Landmark /> Funding Application</CardTitle>
         <CardDescription>
-          {steps[currentStep].name}
+          {currentStepConfig.name}
         </CardDescription>
         
         <div className="flex items-center pt-4">
-            {steps.map((step, index) => (
+            {dynamicSteps.map((step, index) => (
                 <React.Fragment key={step.id}>
                     <div className="flex flex-col items-center">
                         <div
                             className={cn(
-                                "h-8 w-8 rounded-full flex items-center justify-center font-bold",
+                                "h-8 w-8 rounded-full flex items-center justify-center font-bold transition-all",
                                 currentStep > index ? "bg-primary text-primary-foreground" :
                                 currentStep === index ? "bg-primary text-primary-foreground border-2 border-primary-foreground ring-2 ring-primary" :
                                 "bg-muted text-muted-foreground"
@@ -174,10 +224,10 @@ function ApplyForm() {
                         >
                             {currentStep > index ? <CheckCircle className="h-5 w-5" /> : index + 1}
                         </div>
-                         <p className={cn("text-xs mt-1", currentStep >= index ? "text-primary font-semibold" : "text-muted-foreground")}>{step.id}</p>
+                         <p className={cn("text-xs mt-1 transition-colors", currentStep >= index ? "text-primary font-semibold" : "text-muted-foreground")}>{step.id}</p>
                     </div>
-                    {index < steps.length - 1 && (
-                        <div className={cn("flex-1 h-1 mb-4", currentStep > index ? "bg-primary" : "bg-muted")} />
+                    {index < dynamicSteps.length - 1 && (
+                        <div className={cn("flex-1 h-1 mb-4 transition-colors", currentStep > index ? "bg-primary" : "bg-muted")} />
                     )}
                 </React.Fragment>
             ))}
@@ -188,7 +238,7 @@ function ApplyForm() {
         <FormProvider {...methods}>
           <form onSubmit={methods.handleSubmit(onSubmit)} className="space-y-8">
             
-            {currentStep === 0 && (
+            {currentStepConfig.id === 'Need' && (
                  <FormField
                   control={methods.control}
                   name="fundingNeed"
@@ -213,7 +263,7 @@ function ApplyForm() {
                 />
             )}
 
-            {currentStep === 1 && (
+            {currentStepConfig.id === 'Reason' && (
                 <div className="space-y-6">
                     <FormField
                       control={methods.control}
@@ -259,7 +309,58 @@ function ApplyForm() {
                 </div>
             )}
             
-            {currentStep === 2 && (
+            {currentStepConfig.id === 'Found' && (
+                 <FormField
+                  control={methods.control}
+                  name="foundVehicle"
+                  render={({ field }) => (
+                    <FormItem className="space-y-3">
+                      <FormLabel className="text-lg font-semibold">Have you found the vehicle you want to finance yet?</FormLabel>
+                      <FormControl>
+                        <RadioGroup
+                          onValueChange={field.onChange}
+                          defaultValue={field.value}
+                          className="flex items-center space-x-4"
+                        >
+                            <FormItem className="flex items-center space-x-2 space-y-0">
+                                <FormControl><RadioGroupItem value="yes" /></FormControl>
+                                <FormLabel className="font-normal">Yes</FormLabel>
+                            </FormItem>
+                            <FormItem className="flex items-center space-x-2 space-y-0">
+                                <FormControl><RadioGroupItem value="no" /></FormControl>
+                                <FormLabel className="font-normal">No</FormLabel>
+                            </FormItem>
+                        </RadioGroup>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+            )}
+
+            {currentStepConfig.id === 'Vehicle' && (
+                <div className="space-y-4">
+                    <h3 className="text-lg font-semibold">Vehicle Information</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <FormField control={methods.control} name="vehicleMake" render={({ field }) => (<FormItem><FormLabel>Make</FormLabel><FormControl><Input placeholder="e.g., Scania" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                        <FormField control={methods.control} name="vehicleModel" render={({ field }) => (<FormItem><FormLabel>Model</FormLabel><FormControl><Input placeholder="e.g., R 560" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                        <FormField control={methods.control} name="vehicleYear" render={({ field }) => (<FormItem><FormLabel>Year</FormLabel><FormControl><Input placeholder="e.g., 2022" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                        <FormField control={methods.control} name="vehicleVin" render={({ field }) => (<FormItem><FormLabel>VIN (Optional)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+                    </div>
+                </div>
+            )}
+            
+            {currentStepConfig.id === 'Supplier' && (
+                <div className="space-y-4">
+                     <h3 className="text-lg font-semibold">Supplier Information</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <FormField control={methods.control} name="supplierName" render={({ field }) => (<FormItem><FormLabel>Supplier/Dealership Name</FormLabel><FormControl><Input placeholder="e.g., Global Trucks" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                        <FormField control={methods.control} name="supplierContact" render={({ field }) => (<FormItem><FormLabel>Contact Person (Optional)</FormLabel><FormControl><Input placeholder="e.g., John Doe" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                    </div>
+                </div>
+            )}
+
+            {currentStepConfig.id === 'Amount' && (
                  <FormField
                   control={methods.control}
                   name="amountRequested"
@@ -275,7 +376,7 @@ function ApplyForm() {
                 />
             )}
             
-            {currentStep === 3 && (
+            {currentStepConfig.id === 'Submit' && (
                 <div className="text-center py-4">
                     <h3 className="text-xl font-semibold">Ready to Submit?</h3>
                     <p className="text-muted-foreground mt-2">Please review your information before submitting the enquiry. A funding specialist will contact you shortly to discuss the next steps.</p>
@@ -287,7 +388,7 @@ function ApplyForm() {
                 <ArrowLeft className="mr-2 h-4 w-4" /> Previous
               </Button>
               
-              {currentStep < steps.length - 1 ? (
+              {currentStep < dynamicSteps.length - 1 ? (
                 <Button type="button" onClick={processStep}>
                     Next <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
