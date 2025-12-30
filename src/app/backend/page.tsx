@@ -42,6 +42,7 @@ import {
   Cpu,
   Landmark,
   ArrowRight,
+  LineChart, // Import the new icon
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -489,6 +490,14 @@ function BackendPageContent() {
                   <LayoutDashboard />
                   <span>Dashboard</span>
                 </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                 <a href="https://analytics.google.com" target="_blank" rel="noopener noreferrer" className="w-full">
+                    <SidebarMenuButton tooltip="Analytics">
+                        <LineChart />
+                        <span>Analytics</span>
+                    </SidebarMenuButton>
+                </a>
               </SidebarMenuItem>
               <SidebarMenuItem>
                 <SidebarMenuButton tooltip="Members" isActive={activeView === 'members'} onClick={() => router.push('/backend?view=members', { scroll: false })}>
