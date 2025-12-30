@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useUser, useFirestore, useMemoFirebase, useCollection } from '@/firebase';
@@ -36,12 +37,13 @@ export default function EnquiriesCard() {
 
     const enquiriesQuery = useMemoFirebase(() => {
         if (!firestore || !user) return null;
-        // This query specifically excludes 'quote' status to only show formal enquiries
+        // This query now explicitly excludes all wallet-related types.
         return query(
             collection(firestore, 'members', user.uid, 'financeApplications'), 
+            where('fundingType', 'not-in', ['wallet_top_up', 'membership_payment', 'credit-top-up']),
             where('status', '!=', 'quote'),
-            orderBy('status'),
-            orderBy('createdAt', 'desc'), 
+            orderBy('fundingType'),
+            orderBy('createdAt', 'desc'),
             limit(5)
         );
     }, [firestore, user]);

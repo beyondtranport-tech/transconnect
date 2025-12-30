@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useUser, useFirestore, useMemoFirebase, useCollection } from '@/firebase';
@@ -28,10 +29,12 @@ export default function QuotesCard() {
 
     const quotesQuery = useMemoFirebase(() => {
         if (!firestore || !user) return null;
-        // This query specifically fetches only documents with 'quote' status
+        // This query now ensures we only fetch documents with status 'quote' AND are not wallet types.
         return query(
             collection(firestore, 'members', user.uid, 'financeApplications'), 
             where('status', '==', 'quote'),
+            where('fundingType', 'not-in', ['wallet_top_up', 'membership_payment', 'credit-top-up']),
+            orderBy('fundingType'),
             orderBy('createdAt', 'desc'), 
             limit(5)
         );
