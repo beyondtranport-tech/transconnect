@@ -178,9 +178,9 @@ export default function AccountDashboard() {
                 </Card>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <EnquiriesCard />
+            <div className="space-y-8">
                 <QuotesCard />
+                <EnquiriesCard />
             </div>
 
              <div className="space-y-8">

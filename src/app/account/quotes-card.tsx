@@ -1,10 +1,9 @@
-
 'use client';
 
 import { useUser, useFirestore, useMemoFirebase, useCollection } from '@/firebase';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Loader2, FileText } from 'lucide-react';
+import { Loader2, FileText, MoreVertical } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { collection, query, orderBy, limit } from 'firebase/firestore';
@@ -29,11 +28,10 @@ export default function QuotesCard() {
 
     const quotesQuery = useMemoFirebase(() => {
         if (!firestore || !user) return null;
-        // This is a valid query: a '==' filter combined with a 'not-in' filter.
         return query(
             collection(firestore, 'members', user.uid, 'quotes'), 
             orderBy('createdAt', 'desc'), 
-            limit(5)
+            limit(10)
         );
     }, [firestore, user]);
 
@@ -48,14 +46,14 @@ export default function QuotesCard() {
             <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                    <FileText className="h-6 w-6" />
-                   Quotes
+                   My Saved Quotes
                 </CardTitle>
-                <CardDescription>Click the button to explore funding products and generate a quote. Your saved quotes are shown here.</CardDescription>
+                <CardDescription>Explore funding products to generate a quote. Your recent saved quotes are shown here.</CardDescription>
             </CardHeader>
             <CardContent>
-                <div className="flex flex-col sm:flex-row gap-2 mb-6">
-                    <Button asChild variant="outline" className="w-full">
-                        <Link href="/funding">Get a Quote</Link>
+                 <div className="mb-6">
+                    <Button asChild>
+                        <Link href="/funding">Explore Funding & Get a Quote</Link>
                     </Button>
                 </div>
                 {isLoading && (
@@ -76,8 +74,11 @@ export default function QuotesCard() {
                             <TableHeader>
                                 <TableRow>
                                     <TableHead>Date</TableHead>
-                                    <TableHead>Type</TableHead>
-                                    <TableHead className="text-right">Amount</TableHead>
+                                    <TableHead>Product</TableHead>
+                                    <TableHead>Amount</TableHead>
+                                    <TableHead>Term</TableHead>
+                                    <TableHead>Est. Payment</TableHead>
+                                    <TableHead className="text-right">Actions</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -87,16 +88,22 @@ export default function QuotesCard() {
                                         <TableCell>
                                             <p className="font-medium capitalize">{quote.fundingType?.replace(/-/g, ' ')}</p>
                                         </TableCell>
-                                        <TableCell className="text-right font-mono font-semibold">
-                                            {formatCurrency(quote.amountRequested)}
+                                        <TableCell className="font-semibold">{formatCurrency(quote.amountRequested)}</TableCell>
+                                        <TableCell>{quote.details?.term} months</TableCell>
+                                        <TableCell>{formatCurrency(quote.details?.monthlyPayment)}</TableCell>
+                                        <TableCell className="text-right">
+                                            <Button variant="ghost" size="icon">
+                                                <MoreVertical className="h-4 w-4" />
+                                            </Button>
                                         </TableCell>
                                     </TableRow>
                                 ))}
                             </TableBody>
                         </Table>
                     ) : (
-                        <div className="text-center py-10">
+                        <div className="text-center py-10 border-2 border-dashed rounded-lg">
                             <p className="text-muted-foreground">You have no saved quotes yet.</p>
+                            <p className="text-sm text-muted-foreground mt-1">Generate a quote from our funding products page.</p>
                         </div>
                     )
                 )}
