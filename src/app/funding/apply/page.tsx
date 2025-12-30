@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { Suspense, useState, useEffect } from 'react';
@@ -52,6 +53,9 @@ const baseSchema = z.object({
   engineNumber: z.string().optional(),
   supplierName: z.string().optional(),
   supplierContact: z.string().optional(),
+  supplierPhone: z.string().optional(),
+  supplierEmail: z.string().email().optional().or(z.literal('')),
+  supplierAddress: z.string().optional(),
 });
 
 // Create a refined schema that makes vehicle fields required if foundVehicle is 'yes'
@@ -125,6 +129,9 @@ function ApplyForm() {
       engineNumber: '',
       supplierName: '',
       supplierContact: '',
+      supplierPhone: '',
+      supplierEmail: '',
+      supplierAddress: '',
     },
   });
 
@@ -149,7 +156,7 @@ function ApplyForm() {
         if (foundVehicle === 'yes') {
             vehicleSteps.push(
                 { id: 'Vehicle', name: 'Step 4: Vehicle Info', fields: ['vehicleType', 'vehicleMake', 'vehicleModel', 'vehicleYear', 'vehicleVin', 'engineNumber'] },
-                { id: 'Supplier', name: 'Step 5: Supplier Info', fields: ['supplierName', 'supplierContact'] }
+                { id: 'Supplier', name: 'Step 5: Supplier Info', fields: ['supplierName', 'supplierContact', 'supplierPhone', 'supplierEmail', 'supplierAddress'] }
             );
         }
         // Insert the new steps after the "Reason" step (index 2)
@@ -427,11 +434,16 @@ function ApplyForm() {
             )}
             
             {currentStepConfig.id === 'Supplier' && (
-                <div className="space-y-4">
+                <div className="space-y-6">
                      <h3 className="text-lg font-semibold">Supplier Information</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <FormField control={methods.control} name="supplierName" render={({ field }) => (<FormItem><FormLabel>Supplier/Dealership Name</FormLabel><FormControl><Input placeholder="e.g., Global Trucks" {...field} /></FormControl><FormMessage /></FormItem>)} />
                         <FormField control={methods.control} name="supplierContact" render={({ field }) => (<FormItem><FormLabel>Contact Person (Optional)</FormLabel><FormControl><Input placeholder="e.g., John Doe" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                        <FormField control={methods.control} name="supplierPhone" render={({ field }) => (<FormItem><FormLabel>Supplier Phone (Optional)</FormLabel><FormControl><Input placeholder="e.g., 011 123 4567" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                        <FormField control={methods.control} name="supplierEmail" render={({ field }) => (<FormItem><FormLabel>Supplier Email (Optional)</FormLabel><FormControl><Input placeholder="e.g., sales@globaltrucks.co.za" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                         <div className="md:col-span-2">
+                           <FormField control={methods.control} name="supplierAddress" render={({ field }) => (<FormItem><FormLabel>Supplier Address (Optional)</FormLabel><FormControl><Textarea placeholder="e.g., 123 Industrial Rd, Johannesburg" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                        </div>
                     </div>
                 </div>
             )}
