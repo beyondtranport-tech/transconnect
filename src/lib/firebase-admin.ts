@@ -9,18 +9,11 @@ export function getAdminApp(): { app: App | null; error: string | null } {
   const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
   const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
 
-  if (!adminSdkConfigB64 || !privateKey || !clientEmail || !projectId) {
-    const missingVars = [
-        !adminSdkConfigB64 && "FIREBASE_ADMIN_SDK_CONFIG_B64",
-        !privateKey && "FIREBASE_PRIVATE_KEY",
-        !clientEmail && "FIREBASE_CLIENT_EMAIL",
-        !projectId && "NEXT_PUBLIC_FIREBASE_PROJECT_ID"
-    ].filter(Boolean).join(', ');
-    const error = `Admin SDK Error: The following environment variables are not defined: ${missingVars}.`;
+  if (!adminSdkConfigB64) {
+    const error = "Admin SDK Error: The FIREBASE_ADMIN_SDK_CONFIG_B64 environment variable is not defined.";
     console.error(error);
     return { app: null, error };
   }
-
 
   // Check if the app is already initialized
   const existingApp = getApps().find(app => app.name === 'firebase-admin-app-transconnect');
@@ -30,12 +23,15 @@ export function getAdminApp(): { app: App | null; error: string | null } {
 
   // If not initialized, create it
   try {
-    const serviceAccount: ServiceAccount = {
-        projectId: projectId,
-        clientEmail: clientEmail,
-        privateKey: privateKey.replace(/\\n/g, '\n') // Ensure newlines are correctly formatted
-    };
+    const decodedConfig = Buffer.from(adminSdkConfigB64, 'base64').toString('utf-8');
+    const serviceAccountJSON = JSON.parse(decodedConfig);
 
+    const serviceAccount: ServiceAccount = {
+        projectId: serviceAccountJSON.project_id,
+        clientEmail: serviceAccountJSON.client_email,
+        privateKey: (serviceAccountJSON.private_key || '').replace(/\\n/g, '\n'),
+    };
+    
     const app = initializeApp({
       credential: cert(serviceAccount),
       storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
