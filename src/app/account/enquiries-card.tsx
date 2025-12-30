@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useUser, useFirestore, useMemoFirebase, useCollection, getClientSideAuthToken } from '@/firebase';
@@ -203,7 +202,7 @@ export default function EnquiriesCard() {
                                                     </DropdownMenuTrigger>
                                                     <DropdownMenuContent align="end">
                                                         <DropdownMenuItem asChild>
-                                                            <Link href={`/account/enquiries/${enquiry.id}`}>View</Link>
+                                                            <Link href={`/funding/apply?enquiryId=${enquiry.id}`}>View / Edit</Link>
                                                         </DropdownMenuItem>
                                                         <AlertDialog>
                                                             <AlertDialogTrigger asChild>

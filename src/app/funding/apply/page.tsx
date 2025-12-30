@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { Suspense, useState, useEffect } from 'react';
@@ -18,12 +17,14 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Landmark, ArrowLeft, ArrowRight, Send, CheckCircle } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useUser, getClientSideAuthToken } from '@/firebase';
+import { useUser, getClientSideAuthToken, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { cn } from '@/lib/utils';
+import { doc } from 'firebase/firestore';
+
 
 const fundingNeeds = {
   'business': 'My business',
@@ -86,8 +87,18 @@ function ApplyForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user, isUserLoading } = useUser();
+  const firestore = useFirestore();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
+
+  const enquiryId = searchParams.get('enquiryId');
+
+  const enquiryRef = useMemoFirebase(() => {
+    if (!firestore || !user || !enquiryId) return null;
+    return doc(firestore, `members/${user.uid}/enquiries`, enquiryId);
+  }, [firestore, user, enquiryId]);
+
+  const { data: existingEnquiry, isLoading: isEnquiryLoading } = useDoc(enquiryRef);
 
   const methods = useForm<ApplicationFormValues>({
     resolver: zodResolver(combinedSchema),
@@ -106,6 +117,14 @@ function ApplyForm() {
       supplierContact: '',
     },
   });
+
+  // Effect to populate form with existing enquiry data when editing
+  useEffect(() => {
+    if (existingEnquiry) {
+      methods.reset(existingEnquiry);
+    }
+  }, [existingEnquiry, methods]);
+
 
   const fundingNeed = methods.watch('fundingNeed');
   const foundVehicle = methods.watch('foundVehicle');
@@ -167,27 +186,42 @@ function ApplyForm() {
         const token = await getClientSideAuthToken();
         if (!token) throw new Error("Authentication token not found.");
         
-        const enquiryData = {
-            ...values, // Send all collected data
-            applicantId: user.uid,
-            status: 'pending',
-            agreementType: getAgreementType(values.fundingNeed),
-            createdAt: { _methodName: 'serverTimestamp' },
-        };
-
-        const response = await fetch('/api/createEnquiry', {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ data: enquiryData }),
-        });
+        let response;
+        if (enquiryId) { // This is an update
+            const enquiryData = {
+                ...values,
+                updatedAt: { _methodName: 'serverTimestamp' },
+            };
+            response = await fetch('/api/updateUserDoc', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    path: `members/${user.uid}/enquiries/${enquiryId}`,
+                    data: enquiryData
+                }),
+            });
+            if (response.ok) toast({ title: 'Enquiry Updated!' });
+        } else { // This is a new enquiry
+             const enquiryData = {
+                ...values,
+                applicantId: user.uid,
+                status: 'pending',
+                agreementType: getAgreementType(values.fundingNeed),
+                createdAt: { _methodName: 'serverTimestamp' },
+            };
+            response = await fetch('/api/createEnquiry', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ data: enquiryData }),
+            });
+            if (response.ok) toast({ title: 'Enquiry Submitted!' });
+        }
         
-        const result = await response.json();
-        if (!response.ok) throw new Error(result.error || 'Failed to submit enquiry.');
+        if (!response.ok) {
+            const result = await response.json();
+            throw new Error(result.error || 'Failed to save enquiry.');
+        }
 
-        toast({
-            title: 'Enquiry Submitted!',
-            description: 'Thank you. A funding specialist will be in touch shortly.',
-        });
         router.push('/account?view=dashboard');
     } catch (error: any) {
         toast({ variant: 'destructive', title: 'Submission Failed', description: error.message });
@@ -196,7 +230,9 @@ function ApplyForm() {
     }
   };
   
-  if (isUserLoading || !user) {
+  const isLoading = isUserLoading || (enquiryId && isEnquiryLoading);
+
+  if (isLoading || !user) {
     return <div className="flex justify-center items-center py-20"><Loader2 className="h-12 w-12 animate-spin text-primary" /></div>;
   }
 
@@ -205,7 +241,7 @@ function ApplyForm() {
   return (
     <Card className="w-full max-w-3xl">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2"><Landmark /> Funding Application</CardTitle>
+        <CardTitle className="flex items-center gap-2"><Landmark /> {enquiryId ? 'Edit' : 'New'} Funding Application</CardTitle>
         <CardDescription>
           {currentStepConfig.name}
         </CardDescription>
@@ -395,7 +431,7 @@ function ApplyForm() {
               ) : (
                 <Button type="submit" disabled={isSubmitting}>
                     {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Submit Enquiry <Send className="ml-2 h-4 w-4" />
+                    {enquiryId ? 'Update Enquiry' : 'Submit Enquiry'} <Send className="ml-2 h-4 w-4" />
                 </Button>
               )}
             </div>

@@ -54,7 +54,15 @@ export async function POST(req: NextRequest) {
     const collectionRef = db.collection(collectionPath);
     
     const deserializedData = deserializeData(data);
-    const newDocRef = await collectionRef.add(deserializedData);
+    const newDocRef = collectionRef.doc(); // Auto-generate an ID
+    
+    // Add the auto-generated ID to the document data
+    const finalData = {
+        ...deserializedData,
+        id: newDocRef.id,
+    };
+    
+    await newDocRef.set(finalData);
 
     return NextResponse.json({ success: true, id: newDocRef.id, message: 'Enquiry created successfully.' });
 
