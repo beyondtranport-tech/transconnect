@@ -30,10 +30,10 @@ const nextConfig = {
     ],
   },
   env: {
-    // This is the new, more secure way to pass the full service account key.
     FIREBASE_ADMIN_SDK_CONFIG_B64: process.env.FIREBASE_ADMIN_SDK_CONFIG_B64,
     NEXT_PUBLIC_FIREBASE_PROJECT_ID: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
     GEMINI_API_KEY: process.env.GEMINI_API_KEY,
+    NEXT_PUBLIC_GOOGLE_ANALYTICS_ID: process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS_ID,
   },
   devServer: {
     allowedDevOrigins: ["*.cloudworkstations.dev"],
