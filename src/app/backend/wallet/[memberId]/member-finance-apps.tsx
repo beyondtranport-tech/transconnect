@@ -53,8 +53,8 @@ export default function MemberFinanceApps({ memberId }: { memberId: string }) {
     const fetchApplications = useCallback(async () => {
         setIsLoading(true);
         setError(null);
-        // Pass 'all' to fetch every record without filtering
-        const result = await getMemberFinanceApplications(memberId, 'all'); 
+        // This action now fetches ALL records without filtering.
+        const result = await getMemberFinanceApplications(memberId); 
         if (result.success) {
             setApplications(result.data || []);
         } else {
@@ -169,5 +169,3 @@ export default function MemberFinanceApps({ memberId }: { memberId: string }) {
         </Card>
     )
 }
-
-    

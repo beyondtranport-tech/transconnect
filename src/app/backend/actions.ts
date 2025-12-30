@@ -194,7 +194,7 @@ export async function getFinanceApplications(): Promise<{ success: boolean; data
     }
 }
 
-export async function getMemberFinanceApplications(memberId: string, filter: 'all' | 'funding' = 'funding'): Promise<{ success: boolean, data?: any[], error?: string }> {
+export async function getMemberFinanceApplications(memberId: string): Promise<{ success: boolean, data?: any[], error?: string }> {
     const { app, error: initError } = getAdminApp();
     if (initError || !app) {
         return { success: false, error: initError || 'Firebase Admin SDK could not be initialized.' };
@@ -206,12 +206,6 @@ export async function getMemberFinanceApplications(memberId: string, filter: 'al
             id: doc.id,
             ...serializeTimestamps(doc.data()),
         }));
-
-        // The default behavior is to filter for funding, but we can bypass it
-        if (filter === 'funding') {
-            const walletStatuses = ['membership_payment', 'wallet_top_up'];
-            applications = applications.filter(app => !walletStatuses.includes(app.status));
-        }
         
         return { success: true, data: applications };
     } catch (error: any) {
