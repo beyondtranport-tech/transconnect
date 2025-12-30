@@ -23,6 +23,11 @@ export function getAdminApp(): { app: App | null; error: string | null } {
     const decodedConfig = Buffer.from(adminSdkConfigB64, 'base64').toString('utf-8');
     const serviceAccount = JSON.parse(decodedConfig) as ServiceAccount;
 
+    // IMPORTANT: Replace literal "\\n" with actual newline characters in the private key
+    if (serviceAccount.private_key) {
+        serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n');
+    }
+
     if (!serviceAccount.private_key) {
       const error = "Admin SDK Error: Parsed service account is missing 'private_key'. Check environment variable encoding.";
       console.error(error);
@@ -38,6 +43,6 @@ export function getAdminApp(): { app: App | null; error: string | null } {
 
   } catch (error: any) {
     console.error("Admin SDK Initialization Failed:", error.message);
-    return { app: null, error: `Firebase Admin SDK initialization failed: ${error.message}` };
+    return { app, null, error: `Firebase Admin SDK initialization failed: ${error.message}` };
   }
 }
