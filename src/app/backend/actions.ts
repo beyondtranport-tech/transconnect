@@ -124,7 +124,7 @@ export async function getMemberById(memberId: string): Promise<{ success: boolea
         const memberRef = adminDb.collection('members').doc(memberId);
         const docSnap = await memberRef.get();
 
-        if (docSnap.exists()) {
+        if (docSnap.exists) {
             const data = docSnap.data();
             const serializedData = serializeTimestamps(data);
             return { success: true, data: { id: docSnap.id, ...serializedData } as Member };
