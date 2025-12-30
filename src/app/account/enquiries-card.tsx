@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useUser, useFirestore, useMemoFirebase, useCollection, getClientSideAuthToken } from '@/firebase';
@@ -34,9 +35,17 @@ const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(amount);
 };
 
-const formatDate = (timestamp: any) => {
-    if (timestamp && timestamp.toDate) {
-        return format(timestamp.toDate(), "dd MMM yyyy");
+const formatDate = (dateValue: any) => {
+    // Check if it's a Firestore Timestamp object
+    if (dateValue && typeof dateValue.toDate === 'function') {
+        return format(dateValue.toDate(), "dd MMM yyyy");
+    }
+    // Check if it's an ISO string (from our serialized API response)
+    if (typeof dateValue === 'string') {
+        const date = new Date(dateValue);
+        if (!isNaN(date.getTime())) {
+            return format(date, "dd MMM yyyy");
+        }
     }
     return 'N/A';
 };
