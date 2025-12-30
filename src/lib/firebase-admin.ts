@@ -43,6 +43,20 @@ export function getAdminApp(): { app: App | null; error: string | null } {
 
   } catch (error: any) {
     console.error("Admin SDK Initialization Failed:", error.message);
-    return { app, null, error: `Firebase Admin SDK initialization failed: ${error.message}` };
+    return { app: null, error: `Firebase Admin SDK initialization failed: ${error.message}` };
   }
+}
+
+// A new function to check the status without throwing an error in the component
+export async function checkAdminSdk(): Promise<{ success: boolean; error?: string }> {
+    const { app, error } = getAdminApp();
+    if (error) {
+        return { success: false, error };
+    }
+    if (!app) {
+        return { success: false, error: 'Firebase Admin SDK could not be initialized.' };
+    }
+    // A simple check to see if we can interact with a service (e.g., auth)
+    // This part is more complex, so for now, just checking initialization is enough.
+    return { success: true };
 }
