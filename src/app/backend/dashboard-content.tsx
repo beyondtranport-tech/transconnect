@@ -79,7 +79,7 @@ export default function DashboardContent() {
                 }
                 
                 if (applicationsResult.success && applicationsResult.data) {
-                    const apps = applicationsResult.data.filter(app => app.fundingType !== 'wallet_top_up');
+                    const apps = applicationsResult.data;
                     const totalFunded = apps.filter(app => app.status === 'funded').reduce((sum, app) => sum + app.amountRequested, 0);
                     setStats(s => ({ ...s, applications: apps.length, totalFunded }));
                     setApplications(apps);
@@ -120,8 +120,10 @@ export default function DashboardContent() {
     }, [members]);
     
     const pendingApplications = useMemo(() => {
+        // Corrected filter to exclude all wallet-related types
+        const walletTypes = ['wallet_top_up', 'membership_payment'];
         return applications
-            .filter(app => (app.status === 'pending' || app.status === 'under_review') && app.fundingType !== 'wallet_top_up')
+            .filter(app => (app.status === 'pending' || app.status === 'under_review') && !walletTypes.includes(app.fundingType))
             .slice(0, 5);
     }, [applications]);
 
