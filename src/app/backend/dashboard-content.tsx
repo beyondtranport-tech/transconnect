@@ -121,8 +121,9 @@ export default function DashboardContent() {
     }, [members]);
     
     const pendingApplications = useMemo(() => {
+        const walletFundingTypes = ['wallet_top_up', 'membership_payment'];
         return applications
-            .filter(app => (app.status === 'pending' || app.status === 'under_review'))
+            .filter(app => (app.status === 'pending' || app.status === 'under_review') && !walletFundingTypes.includes(app.fundingType))
             .slice(0, 5);
     }, [applications]);
 
@@ -304,5 +305,7 @@ export default function DashboardContent() {
         </div>
     );
 }
+
+    
 
     

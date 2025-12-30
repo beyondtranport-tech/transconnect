@@ -159,11 +159,8 @@ export async function getFinanceApplications(): Promise<{ success: boolean; data
             const subCollectionSnapshot = await adminDb.collection(`members/${memberId}/financeApplications`).get();
             subCollectionSnapshot.forEach(doc => {
                 const data = doc.data();
-                // Server-side filter to exclude wallet transactions from this view
-                if (!walletStatuses.includes(data.status)) {
-                    const serializedData = serializeTimestamps(data);
-                    appMap.set(doc.id, { id: doc.id, ...serializedData } as FinanceApplication);
-                }
+                const serializedData = serializeTimestamps(data);
+                appMap.set(doc.id, { id: doc.id, ...serializedData } as FinanceApplication);
             });
         }
         
@@ -171,7 +168,7 @@ export async function getFinanceApplications(): Promise<{ success: boolean; data
         const topLevelSnapshot = await adminDb.collection('financeApplications').get();
         topLevelSnapshot.docs.forEach(doc => {
             const data = doc.data();
-            if (!appMap.has(doc.id) && !walletStatuses.includes(data.status)) {
+            if (!appMap.has(doc.id)) {
                 const serializedData = serializeTimestamps(data);
                 appMap.set(doc.id, { id: doc.id, ...serializedData } as FinanceApplication);
             }
@@ -223,6 +220,13 @@ export async function deleteFinanceApplication(memberId: string, applicationId: 
     try {
         const docRef = adminDb.doc(`members/${memberId}/financeApplications/${applicationId}`);
         await docRef.delete();
+        // Also attempt to delete from the top-level collection, just in case
+        try {
+            const topLevelDocRef = adminDb.doc(`financeApplications/${applicationId}`);
+            await topLevelDocRef.delete();
+        } catch (e) {
+            // Ignore errors here, as the doc might not exist in the top-level collection
+        }
         return { success: true };
     } catch (error: any) {
         console.error(`Error deleting finance application ${applicationId} for member ${memberId}:`, error);
@@ -403,6 +407,8 @@ export async function deleteTransaction(memberId: string, transactionId: string)
         return { success: false, error: error.message };
     }
 }
+    
+
     
 
     

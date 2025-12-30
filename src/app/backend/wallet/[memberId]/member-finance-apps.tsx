@@ -139,7 +139,7 @@ export default function MemberFinanceApps({ memberId }: { memberId: string }) {
                                                     </AlertDialogHeader>
                                                     <AlertDialogFooter>
                                                         <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                        <AlertDialogAction onClick={() => handleDelete(app.id)}>
+                                                        <AlertDialogAction onClick={() => handleDelete(app.id)} variant="destructive">
                                                             Yes, delete it
                                                         </AlertDialogAction>
                                                     </AlertDialogFooter>
@@ -169,3 +169,5 @@ export default function MemberFinanceApps({ memberId }: { memberId: string }) {
         </Card>
     )
 }
+
+    
