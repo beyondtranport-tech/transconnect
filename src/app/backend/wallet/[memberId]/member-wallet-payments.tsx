@@ -38,7 +38,7 @@ const formatDate = (isoString: string | undefined) => {
 };
 
 
-export default function MemberWalletPayments({ memberId }: { memberId: string }) {
+export default function MemberWalletPayments({ memberId, onUpdate }: { memberId: string, onUpdate: () => void }) {
     const [payments, setPayments] = useState<any[] | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -63,11 +63,11 @@ export default function MemberWalletPayments({ memberId }: { memberId: string })
 
     const handleDelete = async (paymentId: string) => {
         setIsDeleting(paymentId);
-        // We use the generic finance app deleter for now as wallet payments live there too.
-        const result = await deleteFinanceApplication(memberId, paymentId);
+        const result = await deleteFinanceApplication(memberId, paymentId, 'walletPayment');
         if (result.success) {
             toast({ title: 'Record Deleted', description: 'The wallet payment record has been permanently removed.' });
-            fetchPayments(); // Refresh the list
+            fetchPayments();
+            onUpdate();
         } else {
             toast({ variant: 'destructive', title: 'Deletion Failed', description: result.error });
         }
@@ -77,9 +77,9 @@ export default function MemberWalletPayments({ memberId }: { memberId: string })
     return (
         <Card>
             <CardHeader>
-                <CardTitle className="flex items-center gap-2"><Wallet /> Pending Wallet Records</CardTitle>
+                <CardTitle className="flex items-center gap-2"><Wallet /> Pending Wallet Payments</CardTitle>
                 <CardDescription>
-                    A list of all pending wallet top-ups and membership payments logged by this member.
+                    A list of all pending wallet top-ups and membership payments logged by this member via EFT. Approve these by making a manual wallet adjustment above.
                 </CardDescription>
             </CardHeader>
             <CardContent>

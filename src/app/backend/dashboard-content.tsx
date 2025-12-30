@@ -40,6 +40,7 @@ interface FinanceApplication {
     amountRequested: number;
     status: string;
     createdAt: string;
+    recordType: 'Quote' | 'Enquiry';
 }
 
 const formatDate = (isoString: string | undefined, options?: Intl.DateTimeFormatOptions) => {
@@ -146,9 +147,9 @@ export default function DashboardContent() {
          return members.slice(0, 5);
     }, [members]);
 
-    const handleDelete = async (applicantId: string, applicationId: string) => {
+    const handleDelete = async (applicantId: string, applicationId: string, recordType: 'Quote' | 'Enquiry') => {
         setIsDeleting(applicationId);
-        const result = await deleteFinanceApplication(applicantId, applicationId);
+        const result = await deleteFinanceApplication(applicantId, applicationId, recordType.toLowerCase() as 'quote' | 'enquiry');
         if (result.success) {
             toast({ title: 'Application Deleted', description: 'The record has been permanently removed.' });
             loadDashboardData(); // Refresh the list
@@ -293,7 +294,7 @@ export default function DashboardContent() {
                                                     </AlertDialogHeader>
                                                     <AlertDialogFooter>
                                                         <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                        <AlertDialogAction onClick={() => handleDelete(app.applicantId, app.id)} variant="destructive">
+                                                        <AlertDialogAction onClick={() => handleDelete(app.applicantId, app.id, app.recordType)} variant="destructive">
                                                             Yes, delete it
                                                         </AlertDialogAction>
                                                     </AlertDialogFooter>

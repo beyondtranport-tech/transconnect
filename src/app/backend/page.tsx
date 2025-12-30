@@ -139,7 +139,7 @@ function FundingDivisionContent() {
                 <CardContent>
                     <div className="overflow-x-auto">
                         <Table>
-                            <TableHeader><TableRow><TableCell>Date</TableCell><TableCell>Member</TableCell><TableCell>Record Type</TableCell><TableCell>Funding Type</TableCell><TableCell>Amount</TableCell><TableCell>Status</TableCell></TableRow></TableHeader>
+                            <TableHeader><TableRow><TableCell>Date</TableCell><TableCell>Member</TableCell><TableCell>Record Type</TableCell><TableCell>Funding Type</TableCell><TableCell>Amount</TableCell><TableCell>Status</TableCell><TableCell>Action</TableCell></TableRow></TableHeader>
                             <TableBody>
                                 {applications.length > 0 ? applications.map(app => (
                                     <TableRow key={app.id}>
@@ -155,10 +155,15 @@ function FundingDivisionContent() {
                                         <TableCell className="capitalize">{app.fundingType?.replace(/_/g, ' ')}</TableCell>
                                         <TableCell>{formatPrice(app.amountRequested)}</TableCell>
                                         <TableCell><Badge variant={statusColors[app.status] || 'secondary'} className="capitalize">{app.status?.replace(/_/g, ' ')}</Badge></TableCell>
+                                        <TableCell>
+                                            <Button asChild variant="outline" size="sm">
+                                                <Link href={`/backend/wallet/${app.applicantId}`}>View Member</Link>
+                                            </Button>
+                                        </TableCell>
                                     </TableRow>
                                 )) : (
                                     <TableRow>
-                                        <TableCell colSpan={6} className="text-center h-24 text-muted-foreground">No funding records found.</TableCell>
+                                        <TableCell colSpan={7} className="text-center h-24 text-muted-foreground">No funding records found.</TableCell>
                                     </TableRow>
                                 )}
                             </TableBody>

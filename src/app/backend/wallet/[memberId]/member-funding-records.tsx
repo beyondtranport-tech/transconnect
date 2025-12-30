@@ -64,11 +64,10 @@ export default function MemberFundingRecords({ memberId }: { memberId: string })
         fetchRecords();
     }, [fetchRecords]);
 
-    const handleDelete = async (recordId: string) => {
-        // This is a placeholder since we don't have a specific delete for quotes/enquiries yet.
-        // For now, we will use the generic finance application deleter.
+    const handleDelete = async (recordId: string, recordType: string) => {
         setIsDeleting(recordId);
-        const result = await deleteFinanceApplication(memberId, recordId);
+        const type = recordType.toLowerCase() as 'quote' | 'enquiry';
+        const result = await deleteFinanceApplication(memberId, recordId, type);
         if (result.success) {
             toast({ title: 'Record Deleted', description: 'The record has been permanently removed.' });
             fetchRecords(); // Refresh the list
@@ -144,7 +143,7 @@ export default function MemberFundingRecords({ memberId }: { memberId: string })
                                                     </AlertDialogHeader>
                                                     <AlertDialogFooter>
                                                         <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                        <AlertDialogAction onClick={() => handleDelete(rec.id)} variant="destructive">
+                                                        <AlertDialogAction onClick={() => handleDelete(rec.id, rec.recordType)} variant="destructive">
                                                             Yes, delete it
                                                         </AlertDialogAction>
                                                     </AlertDialogFooter>

@@ -18,6 +18,7 @@ import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import MemberFundingRecords from './member-funding-records';
 import MemberWalletPayments from './member-wallet-payments';
+import MemberTransactions from './member-transactions';
 
 
 const formatCurrency = (amount: number) => new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(amount);
@@ -41,6 +42,7 @@ export default function MemberWallet({ memberId }: { memberId: string }) {
     const [memberData, setMemberData] = useState<any | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [refreshTrigger, setRefreshTrigger] = useState(0);
 
     const fetchMemberData = useCallback(async () => {
         setIsLoading(true);
@@ -61,7 +63,7 @@ export default function MemberWallet({ memberId }: { memberId: string }) {
 
     useEffect(() => {
         fetchMemberData();
-    }, [fetchMemberData]);
+    }, [fetchMemberData, refreshTrigger]);
 
 
     useEffect(() => {
@@ -117,7 +119,7 @@ export default function MemberWallet({ memberId }: { memberId: string }) {
             toast({ title: 'Success!', description: `Wallet updated and transaction recorded for ${memberData?.firstName}.` });
             setNewRecordAmount('');
             setNewRecordDescription('');
-            fetchMemberData(); // Re-fetch data to show updated balance
+            setRefreshTrigger(prev => prev + 1); // Trigger a re-fetch
         } catch (error: any) {
             errorEmitter.emit(
                 'permission-error',
@@ -221,8 +223,9 @@ export default function MemberWallet({ memberId }: { memberId: string }) {
                 </CardFooter>
             </Card>
             
-            <MemberWalletPayments memberId={memberId} />
-            <MemberFundingRecords memberId={memberId} />
+            <MemberWalletPayments memberId={memberId} onUpdate={() => setRefreshTrigger(prev => prev + 1)} />
+            <MemberFundingRecords memberId={memberId} onUpdate={() => setRefreshTrigger(prev => prev + 1)} />
+            <MemberTransactions memberId={memberId} key={refreshTrigger} />
         </div>
     );
 }

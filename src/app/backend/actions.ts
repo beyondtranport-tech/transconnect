@@ -179,45 +179,27 @@ export async function getFinanceApplications(): Promise<{ success: boolean; data
     }
 }
 
-export async function getMemberFinanceApplications(memberId: string): Promise<{ success: boolean, data?: any[], error?: string }> {
+export async function deleteFinanceApplication(memberId: string, applicationId: string, type: 'quote' | 'enquiry' | 'walletPayment'): Promise<{ success: boolean; error?: string }> {
     const { app, error: initError } = getAdminApp();
     if (initError || !app) {
         return { success: false, error: initError || 'Firebase Admin SDK could not be initialized.' };
     }
     const adminDb = getFirestore(app);
-    try {
-        const snapshot = await adminDb.collection(`members/${memberId}/financeApplications`).get();
-        let applications = snapshot.docs.map(doc => ({
-            id: doc.id,
-            ...serializeTimestamps(doc.data()),
-        }));
-        
-        return { success: true, data: applications };
-    } catch (error: any) {
-        console.error(`Error fetching finance applications for member ${memberId}:`, error);
-        return { success: false, error: error.message };
+    
+    let subcollectionName = '';
+    switch(type) {
+        case 'quote': subcollectionName = 'quotes'; break;
+        case 'enquiry': subcollectionName = 'enquiries'; break;
+        case 'walletPayment': subcollectionName = 'walletPayments'; break;
+        default: return { success: false, error: 'Invalid application type provided.' };
     }
-}
 
-export async function deleteFinanceApplication(memberId: string, applicationId: string): Promise<{ success: boolean; error?: string }> {
-    const { app, error: initError } = getAdminApp();
-    if (initError || !app) {
-        return { success: false, error: initError || 'Firebase Admin SDK could not be initialized.' };
-    }
-    const adminDb = getFirestore(app);
     try {
-        const docRef = adminDb.doc(`members/${memberId}/financeApplications/${applicationId}`);
+        const docRef = adminDb.doc(`members/${memberId}/${subcollectionName}/${applicationId}`);
         await docRef.delete();
-        // Also attempt to delete from the top-level collection, just in case
-        try {
-            const topLevelDocRef = adminDb.doc(`financeApplications/${applicationId}`);
-            await topLevelDocRef.delete();
-        } catch (e) {
-            // Ignore errors here, as the doc might not exist in the top-level collection
-        }
         return { success: true };
     } catch (error: any) {
-        console.error(`Error deleting finance application ${applicationId} for member ${memberId}:`, error);
+        console.error(`Error deleting application ${applicationId} for member ${memberId}:`, error);
         return { success: false, error: error.message };
     }
 }
