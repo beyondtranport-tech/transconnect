@@ -10,6 +10,12 @@ import { collection, query, orderBy, limit } from 'firebase/firestore';
 import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import { useMemo } from 'react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 
 const formatCurrency = (amount: number) => {
     if (typeof amount !== 'number') return 'N/A';
@@ -105,9 +111,17 @@ export default function EnquiriesCard() {
                                             {formatCurrency(enquiry.amountRequested)}
                                         </TableCell>
                                         <TableCell className="text-right">
-                                            <Button variant="ghost" size="icon">
-                                                <MoreVertical className="h-4 w-4" />
-                                            </Button>
+                                             <DropdownMenu>
+                                                <DropdownMenuTrigger asChild>
+                                                    <Button variant="ghost" size="icon">
+                                                        <MoreVertical className="h-4 w-4" />
+                                                    </Button>
+                                                </DropdownMenuTrigger>
+                                                <DropdownMenuContent align="end">
+                                                    <DropdownMenuItem>View</DropdownMenuItem>
+                                                    <DropdownMenuItem className="text-destructive">Delete</DropdownMenuItem>
+                                                </DropdownMenuContent>
+                                            </DropdownMenu>
                                         </TableCell>
                                     </TableRow>
                                 ))}
