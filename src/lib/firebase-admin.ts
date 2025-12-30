@@ -5,12 +5,22 @@ import { initializeApp, getApps, App, cert, ServiceAccount } from 'firebase-admi
 // ensuring it's only created once.
 export function getAdminApp(): { app: App | null; error: string | null } {
   const adminSdkConfigB64 = process.env.FIREBASE_ADMIN_SDK_CONFIG_B64;
+  const privateKey = process.env.FIREBASE_PRIVATE_KEY;
+  const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
+  const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
 
-  if (!adminSdkConfigB64) {
-    const error = "Admin SDK Error: FIREBASE_ADMIN_SDK_CONFIG_B64 is not defined in the environment. Please add it to your environment variables.";
+  if (!adminSdkConfigB64 || !privateKey || !clientEmail || !projectId) {
+    const missingVars = [
+        !adminSdkConfigB64 && "FIREBASE_ADMIN_SDK_CONFIG_B64",
+        !privateKey && "FIREBASE_PRIVATE_KEY",
+        !clientEmail && "FIREBASE_CLIENT_EMAIL",
+        !projectId && "NEXT_PUBLIC_FIREBASE_PROJECT_ID"
+    ].filter(Boolean).join(', ');
+    const error = `Admin SDK Error: The following environment variables are not defined: ${missingVars}.`;
     console.error(error);
     return { app: null, error };
   }
+
 
   // Check if the app is already initialized
   const existingApp = getApps().find(app => app.name === 'firebase-admin-app-transconnect');
@@ -20,19 +30,11 @@ export function getAdminApp(): { app: App | null; error: string | null } {
 
   // If not initialized, create it
   try {
-    const decodedConfig = Buffer.from(adminSdkConfigB64, 'base64').toString('utf-8');
-    const serviceAccount = JSON.parse(decodedConfig) as ServiceAccount;
-
-    // IMPORTANT: Replace literal "\\n" with actual newline characters in the private key
-    if (serviceAccount.private_key) {
-        serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n');
-    }
-
-    if (!serviceAccount.private_key) {
-      const error = "Admin SDK Error: Parsed service account is missing 'private_key'. Check environment variable encoding.";
-      console.error(error);
-      return { app: null, error };
-    }
+    const serviceAccount: ServiceAccount = {
+        projectId: projectId,
+        clientEmail: clientEmail,
+        privateKey: privateKey.replace(/\\n/g, '\n') // Ensure newlines are correctly formatted
+    };
 
     const app = initializeApp({
       credential: cert(serviceAccount),
@@ -43,7 +45,8 @@ export function getAdminApp(): { app: App | null; error: string | null } {
 
   } catch (error: any) {
     console.error("Admin SDK Initialization Failed:", error.message);
-    return { app: null, error: `Firebase Admin SDK initialization failed: ${error.message}` };
+    const detailedError = `Firebase Admin SDK initialization failed: ${error.message}. Check if the service account details are correct.`;
+    return { app: null, error: detailedError };
   }
 }
 
