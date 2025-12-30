@@ -11,6 +11,7 @@ import { marketplaceItems } from "@/lib/data";
 import { Badge } from "@/components/ui/badge";
 import * as React from "react";
 import { useState, useEffect } from 'react';
+import { IntentModal } from "./intent-modal";
 
 const { placeholderImages } = data;
 
@@ -113,13 +114,26 @@ const iconMap: { [key: string]: React.ElementType } = {
 
 export default function MallPage() {
     const [isClient, setIsClient] = useState(false);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [selectedMallHref, setSelectedMallHref] = useState<string | null>(null);
 
     useEffect(() => {
         setIsClient(true);
     }, []);
 
+    const handleExploreClick = (href: string) => {
+        setSelectedMallHref(href);
+        setIsModalOpen(true);
+    };
+
     return (
         <div>
+            <IntentModal 
+                isOpen={isModalOpen}
+                onOpenChange={setIsModalOpen}
+                buyHref={selectedMallHref}
+            />
+
             <section className="relative w-full h-80 bg-card">
                 {mallHeroImage && (
                     <Image
@@ -169,10 +183,8 @@ export default function MallPage() {
                                         <p className="mt-4 text-lg text-muted-foreground">
                                             {mall.description}
                                         </p>
-                                        <Button asChild className="mt-6" variant="outline">
-                                            <Link href={mall.href}>
-                                                Explore Mall <ArrowRight className="ml-2 h-4 w-4" />
-                                            </Link>
+                                        <Button onClick={() => handleExploreClick(mall.href)} className="mt-6" variant="outline">
+                                            Explore Mall <ArrowRight className="ml-2 h-4 w-4" />
                                         </Button>
                                     </div>
                                 </div>
