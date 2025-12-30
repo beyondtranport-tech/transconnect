@@ -30,18 +30,60 @@ export interface ModalConfig {
   };
 }
 
+// New type for the incentive step
+export interface IncentiveStep {
+    title: string;
+    description: string;
+    cta: string;
+    action: () => void;
+}
+
+
 interface IntentModalProps {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
   config: ModalConfig | null;
+  incentiveStep?: IncentiveStep | null;
+  showIncentiveStep: boolean;
+  setShowIncentiveStep: (show: boolean) => void;
 }
 
-export function IntentModal({ isOpen, onOpenChange, config }: IntentModalProps) {
+export function IntentModal({ isOpen, onOpenChange, config, incentiveStep, showIncentiveStep, setShowIncentiveStep }: IntentModalProps) {
   
   if (!config) return null;
 
+  const handleClose = () => {
+    setShowIncentiveStep(false);
+    onOpenChange(false);
+  }
+
+  // Render the incentive step if it's active
+  if (showIncentiveStep && incentiveStep) {
+     return (
+        <Dialog open={isOpen} onOpenChange={handleClose}>
+            <DialogContent className="sm:max-w-md">
+                 <DialogHeader>
+                    <DialogTitle>{incentiveStep.title}</DialogTitle>
+                    <DialogDescription>
+                        {incentiveStep.description}
+                    </DialogDescription>
+                </DialogHeader>
+                <DialogFooter className="sm:justify-between">
+                     <Button type="button" variant="ghost" size="sm" onClick={handleClose}>
+                        Maybe Later
+                    </Button>
+                     <Button type="button" onClick={incentiveStep.action}>
+                        {incentiveStep.cta} <ArrowRight className="ml-2 h-4 w-4" />
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+     )
+  }
+
+  // Render the initial intent step
   return (
-    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+    <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>{config.title}</DialogTitle>
@@ -60,7 +102,7 @@ export function IntentModal({ isOpen, onOpenChange, config }: IntentModalProps) 
             </Button>
         </div>
         <DialogFooter>
-             <Button type="button" variant="ghost" size="sm" onClick={() => onOpenChange(false)}>
+             <Button type="button" variant="ghost" size="sm" onClick={handleClose}>
                 Just browsing
             </Button>
         </DialogFooter>

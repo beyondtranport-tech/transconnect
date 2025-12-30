@@ -11,7 +11,7 @@ import { marketplaceItems } from "@/lib/data";
 import { Badge } from "@/components/ui/badge";
 import * as React from "react";
 import { useState, useEffect } from 'react';
-import { IntentModal, type ModalConfig } from "./intent-modal";
+import { IntentModal, type ModalConfig, type IncentiveStep } from "./intent-modal";
 import { useUser } from "@/firebase";
 import { useRouter } from "next/navigation";
 import * as gtag from '@/lib/gtag';
@@ -117,163 +117,116 @@ export default function MallPage() {
     const [isClient, setIsClient] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [modalConfig, setModalConfig] = useState<ModalConfig | null>(null);
+    const [incentiveStep, setIncentiveStep] = useState<IncentiveStep | null>(null);
+    const [showIncentiveStep, setShowIncentiveStep] = useState(false);
 
     useEffect(() => {
         setIsClient(true);
     }, []);
+    
+    const showIncentive = (href: string) => {
+        setIncentiveStep({
+            title: "Become a Valued Supplier",
+            description: "By listing your products or services, you gain access to a targeted market and contribute to our community's data pool. This helps everyone get better deals. Proceed with our quick onboarding to get started.",
+            cta: "Continue Onboarding",
+            action: () => {
+                setIsModalOpen(false);
+                setShowIncentiveStep(false);
+                router.push(href);
+            }
+        });
+        setShowIncentiveStep(true);
+    }
 
     const createModalConfig = (mallId: string, mallHref: string): ModalConfig => {
         const baseSellHref = user ? '/account?view=shop' : '/join?role=vendor';
 
         let config: Partial<ModalConfig> = {};
 
+        const buyerAction = () => {
+            setIsModalOpen(false);
+            router.push(mallHref);
+        }
+        
+        const sellerAction = () => {
+            showIncentive(baseSellHref);
+        }
+
         switch(mallId) {
             case 'finance':
                 config = {
                     title: "What is your goal in the Finance Mall?",
                     description: "Are you here to find funding for your business, or are you a financier looking to provide capital?",
-                    primary: {
-                        label: "I want to Borrow",
-                        description: "Apply for a loan or asset finance.",
-                        action: () => router.push(mallHref),
-                    },
-                    secondary: {
-                        label: "I want to Lend",
-                        description: "Join our network of financiers.",
-                        action: () => router.push('/for-financiers'),
-                    }
+                    primary: { label: "I want to Borrow", description: "Apply for a loan or asset finance.", action: buyerAction },
+                    secondary: { label: "I want to Lend", description: "Join our network of financiers.", action: () => router.push('/for-financiers') }
                 };
                 break;
             case 'loads':
                 config = {
                     title: "What is your goal in the Loads Mall?",
                     description: "Are you looking to post a load for transport, or are you a transporter looking for a load to carry?",
-                    primary: {
-                        label: "I am looking for a load",
-                        description: "Find available loads.",
-                        action: () => router.push(mallHref),
-                    },
-                    secondary: {
-                        label: "I have a load to post",
-                        description: "List your available freight.",
-                        action: () => router.push(baseSellHref),
-                    }
+                    primary: { label: "I am looking for a load", description: "Find available loads.", action: buyerAction },
+                    secondary: { label: "I have a load to post", description: "List your available freight.", action: sellerAction }
                 };
                 break;
             case 'buy-sell':
-                config = {
+                 config = {
                     title: "What brings you to the Buy & Sell Mall?",
                     description: "Are you here to sell a vehicle or looking to purchase one?",
-                    primary: {
-                        label: "I am looking for a vehicle",
-                        description: "Browse vehicles for sale.",
-                        action: () => router.push(mallHref),
-                    },
-                    secondary: {
-                        label: "I have a vehicle to sell",
-                        description: "List your vehicle for sale.",
-                        action: () => router.push(baseSellHref),
-                    }
+                    primary: { label: "I am looking for a vehicle", description: "Browse vehicles for sale.", action: buyerAction },
+                    secondary: { label: "I have a vehicle to sell", description: "List your vehicle for sale.", action: sellerAction }
                 };
                 break;
             case 'distribution':
-                config = {
+                 config = {
                     title: "What is your role in the Distribution Mall?",
                     description: "Are you looking for distribution partners or offering your network's services?",
-                    primary: {
-                        label: "I need distribution work",
-                        description: "Explore partnership opportunities.",
-                        action: () => router.push(mallHref),
-                    },
-                    secondary: {
-                        label: "I want to provide distribution",
-                        description: "List your network's capabilities.",
-                        action: () => router.push(baseSellHref),
-                    }
+                    primary: { label: "I need distribution work", description: "Explore partnership opportunities.", action: buyerAction },
+                    secondary: { label: "I want to provide distribution", description: "List your network's capabilities.", action: sellerAction }
                 };
                 break;
              case 'warehouse':
                 config = {
                     title: "What are you looking for in the Warehouse Mall?",
                     description: "Do you need to find storage space, or do you have warehouse space to offer?",
-                    primary: {
-                        label: "I am looking for a load",
-                        description: "Browse available storage.",
-                        action: () => router.push(mallHref),
-                    },
-                    secondary: {
-                        label: "I want to collect loads",
-                        description: "Offer your warehouse to the network.",
-                        action: () => router.push(baseSellHref),
-                    }
+                    primary: { label: "I am looking for storage", description: "Browse available storage.", action: buyerAction },
+                    secondary: { label: "I have space to offer", description: "Offer your warehouse to the network.", action: sellerAction }
                 };
                 break;
             case 'repurpose':
                 config = {
                     title: "What is your goal in the Repurpose Mall?",
                     description: "Are you looking to find parts and assets, or do you have decommissioned items to list?",
-                    primary: {
-                        label: "I am looking for an available asset",
-                        description: "Find parts for refurbishment or salvage.",
-                        action: () => router.push(mallHref),
-                    },
-                    secondary: {
-                        label: "I have an available asset",
-                        description: "List your decommissioned assets.",
-                        action: () => router.push(baseSellHref),
-                    }
+                    primary: { label: "I am looking for an available asset", description: "Find parts for refurbishment or salvage.", action: buyerAction },
+                    secondary: { label: "I have an available asset", description: "List your decommissioned assets.", action: sellerAction }
                 };
                 break;
             case 'aftermarket':
                 config = {
                     title: "What brings you to the Aftermarket Mall?",
                     description: "Are you here to find performance parts and accessories, or to sell them?",
-                    primary: {
-                        label: "I am looking for a product",
-                        description: "Browse aftermarket products.",
-                        action: () => router.push(mallHref),
-                    },
-                    secondary: {
-                        label: "I want to post a product",
-                        description: "List your products for sale.",
-                        action: () => router.push(baseSellHref),
-                    }
+                    primary: { label: "I am looking for a product", description: "Browse aftermarket products.", action: buyerAction },
+                    secondary: { label: "I want to post a product", description: "List your products for sale.", action: sellerAction }
                 };
                 break;
             case 'transporter':
                  config = {
                     title: "What is your role?",
                     description: "Are you looking to subcontract work, or are you offering your transport services?",
-                    primary: {
-                        label: "I need a Transporter",
-                        description: "Find a partner for a load.",
-                        action: () => router.push(mallHref),
-                    },
-                    secondary: {
-                        label: "I am a Transporter",
-                        description: "List your services.",
-                        action: () => router.push(baseSellHref),
-                    }
+                    primary: { label: "I need a Transporter", description: "Find a partner for a load.", action: buyerAction },
+                    secondary: { label: "I am a Transporter", description: "List your services.", action: sellerAction }
                 };
                 break;
             default: // Default for Supplier Mall
                 config = {
                     title: "What brings you here today?",
                     description: "Let us know if you're here to buy products/services or to sell your own. This helps us tailor your experience.",
-                    primary: {
-                        label: "I want to Buy",
-                        description: "Find parts, services, or loads.",
-                        action: () => router.push(mallHref),
-                    },
-                    secondary: {
-                        label: "I want to Sell",
-                        description: "List my products or services.",
-                        action: () => router.push(baseSellHref),
-                    }
+                    primary: { label: "I want to Buy", description: "Find parts, services, or loads.", action: buyerAction },
+                    secondary: { label: "I want to Sell", description: "List my products or services.", action: sellerAction }
                 };
         }
 
-        // Add analytics and close the modal to each action
+        // Add analytics and wrap the actions
         const wrapAction = (originalAction: () => void, intent: string) => () => {
             gtag.event({
                 action: 'intent_capture',
@@ -282,7 +235,6 @@ export default function MallPage() {
                 value: 1
             });
             originalAction();
-            setIsModalOpen(false);
         };
         
         config.primary!.action = wrapAction(config.primary!.action, 'primary');
@@ -296,6 +248,7 @@ export default function MallPage() {
         const config = createModalConfig(mallId, href);
         setModalConfig(config);
         setIsModalOpen(true);
+        setShowIncentiveStep(false);
     };
 
     return (
@@ -304,6 +257,9 @@ export default function MallPage() {
                 isOpen={isModalOpen}
                 onOpenChange={setIsModalOpen}
                 config={modalConfig}
+                incentiveStep={incentiveStep}
+                showIncentiveStep={showIncentiveStep}
+                setShowIncentiveStep={setShowIncentiveStep}
             />
 
             <section className="relative w-full h-80 bg-card">
