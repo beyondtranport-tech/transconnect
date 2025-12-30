@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -120,10 +121,8 @@ export default function DashboardContent() {
     }, [members]);
     
     const pendingApplications = useMemo(() => {
-        // Corrected filter to exclude all wallet-related types
-        const walletTypes = ['wallet_top_up', 'membership_payment'];
         return applications
-            .filter(app => (app.status === 'pending' || app.status === 'under_review') && !walletTypes.includes(app.fundingType))
+            .filter(app => (app.status === 'pending' || app.status === 'under_review'))
             .slice(0, 5);
     }, [applications]);
 
@@ -305,3 +304,5 @@ export default function DashboardContent() {
         </div>
     );
 }
+
+    

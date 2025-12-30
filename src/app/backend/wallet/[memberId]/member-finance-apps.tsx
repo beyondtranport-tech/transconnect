@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -26,7 +27,9 @@ const statusColors: { [key: string]: 'default' | 'secondary' | 'destructive' | '
   matched: 'default',
   rejected: 'destructive',
   funded: 'default',
-  quote: 'outline'
+  quote: 'outline',
+  membership_payment: 'default',
+  wallet_top_up: 'default'
 };
 
 const formatCurrency = (amount: number) => {
@@ -50,7 +53,8 @@ export default function MemberFinanceApps({ memberId }: { memberId: string }) {
     const fetchApplications = useCallback(async () => {
         setIsLoading(true);
         setError(null);
-        const result = await getMemberFinanceApplications(memberId);
+        // Pass 'all' to fetch every record without filtering
+        const result = await getMemberFinanceApplications(memberId, 'all'); 
         if (result.success) {
             setApplications(result.data || []);
         } else {
@@ -78,9 +82,9 @@ export default function MemberFinanceApps({ memberId }: { memberId: string }) {
     return (
         <Card>
             <CardHeader>
-                <CardTitle className="flex items-center gap-2"><FileText /> Finance Applications</CardTitle>
+                <CardTitle className="flex items-center gap-2"><FileText /> Finance Applications &amp; Wallet Records</CardTitle>
                 <CardDescription>
-                    A list of all finance applications and quotes for this member. You can delete incorrect records here.
+                    A complete list of all records in this member's 'financeApplications' subcollection, including quotes, enquiries, and wallet top-ups.
                 </CardDescription>
             </CardHeader>
             <CardContent>
