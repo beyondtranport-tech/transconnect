@@ -43,6 +43,7 @@ import {
   Landmark,
   ArrowRight,
   LineChart, // Import the new icon
+  Key,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -347,6 +348,24 @@ function DebugToolsContent() {
                         </div>
                     )}
                 </CardContent>
+            </Card>
+             <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2"><Key /> Base64 Encoder</CardTitle>
+                    <CardDescription>
+                        A secure, local tool to encode your service account JSON file for the environment variables.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <p className="text-sm text-muted-foreground">Use this tool to convert the JSON credentials file you downloaded from Firebase into a Base64 string required for the `FIREBASE_ADMIN_SDK_CONFIG_B64` variable.</p>
+                </CardContent>
+                <CardFooter>
+                    <Button asChild>
+                        <Link href="/tools/base64-encoder.html" target="_blank">
+                            Open Encoder Tool <ArrowRight className="ml-2 h-4 w-4" />
+                        </Link>
+                    </Button>
+                </CardFooter>
             </Card>
         </div>
     );
