@@ -41,7 +41,7 @@ export default function EnquiriesCard() {
         return query(
             collection(firestore, 'members', user.uid, 'financeApplications'), 
             where('fundingType', 'not-in', ['wallet_top_up', 'membership_payment', 'credit-top-up']),
-            where('status', 'not-in', ['quote']),
+            where('status', '!=', 'quote'),
             orderBy('status'),
             orderBy('createdAt', 'desc'),
             limit(5)
