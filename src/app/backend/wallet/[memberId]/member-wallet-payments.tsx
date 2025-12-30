@@ -4,9 +4,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Loader2, FileText, Trash2, ShieldAlert } from 'lucide-react';
+import { Loader2, Wallet, Trash2, ShieldAlert } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { getMemberFinanceApplications, deleteFinanceApplication } from '../../actions';
+import { getMemberWalletPayments, deleteFinanceApplication } from '../../actions';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -23,13 +23,8 @@ import {
 
 const statusColors: { [key: string]: 'default' | 'secondary' | 'destructive' | 'outline' } = {
   pending: 'secondary',
-  under_review: 'outline',
-  matched: 'default',
+  approved: 'default',
   rejected: 'destructive',
-  funded: 'default',
-  quote: 'outline',
-  membership_payment: 'default',
-  wallet_top_up: 'default'
 };
 
 const formatCurrency = (amount: number) => {
@@ -43,36 +38,36 @@ const formatDate = (isoString: string | undefined) => {
 };
 
 
-export default function MemberFinanceApps({ memberId }: { memberId: string }) {
-    const [applications, setApplications] = useState<any[] | null>(null);
+export default function MemberWalletPayments({ memberId }: { memberId: string }) {
+    const [payments, setPayments] = useState<any[] | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [isDeleting, setIsDeleting] = useState<string | null>(null);
     const { toast } = useToast();
 
-    const fetchApplications = useCallback(async () => {
+    const fetchPayments = useCallback(async () => {
         setIsLoading(true);
         setError(null);
-        // This action now fetches ALL records without filtering.
-        const result = await getMemberFinanceApplications(memberId); 
+        const result = await getMemberWalletPayments(memberId); 
         if (result.success) {
-            setApplications(result.data || []);
+            setPayments(result.data || []);
         } else {
-            setError(result.error || 'Failed to load applications.');
+            setError(result.error || 'Failed to load wallet payments.');
         }
         setIsLoading(false);
     }, [memberId]);
 
     useEffect(() => {
-        fetchApplications();
-    }, [fetchApplications]);
+        fetchPayments();
+    }, [fetchPayments]);
 
-    const handleDelete = async (applicationId: string) => {
-        setIsDeleting(applicationId);
-        const result = await deleteFinanceApplication(memberId, applicationId);
+    const handleDelete = async (paymentId: string) => {
+        setIsDeleting(paymentId);
+        // We use the generic finance app deleter for now as wallet payments live there too.
+        const result = await deleteFinanceApplication(memberId, paymentId);
         if (result.success) {
-            toast({ title: 'Application Deleted', description: 'The record has been permanently removed.' });
-            fetchApplications(); // Refresh the list
+            toast({ title: 'Record Deleted', description: 'The wallet payment record has been permanently removed.' });
+            fetchPayments(); // Refresh the list
         } else {
             toast({ variant: 'destructive', title: 'Deletion Failed', description: result.error });
         }
@@ -82,9 +77,9 @@ export default function MemberFinanceApps({ memberId }: { memberId: string }) {
     return (
         <Card>
             <CardHeader>
-                <CardTitle className="flex items-center gap-2"><FileText /> Finance Applications &amp; Wallet Records</CardTitle>
+                <CardTitle className="flex items-center gap-2"><Wallet /> Pending Wallet Records</CardTitle>
                 <CardDescription>
-                    A complete list of all records in this member's 'financeApplications' subcollection, including quotes, enquiries, and wallet top-ups.
+                    A list of all pending wallet top-ups and membership payments logged by this member.
                 </CardDescription>
             </CardHeader>
             <CardContent>
@@ -99,47 +94,47 @@ export default function MemberFinanceApps({ memberId }: { memberId: string }) {
                         <p className="text-sm">{error}</p>
                     </div>
                 )}
-                {!isLoading && applications && (
-                    applications.length > 0 ? (
+                {!isLoading && payments && (
+                    payments.length > 0 ? (
                         <div className="overflow-x-auto">
                         <Table>
                             <TableHeader>
                                 <TableRow>
                                     <TableHead>Date</TableHead>
-                                    <TableHead>Type</TableHead>
+                                    <TableHead>Description</TableHead>
                                     <TableHead>Amount</TableHead>
                                     <TableHead>Status</TableHead>
                                     <TableHead className="text-right">Action</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {applications.map(app => (
-                                    <TableRow key={app.id}>
-                                        <TableCell className="text-xs">{formatDate(app.createdAt)}</TableCell>
-                                        <TableCell className="font-medium capitalize">{app.fundingType?.replace(/_/g, ' ')}</TableCell>
-                                        <TableCell>{formatCurrency(app.amountRequested)}</TableCell>
+                                {payments.map(p => (
+                                    <TableRow key={p.id}>
+                                        <TableCell className="text-xs">{formatDate(p.createdAt)}</TableCell>
+                                        <TableCell className="font-medium capitalize">{p.description?.replace(/_/g, ' ')}</TableCell>
+                                        <TableCell>{formatCurrency(p.amount)}</TableCell>
                                         <TableCell>
-                                            <Badge variant={statusColors[app.status] || 'secondary'} className="capitalize">
-                                                {app.status?.replace(/_/g, ' ')}
+                                            <Badge variant={statusColors[p.status] || 'secondary'} className="capitalize">
+                                                {p.status?.replace(/_/g, ' ')}
                                             </Badge>
                                         </TableCell>
                                         <TableCell className="text-right">
                                             <AlertDialog>
                                                 <AlertDialogTrigger asChild>
                                                     <Button variant="destructive" size="sm" disabled={!!isDeleting}>
-                                                        {isDeleting === app.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                                                        {isDeleting === p.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
                                                     </Button>
                                                 </AlertDialogTrigger>
                                                 <AlertDialogContent>
                                                     <AlertDialogHeader>
                                                         <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
                                                         <AlertDialogDescription>
-                                                            This action cannot be undone. This will permanently delete the application record from the member's profile.
+                                                            This action cannot be undone. This will permanently delete this payment record.
                                                         </AlertDialogDescription>
                                                     </AlertDialogHeader>
                                                     <AlertDialogFooter>
                                                         <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                        <AlertDialogAction onClick={() => handleDelete(app.id)} variant="destructive">
+                                                        <AlertDialogAction onClick={() => handleDelete(p.id)} variant="destructive">
                                                             Yes, delete it
                                                         </AlertDialogAction>
                                                     </AlertDialogFooter>
@@ -153,21 +148,11 @@ export default function MemberFinanceApps({ memberId }: { memberId: string }) {
                         </div>
                     ) : (
                          <div className="text-center py-10 text-muted-foreground">
-                            <p>No finance applications or quotes found for this member.</p>
+                            <p>No pending wallet payments found for this member.</p>
                         </div>
                     )
                 )}
             </CardContent>
-            <CardFooter>
-                <div className="flex items-start gap-2 text-xs text-muted-foreground bg-muted p-3 rounded-lg">
-                    <ShieldAlert className="h-5 w-5 mt-0.5 flex-shrink-0" />
-                    <p>
-                        This is a powerful administrative tool. Deleting records is permanent and should only be done to correct errors. This action is not reversible.
-                    </p>
-                </div>
-            </CardFooter>
         </Card>
     )
 }
-
-    

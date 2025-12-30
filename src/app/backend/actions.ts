@@ -159,8 +159,10 @@ export async function getFinanceApplications(): Promise<{ success: boolean; data
             const subCollectionSnapshot = await adminDb.collection(`members/${memberId}/financeApplications`).get();
             subCollectionSnapshot.forEach(doc => {
                 const data = doc.data();
-                const serializedData = serializeTimestamps(data);
-                appMap.set(doc.id, { id: doc.id, ...serializedData } as FinanceApplication);
+                 if (!walletStatuses.includes(data.status)) {
+                    const serializedData = serializeTimestamps(data);
+                    appMap.set(doc.id, { id: doc.id, ...serializedData } as FinanceApplication);
+                 }
             });
         }
         
@@ -168,7 +170,7 @@ export async function getFinanceApplications(): Promise<{ success: boolean; data
         const topLevelSnapshot = await adminDb.collection('financeApplications').get();
         topLevelSnapshot.docs.forEach(doc => {
             const data = doc.data();
-            if (!appMap.has(doc.id)) {
+            if (!appMap.has(doc.id) && !walletStatuses.includes(data.status)) {
                 const serializedData = serializeTimestamps(data);
                 appMap.set(doc.id, { id: doc.id, ...serializedData } as FinanceApplication);
             }
@@ -198,7 +200,7 @@ export async function getMemberFinanceApplications(memberId: string): Promise<{ 
     }
     const adminDb = getFirestore(app);
     try {
-        const snapshot = await adminDb.collection(`members/${memberId}/financeApplications`).orderBy('createdAt', 'desc').get();
+        const snapshot = await adminDb.collection(`members/${memberId}/financeApplications`).get();
         let applications = snapshot.docs.map(doc => ({
             id: doc.id,
             ...serializeTimestamps(doc.data()),
@@ -407,10 +409,44 @@ export async function deleteTransaction(memberId: string, transactionId: string)
         return { success: false, error: error.message };
     }
 }
-    
 
-    
+export async function getMemberFundingRecords(memberId: string): Promise<{ success: boolean, data?: any[], error?: string }> {
+    const { app, error: initError } = getAdminApp();
+    if (initError || !app) return { success: false, error: initError };
+    const adminDb = getFirestore(app);
+    try {
+        const quotesSnapshot = await adminDb.collection(`members/${memberId}/quotes`).get();
+        const enquiriesSnapshot = await adminDb.collection(`members/${memberId}/enquiries`).get();
 
+        let records: any[] = [];
+        quotesSnapshot.forEach(doc => records.push({ id: doc.id, recordType: 'Quote', ...serializeTimestamps(doc.data()) }));
+        enquiriesSnapshot.forEach(doc => records.push({ id: doc.id, recordType: 'Enquiry', ...serializeTimestamps(doc.data()) }));
+        
+        records.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+        return { success: true, data: records };
+    } catch (error: any) {
+        console.error(`Error fetching funding records for member ${memberId}:`, error);
+        return { success: false, error: error.message };
+    }
+}
+
+export async function getMemberWalletPayments(memberId: string): Promise<{ success: boolean, data?: any[], error?: string }> {
+    const { app, error: initError } = getAdminApp();
+    if (initError || !app) return { success: false, error: initError };
+    const adminDb = getFirestore(app);
+    try {
+        const snapshot = await adminDb.collection(`members/${memberId}/walletPayments`).orderBy('createdAt', 'desc').get();
+        const payments = snapshot.docs.map(doc => ({
+            id: doc.id,
+            ...serializeTimestamps(doc.data()),
+        }));
+        return { success: true, data: payments };
+    } catch (error: any) {
+        console.error(`Error fetching wallet payments for member ${memberId}:`, error);
+        return { success: false, error: error.message };
+    }
+}
     
 
     

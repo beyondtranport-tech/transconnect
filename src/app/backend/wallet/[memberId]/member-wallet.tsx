@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect, useCallback } from 'react';
@@ -15,7 +16,8 @@ import { getMemberById } from '../../actions';
 import { useFirestore } from '@/firebase'; // Keep for posting transactions
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
-import MemberFinanceApps from './member-finance-apps';
+import MemberFundingRecords from './member-funding-records';
+import MemberWalletPayments from './member-wallet-payments';
 
 
 const formatCurrency = (amount: number) => new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(amount);
@@ -219,7 +221,8 @@ export default function MemberWallet({ memberId }: { memberId: string }) {
                 </CardFooter>
             </Card>
             
-            <MemberFinanceApps memberId={memberId} />
+            <MemberFundingRecords memberId={memberId} />
+            <MemberWalletPayments memberId={memberId} />
         </div>
     );
 }
