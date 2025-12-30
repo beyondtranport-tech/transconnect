@@ -4,7 +4,7 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, CheckCircle, XCircle, Key, FileJson, Database, ArrowRight } from 'lucide-react';
+import { Loader2, CheckCircle, XCircle, Key, FileJson, Database, ArrowRight, Server } from 'lucide-react';
 import { getAdminSdkDiagnostics, testFirestoreConnection } from './actions';
 import Link from 'next/link';
 
@@ -14,6 +14,8 @@ interface SdkDiagnostics {
     projectId?: string;
     clientEmail?: string;
     hasPrivateKey?: boolean;
+    rawVarSnippet?: string;
+    decodedJson?: string;
 }
 
 export default function DebugToolsContent() {
@@ -60,9 +62,39 @@ export default function DebugToolsContent() {
             </div>
             <Card>
                 <CardHeader>
+                    <CardTitle className="flex items-center gap-2"><Server /> Environment Variable Inspection</CardTitle>
+                    <CardDescription>
+                       Inspecting the raw and decoded environment variable as seen by the server.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    {isLoading ? (
+                         <div className="flex items-center gap-2 text-muted-foreground">
+                            <Loader2 className="h-5 w-5 animate-spin" />
+                            <span>Reading environment variable...</span>
+                        </div>
+                    ) : diagnostics ? (
+                        <>
+                            <div>
+                                <h3 className="font-semibold">Raw `FIREBASE_ADMIN_SDK_CONFIG_B64` Snippet</h3>
+                                <p className="text-xs text-muted-foreground">Shows the first and last 10 characters.</p>
+                                <pre className="mt-1 text-sm bg-muted p-2 rounded-md font-mono break-all">{diagnostics.rawVarSnippet || 'VARIABLE NOT FOUND'}</pre>
+                            </div>
+                             <div>
+                                <h3 className="font-semibold">Decoded JSON (Private Key Redacted)</h3>
+                                 <p className="text-xs text-muted-foreground">Shows the result after Base64 decoding.</p>
+                                <pre className="mt-1 text-sm bg-muted p-2 rounded-md font-mono break-all">{diagnostics.decodedJson || 'DECODING FAILED'}</pre>
+                            </div>
+                        </>
+                    ) : <p className="text-destructive">Could not load diagnostic data.</p>}
+                </CardContent>
+            </Card>
+
+            <Card>
+                <CardHeader>
                     <CardTitle className="flex items-center gap-2"><Key /> Firebase Admin SDK Diagnostics</CardTitle>
                     <CardDescription>
-                        This tool checks if the backend server has the correct credentials to perform admin actions.
+                        This tool checks if the decoded credentials appear valid before attempting a connection.
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -79,7 +111,7 @@ export default function DebugToolsContent() {
                         <ul className="space-y-3">
                             <li className="flex items-center gap-2">
                                 {renderCheck(diagnostics.isB64VarPresent)}
-                                <span>`FIREBASE_ADMIN_SDK_CONFIG_B64` variable is present in environment.</span>
+                                <span>`FIREBASE_ADMIN_SDK_CONFIG_B64` variable is present.</span>
                             </li>
                             <li className="flex items-center gap-2">
                                 {renderCheck(diagnostics.isJsonParsable)}
@@ -95,7 +127,7 @@ export default function DebugToolsContent() {
                             </li>
                              <li className="flex items-center gap-2">
                                 {renderCheck(!!diagnostics.hasPrivateKey)}
-                                <span>Private Key is present (not empty).</span>
+                                <span>Private Key is present in the decoded JSON (not empty).</span>
                             </li>
                         </ul>
                     ) : null}
@@ -144,7 +176,7 @@ export default function DebugToolsContent() {
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2"><FileJson /> Base64 Encoder Tool</CardTitle>
                     <CardDescription>
-                        Use this secure, local tool to encode your service account JSON file for the environment variables. Your data never leaves your browser.
+                        Use this secure, local tool to re-encode your service account JSON file. This can fix potential copy-paste or formatting issues. Your data never leaves your browser.
                     </CardDescription>
                 </CardHeader>
                 <CardFooter>

@@ -49,15 +49,25 @@ export async function getAdminSdkDiagnostics(): Promise<{
   projectId?: string;
   clientEmail?: string;
   hasPrivateKey?: boolean;
+  rawVarSnippet?: string;
+  decodedJson?: string;
 }> {
   const adminSdkConfigB64 = process.env.FIREBASE_ADMIN_SDK_CONFIG_B64;
   if (!adminSdkConfigB64) {
     return { isB64VarPresent: false, isJsonParsable: false };
   }
+  
+  const rawVarSnippet = `${adminSdkConfigB64.substring(0, 10)}...${adminSdkConfigB64.substring(adminSdkConfigB64.length - 10)}`;
 
   try {
     const decodedConfig = Buffer.from(adminSdkConfigB64, 'base64').toString('utf-8');
     const serviceAccount = JSON.parse(decodedConfig);
+    
+    // Create a redacted version for display
+    const redactedServiceAccount = { ...serviceAccount };
+    if (redactedServiceAccount.private_key) {
+        redactedServiceAccount.private_key = "[REDACTED]";
+    }
     
     return {
       isB64VarPresent: true,
@@ -65,9 +75,11 @@ export async function getAdminSdkDiagnostics(): Promise<{
       projectId: serviceAccount.project_id,
       clientEmail: serviceAccount.client_email,
       hasPrivateKey: !!serviceAccount.private_key,
+      rawVarSnippet: rawVarSnippet,
+      decodedJson: JSON.stringify(redactedServiceAccount, null, 2),
     };
   } catch (e) {
-    return { isB64VarPresent: true, isJsonParsable: false };
+    return { isB64VarPresent: true, isJsonParsable: false, rawVarSnippet: rawVarSnippet, decodedJson: `Error parsing JSON: ${(e as Error).message}` };
   }
 }
 
@@ -278,7 +290,7 @@ export async function getShops(): Promise<{ success: boolean; data?: Shop[]; err
                     id: doc.id,
                     ...serializedData,
                  } as Shop;
-                 shopMap.set(shop.id, shop);
+                 shopMap.set(doc.id, shop);
             }
         });
 
