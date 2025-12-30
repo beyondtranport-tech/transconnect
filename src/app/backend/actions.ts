@@ -1,55 +1,8 @@
 
 'use server';
 
-import { initializeApp, getApps, App, cert, ServiceAccount } from 'firebase-admin/app';
 import { getFirestore, Timestamp } from 'firebase-admin/firestore';
-import { getStorage } from 'firebase-admin/storage';
-
-function getAdminApp(): { app: App | null, error: string | null } {
-    const adminSdkConfigB64 = process.env.FIREBASE_ADMIN_SDK_CONFIG_B64;
-
-    if (!adminSdkConfigB64) {
-        const error = "Admin SDK Error: FIREBASE_ADMIN_SDK_CONFIG_B64 is not defined in the environment. Please add it to your environment variables.";
-        console.error(error);
-        return { app: null, error };
-    }
-
-    try {
-        const decodedConfig = Buffer.from(adminSdkConfigB64, 'base64').toString('utf-8');
-        const serviceAccount = JSON.parse(decodedConfig) as ServiceAccount;
-        
-        if (!serviceAccount.private_key) {
-             const error = "Admin SDK Error: Parsed service account is missing 'private_key'. This is likely due to an issue with the environment variable decoding.";
-             console.error(error, "Decoded length:", decodedConfig.length);
-             return { app: null, error };
-        }
-
-        const adminAppName = 'firebase-admin-app-transconnect';
-        const existingApp = getApps().find(app => app.name === adminAppName);
-
-        if (existingApp) {
-            return { app: existingApp, error: null };
-        }
-        
-        const app = initializeApp({
-            credential: cert(serviceAccount),
-            storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-        }, adminAppName);
-        return { app, error: null };
-
-    } catch (error: any) {
-        console.error("Admin SDK Initialization Failed:", error.message);
-        return { app: null, error: `Firebase Admin SDK initialization failed: ${error.message}` };
-    }
-}
-
-export async function checkAdminSdk(): Promise<{ success: boolean; error?: string }> {
-    const { app, error } = getAdminApp();
-    if (error || !app) {
-        return { success: false, error: error || 'Firebase Admin SDK could not be initialized.' };
-    }
-    return { success: true };
-}
+import { getAdminApp } from '@/lib/firebase-admin';
 
 
 // Helper to convert Firestore Timestamps to JSON-serializable strings
