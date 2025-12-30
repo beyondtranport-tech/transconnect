@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { Suspense } from 'react';
@@ -48,29 +49,31 @@ function ApplyForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const defaultFundingType = searchParams.get('type') || '';
+  const defaultAmount = searchParams.get('amount');
 
   useEffect(() => {
     if (!isUserLoading && !user) {
-      router.replace(`/signin?redirect=/funding/apply${defaultFundingType ? `?type=${defaultFundingType}` : ''}`);
+      const redirectUrl = `/funding/apply${defaultFundingType ? `?type=${defaultFundingType}` : ''}${defaultAmount ? `&amount=${defaultAmount}` : ''}`;
+      router.replace(`/signin?redirect=${encodeURIComponent(redirectUrl)}`);
     }
-  }, [user, isUserLoading, router, defaultFundingType]);
+  }, [user, isUserLoading, router, defaultFundingType, defaultAmount]);
 
   const form = useForm<ApplicationFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      fundingType: defaultFundingType,
-      amountRequested: 0,
+      fundingType: defaultFundingType || '',
+      amountRequested: defaultAmount ? Number(defaultAmount) : 0,
       purpose: '',
     },
   });
   
   useEffect(() => {
       form.reset({
-          fundingType: defaultFundingType,
-          amountRequested: 0,
+          fundingType: defaultFundingType || '',
+          amountRequested: defaultAmount ? Number(defaultAmount) : 0,
           purpose: '',
       })
-  }, [defaultFundingType, form]);
+  }, [defaultFundingType, defaultAmount, form]);
 
 
   const onSubmit = async (values: ApplicationFormValues) => {

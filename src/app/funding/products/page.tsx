@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { Suspense, useState, useEffect } from 'react';
@@ -14,6 +15,7 @@ import { Label } from '@/components/ui/label';
 import { useUser, getClientSideAuthToken } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
+import { CheckCircle } from 'lucide-react';
 
 const productsData = {
     loans: {
@@ -68,7 +70,7 @@ const formatPrice = (price: number) => {
     return formattedPrice.replace(/\s/g, ' ');
 };
 
-function QuoteCalculator({ product, onQuoteSaved }: { product: { id: string; title: string }, onQuoteSaved: () => void }) {
+function QuoteCalculator({ product, onQuoteSaved, onOpenChange }: { product: { id: string; title: string }, onQuoteSaved: () => void, onOpenChange: (open: boolean) => void }) {
     const { user } = useUser();
     const router = useRouter();
     const { toast } = useToast();
@@ -78,6 +80,7 @@ function QuoteCalculator({ product, onQuoteSaved }: { product: { id: string; tit
     const [term, setTerm] = useState(60);
     const [monthlyPayment, setMonthlyPayment] = useState(0);
     const [totalRepayment, setTotalRepayment] = useState(0);
+    const [view, setView] = useState('calculator'); // 'calculator' or 'conversion'
 
     useEffect(() => {
         const monthlyRate = rate / 100 / 12;
@@ -130,14 +133,37 @@ function QuoteCalculator({ product, onQuoteSaved }: { product: { id: string; tit
                 title: 'Quote Saved!',
                 description: 'Your quote has been saved to your profile.',
             });
-            onQuoteSaved();
+            setView('conversion'); // Switch to conversion view
         } catch (error: any) {
             toast({ variant: 'destructive', title: 'Save Failed', description: error.message });
         } finally {
             setIsSaving(false);
         }
     };
+    
+    const handleStartEnquiry = () => {
+        onOpenChange(false);
+        router.push(`/funding/apply?type=${product.id}&amount=${amount}`);
+    };
 
+    if (view === 'conversion') {
+        return (
+             <DialogContent>
+                <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2"><CheckCircle className="h-6 w-6 text-green-500" /> Quote Saved Successfully</DialogTitle>
+                    <DialogDescription>
+                        Your quote has been saved to your account. Would you like to proceed with a formal enquiry based on this quote?
+                    </DialogDescription>
+                </DialogHeader>
+                <DialogFooter>
+                    <Button variant="outline" onClick={() => onOpenChange(false)}>No, Not Yet</Button>
+                    <Button onClick={handleStartEnquiry}>
+                       Start Enquiry <ArrowRight className="ml-2 h-4 w-4" />
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        )
+    }
 
     return (
         <DialogContent>
@@ -197,7 +223,7 @@ function ProductTypesContent() {
     const [openDialogs, setOpenDialogs] = useState<Record<string, boolean>>({});
 
     const handleQuoteSaved = (productId: string) => {
-        setOpenDialogs(prev => ({ ...prev, [productId]: false }));
+        // The dialog logic is now handled inside the QuoteCalculator component
     };
 
     const data = productsData[agreement] || { title: "Products", icon: Landmark, items: [] };
@@ -238,7 +264,11 @@ function ProductTypesContent() {
                                     </Button>
                                 </CardFooter>
                             </Card>
-                            <QuoteCalculator product={product} onQuoteSaved={() => handleQuoteSaved(product.id)} />
+                            <QuoteCalculator 
+                                product={product} 
+                                onQuoteSaved={() => handleQuoteSaved(product.id)}
+                                onOpenChange={(isOpen) => setOpenDialogs(prev => ({...prev, [product.id]: isOpen}))} 
+                            />
                         </Dialog>
                     ))}
                 </div>

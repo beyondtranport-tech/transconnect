@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { Button } from "@/components/ui/button";
@@ -87,6 +88,13 @@ export default function FundingPage() {
                         <div className="mt-8 text-left space-y-4 text-muted-foreground bg-card p-8 rounded-lg shadow-sm">
                             <p className="text-lg">At TransConnect, our business is built on empowering yours through intelligent finance. We've redesigned the funding process to make it work for you, not against you. Our systems put you in control, providing access to a broad range of products and unique, industry-specific solutions designed to help you do what you do best—managing and growing your business.</p>
                             <p className="text-lg">We see the opportunities that others miss. Our expertise lies in our ability to take something that seems 'un-financeable', structure it correctly, and convert it into a viable funding opportunity. We don’t want to run your business; we want to fuel it.</p>
+                        </div>
+                        <div className="mt-12">
+                             <Button asChild size="lg">
+                                <Link href={user ? '/funding/apply' : '/join?redirect=/funding/apply'}>
+                                    Start Your Application <ArrowRight className="ml-2 h-5 w-5" />
+                                </Link>
+                            </Button>
                         </div>
                     </div>
                 </div>
