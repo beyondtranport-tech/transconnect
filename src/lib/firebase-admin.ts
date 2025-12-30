@@ -7,7 +7,7 @@ export function getAdminApp(): { app: App | null; error: string | null } {
   const adminSdkConfigB64 = process.env.FIREBASE_ADMIN_SDK_CONFIG_B64;
 
   if (!adminSdkConfigB64) {
-    const error = "Admin SDK Error: FIREBASE_ADMIN_SDK_CONFIG_B64 is not defined in the environment.";
+    const error = "Admin SDK Error: FIREBASE_ADMIN_SDK_CONFIG_B64 is not defined in the environment. Please add it to your environment variables.";
     console.error(error);
     return { app: null, error };
   }
