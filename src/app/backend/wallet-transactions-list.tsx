@@ -1,13 +1,26 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
-import { getAllTransactions, getMembers } from './actions';
+import { getAllTransactions, getMembers, deleteTransaction } from './actions';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Loader2, DollarSign } from 'lucide-react';
+import { Loader2, DollarSign, Trash2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
+import { useToast } from '@/hooks/use-toast';
 
 interface Transaction {
     id: string;
@@ -44,37 +57,51 @@ export default function WalletTransactionsList() {
     const [transactions, setTransactions] = useState<Transaction[] | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [isDeleting, setIsDeleting] = useState<string | null>(null);
+    const { toast } = useToast();
+
+    async function fetchAllTransactions() {
+        // Don't set loading to true here to avoid flicker on re-fetch
+        try {
+            const [transactionsResult, membersResult] = await Promise.all([
+                getAllTransactions(),
+                getMembers()
+            ]);
+
+            if (transactionsResult.success && transactionsResult.data && membersResult.success && membersResult.data) {
+                const memberMap = new Map(membersResult.data.map(m => [m.id, `${m.firstName} ${m.lastName}`]));
+                
+                const transactionsWithNames = transactionsResult.data.map(tx => ({
+                    ...tx,
+                    memberName: memberMap.get(tx.memberId) || 'Unknown Member'
+                }));
+
+                setTransactions(transactionsWithNames as Transaction[]);
+            } else {
+                setError(transactionsResult.error || membersResult.error || 'Failed to fetch data.');
+            }
+        } catch (e: any) {
+            setError(e.message || 'An unexpected error occurred.');
+        } finally {
+            setIsLoading(false);
+        }
+    }
 
     useEffect(() => {
-        async function fetchAllTransactions() {
-            setIsLoading(true);
-            try {
-                const [transactionsResult, membersResult] = await Promise.all([
-                    getAllTransactions(),
-                    getMembers()
-                ]);
-
-                if (transactionsResult.success && transactionsResult.data && membersResult.success && membersResult.data) {
-                    const memberMap = new Map(membersResult.data.map(m => [m.id, `${m.firstName} ${m.lastName}`]));
-                    
-                    const transactionsWithNames = transactionsResult.data.map(tx => ({
-                        ...tx,
-                        memberName: memberMap.get(tx.memberId) || 'Unknown Member'
-                    }));
-
-                    setTransactions(transactionsWithNames as Transaction[]);
-                } else {
-                    setError(transactionsResult.error || membersResult.error || 'Failed to fetch data.');
-                }
-            } catch (e: any) {
-                setError(e.message || 'An unexpected error occurred.');
-            } finally {
-                setIsLoading(false);
-            }
-        }
-
         fetchAllTransactions();
     }, []);
+    
+    const handleDelete = async (memberId: string, transactionId: string) => {
+        setIsDeleting(transactionId);
+        const result = await deleteTransaction(memberId, transactionId);
+        if (result.success) {
+            toast({ title: 'Transaction Deleted' });
+            fetchAllTransactions(); // Re-fetch data to update the list
+        } else {
+            toast({ variant: 'destructive', title: 'Deletion Failed', description: result.error });
+        }
+        setIsDeleting(null);
+    };
 
     return (
         <Card>
@@ -105,6 +132,7 @@ export default function WalletTransactionsList() {
                                         <TableHead>Description</TableHead>
                                         <TableHead>Status</TableHead>
                                         <TableHead className="text-right">Amount</TableHead>
+                                        <TableHead className="text-right">Actions</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
@@ -123,6 +151,29 @@ export default function WalletTransactionsList() {
                                             </TableCell>
                                             <TableCell className={`text-right font-mono font-semibold ${tx.type === 'credit' ? 'text-green-600' : 'text-destructive'}`}>
                                                 {tx.type === 'credit' ? '+' : '-'} {formatPrice(tx.amount)}
+                                            </TableCell>
+                                            <TableCell className="text-right">
+                                                <AlertDialog>
+                                                    <AlertDialogTrigger asChild>
+                                                        <Button variant="ghost" size="icon" disabled={isDeleting === tx.id}>
+                                                            {isDeleting === tx.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4 text-destructive" />}
+                                                        </Button>
+                                                    </AlertDialogTrigger>
+                                                    <AlertDialogContent>
+                                                        <AlertDialogHeader>
+                                                            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                                            <AlertDialogDescription>
+                                                                This action cannot be undone. This will permanently delete this transaction record.
+                                                            </AlertDialogDescription>
+                                                        </AlertDialogHeader>
+                                                        <AlertDialogFooter>
+                                                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                            <AlertDialogAction onClick={() => handleDelete(tx.memberId, tx.id)} className="bg-destructive hover:bg-destructive/90">
+                                                                Yes, delete it
+                                                            </AlertDialogAction>
+                                                        </AlertDialogFooter>
+                                                    </AlertDialogContent>
+                                                </AlertDialog>
                                             </TableCell>
                                         </TableRow>
                                     ))}

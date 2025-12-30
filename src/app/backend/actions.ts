@@ -159,7 +159,7 @@ export async function getFinanceApplications(): Promise<{ success: boolean; data
             const subCollectionSnapshot = await adminDb.collection(`members/${memberId}/financeApplications`).get();
             subCollectionSnapshot.forEach(doc => {
                 const data = doc.data();
-                // Server-side filter to exclude wallet transactions
+                // Server-side filter to exclude wallet transactions from this view
                 if (!walletStatuses.includes(data.status)) {
                     const serializedData = serializeTimestamps(data);
                     appMap.set(doc.id, { id: doc.id, ...serializedData } as FinanceApplication);
@@ -353,16 +353,14 @@ export async function approveShop(shopId: string, ownerId: string): Promise<{ su
 export async function getAllTransactions(): Promise<{ success: boolean; data?: any[]; error?: string }> {
     const { app, error: initError } = getAdminApp();
     if (initError || !app) {
-        return { success: false, error: initError || 'Firebase Admin SDK could not be initialized.' };
+        return { success: false, error: initError };
     }
     const adminDb = getFirestore(app);
 
     try {
-        // 1. Get all members
-        const membersSnapshot = await adminDb.collection('members').get();
         const allTransactions = [];
+        const membersSnapshot = await adminDb.collection('members').get();
 
-        // 2. For each member, query their transactions subcollection
         for (const memberDoc of membersSnapshot.docs) {
             const memberId = memberDoc.id;
             const transactionsSnapshot = await adminDb.collection(`members/${memberId}/transactions`).get();
@@ -371,28 +369,40 @@ export async function getAllTransactions(): Promise<{ success: boolean; data?: a
                 const serializedData = serializeTimestamps(data);
                 allTransactions.push({
                     id: doc.id,
+                    memberId: memberId, // Add memberId to the transaction object
                     ...serializedData,
-                } as any);
+                });
             });
         }
         
-        // 3. Sort all transactions by date
         const sortedTransactions = allTransactions.sort((a, b) => {
             const dateA = a.date ? new Date(a.date).getTime() : 0;
             const dateB = b.date ? new Date(b.date).getTime() : 0;
-            return dateB - dateA; // Most recent first
+            return dateB - dateA;
         });
-
 
         return { success: true, data: sortedTransactions };
     } catch (error: any) {
-        console.error('Error fetching all transactions with admin SDK:', error);
+        console.error('Error fetching all transactions:', error);
         return { success: false, error: error.message };
     }
 }
 
-    
-
+export async function deleteTransaction(memberId: string, transactionId: string): Promise<{ success: boolean; error?: string }> {
+    const { app, error: initError } = getAdminApp();
+    if (initError || !app) {
+        return { success: false, error: initError || 'Firebase Admin SDK could not be initialized.' };
+    }
+    const adminDb = getFirestore(app);
+    try {
+        const docRef = adminDb.doc(`members/${memberId}/transactions/${transactionId}`);
+        await docRef.delete();
+        return { success: true };
+    } catch (error: any) {
+        console.error(`Error deleting transaction ${transactionId} for member ${memberId}:`, error);
+        return { success: false, error: error.message };
+    }
+}
     
 
     
