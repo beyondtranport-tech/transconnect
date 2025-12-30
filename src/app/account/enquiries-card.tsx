@@ -1,21 +1,33 @@
 'use client';
 
-import { useUser, useFirestore, useMemoFirebase, useCollection } from '@/firebase';
+import { useUser, useFirestore, useMemoFirebase, useCollection, getClientSideAuthToken } from '@/firebase';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Loader2, FileText, MoreVertical } from 'lucide-react';
+import { Loader2, FileText, MoreVertical, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { collection, query, orderBy, limit } from 'firebase/firestore';
 import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { useToast } from '@/hooks/use-toast';
 
 const formatCurrency = (amount: number) => {
     if (typeof amount !== 'number') return 'N/A';
@@ -40,6 +52,8 @@ const statusColors: { [key: string]: 'default' | 'secondary' | 'destructive' | '
 export default function EnquiriesCard() {
     const { user } = useUser();
     const firestore = useFirestore();
+    const { toast } = useToast();
+    const [isDeleting, setIsDeleting] = useState<string | null>(null);
 
     const enquiriesQuery = useMemoFirebase(() => {
         if (!firestore || !user) return null;
@@ -50,7 +64,35 @@ export default function EnquiriesCard() {
         );
     }, [firestore, user]);
 
-    const { data: enquiries, isLoading, error } = useCollection(enquiriesQuery);
+    const { data: enquiries, isLoading, error, forceRefresh } = useCollection(enquiriesQuery);
+
+    const handleDelete = async (enquiryId: string) => {
+        if (!user) return;
+        setIsDeleting(enquiryId);
+        try {
+            const token = await getClientSideAuthToken();
+            if (!token) throw new Error("Authentication failed.");
+
+            const response = await fetch('/api/deleteUserDoc', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ path: `members/${user.uid}/enquiries/${enquiryId}` }),
+            });
+
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.error || "Failed to delete.");
+            
+            toast({ title: "Enquiry Deleted", description: "The enquiry has been removed." });
+            forceRefresh(); // Refresh the list
+        } catch (e: any) {
+            toast({ variant: 'destructive', title: "Delete Failed", description: e.message });
+        } finally {
+            setIsDeleting(null);
+        }
+    };
 
     if (user && user.email === 'beyondtransport@gmail.com') {
         return null;
@@ -119,7 +161,31 @@ export default function EnquiriesCard() {
                                                 </DropdownMenuTrigger>
                                                 <DropdownMenuContent align="end">
                                                     <DropdownMenuItem>View</DropdownMenuItem>
-                                                    <DropdownMenuItem className="text-destructive">Delete</DropdownMenuItem>
+                                                    <AlertDialog>
+                                                        <AlertDialogTrigger asChild>
+                                                            <DropdownMenuItem
+                                                                className="text-destructive"
+                                                                onSelect={(e) => e.preventDefault()}
+                                                             >
+                                                                {isDeleting === enquiry.id ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
+                                                                Delete
+                                                            </DropdownMenuItem>
+                                                        </AlertDialogTrigger>
+                                                        <AlertDialogContent>
+                                                            <AlertDialogHeader>
+                                                                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                                                <AlertDialogDescription>
+                                                                    This action cannot be undone. This will permanently delete your enquiry.
+                                                                </AlertDialogDescription>
+                                                            </AlertDialogHeader>
+                                                            <AlertDialogFooter>
+                                                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                                <AlertDialogAction onClick={() => handleDelete(enquiry.id)} variant="destructive">
+                                                                    Delete
+                                                                </AlertDialogAction>
+                                                            </AlertDialogFooter>
+                                                        </AlertDialogContent>
+                                                    </AlertDialog>
                                                 </DropdownMenuContent>
                                             </DropdownMenu>
                                         </TableCell>

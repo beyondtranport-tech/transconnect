@@ -1,9 +1,9 @@
 'use client';
 
-import { useUser, useFirestore, useMemoFirebase, useCollection } from '@/firebase';
+import { useUser, useFirestore, useMemoFirebase, useCollection, getClientSideAuthToken } from '@/firebase';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Loader2, FileText, MoreVertical } from 'lucide-react';
+import { Loader2, FileText, MoreVertical, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { collection, query, orderBy, limit } from 'firebase/firestore';
@@ -14,7 +14,20 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { useToast } from '@/hooks/use-toast';
+import { useState } from 'react';
 
 const formatCurrency = (amount: number) => {
     if (typeof amount !== 'number') return 'N/A';
@@ -31,6 +44,8 @@ const formatDate = (timestamp: any) => {
 export default function QuotesCard() {
     const { user } = useUser();
     const firestore = useFirestore();
+    const { toast } = useToast();
+    const [isDeleting, setIsDeleting] = useState<string | null>(null);
 
     const quotesQuery = useMemoFirebase(() => {
         if (!firestore || !user) return null;
@@ -41,7 +56,36 @@ export default function QuotesCard() {
         );
     }, [firestore, user]);
 
-    const { data: quotes, isLoading, error } = useCollection(quotesQuery);
+    const { data: quotes, isLoading, error, forceRefresh } = useCollection(quotesQuery);
+    
+    const handleDelete = async (quoteId: string) => {
+        if (!user) return;
+        setIsDeleting(quoteId);
+        try {
+            const token = await getClientSideAuthToken();
+            if (!token) throw new Error("Authentication failed.");
+
+            const response = await fetch('/api/deleteUserDoc', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ path: `members/${user.uid}/quotes/${quoteId}` }),
+            });
+
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.error || "Failed to delete.");
+            
+            toast({ title: "Quote Deleted", description: "The quote has been removed from your saved list." });
+            forceRefresh();
+        } catch (e: any) {
+            toast({ variant: 'destructive', title: "Delete Failed", description: e.message });
+        } finally {
+            setIsDeleting(null);
+        }
+    };
+
 
     if (user && user.email === 'beyondtransport@gmail.com') {
         return null;
@@ -106,7 +150,31 @@ export default function QuotesCard() {
                                                 </DropdownMenuTrigger>
                                                 <DropdownMenuContent align="end">
                                                     <DropdownMenuItem>View</DropdownMenuItem>
-                                                    <DropdownMenuItem className="text-destructive">Delete</DropdownMenuItem>
+                                                    <AlertDialog>
+                                                        <AlertDialogTrigger asChild>
+                                                            <DropdownMenuItem
+                                                                className="text-destructive"
+                                                                onSelect={(e) => e.preventDefault()}
+                                                            >
+                                                               {isDeleting === quote.id ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
+                                                               Delete
+                                                            </DropdownMenuItem>
+                                                        </AlertDialogTrigger>
+                                                        <AlertDialogContent>
+                                                            <AlertDialogHeader>
+                                                                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                                                <AlertDialogDescription>
+                                                                    This action cannot be undone. This will permanently delete your saved quote.
+                                                                </AlertDialogDescription>
+                                                            </AlertDialogHeader>
+                                                            <AlertDialogFooter>
+                                                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                                <AlertDialogAction onClick={() => handleDelete(quote.id)} variant="destructive">
+                                                                    Delete
+                                                                </AlertDialogAction>
+                                                            </AlertDialogFooter>
+                                                        </AlertDialogContent>
+                                                    </AlertDialog>
                                                 </DropdownMenuContent>
                                             </DropdownMenu>
                                         </TableCell>
