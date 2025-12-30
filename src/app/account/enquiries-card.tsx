@@ -37,12 +37,12 @@ export default function EnquiriesCard() {
 
     const enquiriesQuery = useMemoFirebase(() => {
         if (!firestore || !user) return null;
-        // This query now explicitly excludes all wallet-related types.
+        // This query now explicitly excludes all wallet-related types and quotes.
         return query(
             collection(firestore, 'members', user.uid, 'financeApplications'), 
             where('fundingType', 'not-in', ['wallet_top_up', 'membership_payment', 'credit-top-up']),
-            where('status', '!=', 'quote'),
-            orderBy('fundingType'),
+            where('status', 'not-in', ['quote']),
+            orderBy('status'),
             orderBy('createdAt', 'desc'),
             limit(5)
         );
