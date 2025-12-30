@@ -16,14 +16,14 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Landmark, ArrowLeft, ArrowRight, Send } from 'lucide-react';
+import { Loader2, Landmark, ArrowLeft, ArrowRight, Send, CheckCircle } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useUser, getClientSideAuthToken } from '@/firebase';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { Progress } from '@/components/ui/progress';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { cn } from '@/lib/utils';
 
 const fundingNeeds = {
   'business': 'My business',
@@ -52,6 +52,14 @@ const combinedSchema = step1Schema.merge(step2Schema).merge(step3Schema);
 
 type ApplicationFormValues = z.infer<typeof combinedSchema>;
 
+const steps = [
+  { id: 'Need', name: 'Step 1: Your Need', fields: ['fundingNeed'] },
+  { id: 'Reason', name: 'Step 2: The Reason', fields: ['fundingReason', 'purpose'] },
+  { id: 'Amount', name: 'Step 3: The Amount', fields: ['amountRequested'] },
+  { id: 'Submit', name: 'Step 4: Review & Submit' },
+];
+
+
 function ApplyForm() {
   const { toast } = useToast();
   const router = useRouter();
@@ -63,10 +71,10 @@ function ApplyForm() {
   const methods = useForm<ApplicationFormValues>({
     resolver: zodResolver(combinedSchema),
     defaultValues: {
-      fundingNeed: '',
+      fundingNeed: searchParams.get('type') || '',
       fundingReason: '',
       purpose: '',
-      amountRequested: 0,
+      amountRequested: Number(searchParams.get('amount')) || 0,
     },
   });
   
@@ -80,7 +88,7 @@ function ApplyForm() {
         isValid = await methods.trigger("amountRequested");
     }
 
-    if (isValid && currentStep < 3) {
+    if (isValid && currentStep < steps.length - 1) {
       setCurrentStep(currentStep + 1);
     }
   };
@@ -93,13 +101,12 @@ function ApplyForm() {
       return;
     }
     
-    // Map user-centric need to a primary agreement type for backend processing
     const getAgreementType = (need: string) => {
         switch(need) {
             case 'business': return 'loan';
             case 'equipment':
             case 'vehicles':
-                return 'installment-sale'; // or lease, default to one
+                return 'installment-sale';
             case 'cashflow': return 'discounting';
             default: return 'loan';
         }
@@ -112,8 +119,8 @@ function ApplyForm() {
         const enquiryData = {
             applicantId: user.uid,
             status: 'pending',
-            fundingType: methods.getValues('fundingNeed'), // The user-centric type
-            agreementType: getAgreementType(methods.getValues('fundingNeed')), // The mapped agreement type
+            fundingType: methods.getValues('fundingNeed'),
+            agreementType: getAgreementType(methods.getValues('fundingNeed')),
             amountRequested: values.amountRequested,
             purpose: values.purpose,
             fundingReason: values.fundingReason,
@@ -133,7 +140,7 @@ function ApplyForm() {
             title: 'Enquiry Submitted!',
             description: 'Thank you. A funding specialist will be in touch shortly.',
         });
-        router.push('/account');
+        router.push('/account?view=dashboard');
     } catch (error: any) {
         toast({ variant: 'destructive', title: 'Submission Failed', description: error.message });
     } finally {
@@ -145,19 +152,37 @@ function ApplyForm() {
     return <div className="flex justify-center items-center py-20"><Loader2 className="h-12 w-12 animate-spin text-primary" /></div>;
   }
 
-  const steps = [
-    { name: 'Need', fields: ['fundingNeed'] },
-    { name: 'Reason', fields: ['fundingReason', 'purpose'] },
-    { name: 'Amount', fields: ['amountRequested'] },
-    { name: 'Submit' },
-  ];
-
   return (
     <Card className="w-full max-w-2xl">
       <CardHeader>
         <CardTitle className="flex items-center gap-2"><Landmark /> Funding Application</CardTitle>
-        <CardDescription>Let's find the right funding for you. Complete the steps below.</CardDescription>
-        <Progress value={((currentStep + 1) / steps.length) * 100} className="mt-4" />
+        <CardDescription>
+          {steps[currentStep].name}
+        </CardDescription>
+        
+        <div className="flex items-center pt-4">
+            {steps.map((step, index) => (
+                <React.Fragment key={step.id}>
+                    <div className="flex flex-col items-center">
+                        <div
+                            className={cn(
+                                "h-8 w-8 rounded-full flex items-center justify-center font-bold",
+                                currentStep > index ? "bg-primary text-primary-foreground" :
+                                currentStep === index ? "bg-primary text-primary-foreground border-2 border-primary-foreground ring-2 ring-primary" :
+                                "bg-muted text-muted-foreground"
+                            )}
+                        >
+                            {currentStep > index ? <CheckCircle className="h-5 w-5" /> : index + 1}
+                        </div>
+                         <p className={cn("text-xs mt-1", currentStep >= index ? "text-primary font-semibold" : "text-muted-foreground")}>{step.id}</p>
+                    </div>
+                    {index < steps.length - 1 && (
+                        <div className={cn("flex-1 h-1 mb-4", currentStep > index ? "bg-primary" : "bg-muted")} />
+                    )}
+                </React.Fragment>
+            ))}
+        </div>
+
       </CardHeader>
       <CardContent>
         <FormProvider {...methods}>
@@ -251,9 +276,9 @@ function ApplyForm() {
             )}
             
             {currentStep === 3 && (
-                <div className="text-center">
+                <div className="text-center py-4">
                     <h3 className="text-xl font-semibold">Ready to Submit?</h3>
-                    <p className="text-muted-foreground mt-2">Please review your information before submitting the enquiry.</p>
+                    <p className="text-muted-foreground mt-2">Please review your information before submitting the enquiry. A funding specialist will contact you shortly to discuss the next steps.</p>
                 </div>
             )}
 
