@@ -103,7 +103,7 @@ function QuoteCalculator({ product, onQuoteSaved }: { product: { id: string; tit
 
             const quoteData = {
                 applicantId: user.uid,
-                status: 'pending',
+                status: 'quote',
                 fundingType: product.id,
                 amountRequested: amount,
                 businessDetails: {

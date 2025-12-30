@@ -38,20 +38,17 @@ export default function EnquiriesCard() {
 
     const enquiriesQuery = useMemoFirebase(() => {
         if (!firestore || !user) return null;
-        // This is a valid query. We fetch all non-wallet applications and then filter out 'quote' on the client.
+        // This is a valid query. We fetch all non-wallet applications that are NOT quotes.
         return query(
             collection(firestore, 'members', user.uid, 'financeApplications'), 
             where('fundingType', 'not-in', ['wallet_top_up', 'membership_payment', 'credit-top-up']),
+            where('status', 'in', ['pending', 'under_review', 'matched', 'rejected', 'funded']),
             orderBy('createdAt', 'desc'),
-            limit(10) // Fetch a bit more to account for client-side filtering
+            limit(5)
         );
     }, [firestore, user]);
 
-    const { data, isLoading, error } = useCollection(enquiriesQuery);
-
-    const enquiries = useMemo(() => {
-        return data?.filter(item => item.status !== 'quote').slice(0, 5) || [];
-    }, [data]);
+    const { data: enquiries, isLoading, error } = useCollection(enquiriesQuery);
 
     if (user && user.email === 'beyondtransport@gmail.com') {
         return null;
@@ -72,7 +69,7 @@ export default function EnquiriesCard() {
                         <Link href="/funding/apply">Start New Enquiry</Link>
                     </Button>
                 </div>
-                {isLoading && !data && (
+                {isLoading && !enquiries && (
                     <div className="flex justify-center items-center py-10">
                         <Loader2 className="h-8 w-8 animate-spin text-primary" />
                     </div>
@@ -85,7 +82,7 @@ export default function EnquiriesCard() {
                 )}
 
                 {!isLoading && (
-                    enquiries.length > 0 ? (
+                    enquiries && enquiries.length > 0 ? (
                         <Table>
                             <TableHeader>
                                 <TableRow>
