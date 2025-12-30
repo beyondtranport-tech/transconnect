@@ -1,15 +1,28 @@
 
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
-import { getMembers, getFinanceApplications, getContributions } from './actions';
+import { useState, useEffect, useMemo, useCallback } from 'react';
+import { getMembers, getFinanceApplications, getContributions, deleteFinanceApplication } from './actions';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Loader2, Users, FileText, HeartHandshake, DollarSign, ArrowRight, UserCheck, Clock } from 'lucide-react';
+import { Loader2, Users, FileText, HeartHandshake, DollarSign, ArrowRight, UserCheck, Clock, Trash2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
+import { useToast } from '@/hooks/use-toast';
+
 
 interface Member {
     id: string;
@@ -60,49 +73,51 @@ export default function DashboardContent() {
     const [applications, setApplications] = useState<FinanceApplication[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [isDeleting, setIsDeleting] = useState<string | null>(null);
+    const { toast } = useToast();
+
+    const loadDashboardData = useCallback(async () => {
+        setIsLoading(true);
+        setError(null);
+        try {
+            const [membersResult, applicationsResult, contributionsResult] = await Promise.all([
+                getMembers(),
+                getFinanceApplications(),
+                getContributions()
+            ]);
+
+            if (membersResult.success && membersResult.data) {
+                setStats(s => ({ ...s, members: membersResult.data!.length }));
+                setMembers(membersResult.data);
+            } else {
+                throw new Error(membersResult.error || 'Failed to load members.');
+            }
+            
+            if (applicationsResult.success && applicationsResult.data) {
+                const apps = applicationsResult.data;
+                const totalFunded = apps.filter(app => app.status === 'funded').reduce((sum, app) => sum + app.amountRequested, 0);
+                setStats(s => ({ ...s, applications: apps.length, totalFunded }));
+                setApplications(apps);
+            } else {
+                throw new Error(applicationsResult.error || 'Failed to load applications.');
+            }
+            
+            if (contributionsResult.success && contributionsResult.data) {
+                setStats(s => ({ ...s, contributions: contributionsResult.data!.length }));
+            } else {
+                 throw new Error(contributionsResult.error || 'Failed to load contributions.');
+            }
+
+        } catch (e: any) {
+            setError(e.message || 'An unexpected error occurred.');
+        } finally {
+            setIsLoading(false);
+        }
+    }, []);
     
     useEffect(() => {
-        async function loadDashboardData() {
-            setIsLoading(true);
-            setError(null);
-            try {
-                const [membersResult, applicationsResult, contributionsResult] = await Promise.all([
-                    getMembers(),
-                    getFinanceApplications(),
-                    getContributions()
-                ]);
-
-                if (membersResult.success && membersResult.data) {
-                    setStats(s => ({ ...s, members: membersResult.data!.length }));
-                    setMembers(membersResult.data);
-                } else {
-                    throw new Error(membersResult.error || 'Failed to load members.');
-                }
-                
-                if (applicationsResult.success && applicationsResult.data) {
-                    const apps = applicationsResult.data;
-                    const totalFunded = apps.filter(app => app.status === 'funded').reduce((sum, app) => sum + app.amountRequested, 0);
-                    setStats(s => ({ ...s, applications: apps.length, totalFunded }));
-                    setApplications(apps);
-                } else {
-                    throw new Error(applicationsResult.error || 'Failed to load applications.');
-                }
-                
-                if (contributionsResult.success && contributionsResult.data) {
-                    setStats(s => ({ ...s, contributions: contributionsResult.data!.length }));
-                } else {
-                     throw new Error(contributionsResult.error || 'Failed to load contributions.');
-                }
-
-            } catch (e: any) {
-                setError(e.message || 'An unexpected error occurred.');
-            } finally {
-                setIsLoading(false);
-            }
-        }
-
         loadDashboardData();
-    }, []);
+    }, [loadDashboardData]);
 
     const memberGrowthData = useMemo(() => {
         if (members.length === 0) return [];
@@ -131,6 +146,17 @@ export default function DashboardContent() {
          return members.slice(0, 5);
     }, [members]);
 
+    const handleDelete = async (applicantId: string, applicationId: string) => {
+        setIsDeleting(applicationId);
+        const result = await deleteFinanceApplication(applicantId, applicationId);
+        if (result.success) {
+            toast({ title: 'Application Deleted', description: 'The record has been permanently removed.' });
+            loadDashboardData(); // Refresh the list
+        } else {
+            toast({ variant: 'destructive', title: 'Deletion Failed', description: result.error });
+        }
+        setIsDeleting(null);
+    };
 
     if (isLoading) {
         return (
@@ -237,7 +263,7 @@ export default function DashboardContent() {
                                 <TableRow>
                                     <TableHead>Pending Finance Applications ({pendingApplications.length})</TableHead>
                                     <TableHead>Amount</TableHead>
-                                    <TableHead className="text-right">Action</TableHead>
+                                    <TableHead className="text-right">Actions</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -248,10 +274,31 @@ export default function DashboardContent() {
                                             <div className="text-xs text-muted-foreground truncate max-w-[150px]">ID: {app.applicantId}</div>
                                         </TableCell>
                                         <TableCell>{formatPrice(app.amountRequested)}</TableCell>
-                                        <TableCell className="text-right">
+                                        <TableCell className="text-right space-x-2">
                                             <Button variant="outline" size="sm" asChild>
                                                 <Link href={`/backend/wallet/${app.applicantId}`}>Review</Link>
                                             </Button>
+                                             <AlertDialog>
+                                                <AlertDialogTrigger asChild>
+                                                    <Button variant="destructive" size="icon" disabled={isDeleting === app.id}>
+                                                        {isDeleting === app.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                                                    </Button>
+                                                </AlertDialogTrigger>
+                                                <AlertDialogContent>
+                                                    <AlertDialogHeader>
+                                                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                                        <AlertDialogDescription>
+                                                            This will permanently delete this application record. This action cannot be undone.
+                                                        </AlertDialogDescription>
+                                                    </AlertDialogHeader>
+                                                    <AlertDialogFooter>
+                                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                        <AlertDialogAction onClick={() => handleDelete(app.applicantId, app.id)} variant="destructive">
+                                                            Yes, delete it
+                                                        </AlertDialogAction>
+                                                    </AlertDialogFooter>
+                                                </AlertDialogContent>
+                                            </AlertDialog>
                                         </TableCell>
                                     </TableRow>
                                 )) : (
@@ -305,7 +352,5 @@ export default function DashboardContent() {
         </div>
     );
 }
-
-    
 
     
