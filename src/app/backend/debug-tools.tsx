@@ -4,8 +4,9 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, CheckCircle, XCircle, Key, FileJson, Database } from 'lucide-react';
+import { Loader2, CheckCircle, XCircle, Key, FileJson, Database, ArrowRight } from 'lucide-react';
 import { getAdminSdkDiagnostics, testFirestoreConnection } from './actions';
+import Link from 'next/link';
 
 interface SdkDiagnostics {
     isB64VarPresent: boolean;
