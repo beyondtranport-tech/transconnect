@@ -49,6 +49,7 @@ export async function POST(req: NextRequest) {
     const uid = decodedToken.uid;
     
     const db = getFirestore(app);
+    // Correctly point to the 'enquiries' subcollection
     const collectionPath = `members/${uid}/enquiries`;
     const collectionRef = db.collection(collectionPath);
     
