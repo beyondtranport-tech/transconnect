@@ -10,6 +10,7 @@ import Link from 'next/link';
 import { collection, query, where, orderBy, limit } from 'firebase/firestore';
 import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
+import { useMemo } from 'react';
 
 const formatCurrency = (amount: number) => {
     if (typeof amount !== 'number') return 'N/A';
@@ -37,17 +38,20 @@ export default function EnquiriesCard() {
 
     const enquiriesQuery = useMemoFirebase(() => {
         if (!firestore || !user) return null;
-        // This query is now valid, using 'not-in' for funding type and a positive 'in' for status.
+        // This is a valid query. We fetch all non-wallet applications and then filter out 'quote' on the client.
         return query(
             collection(firestore, 'members', user.uid, 'financeApplications'), 
             where('fundingType', 'not-in', ['wallet_top_up', 'membership_payment', 'credit-top-up']),
-            where('status', 'in', ['pending', 'under_review', 'matched', 'rejected', 'funded']),
             orderBy('createdAt', 'desc'),
-            limit(5)
+            limit(10) // Fetch a bit more to account for client-side filtering
         );
     }, [firestore, user]);
 
-    const { data: enquiries, isLoading, error } = useCollection(enquiriesQuery);
+    const { data, isLoading, error } = useCollection(enquiriesQuery);
+
+    const enquiries = useMemo(() => {
+        return data?.filter(item => item.status !== 'quote').slice(0, 5) || [];
+    }, [data]);
 
     if (user && user.email === 'beyondtransport@gmail.com') {
         return null;
@@ -68,7 +72,7 @@ export default function EnquiriesCard() {
                         <Link href="/funding/apply">Start New Enquiry</Link>
                     </Button>
                 </div>
-                {isLoading && (
+                {isLoading && !data && (
                     <div className="flex justify-center items-center py-10">
                         <Loader2 className="h-8 w-8 animate-spin text-primary" />
                     </div>
@@ -80,7 +84,7 @@ export default function EnquiriesCard() {
                     </div>
                 )}
 
-                {!isLoading && enquiries && (
+                {!isLoading && (
                     enquiries.length > 0 ? (
                         <Table>
                             <TableHeader>
