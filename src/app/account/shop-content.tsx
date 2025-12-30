@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -116,7 +115,7 @@ export default function ShopContent() {
             <Store className="mx-auto h-12 w-12 text-muted-foreground" />
             <h3 className="mt-4 text-xl font-semibold">You don't have a shop yet.</h3>
             <p className="mt-2 text-muted-foreground">Ready to start selling? Create your shop to get started.</p>
-            <Button onClick={handleCreateShop} disabled={isCreating}>
+            <Button onClick={handleCreateShop} disabled={isCreating} className="mt-6">
               {isCreating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PlusCircle className="mr-2 h-4 w-4" />}
               Create My Shop
             </Button>
