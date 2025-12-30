@@ -44,10 +44,12 @@ const baseSchema = z.object({
   purpose: z.string().min(10, 'Please provide more detail.'),
   amountRequested: z.coerce.number().positive('Please enter a valid amount.'),
   foundVehicle: z.enum(['yes', 'no']).optional(),
+  vehicleType: z.enum(['powered', 'trailer']).optional(),
   vehicleMake: z.string().optional(),
   vehicleModel: z.string().optional(),
   vehicleYear: z.string().optional(),
   vehicleVin: z.string().optional(),
+  engineNumber: z.string().optional(),
   supplierName: z.string().optional(),
   supplierContact: z.string().optional(),
 });
@@ -55,6 +57,9 @@ const baseSchema = z.object({
 // Create a refined schema that makes vehicle fields required if foundVehicle is 'yes'
 const combinedSchema = baseSchema.superRefine((data, ctx) => {
     if (data.fundingNeed === 'vehicles' && data.foundVehicle === 'yes') {
+        if (!data.vehicleType) {
+            ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Please select a vehicle type.", path: ["vehicleType"] });
+        }
         if (!data.vehicleMake) {
             ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Vehicle make is required.", path: ["vehicleMake"] });
         }
@@ -63,6 +68,9 @@ const combinedSchema = baseSchema.superRefine((data, ctx) => {
         }
         if (!data.vehicleYear) {
             ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Vehicle year is required.", path: ["vehicleYear"] });
+        }
+        if (data.vehicleType === 'powered' && !data.engineNumber) {
+            ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Engine number is required for powered vehicles.", path: ["engineNumber"] });
         }
         if (!data.supplierName) {
             ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Supplier name is required.", path: ["supplierName"] });
@@ -109,10 +117,12 @@ function ApplyForm() {
       purpose: '',
       amountRequested: Number(searchParams.get('amount')) || 0,
       foundVehicle: undefined,
+      vehicleType: undefined,
       vehicleMake: '',
       vehicleModel: '',
       vehicleYear: '',
       vehicleVin: '',
+      engineNumber: '',
       supplierName: '',
       supplierContact: '',
     },
@@ -128,6 +138,7 @@ function ApplyForm() {
 
   const fundingNeed = methods.watch('fundingNeed');
   const foundVehicle = methods.watch('foundVehicle');
+  const vehicleType = methods.watch('vehicleType');
 
   const dynamicSteps = React.useMemo(() => {
     const steps = [...staticSteps];
@@ -137,7 +148,7 @@ function ApplyForm() {
         ];
         if (foundVehicle === 'yes') {
             vehicleSteps.push(
-                { id: 'Vehicle', name: 'Step 4: Vehicle Info', fields: ['vehicleMake', 'vehicleModel', 'vehicleYear', 'vehicleVin'] },
+                { id: 'Vehicle', name: 'Step 4: Vehicle Info', fields: ['vehicleType', 'vehicleMake', 'vehicleModel', 'vehicleYear', 'vehicleVin', 'engineNumber'] },
                 { id: 'Supplier', name: 'Step 5: Supplier Info', fields: ['supplierName', 'supplierContact'] }
             );
         }
@@ -375,13 +386,42 @@ function ApplyForm() {
             )}
 
             {currentStepConfig.id === 'Vehicle' && (
-                <div className="space-y-4">
-                    <h3 className="text-lg font-semibold">Vehicle Information</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <FormField control={methods.control} name="vehicleMake" render={({ field }) => (<FormItem><FormLabel>Make</FormLabel><FormControl><Input placeholder="e.g., Scania" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                        <FormField control={methods.control} name="vehicleModel" render={({ field }) => (<FormItem><FormLabel>Model</FormLabel><FormControl><Input placeholder="e.g., R 560" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                        <FormField control={methods.control} name="vehicleYear" render={({ field }) => (<FormItem><FormLabel>Year</FormLabel><FormControl><Input placeholder="e.g., 2022" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                        <FormField control={methods.control} name="vehicleVin" render={({ field }) => (<FormItem><FormLabel>VIN (Optional)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+                <div className="space-y-6">
+                     <FormField
+                        control={methods.control}
+                        name="vehicleType"
+                        render={({ field }) => (
+                            <FormItem className="space-y-3">
+                                <FormLabel className="text-lg font-semibold">What type of vehicle is it?</FormLabel>
+                                <FormControl>
+                                    <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex items-center space-x-4">
+                                        <FormItem className="flex items-center space-x-2 space-y-0">
+                                            <FormControl><RadioGroupItem value="powered" /></FormControl>
+                                            <FormLabel className="font-normal">Powered Vehicle (Truck, etc.)</FormLabel>
+                                        </FormItem>
+                                        <FormItem className="flex items-center space-x-2 space-y-0">
+                                            <FormControl><RadioGroupItem value="trailer" /></FormControl>
+                                            <FormLabel className="font-normal">Trailer</FormLabel>
+                                        </FormItem>
+                                    </RadioGroup>
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+
+                    <div className="space-y-4 pt-4 border-t">
+                        <h3 className="text-base font-semibold">Vehicle Details</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <FormField control={methods.control} name="vehicleMake" render={({ field }) => (<FormItem><FormLabel>Make</FormLabel><FormControl><Input placeholder="e.g., Scania" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                            <FormField control={methods.control} name="vehicleModel" render={({ field }) => (<FormItem><FormLabel>Model</FormLabel><FormControl><Input placeholder="e.g., R 560" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                            <FormField control={methods.control} name="vehicleYear" render={({ field }) => (<FormItem><FormLabel>Year</FormLabel><FormControl><Input placeholder="e.g., 2022" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                            <FormField control={methods.control} name="vehicleVin" render={({ field }) => (<FormItem><FormLabel>VIN (Optional)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+                            
+                            {vehicleType === 'powered' && (
+                                <FormField control={methods.control} name="engineNumber" render={({ field }) => (<FormItem><FormLabel>Engine Number</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+                            )}
+                        </div>
                     </div>
                 </div>
             )}
