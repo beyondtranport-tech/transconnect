@@ -147,45 +147,31 @@ export async function getFinanceApplications(): Promise<{ success: boolean; data
     const adminDb = getFirestore(app);
 
     try {
-        const appMap = new Map<string, FinanceApplication>();
-        const walletStatuses = ['membership_payment', 'wallet_top_up'];
-
-        // 1. Get all members to iterate through them
+        const allRecords: any[] = [];
         const membersSnapshot = await adminDb.collection('members').get();
 
-        // 2. For each member, query their financeApplications subcollection
         for (const memberDoc of membersSnapshot.docs) {
             const memberId = memberDoc.id;
-            const subCollectionSnapshot = await adminDb.collection(`members/${memberId}/financeApplications`).get();
-            subCollectionSnapshot.forEach(doc => {
-                const data = doc.data();
-                 if (!walletStatuses.includes(data.status)) {
-                    const serializedData = serializeTimestamps(data);
-                    appMap.set(doc.id, { id: doc.id, ...serializedData } as FinanceApplication);
-                 }
+            
+            const quotesSnapshot = await adminDb.collection(`members/${memberId}/quotes`).get();
+            quotesSnapshot.forEach(doc => {
+                allRecords.push({ recordType: 'Quote', ...serializeTimestamps(doc.data()), id: doc.id });
+            });
+
+            const enquiriesSnapshot = await adminDb.collection(`members/${memberId}/enquiries`).get();
+            enquiriesSnapshot.forEach(doc => {
+                allRecords.push({ recordType: 'Enquiry', ...serializeTimestamps(doc.data()), id: doc.id });
             });
         }
         
-        // 3. Query the top-level collection and apply the same filter
-        const topLevelSnapshot = await adminDb.collection('financeApplications').get();
-        topLevelSnapshot.docs.forEach(doc => {
-            const data = doc.data();
-            if (!appMap.has(doc.id) && !walletStatuses.includes(data.status)) {
-                const serializedData = serializeTimestamps(data);
-                appMap.set(doc.id, { id: doc.id, ...serializedData } as FinanceApplication);
-            }
-        });
-        
-        const allApps = Array.from(appMap.values());
-
         // Sort by creation date, most recent first
-        const sortedApps = allApps.sort((a, b) => {
+        const sortedRecords = allRecords.sort((a, b) => {
             const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
             const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
             return dateB - dateA;
         });
 
-        return { success: true, data: sortedApps };
+        return { success: true, data: sortedRecords };
 
     } catch (error: any) {
         console.error('Error fetching finance applications with admin SDK:', error);
@@ -447,10 +433,3 @@ export async function getMemberWalletPayments(memberId: string): Promise<{ succe
         return { success: false, error: error.message };
     }
 }
-    
-
-    
-
-    
-
-    

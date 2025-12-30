@@ -94,7 +94,7 @@ export default function DashboardContent() {
             }
             
             if (applicationsResult.success && applicationsResult.data) {
-                const apps = applicationsResult.data;
+                const apps = applicationsResult.data as FinanceApplication[];
                 const totalFunded = apps.filter(app => app.status === 'funded').reduce((sum, app) => sum + app.amountRequested, 0);
                 setStats(s => ({ ...s, applications: apps.length, totalFunded }));
                 setApplications(apps);
@@ -352,5 +352,3 @@ export default function DashboardContent() {
         </div>
     );
 }
-
-    

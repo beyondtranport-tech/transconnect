@@ -221,10 +221,8 @@ export default function MemberWallet({ memberId }: { memberId: string }) {
                 </CardFooter>
             </Card>
             
-            <MemberFundingRecords memberId={memberId} />
             <MemberWalletPayments memberId={memberId} />
+            <MemberFundingRecords memberId={memberId} />
         </div>
     );
 }
-
-    
