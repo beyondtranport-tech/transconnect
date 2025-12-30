@@ -186,7 +186,8 @@ export default function EnquiriesCard() {
                                                         </Button>
                                                     </DropdownMenuTrigger>
                                                     <DropdownMenuContent align="end">
-                                                        <DropdownMenuItem>View</DropdownMenuItem>
+                                                        {/* TODO: Create the [enquiryId] page and link to it here */}
+                                                        <DropdownMenuItem disabled>View</DropdownMenuItem>
                                                         <AlertDialog>
                                                             <AlertDialogTrigger asChild>
                                                                 <DropdownMenuItem
