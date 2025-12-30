@@ -1,3 +1,4 @@
+
 'use server';
 
 import { initializeApp, getApps, App, cert, ServiceAccount } from 'firebase-admin/app';
@@ -147,7 +148,8 @@ export async function getFinanceApplications(): Promise<{ success: boolean; data
 
     try {
         const appMap = new Map<string, FinanceApplication>();
-        
+        const walletStatuses = ['membership_payment', 'wallet_top_up'];
+
         // 1. Get all members to iterate through them
         const membersSnapshot = await adminDb.collection('members').get();
 
@@ -157,17 +159,19 @@ export async function getFinanceApplications(): Promise<{ success: boolean; data
             const subCollectionSnapshot = await adminDb.collection(`members/${memberId}/financeApplications`).get();
             subCollectionSnapshot.forEach(doc => {
                 const data = doc.data();
-                const serializedData = serializeTimestamps(data);
-                appMap.set(doc.id, { id: doc.id, ...serializedData } as FinanceApplication);
+                // Server-side filter to exclude wallet transactions
+                if (!walletStatuses.includes(data.status)) {
+                    const serializedData = serializeTimestamps(data);
+                    appMap.set(doc.id, { id: doc.id, ...serializedData } as FinanceApplication);
+                }
             });
         }
         
-        // 3. Query the top-level collection as a fallback or for admin-created apps
+        // 3. Query the top-level collection and apply the same filter
         const topLevelSnapshot = await adminDb.collection('financeApplications').get();
         topLevelSnapshot.docs.forEach(doc => {
-            // Avoid adding duplicates if the ID already exists from the subcollection query
-            if (!appMap.has(doc.id)) {
-                const data = doc.data();
+            const data = doc.data();
+            if (!appMap.has(doc.id) && !walletStatuses.includes(data.status)) {
                 const serializedData = serializeTimestamps(data);
                 appMap.set(doc.id, { id: doc.id, ...serializedData } as FinanceApplication);
             }
@@ -368,6 +372,8 @@ export async function getAllTransactions(): Promise<{ success: boolean; data?: a
         return { success: false, error: error.message };
     }
 }
+
+    
 
     
 
