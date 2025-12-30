@@ -58,6 +58,18 @@ const statusColors: { [key: string]: 'default' | 'secondary' | 'destructive' | '
   funded: 'default'
 };
 
+const fundingNeedsMap: { [key: string]: string } = {
+    'business': 'My Business',
+    'equipment': 'Equipment',
+    'vehicles': 'Vehicles',
+    'cashflow': 'Cashflow',
+};
+
+const fundingReasonsMap: { [key: string]: string } = {
+    problem: 'Problem',
+    opportunity: 'Opportunity',
+};
+
 export default function EnquiriesCard() {
     const { user } = useUser();
     const firestore = useFirestore();
@@ -136,72 +148,78 @@ export default function EnquiriesCard() {
 
                 {!isLoading && (
                     enquiries && enquiries.length > 0 ? (
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Date</TableHead>
-                                    <TableHead>Type</TableHead>
-                                    <TableHead>Status</TableHead>
-                                    <TableHead>Amount</TableHead>
-                                    <TableHead className="text-right">Actions</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {enquiries.map((enquiry) => (
-                                    <TableRow key={enquiry.id}>
-                                        <TableCell className="text-muted-foreground text-xs">{formatDate(enquiry.createdAt)}</TableCell>
-                                        <TableCell>
-                                            <p className="font-medium capitalize">{enquiry.fundingType?.replace(/-/g, ' ')}</p>
-                                        </TableCell>
-                                        <TableCell>
-                                            <Badge variant={statusColors[enquiry.status] || 'secondary'} className="capitalize">
-                                                {enquiry.status.replace(/_/g, ' ')}
-                                            </Badge>
-                                        </TableCell>
-                                        <TableCell className="font-semibold">
-                                            {formatCurrency(enquiry.amountRequested)}
-                                        </TableCell>
-                                        <TableCell className="text-right">
-                                             <DropdownMenu>
-                                                <DropdownMenuTrigger asChild>
-                                                    <Button variant="ghost" size="icon">
-                                                        <MoreVertical className="h-4 w-4" />
-                                                    </Button>
-                                                </DropdownMenuTrigger>
-                                                <DropdownMenuContent align="end">
-                                                    <DropdownMenuItem>View</DropdownMenuItem>
-                                                    <AlertDialog>
-                                                        <AlertDialogTrigger asChild>
-                                                            <DropdownMenuItem
-                                                                className="text-destructive"
-                                                                onSelect={(e) => e.preventDefault()}
-                                                             >
-                                                                {isDeleting === enquiry.id ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
-                                                                Delete
-                                                            </DropdownMenuItem>
-                                                        </AlertDialogTrigger>
-                                                        <AlertDialogContent>
-                                                            <AlertDialogHeader>
-                                                                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                                                                <AlertDialogDescription>
-                                                                    This action cannot be undone. This will permanently delete your enquiry.
-                                                                </AlertDialogDescription>
-                                                            </AlertDialogHeader>
-                                                            <AlertDialogFooter>
-                                                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                                <AlertDialogAction onClick={() => handleDelete(enquiry.id)} variant="destructive">
-                                                                    Delete
-                                                                </AlertDialogAction>
-                                                            </AlertDialogFooter>
-                                                        </AlertDialogContent>
-                                                    </AlertDialog>
-                                                </DropdownMenuContent>
-                                            </DropdownMenu>
-                                        </TableCell>
+                        <div className="overflow-x-auto">
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>Date</TableHead>
+                                        <TableHead>Need</TableHead>
+                                        <TableHead>Reason</TableHead>
+                                        <TableHead>Status</TableHead>
+                                        <TableHead>Amount</TableHead>
+                                        <TableHead className="text-right">Actions</TableHead>
                                     </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
+                                </TableHeader>
+                                <TableBody>
+                                    {enquiries.map((enquiry) => (
+                                        <TableRow key={enquiry.id}>
+                                            <TableCell className="text-muted-foreground text-xs whitespace-nowrap">{formatDate(enquiry.createdAt)}</TableCell>
+                                            <TableCell>
+                                                <p className="font-medium capitalize">{fundingNeedsMap[enquiry.fundingNeed] || enquiry.fundingNeed?.replace(/-/g, ' ')}</p>
+                                            </TableCell>
+                                            <TableCell>
+                                                <p className="font-medium capitalize">{fundingReasonsMap[enquiry.fundingReason] || enquiry.fundingReason}</p>
+                                            </TableCell>
+                                            <TableCell>
+                                                <Badge variant={statusColors[enquiry.status] || 'secondary'} className="capitalize">
+                                                    {enquiry.status.replace(/_/g, ' ')}
+                                                </Badge>
+                                            </TableCell>
+                                            <TableCell className="font-semibold whitespace-nowrap">
+                                                {formatCurrency(enquiry.amountRequested)}
+                                            </TableCell>
+                                            <TableCell className="text-right">
+                                                 <DropdownMenu>
+                                                    <DropdownMenuTrigger asChild>
+                                                        <Button variant="ghost" size="icon">
+                                                            <MoreVertical className="h-4 w-4" />
+                                                        </Button>
+                                                    </DropdownMenuTrigger>
+                                                    <DropdownMenuContent align="end">
+                                                        <DropdownMenuItem>View</DropdownMenuItem>
+                                                        <AlertDialog>
+                                                            <AlertDialogTrigger asChild>
+                                                                <DropdownMenuItem
+                                                                    className="text-destructive"
+                                                                    onSelect={(e) => e.preventDefault()}
+                                                                 >
+                                                                    {isDeleting === enquiry.id ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
+                                                                    Delete
+                                                                </DropdownMenuItem>
+                                                            </AlertDialogTrigger>
+                                                            <AlertDialogContent>
+                                                                <AlertDialogHeader>
+                                                                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                                                    <AlertDialogDescription>
+                                                                        This action cannot be undone. This will permanently delete your enquiry.
+                                                                    </AlertDialogDescription>
+                                                                </AlertDialogHeader>
+                                                                <AlertDialogFooter>
+                                                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                                    <AlertDialogAction onClick={() => handleDelete(enquiry.id)} variant="destructive">
+                                                                        Delete
+                                                                    </AlertDialogAction>
+                                                                </AlertDialogFooter>
+                                                            </AlertDialogContent>
+                                                        </AlertDialog>
+                                                    </DropdownMenuContent>
+                                                </DropdownMenu>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </div>
                     ) : (
                          <div className="text-center py-10 border-2 border-dashed rounded-lg">
                             <p className="text-muted-foreground">You have no formal enquiries yet.</p>
