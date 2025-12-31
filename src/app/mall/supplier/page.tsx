@@ -11,7 +11,6 @@ import Image from "next/image";
 import Link from "next/link";
 import * as gtag from '@/lib/gtag';
 import { useState, useEffect } from 'react';
-import { getApprovedShops } from './actions';
 
 const { placeholderImages } = data;
 
@@ -27,7 +26,9 @@ export default function SupplierMallPage() {
             setIsLoading(true);
             setError(null);
             try {
-                const result = await getApprovedShops();
+                const response = await fetch('/api/getApprovedShops');
+                const result = await response.json();
+                
                 if (result.success) {
                     setSuppliers(result.data || []);
                 } else {

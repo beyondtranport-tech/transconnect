@@ -1,7 +1,7 @@
-'use server';
 
 import { getAdminApp } from '@/lib/firebase-admin';
 import { getFirestore, Timestamp } from 'firebase-admin/firestore';
+import { NextResponse } from 'next/server';
 
 // Helper to convert Firestore Timestamps to JSON-serializable strings
 function serializeTimestamps(docData: any) {
@@ -21,10 +21,10 @@ function serializeTimestamps(docData: any) {
 }
 
 
-export async function getApprovedShops(): Promise<{ success: boolean; data?: any[]; error?: string }> {
+export async function GET() {
     const { app, error: initError } = getAdminApp();
     if (initError || !app) {
-        return { success: false, error: initError };
+        return NextResponse.json({ success: false, error: `Server error: ${initError}` }, { status: 500 });
     }
     
     const db = getFirestore(app);
@@ -34,7 +34,7 @@ export async function getApprovedShops(): Promise<{ success: boolean; data?: any
         const snapshot = await shopsRef.where('status', '==', 'approved').get();
         
         if (snapshot.empty) {
-            return { success: true, data: [] };
+            return NextResponse.json({ success: true, data: [] });
         }
         
         const approvedShops = snapshot.docs.map(doc => {
@@ -43,10 +43,10 @@ export async function getApprovedShops(): Promise<{ success: boolean; data?: any
             return { id: doc.id, ...serializedData };
         });
         
-        return { success: true, data: approvedShops };
+        return NextResponse.json({ success: true, data: approvedShops });
 
     } catch (error: any) {
         console.error('Error fetching approved shops:', error);
-        return { success: false, error: error.message };
+        return NextResponse.json({ success: false, error: error.message }, { status: 500 });
     }
 }
