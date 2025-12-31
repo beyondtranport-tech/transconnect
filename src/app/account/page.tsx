@@ -36,8 +36,8 @@ import { Loader2 } from 'lucide-react';
 import StaffContent from './staff-content';
 import ProfileContent from './profile-content';
 import CompanyContent from './company-content';
-import TransactionsContent from './transactions-content';
 import ShopContent from './shop-content';
+import BillingContent from './billing-content';
 import { doc } from 'firebase/firestore';
 import { useDoc } from '@/firebase/firestore/use-doc';
 import { useFirestore } from '@/firebase';
@@ -113,8 +113,8 @@ function AccountPageContent() {
         return <StaffContent />;
       case 'shop':
         return <ShopContent />;
-      case 'transactions':
-        return <TransactionsContent />;
+      case 'billing':
+        return <BillingContent />;
       case 'documents':
         return <DocumentsContent />;
       case 'settings':
@@ -179,9 +179,9 @@ function AccountPageContent() {
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Transactions" isActive={activeView === 'transactions'} onClick={() => router.push('/account?view=transactions', { scroll: false })}>
-                  <DollarSign />
-                  <span>Transactions</span>
+                <SidebarMenuButton tooltip="Billing" isActive={activeView === 'billing'} onClick={() => router.push('/account?view=billing', { scroll: false })}>
+                  <CreditCard />
+                  <span>Billing</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
