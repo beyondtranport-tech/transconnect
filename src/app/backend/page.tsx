@@ -61,7 +61,6 @@ import ChartOfAccountsSettings from './chart-of-accounts-settings';
 import ReconciliationPage from './reconciliation/page';
 import DashboardContent from './dashboard-content';
 import ShopsList from './shops-list';
-import { checkAdminSdk, getFinanceApplications, getShops } from './actions';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import DebugToolsContent from './debug-tools';
@@ -104,6 +103,8 @@ function FundingDivisionContent() {
     useEffect(() => {
         async function loadData() {
             setIsLoading(true);
+            // Dynamic import of server actions
+            const { getFinanceApplications } = await import('./actions');
             const result = await getFinanceApplications();
             if (result.success && result.data) {
                 const apps = result.data;
@@ -186,6 +187,7 @@ function MallDivisionContent() {
     useEffect(() => {
         async function loadData() {
             setIsLoading(true);
+            const { getShops } = await import('./actions');
             const result = await getShops();
             if (result.success && result.data) {
                 const allShops = result.data;
