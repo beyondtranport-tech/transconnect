@@ -1,20 +1,24 @@
 
 'use server';
 
-import { getClientSideAuthToken } from '@/firebase';
-
-async function fetchFromApi(path: string, type: 'collection' | 'document' | 'collection-group') {
-    const token = await getClientSideAuthToken();
+async function fetchFromApi(token: string, path: string, type: 'collection' | 'document' | 'collection-group') {
     if (!token) {
         throw new Error("User not authenticated.");
     }
-    const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/getUserSubcollection`, {
+    
+    // Construct the absolute URL for the API endpoint
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+    const url = new URL('/api/getUserSubcollection', baseUrl);
+
+    const response = await fetch(url.toString(), {
         method: 'POST',
         headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
         },
         body: JSON.stringify({ path, type }),
+        // Add cache: 'no-store' to ensure fresh data is fetched on every request
+        cache: 'no-store',
     });
     
     if (!response.ok) {
@@ -26,28 +30,28 @@ async function fetchFromApi(path: string, type: 'collection' | 'document' | 'col
     return result;
 }
 
-export async function getMembers() {
-    return fetchFromApi('members', 'collection');
+export async function getMembers(token: string) {
+    return fetchFromApi(token, 'members', 'collection');
 }
 
-export async function getContributions() {
-    return fetchFromApi('contributions', 'collection');
+export async function getContributions(token: string) {
+    return fetchFromApi(token, 'contributions', 'collection');
 }
 
-export async function getAllTransactions() {
-    return fetchFromApi('transactions', 'collection-group');
+export async function getAllTransactions(token: string) {
+    return fetchFromApi(token, 'transactions', 'collection-group');
 }
 
-export async function getShops() {
-    return fetchFromApi('shops', 'collection-group');
+export async function getShops(token: string) {
+    return fetchFromApi(token, 'shops', 'collection-group');
 }
 
-export async function getFinanceApplications() {
+export async function getFinanceApplications(token: string) {
      try {
         // These can run in parallel
         const [quotesResult, enquiriesResult] = await Promise.all([
-            fetchFromApi('quotes', 'collection-group'),
-            fetchFromApi('enquiries', 'collection-group')
+            fetchFromApi(token, 'quotes', 'collection-group'),
+            fetchFromApi(token, 'enquiries', 'collection-group')
         ]);
         
         if (!quotesResult.success || !enquiriesResult.success) {
@@ -70,9 +74,8 @@ export async function getFinanceApplications() {
 }
 
 
-export async function deleteTransaction(memberId: string, transactionId: string) {
+export async function deleteTransaction(token: string, memberId: string, transactionId: string) {
     try {
-         const token = await getClientSideAuthToken();
         if (!token) throw new Error("Authentication required.");
 
         const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';

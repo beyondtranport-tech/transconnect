@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { getMembers } from './actions';
+import { getClientSideAuthToken } from '@/firebase';
 
 interface Member {
     id: string;
@@ -43,7 +44,13 @@ export default function MembersList() {
     useEffect(() => {
         async function fetchMembers() {
             setIsLoading(true);
-            const result = await getMembers();
+            const token = await getClientSideAuthToken();
+            if (!token) {
+                setError("Authentication failed.");
+                setIsLoading(false);
+                return;
+            }
+            const result = await getMembers(token);
             if (result.success && result.data) {
                 setMembers(result.data);
             } else {

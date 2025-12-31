@@ -74,7 +74,13 @@ export default function ShopsList() {
 
     async function fetchShops() {
         setIsLoading(true);
-        const result = await getShops();
+        const token = await getClientSideAuthToken();
+        if (!token) {
+            setError("Authentication failed.");
+            setIsLoading(false);
+            return;
+        }
+        const result = await getShops(token);
         if (result.success && result.data) {
             const sortedShops = result.data.sort((a: Shop, b: Shop) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
             setShops(sortedShops);

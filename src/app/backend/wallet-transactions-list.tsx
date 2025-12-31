@@ -21,6 +21,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import { useToast } from '@/hooks/use-toast';
+import { getClientSideAuthToken } from '@/firebase';
 
 interface Transaction {
     id: string;
@@ -63,15 +64,19 @@ export default function WalletTransactionsList() {
     async function fetchAllTransactions() {
         // Don't set loading to true here to avoid flicker on re-fetch
         try {
+            const token = await getClientSideAuthToken();
+            if (!token) {
+                throw new Error("Authentication failed.");
+            }
             const [transactionsResult, membersResult] = await Promise.all([
-                getAllTransactions(),
-                getMembers()
+                getAllTransactions(token),
+                getMembers(token)
             ]);
 
             if (transactionsResult.success && transactionsResult.data && membersResult.success && membersResult.data) {
-                const memberMap = new Map(membersResult.data.map(m => [m.id, `${m.firstName} ${m.lastName}`]));
+                const memberMap = new Map(membersResult.data.map((m: any) => [m.id, `${m.firstName} ${m.lastName}`]));
                 
-                const transactionsWithNames = transactionsResult.data.map(tx => ({
+                const transactionsWithNames = transactionsResult.data.map((tx: any) => ({
                     ...tx,
                     memberName: memberMap.get(tx.memberId) || 'Unknown Member'
                 }));
@@ -88,12 +93,19 @@ export default function WalletTransactionsList() {
     }
 
     useEffect(() => {
+        setIsLoading(true);
         fetchAllTransactions();
     }, []);
     
     const handleDelete = async (memberId: string, transactionId: string) => {
         setIsDeleting(transactionId);
-        const result = await deleteTransaction(memberId, transactionId);
+        const token = await getClientSideAuthToken();
+        if (!token) {
+            toast({ variant: 'destructive', title: 'Authentication Error', description: "Could not authenticate your request." });
+            setIsDeleting(null);
+            return;
+        }
+        const result = await deleteTransaction(token, memberId, transactionId);
         if (result.success) {
             toast({ title: 'Transaction Deleted' });
             fetchAllTransactions(); // Re-fetch data to update the list

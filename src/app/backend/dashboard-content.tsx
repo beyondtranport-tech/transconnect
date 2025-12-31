@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { useToast } from '@/hooks/use-toast';
 import { getMembers, getContributions, getFinanceApplications } from './actions';
+import { getClientSideAuthToken } from '@/firebase';
 
 interface Member {
     id: string;
@@ -80,10 +81,15 @@ export default function DashboardContent() {
         setIsLoading(true);
         setError(null);
         try {
+            const token = await getClientSideAuthToken();
+            if (!token) {
+                throw new Error("Authentication failed. Please sign in again.");
+            }
+
             const [membersResult, contributionsResult, financeResult] = await Promise.all([
-                getMembers(),
-                getContributions(),
-                getFinanceApplications(),
+                getMembers(token),
+                getContributions(token),
+                getFinanceApplications(token),
             ]);
             
             if (membersResult.success && membersResult.data) {

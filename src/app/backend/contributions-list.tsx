@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Loader2, Truck, Warehouse, Building } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { getClientSideAuthToken } from '@/firebase';
 
 interface Contribution {
     id: string;
@@ -31,7 +32,11 @@ export default function ContributionsList() {
         async function fetchContributions() {
             setIsLoading(true);
             try {
-                const result = await getContributions();
+                const token = await getClientSideAuthToken();
+                if (!token) {
+                    throw new Error("Authentication failed. Please sign in again.");
+                }
+                const result = await getContributions(token);
                 if (result.success && result.data) {
                     setContributions(result.data as Contribution[]);
                 } else {

@@ -51,13 +51,14 @@ import { useState, useEffect, Suspense, useMemo } from 'react';
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 
-import { useUser, useAuth } from '@/firebase';
+import { useUser, useAuth, getClientSideAuthToken } from '@/firebase';
 import { signOut } from 'firebase/auth';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 
 // Using next/dynamic to lazy-load components
 import dynamic from 'next/dynamic';
+import { getFinanceApplications } from './actions';
 
 const DashboardContent = dynamic(() => import('./dashboard-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const MembersList = dynamic(() => import('./members-list'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
@@ -106,9 +107,14 @@ function FundingDivisionContent() {
     useEffect(() => {
         async function loadData() {
             setIsLoading(true);
-            // Dynamic import of server actions
-            const { getFinanceApplications } = await import('./actions');
-            const result = await getFinanceApplications();
+            const token = await getClientSideAuthToken();
+            if (!token) {
+                setError("Authentication failed.");
+                setIsLoading(false);
+                return;
+            }
+
+            const result = await getFinanceApplications(token);
             if (result.success && result.data) {
                 const apps = result.data;
                 const totalFunded = apps.filter(app => app.status === 'funded').reduce((sum, app) => sum + (app.amountRequested || 0), 0);
@@ -191,7 +197,14 @@ function MallDivisionContent() {
         async function loadData() {
             setIsLoading(true);
             const { getShops } = await import('./actions');
-            const result = await getShops();
+            const token = await getClientSideAuthToken();
+            if (!token) {
+                setError("Authentication failed.");
+                setIsLoading(false);
+                return;
+            }
+
+            const result = await getShops(token);
             if (result.success && result.data) {
                 const allShops = result.data;
                 setStats({
