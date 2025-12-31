@@ -1,6 +1,6 @@
 
 import { initializeApp, getApps, App, cert } from 'firebase-admin/app';
-import { serviceAccount } from '@/lib/service-account-credentials';
+import { serviceAccount } from '@/lib/service-account';
 import type { ServiceAccount } from 'firebase-admin/app';
 
 
