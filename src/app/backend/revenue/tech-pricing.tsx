@@ -35,7 +35,7 @@ const formSchema = z.object({
   // API & Data Services
   aiFreightMatcher: z.coerce.number().min(0, 'Must be non-negative.'),
   analyticsDashboard: z.coerce.number().min(0, 'Must be non-negative.'),
-  apiAccess: z.coerce.number().min(0, 'Must be non-negative.'),
+  apiAccessPerCall: z.coerce.number().min(0, 'Must be non-negative.'),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -59,7 +59,7 @@ export default function TechPricing() {
       paymentProcessingFee: 0,
       aiFreightMatcher: 0,
       analyticsDashboard: 0,
-      apiAccess: 0,
+      apiAccessPerCall: 0,
     },
   });
 
@@ -147,8 +147,8 @@ export default function TechPricing() {
                             <FormField control={form.control} name="analyticsDashboard" render={({ field }) => (
                                 <FormItem><FormLabel>Analytics Dashboard (R/mo)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
                             )} />
-                            <FormField control={form.control} name="apiAccess" render={({ field }) => (
-                                <FormItem><FormLabel>API Access (R/mo)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
+                            <FormField control={form.control} name="apiAccessPerCall" render={({ field }) => (
+                                <FormItem><FormLabel>API Access (R/call)</FormLabel><FormControl><Input type="number" {...field} step="0.01" /></FormControl><FormMessage /></FormItem>
                             )} />
                         </div>
                     </div>
