@@ -1,5 +1,6 @@
 
 import { initializeApp, getApps, App, cert, ServiceAccount } from 'firebase-admin/app';
+import serviceAccount from '@/lib/service-account.json';
 
 // This function initializes and returns the Firebase Admin App instance,
 // ensuring it's only created once.
@@ -10,24 +11,16 @@ export function getAdminApp(): { app: App | null; error: string | null } {
     return { app: existingApp, error: null };
   }
 
-  const adminSdkConfigB64 = process.env.FIREBASE_ADMIN_SDK_CONFIG_B64;
-
-  if (!adminSdkConfigB64) {
-    const error = "Admin SDK Error: The FIREBASE_ADMIN_SDK_CONFIG_B64 environment variable is not defined.";
-    console.error(error);
-    return { app: null, error };
-  }
-
   try {
-    // Decode the Base64 string to get the JSON string.
-    const decodedConfig = Buffer.from(adminSdkConfigB64, 'base64').toString('utf-8');
-    
-    // Parse the JSON string into a ServiceAccount object.
-    const serviceAccount: ServiceAccount = JSON.parse(decodedConfig);
-    
-    // Initialize the app with the complete service account object.
+    // Ensure the imported service account has the necessary properties.
+    // This is a type-safe way to check before passing to cert().
+    const validServiceAccount = serviceAccount as ServiceAccount;
+    if (!validServiceAccount.project_id || !validServiceAccount.private_key || !validServiceAccount.client_email) {
+        throw new Error("The service-account.json file is missing required fields (project_id, private_key, client_email).");
+    }
+
     const app = initializeApp({
-      credential: cert(serviceAccount),
+      credential: cert(validServiceAccount),
       storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
     }, 'firebase-admin-app-transconnect'); // Give the app a unique name
 
@@ -35,7 +28,7 @@ export function getAdminApp(): { app: App | null; error: string | null } {
 
   } catch (error: any) {
     console.error("Admin SDK Initialization Failed:", error.message);
-    const detailedError = `Firebase Admin SDK initialization failed: ${error.message}. This can happen if the FIREBASE_ADMIN_SDK_CONFIG_B64 environment variable is not a valid Base64 encoded service account JSON. Use the provided encoder tool to generate a correct string.`;
+    const detailedError = `Firebase Admin SDK initialization failed: ${error.message}. Please ensure the 'src/lib/service-account.json' file contains a valid service account key.`;
     return { app: null, error: detailedError };
   }
 }
