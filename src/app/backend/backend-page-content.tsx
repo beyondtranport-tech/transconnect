@@ -75,6 +75,7 @@ const MallCommissions = dynamic(() => import('./revenue/mall-commissions'), { lo
 const MarketplaceFees = dynamic(() => import('./revenue/marketplace-fees'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const ConnectPlanPricing = dynamic(() => import('./revenue/connect-plan-pricing'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const WalletFees = dynamic(() => import('./revenue/wallet-fees'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const TechPricing = dynamic(() => import('./revenue/tech-pricing'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 
 
 // --- START: Division Specific Dashboards ---
@@ -434,6 +435,8 @@ export default function BackendPageContent() {
         return <ConnectPlanPricing />;
       case 'revenue-wallet-fees':
         return <WalletFees />;
+      case 'revenue-tech-pricing':
+        return <TechPricing />;
       case 'wallet-transactions':
         return <WalletTransactionsList />;
       case 'divisions':
@@ -592,6 +595,10 @@ export default function BackendPageContent() {
                          <SidebarMenuSubButton tooltip="Connect Plan Pricing" isActive={activeView === 'revenue-connect-plans'} onClick={() => router.push('/backend?view=revenue-connect-plans', { scroll: false })}>
                             <HandCoins />
                             <span>Connect Plans</span>
+                        </SidebarMenuSubButton>
+                         <SidebarMenuSubButton tooltip="Tech Component Pricing" isActive={activeView === 'revenue-tech-pricing'} onClick={() => router.push('/backend?view=revenue-tech-pricing', { scroll: false })}>
+                            <Cpu />
+                            <span>Tech Pricing</span>
                         </SidebarMenuSubButton>
                         <SidebarMenuSubButton tooltip="Wallet & Transaction Fees" isActive={activeView === 'revenue-wallet-fees'} onClick={() => router.push('/backend?view=revenue-wallet-fees', { scroll: false })}>
                             <TicketPercent />
