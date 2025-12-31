@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { Suspense, useState, useEffect } from 'react';
@@ -109,10 +108,12 @@ function ApplyForm() {
   const enquiryId = searchParams.get('enquiryId');
 
   const enquiryRef = useMemoFirebase(() => {
+    // Corrected: Ensure all dependencies are loaded before creating the ref.
     if (!firestore || !user || !enquiryId) return null;
     return doc(firestore, `members/${user.uid}/enquiries`, enquiryId);
   }, [firestore, user, enquiryId]);
 
+  // Pass the memoized ref to useDoc
   const { data: existingEnquiry, isLoading: isEnquiryLoading } = useDoc(enquiryRef);
 
   const methods = useForm<ApplicationFormValues>({
@@ -514,5 +515,3 @@ export default function ApplyPage() {
         </div>
     )
 }
-
-    

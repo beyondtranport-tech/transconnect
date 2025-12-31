@@ -180,7 +180,7 @@ export default function EnquiriesCard() {
                                         <TableRow key={enquiry.id}>
                                             <TableCell className="text-muted-foreground text-xs whitespace-nowrap">{formatDate(enquiry.createdAt)}</TableCell>
                                             <TableCell>
-                                                <p className="font-medium capitalize">{fundingNeedsMap[enquiry.fundingType] || enquiry.fundingType?.replace(/-/g, ' ')}</p>
+                                                <p className="font-medium capitalize">{fundingNeedsMap[enquiry.fundingNeed] || enquiry.fundingNeed?.replace(/-/g, ' ')}</p>
                                             </TableCell>
                                             <TableCell>
                                                 <p className="font-medium capitalize">{fundingReasonsMap[enquiry.fundingReason] || enquiry.fundingReason}</p>
@@ -202,7 +202,10 @@ export default function EnquiriesCard() {
                                                     </DropdownMenuTrigger>
                                                     <DropdownMenuContent align="end">
                                                         <DropdownMenuItem asChild>
-                                                            <Link href={`/funding/apply?enquiryId=${enquiry.id}`}>View / Edit</Link>
+                                                            <Link href={`/account/enquiries/${enquiry.id}`}>View Details</Link>
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuItem asChild>
+                                                            <Link href={`/funding/apply?enquiryId=${enquiry.id}`}>Edit</Link>
                                                         </DropdownMenuItem>
                                                         <AlertDialog>
                                                             <AlertDialogTrigger asChild>

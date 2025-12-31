@@ -1,12 +1,11 @@
-
 'use client';
 
 import { Suspense } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { useDoc, useFirestore, useMemoFirebase, useUser } from '@/firebase';
 import { doc } from 'firebase/firestore';
-import { Loader2, Landmark, FileText, User, Calendar, CircleHelp, HandCoins, Truck, Building } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Loader2, Landmark, FileText, User, Calendar, CircleHelp, HandCoins, Truck, Building, ArrowLeft } from 'lucide-react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -61,23 +60,19 @@ function DetailItem({ label, value, icon }: { label: string; value?: string | nu
 
 function EnquiryDetail() {
     const params = useParams();
+    const router = useRouter();
     const enquiryId = params.enquiryId as string;
     const firestore = useFirestore();
+    const { user, isUserLoading } = useUser();
 
-    // This is the incorrect way to get the user before the path is built.
-    // The useDoc hook now handles public/private fetching internally.
-    // A better approach would be to build the path in a useEffect after user is loaded.
-    // Let's create a new memoized ref for the correct path.
-    const { user } = useUser();
-    const correctEnquiryRef = useMemoFirebase(() => {
+    const enquiryRef = useMemoFirebase(() => {
         if (!firestore || !user || !enquiryId) return null;
         return doc(firestore, `members/${user.uid}/enquiries/${enquiryId}`);
     }, [firestore, user, enquiryId]);
-    
 
-    const { data: enquiry, isLoading, error } = useDoc(correctEnquiryRef);
+    const { data: enquiry, isLoading, error } = useDoc(enquiryRef);
 
-    if (isLoading || !enquiry) {
+    if (isLoading || isUserLoading) {
         return (
             <div className="flex justify-center items-center h-full py-20">
                 <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -87,6 +82,18 @@ function EnquiryDetail() {
     
     if (error) {
         return <div className="text-center py-20 text-destructive">Error: {error.message}</div>
+    }
+    
+    if (!enquiry) {
+        return (
+             <div className="text-center py-20">
+                <h2 className="text-2xl font-bold">Enquiry Not Found</h2>
+                <p className="text-muted-foreground mt-2">The requested enquiry could not be found.</p>
+                <Button onClick={() => router.back()} className="mt-6" variant="outline">
+                    <ArrowLeft className="mr-2 h-4 w-4" /> Go Back
+                </Button>
+            </div>
+        )
     }
     
     const fullAddress = [
@@ -156,8 +163,13 @@ function EnquiryDetail() {
                     </>
                 )}
             </CardContent>
-             <CardFooter className="bg-muted/50 p-4 border-t">
+             <CardFooter className="bg-muted/50 p-4 border-t flex justify-between items-center">
                  <p className="text-sm text-muted-foreground">A funding specialist will be in contact shortly to discuss the next steps.</p>
+                 <Button asChild>
+                    <Link href={`/funding/apply?enquiryId=${enquiryId}`}>
+                        Edit Enquiry
+                    </Link>
+                 </Button>
             </CardFooter>
         </Card>
     )
@@ -173,5 +185,3 @@ export default function EnquiryDetailPage() {
         </div>
     )
 }
-
-    
