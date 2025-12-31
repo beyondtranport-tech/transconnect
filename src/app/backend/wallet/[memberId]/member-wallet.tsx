@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useEffect, useCallback } from 'react';
@@ -32,7 +31,7 @@ const formatDate = (isoString: any) => {
 
 export default function MemberWallet({ memberId }: { memberId: string }) {
     const { toast } = useToast();
-    const { user: adminUser } = useUser();
+    const { user: adminUser, isUserLoading: isAdminLoading } = useUser();
     const firestore = useFirestore();
 
     const [isPosting, setIsPosting] = useState(false);
@@ -46,6 +45,7 @@ export default function MemberWallet({ memberId }: { memberId: string }) {
     const [refreshTrigger, setRefreshTrigger] = useState(0);
 
     const fetchMemberData = useCallback(async () => {
+        if (isAdminLoading) return; // Don't fetch if admin user is not loaded
         setIsLoading(true);
         setError(null);
         try {
@@ -72,7 +72,7 @@ export default function MemberWallet({ memberId }: { memberId: string }) {
         } finally {
             setIsLoading(false);
         }
-    }, [memberId]);
+    }, [memberId, isAdminLoading]);
 
     useEffect(() => {
         fetchMemberData();
@@ -148,7 +148,7 @@ export default function MemberWallet({ memberId }: { memberId: string }) {
         }
     };
 
-    if (isLoading) {
+    if (isLoading || isAdminLoading) {
         return <div className="flex justify-center items-center min-h-[calc(100vh-8rem)]"><Loader2 className="h-12 w-12 animate-spin text-primary" /></div>;
     }
 

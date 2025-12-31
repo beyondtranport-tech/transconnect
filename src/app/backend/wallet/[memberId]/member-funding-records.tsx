@@ -19,7 +19,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { getClientSideAuthToken } from '@/firebase';
+import { getClientSideAuthToken, useUser } from '@/firebase';
 
 const statusColors: { [key: string]: 'default' | 'secondary' | 'destructive' | 'outline' } = {
   pending: 'secondary',
@@ -42,6 +42,7 @@ const formatDate = (isoString: string | undefined) => {
 
 
 export default function MemberFundingRecords({ memberId }: { memberId: string }) {
+    const { user, isUserLoading: isAdminLoading } = useUser();
     const [records, setRecords] = useState<any[] | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -49,6 +50,7 @@ export default function MemberFundingRecords({ memberId }: { memberId: string })
     const { toast } = useToast();
 
     const fetchRecords = useCallback(async () => {
+        if (isAdminLoading) return; // Don't fetch if admin user isn't loaded
         setIsLoading(true);
         setError(null);
         try {
@@ -87,7 +89,7 @@ export default function MemberFundingRecords({ memberId }: { memberId: string })
             setError(e.message);
         }
         setIsLoading(false);
-    }, [memberId]);
+    }, [memberId, isAdminLoading]);
 
     useEffect(() => {
         fetchRecords();
@@ -122,6 +124,19 @@ export default function MemberFundingRecords({ memberId }: { memberId: string })
              setIsDeleting(null);
         }
     };
+    
+    if (isLoading || isAdminLoading) {
+        return (
+            <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2"><FileText /> Funding Records (Quotes & Enquiries)</CardTitle>
+                </CardHeader>
+                <CardContent className="flex justify-center items-center py-10">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                </CardContent>
+            </Card>
+        )
+    }
 
     return (
         <Card>
@@ -132,18 +147,13 @@ export default function MemberFundingRecords({ memberId }: { memberId: string })
                 </CardDescription>
             </CardHeader>
             <CardContent>
-                 {isLoading && (
-                    <div className="flex justify-center items-center py-10">
-                        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                    </div>
-                )}
-                {error && (
+                 {error && (
                     <div className="text-destructive-foreground bg-destructive/90 p-4 rounded-md">
                         <h4 className="font-semibold">Error</h4>
                         <p className="text-sm">{error}</p>
                     </div>
                 )}
-                {!isLoading && records && (
+                {!isLoading && !error && records && (
                     records.length > 0 ? (
                         <div className="overflow-x-auto">
                         <Table>

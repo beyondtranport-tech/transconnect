@@ -19,7 +19,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { getClientSideAuthToken } from '@/firebase';
+import { getClientSideAuthToken, useUser } from '@/firebase';
 
 const statusColors: { [key: string]: 'default' | 'secondary' | 'destructive' | 'outline' } = {
   pending: 'secondary',
@@ -39,6 +39,7 @@ const formatDate = (isoString: string | undefined) => {
 
 
 export default function MemberWalletPayments({ memberId, onUpdate }: { memberId: string, onUpdate: () => void }) {
+    const { user, isUserLoading: isAdminLoading } = useUser();
     const [payments, setPayments] = useState<any[] | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -46,6 +47,7 @@ export default function MemberWalletPayments({ memberId, onUpdate }: { memberId:
     const { toast } = useToast();
 
     const fetchPayments = useCallback(async () => {
+        if (isAdminLoading) return; // Don't fetch if admin user isn't loaded
         setIsLoading(true);
         setError(null);
         try {
@@ -69,7 +71,7 @@ export default function MemberWalletPayments({ memberId, onUpdate }: { memberId:
             setError(e.message);
         }
         setIsLoading(false);
-    }, [memberId]);
+    }, [memberId, isAdminLoading]);
 
     useEffect(() => {
         fetchPayments();
@@ -103,6 +105,19 @@ export default function MemberWalletPayments({ memberId, onUpdate }: { memberId:
              setIsDeleting(null);
         }
     };
+    
+    if (isLoading || isAdminLoading) {
+        return (
+            <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2"><Wallet /> Pending Wallet Payments</CardTitle>
+                </CardHeader>
+                <CardContent className="flex justify-center items-center py-10">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                </CardContent>
+            </Card>
+        )
+    }
 
     return (
         <Card>
@@ -113,18 +128,13 @@ export default function MemberWalletPayments({ memberId, onUpdate }: { memberId:
                 </CardDescription>
             </CardHeader>
             <CardContent>
-                 {isLoading && (
-                    <div className="flex justify-center items-center py-10">
-                        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                    </div>
-                )}
-                {error && (
+                 {error && (
                     <div className="text-destructive-foreground bg-destructive/90 p-4 rounded-md">
                         <h4 className="font-semibold">Error</h4>
                         <p className="text-sm">{error}</p>
                     </div>
                 )}
-                {!isLoading && payments && (
+                {!isLoading && !error && payments && (
                     payments.length > 0 ? (
                         <div className="overflow-x-auto">
                         <Table>
