@@ -336,6 +336,20 @@
         "createdAt": { "type": "object" }
       }
     },
+    "Charge": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Charge",
+      "type": "object",
+      "description": "Represents a single billable item from TransConnect to a member (e.g., membership fee, SaaS fee).",
+      "properties": {
+        "chargeId": { "type": "string" },
+        "invoiceId": { "type": "string" },
+        "description": { "type": "string" },
+        "amount": { "type": "number" },
+        "date": { "type": "object" }
+      },
+      "required": ["chargeId", "description", "amount", "date"]
+    },
     "Transaction": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Transaction",
@@ -528,6 +542,18 @@
               "name": "transactionId",
               "description": "The unique identifier of the financial transaction."
             }
+          ]
+        }
+      },
+      {
+        "path": "/members/{memberId}/charges/{chargeId}",
+        "definition": {
+          "entityName": "Charge",
+          "schema": { "$ref": "#/entities/Charge" },
+          "description": "Stores individual billing charges from TransConnect to the member. Writable by admins, readable by the member.",
+          "params": [
+            { "name": "memberId", "description": "The UID of the parent member." },
+            { "name": "chargeId", "description": "The unique identifier of the charge." }
           ]
         }
       },
