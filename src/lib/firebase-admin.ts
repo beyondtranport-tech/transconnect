@@ -1,5 +1,6 @@
 
 import { initializeApp, getApps, App, cert, ServiceAccount } from 'firebase-admin/app';
+import { getFirestore } from 'firebase-admin/firestore';
 import serviceAccount from '@/lib/service-account.json';
 
 // This function initializes and returns the Firebase Admin App instance,
@@ -13,7 +14,6 @@ export function getAdminApp(): { app: App | null; error: string | null } {
 
   try {
     // Ensure the imported service account has the necessary properties.
-    // This is a type-safe way to check before passing to cert().
     const validServiceAccount = serviceAccount as ServiceAccount;
     if (!validServiceAccount.project_id || !validServiceAccount.private_key || !validServiceAccount.client_email) {
         throw new Error("The service-account.json file is missing required fields (project_id, private_key, client_email).");
@@ -22,7 +22,7 @@ export function getAdminApp(): { app: App | null; error: string | null } {
     const app = initializeApp({
       credential: cert(validServiceAccount),
       storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-    }, 'firebase-admin-app-transconnect'); // Give the app a unique name
+    }, 'firebase-admin-app-transconnect');
 
     return { app, error: null };
 
