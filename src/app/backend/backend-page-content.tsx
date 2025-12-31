@@ -62,7 +62,6 @@ import DashboardContent from './dashboard-content';
 import ShopsList from './shops-list';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import DebugToolsContent from './debug-tools';
 
 
 // --- START: Division Specific Dashboards ---
@@ -387,8 +386,6 @@ export default function BackendPageContent() {
         return <PlatformTasksContent />;
       case 'platform-settings':
         return <PlatformSettingsContent />;
-      case 'debug-tools':
-        return <DebugToolsContent />;
       case 'revenue-pricing':
         return <RevenuePricingContent />;
       case 'wallet-transactions':
@@ -540,12 +537,6 @@ export default function BackendPageContent() {
                         </SidebarMenuSubButton>
                     </SidebarMenuSub>
                 </SidebarMenuItem>
-               <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Debug Tools" isActive={activeView === 'debug-tools'} onClick={() => router.push('/backend?view=debug-tools', { scroll: false })}>
-                  <Wrench />
-                  <span>Debug Tools</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
           </SidebarGroup>
         </SidebarContent>
         <SidebarFooter>
