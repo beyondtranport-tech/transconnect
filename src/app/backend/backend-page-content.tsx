@@ -563,9 +563,9 @@ export default function BackendPageContent() {
                         <span>Revenue</span>
                     </SidebarMenuButton>
                      <SidebarMenuSub>
-                        <SidebarMenuSubButton isActive={activeView === 'revenue-pricing'} onClick={() => router.push('/backend?view=revenue-pricing', { scroll: false })}>
+                        <SidebarMenuSubButton tooltip="Membership Plans" isActive={activeView === 'revenue-pricing'} onClick={() => router.push('/backend?view=revenue-pricing', { scroll: false })}>
                             <TrendingUp />
-                            <span>Pricing</span>
+                            <span>Membership</span>
                         </SidebarMenuSubButton>
                     </SidebarMenuSub>
                 </SidebarMenuItem>

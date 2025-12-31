@@ -170,7 +170,7 @@ export default function PricingManagement() {
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <div>
-            <CardTitle>Membership Pricing</CardTitle>
+            <CardTitle>Membership Plans</CardTitle>
             <CardDescription>Manage the membership tiers, pricing, and features available to users.</CardDescription>
         </div>
         <PlanDialog onSave={forceRefresh} />
@@ -215,5 +215,3 @@ export default function PricingManagement() {
     </Card>
   );
 }
-
-    
