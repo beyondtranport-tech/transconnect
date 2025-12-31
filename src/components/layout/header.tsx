@@ -2,7 +2,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { Truck, Menu, User, ChevronDown, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -40,6 +40,7 @@ const divisionLinks = [
 
 export function Header() {
   const pathname = usePathname();
+  const router = useRouter();
   const [isSheetOpen, setIsSheetOpen] = React.useState(false);
   const { user, isUserLoading } = useUser();
   const auth = useAuth();
@@ -48,11 +49,18 @@ export function Header() {
   React.useEffect(() => {
     setIsClient(true);
   }, []);
+  
+  function deleteCookie(name: string) {
+    document.cookie = name + '=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+  }
 
   const handleSignOut = async () => {
     if (!auth) return;
     try {
         await signOut(auth);
+        // Explicitly remove cookies on sign-out
+        deleteCookie('decodedToken');
+        router.push('/');
     } catch (error) {
         console.error("Error signing out: ", error);
     }

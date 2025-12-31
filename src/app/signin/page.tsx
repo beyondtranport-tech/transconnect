@@ -44,6 +44,7 @@ function setCookie(name: string, value: string, days: number) {
         date.setTime(date.getTime() + (days*24*60*60*1000));
         expires = "; expires=" + date.toUTCString();
     }
+    // Ensure the cookie is set for the root path
     document.cookie = name + "=" + (value || "")  + expires + "; path=/";
 }
 
@@ -64,9 +65,8 @@ function SignInFormComponent() {
     },
   });
   
-  // This effect will run when the user's auth state is confirmed.
-  // The middleware handles the actual redirection logic.
   useEffect(() => {
+    // This effect handles redirection for already-logged-in users visiting the signin page.
     if (!isUserLoading && user) {
         const redirectParam = searchParams.get('redirect');
         const isAdmin = user.email === 'beyondtransport@gmail.com';
@@ -126,14 +126,20 @@ function SignInFormComponent() {
       const userCredential = await signInWithEmailAndPassword(auth, values.email, values.password);
       const user = userCredential.user;
       
-      const idToken = await user.getIdToken();
-      const decodedToken = await user.getIdTokenResult();
+      const decodedToken = await getIdTokenResult(user);
       
-      // Set cookies for middleware and server-side rendering
-      setCookie('firebaseIdToken', idToken, 1);
+      // Set a cookie with the claims for the middleware to read.
       setCookie('decodedToken', JSON.stringify(decodedToken), 1);
       
-      // The useEffect will now handle the redirection once the user state is updated.
+      // Post-login redirection logic is now handled by the middleware and the useEffect hook.
+      // We no longer need to force a reload.
+      const redirectParam = searchParams.get('redirect');
+      const isAdmin = user.email === 'beyondtransport@gmail.com';
+      const defaultRedirect = isAdmin ? '/backend' : '/account';
+
+      // After setting the cookie, push to the correct dashboard.
+      // The middleware will now allow this navigation.
+      router.push(redirectParam || defaultRedirect);
       
     } catch (error: any) {
       let title = 'An error occurred.';
@@ -149,7 +155,8 @@ function SignInFormComponent() {
         title,
         description,
       });
-      setIsLoading(false); // Only set loading to false on error, success will trigger a page change
+    } finally {
+        setIsLoading(false);
     }
   };
 
