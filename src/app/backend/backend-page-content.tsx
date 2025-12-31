@@ -42,6 +42,8 @@ import {
   ArrowRight,
   LineChart,
   Key,
+  HandCoins,
+  TicketPercent,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -69,6 +71,10 @@ const ReconciliationPage = dynamic(() => import('./reconciliation/page'), { load
 const BankDetailsSettings = dynamic(() => import('./bank-details-settings'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const ChartOfAccountsSettings = dynamic(() => import('./chart-of-accounts-settings'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const PricingManagement = dynamic(() => import('./revenue/pricing-management'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const MallCommissions = dynamic(() => import('./revenue/mall-commissions'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const MarketplaceFees = dynamic(() => import('./revenue/marketplace-fees'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const ConnectPlanPricing = dynamic(() => import('./revenue/connect-plan-pricing'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const WalletFees = dynamic(() => import('./revenue/wallet-fees'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 
 
 // --- START: Division Specific Dashboards ---
@@ -418,8 +424,16 @@ export default function BackendPageContent() {
         return <PlatformTasksContent />;
       case 'platform-settings':
         return <PlatformSettingsContent />;
-      case 'revenue-pricing':
+      case 'revenue-membership':
         return <PricingManagement />;
+      case 'revenue-mall-commissions':
+        return <MallCommissions />;
+      case 'revenue-marketplace-fees':
+        return <MarketplaceFees />;
+      case 'revenue-connect-plans':
+        return <ConnectPlanPricing />;
+      case 'revenue-wallet-fees':
+        return <WalletFees />;
       case 'wallet-transactions':
         return <WalletTransactionsList />;
       case 'divisions':
@@ -563,9 +577,25 @@ export default function BackendPageContent() {
                         <span>Revenue</span>
                     </SidebarMenuButton>
                      <SidebarMenuSub>
-                        <SidebarMenuSubButton tooltip="Membership Plans" isActive={activeView === 'revenue-pricing'} onClick={() => router.push('/backend?view=revenue-pricing', { scroll: false })}>
+                        <SidebarMenuSubButton tooltip="Membership Plans" isActive={activeView === 'revenue-membership'} onClick={() => router.push('/backend?view=revenue-membership', { scroll: false })}>
                             <TrendingUp />
                             <span>Membership</span>
+                        </SidebarMenuSubButton>
+                        <SidebarMenuSubButton tooltip="Mall Commissions" isActive={activeView === 'revenue-mall-commissions'} onClick={() => router.push('/backend?view=revenue-mall-commissions', { scroll: false })}>
+                            <ShoppingBasket />
+                            <span>Mall Commissions</span>
+                        </SidebarMenuSubButton>
+                        <SidebarMenuSubButton tooltip="Marketplace Fees" isActive={activeView === 'revenue-marketplace-fees'} onClick={() => router.push('/backend?view=revenue-marketplace-fees', { scroll: false })}>
+                            <Store />
+                            <span>Marketplace Fees</span>
+                        </SidebarMenuSubButton>
+                         <SidebarMenuSubButton tooltip="Connect Plan Pricing" isActive={activeView === 'revenue-connect-plans'} onClick={() => router.push('/backend?view=revenue-connect-plans', { scroll: false })}>
+                            <HandCoins />
+                            <span>Connect Plans</span>
+                        </SidebarMenuSubButton>
+                        <SidebarMenuSubButton tooltip="Wallet & Transaction Fees" isActive={activeView === 'revenue-wallet-fees'} onClick={() => router.push('/backend?view=revenue-wallet-fees', { scroll: false })}>
+                            <TicketPercent />
+                            <span>Wallet Fees</span>
                         </SidebarMenuSubButton>
                     </SidebarMenuSub>
                 </SidebarMenuItem>
