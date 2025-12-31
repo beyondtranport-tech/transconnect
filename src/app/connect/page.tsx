@@ -1,10 +1,9 @@
-
 'use client';
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
-import { Check, Gift, Heart, Zap, ArrowRight } from "lucide-react";
+import { Check, Gift, Heart, Zap, ArrowRight, Loader2 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import data from "@/lib/placeholder-images.json";
@@ -13,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import { DataContributionModal } from "./data-contribution-modal";
 import React from "react";
 import * as gtag from '@/lib/gtag';
+import { useConfig } from '@/hooks/use-config';
 
 const { placeholderImages } = data;
 
@@ -24,46 +24,6 @@ const iconMap: { [key: string]: React.ElementType } = {
     "Loyalty Plan": Heart,
     "Actions Plan": Zap,
 };
-
-const plans = [
-    {
-        id: "rewards",
-        title: "Rewards Plan",
-        price: 50,
-        description: "Claim your share to discounts and save",
-        features: [
-            "Earn points on all Mall purchases",
-            "Redeem points for fuel vouchers",
-            "Access exclusive member-only products"
-        ],
-        cta: "Activate Rewards Plan"
-    },
-    {
-        id: "loyalty",
-        title: "Loyalty Plan",
-        price: 50,
-        description: "Join our loyalty plan, your path to increasing your share of the rewards.",
-        features: [
-            "Unlock deep discounts from our network of trusted suppliers.",
-            "Get exclusive pricing on parts & tires",
-            "Receive special offers from partners",
-            "Priority access to new suppliers"
-        ],
-        cta: "Activate Loyalty Plan"
-    },
-    {
-        id: "actions",
-        title: "Actions Plan",
-        price: 50,
-        description: "Generate new revenue by sharing the benefits of TransConnect.",
-        features: [
-            "Earn commission on referrals",
-            "Get paid for sharing supplier discounts",
-            "Track your earnings in a dedicated dashboard",
-        ],
-        cta: "Activate Actions Plan"
-    },
-]
 
 const formatPrice = (price: number) => {
     const formattedPrice = new Intl.NumberFormat('en-ZA', {
@@ -88,6 +48,52 @@ export default function ConnectPage() {
     const [isClient, setIsClient] = useState(false);
     const [hasInteracted, setHasInteracted] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    
+    const { data: pricing, isLoading: isPricingLoading } = useConfig<{
+      rewardsPlanPrice: number;
+      loyaltyPlanPrice: number;
+      actionsPlanPrice: number;
+    }>('connectPlans');
+
+    const plans = [
+        {
+            id: "rewards",
+            title: "Rewards Plan",
+            price: pricing?.rewardsPlanPrice || 50,
+            description: "Claim your share to discounts and save",
+            features: [
+                "Earn points on all Mall purchases",
+                "Redeem points for fuel vouchers",
+                "Access exclusive member-only products"
+            ],
+            cta: "Activate Rewards Plan"
+        },
+        {
+            id: "loyalty",
+            title: "Loyalty Plan",
+            price: pricing?.loyaltyPlanPrice || 50,
+            description: "Join our loyalty plan, your path to increasing your share of the rewards.",
+            features: [
+                "Unlock deep discounts from our network of trusted suppliers.",
+                "Get exclusive pricing on parts & tires",
+                "Receive special offers from partners",
+                "Priority access to new suppliers"
+            ],
+            cta: "Activate Loyalty Plan"
+        },
+        {
+            id: "actions",
+            title: "Actions Plan",
+            price: pricing?.actionsPlanPrice || 50,
+            description: "Generate new revenue by sharing the benefits of TransConnect.",
+            features: [
+                "Earn commission on referrals",
+                "Get paid for sharing supplier discounts",
+                "Track your earnings in a dedicated dashboard",
+            ],
+            cta: "Activate Actions Plan"
+        },
+    ];
 
     useEffect(() => {
         setIsClient(true);
@@ -168,7 +174,11 @@ export default function ConnectPage() {
                                             {IconComponent && <IconComponent className="h-10 w-10 text-primary" />}
                                             <h3 className="text-3xl font-bold font-headline">{plan.title}</h3>
                                         </div>
-                                        <p className="mt-2 text-lg font-semibold text-primary">{formatPrice(plan.price)}/month</p>
+                                        {isPricingLoading ? (
+                                            <Loader2 className="h-5 w-5 animate-spin mt-2" />
+                                        ) : (
+                                            <p className="mt-2 text-lg font-semibold text-primary">{formatPrice(plan.price)}/month</p>
+                                        )}
                                         <p className="mt-4 text-lg text-muted-foreground">
                                             {plan.description}
                                         </p>

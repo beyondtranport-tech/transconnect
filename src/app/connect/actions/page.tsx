@@ -1,21 +1,26 @@
-
 'use client';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useUser } from '@/firebase';
-import { ArrowRight, Zap } from 'lucide-react';
+import { ArrowRight, Loader2, Zap } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import data from '@/lib/placeholder-images.json';
+import { useConfig } from '@/hooks/use-config';
 
 const { placeholderImages } = data;
 
 const actionsImage = placeholderImages.find(p => p.id === 'tech-division');
 
+const formatPrice = (price: number) => {
+    return new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(price);
+};
+
 export default function ActionsPlanPage() {
     const { user } = useUser();
     const ctaLink = user ? '/account' : '/signin';
+    const { data: pricing, isLoading } = useConfig<{ actionsPlanPrice: number }>('connectPlans');
     
     return (
         <div className="container mx-auto px-4 py-16">
@@ -38,7 +43,11 @@ export default function ActionsPlanPage() {
                             <Zap className="h-12 w-12 text-primary" />
                             <div>
                                 <h1 className="text-3xl md:text-4xl font-bold font-headline">Actions Plan</h1>
-                                <p className="text-lg text-primary font-semibold">R 50/month</p>
+                                {isLoading ? (
+                                    <Loader2 className="h-6 w-6 animate-spin text-primary mt-2" />
+                                ) : (
+                                    <p className="text-lg text-primary font-semibold">{formatPrice(pricing?.actionsPlanPrice || 50)}/month</p>
+                                )}
                             </div>
                         </div>
                     </CardHeader>
