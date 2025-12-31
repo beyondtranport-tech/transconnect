@@ -1,10 +1,9 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, CheckCircle, XCircle, Key, FileJson, Database, ArrowRight, Server } from 'lucide-react';
+import { Loader2, CheckCircle, XCircle, Key, FileJson, Database, ArrowRight, Server, ShieldAlert } from 'lucide-react';
 import { getAdminSdkDiagnostics, testFirestoreConnection } from './actions';
 import Link from 'next/link';
 
@@ -60,6 +59,75 @@ export default function DebugToolsContent() {
                 <h1 className="text-2xl font-bold">Admin SDK Debug Tools</h1>
                 <p className="mt-2 text-muted-foreground">Tools for diagnosing the admin backend configuration.</p>
             </div>
+
+            <Card className="border-destructive bg-destructive/10">
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-destructive"><ShieldAlert />Next Steps for Authentication Error</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4 text-destructive-foreground">
+                    <p>
+                        The "Connection Failed" error persists even though the application code appears correct. This strongly indicates the issue is with the Service Account credential itself, not the code.
+                    </p>
+                    <p>
+                        The credential being used might be disabled, deleted, or lacking the correct permissions in Google Cloud.
+                    </p>
+                    <h4 className="font-semibold">Action Required:</h4>
+                    <ol className="list-decimal list-inside space-y-2">
+                        <li>Go to the Google Cloud IAM & Admin section for your project to manage service accounts.</li>
+                        <li>Find the service account with the email: <br/><code className="text-xs bg-destructive/20 p-1 rounded">{diagnostics?.clientEmail || "firebase-adminsdk-fbsvc@..."}</code></li>
+                        <li>Ensure the service account is enabled (it should not have a red disabled icon).</li>
+                        <li>Click on the service account, go to the "Keys" tab, and create a new JSON key.</li>
+                        <li>Use the "Base64 Encoder Tool" below to encode the new key file.</li>
+                        <li>Update the `FIREBASE_ADMIN_SDK_CONFIG_B64` secret in your hosting environment with the new Base64 string.</li>
+                    </ol>
+                </CardContent>
+                <CardFooter>
+                     <Button asChild variant="destructive">
+                        <a href={`https://console.cloud.google.com/iam-admin/serviceaccounts?project=${diagnostics?.projectId || ''}`} target="_blank" rel="noopener noreferrer">
+                           Open Google Cloud Service Accounts <ArrowRight className="ml-2 h-4 w-4" />
+                        </a>
+                    </Button>
+                </CardFooter>
+            </Card>
+
+            <Card>
+                <CardHeader>
+                     <CardTitle className="flex items-center gap-2"><Database /> Firestore Connection Test</CardTitle>
+                    <CardDescription>
+                        This button attempts to make a live, authenticated request to Firestore from the backend to verify the end-to-end connection.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    {testResult.loading ? (
+                         <div className="flex items-center gap-2 text-muted-foreground">
+                            <Loader2 className="h-5 w-5 animate-spin" />
+                            <span>Testing connection...</span>
+                        </div>
+                    ) : testResult.error ? (
+                         <div className="flex flex-col gap-2 text-destructive">
+                            <div className="flex items-center gap-2 font-semibold">
+                                <XCircle className="h-5 w-5" />
+                                <span>Connection Failed.</span>
+                            </div>
+                            <p className="text-sm font-mono bg-destructive/10 p-2 rounded-md">{testResult.error}</p>
+                        </div>
+                    ) : testResult.success ? (
+                         <div className="flex items-center gap-2 text-green-600">
+                            <CheckCircle className="h-5 w-5" />
+                            <span className="font-semibold">Successfully connected to Firestore and fetched data.</span>
+                        </div>
+                    ) : (
+                        <p className="text-sm text-muted-foreground">Click the button to start the test.</p>
+                    )}
+                </CardContent>
+                <CardFooter>
+                    <Button onClick={handleTestConnection} disabled={testResult.loading}>
+                        {testResult.loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null}
+                        Run Live Connection Test
+                    </Button>
+                </CardFooter>
+            </Card>
+
             <Card>
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2"><Server /> Environment Variable Inspection</CardTitle>
@@ -132,44 +200,6 @@ export default function DebugToolsContent() {
                         </ul>
                     ) : null}
                 </CardContent>
-            </Card>
-
-            <Card>
-                <CardHeader>
-                     <CardTitle className="flex items-center gap-2"><Database /> Firestore Connection Test</CardTitle>
-                    <CardDescription>
-                        This button attempts to make a live, authenticated request to Firestore from the backend to verify the end-to-end connection.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
-                    {testResult.loading ? (
-                         <div className="flex items-center gap-2 text-muted-foreground">
-                            <Loader2 className="h-5 w-5 animate-spin" />
-                            <span>Testing connection...</span>
-                        </div>
-                    ) : testResult.error ? (
-                         <div className="flex flex-col gap-2 text-destructive">
-                            <div className="flex items-center gap-2 font-semibold">
-                                <XCircle className="h-5 w-5" />
-                                <span>Connection Failed.</span>
-                            </div>
-                            <p className="text-sm font-mono bg-destructive/10 p-2 rounded-md">{testResult.error}</p>
-                        </div>
-                    ) : testResult.success ? (
-                         <div className="flex items-center gap-2 text-green-600">
-                            <CheckCircle className="h-5 w-5" />
-                            <span className="font-semibold">Successfully connected to Firestore and fetched data.</span>
-                        </div>
-                    ) : (
-                        <p className="text-sm text-muted-foreground">Click the button to start the test.</p>
-                    )}
-                </CardContent>
-                <CardFooter>
-                    <Button onClick={handleTestConnection} disabled={testResult.loading}>
-                        {testResult.loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null}
-                        Run Live Connection Test
-                    </Button>
-                </CardFooter>
             </Card>
 
              <Card>
