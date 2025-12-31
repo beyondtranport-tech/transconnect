@@ -36,7 +36,6 @@ import { Loader2, Eye, EyeOff, Building2, User } from 'lucide-react';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { Badge } from '@/components/ui/badge';
-import { getFunctions, httpsCallable } from 'firebase/functions';
 
 const formSchema = z.object({
   firstName: z.string().min(1, 'First name is required'),
