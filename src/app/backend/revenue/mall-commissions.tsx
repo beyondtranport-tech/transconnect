@@ -26,6 +26,8 @@ const formSchema = z.object({
   buySellMall: z.coerce.number().min(0).max(100, 'Must be between 0 and 100'),
   warehouseMall: z.coerce.number().min(0).max(100, 'Must be between 0 and 100'),
   repurposeMall: z.coerce.number().min(0).max(100, 'Must be between 0 and 100'),
+  loadsMall: z.coerce.number().min(0).max(100, 'Must be between 0 and 100'),
+  distributionMall: z.coerce.number().min(0).max(100, 'Must be between 0 and 100'),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -46,6 +48,8 @@ export default function MallCommissions() {
       buySellMall: 0,
       warehouseMall: 0,
       repurposeMall: 0,
+      loadsMall: 0,
+      distributionMall: 0,
     },
   });
 
@@ -141,6 +145,28 @@ export default function MallCommissions() {
                             render={({ field }) => (
                                 <FormItem>
                                 <FormLabel>Repurpose Mall (%)</FormLabel>
+                                <FormControl><Input type="number" {...field} /></FormControl>
+                                <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                         <FormField
+                            control={form.control}
+                            name="loadsMall"
+                            render={({ field }) => (
+                                <FormItem>
+                                <FormLabel>Loads Mall (%)</FormLabel>
+                                <FormControl><Input type="number" {...field} /></FormControl>
+                                <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                         <FormField
+                            control={form.control}
+                            name="distributionMall"
+                            render={({ field }) => (
+                                <FormItem>
+                                <FormLabel>Distribution Mall (%)</FormLabel>
                                 <FormControl><Input type="number" {...field} /></FormControl>
                                 <FormMessage />
                                 </FormItem>
