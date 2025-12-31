@@ -1,6 +1,6 @@
 
 import { initializeApp, getApps, App, cert } from 'firebase-admin/app';
-import { serviceAccount } from '@/lib/service-account';
+import serviceAccount from '@/lib/service-account.json';
 import type { ServiceAccount } from 'firebase-admin/app';
 
 
@@ -8,7 +8,7 @@ const ADMIN_APP_NAME = 'firebase-admin-app-transconnect-studio';
 
 export function getAdminApp(): { app: App | null; error: string | null } {
   // Check if the required service account details are present.
-  if (!serviceAccount.projectId || !serviceAccount.clientEmail || !serviceAccount.privateKey) {
+  if (!serviceAccount.project_id || !serviceAccount.client_email || !serviceAccount.private_key) {
     const errorMessage = `Firebase Admin SDK initialization failed: Missing service account details.`;
     console.error(errorMessage);
     return { app: null, error: errorMessage };
