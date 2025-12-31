@@ -3,27 +3,7 @@ import { getFirestore, FieldValue, Timestamp } from 'firebase-admin/firestore';
 import { NextRequest, NextResponse } from 'next/server';
 import { headers } from 'next/headers';
 import { getAuth } from 'firebase-admin/auth';
-// We need the admin app for this admin-only action
-import { initializeApp, getApps, App, cert, ServiceAccount } from 'firebase-admin/app';
-import serviceAccount from '@/lib/service-account.json';
-
-// Duplicating getAdminApp here because of module resolution issues in API routes
-function getAdminApp(): { app: App | null; error: string | null } {
-  const existingApp = getApps().find(app => app.name === 'firebase-admin-app-transconnect-api');
-  if (existingApp) {
-    return { app: existingApp, error: null };
-  }
-
-  try {
-    const validServiceAccount = serviceAccount as ServiceAccount;
-    const app = initializeApp({
-      credential: cert(validService-account),
-    }, 'firebase-admin-app-transconnect-api');
-    return { app, error: null };
-  } catch (error: any) {
-    return { app: null, error: `Firebase Admin SDK initialization failed: ${error.message}` };
-  }
-}
+import { getAdminApp } from '@/lib/firebase-admin';
 
 
 export async function POST(req: NextRequest) {

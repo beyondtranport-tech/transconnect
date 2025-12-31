@@ -26,7 +26,7 @@ function serializeTimestamps(docData: any) {
 export async function POST(req: NextRequest) {
     const { app, error: initError } = getAdminApp();
     if (initError || !app) {
-        return NextResponse.json({ success: false, error: 'Internal Server Error: Could not connect to Firebase.' }, { status: 500 });
+        return NextResponse.json({ success: false, error: `Internal Server Error: Could not connect to Firebase. ${initError}` }, { status: 500 });
     }
 
     const { path, type } = await req.json();
@@ -57,6 +57,9 @@ export async function POST(req: NextRequest) {
                  return NextResponse.json({ success: false, error: 'Unauthorized: Invalid token.' }, { status: 401 });
             }
         }
+    } else if (!isPublicPath) {
+        // If not a public path and no token is provided, deny access.
+        return NextResponse.json({ success: false, error: 'Unauthorized: No token provided.' }, { status: 401 });
     }
 
     // Security Check
@@ -83,8 +86,13 @@ export async function POST(req: NextRequest) {
             } else {
                 return NextResponse.json({ success: true, data: null });
             }
+        } else if (type === 'collection-group') {
+             const collectionGroupRef = db.collectionGroup(path);
+             const snapshot = await collectionGroupRef.get();
+             const data = snapshot.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
+             return NextResponse.json({ success: true, data });
         } else {
-             return NextResponse.json({ success: false, error: 'Bad Request: "type" must be "collection" or "document".' }, { status: 400 });
+             return NextResponse.json({ success: false, error: 'Bad Request: "type" must be "collection", "document", or "collection-group".' }, { status: 400 });
         }
     } catch (error: any) {
         console.error(`Error fetching path "${path}":`, error);
