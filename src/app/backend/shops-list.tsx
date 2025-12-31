@@ -10,10 +10,8 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useCollection, useFirestore, useMemoFirebase, getClientSideAuthToken } from '@/firebase';
-import { collection, doc } from 'firebase/firestore';
+import { collection } from 'firebase/firestore';
 import { ShopPreview } from '@/components/shop-preview';
-import { getShops } from './actions';
-
 
 interface Shop {
     id: string;
@@ -24,6 +22,27 @@ interface Shop {
     createdAt: string;
     [key: string]: any; // Allow other properties
 }
+
+async function fetchFromAdminAPI(action: string, payload?: any) {
+    const token = await getClientSideAuthToken();
+    if (!token) throw new Error("Authentication failed.");
+    
+    const response = await fetch('/api/admin', {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ action, payload }),
+    });
+
+    const result = await response.json();
+    if (!response.ok || !result.success) {
+        throw new Error(result.error || `API Error for action: ${action}`);
+    }
+    return result;
+}
+
 
 const statusColors: { [key: string]: 'default' | 'secondary' | 'destructive' | 'outline' } = {
   draft: 'secondary',
@@ -74,20 +93,17 @@ export default function ShopsList() {
 
     async function fetchShops() {
         setIsLoading(true);
-        const token = await getClientSideAuthToken();
-        if (!token) {
-            setError("Authentication failed.");
-            setIsLoading(false);
-            return;
+        try {
+            const result = await fetchFromAdminAPI('getShops');
+            if (result.data) {
+                 const sortedShops = result.data.sort((a: Shop, b: Shop) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+                 setShops(sortedShops);
+            }
+        } catch (e: any) {
+            setError(e.message || 'Failed to fetch shops.');
+        } finally {
+             setIsLoading(false);
         }
-        const result = await getShops(token);
-        if (result.success && result.data) {
-            const sortedShops = result.data.sort((a: Shop, b: Shop) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-            setShops(sortedShops);
-        } else {
-            setError(result.error || 'Failed to fetch shops.');
-        }
-        setIsLoading(false);
     }
 
     useEffect(() => {

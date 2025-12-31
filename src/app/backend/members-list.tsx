@@ -8,7 +8,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { getMembers } from './actions';
 import { getClientSideAuthToken } from '@/firebase';
 
 interface Member {
@@ -21,6 +20,27 @@ interface Member {
     walletBalance?: number;
     createdAt?: string;
 }
+
+async function fetchFromAdminAPI(action: string, payload?: any) {
+    const token = await getClientSideAuthToken();
+    if (!token) throw new Error("Authentication failed.");
+    
+    const response = await fetch('/api/admin', {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ action, payload }),
+    });
+
+    const result = await response.json();
+    if (!response.ok || !result.success) {
+        throw new Error(result.error || `API Error for action: ${action}`);
+    }
+    return result;
+}
+
 
 const formatCurrency = (amount: number | undefined) => {
     if (amount === undefined) return 'N/A';
@@ -44,19 +64,14 @@ export default function MembersList() {
     useEffect(() => {
         async function fetchMembers() {
             setIsLoading(true);
-            const token = await getClientSideAuthToken();
-            if (!token) {
-                setError("Authentication failed.");
-                setIsLoading(false);
-                return;
-            }
-            const result = await getMembers(token);
-            if (result.success && result.data) {
+            try {
+                const result = await fetchFromAdminAPI('getMembers');
                 setMembers(result.data);
-            } else {
-                setError(result.error || 'Failed to fetch members.');
+            } catch (e: any) {
+                 setError(e.message || 'Failed to fetch members.');
+            } finally {
+                setIsLoading(false);
             }
-            setIsLoading(false);
         }
 
         fetchMembers();

@@ -58,7 +58,6 @@ import { Badge } from '@/components/ui/badge';
 
 // Using next/dynamic to lazy-load components
 import dynamic from 'next/dynamic';
-import { getFinanceApplications } from './actions';
 
 const DashboardContent = dynamic(() => import('./dashboard-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const MembersList = dynamic(() => import('./members-list'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
@@ -98,6 +97,27 @@ const statusColors: { [key: string]: 'default' | 'secondary' | 'destructive' | '
   approved: 'default',
 };
 
+async function fetchFromAdminAPI(action: string, payload?: any) {
+    const token = await getClientSideAuthToken();
+    if (!token) throw new Error("Authentication failed.");
+    
+    const response = await fetch('/api/admin', {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ action, payload }),
+    });
+
+    const result = await response.json();
+    if (!response.ok || !result.success) {
+        throw new Error(result.error || `API Error for action: ${action}`);
+    }
+    return result;
+}
+
+
 function FundingDivisionContent() {
     const [stats, setStats] = useState({ applications: 0, totalRequested: 0, totalFunded: 0 });
     const [applications, setApplications] = useState<any[]>([]);
@@ -107,24 +127,22 @@ function FundingDivisionContent() {
     useEffect(() => {
         async function loadData() {
             setIsLoading(true);
-            const token = await getClientSideAuthToken();
-            if (!token) {
-                setError("Authentication failed.");
+            try {
+                const result = await fetchFromAdminAPI('getFinanceApplications');
+                if (result.data) {
+                    const apps = result.data;
+                    const totalFunded = apps.filter((app: any) => app.status === 'funded').reduce((sum: number, app: any) => sum + (app.amountRequested || 0), 0);
+                    const totalRequested = apps.reduce((sum: number, app: any) => sum + (app.amountRequested || 0), 0);
+                    setStats({ applications: apps.length, totalRequested, totalFunded });
+                    setApplications(apps);
+                } else {
+                    setError("Failed to load funding data.");
+                }
+            } catch (e: any) {
+                setError(e.message);
+            } finally {
                 setIsLoading(false);
-                return;
             }
-
-            const result = await getFinanceApplications(token);
-            if (result.success && result.data) {
-                const apps = result.data;
-                const totalFunded = apps.filter(app => app.status === 'funded').reduce((sum, app) => sum + (app.amountRequested || 0), 0);
-                const totalRequested = apps.reduce((sum, app) => sum + (app.amountRequested || 0), 0);
-                setStats({ applications: apps.length, totalRequested, totalFunded });
-                setApplications(apps);
-            } else {
-                setError(result.error || "Failed to load funding data.");
-            }
-            setIsLoading(false);
         }
         loadData();
     }, []);
@@ -196,27 +214,24 @@ function MallDivisionContent() {
     useEffect(() => {
         async function loadData() {
             setIsLoading(true);
-            const { getShops } = await import('./actions');
-            const token = await getClientSideAuthToken();
-            if (!token) {
-                setError("Authentication failed.");
+            try {
+                const result = await fetchFromAdminAPI('getShops');
+                if (result.data) {
+                    const allShops = result.data;
+                    setStats({
+                        total: allShops.length,
+                        pending: allShops.filter((s:any) => s.status === 'pending_review').length,
+                        approved: allShops.filter((s:any) => s.status === 'approved').length,
+                    });
+                    setShops(allShops);
+                } else {
+                    setError("Failed to load shop data.");
+                }
+            } catch(e: any) {
+                setError(e.message)
+            } finally {
                 setIsLoading(false);
-                return;
             }
-
-            const result = await getShops(token);
-            if (result.success && result.data) {
-                const allShops = result.data;
-                setStats({
-                    total: allShops.length,
-                    pending: allShops.filter(s => s.status === 'pending_review').length,
-                    approved: allShops.filter(s => s.status === 'approved').length,
-                });
-                setShops(allShops);
-            } else {
-                setError(result.error || "Failed to load shop data.");
-            }
-            setIsLoading(false);
         }
         loadData();
     }, []);

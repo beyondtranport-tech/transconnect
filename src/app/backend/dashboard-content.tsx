@@ -21,7 +21,6 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import { useToast } from '@/hooks/use-toast';
-import { getMembers, getContributions, getFinanceApplications } from './actions';
 import { getClientSideAuthToken } from '@/firebase';
 
 interface Member {
@@ -41,6 +40,26 @@ interface FinanceApplication {
     status: string;
     createdAt: string;
     recordType: 'Quote' | 'Enquiry';
+}
+
+async function fetchFromAdminAPI(action: string, payload?: any) {
+    const token = await getClientSideAuthToken();
+    if (!token) throw new Error("Authentication failed.");
+    
+    const response = await fetch('/api/admin', {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ action, payload }),
+    });
+
+    const result = await response.json();
+    if (!response.ok || !result.success) {
+        throw new Error(result.error || `API Error for action: ${action}`);
+    }
+    return result;
 }
 
 const formatDate = (isoString: string | undefined, options?: Intl.DateTimeFormatOptions) => {
@@ -81,37 +100,32 @@ export default function DashboardContent() {
         setIsLoading(true);
         setError(null);
         try {
-            const token = await getClientSideAuthToken();
-            if (!token) {
-                throw new Error("Authentication failed. Please sign in again.");
-            }
-
             const [membersResult, contributionsResult, financeResult] = await Promise.all([
-                getMembers(token),
-                getContributions(token),
-                getFinanceApplications(token),
+                fetchFromAdminAPI('getMembers'),
+                fetchFromAdminAPI('getContributions'),
+                fetchFromAdminAPI('getFinanceApplications'),
             ]);
             
-            if (membersResult.success && membersResult.data) {
+            if (membersResult.data) {
                 setStats(s => ({ ...s, members: membersResult.data!.length }));
                 setMembers(membersResult.data);
             } else {
-                throw new Error(membersResult.error || 'Failed to load members.');
+                throw new Error('Failed to load members.');
             }
             
-            if (contributionsResult.success && contributionsResult.data) {
+            if (contributionsResult.data) {
                 setStats(s => ({ ...s, contributions: contributionsResult.data!.length }));
             } else {
-                 throw new Error(contributionsResult.error || 'Failed to load contributions.');
+                 throw new Error('Failed to load contributions.');
             }
 
-            if (financeResult.success && financeResult.data) {
+            if (financeResult.data) {
                 const apps = financeResult.data;
-                const totalFunded = apps.filter(app => app.status === 'funded').reduce((sum, app) => sum + (app.amountRequested || 0), 0);
+                const totalFunded = apps.filter((app: any) => app.status === 'funded').reduce((sum: number, app: any) => sum + (app.amountRequested || 0), 0);
                 setStats(s => ({ ...s, applications: apps.length, totalFunded }));
                 setApplications(apps);
             } else {
-                throw new Error(financeResult.error || 'Failed to load finance data.');
+                throw new Error('Failed to load finance data.');
             }
 
         } catch (e: any) {

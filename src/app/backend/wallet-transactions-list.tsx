@@ -2,13 +2,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { getAllTransactions, getMembers, deleteTransaction } from './actions';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Loader2, DollarSign, Trash2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import Link from 'next/link';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -33,6 +31,27 @@ interface Transaction {
     date: string; // ISO string
     memberName?: string;
 }
+
+async function fetchFromAdminAPI(action: string, payload?: any) {
+    const token = await getClientSideAuthToken();
+    if (!token) throw new Error("Authentication failed.");
+    
+    const response = await fetch('/api/admin', {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ action, payload }),
+    });
+
+    const result = await response.json();
+    if (!response.ok || !result.success) {
+        throw new Error(result.error || `API Error for action: ${action}`);
+    }
+    return result;
+}
+
 
 const statusColors: { [key: string]: 'default' | 'secondary' | 'destructive' | 'outline' } = {
   pending_allocation: 'secondary',
@@ -64,27 +83,19 @@ export default function WalletTransactionsList() {
     async function fetchAllTransactions() {
         // Don't set loading to true here to avoid flicker on re-fetch
         try {
-            const token = await getClientSideAuthToken();
-            if (!token) {
-                throw new Error("Authentication failed.");
-            }
             const [transactionsResult, membersResult] = await Promise.all([
-                getAllTransactions(token),
-                getMembers(token)
+                fetchFromAdminAPI('getAllTransactions'),
+                fetchFromAdminAPI('getMembers')
             ]);
 
-            if (transactionsResult.success && transactionsResult.data && membersResult.success && membersResult.data) {
-                const memberMap = new Map(membersResult.data.map((m: any) => [m.id, `${m.firstName} ${m.lastName}`]));
-                
-                const transactionsWithNames = transactionsResult.data.map((tx: any) => ({
-                    ...tx,
-                    memberName: memberMap.get(tx.memberId) || 'Unknown Member'
-                }));
+            const memberMap = new Map(membersResult.data.map((m: any) => [m.id, `${m.firstName} ${m.lastName}`]));
+            
+            const transactionsWithNames = transactionsResult.data.map((tx: any) => ({
+                ...tx,
+                memberName: memberMap.get(tx.memberId) || 'Unknown Member'
+            }));
 
-                setTransactions(transactionsWithNames as Transaction[]);
-            } else {
-                setError(transactionsResult.error || membersResult.error || 'Failed to fetch data.');
-            }
+            setTransactions(transactionsWithNames as Transaction[]);
         } catch (e: any) {
             setError(e.message || 'An unexpected error occurred.');
         } finally {
@@ -99,18 +110,12 @@ export default function WalletTransactionsList() {
     
     const handleDelete = async (memberId: string, transactionId: string) => {
         setIsDeleting(transactionId);
-        const token = await getClientSideAuthToken();
-        if (!token) {
-            toast({ variant: 'destructive', title: 'Authentication Error', description: "Could not authenticate your request." });
-            setIsDeleting(null);
-            return;
-        }
-        const result = await deleteTransaction(token, memberId, transactionId);
-        if (result.success) {
+        try {
+            await fetchFromAdminAPI('deleteTransaction', { memberId, transactionId });
             toast({ title: 'Transaction Deleted' });
             fetchAllTransactions(); // Re-fetch data to update the list
-        } else {
-            toast({ variant: 'destructive', title: 'Deletion Failed', description: result.error });
+        } catch(e: any) {
+            toast({ variant: 'destructive', title: 'Deletion Failed', description: e.message });
         }
         setIsDeleting(null);
     };

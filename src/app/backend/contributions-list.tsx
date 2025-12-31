@@ -2,7 +2,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { getContributions } from './actions';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Loader2, Truck, Warehouse, Building } from 'lucide-react';
@@ -15,6 +14,26 @@ interface Contribution {
     type: string;
     createdAt: string;
     data: any;
+}
+
+async function fetchFromAdminAPI(action: string, payload?: any) {
+    const token = await getClientSideAuthToken();
+    if (!token) throw new Error("Authentication failed.");
+    
+    const response = await fetch('/api/admin', {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ action, payload }),
+    });
+
+    const result = await response.json();
+    if (!response.ok || !result.success) {
+        throw new Error(result.error || `API Error for action: ${action}`);
+    }
+    return result;
 }
 
 const typeConfig = {
@@ -32,16 +51,8 @@ export default function ContributionsList() {
         async function fetchContributions() {
             setIsLoading(true);
             try {
-                const token = await getClientSideAuthToken();
-                if (!token) {
-                    throw new Error("Authentication failed. Please sign in again.");
-                }
-                const result = await getContributions(token);
-                if (result.success && result.data) {
-                    setContributions(result.data as Contribution[]);
-                } else {
-                    setError(result.error || 'Failed to fetch contributions.');
-                }
+                const result = await fetchFromAdminAPI('getContributions');
+                setContributions(result.data as Contribution[]);
             } catch (e: any) {
                 setError(e.message || 'An unexpected error occurred.');
             } finally {
