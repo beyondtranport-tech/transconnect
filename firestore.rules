@@ -4,71 +4,38 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // --- Global Admin Override ---
-    // This rule must be at the top to grant unconditional access to the admin user.
-    match /{path=**} {
-      allow read, write: if request.auth.uid == '4CH2RmdJHUSE5Zqc8kPoaEaqgCW2';
-    }
-
     // --- Member Data Ownership ---
     // A user can create their own member document on signup, and can read/update it.
     match /members/{userId} {
       allow create: if request.auth != null;
       allow get, update: if request.auth != null && request.auth.uid == userId;
-    }
 
-    // --- Explicit Member Subcollection Ownership ---
-    // This explicit rule directly targets the failing operation.
-    match /members/{userId}/shops/{shopId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
-    }
-
-    // A user can also manage the products within their own shop sub-subcollection.
-    match /members/{userId}/shops/{shopId}/products/{productId} {
-        allow read, write: if request.auth != null && request.auth.uid == userId;
-    }
-    
-    match /members/{userId}/transactions/{transactionId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
-    }
-    
-    match /members/{userId}/quotes/{quoteId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
-    }
-    
-    match /members/{userId}/enquiries/{enquiryId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
-    }
-    
-    match /members/{userId}/walletPayments/{paymentId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
-    }
-
-    match /members/{userId}/staff/{staffId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
-    }
-
-    match /members/{userId}/versions/{versionId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+      // --- Member Subcollection Ownership ---
+      // This rule grants access to subcollections if the user is the owner OR the admin.
+      // This is more secure and flexible than a global admin override.
+      match /{subcollection}/{docId} {
+        allow read, write: if request.auth != null && (request.auth.uid == userId || request.auth.token.email == 'beyondtransport@gmail.com');
+      }
     }
 
     // --- Public & Global Collections ---
 
     // Publicly readable collection for approved shops and their products.
     // The `{path=**}` wildcard makes subcollections like 'products' also readable.
-    // Admins have write access via the global override.
+    // Writes are handled by admin-only backend functions.
     match /shops/{shopId}/{path=**} {
       allow get, list: if true;
     }
 
     // Publicly readable collection for membership plans.
     match /memberships/{membershipId} {
-      allow read: if request.auth != null;
+      allow get, list: if request.auth != null;
     }
 
-    // Any authenticated user can create a contribution.
+    // Any authenticated user can create a contribution. Read access is for admins.
     match /contributions/{contributionId} {
       allow create: if request.auth != null;
+      allow read: if request.auth != null && request.auth.token.email == 'beyondtransport@gmail.com';
     }
   }
 }
