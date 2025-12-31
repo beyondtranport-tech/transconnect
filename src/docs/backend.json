@@ -129,6 +129,7 @@
       "type": "object",
       "description": "Represents a vendor's shop on the TransConnect platform.",
       "properties": {
+        "id": { "type": "string", "description": "Unique identifier for the shop." },
         "ownerId": { "type": "string" },
         "shopName": { "type": "string" },
         "shopDescription": { "type": "string" },
@@ -157,7 +158,7 @@
         "createdAt": { "type": "object" },
         "updatedAt": { "type": "object" }
       },
-      "required": ["ownerId", "shopName", "category", "status", "createdAt", "updatedAt"]
+      "required": ["id", "ownerId", "shopName", "category", "status", "createdAt", "updatedAt"]
     },
     "Product": {
       "$schema": "http://json-schema.org/draft-07/schema#",

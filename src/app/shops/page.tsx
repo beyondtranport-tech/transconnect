@@ -1,17 +1,20 @@
+
 'use client';
 
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, query, where, getFirestore, getApp } from 'firebase/firestore';
+import { collection, query, where } from 'firebase/firestore';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Loader2, Store } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 
 export default function PublicShopsPage() {
+    const firestore = useFirestore();
+
     const shopsQuery = useMemoFirebase(() => {
-        // This query is now self-contained and does not depend on an external firestore instance.
-        return query(collection(getFirestore(getApp()), 'shops'), where('status', '==', 'approved'));
-    }, []);
+        if (!firestore) return null;
+        return query(collection(firestore, 'shops'), where('status', '==', 'approved'));
+    }, [firestore]);
 
     const { data: shops, isLoading, error } = useCollection(shopsQuery);
 
