@@ -6,7 +6,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Loader2, Wallet, Trash2, ShieldAlert } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { getMemberWalletPayments, deleteFinanceApplication } from '../../actions';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -19,7 +18,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
+} from "@/components/ui/alert-dialog";
+import { getClientSideAuthToken } from '@/firebase';
 
 const statusColors: { [key: string]: 'default' | 'secondary' | 'destructive' | 'outline' } = {
   pending: 'secondary',
@@ -48,11 +48,25 @@ export default function MemberWalletPayments({ memberId, onUpdate }: { memberId:
     const fetchPayments = useCallback(async () => {
         setIsLoading(true);
         setError(null);
-        const result = await getMemberWalletPayments(memberId); 
-        if (result.success) {
-            setPayments(result.data || []);
-        } else {
-            setError(result.error || 'Failed to load wallet payments.');
+        try {
+             const token = await getClientSideAuthToken();
+             if (!token) throw new Error("Authentication token not found.");
+            
+            const response = await fetch('/api/getUserSubcollection', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ path: `members/${memberId}/walletPayments`, type: 'collection' }),
+            });
+            
+            const result = await response.json();
+
+            if (result.success) {
+                setPayments(result.data || []);
+            } else {
+                setError(result.error || 'Failed to load wallet payments.');
+            }
+        } catch(e: any) {
+            setError(e.message);
         }
         setIsLoading(false);
     }, [memberId]);
@@ -63,15 +77,31 @@ export default function MemberWalletPayments({ memberId, onUpdate }: { memberId:
 
     const handleDelete = async (paymentId: string) => {
         setIsDeleting(paymentId);
-        const result = await deleteFinanceApplication(memberId, paymentId, 'walletPayment');
-        if (result.success) {
+         try {
+            const token = await getClientSideAuthToken();
+            if (!token) throw new Error("Authentication token not found.");
+
+            const response = await fetch('/api/deleteUserDoc', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ path: `members/${memberId}/walletPayments/${paymentId}` }),
+            });
+
+            if (!response.ok) {
+                 throw new Error((await response.json()).error || 'Failed to delete record.');
+            }
+
             toast({ title: 'Record Deleted', description: 'The wallet payment record has been permanently removed.' });
             fetchPayments();
             onUpdate();
-        } else {
-            toast({ variant: 'destructive', title: 'Deletion Failed', description: result.error });
+        } catch (e: any) {
+            toast({ variant: 'destructive', title: 'Deletion Failed', description: e.message });
+        } finally {
+             setIsDeleting(null);
         }
-        setIsDeleting(null);
     };
 
     return (

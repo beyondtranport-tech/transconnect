@@ -5,21 +5,19 @@ import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useUser } from '@/firebase';
+import { useUser, getClientSideAuthToken } from '@/firebase';
 import { doc, writeBatch, collection, increment, serverTimestamp } from 'firebase/firestore';
 import { Loader2, User, Wallet, Calendar, Mail, FileCheck } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { getMemberById } from '../../actions';
-import { useFirestore } from '@/firebase'; // Keep for posting transactions
+import { useFirestore } from '@/firebase'; 
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import MemberFundingRecords from './member-funding-records';
 import MemberWalletPayments from './member-wallet-payments';
 import MemberTransactions from './member-transactions';
-
 
 const formatCurrency = (amount: number) => new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(amount);
 const formatDate = (isoString: any) => {
@@ -48,7 +46,19 @@ export default function MemberWallet({ memberId }: { memberId: string }) {
         setIsLoading(true);
         setError(null);
         try {
-            const result = await getMemberById(memberId);
+            const token = await getClientSideAuthToken();
+            if (!token) throw new Error("Authentication token not found.");
+            
+            const response = await fetch('/api/getUserSubcollection', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ path: `members/${memberId}`, type: 'document' }),
+            });
+
+            const result = await response.json();
             if (result.success) {
                 setMemberData(result.data);
             } else {
@@ -157,7 +167,6 @@ export default function MemberWallet({ memberId }: { memberId: string }) {
         );
     }
 
-
     return (
         <div className="space-y-8">
             <Card>
@@ -224,7 +233,7 @@ export default function MemberWallet({ memberId }: { memberId: string }) {
             </Card>
             
             <MemberWalletPayments memberId={memberId} onUpdate={() => setRefreshTrigger(prev => prev + 1)} />
-            <MemberFundingRecords memberId={memberId} onUpdate={() => setRefreshTrigger(prev => prev + 1)} />
+            <MemberFundingRecords memberId={memberId} />
             <MemberTransactions memberId={memberId} key={refreshTrigger} />
         </div>
     );

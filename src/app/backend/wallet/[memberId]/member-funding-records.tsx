@@ -6,7 +6,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Loader2, FileText, Trash2, ShieldAlert } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { getMemberFundingRecords, deleteFinanceApplication } from '../../actions';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -19,7 +18,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
+} from "@/components/ui/alert-dialog";
+import { getClientSideAuthToken } from '@/firebase';
 
 const statusColors: { [key: string]: 'default' | 'secondary' | 'destructive' | 'outline' } = {
   pending: 'secondary',
@@ -51,11 +51,40 @@ export default function MemberFundingRecords({ memberId }: { memberId: string })
     const fetchRecords = useCallback(async () => {
         setIsLoading(true);
         setError(null);
-        const result = await getMemberFundingRecords(memberId); 
-        if (result.success) {
-            setRecords(result.data || []);
-        } else {
-            setError(result.error || 'Failed to load funding records.');
+        try {
+            const token = await getClientSideAuthToken();
+            if (!token) throw new Error("Authentication token not found.");
+            
+            const [quotesRes, enquiriesRes] = await Promise.all([
+                 fetch('/api/getUserSubcollection', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ path: `members/${memberId}/quotes`, type: 'collection' }),
+                }),
+                 fetch('/api/getUserSubcollection', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ path: `members/${memberId}/enquiries`, type: 'collection' }),
+                })
+            ]);
+            
+            const quotesResult = await quotesRes.json();
+            const enquiriesResult = await enquiriesRes.json();
+            
+            if (!quotesResult.success || !enquiriesResult.success) {
+                throw new Error(quotesResult.error || enquiriesResult.error || 'Failed to fetch funding records.');
+            }
+
+            const combinedRecords = [
+                ...(quotesResult.data || []).map((q: any) => ({ ...q, recordType: 'Quote' })),
+                ...(enquiriesResult.data || []).map((e: any) => ({ ...e, recordType: 'Enquiry' })),
+            ];
+
+            combinedRecords.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+            setRecords(combinedRecords);
+        } catch (e: any) {
+            setError(e.message);
         }
         setIsLoading(false);
     }, [memberId]);
@@ -66,15 +95,32 @@ export default function MemberFundingRecords({ memberId }: { memberId: string })
 
     const handleDelete = async (recordId: string, recordType: string) => {
         setIsDeleting(recordId);
-        const type = recordType.toLowerCase() as 'quote' | 'enquiry';
-        const result = await deleteFinanceApplication(memberId, recordId, type);
-        if (result.success) {
+        try {
+            const token = await getClientSideAuthToken();
+            if (!token) throw new Error("Authentication token not found.");
+
+            const subcollection = recordType.toLowerCase() === 'quote' ? 'quotes' : 'enquiries';
+
+            const response = await fetch('/api/deleteUserDoc', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ path: `members/${memberId}/${subcollection}/${recordId}` }),
+            });
+
+            if (!response.ok) {
+                 throw new Error((await response.json()).error || 'Failed to delete record.');
+            }
+
             toast({ title: 'Record Deleted', description: 'The record has been permanently removed.' });
-            fetchRecords(); // Refresh the list
-        } else {
-            toast({ variant: 'destructive', title: 'Deletion Failed', description: result.error });
+            fetchRecords();
+        } catch (e: any) {
+            toast({ variant: 'destructive', title: 'Deletion Failed', description: e.message });
+        } finally {
+             setIsDeleting(null);
         }
-        setIsDeleting(null);
     };
 
     return (

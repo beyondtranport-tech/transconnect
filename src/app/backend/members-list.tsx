@@ -4,11 +4,11 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Loader2, Users, Wallet } from 'lucide-react';
-import { getMembers } from './actions';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
+import { getClientSideAuthToken } from '@/firebase';
 
 interface Member {
     id: string;
@@ -18,7 +18,7 @@ interface Member {
     companyName?: string;
     membershipId?: string;
     walletBalance?: number;
-    createdAt?: string; // Changed to string
+    createdAt?: string;
 }
 
 const formatCurrency = (amount: number | undefined) => {
@@ -44,7 +44,20 @@ export default function MembersList() {
         async function fetchMembers() {
             setIsLoading(true);
             try {
-                const result = await getMembers();
+                 const token = await getClientSideAuthToken();
+                 if (!token) throw new Error("Authentication token not found.");
+
+                 const response = await fetch('/api/getUserSubcollection', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ path: 'members', type: 'collection' }),
+                });
+                
+                const result = await response.json();
+
                 if (result.success && result.data) {
                     setMembers(result.data);
                 } else {

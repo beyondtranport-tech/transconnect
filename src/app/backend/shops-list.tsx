@@ -2,7 +2,6 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { getShops, approveShop } from './actions';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Loader2, Store, CheckCircle, Eye } from 'lucide-react';
@@ -10,10 +9,9 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { useCollection, useFirestore, useMemoFirebase, getClientSideAuthToken } from '@/firebase';
 import { collection, doc } from 'firebase/firestore';
 import { ShopPreview } from '@/components/shop-preview';
-
 
 interface Shop {
     id: string;
@@ -75,11 +73,20 @@ export default function ShopsList() {
     async function fetchShops() {
         setIsLoading(true);
         try {
-            const result = await getShops();
+            const token = await getClientSideAuthToken();
+            if (!token) throw new Error("Authentication token not found.");
+
+            // This should query the 'shops' collection group to get all shops
+            const response = await fetch('/api/getUserSubcollection', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ path: 'shops', type: 'collection-group' }), // A new type for collection group
+            });
+
+            const result = await response.json();
             if (result.success && result.data) {
-                // Sort the data by date on the client-side
-                const sortedShops = result.data.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-                setShops(sortedShops as Shop[]);
+                const sortedShops = result.data.sort((a: Shop, b: Shop) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+                setShops(sortedShops);
             } else {
                 setError(result.error || 'Failed to fetch shops.');
             }
@@ -96,19 +103,31 @@ export default function ShopsList() {
 
     const handleApprove = async (shopId: string, ownerId: string) => {
         setIsApproving(shopId);
-        const result = await approveShop(shopId, ownerId);
-        if (result.success) {
+        try {
+            const token = await getClientSideAuthToken();
+            if (!token) throw new Error("Authentication failed");
+
+            // This should be a dedicated API route for this admin action
+            const response = await fetch('/api/approveShop', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ shopId, ownerId }),
+            });
+
+            if (!response.ok) {
+                throw new Error((await response.json()).error || 'Failed to approve shop');
+            }
+            
             toast({
                 title: 'Shop Approved!',
                 description: 'The shop is now public and live on the platform.',
             });
-            // Refresh the list to show the new status
             fetchShops();
-        } else {
-            toast({
+        } catch (e: any) {
+             toast({
                 variant: 'destructive',
                 title: 'Approval Failed',
-                description: result.error || 'An unexpected error occurred.',
+                description: e.message || 'An unexpected error occurred.',
             });
         }
         setIsApproving(null);
