@@ -59,6 +59,7 @@ import { Badge } from '@/components/ui/badge';
 
 // Using next/dynamic to lazy-load components
 import dynamic from 'next/dynamic';
+import MemberWallet from './wallet/[memberId]/member-wallet';
 
 const DashboardContent = dynamic(() => import('./dashboard-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const MembersList = dynamic(() => import('./members-list'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
@@ -177,7 +178,7 @@ function FundingDivisionContent() {
                                     <TableRow key={app.id}>
                                         <TableCell className="text-xs">{formatDate(app.createdAt)}</TableCell>
                                         <TableCell className="font-mono text-xs max-w-[150px] truncate">
-                                            <Link href={`/backend/wallet/${app.applicantId}`} className="hover:underline text-primary">{app.applicantId}</Link>
+                                            <Link href={`/backend?view=wallet&memberId=${app.applicantId}`} className="hover:underline text-primary">{app.applicantId}</Link>
                                         </TableCell>
                                         <TableCell>
                                             <Badge variant={app.recordType === 'Quote' ? 'outline' : 'default'} className="capitalize">
@@ -189,7 +190,7 @@ function FundingDivisionContent() {
                                         <TableCell><Badge variant={statusColors[app.status] || 'secondary'} className="capitalize">{app.status?.replace(/_/g, ' ')}</Badge></TableCell>
                                         <TableCell>
                                             <Button asChild variant="outline" size="sm">
-                                                <Link href={`/backend/wallet/${app.applicantId}`}>View Member</Link>
+                                                <Link href={`/backend?view=wallet&memberId=${app.applicantId}`}>View Member</Link>
                                             </Button>
                                         </TableCell>
                                     </TableRow>
@@ -380,6 +381,7 @@ export default function BackendPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const initialView = searchParams.get('view') || 'dashboard';
+  const memberId = searchParams.get('memberId');
   const [activeView, setActiveView] = useState(initialView);
   const { user, isUserLoading } = useUser();
   const auth = useAuth();
@@ -414,6 +416,11 @@ export default function BackendPageContent() {
         return <MembersList />;
       case 'shops':
         return <ShopsList />;
+      case 'wallet':
+        if (memberId) {
+            return <MemberWallet memberId={memberId} />;
+        }
+        return <WalletTransactionsList />; // Fallback if no memberId
       case 'platform-logs':
         return <PlatformLogsContent />;
       case 'platform-tasks':
@@ -608,5 +615,3 @@ export default function BackendPageContent() {
     </SidebarProvider>
   );
 }
-
-    

@@ -289,7 +289,7 @@ export default function DashboardContent() {
                                         <TableCell>{formatPrice(app.amountRequested)}</TableCell>
                                         <TableCell className="text-right space-x-2">
                                             <Button variant="outline" size="sm" asChild>
-                                                <Link href={`/backend/wallet/${app.applicantId}`}>Review</Link>
+                                                <Link href={`/backend?view=wallet&memberId=${app.applicantId}`}>Review</Link>
                                             </Button>
                                              <AlertDialog>
                                                 <AlertDialogTrigger asChild>
@@ -347,7 +347,7 @@ export default function DashboardContent() {
                                         <TableCell>{member.companyName}</TableCell>
                                         <TableCell className="text-right">
                                             <Button variant="ghost" size="sm" asChild>
-                                                <Link href={`/backend/wallet/${member.id}`}><ArrowRight className="h-4 w-4" /></Link>
+                                                <Link href={`/backend?view=wallet&memberId=${member.id}`}><ArrowRight className="h-4 w-4" /></Link>
                                             </Button>
                                         </TableCell>
                                     </TableRow>

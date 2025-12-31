@@ -142,7 +142,7 @@ export default function MembersList() {
                                     <TableCell>{formatDate(member.createdAt)}</TableCell>
                                     <TableCell className="text-right">
                                         <Button asChild variant="ghost" size="sm">
-                                            <Link href={`/backend/wallet/${member.id}`}>
+                                            <Link href={`/backend?view=wallet&memberId=${member.id}`}>
                                                 <Wallet className="mr-2 h-4 w-4" />
                                                 Wallet
                                             </Link>
