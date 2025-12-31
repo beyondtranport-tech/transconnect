@@ -6,7 +6,7 @@ import { getAuth } from 'firebase-admin/auth';
 import { getAdminApp } from '@/lib/firebase-admin';
 
 // Helper to convert Firestore Timestamps to JSON-serializable strings
-function serializeTimestamps(docData: any) {
+function serializeTimestamps(docData: any): any {
     if (!docData) return docData;
     const newDocData: { [key: string]: any } = {};
     for (const key in docData) {
@@ -35,14 +35,14 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ success: false, error: 'Bad Request: "path" and "type" are required.' }, { status: 400 });
     }
 
-    // These are public paths that do not require authentication
-    const publicPrefixes = ['/shops', '/memberships'];
-    const isPublicPath = publicPrefixes.some(prefix => path.startsWith(prefix));
-
     const headersList = headers();
     const authorization = headersList.get('authorization');
     let isAdmin = false;
     let uid: string | null = null;
+    
+    // Public paths that do not require any authentication
+    const publicPrefixes = ['/shops', '/memberships'];
+    const isPublicPath = publicPrefixes.some(prefix => path.startsWith(prefix));
 
     if (authorization && authorization.startsWith('Bearer ')) {
         const idToken = authorization.split('Bearer ')[1];
@@ -52,13 +52,11 @@ export async function POST(req: NextRequest) {
             uid = decodedToken.uid;
             isAdmin = decodedToken.email === 'beyondtransport@gmail.com';
         } catch (error: any) {
-            // Token is invalid or expired, but we can still allow public access
             if (!isPublicPath) {
                  return NextResponse.json({ success: false, error: 'Unauthorized: Invalid token.' }, { status: 401 });
             }
         }
     } else if (!isPublicPath) {
-        // If not a public path and no token is provided, deny access.
         return NextResponse.json({ success: false, error: 'Unauthorized: No token provided.' }, { status: 401 });
     }
 
@@ -70,7 +68,6 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ success: false, error: 'Forbidden: You do not have permission to access this resource.' }, { status: 403 });
     }
     
-    // If all checks pass, proceed to fetch data
     const db = getFirestore(app);
     try {
         if (type === 'collection') {

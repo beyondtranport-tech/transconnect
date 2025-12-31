@@ -34,7 +34,11 @@ export async function POST(req: NextRequest) {
     // Security Check: Ensure the requested path belongs to the authenticated user.
     const pathSegments = path.split('/');
     if (pathSegments.length < 2 || pathSegments[0] !== 'members' || pathSegments[1] !== uid) {
-        return NextResponse.json({ success: false, error: 'Forbidden: You can only delete your own data.' }, { status: 403 });
+        // Exception for admins deleting records
+        const isAdmin = decodedToken.email === 'beyondtransport@gmail.com';
+        if (!isAdmin) {
+          return NextResponse.json({ success: false, error: 'Forbidden: You can only delete your own data.' }, { status: 403 });
+        }
     }
 
     const db = getFirestore(app);

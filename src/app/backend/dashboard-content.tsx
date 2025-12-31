@@ -83,16 +83,11 @@ export default function DashboardContent() {
             const token = await getClientSideAuthToken();
             if (!token) throw new Error("Authentication token not found.");
             
-            const [membersResponse, applicationsResponse, contributionsResponse] = await Promise.all([
+            const [membersResponse, contributionsResponse] = await Promise.all([
                  fetch('/api/getUserSubcollection', {
                     method: 'POST',
                     headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
                     body: JSON.stringify({ path: 'members', type: 'collection' }),
-                }),
-                 fetch('/api/getUserSubcollection', { // This needs a new endpoint that aggregates all
-                    method: 'POST',
-                    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ path: 'finance-applications', type: 'collection' }),
                 }),
                  fetch('/api/getUserSubcollection', {
                     method: 'POST',
@@ -102,7 +97,6 @@ export default function DashboardContent() {
             ]);
             
             const membersResult = await membersResponse.json();
-            const applicationsResult = await applicationsResponse.json();
             const contributionsResult = await contributionsResponse.json();
 
             if (membersResult.success && membersResult.data) {
@@ -110,16 +104,6 @@ export default function DashboardContent() {
                 setMembers(membersResult.data);
             } else {
                 throw new Error(membersResult.error || 'Failed to load members.');
-            }
-            
-            if (applicationsResult.success && applicationsResult.data) {
-                const apps = applicationsResult.data as FinanceApplication[];
-                const totalFunded = apps.filter(app => app.status === 'funded').reduce((sum, app) => sum + app.amountRequested, 0);
-                setStats(s => ({ ...s, applications: apps.length, totalFunded }));
-                setApplications(apps);
-            } else {
-                // Ignore error for now as endpoint doesn't exist
-                // throw new Error(applicationsResult.error || 'Failed to load applications.');
             }
             
             if (contributionsResult.success && contributionsResult.data) {
@@ -167,7 +151,6 @@ export default function DashboardContent() {
 
     const handleDelete = async (applicantId: string, applicationId: string, recordType: 'Quote' | 'Enquiry') => {
         setIsDeleting(applicationId);
-        // This needs to be converted to a fetch call to a secure API
         toast({ variant: 'destructive', title: 'Deletion Failed', description: "Delete action not implemented in API." });
         setIsDeleting(null);
     };
