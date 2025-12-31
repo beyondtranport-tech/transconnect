@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, Suspense } from 'react';
+import { useState, Suspense, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useForm } from 'react-hook-form';
@@ -9,7 +9,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { signInWithEmailAndPassword, sendPasswordResetEmail, getIdTokenResult } from 'firebase/auth';
 
-import { useAuth } from '@/firebase';
+import { useAuth, useUser } from '@/firebase';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -54,6 +54,7 @@ function SignInFormComponent() {
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const auth = useAuth();
+  const { user, isUserLoading } = useUser();
 
   const form = useForm<SignInFormValues>({
     resolver: zodResolver(formSchema),
@@ -62,6 +63,17 @@ function SignInFormComponent() {
       password: '',
     },
   });
+  
+  // This effect will run when the user's auth state is confirmed.
+  // The middleware handles the actual redirection logic.
+  useEffect(() => {
+    if (!isUserLoading && user) {
+        const redirectParam = searchParams.get('redirect');
+        const isAdmin = user.email === 'beyondtransport@gmail.com';
+        const defaultRedirect = isAdmin ? '/backend' : '/account';
+        router.replace(redirectParam || defaultRedirect);
+    }
+  }, [user, isUserLoading, router, searchParams]);
 
   const handlePasswordReset = async () => {
     const email = form.getValues('email');
@@ -113,20 +125,16 @@ function SignInFormComponent() {
     try {
       const userCredential = await signInWithEmailAndPassword(auth, values.email, values.password);
       const user = userCredential.user;
-      const isAdmin = user.email === 'beyondtransport@gmail.com';
       
       const idToken = await user.getIdToken();
       const decodedToken = await user.getIdTokenResult();
       
-      // Set cookies
+      // Set cookies for middleware and server-side rendering
       setCookie('firebaseIdToken', idToken, 1);
-      setCookie('decodedToken', JSON.stringify(decodedToken.claims), 1);
+      setCookie('decodedToken', JSON.stringify(decodedToken), 1);
       
-      const redirectParam = searchParams.get('redirect');
-      const defaultRedirect = isAdmin ? '/backend' : '/account';
+      // The useEffect will now handle the redirection once the user state is updated.
       
-      router.replace(redirectParam || defaultRedirect);
-
     } catch (error: any) {
       let title = 'An error occurred.';
       let description = 'Please check your credentials and try again.';
@@ -141,8 +149,7 @@ function SignInFormComponent() {
         title,
         description,
       });
-    } finally {
-      setIsLoading(false);
+      setIsLoading(false); // Only set loading to false on error, success will trigger a page change
     }
   };
 

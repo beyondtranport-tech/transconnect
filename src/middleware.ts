@@ -7,12 +7,10 @@ async function verifyToken(token: string): Promise<JWTPayload | null> {
     if (!token) {
         return null;
     }
-    const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'your-fallback-secret-for-local-dev');
+    // In a real app, the secret would be a securely stored environment variable
+    const secret = new TextEncoder().encode('your-fallback-secret-for-local-dev');
     try {
-        const { payload } = await joseVerify(token, secret, {
-            issuer: 'urn:example:issuer',
-            audience: 'urn:example:audience',
-        });
+        const { payload } = await joseVerify(token, secret);
         return payload;
     } catch (err) {
         console.error('Token verification failed:', err);
@@ -24,43 +22,47 @@ async function verifyToken(token: string): Promise<JWTPayload | null> {
 export async function middleware(request: NextRequest) {
     const { pathname } = request.nextUrl;
     
-    // Check for the presence of the decodedToken cookie
-    const tokenCookie = request.cookies.get('decodedToken');
-    let isAuthenticated = false;
+    const tokenCookie = request.cookies.get('firebaseIdToken');
+    const isAuthenticated = !!tokenCookie;
+    
     let isAdmin = false;
-
-    if (tokenCookie) {
+    if (isAuthenticated) {
         try {
-            const decodedPayload = JSON.parse(tokenCookie.value);
-            if (decodedPayload && decodedPayload.uid) {
-                isAuthenticated = true;
-                if (decodedPayload.email === 'beyondtransport@gmail.com') {
-                    isAdmin = true;
+            const decodedTokenCookie = request.cookies.get('decodedToken');
+            if (decodedTokenCookie) {
+                const claims = JSON.parse(decodedTokenCookie.value).claims;
+                if (claims && claims.email === 'beyondtransport@gmail.com') {
+                     isAdmin = true;
                 }
             }
         } catch (e) {
-            // Invalid JSON in cookie
-            isAuthenticated = false;
-            isAdmin = false;
+            // Ignore parsing error, isAdmin remains false
         }
     }
     
-    // Protect backend routes
-    if (pathname.startsWith('/backend') && !isAdmin) {
-        const redirectUrl = isAuthenticated ? '/account' : `/signin?redirect=${pathname}`;
-        return NextResponse.redirect(new URL(redirectUrl, request.url));
-    }
+    const isAuthPage = pathname.startsWith('/signin') || pathname.startsWith('/join');
 
-    // Protect other sensitive routes that require any authenticated user
-    const protectedRoutes = ['/account', '/contribute', '/checkout'];
-    if (protectedRoutes.some(p => pathname.startsWith(p)) && !isAuthenticated) {
-        return NextResponse.redirect(new URL(`/signin?redirect=${pathname}`, request.url));
-    }
-    
-    // If an already authenticated user tries to access sign-in or join pages, redirect them.
-    if ((pathname.startsWith('/signin') || pathname.startsWith('/join')) && isAuthenticated) {
-        const defaultRedirect = isAdmin ? '/backend' : '/account';
-        return NextResponse.redirect(new URL(defaultRedirect, request.url));
+    // If the user is authenticated
+    if (isAuthenticated) {
+        // And they are on a sign-in/join page, redirect them to the correct dashboard.
+        if (isAuthPage) {
+            const url = request.nextUrl.clone();
+            url.pathname = isAdmin ? '/backend' : '/account';
+            return NextResponse.redirect(url);
+        }
+    } 
+    // If the user is NOT authenticated
+    else {
+        // And they are trying to access a protected route, redirect them to sign-in.
+        const protectedRoutes = ['/account', '/contribute', '/checkout', '/backend'];
+        if (protectedRoutes.some(p => pathname.startsWith(p))) {
+            const url = request.nextUrl.clone();
+            const searchParams = url.searchParams;
+            searchParams.set('redirect', pathname);
+            url.pathname = '/signin';
+            url.search = searchParams.toString();
+            return NextResponse.redirect(url);
+        }
     }
 
     return NextResponse.next();
@@ -69,6 +71,6 @@ export async function middleware(request: NextRequest) {
 export const config = {
     // Match all paths except for static files, API routes, and image optimization.
     matcher: [
-      '/((?!api|_next/static|_next/image|favicon.ico|images|brochures).*)',
+      '/((?!api|_next/static|_next/image|favicon.ico|images|brochures|.*\\.png$).*)',
     ],
 };
