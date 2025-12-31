@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -19,17 +20,24 @@ const formatPrice = (price: number, isPercentage?: boolean, per?: string) => {
     if (typeof price !== 'number') return 'Contact Us';
     if (price === 0) return 'Free';
     if (isPercentage) return `${price}%`;
-    
+
+    const hasDecimals = price % 1 !== 0;
+
     const formattedPrice = new Intl.NumberFormat('en-ZA', {
         style: 'currency',
         currency: 'ZAR',
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0,
+        minimumFractionDigits: hasDecimals ? 2 : 0,
+        maximumFractionDigits: 2,
     }).format(price);
     
     let suffix = '/mo';
     if (per) {
         suffix = `/${per}`;
+    }
+
+    // For prices less than 1 but not 0, there is no per-month assumption.
+    if(price > 0 && price < 1 && per) {
+      return `${formattedPrice}/${per}`;
     }
 
     return `${formattedPrice}${suffix}`;
