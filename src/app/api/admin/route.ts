@@ -55,6 +55,11 @@ export async function POST(req: NextRequest) {
                 const data = snapshot.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
                 return NextResponse.json({ success: true, data });
             }
+             case 'getMemberships': {
+                const snapshot = await db.collection('memberships').get();
+                const data = snapshot.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
+                return NextResponse.json({ success: true, data });
+            }
             case 'getContributions': {
                 const snapshot = await db.collection('contributions').get();
                 const data = snapshot.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));

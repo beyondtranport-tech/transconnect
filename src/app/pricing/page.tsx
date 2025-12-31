@@ -5,58 +5,15 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Check, Star, Minus } from 'lucide-react';
 import Link from 'next/link';
-import { useUser } from '@/firebase';
+import { useUser, useFirestore, useCollection } from '@/firebase';
 import { cn } from '@/lib/utils';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import * as React from 'react';
-
-const tiers = [
-  {
-    id: 'basic',
-    name: 'Basic',
-    price: { monthly: 375, annual: 375 * 12 * 0.85 },
-    description: 'Essential tools for owner-operators and small fleets getting started.',
-    features: [
-      'Access to All Malls',
-      'Marketplace Access',
-      'AI Freight Matcher (Basic)',
-      'Community Forum Access',
-      'Standard Support',
-    ],
-    isPopular: false,
-  },
-  {
-    id: 'standard',
-    name: 'Standard',
-    price: { monthly: 425, annual: 425 * 12 * 0.85 },
-    description: 'Advanced features for growing businesses looking to optimize.',
-    features: [
-      'All Basic features',
-      'AI Freight Matcher (Advanced)',
-      'Real-time Analytics Dashboard',
-      'Loyalty & Rewards Program Access',
-      'Priority Support',
-    ],
-    isPopular: true,
-  },
-  {
-    id: 'premium',
-    name: 'Premium',
-    price: { monthly: 475, annual: 475 * 12 * 0.85 },
-    description: 'Comprehensive solutions for established fleets and power users.',
-    features: [
-      'All Standard features',
-      'Dedicated Account Manager',
-      'API Access for Integrations',
-      'Actions Plan Included',
-      '24/7 Premium Support',
-    ],
-    isPopular: false,
-  },
-];
+import { collection, query } from 'firebase/firestore';
+import { Loader2 } from 'lucide-react';
 
 const featureSections = [
     {
@@ -110,7 +67,6 @@ const featureSections = [
     },
 ];
 
-
 const formatPrice = (price: number, perMonth = false) => {
     const formatted = new Intl.NumberFormat('en-ZA', {
         style: 'currency',
@@ -133,7 +89,15 @@ const renderCheckmark = (value: boolean | string) => {
 
 export default function MembershipPage() {
   const { user } = useUser();
+  const firestore = useFirestore();
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('monthly');
+
+  const membershipsQuery = useMemo(() => {
+    if (!firestore) return null;
+    return query(collection(firestore, 'memberships'));
+  }, [firestore]);
+  
+  const { data: tiers, isLoading } = useCollection(membershipsQuery);
 
   return (
     <div className="bg-background">
@@ -157,52 +121,55 @@ export default function MembershipPage() {
             </Label>
         </div>
 
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-7xl mx-auto">
-          {tiers.map((tier) => (
-            <Card key={tier.id} className={cn(
-                "flex flex-col shadow-lg transition-transform duration-300 hover:scale-105",
-                tier.isPopular ? "border-primary border-2 relative" : "border"
-            )}>
-                 {tier.isPopular && (
-                    <div className="absolute -top-4 right-4 bg-primary text-primary-foreground px-3 py-1 text-sm font-semibold rounded-full flex items-center gap-1">
-                        <Star className="h-4 w-4" />
-                        Most Popular
+        {isLoading ? (
+            <div className="flex justify-center py-20"><Loader2 className="h-16 w-16 animate-spin text-primary" /></div>
+        ) : (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-7xl mx-auto">
+              {tiers?.map((tier) => (
+                <Card key={tier.id} className={cn(
+                    "flex flex-col shadow-lg transition-transform duration-300 hover:scale-105",
+                    tier.isPopular ? "border-primary border-2 relative" : "border"
+                )}>
+                     {tier.isPopular && (
+                        <div className="absolute -top-4 right-4 bg-primary text-primary-foreground px-3 py-1 text-sm font-semibold rounded-full flex items-center gap-1">
+                            <Star className="h-4 w-4" />
+                            Most Popular
+                        </div>
+                     )}
+                  <CardHeader className="text-center">
+                    <CardTitle className="text-2xl font-bold">{tier.name}</CardTitle>
+                    <CardDescription className="mt-2 text-base h-10">{tier.description}</CardDescription>
+                    <div className="pt-4">
+                      <span className="text-4xl font-extrabold tracking-tight">
+                        {formatPrice(billingCycle === 'annual' ? tier.price.annual / 12 : tier.price.monthly)}
+                      </span>
+                      <span className="text-muted-foreground">/month</span>
+                      {billingCycle === 'annual' && (
+                         <p className="text-xs text-muted-foreground mt-1">Billed as {formatPrice(tier.price.annual)} per year</p>
+                      )}
                     </div>
-                 )}
-              <CardHeader className="text-center">
-                <CardTitle className="text-2xl font-bold">{tier.name}</CardTitle>
-                <CardDescription className="mt-2 text-base h-10">{tier.description}</CardDescription>
-                <div className="pt-4">
-                  <span className="text-4xl font-extrabold tracking-tight">
-                    {formatPrice(billingCycle === 'annual' ? tier.price.annual / 12 : tier.price.monthly)}
-                  </span>
-                  <span className="text-muted-foreground">/month</span>
-                  {billingCycle === 'annual' && (
-                     <p className="text-xs text-muted-foreground mt-1">Billed as {formatPrice(tier.price.annual)} per year</p>
-                  )}
-                </div>
-              </CardHeader>
-              <CardContent className="flex-grow">
-                <ul className="space-y-3">
-                  {tier.features.map((feature) => (
-                    <li key={feature} className="flex items-start">
-                      <Check className="h-5 w-5 text-green-500 mr-3 flex-shrink-0 mt-0.5" />
-                      <span className="text-muted-foreground">{feature}</span>
-                    </li>
-                  ))}
-                </ul>
-              </CardContent>
-              <CardFooter className="p-6">
-                <Button asChild className="w-full" size="lg" variant={tier.isPopular ? 'default' : 'outline'}>
-                  <Link href={`/checkout/${tier.id}?cycle=${billingCycle}`}>
-                    Choose {tier.name}
-                  </Link>
-                </Button>
-              </CardFooter>
-            </Card>
-          ))}
-        </div>
+                  </CardHeader>
+                  <CardContent className="flex-grow">
+                    <ul className="space-y-3">
+                      {tier.features.slice(0, 5).map((feature: string) => (
+                        <li key={feature} className="flex items-start">
+                          <Check className="h-5 w-5 text-green-500 mr-3 flex-shrink-0 mt-0.5" />
+                          <span className="text-muted-foreground">{feature}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </CardContent>
+                  <CardFooter className="p-6">
+                    <Button asChild className="w-full" size="lg" variant={tier.isPopular ? 'default' : 'outline'}>
+                      <Link href={`/checkout/${tier.id}?cycle=${billingCycle}`}>
+                        Choose {tier.name}
+                      </Link>
+                    </Button>
+                  </CardFooter>
+                </Card>
+              ))}
+            </div>
+        )}
       </div>
       <section className="py-16 md:py-24 bg-card">
         <div className="container mx-auto px-4">
@@ -217,7 +184,7 @@ export default function MembershipPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead className="w-2/5 font-bold text-lg">Features</TableHead>
-                  {tiers.map(tier => (
+                  {tiers?.map(tier => (
                     <TableHead key={tier.id} className="text-center font-bold text-lg">{tier.name}</TableHead>
                   ))}
                 </TableRow>

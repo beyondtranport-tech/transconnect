@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -69,6 +68,7 @@ const WalletTransactionsList = dynamic(() => import('./wallet-transactions-list'
 const ReconciliationPage = dynamic(() => import('./reconciliation/page'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const BankDetailsSettings = dynamic(() => import('./bank-details-settings'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const ChartOfAccountsSettings = dynamic(() => import('./chart-of-accounts-settings'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const PricingManagement = dynamic(() => import('./revenue/pricing-management'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 
 
 // --- START: Division Specific Dashboards ---
@@ -353,15 +353,6 @@ function PlatformTasksContent() {
     )
 }
 
-function RevenuePricingContent() {
-    return (
-        <div>
-            <h1 className="text-2xl font-bold">Revenue Pricing</h1>
-            <p className="mt-2 text-muted-foreground">Define and manage membership tiers and prices.</p>
-        </div>
-    )
-}
-
 function DivisionsContent() {
     return (
         <div>
@@ -428,7 +419,7 @@ export default function BackendPageContent() {
       case 'platform-settings':
         return <PlatformSettingsContent />;
       case 'revenue-pricing':
-        return <RevenuePricingContent />;
+        return <PricingManagement />;
       case 'wallet-transactions':
         return <WalletTransactionsList />;
       case 'divisions':
@@ -567,7 +558,7 @@ export default function BackendPageContent() {
                     </SidebarMenuSub>
                 </SidebarMenuItem>
                 <SidebarMenuItem>
-                    <SidebarMenuButton tooltip="Revenue">
+                    <SidebarMenuButton tooltip="Revenue" isActive={activeView.startsWith('revenue')}>
                         <DollarSign />
                         <span>Revenue</span>
                     </SidebarMenuButton>
