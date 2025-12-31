@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -12,7 +12,7 @@ import { Loader2, PlusCircle, Save, Edit, Trash2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
-import { useFirestore, useCollection } from '@/firebase';
+import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, doc, writeBatch, serverTimestamp } from 'firebase/firestore';
 import { Label } from '@/components/ui/label';
 
@@ -132,7 +132,10 @@ export default function PricingManagement() {
   const firestore = useFirestore();
   const { toast } = useToast();
 
-  const membershipsQuery = query(collection(firestore, 'memberships'));
+  const membershipsQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return query(collection(firestore, 'memberships'));
+  }, [firestore]);
   const { data: plans, isLoading, forceRefresh } = useCollection<PlanFormValues>(membershipsQuery);
 
   const handleDelete = async (planId: string) => {
@@ -194,3 +197,5 @@ export default function PricingManagement() {
     </Card>
   );
 }
+
+    

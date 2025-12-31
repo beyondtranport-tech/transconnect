@@ -1,15 +1,15 @@
 'use client';
 
-import { useUser, useFirestore, useMemoFirebase, useCollection, getClientSideAuthToken } from '@/firebase';
+import { useUser, useFirestore, useMemoFirebase, useCollection } from '@/firebase';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Loader2, FileText, MoreVertical, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { collection, query, orderBy, limit } from 'firebase/firestore';
+import { collection, query, orderBy, limit, deleteDoc, doc } from 'firebase/firestore';
 import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -103,24 +103,10 @@ export default function EnquiriesCard() {
     const { data: enquiries, isLoading, error, forceRefresh } = useCollection(enquiriesQuery);
 
     const handleDelete = async (enquiryId: string) => {
-        if (!user) return;
+        if (!user || !firestore) return;
         setIsDeleting(enquiryId);
         try {
-            const token = await getClientSideAuthToken();
-            if (!token) throw new Error("Authentication failed.");
-
-            const response = await fetch('/api/deleteUserDoc', {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ path: `members/${user.uid}/enquiries/${enquiryId}` }),
-            });
-
-            const result = await response.json();
-            if (!response.ok) throw new Error(result.error || "Failed to delete.");
-            
+            await deleteDoc(doc(firestore, `members/${user.uid}/enquiries/${enquiryId}`));
             toast({ title: "Enquiry Deleted", description: "The enquiry has been removed." });
             forceRefresh(); // Refresh the list
         } catch (e: any) {
@@ -251,3 +237,4 @@ export default function EnquiriesCard() {
         </Card>
     );
 }
+    

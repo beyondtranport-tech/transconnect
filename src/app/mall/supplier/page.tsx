@@ -9,9 +9,8 @@ import { Building2, Search, ArrowRight, Sparkles, Loader2 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import * as gtag from '@/lib/gtag';
-import { useState, useEffect } from 'react';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, query } from 'firebase/firestore';
+import { collection, query, where } from 'firebase/firestore';
 
 const { placeholderImages } = data;
 
@@ -22,7 +21,7 @@ export default function SupplierMallPage() {
     
     const approvedShopsQuery = useMemoFirebase(() => {
         if (!firestore) return null;
-        return query(collection(firestore, 'shops'));
+        return query(collection(firestore, 'shops'), where('status', '==', 'approved'));
     }, [firestore]);
 
     const { data: suppliers, isLoading, error } = useCollection(approvedShopsQuery);
@@ -172,3 +171,5 @@ export default function SupplierMallPage() {
         </div>
     );
 }
+
+    

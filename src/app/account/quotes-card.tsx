@@ -1,12 +1,12 @@
 'use client';
 
-import { useUser, useFirestore, useMemoFirebase, useCollection, getClientSideAuthToken } from '@/firebase';
+import { useUser, useFirestore, useMemoFirebase, useCollection } from '@/firebase';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Loader2, FileText, MoreVertical, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { collection, query, orderBy, limit } from 'firebase/firestore';
+import { collection, query, orderBy, limit, deleteDoc, doc } from 'firebase/firestore';
 import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -59,24 +59,10 @@ export default function QuotesCard() {
     const { data: quotes, isLoading, error, forceRefresh } = useCollection(quotesQuery);
     
     const handleDelete = async (quoteId: string) => {
-        if (!user) return;
+        if (!user || !firestore) return;
         setIsDeleting(quoteId);
         try {
-            const token = await getClientSideAuthToken();
-            if (!token) throw new Error("Authentication failed.");
-
-            const response = await fetch('/api/deleteUserDoc', {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ path: `members/${user.uid}/quotes/${quoteId}` }),
-            });
-
-            const result = await response.json();
-            if (!response.ok) throw new Error(result.error || "Failed to delete.");
-            
+            await deleteDoc(doc(firestore, `members/${user.uid}/quotes/${quoteId}`));
             toast({ title: "Quote Deleted", description: "The quote has been removed from your saved list." });
             forceRefresh();
         } catch (e: any) {
@@ -193,3 +179,5 @@ export default function QuotesCard() {
         </Card>
     );
 }
+
+    
