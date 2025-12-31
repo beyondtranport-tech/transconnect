@@ -4,7 +4,7 @@
 import { useUser, useFirestore, useMemoFirebase, useCollection } from '@/firebase';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Loader2, DollarSign, ClipboardCopy, FilePlus } from 'lucide-react';
+import { Loader2, DollarSign, ClipboardCopy, FilePlus, Info } from 'lucide-react';
 import { collection, query, orderBy, addDoc, serverTimestamp } from 'firebase/firestore';
 import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
@@ -20,6 +20,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { getClientSideAuthToken } from '@/firebase';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useConfig } from '@/hooks/use-config';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(amount);
@@ -174,7 +176,9 @@ export default function TransactionsContent() {
     
     const { data: transactions, isLoading: isTransactionsLoading, error } = useCollection(transactionsQuery);
 
-    const isLoading = isUserLoading || isTransactionsLoading;
+    const { data: feeConfig, isLoading: isFeeLoading } = useConfig<{ eftTopUpFee: number }>('walletFees');
+
+    const isLoading = isUserLoading || isTransactionsLoading || isFeeLoading;
     
     const copyToClipboard = (text: string) => {
         navigator.clipboard.writeText(text).then(() => {
@@ -209,6 +213,15 @@ export default function TransactionsContent() {
                             </div>
                         )}
                     </div>
+                     {feeConfig && feeConfig.eftTopUpFee > 0 && (
+                        <Alert className="mt-6">
+                            <Info className="h-4 w-4" />
+                            <AlertTitle>Please Note</AlertTitle>
+                            <AlertDescription>
+                                A standard EFT top-up fee of <span className="font-semibold">{formatCurrency(feeConfig.eftTopUpFee)}</span> will be deducted from your deposit amount.
+                            </AlertDescription>
+                        </Alert>
+                    )}
                 </CardContent>
                  <CardFooter>
                     <p className="text-xs text-muted-foreground">Your balance is updated by an admin after payment is confirmed.</p>
@@ -281,3 +294,5 @@ export default function TransactionsContent() {
         </div>
     );
 }
+
+    
