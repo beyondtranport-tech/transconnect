@@ -19,50 +19,50 @@ const featureSections = [
     {
         name: 'Core Platform',
         features: [
-            { name: 'Community Forum Access', basic: true, standard: true, premium: true },
-            { name: 'Standard Support', basic: true, standard: true, premium: true },
+            { name: 'Community Forum Access', key: 'Community Forum Access' },
+            { name: 'Standard Support', key: 'Standard Support' },
         ]
     },
     {
         name: 'Mall Division',
         features: [
-             { name: 'Supplier Mall Access', basic: true, standard: true, premium: true },
-             { name: 'Transporter Mall Access', basic: true, standard: true, premium: true },
-             { name: 'Finance Mall Access', basic: true, standard: true, premium: true },
-             { name: 'Buy & Sell Mall', basic: true, standard: true, premium: true },
-             { name: 'Warehouse Mall', basic: false, standard: true, premium: true },
-             { name: 'Repurpose Mall', basic: false, standard: true, premium: true },
-             { name: 'Aftermarket Mall', basic: false, standard: true, premium: true },
+             { name: 'Supplier Mall Access', key: 'Supplier Mall Access' },
+             { name: 'Transporter Mall Access', key: 'Transporter Mall Access' },
+             { name: 'Finance Mall Access', key: 'Finance Mall Access' },
+             { name: 'Buy & Sell Mall', key: 'Buy & Sell Mall' },
+             { name: 'Warehouse Mall', key: 'Warehouse Mall' },
+             { name: 'Repurpose Mall', key: 'Repurpose Mall' },
+             { name: 'Aftermarket Mall', key: 'Aftermarket Mall' },
         ]
     },
      {
         name: 'Marketplace Division',
         features: [
-             { name: 'Access Partner Reseller Network', basic: true, standard: true, premium: true },
+             { name: 'Access Partner Reseller Network', key: 'Access Partner Reseller Network' },
         ]
     },
     {
         name: 'Tech Division',
         features: [
-            { name: 'AI Freight Matcher (Loads Mall)', basic: 'Basic', standard: 'Advanced', premium: 'Advanced' },
-            { name: 'Real-time Analytics Dashboard', basic: false, standard: true, premium: true },
-            { name: 'API Access for Integrations', basic: false, standard: false, premium: true },
+            { name: 'AI Freight Matcher (Loads Mall)', key: 'AI Freight Matcher (Loads Mall)' },
+            { name: 'Real-time Analytics Dashboard', key: 'Real-time Analytics Dashboard' },
+            { name: 'API Access for Integrations', key: 'API Access for Integrations' },
         ]
     },
     {
         name: 'Connect Plans',
         features: [
-            { name: 'Loyalty Plan Access', basic: false, standard: true, premium: true },
-            { name: 'Rewards Plan Access', basic: false, standard: true, premium: true },
-            { name: 'Actions Plan Included', basic: false, standard: false, premium: true },
+            { name: 'Loyalty Plan Access', key: 'Loyalty Plan Access' },
+            { name: 'Rewards Plan Access', key: 'Rewards Plan Access' },
+            { name: 'Actions Plan Included', key: 'Actions Plan Included' },
         ]
     },
     {
         name: 'Service & Support',
         features: [
-            { name: 'Priority Support', basic: false, standard: true, premium: true },
-            { name: 'Dedicated Account Manager', basic: false, standard: false, premium: true },
-            { name: '24/7 Premium Support', basic: false, standard: false, premium: true },
+            { name: 'Priority Support', key: 'Priority Support' },
+            { name: 'Dedicated Account Manager', key: 'Dedicated Account Manager' },
+            { name: '24/7 Premium Support', key: '24/7 Premium Support' },
         ]
     },
 ];
@@ -77,11 +77,8 @@ const formatPrice = (price: number, perMonth = false) => {
     return perMonth ? `${formatted}/month` : formatted;
 };
 
-const renderCheckmark = (value: boolean | string) => {
-    if (typeof value === 'string') {
-        return <span className="font-semibold text-sm">{value}</span>;
-    }
-    if (value) {
+const renderCheckmark = (isIncluded: boolean) => {
+    if (isIncluded) {
         return <Check className="h-5 w-5 text-green-500 mx-auto" />;
     }
     return <Minus className="h-5 w-5 text-muted-foreground mx-auto" />;
@@ -98,6 +95,20 @@ export default function MembershipPage() {
   }, [firestore]);
   
   const { data: tiers, isLoading } = useCollection(membershipsQuery);
+
+  // Sort tiers: free, basic, standard, premium, etc.
+  const sortedTiers = useMemo(() => {
+      if (!tiers) return [];
+      const order = ['free', 'basic', 'standard', 'professional', 'enterprise', 'premium'];
+      return [...tiers].sort((a, b) => {
+          const aIndex = order.indexOf(a.id);
+          const bIndex = order.indexOf(b.id);
+          if (aIndex === -1 && bIndex === -1) return a.price.monthly - b.price.monthly;
+          if (aIndex === -1) return 1;
+          if (bIndex === -1) return -1;
+          return aIndex - bIndex;
+      });
+  }, [tiers]);
 
   return (
     <div className="bg-background">
@@ -125,8 +136,8 @@ export default function MembershipPage() {
             <div className="flex justify-center py-20"><Loader2 className="h-16 w-16 animate-spin text-primary" /></div>
         ) : (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-7xl mx-auto">
-              {tiers?.map((tier) => {
-                  const annualPrice = tier.price.monthly * 12 * (1 - (tier.annualDiscount || 0) / 100);
+              {sortedTiers?.map((tier:any) => {
+                  const annualPrice = tier.price.annual || tier.price.monthly * 12 * (1 - (tier.annualDiscount || 0) / 100);
                   const priceToShow = billingCycle === 'annual' ? annualPrice / 12 : tier.price.monthly;
 
                   return (
@@ -144,13 +155,19 @@ export default function MembershipPage() {
                         <CardTitle className="text-2xl font-bold">{tier.name}</CardTitle>
                         <CardDescription className="mt-2 text-base h-10">{tier.description}</CardDescription>
                         <div className="pt-4">
-                          <span className="text-4xl font-extrabold tracking-tight">
-                            {formatPrice(priceToShow)}
-                          </span>
-                          <span className="text-muted-foreground">/month</span>
-                          {billingCycle === 'annual' && (
-                            <p className="text-xs text-muted-foreground mt-1">Billed as {formatPrice(annualPrice)} per year</p>
-                          )}
+                           {tier.id === 'free' ? (
+                                <span className="text-4xl font-extrabold tracking-tight">Free</span>
+                           ) : (
+                                <>
+                                    <span className="text-4xl font-extrabold tracking-tight">
+                                        {formatPrice(priceToShow)}
+                                    </span>
+                                    <span className="text-muted-foreground">/month</span>
+                                    {billingCycle === 'annual' && (
+                                        <p className="text-xs text-muted-foreground mt-1">Billed as {formatPrice(annualPrice)} per year</p>
+                                    )}
+                                </>
+                           )}
                         </div>
                       </CardHeader>
                       <CardContent className="flex-grow">
@@ -165,7 +182,7 @@ export default function MembershipPage() {
                       </CardContent>
                       <CardFooter className="p-6">
                         <Button asChild className="w-full" size="lg" variant={tier.isPopular ? 'default' : 'outline'}>
-                          <Link href={`/checkout/${tier.id}?cycle=${billingCycle}`}>
+                          <Link href={tier.id === 'free' ? '/join' : `/checkout/${tier.id}?cycle=${billingCycle}`}>
                             Choose {tier.name}
                           </Link>
                         </Button>
@@ -189,7 +206,7 @@ export default function MembershipPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead className="w-2/5 font-bold text-lg">Features</TableHead>
-                  {tiers?.map(tier => (
+                  {sortedTiers?.map((tier:any) => (
                     <TableHead key={tier.id} className="text-center font-bold text-lg">{tier.name}</TableHead>
                   ))}
                 </TableRow>
@@ -203,9 +220,11 @@ export default function MembershipPage() {
                         {section.features.map((feature) => (
                             <TableRow key={feature.name}>
                                 <TableCell className="font-medium pl-8">{feature.name}</TableCell>
-                                <TableCell className="text-center">{renderCheckmark(feature.basic)}</TableCell>
-                                <TableCell className="text-center">{renderCheckmark(feature.standard)}</TableCell>
-                                <TableCell className="text-center">{renderCheckmark(feature.premium)}</TableCell>
+                                {sortedTiers?.map((tier: any) => (
+                                     <TableCell key={`${tier.id}-${feature.key}`} className="text-center">
+                                        {renderCheckmark(tier.features.includes(feature.key))}
+                                     </TableCell>
+                                ))}
                             </TableRow>
                         ))}
                     </React.Fragment>
@@ -218,5 +237,3 @@ export default function MembershipPage() {
     </div>
   );
 }
-
-    
