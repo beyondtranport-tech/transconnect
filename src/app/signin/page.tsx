@@ -103,8 +103,15 @@ function SignInFormComponent() {
     try {
       const userCredential = await signInWithEmailAndPassword(auth, values.email, values.password);
       const isAdmin = userCredential.user.email === 'beyondtransport@gmail.com';
-      const redirectParam = searchParams.get('redirect');
       
+      // Set a cookie to indicate admin status for middleware and client-side checks
+      if (isAdmin) {
+          document.cookie = "isAdmin=true; path=/";
+      } else {
+          document.cookie = "isAdmin=false; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+      }
+      
+      const redirectParam = searchParams.get('redirect');
       const defaultRedirect = isAdmin ? '/backend' : '/account';
       
       // Use router.replace to avoid adding the sign-in page to history

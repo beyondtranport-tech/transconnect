@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useUser, useFirestore, useMemoFirebase } from '@/firebase';
@@ -61,23 +62,22 @@ export default function AccountDashboard() {
     if (!user) {
         return null; // or a message telling user to sign in
     }
-
-    return (
-        <div className="w-full space-y-8">
-            {/* <<< START: ADMIN-ONLY BACKEND ACCESS CARD >>> */}
-            {isAdmin && (
-                <Card className="mb-8 border-destructive bg-destructive/10">
+    
+    if (isAdmin) {
+        return (
+             <div className="w-full space-y-8">
+                 <Card className="mb-8 border-destructive bg-destructive/10">
                     <CardHeader>
                         <div className="flex items-center gap-4">
                             <ShieldAlert className="h-8 w-8 text-destructive" />
                             <div>
-                                <CardTitle>Admin Backend Access</CardTitle>
-                                <CardDescription className="text-destructive/80">Direct access to the platform's administrative backend.</CardDescription>
+                                <CardTitle>Admin Account</CardTitle>
+                                <CardDescription className="text-destructive/80">You have successfully logged in as an administrator.</CardDescription>
                             </div>
                         </div>
                     </CardHeader>
                     <CardContent>
-                        <p className="text-muted-foreground">The navigation link in the avatar menu may be broken. Use this button to access the backend.</p>
+                        <p className="text-muted-foreground">Your primary dashboard is the Admin Backend. Use the button below or the link in the avatar menu to access it.</p>
                     </CardContent>
                     <CardFooter>
                         <Button variant="destructive" asChild>
@@ -87,9 +87,12 @@ export default function AccountDashboard() {
                         </Button>
                     </CardFooter>
                 </Card>
-            )}
-            {/* <<< END: ADMIN-ONLY BACKEND ACCESS CARD >>> */}
+             </div>
+        )
+    }
 
+    return (
+        <div className="w-full space-y-8">
             <div className="flex items-center gap-4">
                 <div>
                     <h1 className="text-3xl md:text-4xl font-bold font-headline">Dashboard</h1>
@@ -97,7 +100,7 @@ export default function AccountDashboard() {
                 </div>
             </div>
 
-            {isFreeMember && !isAdmin && (
+            {isFreeMember && (
                  <Card className="bg-primary/5 border-primary/20">
                     <CardHeader>
                         <div className="flex items-start gap-4">
@@ -135,12 +138,12 @@ export default function AccountDashboard() {
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold text-primary capitalize">{memberData?.membershipId || 'Free'}</div>
-                         {isFreeMember && !isAdmin ? (
+                         {isFreeMember ? (
                              <Button asChild variant="link" size="sm" className="p-0 h-auto">
                                 <Link href="/pricing">Upgrade to a paid plan</Link>
                             </Button>
                          ) : (
-                            <p className="text-xs text-muted-foreground">{isAdmin ? 'Admin Account' : 'You have a premium membership.'}</p>
+                            <p className="text-xs text-muted-foreground">You have a premium membership.</p>
                          )}
                     </CardContent>
                 </Card>

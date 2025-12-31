@@ -5,17 +5,18 @@ export async function middleware(request: NextRequest) {
     const { pathname } = request.nextUrl;
     const isAuthenticated = request.cookies.has('firebaseIdToken');
 
-    // Simple check for admin based on a separate cookie or role claim if available.
-    // For this fix, we will rely on the API routes to perform the final admin check.
-    // The main goal is to remove the Admin SDK from the middleware.
-    
-    // This logic assumes that if a user has a token and goes to /backend,
-    // the backend page itself or its API routes will verify if the user is truly an admin.
-    // A non-admin will be redirected from the backend page itself if they somehow land there.
+    // This is a simplified check. A robust solution would involve verifying the token
+    // on a backend and setting a secure, httpOnly cookie with role information.
+    // For this environment, we'll check a simple isAdmin cookie set during login.
+    const isAdmin = request.cookies.get('isAdmin')?.value === 'true';
 
-    // Protect backend routes - check for authentication cookie
+    // Protect backend routes
     if (pathname.startsWith('/backend') && !isAuthenticated) {
         return NextResponse.redirect(new URL('/signin?redirect=/backend', request.url));
+    }
+    // If not an admin, redirect from backend to account page
+    if (pathname.startsWith('/backend') && isAuthenticated && !isAdmin) {
+         return NextResponse.redirect(new URL('/account', request.url));
     }
 
     // Protect account page
@@ -30,21 +31,15 @@ export async function middleware(request: NextRequest) {
 
     // Redirect authenticated users from signin/join pages
     if ((pathname.startsWith('/signin') || pathname.startsWith('/join')) && isAuthenticated) {
-        const decodedTokenCookie = request.cookies.get('decodedToken');
-        let isAdmin = false;
-        if (decodedTokenCookie) {
-            try {
-                const decodedToken = JSON.parse(decodedTokenCookie.value);
-                if (decodedToken.email === 'beyondtransport@gmail.com') {
-                    isAdmin = true;
-                }
-            } catch(e) {
-                // ignore parsing error
-            }
-        }
-        const defaultRedirect = isAdmin ? '/backend' : '/account';
         const redirectParam = request.nextUrl.searchParams.get('redirect');
+        
+        // If user is admin and trying to sign in, redirect to backend.
+        // The redirect param might be for a non-admin page.
+        if (isAdmin) {
+            return NextResponse.redirect(new URL(redirectParam || '/backend', request.url));
+        }
 
+        const defaultRedirect = '/account';
         return NextResponse.redirect(new URL(redirectParam || defaultRedirect, request.url));
     }
 
