@@ -26,7 +26,7 @@ export function getAdminApp(): { app: App | null; error: string | null } {
     const validServiceAccount = serviceAccount as ServiceAccount;
 
     const app = initializeApp({
-      credential: cert(validService-account),
+      credential: cert(validServiceAccount),
     }, ADMIN_APP_NAME);
 
     return { app, error: null };
