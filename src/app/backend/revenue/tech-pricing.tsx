@@ -31,6 +31,8 @@ const formSchema = z.object({
   // Wallet & Financial Services
   walletMaintenanceFee: z.coerce.number().min(0, 'Must be non-negative.'),
   paymentProcessingFee: z.coerce.number().min(0).max(100, 'Must be 0-100'),
+  eftTopUpFee: z.coerce.number().min(0, 'Fee must be non-negative.'),
+  walletTransferFee: z.coerce.number().min(0).max(100, 'Must be between 0 and 100'),
 
   // API & Data Services
   aiFreightMatcher: z.coerce.number().min(0, 'Must be non-negative.'),
@@ -57,6 +59,8 @@ export default function TechPricing() {
       promotionsPlus: 0,
       walletMaintenanceFee: 0,
       paymentProcessingFee: 0,
+      eftTopUpFee: 0,
+      walletTransferFee: 0,
       aiFreightMatcher: 0,
       analyticsDashboard: 0,
       apiAccessPerCall: 0,
@@ -134,6 +138,28 @@ export default function TechPricing() {
                             <FormField control={form.control} name="paymentProcessingFee" render={({ field }) => (
                                 <FormItem><FormLabel>Payment Processing (%)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
                             )} />
+                            <FormField
+                                control={form.control}
+                                name="eftTopUpFee"
+                                render={({ field }) => (
+                                    <FormItem>
+                                    <FormLabel>EFT Top-up Fee (R)</FormLabel>
+                                    <FormControl><Input type="number" {...field} /></FormControl>
+                                    <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
+                                name="walletTransferFee"
+                                render={({ field }) => (
+                                    <FormItem>
+                                    <FormLabel>Wallet Transfer Fee (%)</FormLabel>
+                                    <FormControl><Input type="number" {...field} /></FormControl>
+                                    <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
                         </div>
                     </div>
 

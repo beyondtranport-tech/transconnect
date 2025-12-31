@@ -74,7 +74,6 @@ const PricingManagement = dynamic(() => import('./revenue/pricing-management'), 
 const MallCommissions = dynamic(() => import('./revenue/mall-commissions'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const MarketplaceFees = dynamic(() => import('./revenue/marketplace-fees'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const ConnectPlanPricing = dynamic(() => import('./revenue/connect-plan-pricing'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const WalletFees = dynamic(() => import('./revenue/wallet-fees'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const TechPricing = dynamic(() => import('./revenue/tech-pricing'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 
 
@@ -433,8 +432,6 @@ export default function BackendPageContent() {
         return <MarketplaceFees />;
       case 'revenue-connect-plans':
         return <ConnectPlanPricing />;
-      case 'revenue-wallet-fees':
-        return <WalletFees />;
       case 'revenue-tech-pricing':
         return <TechPricing />;
       case 'wallet-transactions':
@@ -599,10 +596,6 @@ export default function BackendPageContent() {
                          <SidebarMenuSubButton tooltip="Tech Component Pricing" isActive={activeView === 'revenue-tech-pricing'} onClick={() => router.push('/backend?view=revenue-tech-pricing', { scroll: false })}>
                             <Cpu />
                             <span>Tech Pricing</span>
-                        </SidebarMenuSubButton>
-                        <SidebarMenuSubButton tooltip="Wallet & Transaction Fees" isActive={activeView === 'revenue-wallet-fees'} onClick={() => router.push('/backend?view=revenue-wallet-fees', { scroll: false })}>
-                            <TicketPercent />
-                            <span>Wallet Fees</span>
                         </SidebarMenuSubButton>
                     </SidebarMenuSub>
                 </SidebarMenuItem>

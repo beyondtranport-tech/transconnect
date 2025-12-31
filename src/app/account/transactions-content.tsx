@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useUser, useFirestore, useMemoFirebase, useCollection } from '@/firebase';
@@ -176,7 +175,7 @@ export default function TransactionsContent() {
     
     const { data: transactions, isLoading: isTransactionsLoading, error } = useCollection(transactionsQuery);
 
-    const { data: feeConfig, isLoading: isFeeLoading } = useConfig<{ eftTopUpFee: number }>('walletFees');
+    const { data: feeConfig, isLoading: isFeeLoading } = useConfig<{ eftTopUpFee: number }>('techPricing');
 
     const isLoading = isUserLoading || isTransactionsLoading || isFeeLoading;
     
@@ -294,5 +293,3 @@ export default function TransactionsContent() {
         </div>
     );
 }
-
-    
