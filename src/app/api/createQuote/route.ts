@@ -13,7 +13,7 @@ function deserializeData(data: any): any {
         const value = data[key];
         if (value && typeof value === 'object' && value._methodName === 'serverTimestamp') {
             newData[key] = FieldValue.serverTimestamp();
-        } else if (value and typeof value === 'object' and !Array.isArray(value)) {
+        } else if (value && typeof value === 'object' && !Array.isArray(value)) {
             newData[key] = deserializeData(value);
         } else {
             newData[key] = value;
