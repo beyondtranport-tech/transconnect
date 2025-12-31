@@ -66,8 +66,9 @@ function SignInFormComponent() {
   });
   
   useEffect(() => {
-    // This effect handles redirection for already-logged-in users visiting the signin page.
-    // The middleware should handle this, but this is a client-side backup.
+    // This effect relies on the middleware to handle redirection.
+    // If the user is logged in, the middleware should redirect them away
+    // from this page before it even renders.
     if (!isUserLoading && user) {
         const redirectParam = searchParams.get('redirect');
         const isAdmin = user.email === 'beyondtransport@gmail.com';
@@ -127,17 +128,17 @@ function SignInFormComponent() {
       const userCredential = await signInWithEmailAndPassword(auth, values.email, values.password);
       const user = userCredential.user;
       
-      const decodedToken = await getIdTokenResult(user);
+      const idToken = await getIdToken(user);
       
-      // Set a cookie with the claims for the middleware to read.
-      setCookie('decodedToken', JSON.stringify(decodedToken), 1);
+      // Set a simple cookie that the middleware can read.
+      setCookie('decodedToken', idToken, 1);
       
+      // Let the useEffect and middleware handle the redirect.
+      // We just need to trigger a page refresh to make sure middleware runs.
       const redirectParam = searchParams.get('redirect');
       const isAdmin = user.email === 'beyondtransport@gmail.com';
       const defaultRedirect = isAdmin ? '/backend' : '/account';
 
-      // After setting the cookie, push to the correct dashboard.
-      // The middleware will see the cookie on the next request and allow the navigation.
       router.push(redirectParam || defaultRedirect);
       // We force a reload to ensure the new cookie state is picked up by the server and middleware.
       router.refresh();
