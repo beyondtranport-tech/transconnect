@@ -7,7 +7,7 @@ import {
   DocumentData,
   FirestoreError,
 } from 'firebase/firestore';
-import { getClientSideAuthToken } from '@/firebase';
+import { getClientSideAuthToken, useUser } from '@/firebase';
 
 /** Utility type to add an 'id' field to a given type T. */
 type WithId<T> = T & { id: string };
@@ -42,19 +42,27 @@ export function useDoc<T = any>(
   type StateDataType = WithId<T> | null;
 
   const [data, setData] = useState<StateDataType>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(true); // Start as true
   const [error, setError] = useState<Error | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
+  const { user, isUserLoading } = useUser();
 
   const forceRefresh = useCallback(() => {
     setRefreshKey(oldKey => oldKey + 1);
   }, []);
 
   useEffect(() => {
+    // If the doc ref isn't ready, reset state and do nothing.
     if (!memoizedDocRef) {
       setData(null);
       setIsLoading(false);
       setError(null);
+      return;
+    }
+
+    // If the user state is still loading, wait.
+    if (isUserLoading) {
+      setIsLoading(true);
       return;
     }
 
@@ -97,7 +105,7 @@ export function useDoc<T = any>(
 
     fetchData();
 
-  }, [memoizedDocRef, refreshKey]);
+  }, [memoizedDocRef, isUserLoading, user, refreshKey]);
 
   return { data, isLoading, error, forceRefresh };
 }
