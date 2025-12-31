@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useUser, useFirestore, useMemoFirebase } from '@/firebase';
@@ -8,7 +7,7 @@ import { Award, FileText, Gem, User, Loader2, DollarSign, HeartHandshake, ArrowR
 import { doc } from 'firebase/firestore';
 import { useDoc } from '@/firebase/firestore/use-doc';
 import Link from 'next/link';
-import RecentTransactions from './recent-transactions';
+import WalletCard from './wallet-card';
 import { useEffect, useState } from 'react';
 import EnquiriesCard from './enquiries-card';
 import QuotesCard from './quotes-card';
@@ -130,8 +129,8 @@ export default function AccountDashboard() {
                 </Card>
             )}
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-                <Card>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between pb-2">
                         <CardTitle className="text-sm font-medium">Membership Tier</CardTitle>
                         <Gem className="h-4 w-4 text-muted-foreground" />
@@ -145,16 +144,6 @@ export default function AccountDashboard() {
                          ) : (
                             <p className="text-xs text-muted-foreground">You have a premium membership.</p>
                          )}
-                    </CardContent>
-                </Card>
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between pb-2">
-                        <CardTitle className="text-sm font-medium">Wallet Balance</CardTitle>
-                        <Wallet className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">{formatPrice(memberData?.walletBalance || 0)}</div>
-                        <p className="text-xs text-muted-foreground">Used for membership payments.</p>
                     </CardContent>
                 </Card>
                 <Card>
@@ -187,7 +176,7 @@ export default function AccountDashboard() {
             </div>
 
              <div className="space-y-8">
-                <RecentTransactions />
+                <WalletCard />
             </div>
         </div>
     );

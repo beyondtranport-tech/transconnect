@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useUser, useFirestore, useMemoFirebase, useCollection } from '@/firebase';
@@ -98,9 +97,6 @@ export default function BillingContent() {
                         <div className="text-center py-20">
                           <p className="text-muted-foreground">You have no transactions yet.</p>
                           <p className="text-sm text-muted-foreground">Top up your wallet or make a purchase to get started.</p>
-                           <Button asChild variant="secondary" className="mt-4">
-                                <Link href="/account?view=transactions">Top-up Wallet</Link>
-                           </Button>
                         </div>
                      )
                 )}
