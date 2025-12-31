@@ -60,13 +60,14 @@ function SignInFormComponent() {
   const form = useForm<SignInFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      email: '',
+      email: searchParams.get('email') || '',
       password: '',
     },
   });
   
   useEffect(() => {
     // This effect handles redirection for already-logged-in users visiting the signin page.
+    // The middleware should handle this, but this is a client-side backup.
     if (!isUserLoading && user) {
         const redirectParam = searchParams.get('redirect');
         const isAdmin = user.email === 'beyondtransport@gmail.com';
@@ -131,15 +132,15 @@ function SignInFormComponent() {
       // Set a cookie with the claims for the middleware to read.
       setCookie('decodedToken', JSON.stringify(decodedToken), 1);
       
-      // Post-login redirection logic is now handled by the middleware and the useEffect hook.
-      // We no longer need to force a reload.
       const redirectParam = searchParams.get('redirect');
       const isAdmin = user.email === 'beyondtransport@gmail.com';
       const defaultRedirect = isAdmin ? '/backend' : '/account';
 
       // After setting the cookie, push to the correct dashboard.
-      // The middleware will now allow this navigation.
+      // The middleware will see the cookie on the next request and allow the navigation.
       router.push(redirectParam || defaultRedirect);
+      // We force a reload to ensure the new cookie state is picked up by the server and middleware.
+      router.refresh();
       
     } catch (error: any) {
       let title = 'An error occurred.';
