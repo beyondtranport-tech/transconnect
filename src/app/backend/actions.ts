@@ -6,7 +6,6 @@ async function fetchFromApi(token: string, path: string, type: 'collection' | 'd
         throw new Error("User not authenticated.");
     }
     
-    // Construct the absolute URL for the API endpoint
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
     const url = new URL('/api/getUserSubcollection', baseUrl);
 
@@ -17,7 +16,6 @@ async function fetchFromApi(token: string, path: string, type: 'collection' | 'd
             'Content-Type': 'application/json',
         },
         body: JSON.stringify({ path, type }),
-        // Add cache: 'no-store' to ensure fresh data is fetched on every request
         cache: 'no-store',
     });
     
@@ -48,7 +46,6 @@ export async function getShops(token: string) {
 
 export async function getFinanceApplications(token: string) {
      try {
-        // These can run in parallel
         const [quotesResult, enquiriesResult] = await Promise.all([
             fetchFromApi(token, 'quotes', 'collection-group'),
             fetchFromApi(token, 'enquiries', 'collection-group')
@@ -63,7 +60,6 @@ export async function getFinanceApplications(token: string) {
             ...(enquiriesResult.data || []).map((e: any) => ({ ...e, recordType: 'Enquiry' })),
         ];
 
-        // Sort by creation date, descending
         combinedRecords.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
         return { success: true, data: combinedRecords };
@@ -72,7 +68,6 @@ export async function getFinanceApplications(token: string) {
         return { success: false, error: error.message };
     }
 }
-
 
 export async function deleteTransaction(token: string, memberId: string, transactionId: string) {
     try {

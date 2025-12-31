@@ -7,28 +7,28 @@ import { getAdminApp } from '@/lib/firebase-admin';
 export async function POST(req: NextRequest) {
     const { app, error: initError } = getAdminApp();
     if (initError || !app) {
-        return NextResponse.json({ success: false, error: 'Admin SDK not initialized.' }, { status: 500 });
+        return NextResponse.json({ success: false, error: `Admin SDK not initialized: ${initError}` }, { status: 500 });
     }
 
     const headersList = req.headers;
     const authorization = headersList.get('authorization');
 
     if (!authorization?.startsWith('Bearer ')) {
-        return NextResponse.json({ success: false, error: 'Unauthorized.' }, { status: 401 });
+        return NextResponse.json({ success: false, error: 'Unauthorized: Missing or invalid token.' }, { status: 401 });
     }
     const token = authorization.split('Bearer ')[1];
     
     try {
         const adminAuth = getAuth(app);
         const decodedToken = await adminAuth.verifyIdToken(token);
-        // This is an admin action, so we must check for the admin email.
+        
         if (decodedToken.email !== 'beyondtransport@gmail.com') {
             return NextResponse.json({ success: false, error: 'Forbidden: Admin access required.' }, { status: 403 });
         }
         
         const { shopId, ownerId } = await req.json();
         if (!shopId || !ownerId) {
-            return NextResponse.json({ success: false, error: 'shopId and ownerId are required.' }, { status: 400 });
+            return NextResponse.json({ success: false, error: 'Bad Request: shopId and ownerId are required.' }, { status: 400 });
         }
         
         const db = getFirestore(app);
@@ -43,9 +43,7 @@ export async function POST(req: NextRequest) {
         const shopData = shopDoc.data();
         
         const batch = db.batch();
-        // Copy the shop data to the public collection and set status to 'approved'
         batch.set(publicShopRef, { ...shopData, status: 'approved', updatedAt: new Date() });
-        // Update the status on the original shop document
         batch.update(memberShopRef, { status: 'approved', updatedAt: new Date() });
         await batch.commit();
 

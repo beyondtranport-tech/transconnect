@@ -7,12 +7,10 @@ import { getAdminApp } from '@/lib/firebase-admin';
 export async function POST(req: NextRequest) {
     const { app, error: initError } = getAdminApp();
     if (initError || !app) {
-        return NextResponse.json({ success: false, error: 'Admin SDK not initialized.' }, { status: 500 });
+        return NextResponse.json({ success: false, error: `Admin SDK not initialized: ${initError}` }, { status: 500 });
     }
 
-    const headersList = req.headers;
-    const authorization = headersList.get('authorization');
-
+    const authorization = req.headers.get('authorization');
     if (!authorization?.startsWith('Bearer ')) {
         return NextResponse.json({ success: false, error: 'Unauthorized.' }, { status: 401 });
     }
@@ -41,8 +39,7 @@ export async function POST(req: NextRequest) {
         
         const batch = db.batch();
         batch.set(newShopRef, newShopData);
-        // Also update the member document with the new shopId
-        batch.set(memberRef, { shopId: newShopRef.id }, { merge: true });
+        batch.update(memberRef, { shopId: newShopRef.id });
         await batch.commit();
 
         return NextResponse.json({ success: true, shopId: newShopRef.id });

@@ -5,7 +5,6 @@ import { headers } from 'next/headers';
 import { getAuth } from 'firebase-admin/auth';
 import { getAdminApp } from '@/lib/firebase-admin';
 
-// Helper function to convert serverTimestamp placeholders
 function deserializeData(data: any): any {
     if (!data) return data;
     const newData: { [key: string]: any } = {};
@@ -25,25 +24,22 @@ function deserializeData(data: any): any {
 export async function POST(req: NextRequest) {
   const { app, error: initError } = getAdminApp();
   if (initError || !app) {
-    return NextResponse.json({ success: false, error: 'Internal Server Error: Could not connect to Firebase.' }, { status: 500 });
+    return NextResponse.json({ success: false, error: `Internal Server Error: ${initError}` }, { status: 500 });
   }
 
-  const headersList = headers();
-  const authorization = headersList.get('authorization');
-  
-  if (!authorization || !authorization.startsWith('Bearer ')) {
+  const authorization = headers().get('authorization');
+  if (!authorization?.startsWith('Bearer ')) {
     return NextResponse.json({ success: false, error: 'Unauthorized: No token provided.' }, { status: 401 });
   }
 
   const idToken = authorization.split('Bearer ')[1];
   
-  const { data } = await req.json();
-
-  if (!data) {
-      return NextResponse.json({ success: false, error: 'Bad Request: "data" is required.' }, { status: 400 });
-  }
-
   try {
+    const { data } = await req.json();
+    if (!data) {
+        return NextResponse.json({ success: false, error: 'Bad Request: "data" is required.' }, { status: 400 });
+    }
+
     const adminAuth = getAuth(app);
     const decodedToken = await adminAuth.verifyIdToken(idToken);
     const uid = decodedToken.uid;
