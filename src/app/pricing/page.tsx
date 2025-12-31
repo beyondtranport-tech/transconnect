@@ -215,7 +215,7 @@ export default function MembershipPage() {
                 {featureSections.map((section) => (
                     <React.Fragment key={section.name}>
                         <TableRow className="bg-muted/50">
-                            <TableCell colSpan={4} className="font-semibold text-primary">{section.name}</TableCell>
+                            <TableCell colSpan={sortedTiers.length + 1} className="font-semibold text-primary">{section.name}</TableCell>
                         </TableRow>
                         {section.features.map((feature) => (
                             <TableRow key={feature.name}>
