@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Suspense } from 'react';
@@ -9,11 +10,21 @@ import { doc, getDoc, writeBatch, collection, serverTimestamp } from 'firebase/f
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Loader2, Banknote, ClipboardCopy } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import Link from 'next/link';
-import { bankDetails } from '@/lib/bank-details.json';
+
+// Removed the problematic import and hardcoded the details.
+const bankDetails = {
+  "bankName": "First National Bank",
+  "branchName": "Sandton City",
+  "accountHolder": "TransConnect (Pty) Ltd",
+  "accountType": "Cheque",
+  "accountNumber": "62800012345",
+  "branchCode": "250655"
+};
+
 
 const tiers = [
   { id: 'basic', name: 'Basic', price: { monthly: 375, annual: 375 * 12 * 0.85 } },
@@ -46,12 +57,6 @@ function CheckoutComponent() {
     return doc(firestore, 'members', user.uid);
   }, [firestore, user]);
 
-  useEffect(() => {
-    if (!isUserLoading && !user) {
-      router.push(`/signin?redirect=/checkout/${planId}?cycle=${cycle}`);
-    }
-  }, [user, isUserLoading, router, planId, cycle]);
-
   const fetchBalance = useCallback(async () => {
     if (memberRef) {
       setIsBalanceLoading(true);
@@ -69,8 +74,12 @@ function CheckoutComponent() {
   }, [memberRef]);
 
   useEffect(() => {
-    fetchBalance();
-  }, [fetchBalance]);
+    if (!isUserLoading && !user) {
+      router.push(`/signin?redirect=/checkout/${planId}?cycle=${cycle}`);
+    } else {
+        fetchBalance();
+    }
+  }, [user, isUserLoading, router, planId, cycle, fetchBalance]);
   
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text).then(() => {
@@ -208,3 +217,5 @@ export default function CheckoutPage() {
         </div>
     );
 }
+
+    

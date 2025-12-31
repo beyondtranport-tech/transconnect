@@ -51,7 +51,8 @@ import { useState, useEffect, Suspense, useMemo } from 'react';
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 
-import { useUser, useAuth, getClientSideAuthToken } from '@/firebase';
+import { useUser, useAuth } from '@/firebase';
+import { getClientSideAuthToken } from '@/firebase';
 import { signOut } from 'firebase/auth';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -607,3 +608,5 @@ export default function BackendPageContent() {
     </SidebarProvider>
   );
 }
+
+    
