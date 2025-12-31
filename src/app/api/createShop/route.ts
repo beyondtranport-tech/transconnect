@@ -6,7 +6,7 @@ import { getAdminApp } from '@/lib/firebase-admin';
 
 export async function POST(req: NextRequest) {
     const { app, error: initError } = getAdminApp();
-    if (initError) {
+    if (initError || !app) {
         return NextResponse.json({ success: false, error: 'Admin SDK not initialized.' }, { status: 500 });
     }
 
@@ -19,11 +19,11 @@ export async function POST(req: NextRequest) {
     const token = authorization.split('Bearer ')[1];
     
     try {
-        const adminAuth = getAuth(app!);
+        const adminAuth = getAuth(app);
         const decodedToken = await adminAuth.verifyIdToken(token);
         const uid = decodedToken.uid;
 
-        const db = getFirestore(app!);
+        const db = getFirestore(app);
         const memberRef = db.collection('members').doc(uid);
         const shopCollectionRef = memberRef.collection('shops');
         
@@ -41,6 +41,7 @@ export async function POST(req: NextRequest) {
         
         const batch = db.batch();
         batch.set(newShopRef, newShopData);
+        // Also update the member document with the new shopId
         batch.set(memberRef, { shopId: newShopRef.id }, { merge: true });
         await batch.commit();
 
