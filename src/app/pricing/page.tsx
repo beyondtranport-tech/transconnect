@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Check, Star, Minus } from 'lucide-react';
 import Link from 'next/link';
-import { useUser, useFirestore, useCollection } from '@/firebase';
+import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { cn } from '@/lib/utils';
 import { useState, useMemo } from 'react';
 import { Switch } from '@/components/ui/switch';
@@ -92,7 +92,7 @@ export default function MembershipPage() {
   const firestore = useFirestore();
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('monthly');
 
-  const membershipsQuery = useMemo(() => {
+  const membershipsQuery = useMemoFirebase(() => {
     if (!firestore) return null;
     return query(collection(firestore, 'memberships'));
   }, [firestore]);
@@ -117,7 +117,7 @@ export default function MembershipPage() {
                 onCheckedChange={(checked) => setBillingCycle(checked ? 'annual' : 'monthly')}
             />
             <Label htmlFor="billing-switch">
-                Annual <span className="text-primary font-semibold ml-1">(Save 15%)</span>
+                Annual <span className="text-primary font-semibold ml-1">(Save up to 15%)</span>
             </Label>
         </div>
 
@@ -125,49 +125,54 @@ export default function MembershipPage() {
             <div className="flex justify-center py-20"><Loader2 className="h-16 w-16 animate-spin text-primary" /></div>
         ) : (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-7xl mx-auto">
-              {tiers?.map((tier) => (
-                <Card key={tier.id} className={cn(
-                    "flex flex-col shadow-lg transition-transform duration-300 hover:scale-105",
-                    tier.isPopular ? "border-primary border-2 relative" : "border"
-                )}>
-                     {tier.isPopular && (
-                        <div className="absolute -top-4 right-4 bg-primary text-primary-foreground px-3 py-1 text-sm font-semibold rounded-full flex items-center gap-1">
-                            <Star className="h-4 w-4" />
-                            Most Popular
+              {tiers?.map((tier) => {
+                  const annualPrice = tier.price.monthly * 12 * (1 - (tier.annualDiscount || 0) / 100);
+                  const priceToShow = billingCycle === 'annual' ? annualPrice / 12 : tier.price.monthly;
+
+                  return (
+                    <Card key={tier.id} className={cn(
+                        "flex flex-col shadow-lg transition-transform duration-300 hover:scale-105",
+                        tier.isPopular ? "border-primary border-2 relative" : "border"
+                    )}>
+                        {tier.isPopular && (
+                            <div className="absolute -top-4 right-4 bg-primary text-primary-foreground px-3 py-1 text-sm font-semibold rounded-full flex items-center gap-1">
+                                <Star className="h-4 w-4" />
+                                Most Popular
+                            </div>
+                        )}
+                      <CardHeader className="text-center">
+                        <CardTitle className="text-2xl font-bold">{tier.name}</CardTitle>
+                        <CardDescription className="mt-2 text-base h-10">{tier.description}</CardDescription>
+                        <div className="pt-4">
+                          <span className="text-4xl font-extrabold tracking-tight">
+                            {formatPrice(priceToShow)}
+                          </span>
+                          <span className="text-muted-foreground">/month</span>
+                          {billingCycle === 'annual' && (
+                            <p className="text-xs text-muted-foreground mt-1">Billed as {formatPrice(annualPrice)} per year</p>
+                          )}
                         </div>
-                     )}
-                  <CardHeader className="text-center">
-                    <CardTitle className="text-2xl font-bold">{tier.name}</CardTitle>
-                    <CardDescription className="mt-2 text-base h-10">{tier.description}</CardDescription>
-                    <div className="pt-4">
-                      <span className="text-4xl font-extrabold tracking-tight">
-                        {formatPrice(billingCycle === 'annual' ? tier.price.annual / 12 : tier.price.monthly)}
-                      </span>
-                      <span className="text-muted-foreground">/month</span>
-                      {billingCycle === 'annual' && (
-                         <p className="text-xs text-muted-foreground mt-1">Billed as {formatPrice(tier.price.annual)} per year</p>
-                      )}
-                    </div>
-                  </CardHeader>
-                  <CardContent className="flex-grow">
-                    <ul className="space-y-3">
-                      {tier.features.slice(0, 5).map((feature: string) => (
-                        <li key={feature} className="flex items-start">
-                          <Check className="h-5 w-5 text-green-500 mr-3 flex-shrink-0 mt-0.5" />
-                          <span className="text-muted-foreground">{feature}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </CardContent>
-                  <CardFooter className="p-6">
-                    <Button asChild className="w-full" size="lg" variant={tier.isPopular ? 'default' : 'outline'}>
-                      <Link href={`/checkout/${tier.id}?cycle=${billingCycle}`}>
-                        Choose {tier.name}
-                      </Link>
-                    </Button>
-                  </CardFooter>
-                </Card>
-              ))}
+                      </CardHeader>
+                      <CardContent className="flex-grow">
+                        <ul className="space-y-3">
+                          {tier.features.slice(0, 5).map((feature: string) => (
+                            <li key={feature} className="flex items-start">
+                              <Check className="h-5 w-5 text-green-500 mr-3 flex-shrink-0 mt-0.5" />
+                              <span className="text-muted-foreground">{feature}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </CardContent>
+                      <CardFooter className="p-6">
+                        <Button asChild className="w-full" size="lg" variant={tier.isPopular ? 'default' : 'outline'}>
+                          <Link href={`/checkout/${tier.id}?cycle=${billingCycle}`}>
+                            Choose {tier.name}
+                          </Link>
+                        </Button>
+                      </CardFooter>
+                    </Card>
+                  )
+              })}
             </div>
         )}
       </div>
@@ -213,3 +218,5 @@ export default function MembershipPage() {
     </div>
   );
 }
+
+    

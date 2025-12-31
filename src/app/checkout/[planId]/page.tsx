@@ -4,7 +4,7 @@
 import { Suspense } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
-import { useUser, useFirestore, useMemoFirebase } from '@/firebase';
+import { useUser, useFirestore, useMemoFirebase, useDoc } from '@/firebase';
 import { doc, getDoc, writeBatch, collection, serverTimestamp } from 'firebase/firestore';
 
 import { Button } from '@/components/ui/button';
@@ -14,23 +14,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import Link from 'next/link';
+import bankDetailsData from '@/lib/bank-details.json';
 
-// Removed the problematic import and hardcoded the details.
-const bankDetails = {
-  "bankName": "First National Bank",
-  "branchName": "Sandton City",
-  "accountHolder": "TransConnect (Pty) Ltd",
-  "accountType": "Cheque",
-  "accountNumber": "62800012345",
-  "branchCode": "250655"
-};
-
-
-const tiers = [
-  { id: 'basic', name: 'Basic', price: { monthly: 375, annual: 375 * 12 * 0.85 } },
-  { id: 'standard', name: 'Standard', price: { monthly: 425, annual: 425 * 12 * 0.85 } },
-  { id: 'premium', name: 'Premium', price: { monthly: 475, annual: 475 * 12 * 0.85 } },
-];
 
 const formatPrice = (price: number) => {
     return new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(price);
@@ -49,13 +34,28 @@ function CheckoutComponent() {
 
   const planId = params.planId as string;
   const cycle = searchParams.get('cycle') || 'monthly';
-  const plan = tiers.find(t => t.id === planId);
-  const price = plan ? plan.price[cycle as 'monthly' | 'annual'] : 0;
+  
+  const planRef = useMemoFirebase(() => {
+      if (!firestore || !planId) return null;
+      return doc(firestore, 'memberships', planId);
+  }, [firestore, planId]);
+  
+  const { data: plan, isLoading: isPlanLoading } = useDoc(planRef);
 
   const memberRef = useMemoFirebase(() => {
     if (!firestore || !user) return null;
     return doc(firestore, 'members', user.uid);
   }, [firestore, user]);
+  
+  const price = useMemo(() => {
+    if (!plan) return 0;
+    if (cycle === 'annual') {
+        const discount = plan.annualDiscount || 0;
+        return plan.price.monthly * 12 * (1 - discount / 100);
+    }
+    return plan.price.monthly;
+  }, [plan, cycle]);
+
 
   const fetchBalance = useCallback(async () => {
     if (memberRef) {
@@ -136,7 +136,7 @@ function CheckoutComponent() {
     }
   };
 
-  if (isUserLoading || !user || isBalanceLoading) {
+  if (isUserLoading || !user || isBalanceLoading || isPlanLoading) {
       return <div className="flex justify-center items-center h-full"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
   }
   if (!plan) {
@@ -180,7 +180,7 @@ function CheckoutComponent() {
                         <CardTitle>EFT Payment Details</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-3">
-                         {Object.entries(bankDetails).map(([key, value]) => (
+                         {Object.entries(bankDetailsData).map(([key, value]) => (
                             <div key={key} className="flex justify-between items-center text-sm">
                                 <span className="text-muted-foreground capitalize">{key.replace(/([A-Z])/g, ' $1').trim()}</span>
                                 <span className="font-mono">{value}</span>

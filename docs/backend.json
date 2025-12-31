@@ -237,8 +237,19 @@
           "description": "A short description of the ideal user for this plan."
         },
         "price": {
-          "type": "number",
-          "description": "Monthly price of the membership plan in ZAR. A value of 0 indicates a free plan. A null or undefined value indicates custom pricing."
+          "type": "object",
+          "properties": {
+              "monthly": { "type": "number", "description": "Monthly price in ZAR." },
+              "annual": { "type": "number", "description": "Annual price in ZAR." }
+          }
+        },
+        "annualDiscount": {
+            "type": "number",
+            "description": "The discount percentage for an annual subscription."
+        },
+        "sessionDiscount": {
+            "type": "number",
+            "description": "The discount percentage for a session subscription."
         },
         "features": {
           "type": "array",
@@ -589,3 +600,5 @@
     "reasoning": "The data model now uses a dual-collection strategy for shops to ensure security and functionality. A user's shop is created and managed within a subcollection at `/members/{memberId}/shops`, which is fully controlled by the owner via a recursive security rule. A top-level `/shops` collection exists to hold public, read-only copies of *approved* shops. This separation prevents users from listing each other's draft shops while allowing a public, queryable marketplace. A backend process (e.g., Cloud Function, not implemented here) would be responsible for copying an approved shop from the member's subcollection to the public top-level collection. Quotes, Enquiries, and Wallet Payments are now in their own dedicated subcollections under each member for clarity and to prevent data mixing."
   }
 }
+
+    

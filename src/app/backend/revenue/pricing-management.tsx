@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
@@ -24,6 +25,8 @@ const planSchema = z.object({
     monthly: z.coerce.number().min(0, 'Price must be 0 or more'),
     annual: z.coerce.number().min(0, 'Price must be 0 or more'),
   }),
+  annualDiscount: z.coerce.number().min(0).optional(),
+  sessionDiscount: z.coerce.number().min(0).optional(),
   features: z.array(z.string()).min(1, 'At least one feature is required'),
   isPopular: z.boolean().default(false),
 });
@@ -43,6 +46,8 @@ function PlanDialog({ plan, onSave }: { plan?: PlanFormValues; onSave: () => voi
       name: '',
       description: '',
       price: { monthly: 0, annual: 0 },
+      annualDiscount: 0,
+      sessionDiscount: 0,
       features: [''],
       isPopular: false,
     },
@@ -105,6 +110,14 @@ function PlanDialog({ plan, onSave }: { plan?: PlanFormValues; onSave: () => voi
                 <FormItem><FormLabel>Annual Price</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
               )} />
             </div>
+             <div className="grid grid-cols-2 gap-4">
+                <FormField name="annualDiscount" control={form.control} render={({ field }) => (
+                    <FormItem><FormLabel>Annual Discount (%)</FormLabel><FormControl><Input type="number" placeholder="e.g., 15" {...field} /></FormControl><FormMessage /></FormItem>
+                )} />
+                <FormField name="sessionDiscount" control={form.control} render={({ field }) => (
+                    <FormItem><FormLabel>Session Discount (%)</FormLabel><FormControl><Input type="number" placeholder="e.g., 10" {...field} /></FormControl><FormMessage /></FormItem>
+                )} />
+            </div>
             <div>
               <Label>Features</Label>
               {fields.map((field, index) => (
@@ -136,6 +149,7 @@ export default function PricingManagement() {
     if (!firestore) return null;
     return query(collection(firestore, 'memberships'));
   }, [firestore]);
+  
   const { data: plans, isLoading, forceRefresh } = useCollection<PlanFormValues>(membershipsQuery);
 
   const handleDelete = async (planId: string) => {
@@ -172,6 +186,8 @@ export default function PricingManagement() {
                   <TableHead>Plan Name</TableHead>
                   <TableHead>Monthly Price</TableHead>
                   <TableHead>Annual Price</TableHead>
+                  <TableHead>Annual Discount</TableHead>
+                  <TableHead>Session Discount</TableHead>
                   <TableHead>Features</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
@@ -180,8 +196,10 @@ export default function PricingManagement() {
                 {plans && plans.map(plan => (
                   <TableRow key={plan.id}>
                     <TableCell className="font-semibold">{plan.name}</TableCell>
-                    <TableCell>{plan.price.monthly}</TableCell>
-                    <TableCell>{plan.price.annual}</TableCell>
+                    <TableCell>R {plan.price.monthly}</TableCell>
+                    <TableCell>R {plan.price.annual}</TableCell>
+                    <TableCell>{plan.annualDiscount || 0}%</TableCell>
+                    <TableCell>{plan.sessionDiscount || 0}%</TableCell>
                     <TableCell>{plan.features.length}</TableCell>
                     <TableCell className="text-right">
                         <PlanDialog plan={plan} onSave={forceRefresh} />
