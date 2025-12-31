@@ -1,9 +1,10 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, CheckCircle, XCircle, Key, FileJson, Database, ArrowRight, Server, ShieldAlert } from 'lucide-react';
+import { Loader2, CheckCircle, XCircle, Key, FileJson, Database, ArrowRight, Server, ShieldAlert, RefreshCw } from 'lucide-react';
 import { getAdminSdkDiagnostics, testFirestoreConnection } from './actions';
 import Link from 'next/link';
 
@@ -60,35 +61,24 @@ export default function DebugToolsContent() {
                 <p className="mt-2 text-muted-foreground">Tools for diagnosing the admin backend configuration.</p>
             </div>
 
-            <Card className="border-destructive bg-destructive/10">
+            {/* NEW CARD FOR RESTART INSTRUCTION */}
+            <Card className="border-primary bg-primary/10">
                 <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-destructive"><ShieldAlert />Next Steps for Authentication Error</CardTitle>
+                    <CardTitle className="flex items-center gap-2 text-primary"><RefreshCw /> Final Troubleshooting Step: Restart Server</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4 text-destructive-foreground">
+                <CardContent className="space-y-4">
                     <p>
-                        The "Connection Failed" error persists even though the application code appears correct. This strongly indicates the issue is with the Service Account credential itself, not the code.
+                        We have corrected the code, created a new service account key, and placed it in the correct `.env.local` file. The `UNAUTHENTICATED` error should not be happening.
                     </p>
                     <p>
-                        The credential being used might be disabled, deleted, or lacking the correct permissions in Google Cloud.
+                        This strongly suggests the development server is using a cached, old version of the environment variables. **You must restart the development server to force it to load the new credentials.**
                     </p>
-                    <h4 className="font-semibold">Action Required:</h4>
-                    <ol className="list-decimal list-inside space-y-2">
-                        <li>Go to the Google Cloud IAM & Admin section for your project to manage service accounts.</li>
-                        <li>Find the service account with the email: <br/><code className="text-xs bg-destructive/20 p-1 rounded">{diagnostics?.clientEmail || "firebase-adminsdk-fbsvc@..."}</code></li>
-                        <li>Ensure the service account is enabled (it should not have a red disabled icon).</li>
-                        <li>Click on the service account, go to the "Keys" tab, and create a new JSON key.</li>
-                        <li>Use the "Base64 Encoder Tool" below to encode the new key file.</li>
-                        <li>Update the `FIREBASE_ADMIN_SDK_CONFIG_B64` secret in your hosting environment with the new Base64 string.</li>
-                    </ol>
+                    <p>
+                        After restarting, click the **"Run Live Connection Test"** button below. If the error persists even after a restart, the only remaining possibility is a permissions issue on the service account itself in Google Cloud.
+                    </p>
                 </CardContent>
-                <CardFooter>
-                     <Button asChild variant="destructive">
-                        <a href={`https://console.cloud.google.com/iam-admin/serviceaccounts?project=${diagnostics?.projectId || ''}`} target="_blank" rel="noopener noreferrer">
-                           Open Google Cloud Service Accounts <ArrowRight className="ml-2 h-4 w-4" />
-                        </a>
-                    </Button>
-                </CardFooter>
             </Card>
+
 
             <Card>
                 <CardHeader>
@@ -128,34 +118,29 @@ export default function DebugToolsContent() {
                 </CardFooter>
             </Card>
 
-            <Card>
+            <Card className="border-destructive/50 bg-destructive/10">
                 <CardHeader>
-                    <CardTitle className="flex items-center gap-2"><Server /> Environment Variable Inspection</CardTitle>
-                    <CardDescription>
-                       Inspecting the raw and decoded environment variable as seen by the server.
-                    </CardDescription>
+                    <CardTitle className="flex items-center gap-2 text-destructive"><ShieldAlert />If Connection Still Fails: Check IAM Permissions</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                    {isLoading ? (
-                         <div className="flex items-center gap-2 text-muted-foreground">
-                            <Loader2 className="h-5 w-5 animate-spin" />
-                            <span>Reading environment variable...</span>
-                        </div>
-                    ) : diagnostics ? (
-                        <>
-                            <div>
-                                <h3 className="font-semibold">Raw `FIREBASE_ADMIN_SDK_CONFIG_B64` Snippet</h3>
-                                <p className="text-xs text-muted-foreground">Shows the first and last 10 characters.</p>
-                                <pre className="mt-1 text-sm bg-muted p-2 rounded-md font-mono break-all">{diagnostics.rawVarSnippet || 'VARIABLE NOT FOUND'}</pre>
-                            </div>
-                             <div>
-                                <h3 className="font-semibold">Decoded JSON (Private Key Redacted)</h3>
-                                 <p className="text-xs text-muted-foreground">Shows the result after Base64 decoding.</p>
-                                <pre className="mt-1 text-sm bg-muted p-2 rounded-md font-mono break-all">{diagnostics.decodedJson || 'DECODING FAILED'}</pre>
-                            </div>
-                        </>
-                    ) : <p className="text-destructive">Could not load diagnostic data.</p>}
+                <CardContent className="space-y-4 text-destructive-foreground/90">
+                    <p>
+                       If the test fails after a server restart, the issue is not with the code or the key's format, but with the permissions assigned to the service account in Google Cloud.
+                    </p>
+                    <h4 className="font-semibold">Action Required:</h4>
+                    <ol className="list-decimal list-inside space-y-2">
+                        <li>Go to the Google Cloud IAM page for your project.</li>
+                        <li>Find the service account with the email: <br/><code className="text-xs bg-destructive/20 p-1 rounded">{diagnostics?.clientEmail || "firebase-adminsdk-fbsvc@..."}</code></li>
+                        <li>Check its "Roles". It must have a role that allows Firestore access, such as <b className="font-bold">`Firebase Admin`</b>, <b className="font-bold">`Editor`</b>, or at a minimum, <b className="font-bold">`Cloud Datastore User`</b>.</li>
+                        <li>If the necessary roles are missing, add them.</li>
+                    </ol>
                 </CardContent>
+                <CardFooter>
+                     <Button asChild variant="destructive">
+                        <a href={`https://console.cloud.google.com/iam-admin/iam?project=${diagnostics?.projectId || ''}`} target="_blank" rel="noopener noreferrer">
+                           Open Google Cloud IAM Roles <ArrowRight className="ml-2 h-4 w-4" />
+                        </a>
+                    </Button>
+                </CardFooter>
             </Card>
 
             <Card>
@@ -179,7 +164,7 @@ export default function DebugToolsContent() {
                         <ul className="space-y-3">
                             <li className="flex items-center gap-2">
                                 {renderCheck(diagnostics.isB64VarPresent)}
-                                <span>`FIREBASE_ADMIN_SDK_CONFIG_B64` variable is present.</span>
+                                <span>`.env.local` variable `FIREBASE_ADMIN_SDK_CONFIG_B64` is present.</span>
                             </li>
                             <li className="flex items-center gap-2">
                                 {renderCheck(diagnostics.isJsonParsable)}
