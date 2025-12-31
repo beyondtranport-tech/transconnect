@@ -7,7 +7,7 @@ import Link from 'next/link';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { signInWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
+import { signInWithEmailAndPassword, sendPasswordResetEmail, getIdTokenResult } from 'firebase/auth';
 
 import { useAuth } from '@/firebase';
 import { Button } from '@/components/ui/button';
@@ -36,6 +36,16 @@ const formSchema = z.object({
 });
 
 type SignInFormValues = z.infer<typeof formSchema>;
+
+function setCookie(name: string, value: string, days: number) {
+    let expires = "";
+    if (days) {
+        const date = new Date();
+        date.setTime(date.getTime() + (days*24*60*60*1000));
+        expires = "; expires=" + date.toUTCString();
+    }
+    document.cookie = name + "=" + (value || "")  + expires + "; path=/";
+}
 
 function SignInFormComponent() {
   const router = useRouter();
@@ -102,19 +112,19 @@ function SignInFormComponent() {
     }
     try {
       const userCredential = await signInWithEmailAndPassword(auth, values.email, values.password);
-      const isAdmin = userCredential.user.email === 'beyondtransport@gmail.com';
+      const user = userCredential.user;
+      const isAdmin = user.email === 'beyondtransport@gmail.com';
       
-      // Set a cookie to indicate admin status for middleware and client-side checks
-      if (isAdmin) {
-          document.cookie = "isAdmin=true; path=/";
-      } else {
-          document.cookie = "isAdmin=false; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
-      }
+      const idToken = await user.getIdToken();
+      const decodedToken = await user.getIdTokenResult();
+      
+      // Set cookies
+      setCookie('firebaseIdToken', idToken, 1);
+      setCookie('decodedToken', JSON.stringify(decodedToken.claims), 1);
       
       const redirectParam = searchParams.get('redirect');
       const defaultRedirect = isAdmin ? '/backend' : '/account';
       
-      // Use router.replace to avoid adding the sign-in page to history
       router.replace(redirectParam || defaultRedirect);
 
     } catch (error: any) {
