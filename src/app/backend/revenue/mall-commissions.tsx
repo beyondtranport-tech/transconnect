@@ -21,6 +21,7 @@ import { useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 
 const formSchema = z.object({
+  financeMall: z.coerce.number().min(0).max(100, 'Must be between 0 and 100'),
   supplierMall: z.coerce.number().min(0).max(100, 'Must be between 0 and 100'),
   transporterMall: z.coerce.number().min(0).max(100, 'Must be between 0 and 100'),
   buySellMall: z.coerce.number().min(0).max(100, 'Must be between 0 and 100'),
@@ -43,6 +44,7 @@ export default function MallCommissions() {
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
+      financeMall: 0,
       supplierMall: 0,
       transporterMall: 0,
       buySellMall: 0,
@@ -95,6 +97,17 @@ export default function MallCommissions() {
                 <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                         <FormField
+                            control={form.control}
+                            name="financeMall"
+                            render={({ field }) => (
+                                <FormItem>
+                                <FormLabel>Finance Mall (%)</FormLabel>
+                                <FormControl><Input type="number" {...field} /></FormControl>
+                                <FormMessage />
+                                </FormItem>
+                            )}
+                        />
                         <FormField
                             control={form.control}
                             name="supplierMall"
