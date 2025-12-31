@@ -1,8 +1,7 @@
-
 'use client';
 
-import { useDoc, usePublicCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, doc, query, where } from 'firebase/firestore';
+import { useDoc, useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { collection, doc, query } from 'firebase/firestore';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Loader2, Store, ShoppingCart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -19,14 +18,15 @@ function ShopPageContent({ params }: { params: { shopId: string } }) {
         if (!firestore) return null;
         return doc(firestore, 'shops', params.shopId);
     }, [firestore, params.shopId]);
-
+    
     const productsQuery = useMemoFirebase(() => {
         if (!firestore) return null;
-        return query(collection(firestore, 'shops', params.shopId, 'products'));
+        // Correctly query the public subcollection
+        return query(collection(firestore, `shops/${params.shopId}/products`));
     }, [firestore, params.shopId]);
 
     const { data: shop, isLoading: isShopLoading } = useDoc(shopRef);
-    const { data: products, isLoading: areProductsLoading } = usePublicCollection(productsQuery);
+    const { data: products, isLoading: areProductsLoading } = useCollection(productsQuery);
     
     const isLoading = isShopLoading || areProductsLoading;
 

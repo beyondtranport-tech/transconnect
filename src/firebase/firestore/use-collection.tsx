@@ -39,6 +39,7 @@ export interface InternalQuery extends Query<DocumentData> {
  * React hook to fetch a Firestore collection via a secure API route.
  * This hook is designed to bypass client-side security rule issues by fetching
  * data through a backend endpoint that uses the Firebase Admin SDK.
+ * It intelligently handles both public and private collections.
  * It does NOT provide real-time updates.
  *
  * IMPORTANT! YOU MUST MEMOIZE the inputted memoizedTargetRefOrQuery or BAD THINGS WILL HAPPEN
@@ -76,11 +77,9 @@ export function useCollection<T = any>(
         setError(null);
 
         try {
+            // Always try to get the auth token.
+            // The API route will decide if it's needed based on the path.
             const token = await getClientSideAuthToken();
-            if (!token) {
-                // For useCollection, we assume authentication is always required.
-                throw new Error("User is not authenticated.");
-            }
 
             const path: string =
                 memoizedTargetRefOrQuery.type === 'collection'
@@ -90,7 +89,8 @@ export function useCollection<T = any>(
             const response = await fetch('/api/getUserSubcollection', {
                 method: 'POST',
                 headers: {
-                    'Authorization': `Bearer ${token}`,
+                    // Conditionally add the Authorization header ONLY if a token was successfully retrieved.
+                    ...(token && { 'Authorization': `Bearer ${token}` }),
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({ path, type: 'collection' }),
@@ -118,78 +118,5 @@ export function useCollection<T = any>(
   return { data, isLoading, error, forceRefresh };
 }
 
-
-/**
- * React hook to fetch a PUBLIC Firestore collection via a secure API route.
- * This hook is designed for PUBLIC data and does not send an auth token.
- * It does NOT provide real-time updates.
- *
- * IMPORTANT! YOU MUST MEMOIZE the inputted memoizedTargetRefOrQuery or BAD THINGS WILL HAPPEN
- *
- * @template T Optional type for document data. Defaults to any.
- * @param {CollectionReference<DocumentData> | Query<DocumentData> | null | undefined} memoizedTargetRefOrQuery -
- * The Firestore CollectionReference or Query. The path of this object is used for the API call.
- * @returns {UseCollectionResult<T>} Object with data, isLoading, error.
- */
-export function usePublicCollection<T = any>(
-    memoizedTargetRefOrQuery: ((CollectionReference<DocumentData> | Query<DocumentData>) & {__memo?: boolean})  | null | undefined,
-): UseCollectionResult<T> {
-  type ResultItemType = WithId<T>;
-  type StateDataType = ResultItemType[] | null;
-
-  const [data, setData] = useState<StateDataType>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [error, setError] = useState<Error | null>(null);
-  const [refreshKey, setRefreshKey] = useState(0);
-
-  const forceRefresh = useCallback(() => {
-    setRefreshKey(oldKey => oldKey + 1);
-  }, []);
-
-  useEffect(() => {
-    if (!memoizedTargetRefOrQuery) {
-      setData(null);
-      setIsLoading(false);
-      setError(null);
-      return;
-    }
-
-    const fetchData = async () => {
-        setIsLoading(true);
-        setError(null);
-
-        try {
-            const path: string =
-                memoizedTargetRefOrQuery.type === 'collection'
-                ? (memoizedTargetRefOrQuery as CollectionReference).path
-                : (memoizedTargetRefOrQuery as unknown as InternalQuery)._query.path.canonicalString()
-            
-            const response = await fetch('/api/getUserSubcollection', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ path, type: 'collection' }),
-            });
-
-            const result = await response.json();
-
-            if (!response.ok) {
-                throw new Error(result.error || 'Failed to fetch collection data.');
-            }
-
-            setData(result.data as ResultItemType[]);
-        } catch (e: any) {
-            console.error("usePublicCollection fetch error:", e);
-            setError(e);
-            setData(null);
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    fetchData();
-  }, [memoizedTargetRefOrQuery, refreshKey]);
-
-  return { data, isLoading, error, forceRefresh };
-}
+// The usePublicCollection is removed as it's redundant and was the source of the error.
+// The primary useCollection hook now handles all cases correctly.
