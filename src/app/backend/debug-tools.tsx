@@ -1,16 +1,13 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, CheckCircle, XCircle, Key, FileJson, Database, ArrowRight, Server, ShieldAlert, RefreshCw } from 'lucide-react';
+import { Loader2, CheckCircle, XCircle, FileJson, Database, ArrowRight, ShieldAlert, RefreshCw } from 'lucide-react';
 import { testFirestoreConnection } from './actions';
-import Link from 'next/link';
-
 
 export default function DebugToolsContent() {
-    const [isLoading, setIsLoading] = useState(false);
     const [testResult, setTestResult] = useState<{ loading: boolean, success: boolean, error?: string }>({ loading: false, success: false });
 
     const handleTestConnection = async () => {
@@ -25,7 +22,7 @@ export default function DebugToolsContent() {
                 <h1 className="text-2xl font-bold">Admin SDK Debug Tools</h1>
                 <p className="mt-2 text-muted-foreground">Tools for diagnosing the admin backend configuration.</p>
             </div>
-
+            
             <Card>
                 <CardHeader>
                      <CardTitle className="flex items-center gap-2"><Database /> Firestore Connection Test</CardTitle>
@@ -63,7 +60,7 @@ export default function DebugToolsContent() {
                     </Button>
                 </CardFooter>
             </Card>
-            
+
              <Card className="border-primary bg-primary/10">
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2 text-primary"><RefreshCw /> Troubleshooting Step: Restart Server</CardTitle>

@@ -29,9 +29,6 @@ const nextConfig = {
       },
     ],
   },
-  devServer: {
-    allowedDevOrigins: ["*.cloudworkstations.dev"],
-  },
 };
 
 module.exports = nextConfig;

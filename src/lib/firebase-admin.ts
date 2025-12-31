@@ -20,7 +20,6 @@ export function getAdminApp(): { app: App | null; error: string | null } {
 
     const app = initializeApp({
       credential: cert(validServiceAccount),
-      storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
     }, 'firebase-admin-app-transconnect');
 
     return { app, error: null };
