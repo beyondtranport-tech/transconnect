@@ -7,7 +7,7 @@ import Link from 'next/link';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { signInWithEmailAndPassword, sendPasswordResetEmail, getIdTokenResult } from 'firebase/auth';
+import { signInWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
 
 import { useAuth, useUser } from '@/firebase';
 import { Button } from '@/components/ui/button';
@@ -37,17 +37,6 @@ const formSchema = z.object({
 
 type SignInFormValues = z.infer<typeof formSchema>;
 
-function setCookie(name: string, value: string, days: number) {
-    let expires = "";
-    if (days) {
-        const date = new Date();
-        date.setTime(date.getTime() + (days*24*60*60*1000));
-        expires = "; expires=" + date.toUTCString();
-    }
-    // Ensure the cookie is set for the root path
-    document.cookie = name + "=" + (value || "")  + expires + "; path=/";
-}
-
 function SignInFormComponent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -56,6 +45,7 @@ function SignInFormComponent() {
   const [showPassword, setShowPassword] = useState(false);
   const auth = useAuth();
   const { user, isUserLoading } = useUser();
+  const redirectParam = searchParams.get('redirect');
 
   const form = useForm<SignInFormValues>({
     resolver: zodResolver(formSchema),
@@ -66,16 +56,13 @@ function SignInFormComponent() {
   });
   
   useEffect(() => {
-    // This effect relies on the middleware to handle redirection.
-    // If the user is logged in, the middleware should redirect them away
-    // from this page before it even renders.
     if (!isUserLoading && user) {
-        const redirectParam = searchParams.get('redirect');
         const isAdmin = user.email === 'beyondtransport@gmail.com';
         const defaultRedirect = isAdmin ? '/backend' : '/account';
         router.replace(redirectParam || defaultRedirect);
     }
-  }, [user, isUserLoading, router, searchParams]);
+  }, [user, isUserLoading, router, redirectParam]);
+
 
   const handlePasswordReset = async () => {
     const email = form.getValues('email');
@@ -125,23 +112,12 @@ function SignInFormComponent() {
         return;
     }
     try {
-      const userCredential = await signInWithEmailAndPassword(auth, values.email, values.password);
-      const user = userCredential.user;
-      
-      const idToken = await getIdToken(user);
-      
-      // Set a simple cookie that the middleware can read.
-      setCookie('decodedToken', idToken, 1);
-      
-      // Let the useEffect and middleware handle the redirect.
-      // We just need to trigger a page refresh to make sure middleware runs.
-      const redirectParam = searchParams.get('redirect');
-      const isAdmin = user.email === 'beyondtransport@gmail.com';
-      const defaultRedirect = isAdmin ? '/backend' : '/account';
-
-      router.push(redirectParam || defaultRedirect);
-      // We force a reload to ensure the new cookie state is picked up by the server and middleware.
-      router.refresh();
+      await signInWithEmailAndPassword(auth, values.email, values.password);
+      // The useEffect hook will handle the redirect once the user state is updated.
+      toast({
+        title: 'Sign In Successful',
+        description: 'Redirecting to your dashboard...',
+      });
       
     } catch (error: any) {
       let title = 'An error occurred.';

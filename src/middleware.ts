@@ -1,38 +1,48 @@
 
 import { NextResponse, type NextRequest } from 'next/server';
+import { getAuth } from 'firebase-admin/auth';
+import { getAdminApp } from '@/lib/firebase-admin';
 
-export function middleware(request: NextRequest) {
+// This function is for decoding the token, but we won't use it to block.
+// The presence of the cookie is enough for the middleware's purpose.
+async function verifyToken(token: string) {
+    try {
+        const { app } = getAdminApp();
+        if (!app) return null;
+        const adminAuth = getAuth(app);
+        const decodedToken = await adminAuth.verifyIdToken(token);
+        return decodedToken;
+    } catch (error) {
+        // This is expected if the token is invalid or expired
+        return null;
+    }
+}
+
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  const isAuthenticated = request.cookies.has('decodedToken');
+  const idTokenCookie = request.cookies.get('firebaseIdToken');
+  const isAuthenticated = !!idTokenCookie;
 
-  const isAuthPage = pathname === '/signin' || pathname === '/join';
-  const isAccountRoute = pathname.startsWith('/account');
-  const isBackendRoute = pathname.startsWith('/backend');
-  const isProtected = isAccountRoute || isBackendRoute;
+  const isAuthPage = pathname.startsWith('/signin') || pathname.startsWith('/join');
+  const isBackend = pathname.startsWith('/backend');
 
-  // If user is authenticated
-  if (isAuthenticated) {
-    // And is trying to access a signin/join page, redirect them away
-    if (isAuthPage) {
-      // This is a simplified check. A full implementation would check claims for admin role.
-      // For now, we assume if you are going to /backend you must be admin.
-      // A more robust solution might involve parsing the cookie here.
-      // But we will keep it simple to fix the redirect loop.
-      const redirectUrl = new URL('/account', request.url);
-      return NextResponse.redirect(redirectUrl);
-    }
-  } 
-  // If user is not authenticated
-  else {
-    // And is trying to access a protected route, redirect to signin
-    if (isProtected) {
-      const redirectUrl = new URL('/signin', request.url);
-      redirectUrl.searchParams.set('redirect', pathname);
-      return NextResponse.redirect(redirectUrl);
-    }
+  if (isAuthenticated && isAuthPage) {
+    let isAdmin = false;
+    // We can't use verifyToken here because of edge runtime limitations.
+    // A simple heuristic for now until a better method is found.
+    // A robust solution might involve a separate API call from client to determine role.
+    // For now, we rely on client-side logic to handle admin redirect.
+    // The main job here is to get non-admins out of the sign-in page.
+    const redirectUrl = new URL('/account', request.url);
+    return NextResponse.redirect(redirectUrl);
   }
 
-  // Allow all other requests
+  if (!isAuthenticated && isBackend) {
+     const redirectUrl = new URL('/signin', request.url);
+     redirectUrl.searchParams.set('redirect', pathname);
+     return NextResponse.redirect(redirectUrl);
+  }
+
   return NextResponse.next();
 }
 
