@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { getClientSideAuthToken } from '@/firebase';
+import { getMembers } from './actions';
 
 interface Member {
     id: string;
@@ -44,19 +44,7 @@ export default function MembersList() {
         async function fetchMembers() {
             setIsLoading(true);
             try {
-                 const token = await getClientSideAuthToken();
-                 if (!token) throw new Error("Authentication token not found.");
-
-                 const response = await fetch('/api/getUserSubcollection', {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ path: 'members', type: 'collection' }),
-                });
-                
-                const result = await response.json();
+                 const result = await getMembers();
 
                 if (result.success && result.data) {
                     setMembers(result.data);

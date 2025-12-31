@@ -21,7 +21,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import { useToast } from '@/hooks/use-toast';
-import { getClientSideAuthToken } from '@/firebase';
+import { getMembers, getContributions, getFinanceApplications } from './actions';
 
 interface Member {
     id: string;
@@ -80,25 +80,12 @@ export default function DashboardContent() {
         setIsLoading(true);
         setError(null);
         try {
-            const token = await getClientSideAuthToken();
-            if (!token) throw new Error("Authentication token not found.");
-            
-            const [membersResponse, contributionsResponse] = await Promise.all([
-                 fetch('/api/getUserSubcollection', {
-                    method: 'POST',
-                    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ path: 'members', type: 'collection' }),
-                }),
-                 fetch('/api/getUserSubcollection', {
-                    method: 'POST',
-                    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ path: 'contributions', type: 'collection' }),
-                }),
+            const [membersResult, contributionsResult, financeResult] = await Promise.all([
+                getMembers(),
+                getContributions(),
+                getFinanceApplications(),
             ]);
             
-            const membersResult = await membersResponse.json();
-            const contributionsResult = await contributionsResponse.json();
-
             if (membersResult.success && membersResult.data) {
                 setStats(s => ({ ...s, members: membersResult.data!.length }));
                 setMembers(membersResult.data);
@@ -110,6 +97,15 @@ export default function DashboardContent() {
                 setStats(s => ({ ...s, contributions: contributionsResult.data!.length }));
             } else {
                  throw new Error(contributionsResult.error || 'Failed to load contributions.');
+            }
+
+            if (financeResult.success && financeResult.data) {
+                const apps = financeResult.data;
+                const totalFunded = apps.filter(app => app.status === 'funded').reduce((sum, app) => sum + (app.amountRequested || 0), 0);
+                setStats(s => ({ ...s, applications: apps.length, totalFunded }));
+                setApplications(apps);
+            } else {
+                throw new Error(financeResult.error || 'Failed to load finance data.');
             }
 
         } catch (e: any) {

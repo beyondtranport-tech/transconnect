@@ -22,7 +22,10 @@ import MemberTransactions from './member-transactions';
 const formatCurrency = (amount: number) => new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(amount);
 const formatDate = (isoString: any) => {
     if (!isoString) return 'N/A';
-    return new Date(isoString).toLocaleDateString('en-ZA', {
+    // Handle both string and Firestore Timestamp
+    const date = isoString.toDate ? isoString.toDate() : new Date(isoString);
+    if (isNaN(date.getTime())) return 'Invalid Date';
+    return date.toLocaleDateString('en-ZA', {
         year: 'numeric', month: 'long', day: 'numeric'
     });
 }
