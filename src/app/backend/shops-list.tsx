@@ -12,6 +12,8 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { useCollection, useFirestore, useMemoFirebase, getClientSideAuthToken } from '@/firebase';
 import { collection, doc } from 'firebase/firestore';
 import { ShopPreview } from '@/components/shop-preview';
+import { getShops } from './actions';
+
 
 interface Shop {
     id: string;
@@ -72,29 +74,14 @@ export default function ShopsList() {
 
     async function fetchShops() {
         setIsLoading(true);
-        try {
-            const token = await getClientSideAuthToken();
-            if (!token) throw new Error("Authentication token not found.");
-
-            // This should query the 'shops' collection group to get all shops
-            const response = await fetch('/api/getUserSubcollection', {
-                method: 'POST',
-                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ path: 'shops', type: 'collection-group' }), // A new type for collection group
-            });
-
-            const result = await response.json();
-            if (result.success && result.data) {
-                const sortedShops = result.data.sort((a: Shop, b: Shop) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-                setShops(sortedShops);
-            } else {
-                setError(result.error || 'Failed to fetch shops.');
-            }
-        } catch (e: any) {
-            setError(e.message || 'An unexpected error occurred.');
-        } finally {
-            setIsLoading(false);
+        const result = await getShops();
+        if (result.success && result.data) {
+            const sortedShops = result.data.sort((a: Shop, b: Shop) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+            setShops(sortedShops);
+        } else {
+            setError(result.error || 'Failed to fetch shops.');
         }
+        setIsLoading(false);
     }
 
     useEffect(() => {

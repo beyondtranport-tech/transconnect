@@ -43,19 +43,13 @@ export default function MembersList() {
     useEffect(() => {
         async function fetchMembers() {
             setIsLoading(true);
-            try {
-                 const result = await getMembers();
-
-                if (result.success && result.data) {
-                    setMembers(result.data);
-                } else {
-                    setError(result.error || 'Failed to fetch members.');
-                }
-            } catch (e: any) {
-                setError(e.message || 'An unexpected error occurred while fetching members.');
-            } finally {
-                setIsLoading(false);
+            const result = await getMembers();
+            if (result.success && result.data) {
+                setMembers(result.data);
+            } else {
+                setError(result.error || 'Failed to fetch members.');
             }
+            setIsLoading(false);
         }
 
         fetchMembers();
