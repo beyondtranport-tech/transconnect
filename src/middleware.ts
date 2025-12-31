@@ -3,44 +3,33 @@ import { NextResponse, type NextRequest } from 'next/server';
 
 export async function middleware(request: NextRequest) {
     const { pathname } = request.nextUrl;
+    
+    // The user's authentication state is stored in a cookie named `firebaseIdToken`
+    // which is set on the client after a successful sign-in.
+    // It's an HttpOnly cookie and secure, but its presence is a good signal.
     const isAuthenticated = request.cookies.has('firebaseIdToken');
 
-    // This is a simplified check. A robust solution would involve verifying the token
-    // on a backend and setting a secure, httpOnly cookie with role information.
-    // For this environment, we'll check a simple isAdmin cookie set during login.
+    // For this environment, we check a simple client-set cookie for admin status.
     const isAdmin = request.cookies.get('isAdmin')?.value === 'true';
 
     // Protect backend routes
-    if (pathname.startsWith('/backend') && !isAuthenticated) {
-        return NextResponse.redirect(new URL('/signin?redirect=/backend', request.url));
-    }
-    // If not an admin, redirect from backend to account page
-    if (pathname.startsWith('/backend') && isAuthenticated && !isAdmin) {
-         return NextResponse.redirect(new URL('/account', request.url));
+    if (pathname.startsWith('/backend') && !isAdmin) {
+        // If not an admin, redirect away from the backend.
+        // If not authenticated at all, redirect to sign-in with a redirect back to the backend.
+        const redirectUrl = isAuthenticated ? '/account' : '/signin?redirect=/backend';
+        return NextResponse.redirect(new URL(redirectUrl, request.url));
     }
 
-    // Protect account page
-    if (pathname.startsWith('/account') && !isAuthenticated) {
+    // Protect other sensitive routes that require any authenticated user
+    const protectedRoutes = ['/account', '/contribute'];
+    if (protectedRoutes.some(p => pathname.startsWith(p)) && !isAuthenticated) {
         return NextResponse.redirect(new URL(`/signin?redirect=${pathname}`, request.url));
     }
     
-    // Protect contribution page
-    if (pathname.startsWith('/contribute') && !isAuthenticated) {
-         return NextResponse.redirect(new URL(`/signin?redirect=${pathname}`, request.url));
-    }
-
-    // Redirect authenticated users from signin/join pages
+    // If an already authenticated user tries to access sign-in or join pages, redirect them.
     if ((pathname.startsWith('/signin') || pathname.startsWith('/join')) && isAuthenticated) {
-        const redirectParam = request.nextUrl.searchParams.get('redirect');
-        
-        // If user is admin and trying to sign in, redirect to backend.
-        // The redirect param might be for a non-admin page.
-        if (isAdmin) {
-            return NextResponse.redirect(new URL(redirectParam || '/backend', request.url));
-        }
-
-        const defaultRedirect = '/account';
-        return NextResponse.redirect(new URL(redirectParam || defaultRedirect, request.url));
+        const defaultRedirect = isAdmin ? '/backend' : '/account';
+        return NextResponse.redirect(new URL(defaultRedirect, request.url));
     }
 
     return NextResponse.next();
