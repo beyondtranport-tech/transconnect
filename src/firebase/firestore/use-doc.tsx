@@ -60,12 +60,6 @@ export function useDoc<T = any>(
       return;
     }
 
-    // If the user state is still loading, wait.
-    if (isUserLoading) {
-      setIsLoading(true);
-      return;
-    }
-
     const fetchData = async () => {
         setIsLoading(true);
         setError(null);
@@ -103,9 +97,10 @@ export function useDoc<T = any>(
         }
     };
 
+    // The fetch should not depend on user loading status if the path might be public
     fetchData();
 
-  }, [memoizedDocRef, isUserLoading, user, refreshKey]);
+  }, [memoizedDocRef, refreshKey]); // Removed user and isUserLoading from dependencies
 
   return { data, isLoading, error, forceRefresh };
 }

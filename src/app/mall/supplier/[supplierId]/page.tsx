@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useDoc, usePublicCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { useDoc, useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, doc, query } from 'firebase/firestore';
 import { Building2, Loader2, Mail, Phone, ShoppingCart } from "lucide-react";
 import Image from "next/image";
@@ -24,7 +24,7 @@ function SupplierProfile({ params }: { params: { supplierId: string }}) {
     }, [firestore, params.supplierId]);
 
     const { data: supplier, isLoading: isShopLoading } = useDoc(supplierRef);
-    const { data: products, isLoading: areProductsLoading } = usePublicCollection(productsQuery);
+    const { data: products, isLoading: areProductsLoading } = useCollection(productsQuery);
     
     const isLoading = isShopLoading || areProductsLoading;
 

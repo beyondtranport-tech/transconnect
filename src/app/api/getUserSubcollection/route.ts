@@ -42,7 +42,7 @@ export async function POST(req: NextRequest) {
     let uid: string | null = null;
     
     // Public paths that do not require any authentication
-    const publicPrefixes = ['/shops', '/memberships'];
+    const publicPrefixes = ['/shops', '/memberships', '/configuration'];
     const isPublicPath = publicPrefixes.some(prefix => path.startsWith(prefix));
 
     if (authorization && authorization.startsWith('Bearer ')) {

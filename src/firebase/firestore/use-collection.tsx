@@ -60,7 +60,6 @@ export function useCollection<T = any>(
   const [isLoading, setIsLoading] = useState<boolean>(true); // Start as true
   const [error, setError] = useState<Error | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
-  const { user, isUserLoading } = useUser();
 
   const forceRefresh = useCallback(() => {
     setRefreshKey(oldKey => oldKey + 1);
@@ -72,12 +71,6 @@ export function useCollection<T = any>(
       setData(null);
       setIsLoading(false);
       setError(null);
-      return;
-    }
-
-    // If the user state is still loading, wait.
-    if (isUserLoading) {
-      setIsLoading(true);
       return;
     }
 
@@ -123,7 +116,17 @@ export function useCollection<T = any>(
     };
 
     fetchData();
-  }, [memoizedTargetRefOrQuery, isUserLoading, user, refreshKey]);
+  }, [memoizedTargetRefOrQuery, refreshKey]); // Removed user and isUserLoading from dependencies
 
   return { data, isLoading, error, forceRefresh };
+}
+
+/**
+ * A hook for accessing public collections that don't require user authentication.
+ * It's a lightweight wrapper around useCollection that doesn't depend on the user's auth state.
+ */
+export function usePublicCollection<T = any>(
+    memoizedTargetRefOrQuery: ((CollectionReference<DocumentData> | Query<DocumentData>) & {__memo?: boolean})  | null | undefined,
+): UseCollectionResult<T> {
+    return useCollection<T>(memoizedTargetRefOrQuery);
 }
