@@ -101,18 +101,6 @@ export async function testFirestoreConnection(): Promise<{ success: boolean; err
     }
 }
 
-// Re-adding the missing function
-export async function checkAdminSdk(): Promise<{ success: boolean; error?: string }> {
-    const { app, error } = getAdminApp();
-    if (error) {
-        return { success: false, error };
-    }
-    if (!app) {
-        return { success: false, error: 'Firebase Admin SDK could not be initialized.' };
-    }
-    return { success: true };
-}
-
 
 export async function getMembers(): Promise<{ success: boolean; data?: Member[]; error?: string }> {
     const { app, error: initError } = getAdminApp();
