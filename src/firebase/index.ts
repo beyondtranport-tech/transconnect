@@ -34,11 +34,17 @@ export async function getClientSideAuthToken(): Promise<string | null> {
     const auth = getAuth();
     if (auth.currentUser) {
         try {
-            // The `true` forces a token refresh if the current one is expiring soon.
-            return await getIdToken(auth.currentUser, true);
+            // The `false` means it will return the cached token unless it's expired.
+            // This is safer for avoiding quota issues.
+            return await getIdToken(auth.currentUser, false);
         } catch (error) {
-            console.error("Error getting auth token:", error);
-            return null;
+            // If getting the token fails, try to force a refresh as a fallback.
+            try {
+                return await getIdToken(auth.currentUser, true);
+            } catch (refreshError) {
+                console.error("Error getting auth token after forced refresh:", refreshError);
+                return null;
+            }
         }
     }
     return null;
@@ -51,3 +57,4 @@ export * from './firestore/use-collection';
 export * from './firestore/use-doc';
 export * from './errors';
 export * from './error-emitter';
+    
