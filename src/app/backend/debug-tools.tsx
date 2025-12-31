@@ -26,29 +26,6 @@ export default function DebugToolsContent() {
                 <p className="mt-2 text-muted-foreground">Tools for diagnosing the admin backend configuration.</p>
             </div>
 
-            <Card className="border-primary bg-primary/10">
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-primary"><RefreshCw /> Troubleshooting Step: Restart Server</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                    <p>
-                        If the connection test below fails with an `UNAUTHENTICATED` error, it can often mean the development server is using old, cached credentials.
-                    </p>
-                    <p>
-                        **Please restart your development server to force it to load the new `service-account.json` file you just saved.**
-                    </p>
-                     <ol className="list-decimal list-inside space-y-2 pl-4">
-                        <li>Go to your terminal where `npm run dev` is running.</li>
-                        <li>Press `Ctrl + C` to stop the server.</li>
-                        <li>Run `npm run dev` again to restart it.</li>
-                    </ol>
-                    <p>
-                        After restarting, click the **"Run Live Connection Test"** button again.
-                    </p>
-                </CardContent>
-            </Card>
-
-
             <Card>
                 <CardHeader>
                      <CardTitle className="flex items-center gap-2"><Database /> Firestore Connection Test</CardTitle>
@@ -87,6 +64,28 @@ export default function DebugToolsContent() {
                 </CardFooter>
             </Card>
             
+             <Card className="border-primary bg-primary/10">
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-primary"><RefreshCw /> Troubleshooting Step: Restart Server</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    <p>
+                        If the connection test below fails with an `UNAUTHENTICATED` error, it can often mean the development server is using old, cached credentials.
+                    </p>
+                    <p>
+                        **Please restart your development server to force it to load the `service-account.json` file you just saved.**
+                    </p>
+                     <ol className="list-decimal list-inside space-y-2 pl-4">
+                        <li>Go to your terminal where `npm run dev` is running.</li>
+                        <li>Press `Ctrl + C` to stop the server.</li>
+                        <li>Run `npm run dev` again to restart it.</li>
+                    </ol>
+                    <p>
+                        After restarting, click the **"Run Live Connection Test"** button again.
+                    </p>
+                </CardContent>
+            </Card>
+
              <Card className="border-destructive/50 bg-destructive/10">
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2 text-destructive"><ShieldAlert />If Connection Still Fails: Check IAM Permissions</CardTitle>

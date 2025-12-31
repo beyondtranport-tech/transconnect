@@ -1,6 +1,5 @@
 
 import { initializeApp, getApps, App, cert, ServiceAccount } from 'firebase-admin/app';
-import { getFirestore } from 'firebase-admin/firestore';
 import serviceAccount from '@/lib/service-account.json';
 
 // This function initializes and returns the Firebase Admin App instance,
