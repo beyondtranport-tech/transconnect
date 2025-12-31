@@ -14,6 +14,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore, useCollection } from '@/firebase';
 import { collection, query, doc, writeBatch, serverTimestamp } from 'firebase/firestore';
+import { Label } from '@/components/ui/label';
 
 const planSchema = z.object({
   id: z.string().min(1, 'ID is required (e.g., "basic")'),
