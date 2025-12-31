@@ -11,37 +11,22 @@ import Image from "next/image";
 import Link from "next/link";
 import * as gtag from '@/lib/gtag';
 import { useState, useEffect } from 'react';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { collection, query } from 'firebase/firestore';
 
 const { placeholderImages } = data;
 
 const supplierMallImage = placeholderImages.find(p => p.id === 'mall-division');
 
 export default function SupplierMallPage() {
-    const [suppliers, setSuppliers] = useState<any[] | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
+    const firestore = useFirestore();
+    
+    const approvedShopsQuery = useMemoFirebase(() => {
+        if (!firestore) return null;
+        return query(collection(firestore, 'shops'));
+    }, [firestore]);
 
-    useEffect(() => {
-        async function fetchShops() {
-            setIsLoading(true);
-            setError(null);
-            try {
-                const response = await fetch('/api/getApprovedShops');
-                const result = await response.json();
-                
-                if (result.success) {
-                    setSuppliers(result.data || []);
-                } else {
-                    setError(result.error || 'An unknown error occurred.');
-                }
-            } catch (e: any) {
-                setError(e.message);
-            } finally {
-                setIsLoading(false);
-            }
-        }
-        fetchShops();
-    }, []);
+    const { data: suppliers, isLoading, error } = useCollection(approvedShopsQuery);
 
 
     const handleSupplierClick = (supplierId: string) => {
@@ -133,7 +118,7 @@ export default function SupplierMallPage() {
                     ) : error ? (
                         <div className="text-center py-20 text-destructive border-2 border-destructive/50 rounded-lg bg-destructive/10">
                             <h3 className="text-xl font-semibold">Error Loading Suppliers</h3>
-                            <p className="mt-2 text-sm">{error}</p>
+                            <p className="mt-2 text-sm">{error.message}</p>
                         </div>
                     ) : suppliers && suppliers.length > 0 ? (
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">

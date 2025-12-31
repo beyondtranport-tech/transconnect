@@ -1,7 +1,6 @@
-
 'use client';
 
-import { usePublicCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query, where, getFirestore, getApp } from 'firebase/firestore';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Loader2, Store } from 'lucide-react';
@@ -14,7 +13,7 @@ export default function PublicShopsPage() {
         return query(collection(getFirestore(getApp()), 'shops'), where('status', '==', 'approved'));
     }, []);
 
-    const { data: shops, isLoading, error } = usePublicCollection(shopsQuery);
+    const { data: shops, isLoading, error } = useCollection(shopsQuery);
 
     return (
         <div className="container mx-auto px-4 py-16">

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -84,7 +85,8 @@ export function useCollection<T = any>(
             const path: string =
                 memoizedTargetRefOrQuery.type === 'collection'
                 ? (memoizedTargetRefOrQuery as CollectionReference).path
-                : (memoizedTargetRefOrQuery as unknown as InternalQuery)._query.path.canonicalString()
+                // This is a more robust way to get the path from a query
+                : (memoizedTargetRefOrQuery as Query)._query.path.segments.join('/');
             
             const response = await fetch('/api/getUserSubcollection', {
                 method: 'POST',
@@ -117,6 +119,3 @@ export function useCollection<T = any>(
 
   return { data, isLoading, error, forceRefresh };
 }
-
-// The usePublicCollection is removed as it's redundant and was the source of the error.
-// The primary useCollection hook now handles all cases correctly.
