@@ -22,7 +22,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useConfig } from '@/hooks/use-config';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
-const formatCurrency = (amount: number) => {
+const formatCurrency = (amount?: number) => {
+    if (typeof amount !== 'number') return 'N/A';
     return new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(amount);
 };
 
