@@ -241,15 +241,15 @@
         }
       },
       {
-        "path": "/companies/{companyId}",
+        "path": "/members/{memberId}",
         "definition": {
           "entityName": "Company",
           "schema": { "$ref": "#/entities/Company" },
-          "description": "Stores company profiles. The owner of the company has full read/write access."
+          "description": "Stores company profiles (for both paying and non-paying members). The owner of the company has full read/write access."
         }
       },
       {
-        "path": "/companies/{companyId}/staff/{staffId}",
+        "path": "/members/{memberId}/staff/{staffId}",
         "definition": {
           "entityName": "Staff",
           "schema": { "$ref": "#/entities/Staff" },
@@ -257,7 +257,7 @@
         }
       },
       {
-        "path": "/companies/{companyId}/quotes/{quoteId}",
+        "path": "/members/{memberId}/quotes/{quoteId}",
         "definition": {
           "entityName": "Quote",
           "schema": { "$ref": "#/entities/Quote" },
@@ -265,7 +265,7 @@
         }
       },
       {
-        "path": "/companies/{companyId}/enquiries/{enquiryId}",
+        "path": "/members/{memberId}/enquiries/{enquiryId}",
         "definition": {
           "entityName": "Enquiry",
           "schema": { "$ref": "#/entities/Enquiry" },
@@ -273,7 +273,7 @@
         }
       },
       {
-        "path": "/companies/{companyId}/walletPayments/{paymentId}",
+        "path": "/members/{memberId}/walletPayments/{paymentId}",
         "definition": {
           "entityName": "WalletPayment",
           "schema": { "$ref": "#/entities/WalletPayment" },
@@ -281,7 +281,7 @@
         }
       },
       {
-        "path": "/companies/{companyId}/transactions/{transactionId}",
+        "path": "/members/{memberId}/transactions/{transactionId}",
         "definition": {
           "entityName": "Transaction",
           "schema": { "$ref": "#/entities/Transaction" },
@@ -289,7 +289,7 @@
         }
       },
       {
-        "path": "/companies/{companyId}/shops/{shopId}",
+        "path": "/members/{memberId}/shops/{shopId}",
         "definition": {
           "entityName": "Shop",
           "schema": { "$ref": "#/entities/Shop" },
@@ -345,6 +345,6 @@
         }
       }
     ],
-    "reasoning": "The data model is refactored to separate user identity from business entities. A new `/users` collection stores individual user profiles, linked via Firebase Auth UID. A new `/companies` collection stores business-related data, including wallet balance, membership status, and subcollections for transactions, staff, quotes, etc. This creates a cleaner, more scalable architecture where a user owns a company, rather than the user and company being the same entity. This prevents data duplication and clarifies ownership for security rules."
+    "reasoning": "The data model is refactored to separate user identity from business entities. A new `/users` collection stores individual user profiles, linked via Firebase Auth UID. A new `/members` collection stores business-related data (for both paying and non-paying members), including wallet balance, membership status, and subcollections for transactions, staff, quotes, etc. This creates a cleaner, more scalable architecture where a user owns a company, rather than the user and company being the same entity. This prevents data duplication and clarifies ownership for security rules."
   }
 }
