@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useForm } from 'react-hook-form';
@@ -112,11 +111,6 @@ export default function CompanyContent() {
               requestResourceData: dataToUpdate,
           });
           errorEmitter.emit('permission-error', permissionError);
-          toast({
-              variant: 'destructive',
-              title: 'Update Failed',
-              description: serverError.message || 'You do not have permission to update company info.',
-          });
       })
       .finally(() => {
           setIsSaving(false);

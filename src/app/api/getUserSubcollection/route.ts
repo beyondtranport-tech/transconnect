@@ -1,4 +1,3 @@
-
 import { getFirestore, Timestamp } from 'firebase-admin/firestore';
 import { NextRequest, NextResponse } from 'next/server';
 import { headers } from 'next/headers';

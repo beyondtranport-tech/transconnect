@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useUser, useFirestore, useMemoFirebase, useCollection, useDoc } from '@/firebase';
@@ -27,6 +26,12 @@ const formatDate = (timestamp: any) => {
     if (timestamp && timestamp.toDate) {
         return format(timestamp.toDate(), "dd MMM yyyy, HH:mm");
     }
+     if (typeof timestamp === 'string') {
+        const date = new Date(timestamp);
+        if (!isNaN(date.getTime())) {
+             return format(date, "dd MMM yyyy, HH:mm");
+        }
+    }
     return 'N/A';
 };
 
@@ -44,31 +49,39 @@ export default function WalletContent() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [paymentAmount, setPaymentAmount] = useState<string>('');
 
-
-    const memberRef = useMemoFirebase(() => {
+    // Step 1: Get User to find CompanyID
+    const userDocRef = useMemoFirebase(() => {
         if (!firestore || !user) return null;
-        return doc(firestore, 'members', user.uid);
+        return doc(firestore, 'users', user.uid);
     }, [firestore, user]);
+    const { data: userData, isLoading: isUserDocLoading } = useDoc(userDocRef);
+    const companyId = userData?.companyId;
 
-    const { data: memberData, isLoading: isMemberLoading } = useDoc(memberRef);
+    // Step 2: Use CompanyID to get company data (for wallet balance)
+    const companyDocRef = useMemoFirebase(() => {
+        if (!firestore || !companyId) return null;
+        return doc(firestore, 'companies', companyId);
+    }, [firestore, companyId]);
+    const { data: companyData, isLoading: isCompanyLoading } = useDoc(companyDocRef);
+
 
     const transactionsQuery = useMemoFirebase(() => {
-        if (!firestore || !user) return null;
+        if (!firestore || !companyId) return null;
         return query(
-            collection(firestore, 'members', user.uid, 'transactions'), 
+            collection(firestore, 'companies', companyId, 'transactions'), 
             orderBy('date', 'desc'), 
             limit(5)
         );
-    }, [firestore, user]);
+    }, [firestore, companyId]);
 
     const pendingPaymentsQuery = useMemoFirebase(() => {
-        if (!firestore || !user) return null;
+        if (!firestore || !companyId) return null;
         return query(
-            collection(firestore, 'members', user.uid, 'walletPayments'),
+            collection(firestore, 'companies', companyId, 'walletPayments'),
             orderBy('createdAt', 'desc'),
             limit(5)
         );
-    }, [firestore, user]);
+    }, [firestore, companyId]);
     
     const { data: techPricing, isLoading: isTechPricingLoading } = useConfig<{ eftTopUpFee?: number }>('techPricing');
     const { data: bankDetails, isLoading: isBankDetailsLoading } = useConfig<any>('bankDetails');
@@ -76,7 +89,7 @@ export default function WalletContent() {
     const { data: transactions, isLoading: isLoadingTransactions, error: transactionsError } = useCollection(transactionsQuery);
     const { data: pendingPayments, isLoading: isLoadingPayments, error: paymentsError, forceRefresh } = useCollection(pendingPaymentsQuery);
 
-    const isLoading = isLoadingTransactions || isLoadingPayments || isMemberLoading || isTechPricingLoading || isBankDetailsLoading;
+    const isLoading = isLoadingTransactions || isLoadingPayments || isUserDocLoading || isCompanyLoading || isTechPricingLoading || isBankDetailsLoading;
     const error = transactionsError || paymentsError;
 
     const unallocatedTotal = pendingPayments?.reduce((sum, p) => sum + p.amount, 0) || 0;
@@ -86,7 +99,7 @@ export default function WalletContent() {
     }
     
     const handleSubmitProofOfPayment = async () => {
-        if (!user) return;
+        if (!user || !companyId) return;
         const amountValue = parseFloat(paymentAmount);
         if (isNaN(amountValue) || amountValue <= 0) {
             toast({ variant: 'destructive', title: "Invalid Amount", description: "Please enter a valid payment amount."});
@@ -99,7 +112,8 @@ export default function WalletContent() {
             if (!token) throw new Error("Authentication failed");
             
             const paymentData = {
-                applicantId: user.uid,
+                userId: user.uid,
+                companyId: companyId,
                 status: 'pending',
                 description: 'Wallet Top-up via EFT',
                 amount: amountValue,
@@ -109,7 +123,7 @@ export default function WalletContent() {
             const response = await fetch('/api/createWalletPayment', {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ data: paymentData })
+                body: JSON.stringify({ data: paymentData }),
             });
 
             if (!response.ok) throw new Error((await response.json()).error || 'Failed to submit.');
@@ -137,10 +151,10 @@ export default function WalletContent() {
             <CardContent className="space-y-8">
                 <div className="p-4 bg-muted/50 rounded-lg">
                     <p className="text-sm text-muted-foreground">Current Allocated Balance</p>
-                    {isMemberLoading ? (
+                    {isCompanyLoading ? (
                         <Loader2 className="h-6 w-6 animate-spin mt-1" />
                     ) : (
-                        <p className="text-3xl font-bold">{formatCurrency(memberData?.walletBalance || 0)}</p>
+                        <p className="text-3xl font-bold">{formatCurrency(companyData?.walletBalance || 0)}</p>
                     )}
                 </div>
 
@@ -150,7 +164,7 @@ export default function WalletContent() {
                         <Info className="h-4 w-4" />
                         <AlertTitle>How to Top Up</AlertTitle>
                         <AlertDescription>
-                           To add funds, make an EFT payment to the bank details below using your Member ID as the reference. Then, enter the amount and click "I've made a payment" to notify us.
+                           To add funds, make an EFT payment to the bank details below using your Company ID as the reference. Then, enter the amount and click "I've made a payment" to notify us.
                            {techPricing?.eftTopUpFee && techPricing.eftTopUpFee > 0 && (
                                 <span className="font-semibold block mt-2">Please note: A {formatCurrency(techPricing.eftTopUpFee)} admin fee applies to EFT top-ups.</span>
                            )}
@@ -172,7 +186,7 @@ export default function WalletContent() {
                                     ))}
                                     <div className="flex justify-between pt-2 border-t">
                                         <span className="text-muted-foreground">Reference</span>
-                                        <span className="font-mono text-primary">{user?.uid}</span>
+                                        <span className="font-mono text-primary">{companyId}</span>
                                     </div>
                                 </>
                             ) : (
