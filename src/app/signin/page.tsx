@@ -46,6 +46,7 @@ function SignInFormComponent() {
   const auth = useAuth();
   const { user, isUserLoading } = useUser();
   const redirectParam = searchParams.get('redirect');
+  const [isRedirecting, setIsRedirecting] = useState(false);
 
   const form = useForm<SignInFormValues>({
     resolver: zodResolver(formSchema),
@@ -56,13 +57,14 @@ function SignInFormComponent() {
   });
   
   useEffect(() => {
-    // Only redirect if loading is finished and user is authenticated.
-    if (!isUserLoading && user) {
+    // Only redirect if loading is finished, user is authenticated, and we are not already redirecting.
+    if (!isUserLoading && user && !isRedirecting) {
+        setIsRedirecting(true); // Prevent multiple redirects
         const isAdmin = user.email === 'beyondtransport@gmail.com';
         const defaultRedirect = isAdmin ? '/backend' : '/account';
         router.replace(redirectParam || defaultRedirect);
     }
-  }, [user, isUserLoading, router, redirectParam]);
+  }, [user, isUserLoading, router, redirectParam, isRedirecting]);
 
 
   const handlePasswordReset = async () => {
@@ -193,8 +195,8 @@ function SignInFormComponent() {
                 </FormItem>
               )}
             />
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            <Button type="submit" className="w-full" disabled={isLoading || isRedirecting}>
+              {(isLoading || isRedirecting) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Sign In
             </Button>
           </form>
