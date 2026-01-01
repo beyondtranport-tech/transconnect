@@ -1,10 +1,9 @@
-
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Loader2, DownloadCloud } from "lucide-react";
-import { useState } from "react";
+import { PlusCircle, Loader2, DownloadCloud, Upload } from "lucide-react";
+import { useState, useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
 import TransactionAllocation from "./transaction-allocation";
 import { getClientSideAuthToken } from "@/firebase";
@@ -53,6 +52,7 @@ export default function ReconciliationPage() {
     const [processingData, setProcessingData] = useState<any | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const { toast } = useToast();
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     const handleProcessPendingEFTs = async () => {
         setIsLoading(true);
@@ -89,6 +89,50 @@ export default function ReconciliationPage() {
         setProcessingData(manualAdjustmentTemplate);
     }
 
+    const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+
+        setIsLoading(true);
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const text = e.target?.result as string;
+                const rows = text.split('\n').slice(1); // Skip header row
+                const transactions = rows.map((row, index) => {
+                    const [date, description, reference, amountStr] = row.split(',');
+                    const amount = parseFloat(amountStr);
+                    return {
+                        id: index + 1,
+                        date,
+                        description,
+                        reference,
+                        amount: Math.abs(amount),
+                        type: amount >= 0 ? 'credit' : 'debit'
+                    };
+                }).filter(tx => tx.date && tx.description); // Filter out empty rows
+
+                if (transactions.length === 0) {
+                    throw new Error("No valid transactions found in the file.");
+                }
+
+                setProcessingData({
+                    statementName: file.name,
+                    openingBalance: 0,
+                    closingBalance: 0,
+                    transactions: transactions
+                });
+                toast({ title: "Statement Loaded", description: `${transactions.length} transactions are ready for reconciliation.` });
+            } catch (err: any) {
+                toast({ variant: "destructive", title: "Error Parsing File", description: err.message });
+                setProcessingData(null);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        reader.readAsText(file);
+    };
+
     return (
         <div className="w-full space-y-8">
             <Card>
@@ -97,10 +141,21 @@ export default function ReconciliationPage() {
                         <div>
                             <CardTitle>Transaction Reconciliation</CardTitle>
                             <CardDescription>
-                                Start by loading unallocated member payments or make a manual adjustment.
+                                Start a session by uploading a bank statement, loading pending EFTs, or making manual adjustments.
                             </CardDescription>
                         </div>
                          <div className="flex gap-2">
+                             <input
+                                type="file"
+                                ref={fileInputRef}
+                                className="hidden"
+                                accept=".csv"
+                                onChange={handleFileChange}
+                             />
+                              <Button onClick={() => fileInputRef.current?.click()} variant="outline">
+                                <Upload className="mr-2 h-4 w-4" />
+                                Upload Statement (CSV)
+                            </Button>
                              <Button onClick={handleManualAdjustment} variant="outline">
                                 <PlusCircle className="mr-2 h-4 w-4" />
                                 Manual Adjustment

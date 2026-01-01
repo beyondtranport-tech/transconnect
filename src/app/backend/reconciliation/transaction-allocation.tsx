@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -60,7 +59,7 @@ export default function TransactionAllocation({ statementData }: { statementData
     const [difference, setDifference] = useState(0);
     const [isPosting, setIsPosting] = useState(false);
 
-    useEffect(() => {
+     useEffect(() => {
         setOpeningBalance(statementData.openingBalance);
         setClosingBalance(statementData.closingBalance);
         
@@ -69,7 +68,7 @@ export default function TransactionAllocation({ statementData }: { statementData
             const populated = statementData.transactions.map((tx: any) => ({
                 ...tx,
                 status: 'pending',
-                memberName: memberMap.get(tx.reference) || (tx.reference ? 'Unknown Member' : '')
+                memberName: memberMap.get(tx.reference) || (tx.reference ? 'Unknown/Manual Entry' : '')
             }));
             setTransactions(populated);
         } else if (statementData.transactions) {
@@ -77,7 +76,7 @@ export default function TransactionAllocation({ statementData }: { statementData
             setTransactions(statementData.transactions.map((t: any) => ({ ...t, status: 'pending', memberName: '' })));
         }
 
-    }, [statementData, members, isLoadingMembers, memberMap]);
+    }, [statementData, isLoadingMembers, memberMap]); // depends on all three
     
     const handleAllocationChange = (transactionId: number) => {
         let wasAllocated = false;
@@ -100,7 +99,7 @@ export default function TransactionAllocation({ statementData }: { statementData
                 if (tx.id === transactionId) {
                     const updatedTx = { ...tx, [field]: value };
                     if (field === 'reference') {
-                        updatedTx.memberName = memberMap.get(value as string) || 'Unknown Member';
+                        updatedTx.memberName = memberMap.get(value as string) || 'Unknown/Manual Entry';
                     }
                     return updatedTx;
                 }
