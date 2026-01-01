@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -15,25 +16,31 @@ export default function ShopContent() {
   const { toast } = useToast();
   const [isCreating, setIsCreating] = useState(false);
 
-  // 1. Get the member document to check for a shopId
-  const memberRef = useMemoFirebase(() => {
+  // 1. Get the user document to check for a companyId
+  const userDocRef = useMemoFirebase(() => {
     if (!firestore || !user) return null;
-    return doc(firestore, `members/${user.uid}`);
+    return doc(firestore, `users/${user.uid}`);
   }, [firestore, user]);
 
-  const { data: memberData, isLoading: isMemberLoading, forceRefresh } = useDoc(memberRef);
+  const { data: userData, isLoading: isUserDocLoading, forceRefresh: forceUserRefresh } = useDoc(userDocRef);
 
-  // 2. Use the shopId from the member data to fetch the shop document
+  // 2. Use the companyId from the user data to fetch the company document for its shopId
+  const companyRef = useMemoFirebase(() => {
+    if (!firestore || !userData?.companyId) return null;
+    return doc(firestore, `companies/${userData.companyId}`);
+  }, [firestore, userData]);
+
+  const { data: companyData, isLoading: isCompanyLoading, forceRefresh: forceCompanyRefresh } = useDoc(companyRef);
+
+  // 3. Use the shopId from the company data to fetch the actual shop document
   const shopRef = useMemoFirebase(() => {
-    if (!firestore || !user || !memberData?.shopId) return null;
-    // This path is correct because we are reading the user's own shop data.
-    // The security rules allow the owner to read their own subcollections.
-    return doc(firestore, `members/${user.uid}/shops/${memberData.shopId}`);
-  }, [firestore, user, memberData]);
+    if (!firestore || !companyData?.shopId) return null;
+    return doc(firestore, `companies/${companyData.id}/shops/${companyData.shopId}`);
+  }, [firestore, companyData]);
 
   const { data: userShop, isLoading: isShopLoading } = useDoc(shopRef);
 
-  const isLoading = isUserLoading || isMemberLoading;
+  const isLoading = isUserLoading || isUserDocLoading || isCompanyLoading;
 
   const handleCreateShop = async () => {
     if (!user) {
@@ -60,7 +67,8 @@ export default function ShopContent() {
 
       if (response.ok && result.success) {
         toast({ title: 'Shop Draft Created!', description: "Let's get started with the details." });
-        forceRefresh();
+        forceUserRefresh();
+        forceCompanyRefresh();
       } else {
         throw new Error(result.error || 'Failed to create shop.');
       }
@@ -77,7 +85,7 @@ export default function ShopContent() {
     }
   };
 
-  const shopExists = !!memberData?.shopId;
+  const shopExists = !!companyData?.shopId;
 
   return (
     <Card>

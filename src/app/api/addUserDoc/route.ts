@@ -48,15 +48,21 @@ export async function POST(req: NextRequest) {
     const decodedToken = await adminAuth.verifyIdToken(idToken);
     const uid = decodedToken.uid;
     
-    // Security Check: Ensure the requested path belongs to the authenticated user.
+    const db = getFirestore(app);
     const pathSegments = collectionPath.split('/');
-    if (pathSegments.length < 2 || pathSegments[0] !== 'members' || pathSegments[1] !== uid) {
-        return NextResponse.json({ success: false, error: 'Forbidden: You can only add data to your own collections.' }, { status: 403 });
+    
+    // Security Check: Ensure the user is adding to a subcollection of their own company.
+    if (pathSegments.length < 2 || pathSegments[0] !== 'companies') {
+        return NextResponse.json({ success: false, error: 'Forbidden: Invalid collection path.' }, { status: 403 });
+    }
+    
+    const companyId = pathSegments[1];
+    const companyDoc = await db.collection('companies').doc(companyId).get();
+    if (!companyDoc.exists || companyDoc.data()?.ownerId !== uid) {
+        return NextResponse.json({ success: false, error: 'Forbidden: You can only add data to your own company subcollections.' }, { status: 403 });
     }
 
-    const db = getFirestore(app);
     const collectionRef = db.collection(collectionPath);
-    
     const deserializedData = deserializeData(data);
     const newDocRef = await collectionRef.add(deserializedData);
 

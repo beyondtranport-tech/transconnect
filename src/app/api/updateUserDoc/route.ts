@@ -45,14 +45,26 @@ export async function POST(req: NextRequest) {
     const decodedToken = await adminAuth.verifyIdToken(idToken);
     const uid = decodedToken.uid;
     
+    const db = getFirestore(app);
     const pathSegments = path.split('/');
-    if (pathSegments.length < 2 || pathSegments[0] !== 'members' || pathSegments[1] !== uid) {
+    
+    // Security check: path must be /users/{uid} or /companies/{companyId} where user is owner
+    let isAuthorized = false;
+    if (pathSegments[0] === 'users' && pathSegments[1] === uid) {
+        isAuthorized = true;
+    } else if (pathSegments[0] === 'companies') {
+        const companyId = pathSegments[1];
+        const companyDoc = await db.collection('companies').doc(companyId).get();
+        if (companyDoc.exists && companyDoc.data()?.ownerId === uid) {
+            isAuthorized = true;
+        }
+    }
+
+    if (!isAuthorized) {
         return NextResponse.json({ success: false, error: 'Forbidden: You can only modify your own data.' }, { status: 403 });
     }
 
-    const db = getFirestore(app);
     const docRef = db.doc(path);
-    
     const deserializedData = deserializeData(data);
 
     await docRef.update(deserializedData);

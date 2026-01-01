@@ -27,17 +27,26 @@ export async function POST(req: NextRequest) {
     const adminAuth = getAuth(app);
     const decodedToken = await adminAuth.verifyIdToken(idToken);
     const uid = decodedToken.uid;
+    const db = getFirestore(app);
     
     const pathSegments = path.split('/');
     const isAdmin = decodedToken.email === 'beyondtransport@gmail.com';
     
-    if (pathSegments.length < 2 || pathSegments[0] !== 'members' || pathSegments[1] !== uid) {
-        if (!isAdmin) {
-          return NextResponse.json({ success: false, error: 'Forbidden: You can only delete your own data.' }, { status: 403 });
+    let isAuthorized = false;
+    if (pathSegments[0] === 'users' && pathSegments[1] === uid) {
+        isAuthorized = true;
+    } else if (pathSegments[0] === 'companies') {
+        const companyId = pathSegments[1];
+        const companyDoc = await db.collection('companies').doc(companyId).get();
+        if (companyDoc.exists && companyDoc.data()?.ownerId === uid) {
+            isAuthorized = true;
         }
     }
 
-    const db = getFirestore(app);
+    if (!isAuthorized && !isAdmin) {
+      return NextResponse.json({ success: false, error: 'Forbidden: You can only delete your own data.' }, { status: 403 });
+    }
+
     await db.doc(path).delete();
 
     return NextResponse.json({ success: true, message: 'Document deleted successfully.' });

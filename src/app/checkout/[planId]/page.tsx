@@ -5,7 +5,7 @@ import { Suspense } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { useUser, useFirestore, useMemoFirebase, useDoc } from '@/firebase';
-import { doc, getDoc, writeBatch, collection, serverTimestamp } from 'firebase/firestore';
+import { doc, getDoc, writeBatch, collection, serverTimestamp, increment } from 'firebase/firestore';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
@@ -29,9 +29,7 @@ function CheckoutComponent() {
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
   const [isProcessing, setIsProcessing] = useState(false);
-  const [userBalance, setUserBalance] = useState(0);
-  const [isBalanceLoading, setIsBalanceLoading] = useState(true);
-
+  
   const planId = params.planId as string;
   const cycle = searchParams.get('cycle') || 'monthly';
   
@@ -44,11 +42,20 @@ function CheckoutComponent() {
 
   const { data: bankDetails, isLoading: isBankDetailsLoading } = useConfig<any>('bankDetails');
 
-  const memberRef = useMemoFirebase(() => {
+  const userDocRef = useMemoFirebase(() => {
     if (!firestore || !user) return null;
-    return doc(firestore, 'members', user.uid);
+    return doc(firestore, 'users', user.uid);
   }, [firestore, user]);
+  const { data: userData, isLoading: isUserDocLoading } = useDoc(userDocRef);
+
+  const companyRef = useMemoFirebase(() => {
+    if (!firestore || !userData?.companyId) return null;
+    return doc(firestore, 'companies', userData.companyId);
+  }, [firestore, userData]);
+  const { data: companyData, isLoading: isCompanyLoading, forceRefresh: refreshBalance } = useDoc(companyRef);
   
+  const userBalance = companyData?.walletBalance || 0;
+
   const price = useMemo(() => {
     if (!plan) return 0;
     if (cycle === 'annual') {
@@ -59,29 +66,11 @@ function CheckoutComponent() {
   }, [plan, cycle]);
 
 
-  const fetchBalance = useCallback(async () => {
-    if (memberRef) {
-      setIsBalanceLoading(true);
-      try {
-        const docSnap = await getDoc(memberRef);
-        if (docSnap.exists()) {
-          setUserBalance(docSnap.data().walletBalance || 0);
-        }
-      } catch (e) {
-        console.error("Failed to fetch user balance:", e);
-      } finally {
-        setIsBalanceLoading(false);
-      }
-    }
-  }, [memberRef]);
-
   useEffect(() => {
     if (!isUserLoading && !user) {
       router.push(`/signin?redirect=/checkout/${planId}?cycle=${cycle}`);
-    } else {
-        fetchBalance();
     }
-  }, [user, isUserLoading, router, planId, cycle, fetchBalance]);
+  }, [user, isUserLoading, router, planId, cycle]);
   
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text).then(() => {
@@ -90,7 +79,7 @@ function CheckoutComponent() {
   };
 
   const handlePurchaseWithWallet = async () => {
-    if (!user || !firestore || !plan || userBalance < price) {
+    if (!user || !firestore || !plan || userBalance < price || !userData?.companyId) {
         toast({ variant: 'destructive', title: 'Error', description: 'Insufficient balance or user/plan not found.' });
         return;
     }
@@ -98,9 +87,8 @@ function CheckoutComponent() {
     
     const batch = writeBatch(firestore);
     
-    // 1. Update member's balance and membership
-    const memberDocRef = doc(firestore, 'members', user.uid);
-    const newBalance = userBalance - price;
+    // 1. Update company's balance and membership
+    const companyDocRef = doc(firestore, 'companies', userData.companyId);
 
     const now = new Date();
     const nextBillingDate = new Date(now);
@@ -110,19 +98,20 @@ function CheckoutComponent() {
         nextBillingDate.setFullYear(nextBillingDate.getFullYear() + 1);
     }
 
-    const memberUpdateData = { 
+    const companyUpdateData = { 
         membershipId: plan.id, 
-        walletBalance: newBalance,
+        walletBalance: increment(-price),
         membershipStartDate: serverTimestamp(),
         billingCycle: cycle,
         nextBillingDate: nextBillingDate
     };
-    batch.update(memberDocRef, memberUpdateData);
+    batch.update(companyDocRef, companyUpdateData);
 
-    // 2. Create a transaction record in the member's transactions subcollection
-    const transactionRef = doc(collection(firestore, `members/${user.uid}/transactions`));
+    // 2. Create a transaction record in the company's transactions subcollection
+    const transactionRef = doc(collection(firestore, `companies/${userData.companyId}/transactions`));
     const transactionData = {
-        memberId: user.uid,
+        companyId: userData.companyId,
+        userId: user.uid,
         type: 'debit',
         amount: price,
         date: serverTimestamp(),
@@ -142,9 +131,9 @@ function CheckoutComponent() {
         router.push('/account');
     } catch (serverError) {
         const permissionError = new FirestorePermissionError({
-            path: memberDocRef.path,
+            path: companyDocRef.path,
             operation: 'update',
-            requestResourceData: { memberUpdate: memberUpdateData, transaction: transactionData },
+            requestResourceData: { companyUpdate: companyUpdateData, transaction: transactionData },
         });
         errorEmitter.emit('permission-error', permissionError);
         toast({ variant: 'destructive', title: 'Upgrade Failed', description: 'Permission denied.' });
@@ -153,7 +142,9 @@ function CheckoutComponent() {
     }
   };
 
-  if (isUserLoading || !user || isBalanceLoading || isPlanLoading || isBankDetailsLoading) {
+  const isLoading = isUserLoading || isPlanLoading || isBankDetailsLoading || isUserDocLoading || isCompanyLoading;
+
+  if (isLoading || !user) {
       return <div className="flex justify-center items-center h-full"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
   }
   if (!plan) {
@@ -207,8 +198,8 @@ function CheckoutComponent() {
                                 ))}
                                 <div className="flex justify-between items-center text-sm pt-3 border-t">
                                     <span className="text-muted-foreground">Reference</span>
-                                    <button onClick={() => copyToClipboard(user.uid)} className="font-mono text-primary hover:underline flex items-center gap-2">
-                                        {user.uid}
+                                    <button onClick={() => copyToClipboard(userData.companyId)} className="font-mono text-primary hover:underline flex items-center gap-2">
+                                        {userData.companyId}
                                         <ClipboardCopy className="h-4 w-4"/>
                                     </button>
                                 </div>
@@ -218,7 +209,7 @@ function CheckoutComponent() {
                          )}
                     </CardContent>
                 </Card>
-                 <Button onClick={() => fetchBalance()} className="w-full mt-6" variant="outline">
+                 <Button onClick={() => refreshBalance()} className="w-full mt-6" variant="outline">
                     I've made the payment, refresh balance
                 </Button>
             </div>

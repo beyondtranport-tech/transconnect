@@ -50,9 +50,20 @@ export async function POST(req: NextRequest) {
         const { action, payload } = await req.json();
 
         switch (action) {
-            case 'getMembers': {
-                const snapshot = await db.collection('members').get();
-                const data = snapshot.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
+            case 'getUsers': {
+                const snapshot = await db.collection('users').get();
+                const users = snapshot.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
+
+                const companiesSnap = await db.collection('companies').get();
+                const companyMap = new Map(companiesSnap.docs.map(doc => [doc.id, doc.data()]));
+                
+                const data = users.map(user => ({
+                    ...user,
+                    companyName: companyMap.get(user.companyId)?.companyName,
+                    membershipId: companyMap.get(user.companyId)?.membershipId,
+                    walletBalance: companyMap.get(user.companyId)?.walletBalance,
+                }));
+
                 return NextResponse.json({ success: true, data });
             }
              case 'getMemberships': {
@@ -66,7 +77,7 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, data });
             }
             case 'getShops': {
-                const snapshot = await db.collectionGroup('shops').get();
+                const snapshot = await db.collectionGroup('shops').where('status', '!=', 'draft').get();
                 const data = snapshot.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
                 return NextResponse.json({ success: true, data });
             }
@@ -82,9 +93,9 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, data: combined });
             }
             case 'deleteTransaction': {
-                const { memberId, transactionId } = payload;
-                if (!memberId || !transactionId) throw new Error("memberId and transactionId are required.");
-                await db.doc(`members/${memberId}/transactions/${transactionId}`).delete();
+                const { companyId, transactionId } = payload;
+                if (!companyId || !transactionId) throw new Error("companyId and transactionId are required.");
+                await db.doc(`companies/${companyId}/transactions/${transactionId}`).delete();
                 return NextResponse.json({ success: true });
             }
             default:
