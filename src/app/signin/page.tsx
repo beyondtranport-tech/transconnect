@@ -46,7 +46,6 @@ function SignInFormComponent() {
   const auth = useAuth();
   const { user, isUserLoading } = useUser();
   const redirectParam = searchParams.get('redirect');
-  const [isRedirecting, setIsRedirecting] = useState(false);
 
   const form = useForm<SignInFormValues>({
     resolver: zodResolver(formSchema),
@@ -56,15 +55,14 @@ function SignInFormComponent() {
     },
   });
   
+  // This effect handles the case where a user is already logged in when visiting the page.
   useEffect(() => {
-    // Only redirect if loading is finished, user is authenticated, and we are not already redirecting.
-    if (!isUserLoading && user && !isRedirecting) {
-        setIsRedirecting(true); // Prevent multiple redirects
+    if (!isUserLoading && user) {
         const isAdmin = user.email === 'beyondtransport@gmail.com';
         const defaultRedirect = isAdmin ? '/backend' : '/account';
         router.replace(redirectParam || defaultRedirect);
     }
-  }, [user, isUserLoading, router, redirectParam, isRedirecting]);
+  }, [user, isUserLoading, router, redirectParam]);
 
 
   const handlePasswordReset = async () => {
@@ -115,12 +113,17 @@ function SignInFormComponent() {
         return;
     }
     try {
-      await signInWithEmailAndPassword(auth, values.email, values.password);
-      // The useEffect hook will handle the redirect once the user state is updated.
+      const userCredential = await signInWithEmailAndPassword(auth, values.email, values.password);
+      
       toast({
         title: 'Sign In Successful',
         description: 'Redirecting to your dashboard...',
       });
+      
+      const loggedInUser = userCredential.user;
+      const isAdmin = loggedInUser.email === 'beyondtransport@gmail.com';
+      const defaultRedirect = isAdmin ? '/backend' : '/account';
+      router.replace(redirectParam || defaultRedirect);
       
     } catch (error: any) {
       let title = 'An error occurred.';
@@ -195,8 +198,8 @@ function SignInFormComponent() {
                 </FormItem>
               )}
             />
-            <Button type="submit" className="w-full" disabled={isLoading || isRedirecting}>
-              {(isLoading || isRedirecting) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            <Button type="submit" className="w-full" disabled={isLoading || (isUserLoading || !!user)}>
+              {(isLoading || (isUserLoading || !!user)) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Sign In
             </Button>
           </form>
