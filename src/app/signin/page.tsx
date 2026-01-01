@@ -56,6 +56,7 @@ function SignInFormComponent() {
   });
   
   useEffect(() => {
+    // Only redirect if loading is finished and user is authenticated.
     if (!isUserLoading && user) {
         const isAdmin = user.email === 'beyondtransport@gmail.com';
         const defaultRedirect = isAdmin ? '/backend' : '/account';
