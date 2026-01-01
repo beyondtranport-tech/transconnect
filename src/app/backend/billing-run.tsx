@@ -41,8 +41,14 @@ export default function BillingRun() {
             if (!response.ok) {
                 throw new Error(data.error || 'Failed to run billing job.');
             }
+            
+            // Set default for errors if it's not in the response
+            const finalResult = {
+                ...data,
+                errors: data.errors || [],
+            };
 
-            setResult(data);
+            setResult(finalResult);
             toast({
                 title: 'Billing Run Complete',
                 description: data.message,
@@ -94,7 +100,7 @@ export default function BillingRun() {
                             <p className="text-xl font-bold">{formatCurrency(result.totalBilled)}</p>
                         </div>
                     </div>
-                    {result.errors.length > 0 && (
+                    {result.errors && result.errors.length > 0 && (
                         <div className="w-full">
                             <h4 className="font-semibold text-destructive">Errors Encountered ({result.errors.length}):</h4>
                              <ul className="list-disc list-inside mt-2 text-xs text-destructive bg-destructive/10 p-3 rounded-md">
