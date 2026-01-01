@@ -3,16 +3,21 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Loader2, DownloadCloud, Upload } from "lucide-react";
-import { useState, useRef, useEffect } from "react";
+import { PlusCircle, Loader2, DownloadCloud, Upload, ListChecks, ArrowRight } from "lucide-react";
+import { useState, useRef, useEffect, Suspense } from "react";
 import { useToast } from "@/hooks/use-toast";
 import TransactionAllocation from "./transaction-allocation";
-import { getClientSideAuthToken } from "@/firebase";
+import { getClientSideAuthToken, useCollection, useFirestore, useMemoFirebase } from "@/firebase";
 import demoStatementData from '@/lib/demo-statement.json';
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import Link from "next/link";
+import { collection, query, orderBy } from "firebase/firestore";
+import { useRouter, useSearchParams } from "next/navigation";
+import ReconciliationReport from "./[reconciliationId]/page";
 
-// A blank statement template for manual adjustments
+
 const manualAdjustmentTemplate = {
     statementName: `manual-adjustment-${new Date().toISOString()}`,
     openingBalance: 0,
@@ -38,33 +43,37 @@ async function fetchPendingPayments() {
         throw new Error(result.error || 'Failed to fetch pending payments');
     }
     
-    // Filter for pending status and transform data to match statement format
     return result.data
         .filter((p: any) => p.status === 'pending')
         .map((p: any, index: number) => ({
-            id: index + 1, // Simple UI key
-            paymentId: p.id, // The actual Firestore document ID
+            id: index + 1,
+            paymentId: p.id,
             date: new Date(p.createdAt).toISOString().split('T')[0],
             description: p.description,
-            reference: p.applicantId, // Map applicantId to reference for the allocation component
+            reference: p.applicantId,
             amount: p.amount,
-            type: 'credit', // All pending payments are credits
+            type: 'credit',
         }));
 }
 
-export default function ReconciliationPage() {
+function ReconciliationDashboard() {
     const [processingData, setProcessingData] = useState<any | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [useDemo, setUseDemo] = useState(false);
     const { toast } = useToast();
     const fileInputRef = useRef<HTMLInputElement>(null);
-    
+    const firestore = useFirestore();
+
+    const reconciliationsQuery = useMemoFirebase(() => 
+        firestore ? query(collection(firestore, 'reconciliations'), orderBy('processedAt', 'desc')) : null
+    , [firestore]);
+    const { data: pastReconciliations, isLoading: isLoadingHistory } = useCollection(reconciliationsQuery);
+
     useEffect(() => {
         if (useDemo) {
             setProcessingData(demoStatementData);
              toast({ title: "Demo Statement Loaded", description: "Sample transactions are ready for reconciliation." });
         } else {
-            // If there's data and it's from the demo, clear it.
             if (processingData && processingData.statementName === 'demo-statement.csv') {
                  setProcessingData(null);
             }
@@ -88,7 +97,7 @@ export default function ReconciliationPage() {
             setProcessingData({
                 statementName: `pending-efts-${new Date().toISOString()}`,
                 openingBalance: 0,
-                closingBalance: totalAmount, // The closing balance is the sum of all pending payments
+                closingBalance: totalAmount,
                 transactions: pending,
             });
              toast({ title: "Pending Payments Loaded", description: `${pending.length} unallocated payments are ready for reconciliation.` });
@@ -118,7 +127,7 @@ export default function ReconciliationPage() {
         reader.onload = (e) => {
             try {
                 const text = e.target?.result as string;
-                const rows = text.split('\n').slice(1); // Skip header row
+                const rows = text.split('\n').slice(1);
                 const transactions = rows.map((row, index) => {
                     const [date, description, reference, amountStr] = row.split(',');
                     const amount = parseFloat(amountStr);
@@ -130,7 +139,7 @@ export default function ReconciliationPage() {
                         amount: Math.abs(amount),
                         type: amount >= 0 ? 'credit' : 'debit'
                     };
-                }).filter(tx => tx.date && tx.description); // Filter out empty rows
+                }).filter(tx => tx.date && tx.description);
 
                 if (transactions.length === 0) {
                     throw new Error("No valid transactions found in the file.");
@@ -152,6 +161,13 @@ export default function ReconciliationPage() {
         };
         reader.readAsText(file);
     };
+    
+     const formatDate = (timestamp: any) => {
+        if (!timestamp) return 'N/A';
+        const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+        return date.toLocaleString('en-ZA', { dateStyle: 'medium', timeStyle: 'short'});
+    }
+
 
     return (
         <div className="w-full space-y-8">
@@ -161,7 +177,7 @@ export default function ReconciliationPage() {
                         <div>
                             <CardTitle>Transaction Reconciliation</CardTitle>
                             <CardDescription>
-                                Start by loading pending EFTs, uploading a statement, or using the demo data.
+                                Start a new reconciliation session or view past reports.
                             </CardDescription>
                         </div>
                          <div className="flex gap-4 items-center">
@@ -174,7 +190,7 @@ export default function ReconciliationPage() {
                              />
                               <Button onClick={() => fileInputRef.current?.click()} variant="outline" disabled={isLoading}>
                                 <Upload className="mr-2 h-4 w-4" />
-                                Upload Statement (CSV)
+                                Upload Statement
                             </Button>
                              <Button onClick={handleManualAdjustment} variant="outline" disabled={isLoading}>
                                 <PlusCircle className="mr-2 h-4 w-4" />
@@ -203,6 +219,63 @@ export default function ReconciliationPage() {
             {processingData && (
                 <TransactionAllocation statementData={processingData} />
             )}
+
+            <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2"><ListChecks /> Reconciliation History</CardTitle>
+                    <CardDescription>Review all previously completed reconciliation reports.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    {isLoadingHistory ? (
+                        <div className="flex justify-center items-center py-10"><Loader2 className="h-8 w-8 animate-spin" /></div>
+                    ) : pastReconciliations && pastReconciliations.length > 0 ? (
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Report ID</TableHead>
+                                    <TableHead>Statement Period</TableHead>
+                                    <TableHead>Processed On</TableHead>
+                                    <TableHead className="text-right">Actions</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {pastReconciliations.map(recon => (
+                                    <TableRow key={recon.id}>
+                                        <TableCell className="font-mono text-xs">{recon.id}</TableCell>
+                                        <TableCell>{recon.statementPeriod}</TableCell>
+                                        <TableCell>{formatDate(recon.processedAt)}</TableCell>
+                                        <TableCell className="text-right">
+                                            <Button variant="outline" size="sm" asChild>
+                                                <Link href={`/backend/reconciliation/${recon.id}`}>View Report <ArrowRight className="ml-2 h-4 w-4"/></Link>
+                                            </Button>
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    ) : (
+                        <p className="text-center text-muted-foreground py-10">No past reconciliations found.</p>
+                    )}
+                </CardContent>
+            </Card>
         </div>
     );
 }
+
+export default function ReconciliationPage() {
+    const searchParams = useSearchParams();
+    const reconciliationId = searchParams.get('reconciliationId');
+    
+    // This is a client component, so we can use hooks.
+    // However, to show a different view based on URL, we have to handle it this way.
+    // The reconciliationId in the URL determines which view to show.
+    const reconciliationIdFromPath = window.location.pathname.split('/reconciliation/')[1];
+
+    if (reconciliationIdFromPath) {
+        return <Suspense fallback={<Loader2 className="h-16 w-16 animate-spin" />}><ReconciliationReport params={{reconciliationId: reconciliationIdFromPath}} /></Suspense>
+    }
+    
+    return <Suspense fallback={<Loader2 className="h-16 w-16 animate-spin" />}><ReconciliationDashboard /></Suspense>
+}
+
+    

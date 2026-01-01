@@ -390,7 +390,7 @@
       "type": "object",
       "description": "Represents a single bank statement reconciliation batch.",
       "properties": {
-        "reconciliationId": {
+        "id": {
           "type": "string",
           "description": "Unique identifier for the reconciliation batch (e.g., RECON-2024-07-30)."
         },
@@ -416,7 +416,7 @@
           "description": "The server timestamp when the reconciliation was completed."
         }
       },
-      "required": ["reconciliationId", "statementPeriod", "openingBalance", "status"]
+      "required": ["id", "statementPeriod", "openingBalance", "status"]
     },
     "ChartOfAccounts": {
         "$schema": "http://json-schema.org/draft-07/schema#",
@@ -616,6 +616,15 @@
           "schema": { "$ref": "#/entities/Transaction" },
           "description": "Stores platform-level transactions not associated with a specific member (e.g., bank charges). Admin-only access.",
           "params": [{ "name": "transactionId", "description": "The unique ID of the platform transaction." }]
+        }
+      },
+       {
+        "path": "/reconciliations/{reconciliationId}",
+        "definition": {
+          "entityName": "Reconciliation",
+          "schema": { "$ref": "#/entities/Reconciliation" },
+          "description": "Stores a record of each completed reconciliation batch. Admin-only access.",
+          "params": [{ "name": "reconciliationId", "description": "The unique ID of the reconciliation batch." }]
         }
       }
     ],

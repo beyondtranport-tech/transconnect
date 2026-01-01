@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -13,6 +14,7 @@ import { useFirestore, useUser, useCollection, useMemoFirebase } from '@/firebas
 import { writeBatch, doc, collection, increment, serverTimestamp, query, deleteDoc, addDoc } from 'firebase/firestore';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
+import { format } from 'date-fns';
 
 const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-ZA', {
@@ -40,18 +42,17 @@ const chartOfAccounts = {
 };
 
 
-// A new type for our dynamically added rows
 type UiTransaction = {
     id: number;
-    paymentId?: string; // The original Firestore ID for pending payments
+    paymentId?: string;
     date: string;
     description: string;
-    reference: string; // This will hold the Member UID
+    reference: string;
     amount: number;
     type: 'credit' | 'debit';
-    status: 'allocated' | 'pending' | 'platform_expense'; // New status
-    memberName?: string; // To display member name
-    chartOfAccountsCode?: string; // New field for accounting code
+    status: 'allocated' | 'pending' | 'platform_expense';
+    memberName?: string;
+    chartOfAccountsCode?: string;
 };
 
 export default function TransactionAllocation({ statementData }: { statementData: any }) {
@@ -99,14 +100,13 @@ export default function TransactionAllocation({ statementData }: { statementData
     const handleAllocationChange = (transactionId: number, newStatus: UiTransaction['status']) => {
         const updatedTransactions = transactions.map((tx) => {
             if (tx.id === transactionId) {
-                // If allocating to a member, check for valid UID
                 if (newStatus === 'allocated' && !memberMap.has(tx.reference)) {
                     toast({
                         variant: 'destructive',
                         title: 'Invalid Member',
                         description: 'Cannot allocate to member without a valid Member UID in the reference field.',
                     });
-                    return tx; // Return original transaction
+                    return tx;
                 }
                 
                 let toastMessage = `Transaction ${transactionId} marked as ${newStatus.replace('_', ' ')}.`;
@@ -174,9 +174,21 @@ export default function TransactionAllocation({ statementData }: { statementData
             setIsPosting(false);
             return;
         }
-
         
         const batch = writeBatch(firestore);
+        const reconciliationId = `RECON-${format(new Date(), 'yyyy-MM-dd-HHmmss')}`;
+
+        // Create the master reconciliation document
+        const reconciliationRef = doc(firestore, 'reconciliations', reconciliationId);
+        batch.set(reconciliationRef, {
+            id: reconciliationId,
+            statementPeriod: statementData.statementName,
+            openingBalance,
+            closingBalance,
+            status: 'completed',
+            processedAt: serverTimestamp(),
+            processedBy: user.uid,
+        });
 
         // Process Member Allocations
         for (const tx of memberAllocations) {
@@ -188,35 +200,36 @@ export default function TransactionAllocation({ statementData }: { statementData
 
             const transactionRef = doc(collection(firestore, 'members', memberId, 'transactions'));
             batch.set(transactionRef, {
-                reconciliationId: statementData.statementName,
-                memberId: tx.reference,
+                transactionId: transactionRef.id,
+                reconciliationId,
                 type: tx.type,
                 amount: tx.amount,
                 date: new Date(tx.date),
                 description: tx.description,
                 status: 'allocated',
-                chartOfAccountsCode: '4410', // Default income code
+                chartOfAccountsCode: '4410', 
                 isAdjustment: tx.description.toLowerCase().includes('manual'),
                 postedAt: serverTimestamp(),
                 postedBy: user.uid,
             });
             
             if (tx.paymentId) {
-                const pendingPaymentRef = doc(firestore, 'members', memberId, 'walletPayments', tx.paymentId);
+                const pendingPaymentRef = doc(firestore, `members/${memberId}/walletPayments/${tx.paymentId}`);
                 batch.delete(pendingPaymentRef);
             }
         }
         
         // Process Platform Expenses
         for (const tx of platformExpenses) {
-             const platformTransactionRef = collection(firestore, 'platformTransactions');
-             addDoc(platformTransactionRef, { // Using addDoc as we don't have a sub-collection
-                reconciliationId: statementData.statementName,
+             const platformTransactionRef = doc(collection(firestore, 'platformTransactions'));
+             batch.set(platformTransactionRef, {
+                transactionId: platformTransactionRef.id,
+                reconciliationId,
                 type: tx.type,
                 amount: tx.amount,
                 date: new Date(tx.date),
                 description: tx.description,
-                chartOfAccountsCode: tx.chartOfAccountsCode || '7050', // Default to General Expense
+                chartOfAccountsCode: tx.chartOfAccountsCode || '7050',
                 postedAt: serverTimestamp(),
                 postedBy: user.uid,
              });
@@ -225,7 +238,6 @@ export default function TransactionAllocation({ statementData }: { statementData
         try {
             await batch.commit();
             toast({ title: 'Success!', description: 'Reconciliation has been posted.' });
-            // Filter out transactions that were processed
             setTransactions(transactions.filter(tx => tx.status === 'pending'));
         } catch (error: any) {
             toast({ variant: 'destructive', title: 'Posting Failed', description: error.message || "You may not have the required permissions." });
@@ -235,7 +247,6 @@ export default function TransactionAllocation({ statementData }: { statementData
     };
 
     useEffect(() => {
-        // Consider all non-pending transactions in the calculation
         const reconciledTxs = transactions.filter(t => t.status !== 'pending');
         const newTotalCredits = reconciledTxs.filter(t => t.type === 'credit').reduce((sum, t) => sum + t.amount, 0);
         const newTotalDebits = reconciledTxs.filter(t => t.type === 'debit').reduce((sum, t) => sum + Math.abs(t.amount), 0);
