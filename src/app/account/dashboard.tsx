@@ -7,7 +7,6 @@ import { Award, FileText, Gem, User, Loader2, DollarSign, HeartHandshake, ArrowR
 import { doc } from 'firebase/firestore';
 import { useDoc } from '@/firebase/firestore/use-doc';
 import Link from 'next/link';
-import WalletCard from './wallet-card';
 import { useEffect, useState } from 'react';
 import EnquiriesCard from './enquiries-card';
 import QuotesCard from './quotes-card';
@@ -173,10 +172,6 @@ export default function AccountDashboard() {
             <div className="space-y-8">
                 <QuotesCard />
                 <EnquiriesCard />
-            </div>
-
-             <div className="space-y-8">
-                <WalletCard />
             </div>
         </div>
     );

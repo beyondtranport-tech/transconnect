@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -24,6 +23,7 @@ import {
   Building,
   Store,
   CreditCard,
+  Wallet,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -38,6 +38,7 @@ import ProfileContent from './profile-content';
 import CompanyContent from './company-content';
 import ShopContent from './shop-content';
 import BillingContent from './billing-content';
+import WalletContent from './wallet-content';
 import { doc } from 'firebase/firestore';
 import { useDoc } from '@/firebase/firestore/use-doc';
 import { useFirestore } from '@/firebase';
@@ -113,6 +114,8 @@ function AccountPageContent() {
         return <StaffContent />;
       case 'shop':
         return <ShopContent />;
+      case 'wallet':
+        return <WalletContent />;
       case 'billing':
         return <BillingContent />;
       case 'documents':
@@ -176,6 +179,12 @@ function AccountPageContent() {
                 <SidebarMenuButton tooltip="My Shop" isActive={activeView === 'shop'} onClick={() => router.push('/account?view=shop', { scroll: false })}>
                   <Store />
                   <span>My Shop</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+               <SidebarMenuItem>
+                <SidebarMenuButton tooltip="Wallet" isActive={activeView === 'wallet'} onClick={() => router.push('/account?view=wallet', { scroll: false })}>
+                  <Wallet />
+                  <span>Wallet</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>

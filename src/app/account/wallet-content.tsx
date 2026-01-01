@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useUser, useFirestore, useMemoFirebase, useCollection, useDoc } from '@/firebase';
@@ -36,7 +37,7 @@ const statusColors: { [key: string]: 'default' | 'secondary' | 'destructive' | '
   pending: 'secondary',
 };
 
-export default function WalletCard() {
+export default function WalletContent() {
     const { user } = useUser();
     const firestore = useFirestore();
     const { toast } = useToast();
