@@ -107,27 +107,17 @@ export default function DashboardContent() {
                 fetchFromAdminAPI('getFinanceApplications'),
             ]);
             
-            if (membersResult.data) {
-                setStats(s => ({ ...s, members: membersResult.data!.length }));
-                setMembers(membersResult.data);
-            } else {
-                throw new Error('Failed to load members.');
-            }
+            const membersData = membersResult.data || [];
+            setStats(s => ({ ...s, members: membersData.length }));
+            setMembers(membersData);
             
-            if (contributionsResult.data) {
-                setStats(s => ({ ...s, contributions: contributionsResult.data!.length }));
-            } else {
-                 throw new Error('Failed to load contributions.');
-            }
+            const contributionsData = contributionsResult.data || [];
+            setStats(s => ({ ...s, contributions: contributionsData.length }));
 
-            if (financeResult.data) {
-                const apps = financeResult.data;
-                const totalFunded = apps.filter((app: any) => app.status === 'funded').reduce((sum: number, app: any) => sum + (app.amountRequested || 0), 0);
-                setStats(s => ({ ...s, applications: apps.length, totalFunded }));
-                setApplications(apps);
-            } else {
-                throw new Error('Failed to load finance data.');
-            }
+            const financeData = financeResult.data || [];
+            const totalFunded = financeData.filter((app: any) => app.status === 'funded').reduce((sum: number, app: any) => sum + (app.amountRequested || 0), 0);
+            setStats(s => ({ ...s, applications: financeData.length, totalFunded }));
+            setApplications(financeData);
 
         } catch (e: any) {
             setError(e.message || 'An unexpected error occurred.');
