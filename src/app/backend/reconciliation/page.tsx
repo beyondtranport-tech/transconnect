@@ -1,12 +1,16 @@
+
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { PlusCircle, Loader2, DownloadCloud, Upload } from "lucide-react";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import TransactionAllocation from "./transaction-allocation";
 import { getClientSideAuthToken } from "@/firebase";
+import demoStatementData from '@/lib/demo-statement.json';
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 
 // A blank statement template for manual adjustments
 const manualAdjustmentTemplate = {
@@ -51,12 +55,26 @@ async function fetchPendingPayments() {
 export default function ReconciliationPage() {
     const [processingData, setProcessingData] = useState<any | null>(null);
     const [isLoading, setIsLoading] = useState(false);
+    const [useDemo, setUseDemo] = useState(false);
     const { toast } = useToast();
     const fileInputRef = useRef<HTMLInputElement>(null);
+    
+    useEffect(() => {
+        if (useDemo) {
+            setProcessingData(demoStatementData);
+             toast({ title: "Demo Statement Loaded", description: "Sample transactions are ready for reconciliation." });
+        } else {
+            // If there's data and it's from the demo, clear it.
+            if (processingData && processingData.statementName === 'demo-statement.csv') {
+                 setProcessingData(null);
+            }
+        }
+    }, [useDemo]);
 
     const handleProcessPendingEFTs = async () => {
         setIsLoading(true);
         setProcessingData(null);
+        setUseDemo(false);
         try {
             const pending = await fetchPendingPayments();
             if (pending.length === 0) {
@@ -82,6 +100,7 @@ export default function ReconciliationPage() {
     }
     
     const handleManualAdjustment = () => {
+        setUseDemo(false);
         toast({
             title: "Manual Adjustment Mode",
             description: "You can now add manual transactions below.",
@@ -94,6 +113,7 @@ export default function ReconciliationPage() {
         if (!file) return;
 
         setIsLoading(true);
+        setUseDemo(false);
         const reader = new FileReader();
         reader.onload = (e) => {
             try {
@@ -141,7 +161,7 @@ export default function ReconciliationPage() {
                         <div>
                             <CardTitle>Transaction Reconciliation</CardTitle>
                             <CardDescription>
-                                To reconcile payments logged by members, use the "Load Pending EFTs" button. You can also upload a bank statement or make manual adjustments.
+                                Start by loading pending EFTs, uploading a statement, or using the demo data.
                             </CardDescription>
                         </div>
                          <div className="flex gap-4 items-center">
@@ -152,11 +172,11 @@ export default function ReconciliationPage() {
                                 accept=".csv"
                                 onChange={handleFileChange}
                              />
-                              <Button onClick={() => fileInputRef.current?.click()} variant="outline">
+                              <Button onClick={() => fileInputRef.current?.click()} variant="outline" disabled={isLoading}>
                                 <Upload className="mr-2 h-4 w-4" />
                                 Upload Statement (CSV)
                             </Button>
-                             <Button onClick={handleManualAdjustment} variant="outline">
+                             <Button onClick={handleManualAdjustment} variant="outline" disabled={isLoading}>
                                 <PlusCircle className="mr-2 h-4 w-4" />
                                 Manual Adjustment
                             </Button>
@@ -168,6 +188,10 @@ export default function ReconciliationPage() {
                     </div>
                 </CardHeader>
                 <CardContent>
+                    <div className="flex items-center space-x-2 mb-4 p-4 border rounded-md bg-muted/50">
+                        <Checkbox id="demo-mode" checked={useDemo} onCheckedChange={(checked) => setUseDemo(!!checked)} />
+                        <Label htmlFor="demo-mode" className="cursor-pointer">Use Demo Statement</Label>
+                    </div>
                     {!processingData && (
                          <div className="text-center py-10 border-2 border-dashed rounded-lg">
                             <p className="text-muted-foreground">Your reconciliation session will appear below once started.</p>

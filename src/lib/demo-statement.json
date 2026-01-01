@@ -1,0 +1,40 @@
+
+{
+  "statementName": "demo-statement.csv",
+  "openingBalance": 10000,
+  "closingBalance": 18150,
+  "transactions": [
+    {
+      "id": 1,
+      "date": "2024-07-15",
+      "description": "EFT Payment - July Subs",
+      "reference": "pQwzRU8ByifHQbGPv12xXPJTWsv2",
+      "amount": 7500,
+      "type": "credit"
+    },
+    {
+      "id": 2,
+      "date": "2024-07-16",
+      "description": "Bank Charges - Admin Fee",
+      "reference": "",
+      "amount": 150,
+      "type": "debit"
+    },
+    {
+      "id": 3,
+      "date": "2024-07-18",
+      "description": "Wallet Top-up",
+      "reference": "REPLACE_WITH_VALID_MEMBER_UID_2",
+      "amount": 1000,
+      "type": "credit"
+    },
+    {
+      "id": 4,
+      "date": "2024-07-20",
+      "description": "Fuel advance reversal",
+      "reference": "pQwzRU8ByifHQbGPv12xXPJTWsv2",
+      "amount": 200,
+      "type": "debit"
+    }
+  ]
+}
