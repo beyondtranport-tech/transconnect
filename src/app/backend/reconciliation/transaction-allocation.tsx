@@ -10,7 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Banknote, FileCheck, Scale, Loader2, PlusCircle, Trash2 } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import { useFirestore, useUser, useCollection, useMemoFirebase } from '@/firebase';
-import { writeBatch, doc, collection, increment, serverTimestamp, query, deleteDoc } from 'firebase/firestore';
+import { writeBatch, doc, collection, increment, serverTimestamp, query, deleteDoc, addDoc } from 'firebase/firestore';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 
@@ -30,8 +30,9 @@ type UiTransaction = {
     reference: string; // This will hold the Member UID
     amount: number;
     type: 'credit' | 'debit';
-    status: 'allocated' | 'pending';
+    status: 'allocated' | 'pending' | 'platform_expense'; // New status
     memberName?: string; // To display member name
+    chartOfAccountsCode?: string; // New field for accounting code
 };
 
 export default function TransactionAllocation({ statementData }: { statementData: any }) {
@@ -64,43 +65,42 @@ export default function TransactionAllocation({ statementData }: { statementData
         setOpeningBalance(statementData.openingBalance);
         setClosingBalance(statementData.closingBalance);
         
-        // This effect runs when the statement data changes OR when the member map is finally loaded.
-        if (statementData.transactions && !isLoadingMembers && memberMap.size > 0) {
+        if (statementData.transactions) {
             const populated = statementData.transactions.map((tx: any) => ({
                 ...tx,
-                status: 'pending',
-                memberName: memberMap.get(tx.reference) || (tx.reference ? 'Unknown/Manual Entry' : '')
+                status: tx.reference && memberMap.has(tx.reference) ? 'allocated' : 'pending',
+                memberName: memberMap.get(tx.reference) || (tx.reference ? 'Unknown/Manual Entry' : 'N/A'),
+                chartOfAccountsCode: tx.description.toLowerCase().includes('bank charges') ? '7010' : ''
             }));
             setTransactions(populated);
-        } else if (statementData.transactions) {
-            // Set transactions without names if members aren't loaded yet
-            setTransactions(statementData.transactions.map((t: any) => ({ ...t, status: 'pending', memberName: '' })));
         }
 
-    }, [statementData, isLoadingMembers, memberMap]); // depends on all three
+    }, [statementData, memberMap]); 
     
-    const handleAllocationChange = (transactionId: number) => {
-        let wasAllocated = false;
+    const handleAllocationChange = (transactionId: number, newStatus: UiTransaction['status']) => {
         const updatedTransactions = transactions.map((tx) => {
             if (tx.id === transactionId) {
-                // Prevent allocation if member UID is not valid
-                if (tx.status === 'pending' && !memberMap.has(tx.reference)) {
+                // If allocating to a member, check for valid UID
+                if (newStatus === 'allocated' && !memberMap.has(tx.reference)) {
                     toast({
                         variant: 'destructive',
                         title: 'Invalid Member',
-                        description: 'Cannot allocate transaction without a valid Member UID in the reference field.',
+                        description: 'Cannot allocate to member without a valid Member UID in the reference field.',
                     });
                     return tx; // Return original transaction
                 }
-                const newStatus = tx.status === 'allocated' ? 'pending' : 'allocated';
-                if (newStatus === 'allocated') wasAllocated = true;
+                
+                let toastMessage = `Transaction ${transactionId} marked as ${newStatus.replace('_', ' ')}.`;
+                if(tx.status === newStatus) toastMessage = `Transaction ${transactionId} is already ${newStatus.replace('_', ' ')}.`;
+
+                toast({ title: toastMessage });
+
                 return { ...tx, status: newStatus };
             }
             return tx;
         });
 
         setTransactions(updatedTransactions);
-        if (wasAllocated) toast({ title: `Transaction ${transactionId} allocated.` });
     };
 
     const handleFieldChange = (transactionId: number, field: keyof UiTransaction, value: string | number) => {
@@ -110,6 +110,9 @@ export default function TransactionAllocation({ statementData }: { statementData
                     const updatedTx = { ...tx, [field]: value };
                     if (field === 'reference') {
                         updatedTx.memberName = memberMap.get(value as string) || 'Unknown/Manual Entry';
+                        if (memberMap.has(value as string) && updatedTx.status === 'pending') {
+                            updatedTx.status = 'allocated';
+                        }
                     }
                     return updatedTx;
                 }
@@ -127,7 +130,7 @@ export default function TransactionAllocation({ statementData }: { statementData
             reference: '',
             amount: 0,
             type: 'credit',
-            status: 'allocated',
+            status: 'pending',
             memberName: ''
         };
         setTransactions([...transactions, newRow]);
@@ -144,10 +147,11 @@ export default function TransactionAllocation({ statementData }: { statementData
         }
         
         setIsPosting(true);
-        const allocatedTransactions = transactions.filter(tx => tx.status === 'allocated' && memberMap.has(tx.reference));
-        
-        if (allocatedTransactions.length === 0) {
-            toast({ variant: 'destructive', title: 'No Valid Transactions', description: 'No valid transactions were allocated to post. Ensure a valid Member UID is set for each allocated row.' });
+        const memberAllocations = transactions.filter(tx => tx.status === 'allocated' && memberMap.has(tx.reference));
+        const platformExpenses = transactions.filter(tx => tx.status === 'platform_expense');
+
+        if (memberAllocations.length === 0 && platformExpenses.length === 0) {
+            toast({ variant: 'destructive', title: 'No Valid Transactions', description: 'No transactions were marked as allocated to a member or as a platform expense.' });
             setIsPosting(false);
             return;
         }
@@ -155,7 +159,8 @@ export default function TransactionAllocation({ statementData }: { statementData
         
         const batch = writeBatch(firestore);
 
-        for (const tx of allocatedTransactions) {
+        // Process Member Allocations
+        for (const tx of memberAllocations) {
             const memberId = tx.reference;
             const memberRef = doc(firestore, 'members', memberId);
             const transactionAmount = tx.type === 'credit' ? tx.amount : -tx.amount;
@@ -171,24 +176,38 @@ export default function TransactionAllocation({ statementData }: { statementData
                 date: new Date(tx.date),
                 description: tx.description,
                 status: 'allocated',
-                chartOfAccountsCode: tx.description.toLowerCase().includes('manual') ? '7000-ManualAdjustment' : '4410',
+                chartOfAccountsCode: '4410', // Default income code
                 isAdjustment: tx.description.toLowerCase().includes('manual'),
                 postedAt: serverTimestamp(),
                 postedBy: user.uid,
-                transactionId: transactionRef.id
             });
             
             if (tx.paymentId) {
-                // Ensure the path to the walletPayment is correct, it's a subcollection of member
                 const pendingPaymentRef = doc(firestore, 'members', memberId, 'walletPayments', tx.paymentId);
                 batch.delete(pendingPaymentRef);
             }
         }
         
+        // Process Platform Expenses
+        for (const tx of platformExpenses) {
+             const platformTransactionRef = collection(firestore, 'platformTransactions');
+             addDoc(platformTransactionRef, { // Using addDoc as we don't have a sub-collection
+                reconciliationId: statementData.statementName,
+                type: tx.type,
+                amount: tx.amount,
+                date: new Date(tx.date),
+                description: tx.description,
+                chartOfAccountsCode: tx.chartOfAccountsCode || '7050', // Default to General Expense
+                postedAt: serverTimestamp(),
+                postedBy: user.uid,
+             });
+        }
+        
         try {
             await batch.commit();
-            toast({ title: 'Success!', description: 'Reconciliation has been posted and wallets have been updated.' });
-            setTransactions(transactions.filter(tx => tx.status !== 'allocated'));
+            toast({ title: 'Success!', description: 'Reconciliation has been posted.' });
+            // Filter out transactions that were processed
+            setTransactions(transactions.filter(tx => tx.status === 'pending'));
         } catch (error: any) {
             toast({ variant: 'destructive', title: 'Posting Failed', description: error.message || "You may not have the required permissions." });
         } finally {
@@ -197,9 +216,10 @@ export default function TransactionAllocation({ statementData }: { statementData
     };
 
     useEffect(() => {
-        const allocatedTransactions = transactions.filter(t => t.status === 'allocated');
-        const newTotalCredits = allocatedTransactions.filter(t => t.type === 'credit').reduce((sum, t) => sum + t.amount, 0);
-        const newTotalDebits = allocatedTransactions.filter(t => t.type === 'debit').reduce((sum, t) => sum + Math.abs(t.amount), 0);
+        // Consider all non-pending transactions in the calculation
+        const reconciledTxs = transactions.filter(t => t.status !== 'pending');
+        const newTotalCredits = reconciledTxs.filter(t => t.type === 'credit').reduce((sum, t) => sum + t.amount, 0);
+        const newTotalDebits = reconciledTxs.filter(t => t.type === 'debit').reduce((sum, t) => sum + Math.abs(t.amount), 0);
         
         const newCalculatedClosingBalance = openingBalance + newTotalCredits - newTotalDebits;
         const newDifference = closingBalance - newCalculatedClosingBalance;
@@ -245,11 +265,11 @@ export default function TransactionAllocation({ statementData }: { statementData
                             <TableRow>
                                 <TableHead className="w-[120px]">Date</TableHead>
                                 <TableHead>Description</TableHead>
-                                <TableHead className="w-[250px]">Member (UID or Name)</TableHead>
+                                <TableHead className="w-[250px]">Member / Expense Account</TableHead>
                                 <TableHead>Type</TableHead>
                                 <TableHead className="text-right w-[150px]">Amount (R)</TableHead>
                                 <TableHead className="w-[120px] text-center">Status</TableHead>
-                                <TableHead className="w-[120px] text-right">Action</TableHead>
+                                <TableHead className="w-[200px] text-right">Actions</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -262,7 +282,7 @@ export default function TransactionAllocation({ statementData }: { statementData
                                 </TableRow>
                             ) : (
                                 transactions.map(tx => (
-                                    <TableRow key={tx.id} className={tx.status === 'allocated' ? 'bg-green-100/50 dark:bg-green-900/20' : ''}>
+                                    <TableRow key={tx.id} className={tx.status === 'allocated' ? 'bg-green-100/50 dark:bg-green-900/20' : tx.status === 'platform_expense' ? 'bg-blue-100/50 dark:bg-blue-900/20' : ''}>
                                         <TableCell>
                                             <Input value={tx.date} onChange={(e) => handleFieldChange(tx.id, 'date', e.target.value)} className="h-8 text-xs font-mono" type="date" />
                                         </TableCell>
@@ -273,7 +293,7 @@ export default function TransactionAllocation({ statementData }: { statementData
                                             <Input 
                                                 value={tx.reference} 
                                                 onChange={(e) => handleFieldChange(tx.id, 'reference', e.target.value)} 
-                                                className={cn('h-8 text-xs font-mono', tx.reference && !memberMap.has(tx.reference) ? 'border-destructive' : '')}
+                                                className={cn('h-8 text-xs font-mono', tx.reference && tx.status === 'allocated' && !memberMap.has(tx.reference) ? 'border-destructive' : '')}
                                                 list="members-datalist"
                                             />
                                             <p className="text-xs text-muted-foreground mt-1 truncate">{tx.memberName}</p>
@@ -288,15 +308,20 @@ export default function TransactionAllocation({ statementData }: { statementData
                                             <Input value={tx.amount} onChange={(e) => handleFieldChange(tx.id, 'amount', parseFloat(e.target.value) || 0)} className="h-8 text-sm font-mono text-right w-full" type="number" step="0.01" />
                                         </TableCell>
                                         <TableCell className="text-center">
-                                            <Badge variant={tx.status === 'allocated' ? 'default' : 'secondary'} className="capitalize">{tx.status}</Badge>
+                                            <Badge variant={tx.status === 'allocated' ? 'default' : tx.status === 'platform_expense' ? 'outline' : 'secondary'} className="capitalize">{tx.status.replace('_', ' ')}</Badge>
                                         </TableCell>
-                                        <TableCell className="text-right">
+                                        <TableCell className="text-right space-x-1">
                                             {isManualMode ? (
                                                 <Button variant="ghost" size="icon" onClick={() => removeManualRow(tx.id)}><Trash2 className="h-4 w-4 text-destructive"/></Button>
                                             ) : (
-                                                <Button variant={tx.status === 'allocated' ? 'outline' : 'default'} size="sm" onClick={() => handleAllocationChange(tx.id)}>
-                                                    {tx.status === 'allocated' ? 'Un-allocate' : 'Allocate'}
-                                                </Button>
+                                                <>
+                                                    <Button variant={tx.status === 'allocated' ? 'secondary' : 'default'} size="sm" onClick={() => handleAllocationChange(tx.id, tx.status === 'allocated' ? 'pending' : 'allocated')}>
+                                                        {tx.status === 'allocated' ? 'Un-allocate' : 'To Member'}
+                                                    </Button>
+                                                     <Button variant={tx.status === 'platform_expense' ? 'secondary' : 'outline'} size="sm" onClick={() => handleAllocationChange(tx.id, tx.status === 'platform_expense' ? 'pending' : 'platform_expense')}>
+                                                        To Platform
+                                                    </Button>
+                                                </>
                                             )}
                                         </TableCell>
                                     </TableRow>
@@ -316,8 +341,8 @@ export default function TransactionAllocation({ statementData }: { statementData
                         <h4 className="font-semibold mb-3 text-lg">Reconciliation Summary</h4>
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
                             <div className="space-y-1"><p className="text-muted-foreground">Opening Balance</p><p className="font-mono font-semibold">{formatCurrency(openingBalance)}</p></div>
-                            <div className="space-y-1"><p className="text-muted-foreground">Allocated Credits</p><p className="font-mono font-semibold text-green-600">{formatCurrency(totalCredits)}</p></div>
-                            <div className="space-y-1"><p className="text-muted-foreground">Allocated Debits</p><p className="font-mono font-semibold text-destructive">{formatCurrency(totalDebits)}</p></div>
+                            <div className="space-y-1"><p className="text-muted-foreground">Reconciled Credits</p><p className="font-mono font-semibold text-green-600">{formatCurrency(totalCredits)}</p></div>
+                            <div className="space-y-1"><p className="text-muted-foreground">Reconciled Debits</p><p className="font-mono font-semibold text-destructive">{formatCurrency(totalDebits)}</p></div>
                             <div className="space-y-1 border-t pt-2"><p className="text-muted-foreground">Calculated Balance</p><p className="font-mono font-bold text-base">{formatCurrency(calculatedClosingBalance)}</p></div>
                             <div className="space-y-1 border-t pt-2"><p className="text-muted-foreground">Entered Closing</p><p className="font-mono font-bold text-base">{formatCurrency(closingBalance)}</p></div>
                             <div className={`space-y-1 border-t pt-2 ${Math.abs(difference) < 0.01 ? 'bg-green-100 dark:bg-green-900/30' : 'bg-red-100 dark:bg-red-900/30'} p-2 rounded-md`}><p className="text-muted-foreground font-semibold">Difference</p><p className={`font-mono font-extrabold text-lg ${Math.abs(difference) < 0.01 ? 'text-green-700' : 'text-red-700'}`}>{formatCurrency(difference)}</p></div>

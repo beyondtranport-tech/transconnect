@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useForm } from 'react-hook-form';
@@ -57,6 +56,17 @@ const finalizedAccounts: Account[] = [
 
     // 4400 Series: Tech & SaaS Revenue
     { series: '4400: Tech & SaaS Revenue', code: '4410', name: 'Wallet Transaction Fees (SaaS)' },
+    
+    // 7000 Series: Operating Expenses
+    { series: '7000: Operating Expenses', code: '7010', name: 'Bank Charges' },
+    { series: '7000: Operating Expenses', code: '7020', name: 'Software & Subscriptions' },
+    { series: '7000: Operating Expenses', code: '7030', name: 'Consulting & Professional Fees' },
+    { series: '7000: Operating Expenses', code: '7040', name: 'Marketing & Advertising' },
+    { series: '7000: Operating Expenses', code: '7050', name: 'General & Administrative' },
+
+    // 8000 Series: Adjustments & Reversals
+    { series: '8000: Adjustments & Reversals', code: '8010', name: 'Wallet Adjustment (Manual)' },
+    { series: '8000: Adjustments & Reversals', code: '8020', name: 'Transaction Reversal' },
 ];
 
 
@@ -77,7 +87,7 @@ export default function ChartOfAccountsSettings() {
                 <div>
                     <CardTitle>Finalized Chart of Accounts</CardTitle>
                     <CardDescription>
-                        Below are the defined income streams for transaction reconciliation.
+                        Below are the defined income and expense streams for transaction reconciliation.
                     </CardDescription>
                 </div>
             </div>

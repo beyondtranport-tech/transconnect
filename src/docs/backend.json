@@ -336,20 +336,6 @@
         "createdAt": { "type": "object" }
       }
     },
-    "Charge": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Charge",
-      "type": "object",
-      "description": "Represents a single billable item from TransConnect to a member (e.g., membership fee, SaaS fee).",
-      "properties": {
-        "chargeId": { "type": "string" },
-        "invoiceId": { "type": "string" },
-        "description": { "type": "string" },
-        "amount": { "type": "number" },
-        "date": { "type": "object" }
-      },
-      "required": ["chargeId", "description", "amount", "date"]
-    },
     "Transaction": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Transaction",
@@ -432,20 +418,18 @@
       },
       "required": ["reconciliationId", "statementPeriod", "openingBalance", "status"]
     },
-    "BankDetails": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "BankDetails",
-      "type": "object",
-      "description": "Represents the platform's central bank account details for EFT payments.",
-      "properties": {
-        "bankName": { "type": "string" },
-        "branchName": { "type": "string" },
-        "accountHolder": { "type": "string" },
-        "accountType": { "type": "string" },
-        "accountNumber": { "type": "string" },
-        "branchCode": { "type": "string" }
-      },
-      "required": ["bankName", "accountHolder", "accountNumber", "branchCode"]
+    "ChartOfAccounts": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "title": "ChartOfAccounts",
+        "type": "object",
+        "description": "Defines a single entry in the Chart of Accounts.",
+        "properties": {
+            "code": { "type": "string", "description": "The unique account code (e.g., 4010, 7010)." },
+            "name": { "type": "string", "description": "The descriptive name of the account (e.g., Basic Membership Fees, Bank Charges)." },
+            "series": { "type": "string", "description": "The account series or category (e.g., 4000: Core Revenue)." },
+            "type": { "type": "string", "enum": ["revenue", "expense"], "description": "The type of account." }
+        },
+        "required": ["code", "name", "series", "type"]
     }
   },
   "auth": {
@@ -561,18 +545,6 @@
         }
       },
       {
-        "path": "/members/{memberId}/charges/{chargeId}",
-        "definition": {
-          "entityName": "Charge",
-          "schema": { "$ref": "#/entities/Charge" },
-          "description": "Stores individual billing charges from TransConnect to the member. Writable by admins, readable by the member.",
-          "params": [
-            { "name": "memberId", "description": "The UID of the parent member." },
-            { "name": "chargeId", "description": "The unique identifier of the charge." }
-          ]
-        }
-      },
-      {
         "path": "/members/{memberId}/shops/{shopId}",
         "definition": {
           "entityName": "Shop",
@@ -637,18 +609,13 @@
           ]
         }
       },
-       {
-        "path": "/configuration/{configId}",
+      {
+        "path": "/platformTransactions/{transactionId}",
         "definition": {
-          "entityName": "BankDetails",
-          "schema": { "$ref": "#/entities/BankDetails" },
-          "description": "Stores platform-wide configuration settings. The `configId` determines the document (e.g., 'bankDetails'). Publicly readable, admin writable.",
-          "params": [
-            {
-              "name": "configId",
-              "description": "The unique identifier for the configuration document."
-            }
-          ]
+          "entityName": "Transaction",
+          "schema": { "$ref": "#/entities/Transaction" },
+          "description": "Stores platform-level transactions not associated with a specific member (e.g., bank charges). Admin-only access.",
+          "params": [{ "name": "transactionId", "description": "The unique ID of the platform transaction." }]
         }
       }
     ],
