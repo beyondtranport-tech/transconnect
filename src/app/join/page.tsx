@@ -10,10 +10,10 @@ import * as z from 'zod';
 import {
   createUserWithEmailAndPassword,
   updateProfile,
+  getIdToken,
 } from 'firebase/auth';
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 
-import { useAuth, useFirestore } from '@/firebase';
+import { useAuth, getClientSideAuthToken } from '@/firebase';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -33,8 +33,6 @@ import {
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Eye, EyeOff, Building2, User } from 'lucide-react';
-import { FirestorePermissionError } from '@/firebase/errors';
-import { errorEmitter } from '@/firebase/error-emitter';
 import { Badge } from '@/components/ui/badge';
 
 const formSchema = z.object({
@@ -55,7 +53,6 @@ function JoinFormComponent() {
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const auth = useAuth();
-  const firestore = useFirestore();
 
   const userRole = searchParams.get('role');
   const financierType = searchParams.get('type');
@@ -75,7 +72,7 @@ function JoinFormComponent() {
 
   const onSubmit = async (values: JoinFormValues) => {
     setIsLoading(true);
-    if (!auth || !firestore) {
+    if (!auth) {
       toast({
         variant: 'destructive',
         title: 'Initialization Error',
@@ -92,11 +89,16 @@ function JoinFormComponent() {
       );
       const user = userCredential.user;
 
-      const isAdmin = values.email === 'beyondtransport@gmail.com';
-
       await updateProfile(user, {
         displayName: `${values.firstName} ${values.lastName}`,
       });
+      
+      const token = await getIdToken(user);
+      if (!token) {
+        throw new Error("Could not retrieve auth token after user creation.");
+      }
+
+      const isAdmin = values.email === 'beyondtransport@gmail.com';
 
       const memberData: any = {
         id: user.uid,
@@ -110,8 +112,8 @@ function JoinFormComponent() {
         rewardPoints: 0,
         walletBalance: 0,
         admin: isAdmin,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
+        createdAt: { _methodName: 'serverTimestamp' },
+        updatedAt: { _methodName: 'serverTimestamp' },
       };
 
       if (userRole) {
@@ -120,10 +122,22 @@ function JoinFormComponent() {
       if (financierType) {
         memberData.financierType = financierType;
       }
-
-      const memberDocRef = doc(firestore, 'members', user.uid);
       
-      await setDoc(memberDocRef, memberData);
+      // Use the secure API route to create the document
+      const response = await fetch('/api/createUser', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ data: memberData }),
+      });
+
+      const result = await response.json();
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || 'Failed to create user profile in database.');
+      }
+
 
       toast({
         title: 'Account Created!',
@@ -140,12 +154,7 @@ function JoinFormComponent() {
         title = 'Email already in use.';
         description = 'Please sign in or use a different email address.';
       } else {
-        const permissionError = new FirestorePermissionError({
-            path: `members/${auth.currentUser?.uid || 'unknown'}`,
-            operation: 'create',
-            requestResourceData: form.getValues(),
-        });
-        errorEmitter.emit('permission-error', permissionError);
+        description = error.message;
       }
       toast({
         variant: 'destructive',
