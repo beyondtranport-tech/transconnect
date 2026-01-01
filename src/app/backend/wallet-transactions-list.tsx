@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -59,9 +58,9 @@ const statusColors: { [key: string]: 'default' | 'secondary' | 'destructive' | '
   reversal: 'destructive',
 };
 
-const formatPrice = (price: number) => {
-    if (typeof price !== 'number') return 'N/A';
-    return new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(price);
+const formatCurrency = (amount: number) => {
+    if (typeof amount !== 'number') return 'N/A';
+    return new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(amount);
 };
 
 const formatDate = (isoString: string | undefined) => {
@@ -167,7 +166,7 @@ export default function WalletTransactionsList() {
                                                 </Badge>
                                             </TableCell>
                                             <TableCell className={`text-right font-mono font-semibold ${tx.type === 'credit' ? 'text-green-600' : 'text-destructive'}`}>
-                                                {tx.type === 'credit' ? '+' : '-'} {formatPrice(tx.amount)}
+                                                {tx.type === 'credit' ? '+' : '-'} {formatCurrency(tx.amount)}
                                             </TableCell>
                                             <TableCell className="text-right">
                                                 <AlertDialog>
