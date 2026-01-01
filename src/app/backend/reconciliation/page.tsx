@@ -3,21 +3,11 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Check, Upload, PlusCircle, Loader2, DownloadCloud } from "lucide-react";
+import { PlusCircle, Loader2, DownloadCloud } from "lucide-react";
 import { useState } from "react";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import TransactionAllocation from "./transaction-allocation";
-import statementData from './bank-statements/statement-2024-07-01-2024-07-31.json';
 import { getClientSideAuthToken } from "@/firebase";
-
-const availableStatements = [
-    {
-        id: "statement-2024-07-01-2024-07-31.csv",
-        data: statementData
-    }
-];
 
 // A blank statement template for manual adjustments
 const manualAdjustmentTemplate = {
@@ -60,39 +50,9 @@ async function fetchPendingPayments() {
 }
 
 export default function ReconciliationPage() {
-    const [selectedStatementId, setSelectedStatementId] = useState<string | null>(null);
     const [processingData, setProcessingData] = useState<any | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const { toast } = useToast();
-
-    const handleProcessStatement = () => {
-        if (!selectedStatementId) {
-            toast({
-                variant: 'destructive',
-                title: "No statement selected",
-                description: "Please select a statement to process.",
-            });
-            return;
-        }
-        
-        const statementToProcess = availableStatements.find(s => s.id === selectedStatementId);
-
-        if (!statementToProcess) {
-             toast({
-                variant: 'destructive',
-                title: "Statement not found",
-                description: "Could not find the data for the selected statement.",
-            });
-            return;
-        }
-
-        toast({
-            title: "Processing Started",
-            description: `Parsing and preparing statement: ${selectedStatementId}`,
-        });
-        
-        setProcessingData(statementToProcess.data);
-    }
 
     const handleProcessPendingEFTs = async () => {
         setIsLoading(true);
@@ -126,7 +86,6 @@ export default function ReconciliationPage() {
             title: "Manual Adjustment Mode",
             description: "You can now add manual transactions below.",
         });
-        setSelectedStatementId(null); // Deselect any statement
         setProcessingData(manualAdjustmentTemplate);
     }
 
@@ -138,7 +97,7 @@ export default function ReconciliationPage() {
                         <div>
                             <CardTitle>Transaction Reconciliation</CardTitle>
                             <CardDescription>
-                                Select a source to begin reconciliation.
+                                Start by loading unallocated member payments or make a manual adjustment.
                             </CardDescription>
                         </div>
                          <div className="flex gap-2">
@@ -146,42 +105,17 @@ export default function ReconciliationPage() {
                                 <PlusCircle className="mr-2 h-4 w-4" />
                                 Manual Adjustment
                             </Button>
-                            <Button onClick={handleProcessPendingEFTs} variant="outline" disabled={isLoading}>
+                            <Button onClick={handleProcessPendingEFTs} variant="default" disabled={isLoading}>
                                 {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <DownloadCloud className="mr-2 h-4 w-4" />}
                                 Load Pending EFTs
-                            </Button>
-                            <Button onClick={handleProcessStatement} disabled={!selectedStatementId}>
-                                <Check className="mr-2 h-4 w-4" />
-                                Process Selected Statement
                             </Button>
                         </div>
                     </div>
                 </CardHeader>
                 <CardContent>
-                    {availableStatements.length > 0 ? (
-                        <div className="space-y-4 rounded-md border p-4">
-                            <h3 className="font-medium">Available Bank Statements</h3>
-                            {availableStatements.map(statement => (
-                                <div key={statement.id} className="flex items-center space-x-2">
-                                    <Checkbox
-                                        id={statement.id}
-                                        checked={selectedStatementId === statement.id}
-                                        onCheckedChange={(checked) => {
-                                            setSelectedStatementId(checked ? statement.id : null);
-                                            setProcessingData(null); // Clear previous processing data
-                                        }}
-                                    />
-                                    <Label htmlFor={statement.id} className="font-mono cursor-pointer">
-                                        {statement.id}
-                                    </Label>
-                                </div>
-                            ))}
-                        </div>
-                    ) : (
-                         <div className="text-center py-20">
-                             <p className="text-muted-foreground">No statements available for processing.</p>
-                         </div>
-                    )}
+                    <div className="text-center py-10 border-2 border-dashed rounded-lg">
+                        <p className="text-muted-foreground">Your reconciliation session will appear below once started.</p>
+                    </div>
                 </CardContent>
             </Card>
 
