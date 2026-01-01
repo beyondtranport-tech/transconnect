@@ -13,25 +13,23 @@ service cloud.firestore {
       return request.auth != null && request.auth.token.email == 'beyondtransport@gmail.com';
     }
 
-    function getCompanyId(userId) {
-      return get(/databases/$(database)/documents/users/$(userId)).data.companyId;
-    }
-    
     // A user can read a company document if they are the owner of that company.
     function isCompanyOwner(companyId) {
-        return request.auth != null && get(/databases/$(database)/documents/companies/$(companyId)).data.ownerId == request.auth.uid;
+        let companyOwnerId = get(/databases/$(database)/documents/companies/$(companyId)).data.ownerId;
+        return request.auth != null && companyOwnerId == request.auth.uid;
     }
 
     // --- User Profiles ---
     // A user can create their own profile.
     // A user can only read or update their own profile. Admins can read any profile.
     match /users/{userId} {
-      allow create, get, update: if isOwner(userId);
+      allow create: if isOwner(userId);
+      allow get, update: if isOwner(userId) || isAdmin();
       allow list: if isAdmin();
     }
 
     // --- Company Profiles ---
-    // A user can create a company document.
+    // An authenticated user can create a company document.
     // A company document can be read or updated by its owner, or by an admin.
     match /companies/{companyId} {
       allow create: if request.auth != null;
@@ -81,5 +79,3 @@ service cloud.firestore {
     }
   }
 }
-
-    

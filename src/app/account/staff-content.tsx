@@ -64,8 +64,8 @@ function AddStaffDialog({ companyId, onStaffAdded }: { companyId: string; onStaf
 
   const onSubmit = async (values: StaffFormValues) => {
     setIsLoading(true);
-    if (!firestore) {
-      toast({ variant: 'destructive', title: 'Error', description: 'Database not available.' });
+    if (!firestore || !companyId) {
+      toast({ variant: 'destructive', title: 'Error', description: 'Database not available or company not found.' });
       setIsLoading(false);
       return;
     }
@@ -264,5 +264,3 @@ export default function StaffContent() {
     </Card>
   )
 }
-
-    

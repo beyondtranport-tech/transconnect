@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Suspense } from 'react';
@@ -9,7 +10,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { useDoc } from '@/firebase/firestore/use-doc';
 
 const formatPrice = (price?: number) => {
     if (typeof price !== 'number') return 'N/A';
