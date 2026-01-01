@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useForm } from 'react-hook-form';
@@ -39,12 +38,12 @@ export default function ProfileContent() {
   const { toast } = useToast();
   const [isSaving, setIsSaving] = useState(false);
 
-  const memberDocRef = useMemoFirebase(() => {
+  const userDocRef = useMemoFirebase(() => {
     if (!firestore || !user) return null;
-    return doc(firestore, 'members', user.uid);
+    return doc(firestore, 'users', user.uid);
   }, [firestore, user]);
 
-  const { data: memberData, isLoading: isMemberLoading } = useDoc(memberDocRef);
+  const { data: userData, isLoading: isUserDocLoading } = useDoc(userDocRef);
 
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileFormSchema),
@@ -57,19 +56,19 @@ export default function ProfileContent() {
   });
 
   useEffect(() => {
-    if (memberData) {
+    if (userData) {
       form.reset({
-        firstName: memberData.firstName || '',
-        lastName: memberData.lastName || '',
-        phone: memberData.phone || '',
-        email: memberData.email || '',
+        firstName: userData.firstName || '',
+        lastName: userData.lastName || '',
+        phone: userData.phone || '',
+        email: userData.email || '',
       });
     }
-  }, [memberData, form]);
+  }, [userData, form]);
 
   const onSubmit = async (values: ProfileFormValues) => {
     setIsSaving(true);
-    if (!memberDocRef) {
+    if (!userDocRef) {
       toast({ variant: 'destructive', title: 'Error', description: 'Not logged in.' });
       setIsSaving(false);
       return;
@@ -82,7 +81,7 @@ export default function ProfileContent() {
         updatedAt: serverTimestamp(),
     };
     
-    updateDoc(memberDocRef, dataToUpdate)
+    updateDoc(userDocRef, dataToUpdate)
       .then(() => {
         toast({
           title: 'Profile Updated',
@@ -91,7 +90,7 @@ export default function ProfileContent() {
       })
       .catch((serverError) => {
         const permissionError = new FirestorePermissionError({
-            path: memberDocRef.path,
+            path: userDocRef.path,
             operation: 'update',
             requestResourceData: dataToUpdate,
         });
@@ -107,7 +106,7 @@ export default function ProfileContent() {
       });
   };
 
-  const isLoading = isUserLoading || isMemberLoading;
+  const isLoading = isUserLoading || isUserDocLoading;
 
   return (
     <Card>
@@ -188,5 +187,3 @@ export default function ProfileContent() {
     </Card>
   );
 }
-
-    

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, Suspense } from 'react';
@@ -13,7 +12,7 @@ import {
   getIdToken,
 } from 'firebase/auth';
 
-import { useAuth, getClientSideAuthToken } from '@/firebase';
+import { useAuth } from '@/firebase';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -38,7 +37,6 @@ import { Badge } from '@/components/ui/badge';
 const formSchema = z.object({
   firstName: z.string().min(1, 'First name is required'),
   lastName: z.string().min(1, 'Last name is required'),
-  companyName: z.string().min(1, 'Company name is required'),
   email: z.string().email('Invalid email address'),
   phone: z.string().min(1, 'Phone number is required'),
   password: z.string().min(8, 'Password must be at least 8 characters'),
@@ -63,7 +61,6 @@ function JoinFormComponent() {
     defaultValues: {
       firstName: '',
       lastName: '',
-      companyName: '',
       email: '',
       phone: '',
       password: '',
@@ -97,53 +94,26 @@ function JoinFormComponent() {
       if (!token) {
         throw new Error("Could not retrieve auth token after user creation.");
       }
-
-      const isAdmin = values.email === 'beyondtransport@gmail.com';
-
-      const memberData: any = {
-        id: user.uid,
-        ownerId: user.uid,
-        firstName: values.firstName,
-        lastName: values.lastName,
-        email: values.email,
-        phone: values.phone,
-        companyName: values.companyName,
-        membershipId: 'free',
-        rewardPoints: 0,
-        walletBalance: 0,
-        admin: isAdmin,
-        createdAt: { _methodName: 'serverTimestamp' },
-        updatedAt: { _methodName: 'serverTimestamp' },
-      };
-
-      if (userRole) {
-        memberData.role = userRole;
-      }
-      if (financierType) {
-        memberData.financierType = financierType;
-      }
       
-      // Use the secure API route to create the document
-      const response = await fetch('/api/createUser', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ data: memberData }),
+      const response = await fetch('/api/checkAndCreateUser', {
+          method: 'POST',
+          headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json',
+          },
       });
 
-      const result = await response.json();
-      if (!response.ok || !result.success) {
-        throw new Error(result.error || 'Failed to create user profile in database.');
+      if (!response.ok) {
+          const result = await response.json();
+          throw new Error(result.error || "Failed to create user profile in database.");
       }
-
 
       toast({
         title: 'Account Created!',
         description: "Welcome to TransConnect. Redirecting you now...",
       });
 
+      const isAdmin = user.email === 'beyondtransport@gmail.com';
       const defaultRedirect = isAdmin ? '/backend' : '/account';
       router.replace(redirectParam || defaultRedirect);
 
@@ -228,19 +198,6 @@ function JoinFormComponent() {
                 )}
               />
             </div>
-            <FormField
-              control={form.control}
-              name="companyName"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Company Name</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Doe Transport Inc." {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
             <FormField
               control={form.control}
               name="email"

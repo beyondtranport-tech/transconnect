@@ -72,12 +72,12 @@ function AccountPageContent() {
   const initialView = searchParams.get('view') || 'dashboard';
   const [activeView, setActiveView] = useState(initialView);
 
-  const memberDocRef = useMemoFirebase(() => {
+  const userDocRef = useMemoFirebase(() => {
     if (!firestore || !user) return null;
-    return doc(firestore, 'members', user.uid);
+    return doc(firestore, 'users', user.uid);
   }, [firestore, user]);
 
-  const { data: memberData, isLoading: isMemberLoading } = useDoc(memberDocRef);
+  const { data: userData, isLoading: isUserDocLoading } = useDoc(userDocRef);
 
   useEffect(() => {
     setActiveView(initialView);
@@ -128,7 +128,7 @@ function AccountPageContent() {
     }
   }
 
-  if (isUserLoading || !user || isMemberLoading) {
+  if (isUserLoading || !user || isUserDocLoading) {
     return (
         <div className="flex justify-center items-center min-h-[calc(100vh-8rem)]">
             <Loader2 className="h-16 w-16 animate-spin text-primary" />

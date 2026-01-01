@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useForm } from 'react-hook-form';
@@ -19,7 +18,7 @@ import { useState, useEffect } from 'react';
 import { Loader2, Building, Save } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useUser, useFirestore, useMemoFirebase } from '@/firebase';
-import { doc, getDoc, writeBatch, serverTimestamp, collection } from 'firebase/firestore';
+import { doc, getDoc, setDoc, serverTimestamp, collection } from 'firebase/firestore';
 import { useDoc } from '@/firebase/firestore/use-doc';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
@@ -43,12 +42,20 @@ export default function CompanyContent() {
   const { toast } = useToast();
   const [isSaving, setIsSaving] = useState(false);
 
-  const memberDocRef = useMemoFirebase(() => {
+  // First, get the user document to find their companyId
+  const userDocRef = useMemoFirebase(() => {
     if (!firestore || !user) return null;
-    return doc(firestore, 'members', user.uid);
+    return doc(firestore, 'users', user.uid);
   }, [firestore, user]);
+  const { data: userData, isLoading: isUserDocLoading } = useDoc(userDocRef);
 
-  const { data: memberData, isLoading: isMemberLoading } = useDoc(memberDocRef);
+  // Then, use the companyId to get the company document
+  const companyDocRef = useMemoFirebase(() => {
+    if (!firestore || !userData?.companyId) return null;
+    return doc(firestore, 'companies', userData.companyId);
+  }, [firestore, userData]);
+
+  const { data: companyData, isLoading: isCompanyLoading } = useDoc(companyDocRef);
 
   const form = useForm<CompanyFormValues>({
     resolver: zodResolver(companyFormSchema),
@@ -64,78 +71,58 @@ export default function CompanyContent() {
   });
 
   useEffect(() => {
-    if (memberData) {
+    if (companyData) {
       form.reset({
-        companyName: memberData.companyName || '',
-        registrationNumber: memberData.registrationNumber || '',
-        vatNumber: memberData.vatNumber || '',
-        streetAddress: memberData.streetAddress || '',
-        city: memberData.city || '',
-        province: memberData.province || '',
-        postalCode: memberData.postalCode || '',
+        companyName: companyData.companyName || '',
+        registrationNumber: companyData.registrationNumber || '',
+        vatNumber: companyData.vatNumber || '',
+        streetAddress: companyData.streetAddress || '',
+        city: companyData.city || '',
+        province: companyData.province || '',
+        postalCode: companyData.postalCode || '',
       });
     }
-  }, [memberData, form]);
+  }, [companyData, form]);
 
   const onSubmit = async (values: CompanyFormValues) => {
     setIsSaving(true);
-    if (!memberDocRef || !firestore) {
+    if (!companyDocRef || !firestore) {
       toast({ variant: 'destructive', title: 'Error', description: 'Not logged in or database not available.' });
       setIsSaving(false);
       return;
     }
 
-    try {
-        // 1. Get the current state of the document for versioning
-        const currentDocSnap = await getDoc(memberDocRef);
-        if (!currentDocSnap.exists()) {
-            throw new Error("Member document not found.");
-        }
-        const currentData = currentDocSnap.data();
-
-        // 2. Create a batch write
-        const batch = writeBatch(firestore);
-
-        // 3. Add the current state to the 'versions' subcollection
-        const versionRef = doc(collection(memberDocRef, 'versions'));
-        batch.set(versionRef, {
-            ...currentData,
-            updatedAt: serverTimestamp(), // The timestamp of when this version was archived
-        });
-
-        // 4. Update the main document with the new data
-        const dataToUpdate = {
-            ...values,
-            updatedAt: serverTimestamp(),
-        };
-        batch.update(memberDocRef, dataToUpdate);
-
-        // 5. Commit the batch
-        await batch.commit();
-
-        toast({
-          title: 'Company Info Updated',
-          description: 'Your company information has been saved and versioned.',
-        });
-
-    } catch (serverError: any) {
-        const permissionError = new FirestorePermissionError({
-            path: memberDocRef.path,
-            operation: 'update',
-            requestResourceData: values,
-        });
-        errorEmitter.emit('permission-error', permissionError);
-        toast({
-            variant: 'destructive',
-            title: 'Update Failed',
-            description: serverError.message || 'You do not have permission to update company info.',
-        });
-    } finally {
-        setIsSaving(false);
-    }
+    const dataToUpdate = {
+        ...values,
+        updatedAt: serverTimestamp(),
+    };
+    
+    setDoc(companyDocRef, dataToUpdate, { merge: true })
+      .then(() => {
+          toast({
+              title: 'Company Info Updated',
+              description: 'Your company information has been saved.',
+          });
+      })
+      .catch((serverError: any) => {
+          const permissionError = new FirestorePermissionError({
+              path: companyDocRef.path,
+              operation: 'update',
+              requestResourceData: dataToUpdate,
+          });
+          errorEmitter.emit('permission-error', permissionError);
+          toast({
+              variant: 'destructive',
+              title: 'Update Failed',
+              description: serverError.message || 'You do not have permission to update company info.',
+          });
+      })
+      .finally(() => {
+          setIsSaving(false);
+      });
   };
 
-  const isLoading = isUserLoading || isMemberLoading;
+  const isLoading = isUserLoading || isUserDocLoading || isCompanyLoading;
 
   return (
     <Card>

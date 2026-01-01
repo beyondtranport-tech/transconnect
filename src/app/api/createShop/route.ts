@@ -22,13 +22,26 @@ export async function POST(req: NextRequest) {
         const uid = decodedToken.uid;
 
         const db = getFirestore(app);
-        const memberRef = db.collection('members').doc(uid);
-        const shopCollectionRef = memberRef.collection('shops');
+        
+        // Find the user's companyId
+        const userDocRef = db.collection('users').doc(uid);
+        const userDoc = await userDocRef.get();
+        if (!userDoc.exists) {
+            throw new Error("User profile not found.");
+        }
+        const companyId = userDoc.data()?.companyId;
+        if (!companyId) {
+            throw new Error("User is not associated with a company.");
+        }
+
+        const companyRef = db.collection('companies').doc(companyId);
+        const shopCollectionRef = companyRef.collection('shops');
         
         const newShopRef = shopCollectionRef.doc();
 
         const newShopData = {
           ownerId: uid,
+          companyId: companyId,
           status: 'draft',
           shopName: `${decodedToken.name || 'My'}'s New Shop`,
           category: '',
@@ -39,7 +52,7 @@ export async function POST(req: NextRequest) {
         
         const batch = db.batch();
         batch.set(newShopRef, newShopData);
-        batch.update(memberRef, { shopId: newShopRef.id });
+        batch.update(companyRef, { shopId: newShopRef.id });
         await batch.commit();
 
         return NextResponse.json({ success: true, shopId: newShopRef.id });

@@ -27,7 +27,7 @@ service cloud.firestore {
     // A user can only read or update their own profile. Admins can read any profile.
     match /users/{userId} {
       allow create, get, update: if isOwner(userId);
-      allow read: if isAdmin();
+      allow list: if isAdmin();
     }
 
     // --- Company Profiles ---

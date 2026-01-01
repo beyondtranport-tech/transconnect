@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -28,7 +28,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { useToast } from '@/hooks/use-toast';
 import { useUser, useFirestore, useMemoFirebase } from '@/firebase';
 import { useCollection } from '@/firebase/firestore/use-collection';
-import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
+import { useDoc } from '@/firebase/firestore/use-doc';
+import { addDoc, collection, serverTimestamp, doc } from 'firebase/firestore';
 import { Loader2, PlusCircle, UserPlus, Users } from 'lucide-react';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
@@ -44,7 +45,7 @@ const staffFormSchema = z.object({
 
 type StaffFormValues = z.infer<typeof staffFormSchema>;
 
-function AddStaffDialog({ memberId }: { memberId: string }) {
+function AddStaffDialog({ companyId }: { companyId: string }) {
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const firestore = useFirestore();
@@ -69,10 +70,10 @@ function AddStaffDialog({ memberId }: { memberId: string }) {
     }
 
     try {
-      const staffCollectionRef = collection(firestore, `members/${memberId}/staff`);
+      const staffCollectionRef = collection(firestore, `companies/${companyId}/staff`);
       const staffData = {
         ...values,
-        memberId,
+        companyId,
         createdAt: serverTimestamp(),
       };
       
@@ -190,14 +191,21 @@ export default function StaffContent() {
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
 
-  const staffCollectionRef = useMemoFirebase(() => {
+  const userDocRef = useMemoFirebase(() => {
     if (!firestore || !user) return null;
-    return collection(firestore, `members/${user.uid}/staff`);
+    return doc(firestore, 'users', user.uid);
   }, [firestore, user]);
+  const { data: userData, isLoading: isUserDocLoading } = useDoc(userDocRef);
+
+  const staffCollectionRef = useMemoFirebase(() => {
+    if (!firestore || !userData?.companyId) return null;
+    return collection(firestore, `companies/${userData.companyId}/staff`);
+  }, [firestore, userData]);
 
   const { data: staff, isLoading: isStaffLoading } = useCollection(staffCollectionRef);
 
-  const isLoading = isUserLoading || isStaffLoading;
+  const isLoading = isUserLoading || isUserDocLoading || isStaffLoading;
+  const companyId = userData?.companyId;
 
   return (
     <Card>
@@ -208,7 +216,7 @@ export default function StaffContent() {
                 </CardTitle>
                 <CardDescription>Add and manage your company's staff members.</CardDescription>
             </div>
-            {user && <AddStaffDialog memberId={user.uid} />}
+            {companyId && <AddStaffDialog companyId={companyId} />}
         </CardHeader>
         <CardContent>
             {isLoading && (
@@ -251,5 +259,3 @@ export default function StaffContent() {
     </Card>
   )
 }
-
-    
