@@ -1,11 +1,11 @@
 
 'use client';
 
-import { Suspense, useState, useEffect, useCallback, useMemo } from 'react';
+import { Suspense, useState, useEffect, useMemo } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { useUser, useFirestore, useMemoFirebase, useDoc, getClientSideAuthToken } from '@/firebase';
-import { doc, getDoc, writeBatch, collection, serverTimestamp, increment } from 'firebase/firestore';
+import { doc, writeBatch, collection, serverTimestamp, increment } from 'firebase/firestore';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
@@ -59,6 +59,8 @@ function CheckoutComponent() {
   const { data: memberData, isLoading: isMemberLoading, forceRefresh: refreshBalance } = useDoc(memberDocRef);
   
   const userBalance = memberData?.walletBalance || 0;
+  const memberId = userData?.memberId;
+
 
   const price = useMemo(() => {
     if (!plan) return 0;
@@ -83,7 +85,7 @@ function CheckoutComponent() {
   };
 
   const handleSubmitProofOfPayment = async () => {
-    if (!user || !userData?.memberId) {
+    if (!user || !memberId) {
         toast({ variant: 'destructive', title: "Error", description: "You must be logged in to submit a payment." });
         return;
     }
@@ -100,7 +102,7 @@ function CheckoutComponent() {
         
         const paymentData = {
             userId: user.uid,
-            memberId: userData.memberId, // Correctly use memberId from user data
+            memberId: memberId,
             status: 'pending',
             description: `Membership Payment Top-up for ${plan.name} (${cycle})`,
             amount: amountValue,
@@ -126,7 +128,7 @@ function CheckoutComponent() {
 
 
   const handlePurchaseWithWallet = async () => {
-    if (!user || !firestore || !plan || userBalance < price || !userData?.memberId) {
+    if (!user || !firestore || !plan || userBalance < price || !memberId) {
         toast({ variant: 'destructive', title: 'Error', description: 'Insufficient balance or user/plan not found.' });
         return;
     }
@@ -135,7 +137,7 @@ function CheckoutComponent() {
     const batch = writeBatch(firestore);
     
     // 1. Update member's balance and membership
-    const memberDocRef = doc(firestore, 'members', userData.memberId);
+    const memberDocRef = doc(firestore, 'members', memberId);
 
     const now = new Date();
     const nextBillingDate = new Date(now);
@@ -155,9 +157,9 @@ function CheckoutComponent() {
     batch.update(memberDocRef, memberUpdateData);
 
     // 2. Create a transaction record in the member's transactions subcollection
-    const transactionRef = doc(collection(firestore, `members/${userData.memberId}/transactions`));
+    const transactionRef = doc(collection(firestore, `members/${memberId}/transactions`));
     const transactionData = {
-        memberId: userData.memberId,
+        memberId: memberId,
         userId: user.uid,
         type: 'debit',
         amount: price,
@@ -243,7 +245,9 @@ function CheckoutComponent() {
                         <CardTitle>EFT Payment Details</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-3">
-                         {bankDetails ? (
+                         {isBankDetailsLoading ? (
+                            <div className="flex justify-center p-4"><Loader2 className="animate-spin" /></div>
+                         ) : bankDetails && memberId ? (
                             <>
                                 {Object.entries(bankDetails).filter(([key]) => !['id', 'updatedAt'].includes(key)).map(([key, value]) => (
                                     <div key={key} className="flex justify-between items-center text-sm">
@@ -253,14 +257,14 @@ function CheckoutComponent() {
                                 ))}
                                 <div className="flex justify-between items-center text-sm pt-3 border-t">
                                     <span className="text-muted-foreground">Reference</span>
-                                    <button onClick={() => copyToClipboard(userData.memberId)} className="font-mono text-primary hover:underline flex items-center gap-2">
-                                        {userData.memberId}
+                                    <button onClick={() => copyToClipboard(memberId)} className="font-mono text-primary hover:underline flex items-center gap-2">
+                                        {memberId}
                                         <ClipboardCopy className="h-4 w-4"/>
                                     </button>
                                 </div>
                             </>
                          ) : (
-                            <p className="text-sm text-muted-foreground">Bank details are not configured.</p>
+                            <p className="text-sm text-muted-foreground">Bank details or your member ID could not be loaded.</p>
                          )}
                     </CardContent>
                 </Card>
