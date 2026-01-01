@@ -38,7 +38,6 @@ export default function TransactionAllocation({ statementData }: { statementData
     const firestore = useFirestore();
     const { user } = useUser();
 
-    // 1. Fetch all members to create a mapping from UID to Name
     const membersQuery = useMemoFirebase(() => {
         if (!firestore) return null;
         return query(collection(firestore, 'members'));
@@ -50,10 +49,7 @@ export default function TransactionAllocation({ statementData }: { statementData
         return new Map(members.map(m => [m.id, `${m.firstName} ${m.lastName}`]));
     }, [members]);
     
-    // Raw transactions from the statement
     const [rawTransactions, setRawTransactions] = useState<ManualTransaction[]>([]);
-    
-    // **NEW**: State to hold transactions with names populated
     const [transactionsWithNames, setTransactionsWithNames] = useState<ManualTransaction[]>([]);
 
     const [openingBalance, setOpeningBalance] = useState(statementData.openingBalance);
@@ -65,7 +61,6 @@ export default function TransactionAllocation({ statementData }: { statementData
     const [difference, setDifference] = useState(0);
     const [isPosting, setIsPosting] = useState(false);
 
-    // Effect to reset and set raw transactions when statementData changes
     useEffect(() => {
         setRawTransactions(statementData.transactions.map((t: any) => ({
             ...t,
@@ -75,18 +70,20 @@ export default function TransactionAllocation({ statementData }: { statementData
         setClosingBalance(statementData.closingBalance);
     }, [statementData]);
 
-    // **NEW**: Effect to populate names once both rawTransactions and memberMap are ready
     useEffect(() => {
-        if (rawTransactions.length > 0 && memberMap.size > 0) {
+        if (rawTransactions.length > 0 && !isLoadingMembers && memberMap.size > 0) {
             const populated = rawTransactions.map(tx => ({
                 ...tx,
                 memberName: memberMap.get(tx.reference) || (tx.reference ? 'Unknown Member' : '')
             }));
             setTransactionsWithNames(populated);
+        } else if (rawTransactions.length > 0 && !isLoadingMembers) {
+             const populated = rawTransactions.map(tx => ({ ...tx, memberName: 'Unknown Member' }));
+             setTransactionsWithNames(populated);
         } else {
-             setTransactionsWithNames(rawTransactions); // Set raw if map isn't ready
+             setTransactionsWithNames(rawTransactions);
         }
-    }, [rawTransactions, memberMap]);
+    }, [rawTransactions, isLoadingMembers, memberMap]);
     
     const handleAllocationChange = (transactionId: number) => {
         let wasAllocated = false;
@@ -108,7 +105,6 @@ export default function TransactionAllocation({ statementData }: { statementData
             currentTransactions.map(tx => {
                 if (tx.id === transactionId) {
                     const updatedTx = { ...tx, [field]: value };
-                    // If reference changes, update memberName
                     if (field === 'reference') {
                         updatedTx.memberName = memberMap.get(value as string) || 'Unknown Member';
                     }
@@ -125,10 +121,10 @@ export default function TransactionAllocation({ statementData }: { statementData
             id: newId,
             date: new Date().toISOString().split('T')[0],
             description: '',
-            reference: '', // Member ID goes here
+            reference: '',
             amount: 0,
             type: 'credit',
-            status: 'allocated', // Manual entries are always allocated
+            status: 'allocated',
             memberName: ''
         };
         setTransactionsWithNames([...transactionsWithNames, newRow]);
@@ -162,7 +158,6 @@ export default function TransactionAllocation({ statementData }: { statementData
             
             batch.update(memberRef, { walletBalance: increment(transactionAmount) });
 
-            // Create transaction in the member's subcollection
             const transactionRef = doc(collection(firestore, 'members', memberId, 'transactions'));
             batch.set(transactionRef, {
                 reconciliationId: statementData.statementName,
@@ -172,14 +167,13 @@ export default function TransactionAllocation({ statementData }: { statementData
                 date: new Date(tx.date),
                 description: tx.description,
                 status: 'allocated',
-                chartOfAccountsCode: tx.description.toLowerCase().includes('manual') ? '7000-ManualAdjustment' : '4410', // Simplistic logic
+                chartOfAccountsCode: tx.description.toLowerCase().includes('manual') ? '7000-ManualAdjustment' : '4410',
                 isAdjustment: tx.description.toLowerCase().includes('manual'),
                 postedAt: serverTimestamp(),
                 postedBy: user.uid,
                 transactionId: transactionRef.id
             });
             
-            // If this transaction came from a pending payment, delete the original record
             if (tx.paymentId) {
                 const pendingPaymentRef = doc(firestore, 'members', memberId, 'walletPayments', tx.paymentId);
                 batch.delete(pendingPaymentRef);
@@ -189,7 +183,6 @@ export default function TransactionAllocation({ statementData }: { statementData
         try {
             await batch.commit();
             toast({ title: 'Success!', description: 'Reconciliation has been posted and wallets have been updated.' });
-            // Clear out the posted transactions
             setRawTransactions(transactionsWithNames.filter(tx => tx.status !== 'allocated'));
         } catch (error: any) {
             toast({ variant: 'destructive', title: 'Posting Failed', description: error.message || "You may not have the required permissions." });
@@ -287,7 +280,7 @@ export default function TransactionAllocation({ statementData }: { statementData
                                             </Select>
                                         </TableCell>
                                         <TableCell className="text-right">
-                                            <Input value={tx.amount} onChange={(e) => handleFieldChange(tx.id, 'amount', parseFloat(e.target.value) || 0)} className="h-8 text-sm font-mono text-right w-[150px]" type="number" step="0.01" />
+                                            <Input value={tx.amount} onChange={(e) => handleFieldChange(tx.id, 'amount', parseFloat(e.target.value) || 0)} className="h-8 text-sm font-mono text-right w-full" type="number" step="0.01" />
                                         </TableCell>
                                         <TableCell className="text-center">
                                             <Badge variant={tx.status === 'allocated' ? 'default' : 'secondary'} className="capitalize">{tx.status}</Badge>
