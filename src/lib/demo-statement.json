@@ -6,8 +6,8 @@
   "transactions": [
     {
       "id": 1,
-      "date": "2024-07-15",
-      "description": "EFT Payment - July Subs",
+      "date": "2026-01-01",
+      "description": "Wallet Top-up via EFT",
       "reference": "pQwzRU8ByifHQbGPv12xXPJTWsv2",
       "amount": 7500,
       "type": "credit"
@@ -24,7 +24,7 @@
       "id": 3,
       "date": "2024-07-18",
       "description": "Wallet Top-up",
-      "reference": "REPLACE_WITH_VALID_MEMBER_UID_2",
+      "reference": "REPLACE_WITH_VALID_MEMBER_UID",
       "amount": 1000,
       "type": "credit"
     },
