@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, Suspense } from 'react';
@@ -282,3 +283,5 @@ export default function JoinPage() {
     </div>
   );
 }
+
+    

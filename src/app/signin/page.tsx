@@ -117,8 +117,6 @@ function SignInFormComponent() {
 
       // Securely check and create the user document on the backend
       const token = await getIdToken(loggedInUser);
-      // ** THE FIX IS HERE **
-      // We now AWAIT the fetch call to ensure the backend process completes before we redirect.
       const response = await fetch('/api/checkAndCreateUser', {
           method: 'POST',
           headers: {
@@ -242,3 +240,5 @@ export default function SignInPage() {
         </div>
     )
 }
+
+    

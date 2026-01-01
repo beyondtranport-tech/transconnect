@@ -1,127 +1,49 @@
 
 {
   "entities": {
-    "Member": {
+    "User": {
       "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Member",
+      "title": "User",
       "type": "object",
-      "description": "Represents a member of the TransConnect platform.",
+      "description": "Represents a single user account in Firebase Authentication.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the Member entity, typically matching the Firebase Auth UID of the owner."
-        },
-        "ownerId": {
-          "type": "string",
-          "description": "The Firebase Auth UID of the user who owns and manages this company account."
-        },
-        "firstName": {
-          "type": "string",
-          "description": "The first name of the member."
-        },
-        "lastName": {
-          "type": "string",
-          "description": "The last name of the member."
-        },
-        "email": {
-          "type": "string",
-          "description": "The email address of the member.",
-          "format": "email"
-        },
-        "phone": {
-          "type": "string",
-          "description": "The phone number of the member."
-        },
-        "companyName": {
-          "type": "string",
-          "description": "The registered business name of the member's transport business."
-        },
-        "registrationNumber": {
-            "type": "string",
-            "description": "The official registration number of the company."
-        },
-        "vatNumber": {
-            "type": "string",
-            "description": "The VAT registration number of the company."
-        },
-        "streetAddress": {
-          "type": "string",
-          "description": "The street address of the company."
-        },
-        "city": {
-          "type": "string",
-          "description": "The city of the company's address."
-        },
-        "province": {
-          "type": "string",
-          "description": "The province of the company's address."
-        },
-        "postalCode": {
-          "type": "string",
-          "description": "The postal code of the company's address."
-        },
-        "membershipId": {
-          "type": "string",
-          "description": "Reference to Membership tier ID (e.g., 'professional'). (Relationship: Member 1:1 Membership)"
-        },
-        "shopId": {
-          "type": "string",
-          "description": "The ID of the shop owned by this member, linking to the shops subcollection."
-        },
-        "rewardPoints": {
-          "type": "number",
-          "description": "The number of reward points accumulated by the member for loyalty."
-        },
-        "walletBalance": {
-          "type": "number",
-          "description": "The cash balance in the member's wallet, in ZAR."
-        },
-        "createdAt": {
-            "type": "object",
-            "description": "The server timestamp when the member was created."
-        },
-        "updatedAt": {
-            "type": "object",
-            "description": "The server timestamp when the member was last updated."
-        }
-      },
-      "required": [
-        "id",
-        "ownerId",
-        "firstName",
-        "lastName",
-        "email",
-        "phone",
-        "companyName",
-        "membershipId"
-      ]
-    },
-    "MemberVersion": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "MemberVersion",
-      "type": "object",
-      "description": "A historical snapshot of a Member's data at a specific point in time.",
-      "properties": {
-        "id": { "type": "string" },
-        "ownerId": { "type": "string" },
+        "id": { "type": "string", "description": "The user's Firebase Auth UID." },
         "firstName": { "type": "string" },
         "lastName": { "type": "string" },
         "email": { "type": "string", "format": "email" },
         "phone": { "type": "string" },
-        "companyName": { "type": "string" },
+        "companyId": { "type": "string", "description": "The ID of the company this user belongs to in the /companies collection." },
+        "createdAt": { "type": "object" },
+        "updatedAt": { "type": "object" }
+      },
+      "required": ["id", "firstName", "lastName", "email", "companyId"]
+    },
+    "Company": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Company",
+      "type": "object",
+      "description": "Represents a member's business entity on the TransConnect platform.",
+      "properties": {
+        "id": { "type": "string", "description": "Unique identifier for the company." },
+        "ownerId": { "type": "string", "description": "The Firebase Auth UID of the user who owns and manages this company account." },
+        "companyName": { "type": "string", "description": "The registered business name of the company." },
         "registrationNumber": { "type": "string" },
         "vatNumber": { "type": "string" },
         "streetAddress": { "type": "string" },
         "city": { "type": "string" },
         "province": { "type": "string" },
         "postalCode": { "type": "string" },
-        "membershipId": { "type": "string" },
-        "shopId": { "type": "string" },
+        "membershipId": { "type": "string", "description": "Reference to Membership tier ID." },
+        "membershipStartDate": { "type": "string", "format": "date-time" },
+        "billingCycle": { "type": "string", "enum": ["monthly", "annual"] },
+        "nextBillingDate": { "type": "string", "format": "date-time" },
+        "shopId": { "type": "string", "description": "The ID of the shop owned by this company." },
         "rewardPoints": { "type": "number" },
-        "walletBalance": { "type": "number" },
+        "walletBalance": { "type": "number", "description": "Cash balance in ZAR." },
         "createdAt": { "type": "object" },
         "updatedAt": { "type": "object" }
-      }
+      },
+      "required": ["id", "ownerId", "companyName", "membershipId"]
     },
     "Shop": {
       "$schema": "http://json-schema.org/draft-07/schema#",
@@ -131,6 +53,7 @@
       "properties": {
         "id": { "type": "string", "description": "Unique identifier for the shop." },
         "ownerId": { "type": "string" },
+        "companyId": { "type": "string" },
         "shopName": { "type": "string" },
         "shopDescription": { "type": "string" },
         "category": { "type": "string" },
@@ -142,10 +65,9 @@
         "metaTitle": { "type": "string" },
         "metaDescription": { "type": "string" },
         "tags": { "type": "array", "items": { "type": "string" } },
-        "heroBannerUrl": { "type": "string", "description": "URL for the main hero banner image." },
+        "heroBannerUrl": { "type": "string" },
         "promotions": {
           "type": "array",
-          "description": "A list of promotional items or specials.",
           "items": {
             "type": "object",
             "properties": {
@@ -158,7 +80,7 @@
         "createdAt": { "type": "object" },
         "updatedAt": { "type": "object" }
       },
-      "required": ["id", "ownerId", "shopName", "category", "status", "createdAt", "updatedAt"]
+      "required": ["id", "ownerId", "companyId", "shopName", "category", "status"]
     },
     "Product": {
       "$schema": "http://json-schema.org/draft-07/schema#",
@@ -166,143 +88,76 @@
       "type": "object",
       "description": "Represents a single product within a vendor's shop.",
       "properties": {
-        "shopId": { "type": "string", "description": "The ID of the parent shop this product belongs to." },
-        "name": { "type": "string", "description": "The name of the product." },
-        "description": { "type": "string", "description": "A detailed description of the product." },
-        "price": { "type": "number", "description": "The price of the product in ZAR." },
-        "sku": { "type": "string", "description": "Stock Keeping Unit or other unique product identifier." },
-        "imageUrl": { "type": "string", "description": "URL to the product image in Firebase Storage." },
-        "createdAt": { "type": "object", "description": "Timestamp of creation." },
-        "updatedAt": { "type": "object", "description": "Timestamp of last update." }
+        "shopId": { "type": "string" },
+        "companyId": { "type": "string" },
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "price": { "type": "number" },
+        "sku": { "type": "string" },
+        "imageUrl": { "type": "string" },
+        "createdAt": { "type": "object" },
+        "updatedAt": { "type": "object" }
       },
-      "required": ["shopId", "name", "price"]
+      "required": ["shopId", "companyId", "name", "price"]
     },
     "Staff": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Staff",
       "type": "object",
-      "description": "Represents a staff member associated with a Member's company.",
+      "description": "Represents a staff member associated with a company.",
       "properties": {
-        "firstName": {
-          "type": "string",
-          "description": "The first name of the staff member."
-        },
-        "lastName": {
-          "type": "string",
-          "description": "The last name of the staff member."
-        },
-        "email": {
-          "type": "string",
-          "description": "The email address of the staff member.",
-          "format": "email"
-        },
-        "role": {
-          "type": "string",
-          "description": "The role or position of the staff member (e.g., Driver, Admin)."
-        },
-        "memberId": {
-          "type": "string",
-          "description": "The UID of the parent Member this staff member belongs to."
-        },
-        "createdAt": {
-          "type": "object",
-          "description": "The server timestamp when the staff member was added."
-        }
+        "firstName": { "type": "string" },
+        "lastName": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "role": { "type": "string" },
+        "companyId": { "type": "string", "description": "The ID of the parent company this staff member belongs to." },
+        "createdAt": { "type": "object" }
       },
-      "required": [
-        "firstName",
-        "lastName",
-        "email",
-        "role",
-        "memberId",
-        "createdAt"
-      ]
+      "required": ["firstName", "lastName", "email", "role", "companyId"]
     },
     "Membership": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Membership",
       "type": "object",
-      "description": "Represents a single tier of membership plan for the TransConnect platform (e.g., Member, Professional, Enterprise).",
+      "description": "Represents a single tier of membership plan.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the Membership tier (e.g., 'professional')."
-        },
-        "name": {
-          "type": "string",
-          "description": "Display name of the membership plan (e.g., Professional)."
-        },
-        "description": {
-          "type": "string",
-          "description": "A short description of the ideal user for this plan."
-        },
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "description": { "type": "string" },
         "price": {
           "type": "object",
           "properties": {
-              "monthly": { "type": "number", "description": "Monthly price in ZAR." },
-              "annual": { "type": "number", "description": "Annual price in ZAR." }
+              "monthly": { "type": "number" },
+              "annual": { "type": "number" }
           }
         },
-        "annualDiscount": {
-            "type": "number",
-            "description": "The discount percentage for an annual subscription."
-        },
-        "sessionDiscount": {
-            "type": "number",
-            "description": "The discount percentage for a session subscription."
-        },
-        "features": {
-          "type": "array",
-          "description": "A list of features included in this plan.",
-          "items": {
-            "type": "string"
-          }
-        }
+        "annualDiscount": { "type": "number" },
+        "sessionDiscount": { "type": "number" },
+        "features": { "type": "array", "items": { "type": "string" } }
       },
-      "required": [
-        "id",
-        "name",
-        "description"
-      ]
+      "required": ["id", "name", "description"]
     },
     "Contribution": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Contribution",
       "type": "object",
-      "description": "Represents a single data contribution from a member.",
+      "description": "Represents a single data contribution from a user.",
       "properties": {
-        "userId": {
-          "type": "string",
-          "description": "The UID of the contributing member."
-        },
-        "type": {
-          "type": "string",
-          "enum": ["fleet", "supplier", "client"],
-          "description": "The type of contribution."
-        },
-        "data": {
-          "type": "object",
-          "description": "The submitted data, which varies based on the contribution type."
-        },
-        "createdAt": {
-            "type": "object",
-            "description": "The server timestamp when the contribution was made."
-        }
+        "userId": { "type": "string" },
+        "type": { "type": "string", "enum": ["truck", "trailer", "supplier", "client"] },
+        "data": { "type": "object" },
+        "createdAt": { "type": "object" }
       },
-      "required": [
-        "userId",
-        "type",
-        "data",
-        "createdAt"
-      ]
+      "required": ["userId", "type", "data", "createdAt"]
     },
     "Quote": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Quote",
       "type": "object",
-      "description": "Represents a funding quote generated by a member.",
+      "description": "Represents a funding quote generated by a user.",
       "properties": {
-        "applicantId": { "type": "string" },
+        "userId": { "type": "string" },
+        "companyId": { "type": "string" },
         "fundingType": { "type": "string" },
         "amountRequested": { "type": "number" },
         "details": { "type": "object" },
@@ -313,9 +168,10 @@
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Enquiry",
       "type": "object",
-      "description": "Represents a formal funding enquiry submitted by a member.",
+      "description": "Represents a formal funding enquiry submitted by a user.",
       "properties": {
-        "applicantId": { "type": "string" },
+        "userId": { "type": "string" },
+        "companyId": { "type": "string" },
         "status": { "type": "string" },
         "fundingType": { "type": "string" },
         "amountRequested": { "type": "number" },
@@ -329,7 +185,8 @@
       "type": "object",
       "description": "Represents a pending wallet top-up or membership payment.",
       "properties": {
-        "applicantId": { "type": "string" },
+        "userId": { "type": "string" },
+        "companyId": { "type": "string" },
         "status": { "type": "string" },
         "description": { "type": "string" },
         "amount": { "type": "number" },
@@ -340,47 +197,17 @@
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Transaction",
       "type": "object",
-      "description": "Represents a single financial transaction in the member's wallet ledger.",
+      "description": "Represents a single financial transaction in the company's wallet ledger.",
       "properties": {
-        "transactionId": {
-          "type": "string",
-          "description": "Unique, sequential identifier for the transaction (e.g., R0724-001, P0724-001, ADJ0724-001)."
-        },
-        "reconciliationId": {
-          "type": "string",
-          "description": "The ID of the reconciliation batch this transaction belongs to."
-        },
-        "type": {
-          "type": "string",
-          "enum": ["credit", "debit"],
-          "description": "The type of transaction."
-        },
-        "amount": {
-          "type": "number",
-          "description": "The value of the transaction in ZAR."
-        },
-        "date": {
-          "type": "string",
-          "format": "date-time",
-          "description": "The server timestamp the transaction occurred."
-        },
-        "description": {
-          "type": "string",
-          "description": "The raw description from the bank statement or a manual entry."
-        },
-        "chartOfAccountsCode": {
-          "type": "string",
-          "description": "The accounting code for this transaction (e.g., '4000-MembershipFees')."
-        },
-        "status": {
-          "type": "string",
-          "enum": ["pending_allocation", "allocated", "reversal"],
-          "description": "The status of the transaction in the reconciliation process."
-        },
-        "isAdjustment": {
-          "type": "boolean",
-          "description": "A flag to identify manual corrections or adjustments."
-        }
+        "transactionId": { "type": "string" },
+        "reconciliationId": { "type": "string" },
+        "type": { "type": "string", "enum": ["credit", "debit"] },
+        "amount": { "type": "number" },
+        "date": { "type": "string", "format": "date-time" },
+        "description": { "type": "string" },
+        "chartOfAccountsCode": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending_allocation", "allocated", "reversal"] },
+        "isAdjustment": { "type": "boolean" }
       },
       "required": ["transactionId", "type", "amount", "date", "description", "status"]
     },
@@ -390,170 +217,83 @@
       "type": "object",
       "description": "Represents a single bank statement reconciliation batch.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the reconciliation batch (e.g., RECON-2024-07-30)."
-        },
-        "statementPeriod": {
-          "type": "string",
-          "description": "The date range covered by the bank statement (e.g., '2024-07-01 to 2024-07-31')."
-        },
-        "openingBalance": {
-          "type": "number",
-          "description": "The opening balance from the bank statement."
-        },
-        "closingBalance": {
-          "type": "number",
-          "description": "The closing balance from the bank statement."
-        },
-        "status": {
-          "type": "string",
-          "enum": ["in_progress", "completed"],
-          "description": "The status of the reconciliation process."
-        },
-        "processedAt": {
-          "type": "object",
-          "description": "The server timestamp when the reconciliation was completed."
-        }
+        "id": { "type": "string" },
+        "statementPeriod": { "type": "string" },
+        "openingBalance": { "type": "number" },
+        "closingBalance": { "type": "number" },
+        "status": { "type": "string", "enum": ["in_progress", "completed"] },
+        "processedAt": { "type": "object" }
       },
       "required": ["id", "statementPeriod", "openingBalance", "status"]
-    },
-    "ChartOfAccounts": {
-        "$schema": "http://json-schema.org/draft-07/schema#",
-        "title": "ChartOfAccounts",
-        "type": "object",
-        "description": "Defines a single entry in the Chart of Accounts.",
-        "properties": {
-            "code": { "type": "string", "description": "The unique account code (e.g., 4010, 7010)." },
-            "name": { "type": "string", "description": "The descriptive name of the account (e.g., Basic Membership Fees, Bank Charges)." },
-            "series": { "type": "string", "description": "The account series or category (e.g., 4000: Core Revenue)." },
-            "type": { "type": "string", "enum": ["revenue", "expense"], "description": "The type of account." }
-        },
-        "required": ["code", "name", "series", "type"]
     }
   },
   "auth": {
-    "providers": [
-      "password",
-      "anonymous"
-    ]
+    "providers": ["password", "anonymous"]
   },
   "firestore": {
     "structure": [
       {
-        "path": "/members/{memberId}",
+        "path": "/users/{userId}",
         "definition": {
-          "entityName": "Member",
-          "schema": {
-            "$ref": "#/entities/Member"
-          },
-          "description": "Stores member profiles. Access is restricted to the authenticated user (path-based ownership).",
-          "params": [
-            {
-              "name": "memberId",
-              "description": "The unique identifier of the member, matching the Firebase Auth UID."
-            }
-          ]
+          "entityName": "User",
+          "schema": { "$ref": "#/entities/User" },
+          "description": "Stores individual user profiles. A user can only read/write their own document."
         }
       },
       {
-        "path": "/members/{memberId}/versions/{versionId}",
+        "path": "/companies/{companyId}",
         "definition": {
-            "entityName": "MemberVersion",
-            "schema": { "$ref": "#/entities/MemberVersion" },
-            "description": "Stores historical snapshots of member data.",
-            "params": [
-                { "name": "memberId", "description": "The UID of the parent member." },
-                { "name": "versionId", "description": "The unique ID for the data version." }
-            ]
+          "entityName": "Company",
+          "schema": { "$ref": "#/entities/Company" },
+          "description": "Stores company profiles. The owner of the company has full read/write access."
         }
       },
-       {
-        "path": "/members/{memberId}/quotes/{quoteId}",
+      {
+        "path": "/companies/{companyId}/staff/{staffId}",
+        "definition": {
+          "entityName": "Staff",
+          "schema": { "$ref": "#/entities/Staff" },
+          "description": "Subcollection for company staff members."
+        }
+      },
+      {
+        "path": "/companies/{companyId}/quotes/{quoteId}",
         "definition": {
           "entityName": "Quote",
           "schema": { "$ref": "#/entities/Quote" },
-          "description": "Stores funding quotes generated by the member.",
-          "params": [
-            { "name": "memberId", "description": "The UID of the parent member." },
-            { "name": "quoteId", "description": "The unique ID for the quote." }
-          ]
+          "description": "Subcollection for funding quotes."
         }
       },
-       {
-        "path": "/members/{memberId}/enquiries/{enquiryId}",
+      {
+        "path": "/companies/{companyId}/enquiries/{enquiryId}",
         "definition": {
           "entityName": "Enquiry",
           "schema": { "$ref": "#/entities/Enquiry" },
-          "description": "Stores formal funding enquiries made by the member.",
-          "params": [
-            { "name": "memberId", "description": "The UID of the parent member." },
-            { "name": "enquiryId", "description": "The unique ID for the enquiry." }
-          ]
+          "description": "Subcollection for formal funding enquiries."
         }
       },
-       {
-        "path": "/members/{memberId}/walletPayments/{paymentId}",
+      {
+        "path": "/companies/{companyId}/walletPayments/{paymentId}",
         "definition": {
           "entityName": "WalletPayment",
           "schema": { "$ref": "#/entities/WalletPayment" },
-          "description": "Stores records of pending wallet payments.",
-          "params": [
-            { "name": "memberId", "description": "The UID of the parent member." },
-            { "name": "paymentId", "description": "The unique ID for the payment record." }
-          ]
+          "description": "Subcollection for pending wallet payments."
         }
       },
       {
-        "path": "/members/{memberId}/staff/{staffId}",
-        "definition": {
-          "entityName": "Staff",
-          "schema": {
-            "$ref": "#/entities/Staff"
-          },
-          "description": "Stores staff members associated with a parent member company.",
-          "params": [
-            {
-              "name": "memberId",
-              "description": "The UID of the parent member."
-            },
-            {
-              "name": "staffId",
-              "description": "The unique ID for the staff member document."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/members/{memberId}/transactions/{transactionId}",
+        "path": "/companies/{companyId}/transactions/{transactionId}",
         "definition": {
           "entityName": "Transaction",
-          "schema": {
-            "$ref": "#/entities/Transaction"
-          },
-          "description": "Stores individual financial transactions for a member. Writable by admins, readable by the associated member.",
-          "params": [
-            {
-              "name": "memberId",
-              "description": "The UID of the parent member."
-            },
-            {
-              "name": "transactionId",
-              "description": "The unique identifier of the financial transaction."
-            }
-          ]
+          "schema": { "$ref": "#/entities/Transaction" },
+          "description": "Subcollection for wallet transactions."
         }
       },
       {
-        "path": "/members/{memberId}/shops/{shopId}",
+        "path": "/companies/{companyId}/shops/{shopId}",
         "definition": {
           "entityName": "Shop",
           "schema": { "$ref": "#/entities/Shop" },
-          "description": "Subcollection for storing the shop belonging to a member. The member has full control.",
-          "params": [
-            { "name": "memberId", "description": "The ID of the parent member." },
-            { "name": "shopId", "description": "The unique ID for the shop." }
-          ]
+          "description": "Subcollection for the shop belonging to a company."
         }
       },
       {
@@ -561,8 +301,7 @@
         "definition": {
           "entityName": "Shop",
           "schema": { "$ref": "#/entities/Shop" },
-          "description": "Top-level collection for storing a public, read-only copy of approved shops. Managed by backend functions.",
-          "params": [{ "name": "shopId", "description": "The unique ID for the shop." }]
+          "description": "Top-level collection for public, approved shops."
         }
       },
       {
@@ -570,65 +309,43 @@
         "definition": {
           "entityName": "Product",
           "schema": { "$ref": "#/entities/Product" },
-          "description": "Subcollection for storing products belonging to a specific public shop.",
-          "params": [
-            { "name": "shopId", "description": "The ID of the parent shop." },
-            { "name": "productId", "description": "The unique ID for the product." }
-          ]
+          "description": "Subcollection for products in a public shop."
         }
       },
       {
         "path": "/memberships/{membershipId}",
         "definition": {
           "entityName": "Membership",
-          "schema": {
-            "$ref": "#/entities/Membership"
-          },
-          "description": "Stores details of available membership plans (tiers), readable by all authenticated users.",
-          "params": [
-            {
-              "name": "membershipId",
-              "description": "The unique identifier of the membership plan (e.g. 'professional')."
-            }
-          ]
+          "schema": { "$ref": "#/entities/Membership" },
+          "description": "Public collection for available membership plans."
         }
       },
       {
         "path": "/contributions/{contributionId}",
         "definition": {
           "entityName": "Contribution",
-          "schema": {
-            "$ref": "#/entities/Contribution"
-          },
-          "description": "Stores anonymous data contributed by members across different categories (fleet, suppliers, etc.). Writable by any authenticated user, readable by admins.",
-          "params": [
-            {
-              "name": "contributionId",
-              "description": "The unique identifier of the contribution document."
-            }
-          ]
+          "schema": { "$ref": "#/entities/Contribution" },
+          "description": "Stores anonymous data contributions from users."
         }
       },
-       {
+      {
         "path": "/platformTransactions/{transactionId}",
         "definition": {
           "entityName": "Transaction",
           "schema": { "$ref": "#/entities/Transaction" },
-          "description": "Stores platform-level transactions not associated with a specific member (e.g., bank charges). Admin-only access.",
-          "params": [{ "name": "transactionId", "description": "The unique ID of the platform transaction." }]
+          "description": "Admin-only collection for platform-level expenses."
         }
       },
-       {
+      {
         "path": "/reconciliations/{reconciliationId}",
         "definition": {
           "entityName": "Reconciliation",
           "schema": { "$ref": "#/entities/Reconciliation" },
-          "description": "Stores a record of each completed reconciliation batch. Admin-only access.",
-          "params": [{ "name": "reconciliationId", "description": "The unique ID of the reconciliation batch." }]
+          "description": "Admin-only collection for reconciliation batches."
         }
       }
     ],
-    "reasoning": "The data model now uses a dual-collection strategy for shops to ensure security and functionality. A user's shop is created and managed within a subcollection at `/members/{memberId}/shops`, which is fully controlled by the owner via a recursive security rule. A top-level `/shops` collection exists to hold public, read-only copies of *approved* shops. This separation prevents users from listing each other's draft shops while allowing a public, queryable marketplace. A backend process (e.g., Cloud Function, not implemented here) would be responsible for copying an approved shop from the member's subcollection to the public top-level collection. Quotes, Enquiries, and Wallet Payments are now in their own dedicated subcollections under each member for clarity and to prevent data mixing. A new top-level collection `platformTransactions` has been added for admin-only tracking of platform-wide expenses like bank charges."
+    "reasoning": "The data model is refactored to separate user identity from business entities. A new `/users` collection stores individual user profiles, linked via Firebase Auth UID. A new `/companies` collection stores business-related data, including wallet balance, membership status, and subcollections for transactions, staff, quotes, etc. This creates a cleaner, more scalable architecture where a user owns a company, rather than the user and company being the same entity. This prevents data duplication and clarifies ownership for security rules."
   }
 }
 

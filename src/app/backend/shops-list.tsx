@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -9,13 +10,14 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useCollection, useFirestore, useMemoFirebase, getClientSideAuthToken } from '@/firebase';
-import { collection } from 'firebase/firestore';
+import { collection, doc } from 'firebase/firestore';
 import { ShopPreview } from '@/components/shop-preview';
 
 interface Shop {
     id: string;
     shopName: string;
     ownerId: string;
+    companyId: string;
     category: string;
     status: 'draft' | 'pending_review' | 'approved' | 'rejected';
     createdAt: string;
@@ -53,11 +55,10 @@ const statusColors: { [key: string]: 'default' | 'secondary' | 'destructive' | '
 function ShopPreviewDialog({ shop }: { shop: Shop }) {
     const firestore = useFirestore();
     
-    // We need to fetch the products for the preview from the member's private collection
     const productsCollection = useMemoFirebase(() => {
         if (!firestore) return null;
-        return collection(firestore, `members/${shop.ownerId}/shops/${shop.id}/products`);
-    }, [firestore, shop.ownerId, shop.id]);
+        return collection(firestore, `companies/${shop.companyId}/shops/${shop.id}/products`);
+    }, [firestore, shop.companyId, shop.id]);
 
     const { data: products, isLoading } = useCollection(productsCollection);
 
@@ -109,17 +110,16 @@ export default function ShopsList() {
         fetchShops();
     }, []);
 
-    const handleApprove = async (shopId: string, ownerId: string) => {
-        setIsApproving(shopId);
+    const handleApprove = async (shop: Shop) => {
+        setIsApproving(shop.id);
         try {
             const token = await getClientSideAuthToken();
             if (!token) throw new Error("Authentication failed");
 
-            // This should be a dedicated API route for this admin action
             const response = await fetch('/api/approveShop', {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ shopId, ownerId }),
+                body: JSON.stringify({ shopId: shop.id, ownerId: shop.ownerId, companyId: shop.companyId }),
             });
 
             if (!response.ok) {
@@ -199,7 +199,7 @@ export default function ShopsList() {
                                                 <Button 
                                                     variant="default" 
                                                     size="sm"
-                                                    onClick={() => handleApprove(shop.id, shop.ownerId)}
+                                                    onClick={() => handleApprove(shop)}
                                                     disabled={isApproving === shop.id}
                                                 >
                                                     {isApproving === shop.id ? (

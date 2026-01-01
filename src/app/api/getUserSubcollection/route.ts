@@ -52,23 +52,15 @@ export async function POST(req: NextRequest) {
                 const isAdmin = decodedToken.email === 'beyondtransport@gmail.com';
 
                 const pathSegments = path.split('/');
+                const db = getFirestore(app);
                 
                 // Check for ownership based on new /users and /companies structure
                 const isUsersPathOwner = pathSegments.length >= 2 && pathSegments[0] === 'users' && pathSegments[1] === uid;
-                const isCompaniesPathOwner = pathSegments.length >= 2 && pathSegments[0] === 'companies'; // Further check needed
-
+                
                 let isAuthorized = isAdmin || isUsersPathOwner;
 
-                if (!isAuthorized && isCompaniesPathOwner) {
-                    const db = getFirestore(app);
-                    const companyDoc = await db.doc(path).get();
-                    if (companyDoc.exists && companyDoc.data()?.ownerId === uid) {
-                        isAuthorized = true;
-                    }
-                }
-                
-                // Allow access to company subcollections if owner
-                if (!isAuthorized && pathSegments.length > 2 && pathSegments[0] === 'companies') {
+                // Allow access to a company document or its subcollections if the user is the owner.
+                if (!isAuthorized && pathSegments.length >= 2 && pathSegments[0] === 'companies') {
                     const companyId = pathSegments[1];
                     const companyDoc = await db.collection('companies').doc(companyId).get();
                      if (companyDoc.exists && companyDoc.data()?.ownerId === uid) {
@@ -123,3 +115,5 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ success: false, error: `Internal Server Error: ${error.message}` }, { status: 500 });
     }
 }
+
+    
