@@ -56,7 +56,7 @@ export default function TransactionAllocation({ statementData }: { statementData
         return statementData.transactions.map((t: any) => ({ 
             ...t, 
             status: 'pending',
-            memberName: 'Loading...' // Set a temporary loading state
+            // We will now populate the name when the component renders, once memberMap is ready
         }));
     }, [statementData.transactions]);
 
@@ -70,17 +70,13 @@ export default function TransactionAllocation({ statementData }: { statementData
     const [difference, setDifference] = useState(0);
     const [isPosting, setIsPosting] = useState(false);
 
-    // This effect now correctly populates the member names once the memberMap is ready.
     useEffect(() => {
-        if (memberMap.size > 0) { // Only run if memberMap is populated
-            setTransactions(currentTxs => 
-                currentTxs.map(tx => ({
-                    ...tx,
-                    memberName: memberMap.get(tx.reference) || (tx.reference ? 'Unknown Member' : '')
-                }))
-            );
-        }
-    }, [memberMap, initialTransactions]);
+        // Reset and remap transactions when statementData changes
+        setTransactions(statementData.transactions.map((t: any) => ({
+            ...t,
+            status: 'pending'
+        })));
+    }, [statementData]);
     
     const handleAllocationChange = (transactionId: number) => {
         let wasAllocated = false;
@@ -101,11 +97,7 @@ export default function TransactionAllocation({ statementData }: { statementData
         setTransactions(currentTransactions =>
             currentTransactions.map(tx => {
                 if (tx.id === transactionId) {
-                    const updatedTx = { ...tx, [field]: value };
-                    if (field === 'reference') {
-                        updatedTx.memberName = memberMap.get(value as string) || (value ? 'Unknown Member' : '');
-                    }
-                    return updatedTx;
+                    return { ...tx, [field]: value };
                 }
                 return tx;
             })
@@ -207,20 +199,6 @@ export default function TransactionAllocation({ statementData }: { statementData
 
     const isManualMode = statementData.statementName.startsWith('manual-adjustment');
 
-    if (isLoadingMembers) {
-        return (
-            <Card>
-                <CardHeader>
-                    <CardTitle>Allocate Transactions</CardTitle>
-                </CardHeader>
-                <CardContent className="flex justify-center items-center py-10">
-                     <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                     <p className="ml-4 text-muted-foreground">Loading member data...</p>
-                </CardContent>
-            </Card>
-        )
-    }
-
     return (
         <Card>
             <CardHeader>
@@ -262,46 +240,54 @@ export default function TransactionAllocation({ statementData }: { statementData
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {transactions.map(tx => (
-                                <TableRow key={tx.id} className={tx.status === 'allocated' ? 'bg-green-100/50 dark:bg-green-900/20' : ''}>
-                                    <TableCell>
-                                        <Input value={tx.date} onChange={(e) => handleFieldChange(tx.id, 'date', e.target.value)} className="h-8 text-xs font-mono" type="date" />
-                                    </TableCell>
-                                    <TableCell>
-                                         <Input value={tx.description} onChange={(e) => handleFieldChange(tx.id, 'description', e.target.value)} className="h-8 text-xs" />
-                                    </TableCell>
-                                    <TableCell>
-                                        <Input 
-                                            value={tx.reference} 
-                                            onChange={(e) => handleFieldChange(tx.id, 'reference', e.target.value)} 
-                                            className={`h-8 text-xs font-mono ${tx.reference && !memberMap.has(tx.reference) ? 'border-destructive' : ''}`}
-                                            list="members-datalist"
-                                        />
-                                        <p className="text-xs text-muted-foreground mt-1 truncate">{tx.memberName}</p>
-                                    </TableCell>
-                                    <TableCell>
-                                        <Select value={tx.type} onValueChange={(value: 'credit' | 'debit') => handleFieldChange(tx.id, 'type', value)}>
-                                            <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
-                                            <SelectContent><SelectItem value="credit">Credit</SelectItem><SelectItem value="debit">Debit</SelectItem></SelectContent>
-                                        </Select>
-                                    </TableCell>
-                                    <TableCell className="text-right">
-                                         <Input value={tx.amount} onChange={(e) => handleFieldChange(tx.id, 'amount', parseFloat(e.target.value) || 0)} className="h-8 text-sm font-mono text-right" type="number" step="0.01" />
-                                    </TableCell>
-                                    <TableCell className="text-center">
-                                        <Badge variant={tx.status === 'allocated' ? 'default' : 'secondary'} className="capitalize">{tx.status}</Badge>
-                                    </TableCell>
-                                    <TableCell className="text-right">
-                                        {isManualMode ? (
-                                             <Button variant="ghost" size="icon" onClick={() => removeManualRow(tx.id)}><Trash2 className="h-4 w-4 text-destructive"/></Button>
-                                        ) : (
-                                            <Button variant={tx.status === 'allocated' ? 'outline' : 'default'} size="sm" onClick={() => handleAllocationChange(tx.id)}>
-                                                {tx.status === 'allocated' ? 'Un-allocate' : 'Allocate'}
-                                            </Button>
-                                        )}
+                             {isLoadingMembers ? (
+                                <TableRow>
+                                    <TableCell colSpan={7} className="h-24 text-center">
+                                        <Loader2 className="mx-auto h-6 w-6 animate-spin text-primary" />
                                     </TableCell>
                                 </TableRow>
-                            ))}
+                            ) : (
+                                transactions.map(tx => (
+                                    <TableRow key={tx.id} className={tx.status === 'allocated' ? 'bg-green-100/50 dark:bg-green-900/20' : ''}>
+                                        <TableCell>
+                                            <Input value={tx.date} onChange={(e) => handleFieldChange(tx.id, 'date', e.target.value)} className="h-8 text-xs font-mono" type="date" />
+                                        </TableCell>
+                                        <TableCell>
+                                            <Input value={tx.description} onChange={(e) => handleFieldChange(tx.id, 'description', e.target.value)} className="h-8 text-xs" />
+                                        </TableCell>
+                                        <TableCell>
+                                            <Input 
+                                                value={tx.reference} 
+                                                onChange={(e) => handleFieldChange(tx.id, 'reference', e.target.value)} 
+                                                className={`h-8 text-xs font-mono ${tx.reference && !memberMap.has(tx.reference) ? 'border-destructive' : ''}`}
+                                                list="members-datalist"
+                                            />
+                                            <p className="text-xs text-muted-foreground mt-1 truncate">{memberMap.get(tx.reference) || (tx.reference ? 'Unknown Member' : '')}</p>
+                                        </TableCell>
+                                        <TableCell>
+                                            <Select value={tx.type} onValueChange={(value: 'credit' | 'debit') => handleFieldChange(tx.id, 'type', value)}>
+                                                <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                                                <SelectContent><SelectItem value="credit">Credit</SelectItem><SelectItem value="debit">Debit</SelectItem></SelectContent>
+                                            </Select>
+                                        </TableCell>
+                                        <TableCell className="text-right">
+                                            <Input value={tx.amount} onChange={(e) => handleFieldChange(tx.id, 'amount', parseFloat(e.target.value) || 0)} className="h-8 text-sm font-mono text-right w-[150px]" type="number" step="0.01" />
+                                        </TableCell>
+                                        <TableCell className="text-center">
+                                            <Badge variant={tx.status === 'allocated' ? 'default' : 'secondary'} className="capitalize">{tx.status}</Badge>
+                                        </TableCell>
+                                        <TableCell className="text-right">
+                                            {isManualMode ? (
+                                                <Button variant="ghost" size="icon" onClick={() => removeManualRow(tx.id)}><Trash2 className="h-4 w-4 text-destructive"/></Button>
+                                            ) : (
+                                                <Button variant={tx.status === 'allocated' ? 'outline' : 'default'} size="sm" onClick={() => handleAllocationChange(tx.id)}>
+                                                    {tx.status === 'allocated' ? 'Un-allocate' : 'Allocate'}
+                                                </Button>
+                                            )}
+                                        </TableCell>
+                                    </TableRow>
+                                ))
+                            )}
                         </TableBody>
                     </Table>
                     <datalist id="members-datalist">
