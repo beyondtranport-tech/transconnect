@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -21,7 +22,7 @@ const formatCurrency = (amount: number) => {
 };
 
 // A new type for our dynamically added rows
-type ManualTransaction = {
+type UiTransaction = {
     id: number;
     paymentId?: string; // The original Firestore ID for pending payments
     date: string;
@@ -49,7 +50,7 @@ export default function TransactionAllocation({ statementData }: { statementData
         return new Map(members.map(m => [m.id, `${m.firstName} ${m.lastName}`]));
     }, [members]);
     
-    const [transactions, setTransactions] = useState<ManualTransaction[]>([]);
+    const [transactions, setTransactions] = useState<UiTransaction[]>([]);
     const [openingBalance, setOpeningBalance] = useState(statementData.openingBalance);
     const [closingBalance, setClosingBalance] = useState(statementData.closingBalance);
     
@@ -62,8 +63,7 @@ export default function TransactionAllocation({ statementData }: { statementData
     useEffect(() => {
         setOpeningBalance(statementData.openingBalance);
         setClosingBalance(statementData.closingBalance);
-        
-        // Only process transactions when members are loaded.
+        // This effect runs when the statement data changes OR when the member map is finally loaded.
         if (statementData.transactions && !isLoadingMembers && memberMap.size > 0) {
             const populated = statementData.transactions.map((tx: any) => ({
                 ...tx,
@@ -71,12 +71,7 @@ export default function TransactionAllocation({ statementData }: { statementData
                 memberName: memberMap.get(tx.reference) || (tx.reference ? 'Unknown Member' : '')
             }));
             setTransactions(populated);
-        } else if (statementData.transactions && !isLoadingMembers) {
-            // Fallback if membermap is empty for some reason, but members are not loading.
-             const populated = statementData.transactions.map((tx: any) => ({ ...tx, status: 'pending', memberName: tx.reference ? 'Unknown Member' : '' }));
-             setTransactions(populated);
-        } else {
-            // Set raw transactions if members are still loading
+        } else if (statementData.transactions) {
             setTransactions(statementData.transactions.map((t: any) => ({ ...t, status: 'pending' })));
         }
 
@@ -97,7 +92,7 @@ export default function TransactionAllocation({ statementData }: { statementData
         if (wasAllocated) toast({ title: `Transaction ${transactionId} allocated.` });
     };
 
-    const handleFieldChange = (transactionId: number, field: keyof ManualTransaction, value: string | number) => {
+    const handleFieldChange = (transactionId: number, field: keyof UiTransaction, value: string | number) => {
         setTransactions(currentTransactions =>
             currentTransactions.map(tx => {
                 if (tx.id === transactionId) {
@@ -114,7 +109,7 @@ export default function TransactionAllocation({ statementData }: { statementData
 
     const addManualRow = () => {
         const newId = transactions.length > 0 ? Math.max(...transactions.map(t => t.id)) + 1 : 1;
-        const newRow: ManualTransaction = {
+        const newRow: UiTransaction = {
             id: newId,
             date: new Date().toISOString().split('T')[0],
             description: '',
@@ -137,7 +132,7 @@ export default function TransactionAllocation({ statementData }: { statementData
             return;
         }
         
-        // This is the critical check. It now uses the stable `memberMap` which is guaranteed to be populated.
+        setIsPosting(true);
         const allocatedTransactions = transactions.filter(tx => tx.status === 'allocated' && memberMap.has(tx.reference));
         
         if (allocatedTransactions.length === 0) {
@@ -146,7 +141,7 @@ export default function TransactionAllocation({ statementData }: { statementData
             return;
         }
 
-        setIsPosting(true);
+        
         const batch = writeBatch(firestore);
 
         for (const tx of allocatedTransactions) {

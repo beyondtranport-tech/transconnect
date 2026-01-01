@@ -31,9 +31,6 @@ async function fetchPendingPayments() {
     const token = await getClientSideAuthToken();
     if (!token) throw new Error("Authentication failed.");
     
-    // We can't query collection groups on the client, so we need an API route.
-    // For now, we will simulate this by assuming a similar structure.
-    // This will be replaced with a real API call later.
     const response = await fetch('/api/getUserSubcollection', {
         method: 'POST',
         headers: {
@@ -52,11 +49,11 @@ async function fetchPendingPayments() {
     return result.data
         .filter((p: any) => p.status === 'pending')
         .map((p: any, index: number) => ({
-            id: index + 1, // Simple ID for the UI
+            id: index + 1, // Simple UI key
             paymentId: p.id, // The actual Firestore document ID
             date: new Date(p.createdAt).toISOString().split('T')[0],
             description: p.description,
-            reference: p.applicantId, // The Member UID
+            reference: p.applicantId, // Map applicantId to reference for the allocation component
             amount: p.amount,
             type: 'credit', // All pending payments are credits
         }));
@@ -104,6 +101,7 @@ export default function ReconciliationPage() {
             const pending = await fetchPendingPayments();
             if (pending.length === 0) {
                 toast({ title: "No Pending Payments", description: "There are no unallocated EFTs to reconcile."});
+                setIsLoading(false);
                 return;
             }
             
