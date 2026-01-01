@@ -7,9 +7,10 @@ import Link from 'next/link';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { signInWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
+import { signInWithEmailAndPassword, sendPasswordResetEmail, getIdToken } from 'firebase/auth';
+import { doc, getDoc } from 'firebase/firestore';
 
-import { useAuth, useUser } from '@/firebase';
+import { useAuth, useUser, useFirestore } from '@/firebase';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -44,6 +45,7 @@ function SignInFormComponent() {
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const auth = useAuth();
+  const firestore = useFirestore();
   const { user, isUserLoading } = useUser();
   const redirectParam = searchParams.get('redirect');
 
@@ -55,9 +57,7 @@ function SignInFormComponent() {
     },
   });
   
-  // This effect handles the case where a user is already logged in when visiting the page.
   useEffect(() => {
-    // Only perform the redirect check if the user object is loaded and present.
     if (user && !isUserLoading) {
       const isAdmin = user.email === 'beyondtransport@gmail.com';
       const defaultRedirect = isAdmin ? '/backend' : '/account';
@@ -104,24 +104,66 @@ function SignInFormComponent() {
 
   const onSubmit = async (values: SignInFormValues) => {
     setIsLoading(true);
-    if (!auth) {
+    if (!auth || !firestore) {
         toast({
             variant: 'destructive',
-            title: 'Authentication Error',
-            description: 'Could not connect to authentication service. Please try again later.',
+            title: 'Initialization Error',
+            description: 'Services are not ready. Please try again in a moment.',
         });
         setIsLoading(false);
         return;
     }
     try {
       const userCredential = await signInWithEmailAndPassword(auth, values.email, values.password);
+      const loggedInUser = userCredential.user;
+
+      // Self-healing: Check if the user document exists.
+      const userDocRef = doc(firestore, 'members', loggedInUser.uid);
+      const userDocSnap = await getDoc(userDocRef);
+
+      if (!userDocSnap.exists()) {
+        // If document doesn't exist, create it. This repairs "ghost" accounts.
+        toast({ title: "Finalizing Account Setup...", description: "Your profile is being created." });
+        
+        const token = await getIdToken(loggedInUser);
+        if (!token) throw new Error("Could not retrieve auth token.");
+        
+        // This logic assumes we can piece together the user data.
+        // A more robust implementation might redirect to a profile completion page.
+        const [firstName, lastName] = loggedInUser.displayName?.split(' ') || ['New', 'User'];
+        const memberData = {
+            id: loggedInUser.uid,
+            ownerId: loggedInUser.uid,
+            firstName,
+            lastName,
+            email: loggedInUser.email,
+            phone: loggedInUser.phoneNumber || 'Not provided',
+            companyName: 'Not provided',
+            membershipId: 'free',
+            rewardPoints: 0,
+            walletBalance: 0,
+            admin: loggedInUser.email === 'beyondtransport@gmail.com',
+            createdAt: { _methodName: 'serverTimestamp' },
+            updatedAt: { _methodName: 'serverTimestamp' },
+        };
+
+        const response = await fetch('/api/createUser', {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ data: memberData }),
+        });
+
+        const result = await response.json();
+        if (!response.ok || !result.success) {
+            throw new Error(result.error || 'Failed to create user profile in database.');
+        }
+      }
       
       toast({
         title: 'Sign In Successful',
         description: 'Redirecting to your dashboard...',
       });
       
-      const loggedInUser = userCredential.user;
       const isAdmin = loggedInUser.email === 'beyondtransport@gmail.com';
       const defaultRedirect = isAdmin ? '/backend' : '/account';
       router.replace(redirectParam || defaultRedirect);
@@ -133,6 +175,8 @@ function SignInFormComponent() {
       if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
         title = 'Invalid Credentials';
         description = 'The email or password you entered is incorrect.';
+      } else {
+        description = error.message;
       }
 
       toast({
