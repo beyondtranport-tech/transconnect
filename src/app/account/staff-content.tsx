@@ -46,7 +46,7 @@ const staffFormSchema = z.object({
 
 type StaffFormValues = z.infer<typeof staffFormSchema>;
 
-function AddStaffDialog({ companyId }: { companyId: string }) {
+function AddStaffDialog({ companyId, onStaffAdded }: { companyId: string; onStaffAdded: () => void }) {
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const firestore = useFirestore();
@@ -78,7 +78,7 @@ function AddStaffDialog({ companyId }: { companyId: string }) {
         createdAt: serverTimestamp(),
       };
       
-      addDoc(staffCollectionRef, staffData)
+      await addDoc(staffCollectionRef, staffData)
         .catch((serverError) => {
             const permissionError = new FirestorePermissionError({
                 path: staffCollectionRef.path,
@@ -86,6 +86,7 @@ function AddStaffDialog({ companyId }: { companyId: string }) {
                 requestResourceData: staffData,
             });
             errorEmitter.emit('permission-error', permissionError);
+            throw serverError; // Rethrow to be caught by outer catch
         });
 
       toast({
@@ -95,11 +96,12 @@ function AddStaffDialog({ companyId }: { companyId: string }) {
 
       form.reset();
       setIsOpen(false);
-    } catch (error) {
+      onStaffAdded(); // Call the refresh function
+    } catch (error: any) {
       toast({
         variant: 'destructive',
         title: 'Submission Failed',
-        description: 'An unexpected error occurred.',
+        description: error.message || 'An unexpected error occurred.',
       });
     } finally {
       setIsLoading(false);
@@ -203,7 +205,7 @@ export default function StaffContent() {
     return collection(firestore, `companies/${userData.companyId}/staff`);
   }, [firestore, userData]);
 
-  const { data: staff, isLoading: isStaffLoading } = useCollection(staffCollectionRef);
+  const { data: staff, isLoading: isStaffLoading, forceRefresh } = useCollection(staffCollectionRef);
 
   const isLoading = isUserLoading || isUserDocLoading || isStaffLoading;
   const companyId = userData?.companyId;
@@ -217,7 +219,7 @@ export default function StaffContent() {
                 </CardTitle>
                 <CardDescription>Add and manage your company's staff members.</CardDescription>
             </div>
-            {companyId && <AddStaffDialog companyId={companyId} />}
+            {companyId && <AddStaffDialog companyId={companyId} onStaffAdded={forceRefresh} />}
         </CardHeader>
         <CardContent>
             {isLoading && (
@@ -252,13 +254,13 @@ export default function StaffContent() {
                 </Table>
             )}
             {!isLoading && (!staff || staff.length === 0) && (
-                <div className="text-center py-10">
-                    <p className="text-muted-foreground">You haven't added any staff members yet.</p>
+                <div className="text-center py-10 border-2 border-dashed rounded-lg">
+                    <Users className="mx-auto h-12 w-12 text-muted-foreground" />
+                    <h3 className="mt-4 text-lg font-semibold">No staff members found</h3>
+                    <p className="text-muted-foreground mt-1">Click the "Add Staff" button to add your first team member.</p>
                 </div>
             )}
         </CardContent>
     </Card>
   )
 }
-
-    
