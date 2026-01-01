@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import { useDoc } from '@/firebase/firestore/use-doc';
 
 const formatPrice = (price?: number) => {
     if (typeof price !== 'number') return 'N/A';
@@ -65,10 +66,18 @@ function EnquiryDetail() {
     const firestore = useFirestore();
     const { user, isUserLoading } = useUser();
 
+    // Get user's companyId
+    const userDocRef = useMemoFirebase(() => {
+        if (!firestore || !user) return null;
+        return doc(firestore, 'users', user.uid);
+    }, [firestore, user]);
+    const { data: userData } = useDoc(userDocRef);
+    const companyId = userData?.companyId;
+
     const enquiryRef = useMemoFirebase(() => {
-        if (!firestore || !user || !enquiryId) return null;
-        return doc(firestore, `members/${user.uid}/enquiries/${enquiryId}`);
-    }, [firestore, user, enquiryId]);
+        if (!firestore || !companyId || !enquiryId) return null;
+        return doc(firestore, 'companies', companyId, 'enquiries', enquiryId);
+    }, [firestore, companyId, enquiryId]);
 
     const { data: enquiry, isLoading, error } = useDoc(enquiryRef);
 
