@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
     }
     
     // Public paths that do not require any authentication
-    const publicPrefixes = ['/shops', '/memberships', '/configuration'];
+    const publicPrefixes = ['shops', 'memberships', 'configuration'];
     const isPublicPath = publicPrefixes.some(prefix => path.startsWith(prefix));
     
     // If it's a public path, we can proceed without checking for a token.
