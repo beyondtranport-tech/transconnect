@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -168,9 +169,11 @@ export default function ReconciliationPage() {
                     </div>
                 </CardHeader>
                 <CardContent>
-                    <div className="text-center py-10 border-2 border-dashed rounded-lg">
-                        <p className="text-muted-foreground">Your reconciliation session will appear below once started.</p>
-                    </div>
+                    {!processingData && (
+                         <div className="text-center py-10 border-2 border-dashed rounded-lg">
+                            <p className="text-muted-foreground">Your reconciliation session will appear below once started.</p>
+                        </div>
+                    )}
                 </CardContent>
             </Card>
 
