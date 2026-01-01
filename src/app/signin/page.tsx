@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, Suspense, useEffect } from 'react';
@@ -8,9 +7,8 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { signInWithEmailAndPassword, sendPasswordResetEmail, getIdToken } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
 
-import { useAuth, useUser, useFirestore } from '@/firebase';
+import { useAuth, useUser } from '@/firebase';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -45,7 +43,6 @@ function SignInFormComponent() {
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const auth = useAuth();
-  const firestore = useFirestore();
   const { user, isUserLoading } = useUser();
   const redirectParam = searchParams.get('redirect');
 
@@ -104,7 +101,7 @@ function SignInFormComponent() {
 
   const onSubmit = async (values: SignInFormValues) => {
     setIsLoading(true);
-    if (!auth || !firestore) {
+    if (!auth) {
         toast({
             variant: 'destructive',
             title: 'Initialization Error',
@@ -117,46 +114,19 @@ function SignInFormComponent() {
       const userCredential = await signInWithEmailAndPassword(auth, values.email, values.password);
       const loggedInUser = userCredential.user;
 
-      // Self-healing: Check if the user document exists.
-      const userDocRef = doc(firestore, 'members', loggedInUser.uid);
-      const userDocSnap = await getDoc(userDocRef);
+      // Securely check and create the user document on the backend
+      const token = await getIdToken(loggedInUser);
+      const response = await fetch('/api/checkAndCreateUser', {
+          method: 'POST',
+          headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json',
+          },
+      });
 
-      if (!userDocSnap.exists()) {
-        // If document doesn't exist, create it. This repairs "ghost" accounts.
-        toast({ title: "Finalizing Account Setup...", description: "Your profile is being created." });
-        
-        const token = await getIdToken(loggedInUser);
-        if (!token) throw new Error("Could not retrieve auth token.");
-        
-        // This logic assumes we can piece together the user data.
-        // A more robust implementation might redirect to a profile completion page.
-        const [firstName, lastName] = loggedInUser.displayName?.split(' ') || ['New', 'User'];
-        const memberData = {
-            id: loggedInUser.uid,
-            ownerId: loggedInUser.uid,
-            firstName,
-            lastName,
-            email: loggedInUser.email,
-            phone: loggedInUser.phoneNumber || 'Not provided',
-            companyName: 'Not provided',
-            membershipId: 'free',
-            rewardPoints: 0,
-            walletBalance: 0,
-            admin: loggedInUser.email === 'beyondtransport@gmail.com',
-            createdAt: { _methodName: 'serverTimestamp' },
-            updatedAt: { _methodName: 'serverTimestamp' },
-        };
-
-        const response = await fetch('/api/createUser', {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ data: memberData }),
-        });
-
-        const result = await response.json();
-        if (!response.ok || !result.success) {
-            throw new Error(result.error || 'Failed to create user profile in database.');
-        }
+      if (!response.ok) {
+          const result = await response.json();
+          throw new Error(result.error || "Failed to verify user profile.");
       }
       
       toast({
