@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -58,19 +59,19 @@ export default function MemberTransactions({ memberId }: { memberId: string }) {
     return (
         <Card>
             <CardHeader>
-                <CardTitle className="flex items-center gap-2"><DollarSign /> Wallet Transaction History</CardTitle>
+                <CardTitle class="flex items-center gap-2"><DollarSign /> Wallet Transaction History</CardTitle>
                 <CardDescription>A real-time view of this member's wallet ledger.</CardDescription>
             </CardHeader>
             <CardContent>
                 {isLoading && (
-                    <div className="flex justify-center items-center py-10">
-                        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                    <div class="flex justify-center items-center py-10">
+                        <Loader2 class="h-8 w-8 animate-spin text-primary" />
                     </div>
                 )}
                 {error && (
-                    <div className="text-destructive-foreground bg-destructive/90 p-4 rounded-md">
-                        <h4 className="font-semibold">Error</h4>
-                        <p className="text-sm">{error.message}</p>
+                    <div class="text-destructive-foreground bg-destructive/90 p-4 rounded-md">
+                        <h4 class="font-semibold">Error</h4>
+                        <p class="text-sm">{error.message}</p>
                     </div>
                 )}
                 {!isLoading && transactions && (
@@ -81,20 +82,20 @@ export default function MemberTransactions({ memberId }: { memberId: string }) {
                                     <TableHead>Date</TableHead>
                                     <TableHead>Description</TableHead>
                                     <TableHead>Status</TableHead>
-                                    <TableHead className="text-right">Amount</TableHead>
+                                    <TableHead class="text-right">Amount</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
                                 {transactions.map(tx => (
                                     <TableRow key={tx.id}>
-                                        <TableCell className="text-xs">{formatDate(tx.date)}</TableCell>
+                                        <TableCell class="text-xs">{formatDate(tx.date)}</TableCell>
                                         <TableCell>{tx.description}</TableCell>
                                         <TableCell>
-                                            <Badge variant={statusColors[tx.status] || 'secondary'} className="capitalize">
+                                            <Badge variant={statusColors[tx.status] || 'secondary'} class="capitalize">
                                                 {tx.status?.replace(/_/g, ' ')}
                                             </Badge>
                                         </TableCell>
-                                        <TableCell className={`text-right font-mono font-semibold ${tx.type === 'credit' ? 'text-green-600' : 'text-destructive'}`}>
+                                        <TableCell class={`text-right font-mono font-semibold ${tx.type === 'credit' ? 'text-green-600' : 'text-destructive'}`}>
                                             {tx.type === 'credit' ? '+' : '-'} {formatCurrency(tx.amount)}
                                         </TableCell>
                                     </TableRow>
@@ -102,7 +103,7 @@ export default function MemberTransactions({ memberId }: { memberId: string }) {
                             </TableBody>
                         </Table>
                     ) : (
-                        <div className="text-center py-10 text-muted-foreground">
+                        <div class="text-center py-10 text-muted-foreground">
                             <p>No wallet transactions found for this member.</p>
                         </div>
                     )
@@ -111,3 +112,5 @@ export default function MemberTransactions({ memberId }: { memberId: string }) {
         </Card>
     );
 }
+
+    
