@@ -36,22 +36,22 @@ export async function POST(req: NextRequest) {
   
   try {
     const { data } = await req.json();
-    if (!data || !data.memberId) {
-        return NextResponse.json({ success: false, error: 'Bad Request: "data" object with "memberId" is required.' }, { status: 400 });
+    if (!data || !data.companyId) {
+        return NextResponse.json({ success: false, error: 'Bad Request: "data" object with "companyId" is required.' }, { status: 400 });
     }
 
     const adminAuth = getAuth(app);
     const decodedToken = await adminAuth.verifyIdToken(idToken);
     const uid = decodedToken.uid;
     
-    // Security check: Make sure the user owns the member they are adding a payment for.
+    // Security check: Make sure the user owns the company they are adding a payment for.
     const db = getFirestore(app);
-    const memberDoc = await db.collection('members').doc(data.memberId).get();
-    if (!memberDoc.exists || memberDoc.data()?.ownerId !== uid) {
-        return NextResponse.json({ success: false, error: 'Forbidden: You do not have permission to modify this member.' }, { status: 403 });
+    const companyDoc = await db.collection('companies').doc(data.companyId).get();
+    if (!companyDoc.exists || companyDoc.data()?.ownerId !== uid) {
+        return NextResponse.json({ success: false, error: 'Forbidden: You do not have permission to modify this company.' }, { status: 403 });
     }
     
-    const collectionPath = `members/${data.memberId}/walletPayments`;
+    const collectionPath = `companies/${data.companyId}/walletPayments`;
     const collectionRef = db.collection(collectionPath);
     
     const deserializedData = deserializeData(data);
