@@ -284,7 +284,7 @@ export default function TransactionAllocation({ statementData }: { statementData
                                         </Select>
                                     </TableCell>
                                     <TableCell className="text-right">
-                                         <Input value={tx.amount} onChange={(e) => handleFieldChange(tx.id, 'amount', parseFloat(e.target.value) || 0)} className="h-8 text-xs font-mono text-right" type="number" step="0.01" />
+                                         <Input value={tx.amount} onChange={(e) => handleFieldChange(tx.id, 'amount', parseFloat(e.target.value) || 0)} className="h-8 text-sm font-mono text-right" type="number" step="0.01" />
                                     </TableCell>
                                     <TableCell className="text-center">
                                         <Badge variant={tx.status === 'allocated' ? 'default' : 'secondary'} className="capitalize">{tx.status}</Badge>
