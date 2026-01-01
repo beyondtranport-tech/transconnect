@@ -11,7 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Banknote, FileCheck, Scale, Loader2, PlusCircle, Trash2 } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import { useFirestore, useUser, useCollection, useMemoFirebase } from '@/firebase';
-import { writeBatch, doc, collection, increment, serverTimestamp, query } from 'firebase/firestore';
+import { writeBatch, doc, collection, increment, serverTimestamp, query, deleteDoc } from 'firebase/firestore';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const formatCurrency = (amount: number) => {
@@ -24,6 +24,7 @@ const formatCurrency = (amount: number) => {
 // A new type for our dynamically added rows
 type ManualTransaction = {
     id: number;
+    paymentId?: string; // The original Firestore ID for pending payments
     date: string;
     description: string;
     reference: string; // This will hold the Member UID
@@ -156,18 +157,24 @@ export default function TransactionAllocation({ statementData }: { statementData
             const transactionRef = doc(collection(firestore, 'members', memberId, 'transactions'));
             batch.set(transactionRef, {
                 reconciliationId: statementData.statementName,
-                memberId: tx.reference, // This is redundant in subcollection but good for consistency
+                memberId: tx.reference,
                 type: tx.type,
                 amount: tx.amount,
                 date: new Date(tx.date),
                 description: tx.description,
                 status: 'allocated',
-                chartOfAccountsCode: tx.description.toLowerCase().includes('manual') ? '7000-ManualAdjustment' : '4410',
-                isAdjustment: true,
+                chartOfAccountsCode: tx.description.toLowerCase().includes('manual') ? '7000-ManualAdjustment' : '4410', // Simplistic logic
+                isAdjustment: tx.description.toLowerCase().includes('manual'),
                 postedAt: serverTimestamp(),
                 postedBy: user.uid,
                 transactionId: transactionRef.id
             });
+            
+            // If this transaction came from a pending payment, delete the original record
+            if (tx.paymentId) {
+                const pendingPaymentRef = doc(firestore, 'members', memberId, 'walletPayments', tx.paymentId);
+                batch.delete(pendingPaymentRef);
+            }
         }
         
         try {
@@ -204,9 +211,9 @@ export default function TransactionAllocation({ statementData }: { statementData
                 <CardHeader>
                     <CardTitle>Allocate Transactions</CardTitle>
                 </CardHeader>
-                <CardContent class="flex justify-center items-center py-10">
-                     <Loader2 class="h-8 w-8 animate-spin text-primary" />
-                     <p class="ml-4 text-muted-foreground">Loading member data...</p>
+                <CardContent className="flex justify-center items-center py-10">
+                     <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                     <p className="ml-4 text-muted-foreground">Loading member data...</p>
                 </CardContent>
             </Card>
         )
@@ -215,19 +222,19 @@ export default function TransactionAllocation({ statementData }: { statementData
     return (
         <Card>
             <CardHeader>
-                <div class="flex items-center gap-4">
-                    <Banknote class="h-8 w-8 text-primary" />
+                <div className="flex items-center gap-4">
+                    <Banknote className="h-8 w-8 text-primary" />
                     <div>
                         <CardTitle>Allocate Transactions</CardTitle>
                         <CardDescription>
-                            Reviewing: <span class="font-mono font-semibold">{isManualMode ? 'Manual Adjustment Session' : statementData.statementName}</span>
+                            Reviewing: <span className="font-mono font-semibold">{isManualMode ? 'Manual Adjustment Session' : statementData.statementName}</span>
                         </CardDescription>
                     </div>
                 </div>
             </CardHeader>
             <CardContent>
                 {!isManualMode && (
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                         <div>
                             <Label htmlFor="opening-balance">Opening Balance (R)</Label>
                             <Input id="opening-balance" type="number" placeholder="0.00" value={openingBalance} onChange={e => setOpeningBalance(parseFloat(e.target.value) || 0)} />
@@ -239,52 +246,52 @@ export default function TransactionAllocation({ statementData }: { statementData
                     </div>
                 )}
 
-                <div class="border rounded-lg overflow-x-auto">
+                <div className="border rounded-lg overflow-x-auto">
                     <Table>
                         <TableHeader>
                             <TableRow>
-                                <TableHead class="w-[120px]">Date</TableHead>
+                                <TableHead className="w-[120px]">Date</TableHead>
                                 <TableHead>Description</TableHead>
-                                <TableHead class="w-[250px]">Member (UID or Name)</TableHead>
+                                <TableHead className="w-[250px]">Member (UID or Name)</TableHead>
                                 <TableHead>Type</TableHead>
-                                <TableHead class="text-right">Amount (R)</TableHead>
-                                <TableHead class="w-[120px] text-center">Status</TableHead>
-                                <TableHead class="w-[120px] text-right">Action</TableHead>
+                                <TableHead className="text-right">Amount (R)</TableHead>
+                                <TableHead className="w-[120px] text-center">Status</TableHead>
+                                <TableHead className="w-[120px] text-right">Action</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                             {transactions.map(tx => (
-                                <TableRow key={tx.id} class={tx.status === 'allocated' ? 'bg-green-100/50 dark:bg-green-900/20' : ''}>
+                                <TableRow key={tx.id} className={tx.status === 'allocated' ? 'bg-green-100/50 dark:bg-green-900/20' : ''}>
                                     <TableCell>
-                                        <Input value={tx.date} onChange={(e) => handleFieldChange(tx.id, 'date', e.target.value)} class="h-8 text-xs font-mono" type="date" />
+                                        <Input value={tx.date} onChange={(e) => handleFieldChange(tx.id, 'date', e.target.value)} className="h-8 text-xs font-mono" type="date" />
                                     </TableCell>
                                     <TableCell>
-                                         <Input value={tx.description} onChange={(e) => handleFieldChange(tx.id, 'description', e.target.value)} class="h-8 text-xs" />
+                                         <Input value={tx.description} onChange={(e) => handleFieldChange(tx.id, 'description', e.target.value)} className="h-8 text-xs" />
                                     </TableCell>
                                     <TableCell>
                                         <Input 
                                             value={tx.reference} 
                                             onChange={(e) => handleFieldChange(tx.id, 'reference', e.target.value)} 
-                                            class={`h-8 text-xs font-mono ${tx.reference && !memberMap.has(tx.reference) ? 'border-destructive' : ''}`}
+                                            className={`h-8 text-xs font-mono ${tx.reference && !memberMap.has(tx.reference) ? 'border-destructive' : ''}`}
                                             list="members-datalist"
                                         />
-                                        <p class="text-xs text-muted-foreground mt-1 truncate">{tx.memberName}</p>
+                                        <p className="text-xs text-muted-foreground mt-1 truncate">{tx.memberName}</p>
                                     </TableCell>
                                     <TableCell>
                                         <Select value={tx.type} onValueChange={(value: 'credit' | 'debit') => handleFieldChange(tx.id, 'type', value)}>
-                                            <SelectTrigger class="h-8 text-xs"><SelectValue /></SelectTrigger>
+                                            <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
                                             <SelectContent><SelectItem value="credit">Credit</SelectItem><SelectItem value="debit">Debit</SelectItem></SelectContent>
                                         </Select>
                                     </TableCell>
-                                    <TableCell class="text-right">
-                                         <Input value={tx.amount} onChange={(e) => handleFieldChange(tx.id, 'amount', parseFloat(e.target.value) || 0)} class="h-8 text-xs font-mono text-right" type="number" step="0.01" />
+                                    <TableCell className="text-right">
+                                         <Input value={tx.amount} onChange={(e) => handleFieldChange(tx.id, 'amount', parseFloat(e.target.value) || 0)} className="h-8 text-xs font-mono text-right" type="number" step="0.01" />
                                     </TableCell>
-                                    <TableCell class="text-center">
-                                        <Badge variant={tx.status === 'allocated' ? 'default' : 'secondary'} class="capitalize">{tx.status}</Badge>
+                                    <TableCell className="text-center">
+                                        <Badge variant={tx.status === 'allocated' ? 'default' : 'secondary'} className="capitalize">{tx.status}</Badge>
                                     </TableCell>
-                                    <TableCell class="text-right">
+                                    <TableCell className="text-right">
                                         {isManualMode ? (
-                                             <Button variant="ghost" size="icon" onClick={() => removeManualRow(tx.id)}><Trash2 class="h-4 w-4 text-destructive"/></Button>
+                                             <Button variant="ghost" size="icon" onClick={() => removeManualRow(tx.id)}><Trash2 className="h-4 w-4 text-destructive"/></Button>
                                         ) : (
                                             <Button variant={tx.status === 'allocated' ? 'outline' : 'default'} size="sm" onClick={() => handleAllocationChange(tx.id)}>
                                                 {tx.status === 'allocated' ? 'Un-allocate' : 'Allocate'}
@@ -299,29 +306,27 @@ export default function TransactionAllocation({ statementData }: { statementData
                         {members?.map(m => <option key={m.id} value={m.id}>{`${m.firstName} ${m.lastName} (${m.companyName})`}</option>)}
                     </datalist>
                 </div>
-                 <Button onClick={addManualRow} variant="outline" size="sm" class="mt-4"><PlusCircle class="mr-2 h-4 w-4" />Add Manual Record</Button>
+                 <Button onClick={addManualRow} variant="outline" size="sm" className="mt-4"><PlusCircle className="mr-2 h-4 w-4" />Add Manual Record</Button>
             </CardContent>
-            <CardFooter class="flex flex-col items-start gap-4">
+            <CardFooter className="flex flex-col items-start gap-4">
                  {!isManualMode && (
-                    <div class="w-full bg-muted p-4 rounded-lg">
-                        <h4 class="font-semibold mb-3 text-lg">Reconciliation Summary</h4>
-                        <div class="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
-                            <div class="space-y-1"><p class="text-muted-foreground">Opening Balance</p><p class="font-mono font-semibold">{formatCurrency(openingBalance)}</p></div>
-                            <div class="space-y-1"><p class="text-muted-foreground">Allocated Credits</p><p class="font-mono font-semibold text-green-600">{formatCurrency(totalCredits)}</p></div>
-                            <div class="space-y-1"><p class="text-muted-foreground">Allocated Debits</p><p class="font-mono font-semibold text-destructive">{formatCurrency(totalDebits)}</p></div>
-                            <div class="space-y-1 border-t pt-2"><p class="text-muted-foreground">Calculated Balance</p><p class="font-mono font-bold text-base">{formatCurrency(calculatedClosingBalance)}</p></div>
-                            <div class="space-y-1 border-t pt-2"><p class="text-muted-foreground">Entered Closing</p><p class="font-mono font-bold text-base">{formatCurrency(closingBalance)}</p></div>
-                            <div class={`space-y-1 border-t pt-2 ${Math.abs(difference) < 0.01 ? 'bg-green-100 dark:bg-green-900/30' : 'bg-red-100 dark:bg-red-900/30'} p-2 rounded-md`}><p class="text-muted-foreground font-semibold">Difference</p><p class={`font-mono font-extrabold text-lg ${Math.abs(difference) < 0.01 ? 'text-green-700' : 'text-red-700'}`}>{formatCurrency(difference)}</p></div>
+                    <div className="w-full bg-muted p-4 rounded-lg">
+                        <h4 className="font-semibold mb-3 text-lg">Reconciliation Summary</h4>
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
+                            <div className="space-y-1"><p className="text-muted-foreground">Opening Balance</p><p className="font-mono font-semibold">{formatCurrency(openingBalance)}</p></div>
+                            <div className="space-y-1"><p className="text-muted-foreground">Allocated Credits</p><p className="font-mono font-semibold text-green-600">{formatCurrency(totalCredits)}</p></div>
+                            <div className="space-y-1"><p className="text-muted-foreground">Allocated Debits</p><p className="font-mono font-semibold text-destructive">{formatCurrency(totalDebits)}</p></div>
+                            <div className="space-y-1 border-t pt-2"><p className="text-muted-foreground">Calculated Balance</p><p className="font-mono font-bold text-base">{formatCurrency(calculatedClosingBalance)}</p></div>
+                            <div className="space-y-1 border-t pt-2"><p className="text-muted-foreground">Entered Closing</p><p className="font-mono font-bold text-base">{formatCurrency(closingBalance)}</p></div>
+                            <div className={`space-y-1 border-t pt-2 ${Math.abs(difference) < 0.01 ? 'bg-green-100 dark:bg-green-900/30' : 'bg-red-100 dark:bg-red-900/30'} p-2 rounded-md`}><p className="text-muted-foreground font-semibold">Difference</p><p className={`font-mono font-extrabold text-lg ${Math.abs(difference) < 0.01 ? 'text-green-700' : 'text-red-700'}`}>{formatCurrency(difference)}</p></div>
                         </div>
                     </div>
                 )}
                  <Button onClick={handleSaveAndPost} disabled={isPosting || (!isManualMode && Math.abs(difference) > 0.01)}>
-                    {isPosting ? <Loader2 class="mr-2 h-4 w-4 animate-spin"/> : <FileCheck class="mr-2 h-4 w-4" />}
+                    {isPosting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <FileCheck className="mr-2 h-4 w-4" />}
                     Save & Post Transactions
                 </Button>
             </CardFooter>
         </Card>
     )
 }
-
-    
