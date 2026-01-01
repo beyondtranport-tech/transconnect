@@ -1,24 +1,29 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Loader2, DollarSign, Trash2 } from 'lucide-react';
+import { Loader2, DollarSign, Clock, ArrowRight } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
+import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken } from '@/firebase';
+
+interface Member {
+    id: string;
+    firstName?: string;
+    lastName?: string;
+}
+
+interface Payment {
+    id: string;
+    applicantId: string;
+    amount: number;
+    description: string;
+    createdAt: string;
+    memberName?: string;
+}
 
 interface Transaction {
     id: string;
@@ -26,7 +31,6 @@ interface Transaction {
     type: 'credit' | 'debit';
     amount: number;
     description: string;
-    status: 'pending_allocation' | 'allocated' | 'reversal';
     date: string; // ISO string
     memberName?: string;
 }
@@ -48,15 +52,8 @@ async function fetchFromAdminAPI(action: string, payload?: any) {
     if (!response.ok || !result.success) {
         throw new Error(result.error || `API Error for action: ${action}`);
     }
-    return result;
+    return result.data;
 }
-
-
-const statusColors: { [key: string]: 'default' | 'secondary' | 'destructive' | 'outline' } = {
-  pending_allocation: 'secondary',
-  allocated: 'default',
-  reversal: 'destructive',
-};
 
 const formatCurrency = (amount: number) => {
     if (typeof amount !== 'number') return 'N/A';
@@ -66,143 +63,152 @@ const formatCurrency = (amount: number) => {
 const formatDate = (isoString: string | undefined) => {
     if (!isoString) return 'N/A';
     try {
-        return new Date(isoString).toLocaleString('en-ZA', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit'});
+        return new Date(isoString).toLocaleString('en-ZA', { dateStyle: 'short', timeStyle: 'short' });
     } catch (e) {
         return 'Invalid Date';
     }
 };
 
 export default function WalletTransactionsList() {
-    const [transactions, setTransactions] = useState<Transaction[] | null>(null);
+    const [pendingPayments, setPendingPayments] = useState<Payment[] | null>(null);
+    const [allocatedTransactions, setAllocatedTransactions] = useState<Transaction[] | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [isDeleting, setIsDeleting] = useState<string | null>(null);
     const { toast } = useToast();
 
-    async function fetchAllTransactions() {
-        // Don't set loading to true here to avoid flicker on re-fetch
-        try {
-            const [transactionsResult, membersResult] = await Promise.all([
-                fetchFromAdminAPI('getAllTransactions'),
-                fetchFromAdminAPI('getMembers')
-            ]);
-
-            const memberMap = new Map(membersResult.data.map((m: any) => [m.id, `${m.firstName} ${m.lastName}`]));
-            
-            const transactionsWithNames = transactionsResult.data.map((tx: any) => ({
-                ...tx,
-                memberName: memberMap.get(tx.memberId) || 'Unknown Member'
-            }));
-
-            setTransactions(transactionsWithNames as Transaction[]);
-        } catch (e: any) {
-            setError(e.message || 'An unexpected error occurred.');
-        } finally {
-            setIsLoading(false);
-        }
-    }
-
     useEffect(() => {
-        setIsLoading(true);
-        fetchAllTransactions();
-    }, []);
-    
-    const handleDelete = async (memberId: string, transactionId: string) => {
-        setIsDeleting(transactionId);
-        try {
-            await fetchFromAdminAPI('deleteTransaction', { memberId, transactionId });
-            toast({ title: 'Transaction Deleted' });
-            fetchAllTransactions(); // Re-fetch data to update the list
-        } catch(e: any) {
-            toast({ variant: 'destructive', title: 'Deletion Failed', description: e.message });
+        async function fetchAllWalletData() {
+            setIsLoading(true);
+            try {
+                const [paymentsData, transactionsData, membersData] = await Promise.all([
+                    fetchFromAdminAPI('getWalletPayments'),
+                    fetchFromAdminAPI('getAllTransactions'),
+                    fetchFromAdminAPI('getMembers')
+                ]);
+
+                const memberMap = new Map(membersData.map((m: Member) => [m.id, `${m.firstName} ${m.lastName}`]));
+
+                const paymentsWithNames = paymentsData.map((p: Payment) => ({
+                    ...p,
+                    memberName: memberMap.get(p.applicantId) || 'Unknown Member'
+                }));
+                 const transactionsWithNames = transactionsData.map((tx: Transaction) => ({
+                    ...tx,
+                    memberName: memberMap.get(tx.memberId) || 'Unknown Member'
+                }));
+                
+                transactionsWithNames.sort((a: Transaction, b: Transaction) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+
+                setPendingPayments(paymentsWithNames);
+                setAllocatedTransactions(transactionsWithNames);
+
+            } catch (e: any) {
+                setError(e.message || 'An unexpected error occurred.');
+            } finally {
+                setIsLoading(false);
+            }
         }
-        setIsDeleting(null);
-    };
+
+        fetchAllWalletData();
+    }, []);
+
+    const unallocatedTotal = pendingPayments?.reduce((sum, p) => sum + p.amount, 0) || 0;
 
     return (
-        <Card>
-            <CardHeader>
-                <CardTitle>All Wallet Transactions</CardTitle>
-                <CardDescription>A combined ledger of all transactions across all member wallets.</CardDescription>
-            </CardHeader>
-            <CardContent>
-                {isLoading && (
-                    <div className="flex justify-center items-center py-10">
-                        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                    </div>
-                )}
-                {error && (
-                     <div className="text-destructive-foreground bg-destructive/90 p-4 rounded-md">
-                        <h4 className="font-semibold">Error loading transactions</h4>
-                        <p className="text-sm">{error}</p>
-                    </div>
-                )}
-                {transactions && !isLoading && (
-                    transactions.length > 0 ? (
-                        <div className="overflow-x-auto">
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>Date</TableHead>
-                                        <TableHead>Member</TableHead>
-                                        <TableHead>Description</TableHead>
-                                        <TableHead>Status</TableHead>
-                                        <TableHead className="text-right">Amount</TableHead>
-                                        <TableHead className="text-right">Actions</TableHead>
+        <div className="space-y-8">
+            <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2"><Clock /> Unallocated Payments</CardTitle>
+                    <CardDescription>Member-submitted EFT payments awaiting verification and manual allocation.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    {isLoading ? (
+                        <div className="flex justify-center items-center py-10"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
+                    ) : error ? (
+                         <div className="text-destructive-foreground bg-destructive/90 p-4 rounded-md"><p>{error}</p></div>
+                    ) : pendingPayments && pendingPayments.length > 0 ? (
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Date Logged</TableHead>
+                                    <TableHead>Member</TableHead>
+                                    <TableHead>Description</TableHead>
+                                    <TableHead>Amount</TableHead>
+                                    <TableHead className="text-right">Action</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {pendingPayments.map(p => (
+                                    <TableRow key={p.id} className="bg-amber-50 dark:bg-amber-900/20">
+                                        <TableCell>{formatDate(p.createdAt)}</TableCell>
+                                        <TableCell className="font-medium">{p.memberName}</TableCell>
+                                        <TableCell>{p.description}</TableCell>
+                                        <TableCell className="font-semibold">{formatCurrency(p.amount)}</TableCell>
+                                        <TableCell className="text-right">
+                                            <Button asChild size="sm" variant="outline">
+                                                <Link href={`/backend?view=wallet&memberId=${p.applicantId}`}>
+                                                    Reconcile <ArrowRight className="ml-2 h-4 w-4" />
+                                                </Link>
+                                            </Button>
+                                        </TableCell>
                                     </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {transactions.map(tx => (
-                                        <TableRow key={tx.id}>
-                                            <TableCell>{formatDate(tx.date)}</TableCell>
-                                            <TableCell>
-                                                <div className="font-medium">{tx.memberName}</div>
-                                                <div className="text-xs text-muted-foreground font-mono">{tx.memberId}</div>
-                                            </TableCell>
-                                            <TableCell>{tx.description}</TableCell>
-                                            <TableCell>
-                                                <Badge variant={statusColors[tx.status] || 'secondary'} className="capitalize">
-                                                    {tx.status?.replace(/_/g, ' ') || 'N/A'}
-                                                </Badge>
-                                            </TableCell>
-                                            <TableCell className={`text-right font-mono font-semibold ${tx.type === 'credit' ? 'text-green-600' : 'text-destructive'}`}>
-                                                {tx.type === 'credit' ? '+' : '-'} {formatCurrency(tx.amount)}
-                                            </TableCell>
-                                            <TableCell className="text-right">
-                                                <AlertDialog>
-                                                    <AlertDialogTrigger asChild>
-                                                        <Button variant="ghost" size="icon" disabled={isDeleting === tx.id}>
-                                                            {isDeleting === tx.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4 text-destructive" />}
-                                                        </Button>
-                                                    </AlertDialogTrigger>
-                                                    <AlertDialogContent>
-                                                        <AlertDialogHeader>
-                                                            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                                                            <AlertDialogDescription>
-                                                                This action cannot be undone. This will permanently delete this transaction record.
-                                                            </AlertDialogDescription>
-                                                        </AlertDialogHeader>
-                                                        <AlertDialogFooter>
-                                                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                            <AlertDialogAction onClick={() => handleDelete(tx.memberId, tx.id)} className="bg-destructive hover:bg-destructive/90">
-                                                                Yes, delete it
-                                                            </AlertDialogAction>
-                                                        </AlertDialogFooter>
-                                                    </AlertDialogContent>
-                                                </AlertDialog>
-                                            </TableCell>
-                                        </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
-                        </div>
+                                ))}
+                            </TableBody>
+                            <TableFooter>
+                                <TableRow>
+                                    <TableCell colSpan={4} className="text-right font-bold">Total Pending Allocation</TableCell>
+                                    <TableCell className="text-right font-bold text-lg">{formatCurrency(unallocatedTotal)}</TableCell>
+                                </TableRow>
+                            </TableFooter>
+                        </Table>
                     ) : (
-                         <p className="text-center text-muted-foreground py-10">
-                            No transactions found across any member wallets yet.
-                         </p>
-                    )
-                )}
-            </CardContent>
-        </Card>
+                        <p className="text-center text-muted-foreground py-10">No pending payments to allocate.</p>
+                    )}
+                </CardContent>
+            </Card>
+
+            <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2"><DollarSign /> All Allocated Transactions</CardTitle>
+                    <CardDescription>A combined ledger of all completed transactions across all member wallets.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    {isLoading ? (
+                         <div className="flex justify-center items-center py-10"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
+                    ) : error ? (
+                        <div className="text-destructive-foreground bg-destructive/90 p-4 rounded-md"><p>{error}</p></div>
+                    ) : allocatedTransactions && allocatedTransactions.length > 0 ? (
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Date</TableHead>
+                                    <TableHead>Member</TableHead>
+                                    <TableHead>Description</TableHead>
+                                    <TableHead className="text-right">Amount</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {allocatedTransactions.slice(0, 20).map(tx => ( // Show latest 20
+                                    <TableRow key={tx.id}>
+                                        <TableCell>{formatDate(tx.date)}</TableCell>
+                                        <TableCell>
+                                            <div className="font-medium">{tx.memberName}</div>
+                                            <div className="text-xs text-muted-foreground font-mono">{tx.memberId}</div>
+                                        </TableCell>
+                                        <TableCell>{tx.description}</TableCell>
+                                        <TableCell className={`text-right font-mono font-semibold ${tx.type === 'credit' ? 'text-green-600' : 'text-destructive'}`}>
+                                            {tx.type === 'credit' ? '+' : '-'} {formatCurrency(tx.amount)}
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    ) : (
+                         <p className="text-center text-muted-foreground py-10">No allocated transactions found.</p>
+                    )}
+                </CardContent>
+            </Card>
+        </div>
     );
 }
