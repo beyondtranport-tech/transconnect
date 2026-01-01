@@ -45,5 +45,14 @@ service cloud.firestore {
       allow create: if request.auth != null;
       allow read: if request.auth != null && request.auth.token.email == 'beyondtransport@gmail.com';
     }
+
+    // Admin-only collections for financial records
+    match /reconciliations/{reconciliationId} {
+        allow read, write: if request.auth != null && request.auth.token.email == 'beyondtransport@gmail.com';
+    }
+
+    match /platformTransactions/{transactionId} {
+        allow read, write: if request.auth != null && request.auth.token.email == 'beyondtransport@gmail.com';
+    }
   }
 }
