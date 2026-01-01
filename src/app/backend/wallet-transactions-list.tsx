@@ -83,19 +83,29 @@ const formatCurrency = (amount: number) => {
 
 const formatDate = (dateValue: any) => {
     if (!dateValue) return 'N/A';
-    // Handle Firestore Timestamp object
-    if (typeof dateValue.toDate === 'function') {
-      return dateValue.toDate().toLocaleString('en-ZA', { dateStyle: 'short', timeStyle: 'short' });
+
+    let date;
+    // Handle Firestore Timestamp object (less likely on client after API serialization)
+    if (dateValue && typeof dateValue.toDate === 'function') {
+      date = dateValue.toDate();
+    } 
+    // Handle ISO string from API
+    else if (typeof dateValue === 'string') {
+        date = new Date(dateValue);
+    } 
+    // If it's already a Date object
+    else if (dateValue instanceof Date) {
+        date = dateValue;
     }
-    // Handle ISO string
-    if (typeof dateValue === 'string') {
-        try {
-            return new Date(dateValue).toLocaleString('en-ZA', { dateStyle: 'short', timeStyle: 'short' });
-        } catch (e) {
-            return 'Invalid Date';
-        }
+    else {
+        return 'Invalid Date';
     }
-    return 'Invalid Date';
+
+    if (isNaN(date.getTime())) {
+        return 'Invalid Date';
+    }
+
+    return date.toLocaleString('en-ZA', { dateStyle: 'short', timeStyle: 'short' });
 };
 
 export default function WalletTransactionsList() {
