@@ -30,7 +30,7 @@ async function fetchPendingPayments() {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ path: `walletPayments`, type: 'collection-group' }),
+        body: JSON.stringify({ path: 'walletPayments', type: 'collection-group' }),
     });
 
     const result = await response.json();
