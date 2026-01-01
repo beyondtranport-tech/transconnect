@@ -63,6 +63,7 @@ export default function TransactionAllocation({ statementData }: { statementData
     useEffect(() => {
         setOpeningBalance(statementData.openingBalance);
         setClosingBalance(statementData.closingBalance);
+        
         // This effect runs when the statement data changes OR when the member map is finally loaded.
         if (statementData.transactions && !isLoadingMembers && memberMap.size > 0) {
             const populated = statementData.transactions.map((tx: any) => ({
@@ -72,7 +73,8 @@ export default function TransactionAllocation({ statementData }: { statementData
             }));
             setTransactions(populated);
         } else if (statementData.transactions) {
-            setTransactions(statementData.transactions.map((t: any) => ({ ...t, status: 'pending' })));
+            // Set transactions without names if members aren't loaded yet
+            setTransactions(statementData.transactions.map((t: any) => ({ ...t, status: 'pending', memberName: '' })));
         }
 
     }, [statementData, members, isLoadingMembers, memberMap]);
@@ -168,6 +170,7 @@ export default function TransactionAllocation({ statementData }: { statementData
             });
             
             if (tx.paymentId) {
+                // Ensure the path to the walletPayment is correct, it's a subcollection of member
                 const pendingPaymentRef = doc(firestore, 'members', memberId, 'walletPayments', tx.paymentId);
                 batch.delete(pendingPaymentRef);
             }

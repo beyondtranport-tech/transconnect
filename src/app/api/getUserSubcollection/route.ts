@@ -40,7 +40,8 @@ export async function POST(req: NextRequest) {
     const publicPrefixes = ['shops', 'memberships', 'configuration'];
     const isPublicPath = publicPrefixes.some(prefix => path.startsWith(prefix));
     
-    // If it's a public path, we can proceed without checking for a token.
+    // If it's a public path OR a collection group query (which we'll treat as admin-only), we can proceed, 
+    // but will still check for a token for non-public paths.
     if (!isPublicPath) {
         const headersList = headers();
         const authorization = headersList.get('authorization');
@@ -56,8 +57,13 @@ export async function POST(req: NextRequest) {
                 const pathSegments = path.split('/');
                 const isOwner = uid && pathSegments.length >= 2 && pathSegments[0] === 'members' && pathSegments[1] === uid;
 
-                if (!isAdmin && !isOwner) {
+                // Collection group queries are admin-level, other private paths must be owned or accessed by admin.
+                if (type !== 'collection-group' && !isAdmin && !isOwner) {
                      return NextResponse.json({ success: false, error: 'Forbidden: You do not have permission to access this resource.' }, { status: 403 });
+                }
+                // Specifically for collection group, ensure it's an admin
+                if (type === 'collection-group' && !isAdmin) {
+                    return NextResponse.json({ success: false, error: 'Forbidden: Collection group queries require admin privileges.' }, { status: 403 });
                 }
 
             } catch (error: any) {
