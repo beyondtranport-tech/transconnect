@@ -57,10 +57,11 @@ function SignInFormComponent() {
   
   // This effect handles the case where a user is already logged in when visiting the page.
   useEffect(() => {
-    if (!isUserLoading && user) {
-        const isAdmin = user.email === 'beyondtransport@gmail.com';
-        const defaultRedirect = isAdmin ? '/backend' : '/account';
-        router.replace(redirectParam || defaultRedirect);
+    // Only perform the redirect check if the user object is loaded and present.
+    if (user && !isUserLoading) {
+      const isAdmin = user.email === 'beyondtransport@gmail.com';
+      const defaultRedirect = isAdmin ? '/backend' : '/account';
+      router.replace(redirectParam || defaultRedirect);
     }
   }, [user, isUserLoading, router, redirectParam]);
 
@@ -198,8 +199,8 @@ function SignInFormComponent() {
                 </FormItem>
               )}
             />
-            <Button type="submit" className="w-full" disabled={isLoading || (isUserLoading || !!user)}>
-              {(isLoading || (isUserLoading || !!user)) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            <Button type="submit" className="w-full" disabled={isLoading || (isUserLoading && !user)}>
+              {(isLoading || (isUserLoading && !user)) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Sign In
             </Button>
           </form>
