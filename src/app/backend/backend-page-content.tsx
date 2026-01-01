@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -382,7 +383,7 @@ export default function BackendPageContent() {
   const [activeView, setActiveView] = useState(initialView);
   const { user, isUserLoading } = useUser();
   const auth = useAuth();
-  const [isAdmin, setIsAdmin] = useState(false);
+  const [authChecked, setAuthChecked] = useState(false);
 
   useEffect(() => {
     setActiveView(initialView);
@@ -393,7 +394,7 @@ export default function BackendPageContent() {
       if (!user || user.email !== 'beyondtransport@gmail.com') {
         router.replace('/signin?redirect=/backend');
       } else {
-        setIsAdmin(true);
+        setAuthChecked(true);
       }
     }
   }, [user, isUserLoading, router]);
@@ -455,7 +456,7 @@ export default function BackendPageContent() {
     }
   }
   
-  if (isUserLoading || !isAdmin) {
+  if (isUserLoading || !authChecked) {
     return (
         <div className="flex justify-center items-center min-h-screen">
             <Loader2 className="h-16 w-16 animate-spin text-primary" />
