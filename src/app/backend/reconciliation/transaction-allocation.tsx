@@ -12,6 +12,7 @@ import { Label } from '@/components/ui/label';
 import { useFirestore, useUser, useCollection, useMemoFirebase } from '@/firebase';
 import { writeBatch, doc, collection, increment, serverTimestamp, query, deleteDoc } from 'firebase/firestore';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { cn } from '@/lib/utils';
 
 const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-ZA', {
@@ -263,7 +264,7 @@ export default function TransactionAllocation({ statementData }: { statementData
                                             <Input 
                                                 value={tx.reference} 
                                                 onChange={(e) => handleFieldChange(tx.id, 'reference', e.target.value)} 
-                                                className={`h-8 text-xs font-mono ${tx.reference && !memberMap.has(tx.reference) ? 'border-destructive' : ''}`}
+                                                className={cn('h-8 text-xs font-mono', tx.reference && !memberMap.has(tx.reference) ? 'border-destructive' : '')}
                                                 list="members-datalist"
                                             />
                                             <p className="text-xs text-muted-foreground mt-1 truncate">{tx.memberName}</p>
