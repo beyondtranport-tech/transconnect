@@ -1,7 +1,6 @@
-
 'use client';
 
-import { Suspense } from 'react';
+import { Suspense, useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { useUser, useFirestore, useMemoFirebase, useDoc, getClientSideAuthToken } from '@/firebase';
@@ -10,7 +9,6 @@ import { doc, getDoc, writeBatch, collection, serverTimestamp, increment } from 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Loader2, Banknote, ClipboardCopy } from 'lucide-react';
-import { useState, useEffect, useCallback, useMemo } from 'react';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import Link from 'next/link';
