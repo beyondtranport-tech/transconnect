@@ -7,9 +7,6 @@ import { useState, useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
 import TransactionAllocation from "./transaction-allocation";
 import { getClientSideAuthToken } from "@/firebase";
-import demoStatement from '@/lib/demo-statement.json';
-import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
 
 // A blank statement template for manual adjustments
 const manualAdjustmentTemplate = {
@@ -136,15 +133,6 @@ export default function ReconciliationPage() {
         reader.readAsText(file);
     };
 
-    const handleDemoStatementToggle = (checked: boolean) => {
-        if (checked) {
-            setProcessingData(demoStatement);
-            toast({ title: "Demo Statement Loaded", description: `${demoStatement.transactions.length} sample transactions loaded.` });
-        } else {
-            setProcessingData(null);
-        }
-    }
-
     return (
         <div className="w-full space-y-8">
             <Card>
@@ -177,12 +165,6 @@ export default function ReconciliationPage() {
                                 Load Pending EFTs
                             </Button>
                         </div>
-                    </div>
-                     <div className="flex items-center space-x-2 pt-4 border-t mt-4">
-                        <Checkbox id="demo-statement" onCheckedChange={handleDemoStatementToggle} />
-                        <Label htmlFor="demo-statement" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                            Use Demo Statement
-                        </Label>
                     </div>
                 </CardHeader>
                 <CardContent>

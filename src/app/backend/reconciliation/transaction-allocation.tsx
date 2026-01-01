@@ -83,6 +83,15 @@ export default function TransactionAllocation({ statementData }: { statementData
         let wasAllocated = false;
         const updatedTransactions = transactions.map((tx) => {
             if (tx.id === transactionId) {
+                // Prevent allocation if member UID is not valid
+                if (tx.status === 'pending' && !memberMap.has(tx.reference)) {
+                    toast({
+                        variant: 'destructive',
+                        title: 'Invalid Member',
+                        description: 'Cannot allocate transaction without a valid Member UID in the reference field.',
+                    });
+                    return tx; // Return original transaction
+                }
                 const newStatus = tx.status === 'allocated' ? 'pending' : 'allocated';
                 if (newStatus === 'allocated') wasAllocated = true;
                 return { ...tx, status: newStatus };
