@@ -7,6 +7,10 @@ import { useState, useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
 import TransactionAllocation from "./transaction-allocation";
 import { getClientSideAuthToken } from "@/firebase";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import demoStatementData from '@/lib/demo-statement.json';
+
 
 // A blank statement template for manual adjustments
 const manualAdjustmentTemplate = {
@@ -133,6 +137,19 @@ export default function ReconciliationPage() {
         reader.readAsText(file);
     };
 
+    const handleDemoCheck = (checked: boolean | 'indeterminate') => {
+        if (checked) {
+            toast({
+                title: "Demo Statement Loaded",
+                description: "This is sample data. Replace placeholder UIDs before posting.",
+            });
+            setProcessingData(demoStatementData);
+        } else {
+            setProcessingData(null);
+        }
+    };
+
+
     return (
         <div className="w-full space-y-8">
             <Card>
@@ -144,7 +161,7 @@ export default function ReconciliationPage() {
                                 Start a session by uploading a bank statement, loading pending EFTs, or making manual adjustments.
                             </CardDescription>
                         </div>
-                         <div className="flex gap-2">
+                         <div className="flex gap-4 items-center">
                              <input
                                 type="file"
                                 ref={fileInputRef}
@@ -168,6 +185,12 @@ export default function ReconciliationPage() {
                     </div>
                 </CardHeader>
                 <CardContent>
+                     <div className="flex items-center space-x-2 mb-4 border-t pt-4">
+                        <Checkbox id="demo-statement" onCheckedChange={handleDemoCheck} />
+                        <Label htmlFor="demo-statement" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                            Use Demo Statement
+                        </Label>
+                    </div>
                     {!processingData && (
                          <div className="text-center py-10 border-2 border-dashed rounded-lg">
                             <p className="text-muted-foreground">Your reconciliation session will appear below once started.</p>
