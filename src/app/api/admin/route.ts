@@ -65,16 +65,6 @@ export async function POST(req: NextRequest) {
                 const data = snapshot.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
                 return NextResponse.json({ success: true, data });
             }
-            case 'getAllTransactions': {
-                const snapshot = await db.collectionGroup('transactions').orderBy('date', 'desc').get();
-                const data = snapshot.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
-                return NextResponse.json({ success: true, data });
-            }
-            case 'getWalletPayments': {
-                const snapshot = await db.collectionGroup('walletPayments').where('status', '==', 'pending').orderBy('createdAt', 'desc').get();
-                const data = snapshot.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
-                return NextResponse.json({ success: true, data });
-            }
             case 'getShops': {
                 const snapshot = await db.collectionGroup('shops').get();
                 const data = snapshot.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));

@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Loader2, DollarSign, Clock, ArrowRight } from 'lucide-react';
+import { Loader2, DollarSign, Clock, ArrowRight, User } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
@@ -14,6 +14,7 @@ interface Member {
     id: string;
     firstName?: string;
     lastName?: string;
+    companyName?: string;
 }
 
 interface Payment {
@@ -31,7 +32,7 @@ interface Transaction {
     type: 'credit' | 'debit';
     amount: number;
     description: string;
-    date: string; // ISO string
+    date: string; 
     memberName?: string;
 }
 
@@ -55,6 +56,25 @@ async function fetchFromAdminAPI(action: string, payload?: any) {
     return result.data;
 }
 
+async function fetchSubcollectionForMember(memberId: string, subcollection: 'walletPayments' | 'transactions') {
+    const token = await getClientSideAuthToken();
+    if (!token) throw new Error("Authentication failed.");
+     const response = await fetch('/api/getUserSubcollection', {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ path: `members/${memberId}/${subcollection}`, type: 'collection' }),
+    });
+    const result = await response.json();
+    if (!result.success) {
+        throw new Error(result.error || `Failed to fetch ${subcollection}`);
+    }
+    return result.data;
+}
+
+
 const formatCurrency = (amount: number) => {
     if (typeof amount !== 'number') return 'N/A';
     return new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(amount);
@@ -70,38 +90,42 @@ const formatDate = (isoString: string | undefined) => {
 };
 
 export default function WalletTransactionsList() {
-    const [pendingPayments, setPendingPayments] = useState<Payment[] | null>(null);
-    const [allocatedTransactions, setAllocatedTransactions] = useState<Transaction[] | null>(null);
+    const [members, setMembers] = useState<Member[]>([]);
+    const [pendingPayments, setPendingPayments] = useState<Payment[]>([]);
+    const [allocatedTransactions, setAllocatedTransactions] = useState<Transaction[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const { toast } = useToast();
 
     useEffect(() => {
         async function fetchAllWalletData() {
             setIsLoading(true);
+            setError(null);
             try {
-                const [paymentsData, transactionsData, membersData] = await Promise.all([
-                    fetchFromAdminAPI('getWalletPayments'),
-                    fetchFromAdminAPI('getAllTransactions'),
-                    fetchFromAdminAPI('getMembers')
-                ]);
+                const membersData = await fetchFromAdminAPI('getMembers');
+                setMembers(membersData);
 
-                const memberMap = new Map(membersData.map((m: Member) => [m.id, `${m.firstName} ${m.lastName}`]));
+                let allPayments: Payment[] = [];
+                let allTransactions: Transaction[] = [];
 
-                const paymentsWithNames = paymentsData.map((p: Payment) => ({
-                    ...p,
-                    memberName: memberMap.get(p.applicantId) || 'Unknown Member'
-                }));
-                 const transactionsWithNames = transactionsData.map((tx: Transaction) => ({
-                    ...tx,
-                    memberName: memberMap.get(tx.memberId) || 'Unknown Member'
-                }));
+                for (const member of membersData) {
+                    const memberName = `${member.firstName} ${member.lastName}`;
+                    
+                    const paymentsData = await fetchSubcollectionForMember(member.id, 'walletPayments');
+                    if (paymentsData) {
+                        allPayments.push(...paymentsData.map((p: any) => ({ ...p, memberName })));
+                    }
+
+                    const transactionsData = await fetchSubcollectionForMember(member.id, 'transactions');
+                    if (transactionsData) {
+                        allTransactions.push(...transactionsData.map((tx: any) => ({ ...tx, memberName })));
+                    }
+                }
                 
-                transactionsWithNames.sort((a: Transaction, b: Transaction) => new Date(b.date).getTime() - new Date(a.date).getTime());
+                allPayments.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+                allTransactions.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
-
-                setPendingPayments(paymentsWithNames);
-                setAllocatedTransactions(transactionsWithNames);
+                setPendingPayments(allPayments.filter(p => p.status === 'pending'));
+                setAllocatedTransactions(allTransactions);
 
             } catch (e: any) {
                 setError(e.message || 'An unexpected error occurred.');
