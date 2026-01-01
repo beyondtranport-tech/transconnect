@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useUser, useFirestore, useMemoFirebase, useCollection, useDoc } from '@/firebase';
@@ -15,6 +14,8 @@ import { useConfig } from '@/hooks/use-config';
 import { getClientSideAuthToken } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { useState } from 'react';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 const formatCurrency = (amount: number) => {
     if (typeof amount !== 'number') return 'N/A';
@@ -40,6 +41,8 @@ export default function WalletCard() {
     const firestore = useFirestore();
     const { toast } = useToast();
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [paymentAmount, setPaymentAmount] = useState<string>('');
+
 
     const memberRef = useMemoFirebase(() => {
         if (!firestore || !user) return null;
@@ -70,7 +73,7 @@ export default function WalletCard() {
     const { data: bankDetails, isLoading: isBankDetailsLoading } = useConfig<any>('bankDetails');
 
     const { data: transactions, isLoading: isLoadingTransactions, error: transactionsError } = useCollection(transactionsQuery);
-    const { data: pendingPayments, isLoading: isLoadingPayments, error: paymentsError } = useCollection(pendingPaymentsQuery);
+    const { data: pendingPayments, isLoading: isLoadingPayments, error: paymentsError, forceRefresh } = useCollection(pendingPaymentsQuery);
 
     const isLoading = isLoadingTransactions || isLoadingPayments || isMemberLoading || isTechPricingLoading || isBankDetailsLoading;
     const error = transactionsError || paymentsError;
@@ -81,20 +84,22 @@ export default function WalletCard() {
     
     const handleSubmitProofOfPayment = async () => {
         if (!user) return;
+        const amountValue = parseFloat(paymentAmount);
+        if (isNaN(amountValue) || amountValue <= 0) {
+            toast({ variant: 'destructive', title: "Invalid Amount", description: "Please enter a valid payment amount."});
+            return;
+        }
+
         setIsSubmitting(true);
         try {
             const token = await getClientSideAuthToken();
             if (!token) throw new Error("Authentication failed");
             
-            // This is a placeholder for the actual amount. In a real app,
-            // we'd have a form for the user to enter the amount.
-            const paymentAmount = 0; // We'll need a form for this.
-            
             const paymentData = {
                 applicantId: user.uid,
                 status: 'pending',
                 description: 'Wallet Top-up via EFT',
-                amount: paymentAmount, // This would come from a user input field
+                amount: amountValue,
                 createdAt: { _methodName: 'serverTimestamp' },
             };
             
@@ -107,6 +112,8 @@ export default function WalletCard() {
             if (!response.ok) throw new Error((await response.json()).error || 'Failed to submit.');
 
             toast({ title: "Proof Submitted!", description: "An admin will review and credit your wallet shortly."});
+            setPaymentAmount('');
+            forceRefresh(); // Refresh the list of pending payments
         } catch (e: any) {
             toast({ variant: 'destructive', title: "Submission Failed", description: e.message });
         } finally {
@@ -140,7 +147,7 @@ export default function WalletCard() {
                         <Info className="h-4 w-4" />
                         <AlertTitle>How to Top Up</AlertTitle>
                         <AlertDescription>
-                           To add funds, make an EFT payment to the bank details below using your Member ID as the reference.
+                           To add funds, make an EFT payment to the bank details below using your Member ID as the reference. Then, enter the amount and click "I've made a payment".
                            {techPricing?.eftTopUpFee && techPricing.eftTopUpFee > 0 && (
                                 <span className="font-semibold block mt-2">Please note: A {formatCurrency(techPricing.eftTopUpFee)} admin fee applies to EFT top-ups.</span>
                            )}
@@ -170,10 +177,22 @@ export default function WalletCard() {
                             )}
                          </CardContent>
                      </Card>
-                     <Button onClick={handleSubmitProofOfPayment} disabled={isSubmitting}>
-                        {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null}
-                        I've made a payment
-                     </Button>
+                     <div className="flex flex-col sm:flex-row gap-4 items-end">
+                         <div className="w-full sm:w-auto flex-grow">
+                             <Label htmlFor="payment-amount">Payment Amount (R)</Label>
+                            <Input 
+                                id="payment-amount"
+                                type="number" 
+                                placeholder="500.00"
+                                value={paymentAmount}
+                                onChange={(e) => setPaymentAmount(e.target.value)}
+                            />
+                         </div>
+                         <Button onClick={handleSubmitProofOfPayment} disabled={isSubmitting || !paymentAmount} className="w-full sm:w-auto">
+                            {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null}
+                            I've made a payment
+                         </Button>
+                     </div>
                 </div>
 
                 {isLoading && (
