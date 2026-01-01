@@ -85,24 +85,16 @@ const formatDate = (dateValue: any) => {
     if (!dateValue) return 'N/A';
 
     let date;
-    // Handle Firestore Timestamp object (less likely on client after API serialization)
-    if (dateValue && typeof dateValue.toDate === 'function') {
-      date = dateValue.toDate();
-    } 
-    // Handle ISO string from API
-    else if (typeof dateValue === 'string') {
+    if (typeof dateValue === 'string') {
         date = new Date(dateValue);
-    } 
-    // If it's already a Date object
-    else if (dateValue instanceof Date) {
-        date = dateValue;
-    }
-    else {
-        return 'Invalid Date';
+    } else if (dateValue.toDate && typeof dateValue.toDate === 'function') {
+        date = dateValue.toDate();
+    } else {
+        return 'N/A'; // Return N/A if format is unknown
     }
 
     if (isNaN(date.getTime())) {
-        return 'Invalid Date';
+        return 'N/A'; // Return N/A for invalid dates
     }
 
     return date.toLocaleString('en-ZA', { dateStyle: 'short', timeStyle: 'short' });
