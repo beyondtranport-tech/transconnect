@@ -21,6 +21,25 @@ const formatCurrency = (amount: number) => {
     }).format(amount);
 };
 
+const chartOfAccounts = {
+    revenue: [
+        { code: '4010', name: 'Basic Membership Fees' },
+        { code: '4020', name: 'Standard Membership Fees' },
+        { code: '4030', name: 'Premium Membership Fees' },
+        { code: '4110', name: 'Loyalty Plan Subscription Fees' },
+    ],
+    expenses: [
+        { code: '7010', name: 'Bank Charges' },
+        { code: '7020', name: 'Software & Subscriptions' },
+        { code: '7030', name: 'Consulting & Professional Fees' },
+        { code: '7040', name: 'Marketing & Advertising' },
+        { code: '7050', name: 'General & Administrative' },
+        { code: '8010', name: 'Wallet Adjustment (Manual)' },
+        { code: '8020', name: 'Transaction Reversal' },
+    ]
+};
+
+
 // A new type for our dynamically added rows
 type UiTransaction = {
     id: number;
@@ -290,13 +309,28 @@ export default function TransactionAllocation({ statementData }: { statementData
                                             <Input value={tx.description} onChange={(e) => handleFieldChange(tx.id, 'description', e.target.value)} className="h-8 text-xs" />
                                         </TableCell>
                                         <TableCell>
-                                            <Input 
-                                                value={tx.reference} 
-                                                onChange={(e) => handleFieldChange(tx.id, 'reference', e.target.value)} 
-                                                className={cn('h-8 text-xs font-mono', tx.reference && tx.status === 'allocated' && !memberMap.has(tx.reference) ? 'border-destructive' : '')}
-                                                list="members-datalist"
-                                            />
-                                            <p className="text-xs text-muted-foreground mt-1 truncate">{tx.memberName}</p>
+                                            {tx.status === 'platform_expense' ? (
+                                                 <Select value={tx.chartOfAccountsCode} onValueChange={(value) => handleFieldChange(tx.id, 'chartOfAccountsCode', value)}>
+                                                    <SelectTrigger className="h-8 text-xs">
+                                                        <SelectValue placeholder="Select expense account..." />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        {chartOfAccounts.expenses.map(acc => (
+                                                            <SelectItem key={acc.code} value={acc.code}>{acc.code}: {acc.name}</SelectItem>
+                                                        ))}
+                                                    </SelectContent>
+                                                </Select>
+                                            ) : (
+                                                <>
+                                                    <Input 
+                                                        value={tx.reference} 
+                                                        onChange={(e) => handleFieldChange(tx.id, 'reference', e.target.value)} 
+                                                        className={cn('h-8 text-xs font-mono', tx.reference && tx.status === 'allocated' && !memberMap.has(tx.reference) ? 'border-destructive' : '')}
+                                                        list="members-datalist"
+                                                    />
+                                                    <p className="text-xs text-muted-foreground mt-1 truncate">{tx.memberName}</p>
+                                                </>
+                                            )}
                                         </TableCell>
                                         <TableCell>
                                             <Select value={tx.type} onValueChange={(value: 'credit' | 'debit') => handleFieldChange(tx.id, 'type', value)}>
@@ -357,3 +391,5 @@ export default function TransactionAllocation({ statementData }: { statementData
         </Card>
     )
 }
+
+    

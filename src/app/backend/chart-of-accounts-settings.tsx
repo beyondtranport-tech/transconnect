@@ -1,37 +1,12 @@
 'use client';
 
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
-import { Button } from '@/components/ui/button';
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { useToast } from '@/hooks/use-toast';
-import { useState, useEffect } from 'react';
-import { Loader2, Book, PlusCircle } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useFirestore, useUser, useMemoFirebase } from '@/firebase';
-import { doc, setDoc } from 'firebase/firestore';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { errorEmitter } from '@/firebase/error-emitter';
-import { FirestorePermissionError } from '@/firebase/errors';
 import React from 'react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Book } from 'lucide-react';
 
-
-const formSchema = z.object({
-  accountCode: z.string().min(1, 'Account code is required (e.g., 4000)'),
-  accountName: z.string().min(1, 'Account name is required (e.g., Membership Income)'),
-});
-
-type CoAFormValues = z.infer<typeof formSchema>;
-type Account = { code: string; name: string, series: string };
+type Account = { series: string; code: string; name: string };
 
 const finalizedAccounts: Account[] = [
     // 4000 Series: Core Membership & Subscription Revenue
@@ -71,9 +46,8 @@ const finalizedAccounts: Account[] = [
 
 
 export default function ChartOfAccountsSettings() {
-  const [accounts, setAccounts] = useState<Account[]>(finalizedAccounts);
   
-  const groupedAccounts = accounts.reduce((acc, account) => {
+  const groupedAccounts = finalizedAccounts.reduce((acc, account) => {
     (acc[account.series] = acc[account.series] || []).push(account);
     return acc;
   }, {} as Record<string, Account[]>);
@@ -122,3 +96,5 @@ export default function ChartOfAccountsSettings() {
     </Card>
   );
 }
+
+    
