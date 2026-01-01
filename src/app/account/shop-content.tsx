@@ -34,7 +34,7 @@ export default function ShopContent() {
 
   // 3. Use the shopId from the company data to fetch the actual shop document
   const shopRef = useMemoFirebase(() => {
-    if (!firestore || !companyData?.shopId) return null;
+    if (!firestore || !companyData?.shopId || !companyData.id) return null;
     return doc(firestore, `companies/${companyData.id}/shops/${companyData.shopId}`);
   }, [firestore, companyData]);
 
@@ -133,5 +133,3 @@ export default function ShopContent() {
     </Card>
   );
 }
-
-    

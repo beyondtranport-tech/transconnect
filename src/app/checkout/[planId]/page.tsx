@@ -52,14 +52,14 @@ function CheckoutComponent() {
   }, [firestore, user]);
   const { data: userData, isLoading: isUserDocLoading } = useDoc(userDocRef);
 
-  const memberDocRef = useMemoFirebase(() => {
-    if (!firestore || !userData?.memberId) return null;
-    return doc(firestore, 'members', userData.memberId);
+  const companyDocRef = useMemoFirebase(() => {
+    if (!firestore || !userData?.companyId) return null;
+    return doc(firestore, 'companies', userData.companyId);
   }, [firestore, userData]);
-  const { data: memberData, isLoading: isMemberLoading, forceRefresh: refreshBalance } = useDoc(memberDocRef);
+  const { data: companyData, isLoading: isCompanyLoading, forceRefresh: refreshBalance } = useDoc(companyDocRef);
   
-  const userBalance = memberData?.walletBalance || 0;
-  const memberId = userData?.memberId;
+  const userBalance = companyData?.walletBalance || 0;
+  const companyId = userData?.companyId;
 
 
   const price = useMemo(() => {
@@ -85,7 +85,7 @@ function CheckoutComponent() {
   };
 
   const handleSubmitProofOfPayment = async () => {
-    if (!user || !memberId) {
+    if (!user || !companyId) {
         toast({ variant: 'destructive', title: "Error", description: "You must be logged in to submit a payment." });
         return;
     }
@@ -102,7 +102,7 @@ function CheckoutComponent() {
         
         const paymentData = {
             userId: user.uid,
-            memberId: memberId,
+            companyId: companyId,
             status: 'pending',
             description: `Membership Payment Top-up for ${plan.name} (${cycle})`,
             amount: amountValue,
@@ -128,7 +128,7 @@ function CheckoutComponent() {
 
 
   const handlePurchaseWithWallet = async () => {
-    if (!user || !firestore || !plan || userBalance < price || !memberId) {
+    if (!user || !firestore || !plan || userBalance < price || !companyId) {
         toast({ variant: 'destructive', title: 'Error', description: 'Insufficient balance or user/plan not found.' });
         return;
     }
@@ -136,8 +136,8 @@ function CheckoutComponent() {
     
     const batch = writeBatch(firestore);
     
-    // 1. Update member's balance and membership
-    const memberDocRef = doc(firestore, 'members', memberId);
+    // 1. Update company's balance and membership
+    const companyDocRef = doc(firestore, 'companies', companyId);
 
     const now = new Date();
     const nextBillingDate = new Date(now);
@@ -147,19 +147,19 @@ function CheckoutComponent() {
         nextBillingDate.setFullYear(nextBillingDate.getFullYear() + 1);
     }
 
-    const memberUpdateData = { 
+    const companyUpdateData = { 
         membershipId: plan.id, 
         walletBalance: increment(-price),
         membershipStartDate: serverTimestamp(),
         billingCycle: cycle,
         nextBillingDate: nextBillingDate
     };
-    batch.update(memberDocRef, memberUpdateData);
+    batch.update(companyDocRef, companyUpdateData);
 
-    // 2. Create a transaction record in the member's transactions subcollection
-    const transactionRef = doc(collection(firestore, `members/${memberId}/transactions`));
+    // 2. Create a transaction record in the company's transactions subcollection
+    const transactionRef = doc(collection(firestore, `companies/${companyId}/transactions`));
     const transactionData = {
-        memberId: memberId,
+        companyId: companyId,
         userId: user.uid,
         type: 'debit',
         amount: price,
@@ -180,9 +180,9 @@ function CheckoutComponent() {
         router.push('/account');
     } catch (serverError) {
         const permissionError = new FirestorePermissionError({
-            path: memberDocRef.path,
+            path: companyDocRef.path,
             operation: 'update',
-            requestResourceData: { memberUpdate: memberUpdateData, transaction: transactionData },
+            requestResourceData: { companyUpdate: companyUpdateData, transaction: transactionData },
         });
         errorEmitter.emit('permission-error', permissionError);
         toast({ variant: 'destructive', title: 'Upgrade Failed', description: 'Permission denied.' });
@@ -191,7 +191,7 @@ function CheckoutComponent() {
     }
   };
 
-  const isLoading = isUserLoading || isPlanLoading || isBankDetailsLoading || isUserDocLoading || isMemberLoading;
+  const isLoading = isUserLoading || isPlanLoading || isBankDetailsLoading || isUserDocLoading || isCompanyLoading;
 
   if (isLoading || !user) {
       return <div className="flex justify-center items-center h-full"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
@@ -247,7 +247,7 @@ function CheckoutComponent() {
                     <CardContent className="space-y-3">
                          {isBankDetailsLoading ? (
                             <div className="flex justify-center p-4"><Loader2 className="animate-spin" /></div>
-                         ) : bankDetails && memberId ? (
+                         ) : bankDetails && companyId ? (
                             <>
                                 {Object.entries(bankDetails).filter(([key]) => !['id', 'updatedAt'].includes(key)).map(([key, value]) => (
                                     <div key={key} className="flex justify-between items-center text-sm">
@@ -257,8 +257,8 @@ function CheckoutComponent() {
                                 ))}
                                 <div className="flex justify-between items-center text-sm pt-3 border-t">
                                     <span className="text-muted-foreground">Reference</span>
-                                    <button onClick={() => copyToClipboard(memberId)} className="font-mono text-primary hover:underline flex items-center gap-2">
-                                        {memberId}
+                                    <button onClick={() => copyToClipboard(companyId)} className="font-mono text-primary hover:underline flex items-center gap-2">
+                                        {companyId}
                                         <ClipboardCopy className="h-4 w-4"/>
                                     </button>
                                 </div>

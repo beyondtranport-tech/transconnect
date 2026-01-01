@@ -43,20 +43,20 @@ export default function CompanyContent() {
   const { toast } = useToast();
   const [isSaving, setIsSaving] = useState(false);
 
-  // First, get the user document to find their memberId
+  // First, get the user document to find their companyId
   const userDocRef = useMemoFirebase(() => {
     if (!firestore || !user) return null;
     return doc(firestore, 'users', user.uid);
   }, [firestore, user]);
   const { data: userData, isLoading: isUserDocLoading } = useDoc(userDocRef);
 
-  // Then, use the memberId to get the member document
-  const memberDocRef = useMemoFirebase(() => {
-    if (!firestore || !userData?.memberId) return null;
-    return doc(firestore, 'members', userData.memberId);
+  // Then, use the companyId to get the company document
+  const companyDocRef = useMemoFirebase(() => {
+    if (!firestore || !userData?.companyId) return null;
+    return doc(firestore, 'companies', userData.companyId);
   }, [firestore, userData]);
 
-  const { data: memberData, isLoading: isMemberLoading } = useDoc(memberDocRef);
+  const { data: companyData, isLoading: isCompanyLoading } = useDoc(companyDocRef);
 
   const form = useForm<CompanyFormValues>({
     resolver: zodResolver(companyFormSchema),
@@ -72,22 +72,22 @@ export default function CompanyContent() {
   });
 
   useEffect(() => {
-    if (memberData) {
+    if (companyData) {
       form.reset({
-        companyName: memberData.companyName || '',
-        registrationNumber: memberData.registrationNumber || '',
-        vatNumber: memberData.vatNumber || '',
-        streetAddress: memberData.streetAddress || '',
-        city: memberData.city || '',
-        province: memberData.province || '',
-        postalCode: memberData.postalCode || '',
+        companyName: companyData.companyName || '',
+        registrationNumber: companyData.registrationNumber || '',
+        vatNumber: companyData.vatNumber || '',
+        streetAddress: companyData.streetAddress || '',
+        city: companyData.city || '',
+        province: companyData.province || '',
+        postalCode: companyData.postalCode || '',
       });
     }
-  }, [memberData, form]);
+  }, [companyData, form]);
 
   const onSubmit = async (values: CompanyFormValues) => {
     setIsSaving(true);
-    if (!memberDocRef || !firestore) {
+    if (!companyDocRef || !firestore) {
       toast({ variant: 'destructive', title: 'Error', description: 'Not logged in or database not available.' });
       setIsSaving(false);
       return;
@@ -98,7 +98,7 @@ export default function CompanyContent() {
         updatedAt: serverTimestamp(),
     };
     
-    setDoc(memberDocRef, dataToUpdate, { merge: true })
+    setDoc(companyDocRef, dataToUpdate, { merge: true })
       .then(() => {
           toast({
               title: 'Company Info Updated',
@@ -107,7 +107,7 @@ export default function CompanyContent() {
       })
       .catch((serverError: any) => {
           const permissionError = new FirestorePermissionError({
-              path: memberDocRef.path,
+              path: companyDocRef.path,
               operation: 'update',
               requestResourceData: dataToUpdate,
           });
@@ -118,7 +118,7 @@ export default function CompanyContent() {
       });
   };
 
-  const isLoading = isUserLoading || isUserDocLoading || isMemberLoading;
+  const isLoading = isUserLoading || isUserDocLoading || isCompanyLoading;
 
   return (
     <Card>
@@ -254,5 +254,3 @@ export default function CompanyContent() {
     </Card>
   );
 }
-
-    
