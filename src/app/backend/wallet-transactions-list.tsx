@@ -1,15 +1,14 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
-import { Loader2, DollarSign, Clock, ArrowRight, User } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
+import { Loader2, DollarSign, Clock, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken } from '@/firebase';
+import { useConfig } from '@/hooks/use-config';
 
 interface Member {
     id: string;
@@ -23,7 +22,7 @@ interface Payment {
     applicantId: string;
     amount: number;
     description: string;
-    createdAt: any; // Can be Timestamp or string
+    createdAt: any;
     memberName?: string;
 }
 
@@ -33,11 +32,31 @@ interface Transaction {
     type: 'credit' | 'debit';
     amount: number;
     description: string;
-    date: any; // Can be Timestamp or string
+    date: any;
     memberName?: string;
 }
 
-async function fetchFromAdminAPI(action: string, payload?: any) {
+async function fetchCollectionGroup(collectionId: string) {
+    const token = await getClientSideAuthToken();
+    if (!token) throw new Error("Authentication failed.");
+    
+    const response = await fetch('/api/getUserSubcollection', {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ path: collectionId, type: 'collection-group' }),
+    });
+
+    const result = await response.json();
+    if (!result.success) {
+        throw new Error(result.error || `Failed to fetch ${collectionId}`);
+    }
+    return result.data;
+}
+
+async function fetchMembers() {
     const token = await getClientSideAuthToken();
     if (!token) throw new Error("Authentication failed.");
     
@@ -47,34 +66,15 @@ async function fetchFromAdminAPI(action: string, payload?: any) {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ action, payload }),
+        body: JSON.stringify({ action: 'getMembers' }),
     });
 
     const result = await response.json();
     if (!response.ok || !result.success) {
-        throw new Error(result.error || `API Error for action: ${action}`);
+        throw new Error(result.error || `API Error for action: getMembers`);
     }
     return result.data;
 }
-
-async function fetchSubcollectionForMember(memberId: string, subcollection: 'walletPayments' | 'transactions') {
-    const token = await getClientSideAuthToken();
-    if (!token) throw new Error("Authentication failed.");
-     const response = await fetch('/api/getUserSubcollection', {
-        method: 'POST',
-        headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ path: `members/${memberId}/${subcollection}`, type: 'collection' }),
-    });
-    const result = await response.json();
-    if (!result.success) {
-        throw new Error(result.error || `Failed to fetch ${subcollection}`);
-    }
-    return result.data;
-}
-
 
 const formatCurrency = (amount: number) => {
     if (typeof amount !== 'number') return 'N/A';
@@ -83,25 +83,22 @@ const formatCurrency = (amount: number) => {
 
 const formatDate = (dateValue: any) => {
     if (!dateValue) return 'N/A';
-
     let date;
     if (typeof dateValue === 'string') {
         date = new Date(dateValue);
     } else if (dateValue.toDate && typeof dateValue.toDate === 'function') {
         date = dateValue.toDate();
     } else {
-        return 'N/A'; // Return N/A if format is unknown
+        return 'N/A';
     }
 
-    if (isNaN(date.getTime())) {
-        return 'N/A'; // Return N/A for invalid dates
-    }
-
+    if (isNaN(date.getTime())) return 'Invalid Date';
     return date.toLocaleString('en-ZA', { dateStyle: 'short', timeStyle: 'short' });
 };
 
+
 export default function WalletTransactionsList() {
-    const [members, setMembers] = useState<Member[]>([]);
+    const [memberMap, setMemberMap] = useState<Map<string, Member>>(new Map());
     const [pendingPayments, setPendingPayments] = useState<Payment[]>([]);
     const [allocatedTransactions, setAllocatedTransactions] = useState<Transaction[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -112,31 +109,34 @@ export default function WalletTransactionsList() {
             setIsLoading(true);
             setError(null);
             try {
-                const membersData = await fetchFromAdminAPI('getMembers');
-                setMembers(membersData);
+                const [membersData, paymentsData, transactionsData] = await Promise.all([
+                    fetchMembers(),
+                    fetchCollectionGroup('walletPayments'),
+                    fetchCollectionGroup('transactions')
+                ]);
 
-                let allPayments: Payment[] = [];
-                let allTransactions: Transaction[] = [];
+                const newMemberMap = new Map(membersData.map((m: Member) => [m.id, m]));
+                setMemberMap(newMemberMap);
 
-                for (const member of membersData) {
-                    const memberName = `${member.firstName} ${member.lastName}`;
-                    
-                    const paymentsData = await fetchSubcollectionForMember(member.id, 'walletPayments');
-                    if (paymentsData) {
-                        allPayments.push(...paymentsData.map((p: any) => ({ ...p, memberName })));
-                    }
-
-                    const transactionsData = await fetchSubcollectionForMember(member.id, 'transactions');
-                    if (transactionsData) {
-                        allTransactions.push(...transactionsData.map((tx: any) => ({ ...tx, memberName })));
-                    }
+                if (paymentsData) {
+                    const enhancedPayments = paymentsData
+                        .filter((p: any) => p.status === 'pending')
+                        .map((p: any) => ({
+                            ...p,
+                            memberName: `${newMemberMap.get(p.applicantId)?.firstName || ''} ${newMemberMap.get(p.applicantId)?.lastName || ''}`.trim() || p.applicantId,
+                        }));
+                    enhancedPayments.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+                    setPendingPayments(enhancedPayments);
                 }
-                
-                allPayments.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-                allTransactions.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
-                setPendingPayments(allPayments.filter(p => p.status === 'pending'));
-                setAllocatedTransactions(allTransactions);
+                if (transactionsData) {
+                     const enhancedTransactions = transactionsData.map((tx: any) => ({
+                        ...tx,
+                        memberName: `${newMemberMap.get(tx.memberId)?.firstName || ''} ${newMemberMap.get(tx.memberId)?.lastName || ''}`.trim() || tx.memberId,
+                    }));
+                    enhancedTransactions.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+                    setAllocatedTransactions(enhancedTransactions);
+                }
 
             } catch (e: any) {
                 setError(e.message || 'An unexpected error occurred.');
@@ -192,8 +192,8 @@ export default function WalletTransactionsList() {
                             </TableBody>
                             <TableFooter>
                                 <TableRow>
-                                    <TableCell colSpan={4} className="text-right font-bold">Total Pending Allocation</TableCell>
-                                    <TableCell className="text-right font-bold text-lg">{formatCurrency(unallocatedTotal)}</TableCell>
+                                    <TableCell colSpan={3} className="text-right font-bold">Total Pending Allocation</TableCell>
+                                    <TableCell colSpan={2} className="text-right font-bold text-lg">{formatCurrency(unallocatedTotal)}</TableCell>
                                 </TableRow>
                             </TableFooter>
                         </Table>
