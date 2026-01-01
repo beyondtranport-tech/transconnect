@@ -44,16 +44,14 @@ export async function POST(req: NextRequest) {
     if (!isPublicPath) {
         const headersList = headers();
         const authorization = headersList.get('authorization');
-        let isAdmin = false;
-        let uid: string | null = null;
-
+        
         if (authorization && authorization.startsWith('Bearer ')) {
             const idToken = authorization.split('Bearer ')[1];
             try {
                 const adminAuth = getAuth(app);
                 const decodedToken = await adminAuth.verifyIdToken(idToken);
-                uid = decodedToken.uid;
-                isAdmin = decodedToken.email === 'beyondtransport@gmail.com';
+                const uid = decodedToken.uid;
+                const isAdmin = decodedToken.email === 'beyondtransport@gmail.com';
 
                 const pathSegments = path.split('/');
                 const isOwner = uid && pathSegments.length >= 2 && pathSegments[0] === 'members' && pathSegments[1] === uid;
