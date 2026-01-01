@@ -79,6 +79,8 @@ export default function WalletContent() {
     const isLoading = isLoadingTransactions || isLoadingPayments || isMemberLoading || isTechPricingLoading || isBankDetailsLoading;
     const error = transactionsError || paymentsError;
 
+    const unallocatedTotal = pendingPayments?.reduce((sum, p) => sum + p.amount, 0) || 0;
+
     if (user && user.email === 'beyondtransport@gmail.com') {
         return null;
     }
@@ -134,7 +136,7 @@ export default function WalletContent() {
             </CardHeader>
             <CardContent className="space-y-8">
                 <div className="p-4 bg-muted/50 rounded-lg">
-                    <p className="text-sm text-muted-foreground">Current Balance</p>
+                    <p className="text-sm text-muted-foreground">Current Allocated Balance</p>
                     {isMemberLoading ? (
                         <Loader2 className="h-6 w-6 animate-spin mt-1" />
                     ) : (
@@ -148,7 +150,7 @@ export default function WalletContent() {
                         <Info className="h-4 w-4" />
                         <AlertTitle>How to Top Up</AlertTitle>
                         <AlertDescription>
-                           To add funds, make an EFT payment to the bank details below using your Member ID as the reference. Then, enter the amount and click "I've made a payment".
+                           To add funds, make an EFT payment to the bank details below using your Member ID as the reference. Then, enter the amount and click "I've made a payment" to notify us.
                            {techPricing?.eftTopUpFee && techPricing.eftTopUpFee > 0 && (
                                 <span className="font-semibold block mt-2">Please note: A {formatCurrency(techPricing.eftTopUpFee)} admin fee applies to EFT top-ups.</span>
                            )}
@@ -210,19 +212,20 @@ export default function WalletContent() {
 
                 {!isLoading && (
                     <div className="space-y-8">
-                        {/* Section for Pending Payments */}
-                        {pendingPayments && pendingPayments.length > 0 && (
-                            <div>
-                                <h3 className="text-sm font-semibold text-muted-foreground flex items-center gap-2 mb-2">
-                                    <Clock className="h-4 w-4" />
-                                    Pending Payments
-                                </h3>
+                        {/* Section for Unallocated/Pending Payments */}
+                        <div>
+                            <h3 className="text-sm font-semibold text-muted-foreground flex items-center gap-2 mb-2">
+                                <Clock className="h-4 w-4" />
+                                Unallocated Payments
+                            </h3>
+                            {pendingPayments && pendingPayments.length > 0 ? (
                                 <div className="border rounded-lg">
                                     <Table>
                                         <TableHeader>
                                             <TableRow>
-                                                <TableHead>Date</TableHead>
+                                                <TableHead>Date Logged</TableHead>
                                                 <TableHead>Description</TableHead>
+                                                <TableHead>Status</TableHead>
                                                 <TableHead className="text-right">Amount</TableHead>
                                             </TableRow>
                                         </TableHeader>
@@ -232,7 +235,9 @@ export default function WalletContent() {
                                                     <TableCell className="text-muted-foreground text-xs">{formatDate(payment.createdAt)}</TableCell>
                                                     <TableCell>
                                                         <p className="font-medium capitalize">{payment.description.replace(/_/g, ' ')}</p>
-                                                        <Badge variant="secondary" className="mt-1">Pending Approval</Badge>
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        <Badge variant="secondary">Pending Approval</Badge>
                                                     </TableCell>
                                                     <TableCell className="text-right font-mono font-semibold">
                                                         {formatCurrency(payment.amount)}
@@ -240,16 +245,26 @@ export default function WalletContent() {
                                                 </TableRow>
                                             ))}
                                         </TableBody>
+                                        <TableFooter>
+                                            <TableRow>
+                                                <TableCell colSpan={3} className="text-right font-semibold">Sub-Total of Pending Payments</TableCell>
+                                                <TableCell className="text-right font-bold text-lg">{formatCurrency(unallocatedTotal)}</TableCell>
+                                            </TableRow>
+                                        </TableFooter>
                                     </Table>
                                 </div>
-                            </div>
-                        )}
+                             ) : (
+                                <div className="text-center py-10 border-2 border-dashed rounded-lg">
+                                    <p className="text-muted-foreground">You have no pending payments awaiting allocation.</p>
+                                </div>
+                            )}
+                        </div>
                         
-                        {/* Section for Completed Transactions */}
+                        {/* Section for Allocated/Completed Transactions */}
                         <div>
                              <h3 className="text-sm font-semibold text-muted-foreground flex items-center gap-2 mb-2">
                                 <DollarSign className="h-4 w-4" />
-                                Recent Transactions
+                                Recent Allocated Transactions
                             </h3>
                              {transactions && transactions.length > 0 ? (
                                 <div className="border rounded-lg">
