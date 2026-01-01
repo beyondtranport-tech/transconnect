@@ -13,9 +13,8 @@ function serializeTimestamps(docData: any): any {
         const value = docData[key];
         if (value instanceof Timestamp) {
             newDocData[key] = value.toDate().toISOString();
-        } else if (value && typeof value === 'object' && !Array.isArray(value)) {
-            // Correctly handle nested objects
-            newDocData[key] = serializeTimestamps(value);
+        } else if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+            newDocData[key] = serializeTimestamps(value); // Recursively serialize nested objects
         } else {
             newDocData[key] = value;
         }

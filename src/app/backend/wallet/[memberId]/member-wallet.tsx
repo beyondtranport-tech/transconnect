@@ -150,13 +150,13 @@ export default function MemberWallet({ memberId }: { memberId: string }) {
     };
 
     if (isLoading || isAdminLoading) {
-        return <div class="flex justify-center items-center min-h-[calc(100vh-8rem)]"><Loader2 class="h-12 w-12 animate-spin text-primary" /></div>;
+        return <div className="flex justify-center items-center min-h-[calc(100vh-8rem)]"><Loader2 className="h-12 w-12 animate-spin text-primary" /></div>;
     }
 
     if (error) {
          return (
             <Card>
-                <CardHeader><CardTitle class="text-destructive">Error</CardTitle></CardHeader>
+                <CardHeader><CardTitle className="text-destructive">Error</CardTitle></CardHeader>
                 <CardContent><p>{error}</p></CardContent>
             </Card>
          );
@@ -172,28 +172,28 @@ export default function MemberWallet({ memberId }: { memberId: string }) {
     }
 
     return (
-        <div class="space-y-8">
+        <div className="space-y-8">
             <Card>
                 <CardHeader>
-                    <div class="flex items-center gap-4">
-                        <Avatar class="h-16 w-16">
+                    <div className="flex items-center gap-4">
+                        <Avatar className="h-16 w-16">
                             <AvatarFallback>{getInitials(memberData?.firstName, memberData?.lastName)}</AvatarFallback>
                         </Avatar>
                         <div>
-                             <CardTitle class="text-3xl">{memberData?.firstName} {memberData?.lastName}</CardTitle>
-                             <CardDescription class="flex items-center gap-2 mt-1">
-                                <Mail class="h-4 w-4" /> {memberData?.email}
+                             <CardTitle className="text-3xl">{memberData?.firstName} {memberData?.lastName}</CardTitle>
+                             <CardDescription className="flex items-center gap-2 mt-1">
+                                <Mail className="h-4 w-4" /> {memberData?.email}
                              </CardDescription>
-                             <CardDescription class="flex items-center gap-2">
-                                <Calendar class="h-4 w-4" /> Joined: {formatDate(memberData?.createdAt)}
+                             <CardDescription className="flex items-center gap-2">
+                                <Calendar className="h-4 w-4" /> Joined: {formatDate(memberData?.createdAt)}
                             </CardDescription>
                         </div>
                     </div>
                 </CardHeader>
                 <CardContent>
-                    <div class="flex items-baseline gap-2">
-                         <h3 class="text-sm font-medium text-muted-foreground">Current Balance:</h3>
-                         <p class="text-3xl font-bold">{formattedBalance ?? 'R 0.00'}</p>
+                    <div className="flex items-baseline gap-2">
+                         <h3 className="text-sm font-medium text-muted-foreground">Current Balance:</h3>
+                         <p className="text-3xl font-bold">{formattedBalance ?? 'R 0.00'}</p>
                     </div>
                 </CardContent>
             </Card>
@@ -205,9 +205,9 @@ export default function MemberWallet({ memberId }: { memberId: string }) {
                         Manually add a credit or debit to this member's wallet. Use a negative number for debits.
                     </CardDescription>
                 </CardHeader>
-                <CardContent class="space-y-4">
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div class="md:col-span-1">
+                <CardContent className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="md:col-span-1">
                             <Label htmlFor="amount">Amount (R)</Label>
                             <Input 
                                 id="amount" 
@@ -217,7 +217,7 @@ export default function MemberWallet({ memberId }: { memberId: string }) {
                                 onChange={(e) => setNewRecordAmount(e.target.value)}
                             />
                         </div>
-                         <div class="md:col-span-2">
+                         <div className="md:col-span-2">
                             <Label htmlFor="description">Description</Label>
                             <Input 
                                 id="description" 
@@ -230,7 +230,7 @@ export default function MemberWallet({ memberId }: { memberId: string }) {
                 </CardContent>
                 <CardFooter>
                     <Button onClick={handleAddRecord} disabled={isPosting}>
-                        {isPosting ? <Loader2 class="mr-2 h-4 w-4 animate-spin"/> : <FileCheck class="mr-2 h-4 w-4" />}
+                        {isPosting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <FileCheck className="mr-2 h-4 w-4" />}
                         Add Record & Update Wallet
                     </Button>
                 </CardFooter>
@@ -242,5 +242,3 @@ export default function MemberWallet({ memberId }: { memberId: string }) {
         </div>
     );
 }
-
-    
