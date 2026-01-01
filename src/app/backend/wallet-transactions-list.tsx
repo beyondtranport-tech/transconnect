@@ -23,7 +23,7 @@ interface Payment {
     applicantId: string;
     amount: number;
     description: string;
-    createdAt: string;
+    createdAt: any; // Can be Timestamp or string
     memberName?: string;
 }
 
@@ -33,7 +33,7 @@ interface Transaction {
     type: 'credit' | 'debit';
     amount: number;
     description: string;
-    date: string; 
+    date: any; // Can be Timestamp or string
     memberName?: string;
 }
 
@@ -81,13 +81,21 @@ const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(amount);
 };
 
-const formatDate = (isoString: string | undefined) => {
-    if (!isoString) return 'N/A';
-    try {
-        return new Date(isoString).toLocaleString('en-ZA', { dateStyle: 'short', timeStyle: 'short' });
-    } catch (e) {
-        return 'Invalid Date';
+const formatDate = (dateValue: any) => {
+    if (!dateValue) return 'N/A';
+    // Handle Firestore Timestamp object
+    if (typeof dateValue.toDate === 'function') {
+      return dateValue.toDate().toLocaleString('en-ZA', { dateStyle: 'short', timeStyle: 'short' });
     }
+    // Handle ISO string
+    if (typeof dateValue === 'string') {
+        try {
+            return new Date(dateValue).toLocaleString('en-ZA', { dateStyle: 'short', timeStyle: 'short' });
+        } catch (e) {
+            return 'Invalid Date';
+        }
+    }
+    return 'Invalid Date';
 };
 
 export default function WalletTransactionsList() {
