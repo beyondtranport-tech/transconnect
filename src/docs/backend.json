@@ -431,6 +431,21 @@
         }
       },
       "required": ["reconciliationId", "statementPeriod", "openingBalance", "status"]
+    },
+    "BankDetails": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "BankDetails",
+      "type": "object",
+      "description": "Represents the platform's central bank account details for EFT payments.",
+      "properties": {
+        "bankName": { "type": "string" },
+        "branchName": { "type": "string" },
+        "accountHolder": { "type": "string" },
+        "accountType": { "type": "string" },
+        "accountNumber": { "type": "string" },
+        "branchCode": { "type": "string" }
+      },
+      "required": ["bankName", "accountHolder", "accountNumber", "branchCode"]
     }
   },
   "auth": {
@@ -618,6 +633,20 @@
             {
               "name": "contributionId",
               "description": "The unique identifier of the contribution document."
+            }
+          ]
+        }
+      },
+       {
+        "path": "/configuration/{configId}",
+        "definition": {
+          "entityName": "BankDetails",
+          "schema": { "$ref": "#/entities/BankDetails" },
+          "description": "Stores platform-wide configuration settings. The `configId` determines the document (e.g., 'bankDetails'). Publicly readable, admin writable.",
+          "params": [
+            {
+              "name": "configId",
+              "description": "The unique identifier for the configuration document."
             }
           ]
         }

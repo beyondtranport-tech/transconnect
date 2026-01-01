@@ -18,7 +18,9 @@ import { useToast } from '@/hooks/use-toast';
 import { useState, useEffect } from 'react';
 import { Loader2, Banknote, Save } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import bankDetailsData from '@/lib/bank-details.json';
+import { useFirestore, useDoc, useMemoFirebase } from '@/firebase';
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { useConfig } from '@/hooks/use-config';
 
 const formSchema = z.object({
   bankName: z.string().min(1, 'Bank name is required'),
@@ -33,32 +35,46 @@ type BankDetailsFormValues = z.infer<typeof formSchema>;
 
 export default function BankDetailsSettings() {
   const { toast } = useToast();
-  const [isLoading, setIsLoading] = useState(false);
-  const safeBankDetails = bankDetailsData || {};
+  const firestore = useFirestore();
+  const [isSaving, setIsSaving] = useState(false);
+
+  const configRef = useMemoFirebase(() => firestore ? doc(firestore, 'configuration', 'bankDetails') : null, [firestore]);
+  const { data: bankDetailsConfig, isLoading: isConfigLoading } = useDoc<BankDetailsFormValues>(configRef);
 
   const form = useForm<BankDetailsFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      bankName: safeBankDetails.bankName || '',
-      branchName: safeBankDetails.branchName || '',
-      accountHolder: safeBankDetails.accountHolder || '',
-      accountType: safeBankDetails.accountType || '',
-      accountNumber: safeBankDetails.accountNumber || '',
-      branchCode: safeBankDetails.branchCode || '',
+      bankName: '',
+      branchName: '',
+      accountHolder: '',
+      accountType: '',
+      accountNumber: '',
+      branchCode: '',
     },
   });
 
-  const onSubmit = async (values: BankDetailsFormValues) => {
-    setIsLoading(true);
-    
-    console.log("New bank details to be saved:", JSON.stringify(values, null, 2));
+  useEffect(() => {
+    if (bankDetailsConfig) {
+      form.reset(bankDetailsConfig);
+    }
+  }, [bankDetailsConfig, form]);
 
-    toast({
-        title: 'Form Submitted (Developer Instruction)',
-        description: 'New bank details have been logged to the console. The developer will now update the central configuration file.',
-    });
+
+  const onSubmit = async (values: BankDetailsFormValues) => {
+    if (!configRef) {
+        toast({ variant: 'destructive', title: 'Error', description: 'Firestore not available.' });
+        return;
+    }
+    setIsSaving(true);
     
-    setIsLoading(false);
+    try {
+      await setDoc(configRef, { ...values, updatedAt: serverTimestamp() }, { merge: true });
+      toast({ title: 'Bank Details Saved!', description: 'The platform bank details have been updated successfully.' });
+    } catch (e: any) {
+      toast({ variant: 'destructive', title: 'Update Failed', description: e.message });
+    } finally {
+        setIsSaving(false);
+    }
   };
 
   return (
@@ -75,97 +91,103 @@ export default function BankDetailsSettings() {
             </div>
         </CardHeader>
         <CardContent>
-            <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {isConfigLoading ? (
+                <div className="flex justify-center items-center py-10">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                </div>
+            ) : (
+                <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <FormField
+                        control={form.control}
+                        name="bankName"
+                        render={({ field }) => (
+                            <FormItem>
+                            <FormLabel>Bank Name</FormLabel>
+                            <FormControl>
+                                <Input placeholder="e.g., First National Bank" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                            </FormItem>
+                        )}
+                        />
+                        <FormField
+                        control={form.control}
+                        name="branchName"
+                        render={({ field }) => (
+                            <FormItem>
+                            <FormLabel>Branch</FormLabel>
+                            <FormControl>
+                                <Input placeholder="e.g., Sandton City" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                            </FormItem>
+                        )}
+                        />
+                    </div>
                     <FormField
                     control={form.control}
-                    name="bankName"
+                    name="accountHolder"
                     render={({ field }) => (
                         <FormItem>
-                        <FormLabel>Bank Name</FormLabel>
+                        <FormLabel>Holder</FormLabel>
                         <FormControl>
-                            <Input placeholder="e.g., First National Bank" {...field} />
+                            <Input placeholder="e.g., TransConnect (Pty) Ltd" {...field} />
                         </FormControl>
                         <FormMessage />
                         </FormItem>
                     )}
                     />
-                     <FormField
-                    control={form.control}
-                    name="branchName"
-                    render={({ field }) => (
-                        <FormItem>
-                        <FormLabel>Branch</FormLabel>
-                        <FormControl>
-                            <Input placeholder="e.g., Sandton City" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                        </FormItem>
-                    )}
-                    />
-                </div>
-                <FormField
-                control={form.control}
-                name="accountHolder"
-                render={({ field }) => (
-                    <FormItem>
-                    <FormLabel>Holder</FormLabel>
-                    <FormControl>
-                        <Input placeholder="e.g., TransConnect (Pty) Ltd" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                    </FormItem>
-                )}
-                />
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <FormField
+                        control={form.control}
+                        name="accountType"
+                        render={({ field }) => (
+                            <FormItem>
+                            <FormLabel>Account Type</FormLabel>
+                            <FormControl>
+                                <Input placeholder="e.g., Cheque" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                            </FormItem>
+                        )}
+                        />
+                        <FormField
+                        control={form.control}
+                        name="accountNumber"
+                        render={({ field }) => (
+                            <FormItem>
+                            <FormLabel>Acc Number</FormLabel>
+                            <FormControl>
+                                <Input placeholder="e.g., 62800012345" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                            </FormItem>
+                        )}
+                        />
+                    </div>
                     <FormField
-                    control={form.control}
-                    name="accountType"
-                    render={({ field }) => (
-                        <FormItem>
-                        <FormLabel>Account Type</FormLabel>
-                        <FormControl>
-                            <Input placeholder="e.g., Cheque" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                        </FormItem>
-                    )}
-                    />
-                     <FormField
-                    control={form.control}
-                    name="accountNumber"
-                    render={({ field }) => (
-                        <FormItem>
-                        <FormLabel>Acc Number</FormLabel>
-                        <FormControl>
-                            <Input placeholder="e.g., 62800012345" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                        </FormItem>
-                    )}
-                    />
-                </div>
-                 <FormField
-                    control={form.control}
-                    name="branchCode"
-                    render={({ field }) => (
-                        <FormItem>
-                        <FormLabel>Branch Code</FormLabel>
-                        <FormControl>
-                            <Input placeholder="e.g., 250655" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                        </FormItem>
-                    )}
-                    />
+                        control={form.control}
+                        name="branchCode"
+                        render={({ field }) => (
+                            <FormItem>
+                            <FormLabel>Branch Code</FormLabel>
+                            <FormControl>
+                                <Input placeholder="e.g., 250655" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                            </FormItem>
+                        )}
+                        />
 
-                <Button type="submit" disabled={isLoading} className="mt-4">
-                {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                Save Bank Details
-                </Button>
-            </form>
-            </Form>
+                    <Button type="submit" disabled={isSaving} className="mt-4">
+                    {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                    Save Bank Details
+                    </Button>
+                </form>
+                </Form>
+            )}
         </CardContent>
     </Card>
   );

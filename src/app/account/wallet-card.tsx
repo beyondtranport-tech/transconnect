@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useUser, useFirestore, useMemoFirebase, useCollection, useDoc } from '@/firebase';
@@ -9,7 +10,6 @@ import Link from 'next/link';
 import { collection, query, orderBy, limit, doc } from 'firebase/firestore';
 import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
-import bankDetailsData from '@/lib/bank-details.json';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useConfig } from '@/hooks/use-config';
 import { getClientSideAuthToken } from '@/firebase';
@@ -66,12 +66,13 @@ export default function WalletCard() {
         );
     }, [firestore, user]);
     
-    const { data: techPricing, isLoading: isPricingLoading } = useConfig<{ eftTopUpFee?: number }>('techPricing');
+    const { data: techPricing, isLoading: isTechPricingLoading } = useConfig<{ eftTopUpFee?: number }>('techPricing');
+    const { data: bankDetails, isLoading: isBankDetailsLoading } = useConfig<any>('bankDetails');
 
     const { data: transactions, isLoading: isLoadingTransactions, error: transactionsError } = useCollection(transactionsQuery);
     const { data: pendingPayments, isLoading: isLoadingPayments, error: paymentsError } = useCollection(pendingPaymentsQuery);
 
-    const isLoading = isLoadingTransactions || isLoadingPayments || isMemberLoading || isPricingLoading;
+    const isLoading = isLoadingTransactions || isLoadingPayments || isMemberLoading || isTechPricingLoading || isBankDetailsLoading;
     const error = transactionsError || paymentsError;
 
     if (user && user.email === 'beyondtransport@gmail.com') {
@@ -147,16 +148,26 @@ export default function WalletCard() {
                      </Alert>
                      <Card className="bg-background">
                          <CardContent className="p-4 text-sm space-y-2">
-                             {Object.entries(bankDetailsData).map(([key, value]) => (
-                                <div key={key} className="flex justify-between">
-                                    <span className="text-muted-foreground capitalize">{key.replace(/([A-Z])/g, ' $1').trim()}</span>
-                                    <span className="font-mono">{value}</span>
+                             {isBankDetailsLoading ? (
+                                <div className="flex justify-center p-4">
+                                    <Loader2 className="h-6 w-6 animate-spin"/>
                                 </div>
-                            ))}
-                            <div className="flex justify-between pt-2 border-t">
-                                <span className="text-muted-foreground">Reference</span>
-                                <span className="font-mono text-primary">{user?.uid}</span>
-                            </div>
+                             ) : bankDetails ? (
+                                <>
+                                    {Object.entries(bankDetails).filter(([key]) => !['id', 'updatedAt'].includes(key)).map(([key, value]) => (
+                                        <div key={key} className="flex justify-between">
+                                            <span className="text-muted-foreground capitalize">{key.replace(/([A-Z])/g, ' $1').trim()}</span>
+                                            <span className="font-mono">{String(value)}</span>
+                                        </div>
+                                    ))}
+                                    <div className="flex justify-between pt-2 border-t">
+                                        <span className="text-muted-foreground">Reference</span>
+                                        <span className="font-mono text-primary">{user?.uid}</span>
+                                    </div>
+                                </>
+                            ) : (
+                                <p className="text-muted-foreground text-center">Bank details not configured.</p>
+                            )}
                          </CardContent>
                      </Card>
                      <Button onClick={handleSubmitProofOfPayment} disabled={isSubmitting}>
