@@ -49,9 +49,7 @@ export default function TransactionAllocation({ statementData }: { statementData
         return new Map(members.map(m => [m.id, `${m.firstName} ${m.lastName}`]));
     }, [members]);
     
-    const [rawTransactions, setRawTransactions] = useState<ManualTransaction[]>([]);
-    const [transactionsWithNames, setTransactionsWithNames] = useState<ManualTransaction[]>([]);
-
+    const [transactions, setTransactions] = useState<ManualTransaction[]>([]);
     const [openingBalance, setOpeningBalance] = useState(statementData.openingBalance);
     const [closingBalance, setClosingBalance] = useState(statementData.closingBalance);
     
@@ -62,32 +60,31 @@ export default function TransactionAllocation({ statementData }: { statementData
     const [isPosting, setIsPosting] = useState(false);
 
     useEffect(() => {
-        setRawTransactions(statementData.transactions.map((t: any) => ({
-            ...t,
-            status: 'pending'
-        })));
         setOpeningBalance(statementData.openingBalance);
         setClosingBalance(statementData.closingBalance);
-    }, [statementData]);
-
-    useEffect(() => {
-        if (rawTransactions.length > 0 && !isLoadingMembers && memberMap.size > 0) {
-            const populated = rawTransactions.map(tx => ({
+        
+        // Only process transactions when members are loaded.
+        if (statementData.transactions && !isLoadingMembers && memberMap.size > 0) {
+            const populated = statementData.transactions.map((tx: any) => ({
                 ...tx,
+                status: 'pending',
                 memberName: memberMap.get(tx.reference) || (tx.reference ? 'Unknown Member' : '')
             }));
-            setTransactionsWithNames(populated);
-        } else if (rawTransactions.length > 0 && !isLoadingMembers) {
-             const populated = rawTransactions.map(tx => ({ ...tx, memberName: 'Unknown Member' }));
-             setTransactionsWithNames(populated);
+            setTransactions(populated);
+        } else if (statementData.transactions && !isLoadingMembers) {
+            // Fallback if membermap is empty for some reason, but members are not loading.
+             const populated = statementData.transactions.map((tx: any) => ({ ...tx, status: 'pending', memberName: tx.reference ? 'Unknown Member' : '' }));
+             setTransactions(populated);
         } else {
-             setTransactionsWithNames(rawTransactions);
+            // Set raw transactions if members are still loading
+            setTransactions(statementData.transactions.map((t: any) => ({ ...t, status: 'pending' })));
         }
-    }, [rawTransactions, isLoadingMembers, memberMap]);
+
+    }, [statementData, members, isLoadingMembers, memberMap]);
     
     const handleAllocationChange = (transactionId: number) => {
         let wasAllocated = false;
-        const updatedTransactions = transactionsWithNames.map((tx) => {
+        const updatedTransactions = transactions.map((tx) => {
             if (tx.id === transactionId) {
                 const newStatus = tx.status === 'allocated' ? 'pending' : 'allocated';
                 if (newStatus === 'allocated') wasAllocated = true;
@@ -96,12 +93,12 @@ export default function TransactionAllocation({ statementData }: { statementData
             return tx;
         });
 
-        setTransactionsWithNames(updatedTransactions);
+        setTransactions(updatedTransactions);
         if (wasAllocated) toast({ title: `Transaction ${transactionId} allocated.` });
     };
 
     const handleFieldChange = (transactionId: number, field: keyof ManualTransaction, value: string | number) => {
-        setTransactionsWithNames(currentTransactions =>
+        setTransactions(currentTransactions =>
             currentTransactions.map(tx => {
                 if (tx.id === transactionId) {
                     const updatedTx = { ...tx, [field]: value };
@@ -116,7 +113,7 @@ export default function TransactionAllocation({ statementData }: { statementData
     };
 
     const addManualRow = () => {
-        const newId = transactionsWithNames.length > 0 ? Math.max(...transactionsWithNames.map(t => t.id)) + 1 : 1;
+        const newId = transactions.length > 0 ? Math.max(...transactions.map(t => t.id)) + 1 : 1;
         const newRow: ManualTransaction = {
             id: newId,
             date: new Date().toISOString().split('T')[0],
@@ -127,11 +124,11 @@ export default function TransactionAllocation({ statementData }: { statementData
             status: 'allocated',
             memberName: ''
         };
-        setTransactionsWithNames([...transactionsWithNames, newRow]);
+        setTransactions([...transactions, newRow]);
     };
     
     const removeManualRow = (id: number) => {
-        setTransactionsWithNames(transactionsWithNames.filter(tx => tx.id !== id));
+        setTransactions(transactions.filter(tx => tx.id !== id));
     };
 
     const handleSaveAndPost = async () => {
@@ -139,16 +136,17 @@ export default function TransactionAllocation({ statementData }: { statementData
             toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in to post.' });
             return;
         }
-
-        setIsPosting(true);
-        const allocatedTransactions = transactionsWithNames.filter(tx => tx.status === 'allocated' && memberMap.has(tx.reference));
+        
+        // This is the critical check. It now uses the stable `memberMap` which is guaranteed to be populated.
+        const allocatedTransactions = transactions.filter(tx => tx.status === 'allocated' && memberMap.has(tx.reference));
         
         if (allocatedTransactions.length === 0) {
-            toast({ variant: 'destructive', title: 'No Valid Transactions', description: 'No valid transactions were allocated to post. Ensure a valid Member UID is set.' });
+            toast({ variant: 'destructive', title: 'No Valid Transactions', description: 'No valid transactions were allocated to post. Ensure a valid Member UID is set for each allocated row.' });
             setIsPosting(false);
             return;
         }
 
+        setIsPosting(true);
         const batch = writeBatch(firestore);
 
         for (const tx of allocatedTransactions) {
@@ -183,7 +181,7 @@ export default function TransactionAllocation({ statementData }: { statementData
         try {
             await batch.commit();
             toast({ title: 'Success!', description: 'Reconciliation has been posted and wallets have been updated.' });
-            setRawTransactions(transactionsWithNames.filter(tx => tx.status !== 'allocated'));
+            setTransactions(transactions.filter(tx => tx.status !== 'allocated'));
         } catch (error: any) {
             toast({ variant: 'destructive', title: 'Posting Failed', description: error.message || "You may not have the required permissions." });
         } finally {
@@ -192,7 +190,7 @@ export default function TransactionAllocation({ statementData }: { statementData
     };
 
     useEffect(() => {
-        const allocatedTransactions = transactionsWithNames.filter(t => t.status === 'allocated');
+        const allocatedTransactions = transactions.filter(t => t.status === 'allocated');
         const newTotalCredits = allocatedTransactions.filter(t => t.type === 'credit').reduce((sum, t) => sum + t.amount, 0);
         const newTotalDebits = allocatedTransactions.filter(t => t.type === 'debit').reduce((sum, t) => sum + Math.abs(t.amount), 0);
         
@@ -203,7 +201,7 @@ export default function TransactionAllocation({ statementData }: { statementData
         setTotalDebits(newTotalDebits);
         setCalculatedClosingBalance(newCalculatedClosingBalance);
         setDifference(newDifference);
-    }, [transactionsWithNames, openingBalance, closingBalance]);
+    }, [transactions, openingBalance, closingBalance]);
 
     const isManualMode = statementData.statementName.startsWith('manual-adjustment');
 
@@ -256,7 +254,7 @@ export default function TransactionAllocation({ statementData }: { statementData
                                     </TableCell>
                                 </TableRow>
                             ) : (
-                                transactionsWithNames.map(tx => (
+                                transactions.map(tx => (
                                     <TableRow key={tx.id} className={tx.status === 'allocated' ? 'bg-green-100/50 dark:bg-green-900/20' : ''}>
                                         <TableCell>
                                             <Input value={tx.date} onChange={(e) => handleFieldChange(tx.id, 'date', e.target.value)} className="h-8 text-xs font-mono" type="date" />
