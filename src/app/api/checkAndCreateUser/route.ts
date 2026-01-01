@@ -8,6 +8,7 @@ import { getAdminApp } from '@/lib/firebase-admin';
 export async function POST(req: NextRequest) {
   const { app, error: initError } = getAdminApp();
   if (initError || !app) {
+    console.error("Admin SDK init error in checkAndCreateUser:", initError);
     return NextResponse.json({ success: false, error: 'Internal Server Error: Could not connect to Firebase.' }, { status: 500 });
   }
 
@@ -33,8 +34,16 @@ export async function POST(req: NextRequest) {
     }
 
     // --- Document does NOT exist, so create it ---
+    console.log(`Document for user ${user.uid} not found. Creating it now.`);
+
+    // ** THE FIX IS HERE **
+    // Safely handle potentially null displayName
+    const displayName = user.displayName || '';
+    const nameParts = displayName.split(' ');
+    const firstName = nameParts[0] || 'New';
+    const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : 'User';
+    
     const isAdmin = user.email === 'beyondtransport@gmail.com';
-    const [firstName, lastName] = user.displayName?.split(' ') || ['New', 'User'];
 
     const memberData: any = {
         id: user.uid,
@@ -53,11 +62,12 @@ export async function POST(req: NextRequest) {
     };
     
     await docRef.set(memberData);
+    console.log(`Successfully created document for user ${user.uid}.`);
 
     return NextResponse.json({ success: true, message: 'User document created successfully.' });
 
   } catch (error: any) {
-    console.error(`Error in checkAndCreateUser:`, error);
+    console.error(`Error in checkAndCreateUser for user ${idToken ? getAuth(app).verifyIdToken(idToken).then(t=>t.uid).catch(()=>'unknown') : 'unknown'}:`, error);
     if (error.code?.startsWith('auth/')) {
        return NextResponse.json({ success: false, error: `Authentication error: ${error.message}` }, { status: 401 });
     }
