@@ -64,6 +64,21 @@
           "type": "string",
           "description": "Reference to Membership tier ID (e.g., 'professional'). (Relationship: Member 1:1 Membership)"
         },
+        "membershipStartDate": {
+            "type": "string",
+            "format": "date-time",
+            "description": "The date when the current paid membership plan started."
+        },
+        "billingCycle": {
+            "type": "string",
+            "enum": ["monthly", "annual"],
+            "description": "The billing frequency for the membership plan."
+        },
+        "nextBillingDate": {
+            "type": "string",
+            "format": "date-time",
+            "description": "The calculated next date for recurring billing."
+        },
         "shopId": {
           "type": "string",
           "description": "The ID of the shop owned by this member, linking to the shops subcollection."
@@ -390,7 +405,7 @@
       "type": "object",
       "description": "Represents a single bank statement reconciliation batch.",
       "properties": {
-        "reconciliationId": {
+        "id": {
           "type": "string",
           "description": "Unique identifier for the reconciliation batch (e.g., RECON-2024-07-30)."
         },
@@ -416,7 +431,20 @@
           "description": "The server timestamp when the reconciliation was completed."
         }
       },
-      "required": ["reconciliationId", "statementPeriod", "openingBalance", "status"]
+      "required": ["id", "statementPeriod", "openingBalance", "status"]
+    },
+    "ChartOfAccounts": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "title": "ChartOfAccounts",
+        "type": "object",
+        "description": "Defines a single entry in the Chart of Accounts.",
+        "properties": {
+            "code": { "type": "string", "description": "The unique account code (e.g., 4010, 7010)." },
+            "name": { "type": "string", "description": "The descriptive name of the account (e.g., Basic Membership Fees, Bank Charges)." },
+            "series": { "type": "string", "description": "The account series or category (e.g., 4000: Core Revenue)." },
+            "type": { "type": "string", "enum": ["revenue", "expense"], "description": "The type of account." }
+        },
+        "required": ["code", "name", "series", "type"]
     }
   },
   "auth": {
@@ -595,10 +623,26 @@
             }
           ]
         }
+      },
+       {
+        "path": "/platformTransactions/{transactionId}",
+        "definition": {
+          "entityName": "Transaction",
+          "schema": { "$ref": "#/entities/Transaction" },
+          "description": "Stores platform-level transactions not associated with a specific member (e.g., bank charges). Admin-only access.",
+          "params": [{ "name": "transactionId", "description": "The unique ID of the platform transaction." }]
+        }
+      },
+       {
+        "path": "/reconciliations/{reconciliationId}",
+        "definition": {
+          "entityName": "Reconciliation",
+          "schema": { "$ref": "#/entities/Reconciliation" },
+          "description": "Stores a record of each completed reconciliation batch. Admin-only access.",
+          "params": [{ "name": "reconciliationId", "description": "The unique ID of the reconciliation batch." }]
+        }
       }
     ],
-    "reasoning": "The data model now uses a dual-collection strategy for shops to ensure security and functionality. A user's shop is created and managed within a subcollection at `/members/{memberId}/shops`, which is fully controlled by the owner via a recursive security rule. A top-level `/shops` collection exists to hold public, read-only copies of *approved* shops. This separation prevents users from listing each other's draft shops while allowing a public, queryable marketplace. A backend process (e.g., Cloud Function, not implemented here) would be responsible for copying an approved shop from the member's subcollection to the public top-level collection. Quotes, Enquiries, and Wallet Payments are now in their own dedicated subcollections under each member for clarity and to prevent data mixing."
+    "reasoning": "The data model now uses a dual-collection strategy for shops to ensure security and functionality. A user's shop is created and managed within a subcollection at `/members/{memberId}/shops`, which is fully controlled by the owner via a recursive security rule. A top-level `/shops` collection exists to hold public, read-only copies of *approved* shops. This separation prevents users from listing each other's draft shops while allowing a public, queryable marketplace. A backend process (e.g., Cloud Function, not implemented here) would be responsible for copying an approved shop from the member's subcollection to the public top-level collection. Quotes, Enquiries, and Wallet Payments are now in their own dedicated subcollections under each member for clarity and to prevent data mixing. A new top-level collection `platformTransactions` has been added for admin-only tracking of platform-wide expenses like bank charges."
   }
 }
-
-    

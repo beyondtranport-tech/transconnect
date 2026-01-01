@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken } from '@/firebase';
+import BillingRun from './billing-run';
 
 interface Member {
     id: string;
@@ -239,6 +240,8 @@ export default function DashboardContent() {
                     </Card>
                 </Link>
             </div>
+
+            <BillingRun />
             
             <Card>
                 <CardHeader>

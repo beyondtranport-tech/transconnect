@@ -14,7 +14,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import Link from 'next/link';
-import bankDetailsData from '@/lib/bank-details.json';
+import { useConfig } from '@/hooks/use-config';
 
 
 const formatPrice = (price: number) => {
@@ -42,6 +42,8 @@ function CheckoutComponent() {
   
   const { data: plan, isLoading: isPlanLoading } = useDoc(planRef);
 
+  const { data: bankDetails, isLoading: isBankDetailsLoading } = useConfig<any>('bankDetails');
+
   const memberRef = useMemoFirebase(() => {
     if (!firestore || !user) return null;
     return doc(firestore, 'members', user.uid);
@@ -50,8 +52,8 @@ function CheckoutComponent() {
   const price = useMemo(() => {
     if (!plan) return 0;
     if (cycle === 'annual') {
-        const discount = plan.annualDiscount || 0;
-        return plan.price.monthly * 12 * (1 - discount / 100);
+        const annualPrice = plan.price.annual || 0;
+        return annualPrice > 0 ? annualPrice : plan.price.monthly * 12 * (1 - (plan.annualDiscount || 0) / 100);
     }
     return plan.price.monthly;
   }, [plan, cycle]);
@@ -99,7 +101,22 @@ function CheckoutComponent() {
     // 1. Update member's balance and membership
     const memberDocRef = doc(firestore, 'members', user.uid);
     const newBalance = userBalance - price;
-    const memberUpdateData = { membershipId: plan.id, walletBalance: newBalance };
+
+    const now = new Date();
+    const nextBillingDate = new Date(now);
+    if(cycle === 'monthly') {
+        nextBillingDate.setMonth(nextBillingDate.getMonth() + 1);
+    } else {
+        nextBillingDate.setFullYear(nextBillingDate.getFullYear() + 1);
+    }
+
+    const memberUpdateData = { 
+        membershipId: plan.id, 
+        walletBalance: newBalance,
+        membershipStartDate: serverTimestamp(),
+        billingCycle: cycle,
+        nextBillingDate: nextBillingDate
+    };
     batch.update(memberDocRef, memberUpdateData);
 
     // 2. Create a transaction record in the member's transactions subcollection
@@ -136,7 +153,7 @@ function CheckoutComponent() {
     }
   };
 
-  if (isUserLoading || !user || isBalanceLoading || isPlanLoading) {
+  if (isUserLoading || !user || isBalanceLoading || isPlanLoading || isBankDetailsLoading) {
       return <div className="flex justify-center items-center h-full"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
   }
   if (!plan) {
@@ -180,19 +197,25 @@ function CheckoutComponent() {
                         <CardTitle>EFT Payment Details</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-3">
-                         {Object.entries(bankDetailsData).map(([key, value]) => (
-                            <div key={key} className="flex justify-between items-center text-sm">
-                                <span className="text-muted-foreground capitalize">{key.replace(/([A-Z])/g, ' $1').trim()}</span>
-                                <span className="font-mono">{value}</span>
-                            </div>
-                        ))}
-                        <div className="flex justify-between items-center text-sm pt-3 border-t">
-                            <span className="text-muted-foreground">Reference</span>
-                             <button onClick={() => copyToClipboard(user.uid)} className="font-mono text-primary hover:underline flex items-center gap-2">
-                                {user.uid}
-                                <ClipboardCopy className="h-4 w-4"/>
-                            </button>
-                        </div>
+                         {bankDetails ? (
+                            <>
+                                {Object.entries(bankDetails).filter(([key]) => !['id', 'updatedAt'].includes(key)).map(([key, value]) => (
+                                    <div key={key} className="flex justify-between items-center text-sm">
+                                        <span className="text-muted-foreground capitalize">{key.replace(/([A-Z])/g, ' $1').trim()}</span>
+                                        <span className="font-mono">{String(value)}</span>
+                                    </div>
+                                ))}
+                                <div className="flex justify-between items-center text-sm pt-3 border-t">
+                                    <span className="text-muted-foreground">Reference</span>
+                                    <button onClick={() => copyToClipboard(user.uid)} className="font-mono text-primary hover:underline flex items-center gap-2">
+                                        {user.uid}
+                                        <ClipboardCopy className="h-4 w-4"/>
+                                    </button>
+                                </div>
+                            </>
+                         ) : (
+                            <p className="text-sm text-muted-foreground">Bank details are not configured.</p>
+                         )}
                     </CardContent>
                 </Card>
                  <Button onClick={() => fetchBalance()} className="w-full mt-6" variant="outline">
