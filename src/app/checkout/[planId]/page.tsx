@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Suspense, useState, useEffect, useCallback, useMemo } from 'react';
@@ -82,7 +83,10 @@ function CheckoutComponent() {
   };
 
   const handleSubmitProofOfPayment = async () => {
-    if (!user || !userData?.memberId) return;
+    if (!user || !userData?.memberId) {
+        toast({ variant: 'destructive', title: "Error", description: "You must be logged in to submit a payment." });
+        return;
+    }
     const amountValue = parseFloat(paymentAmount);
     if (isNaN(amountValue) || amountValue <= 0) {
         toast({ variant: 'destructive', title: "Invalid Amount", description: "Please enter a valid payment amount."});
@@ -96,7 +100,7 @@ function CheckoutComponent() {
         
         const paymentData = {
             userId: user.uid,
-            memberId: userData.memberId,
+            memberId: userData.memberId, // Correctly use memberId from user data
             status: 'pending',
             description: `Membership Payment Top-up for ${plan.name} (${cycle})`,
             amount: amountValue,
@@ -130,7 +134,7 @@ function CheckoutComponent() {
     
     const batch = writeBatch(firestore);
     
-    // 1. Update company's balance and membership
+    // 1. Update member's balance and membership
     const memberDocRef = doc(firestore, 'members', userData.memberId);
 
     const now = new Date();
@@ -150,7 +154,7 @@ function CheckoutComponent() {
     };
     batch.update(memberDocRef, memberUpdateData);
 
-    // 2. Create a transaction record in the company's transactions subcollection
+    // 2. Create a transaction record in the member's transactions subcollection
     const transactionRef = doc(collection(firestore, `members/${userData.memberId}/transactions`));
     const transactionData = {
         memberId: userData.memberId,
