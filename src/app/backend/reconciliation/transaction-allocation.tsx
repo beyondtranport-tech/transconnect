@@ -259,6 +259,7 @@ export default function TransactionAllocation({ statementData }: { statementData
                                 <TableRow>
                                     <TableCell colSpan={7} className="h-24 text-center">
                                         <Loader2 className="mx-auto h-6 w-6 animate-spin text-primary" />
+                                        <p className="mt-2 text-sm text-muted-foreground">Loading member data...</p>
                                     </TableCell>
                                 </TableRow>
                             ) : (
