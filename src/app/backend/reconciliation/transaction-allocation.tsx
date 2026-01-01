@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -55,7 +54,7 @@ type UiTransaction = {
     chartOfAccountsCode?: string;
 };
 
-export default function TransactionAllocation({ statementData }: { statementData: any }) {
+export default function TransactionAllocation({ statementData, onSuccessfulPost }: { statementData: any, onSuccessfulPost: () => void }) {
     const { toast } = useToast();
     const firestore = useFirestore();
     const { user } = useUser();
@@ -239,6 +238,7 @@ export default function TransactionAllocation({ statementData }: { statementData
             await batch.commit();
             toast({ title: 'Success!', description: 'Reconciliation has been posted.' });
             setTransactions(transactions.filter(tx => tx.status === 'pending'));
+            onSuccessfulPost();
         } catch (error: any) {
             toast({ variant: 'destructive', title: 'Posting Failed', description: error.message || "You may not have the required permissions." });
         } finally {
@@ -402,5 +402,3 @@ export default function TransactionAllocation({ statementData }: { statementData
         </Card>
     )
 }
-
-    

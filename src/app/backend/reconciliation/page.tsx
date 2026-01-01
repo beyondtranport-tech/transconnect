@@ -1,10 +1,9 @@
-
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { PlusCircle, Loader2, DownloadCloud, Upload, ListChecks, ArrowRight } from "lucide-react";
-import { useState, useRef, useEffect, Suspense } from "react";
+import { useState, useRef, useEffect, Suspense, useCallback } from "react";
 import { useToast } from "@/hooks/use-toast";
 import TransactionAllocation from "./transaction-allocation";
 import { getClientSideAuthToken, useCollection, useFirestore, useMemoFirebase } from "@/firebase";
@@ -67,7 +66,13 @@ function ReconciliationDashboard() {
     const reconciliationsQuery = useMemoFirebase(() => 
         firestore ? query(collection(firestore, 'reconciliations'), orderBy('processedAt', 'desc')) : null
     , [firestore]);
-    const { data: pastReconciliations, isLoading: isLoadingHistory } = useCollection(reconciliationsQuery);
+    const { data: pastReconciliations, isLoading: isLoadingHistory, forceRefresh: refreshHistory } = useCollection(reconciliationsQuery);
+    
+    const onSuccessfulPost = useCallback(() => {
+        setProcessingData(null);
+        refreshHistory();
+    }, [refreshHistory]);
+
 
     useEffect(() => {
         if (useDemo) {
@@ -78,7 +83,7 @@ function ReconciliationDashboard() {
                  setProcessingData(null);
             }
         }
-    }, [useDemo]);
+    }, [useDemo, processingData]);
 
     const handleProcessPendingEFTs = async () => {
         setIsLoading(true);
@@ -217,7 +222,7 @@ function ReconciliationDashboard() {
             </Card>
 
             {processingData && (
-                <TransactionAllocation statementData={processingData} />
+                <TransactionAllocation statementData={processingData} onSuccessfulPost={onSuccessfulPost} />
             )}
 
             <Card>
@@ -277,5 +282,3 @@ export default function ReconciliationPage() {
     
     return <Suspense fallback={<Loader2 className="h-16 w-16 animate-spin" />}><ReconciliationDashboard /></Suspense>
 }
-
-    
