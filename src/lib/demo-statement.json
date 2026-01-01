@@ -1,0 +1,47 @@
+{
+  "statementName": "demo-statement.csv",
+  "openingBalance": 10000.00,
+  "closingBalance": 11550.50,
+  "transactions": [
+    {
+      "id": 1,
+      "date": "2024-07-28",
+      "description": "Payment from ClientCorp - INV-1023",
+      "reference": "tcmember001@gmail.com",
+      "amount": 1500.00,
+      "type": "credit"
+    },
+    {
+      "id": 2,
+      "date": "2024-07-28",
+      "description": "Fuel Purchase - Shell",
+      "reference": "tcmember002@gmail.com",
+      "amount": 250.50,
+      "type": "debit"
+    },
+    {
+      "id": 3,
+      "date": "2024-07-29",
+      "description": "Membership Fee - July 2024",
+      "reference": "tcmember001@gmail.com",
+      "amount": 150.00,
+      "type": "debit"
+    },
+    {
+      "id": 4,
+      "date": "2024-07-30",
+      "description": "EFT Top-up",
+      "reference": "tcmember002@gmail.com",
+      "amount": 500.00,
+      "type": "credit"
+    },
+    {
+      "id": 5,
+      "date": "2024-07-31",
+      "description": "Parts Purchase - Parts Inc.",
+      "reference": "tcmember001@gmail.com",
+      "amount": 50.00,
+      "type": "debit"
+    }
+  ]
+}
