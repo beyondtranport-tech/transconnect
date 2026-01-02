@@ -11,11 +11,11 @@ import { useConfig } from '@/hooks/use-config';
 import { useToast } from '@/hooks/use-toast';
 
 interface Member {
-    id: string;
+    id: string; // This is the user's UID (ownerId)
     firstName?: string;
     lastName?: string;
     companyName?: string;
-    companyId?: string;
+    companyId?: string; // This is the company document ID
 }
 
 interface Payment {
@@ -123,19 +123,27 @@ export default function WalletTransactionsList() {
             if (paymentsData) {
                 const enhancedPayments = paymentsData
                     .filter((p: any) => p.status === 'pending')
-                    .map((p: any) => ({
-                        ...p,
-                        memberName: `${newMemberMap.get(p.companyId)?.firstName || ''} ${newMemberMap.get(p.companyId)?.lastName || ''}`.trim() || p.companyId,
-                    }));
+                    .map((p: any) => {
+                        const member = newMemberMap.get(p.companyId);
+                        const memberName = member ? `${member.firstName || ''} ${member.lastName || ''}`.trim() : p.companyId;
+                        return {
+                            ...p,
+                            memberName: memberName || p.companyId
+                        };
+                    });
                 enhancedPayments.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
                 setPendingPayments(enhancedPayments);
             }
 
             if (transactionsData) {
-                 const enhancedTransactions = transactionsData.map((tx: any) => ({
-                    ...tx,
-                    memberName: `${newMemberMap.get(tx.companyId)?.firstName || ''} ${newMemberMap.get(tx.companyId)?.lastName || ''}`.trim() || tx.companyId,
-                }));
+                 const enhancedTransactions = transactionsData.map((tx: any) => {
+                    const member = newMemberMap.get(tx.companyId);
+                    const memberName = member ? `${member.firstName || ''} ${member.lastName || ''}`.trim() : tx.companyId;
+                    return {
+                        ...tx,
+                        memberName: memberName || tx.companyId
+                    };
+                });
                 enhancedTransactions.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
                 setAllocatedTransactions(enhancedTransactions);
             }

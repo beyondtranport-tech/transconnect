@@ -52,30 +52,33 @@ export async function POST(req: NextRequest) {
         switch (action) {
             case 'getMembers': {
                 const companiesSnap = await db.collection('companies').get();
-                const companies = companiesSnap.docs.map(doc => ({ ...serializeTimestamps(doc.data()), id: doc.id }));
+                const ownerIds = companiesSnap.docs.map(doc => doc.data().ownerId).filter(Boolean);
                 
-                const ownerIdToCompanyMap = new Map();
-                companies.forEach(company => {
-                    if (company.ownerId) {
-                        ownerIdToCompanyMap.set(company.ownerId, company);
-                    }
-                });
-
-                const usersSnap = await db.collection('users').get();
-                const data = usersSnap.docs.map(userDoc => {
-                    const user = serializeTimestamps(userDoc.data());
-                    const company = ownerIdToCompanyMap.get(userDoc.id); // User's UID is the ownerId
+                let usersData: { [key: string]: any } = {};
+                if (ownerIds.length > 0) {
+                    const usersSnap = await db.collection('users').where('__name__', 'in', ownerIds).get();
+                    usersSnap.forEach(doc => {
+                        usersData[doc.id] = serializeTimestamps(doc.data());
+                    });
+                }
+                
+                const members = companiesSnap.docs.map(companyDoc => {
+                    const company = serializeTimestamps(companyDoc.data());
+                    const owner = usersData[company.ownerId];
                     return {
-                        ...user,
-                        id: userDoc.id,
-                        companyName: company?.companyName,
-                        membershipId: company?.membershipId,
-                        walletBalance: company?.walletBalance,
-                        companyId: company?.id,
-                    }
+                        id: company.ownerId, // User UID is the primary ID for this list
+                        companyId: company.id,
+                        firstName: owner?.firstName,
+                        lastName: owner?.lastName,
+                        email: owner?.email,
+                        createdAt: owner?.createdAt,
+                        companyName: company.companyName,
+                        membershipId: company.membershipId,
+                        walletBalance: company.walletBalance,
+                    };
                 });
-
-                return NextResponse.json({ success: true, data });
+                
+                return NextResponse.json({ success: true, data: members });
             }
              case 'getMemberships': {
                 const snapshot = await db.collection('memberships').get();
