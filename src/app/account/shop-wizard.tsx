@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
@@ -12,7 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useFirestore, useUser, useStorage, useCollection, useMemoFirebase, getClientSideAuthToken } from '@/firebase';
 import { doc, collection } from 'firebase/firestore';
 import { ref as storageRef, uploadBytesResumable, getDownloadURL } from "firebase/storage";
-import { Loader2, Save, CheckCircle, LayoutGrid, List, Image as ImageIcon, Sparkles, PlusCircle, Edit, Trash2, Send, Eye, ShoppingCart, Mail, Phone, UploadCloud, GalleryHorizontal, Wand2 } from 'lucide-react';
+import { Loader2, Save, CheckCircle, LayoutGrid, List, Image as ImageIcon, Sparkles, PlusCircle, Edit, Trash2, Send, Eye, ShoppingCart, Mail, Phone, UploadCloud, GalleryHorizontal, Wand2, Video } from 'lucide-react';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -405,6 +406,89 @@ function AIEnhanceDialog({ currentImageUri, onEnhance, children }: { currentImag
   );
 }
 
+function AIVideoDialog({ children }: { children: React.ReactNode }) {
+    const [isOpen, setIsOpen] = useState(false);
+    const [prompt, setPrompt] = useState("");
+    const [isLoading, setIsLoading] = useState(false);
+    const [videoUri, setVideoUri] = useState<string | null>(null);
+    const { toast } = useToast();
+
+    const handleGenerate = async () => {
+        if (!prompt) {
+            toast({ variant: 'destructive', title: 'Prompt is required.' });
+            return;
+        }
+        setIsLoading(true);
+        setVideoUri(null);
+
+        try {
+            const token = await getClientSideAuthToken();
+            if (!token) throw new Error("Authentication token not found.");
+            
+            const response = await fetch('/api/generateVideo', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ prompt, durationSeconds: 5 })
+            });
+            
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.error || 'Failed to generate video');
+
+            setVideoUri(result.videoDataUri);
+            toast({ title: "Video Generated!", description: "Review your new video ad." });
+        } catch (e: any) {
+            toast({ variant: 'destructive', title: 'Video Generation Failed', description: e.message });
+        } finally {
+            setIsLoading(false);
+        }
+    };
+    
+    return (
+        <Dialog open={isOpen} onOpenChange={setIsOpen}>
+            <DialogTrigger asChild>{children}</DialogTrigger>
+            <DialogContent className="max-w-2xl">
+                <DialogHeader>
+                    <DialogTitle>AI Video Ad Generator</DialogTitle>
+                    <DialogDescription>
+                        Describe the video you want to create for your product. Be descriptive!
+                        For example: "A cinematic 360-degree view of a chrome truck wheel, sparkling under studio lights."
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="video-prompt">Video Prompt</Label>
+                        <Textarea id="video-prompt" value={prompt} onChange={(e) => setPrompt(e.target.value)} placeholder="e.g., A cinematic fly-around of a heavy-duty truck engine..." />
+                    </div>
+                    
+                    {isLoading && (
+                        <div className="text-center py-10">
+                            <Loader2 className="h-10 w-10 animate-spin text-primary mx-auto" />
+                            <p className="mt-4 text-muted-foreground">Generating video... This may take a minute or two.</p>
+                        </div>
+                    )}
+                    
+                    {videoUri && (
+                        <div>
+                            <h4 className="font-semibold mb-2">Generated Video:</h4>
+                            <video controls src={videoUri} className="w-full rounded-md" />
+                        </div>
+                    )}
+                </div>
+                <DialogFooter>
+                    <Button variant="outline" onClick={() => setIsOpen(false)}>Close</Button>
+                    <Button onClick={handleGenerate} disabled={isLoading}>
+                        {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Sparkles className="mr-2 h-4 w-4" />}
+                        Generate Video
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    );
+}
+
 function Step2Products({ shop, onSave }: { shop: any, onSave: (newData?: any) => void }) {
   const { user } = useUser();
   const firestore = useFirestore();
@@ -465,7 +549,10 @@ function Step2Products({ shop, onSave }: { shop: any, onSave: (newData?: any) =>
                             <TableRow key={p.id}>
                                 <TableCell className="font-medium">{p.name}</TableCell>
                                 <TableCell>R {p.price.toFixed(2)}</TableCell>
-                                <TableCell className="text-right space-x-2">
+                                <TableCell className="text-right space-x-1">
+                                     <AIVideoDialog>
+                                        <Button variant="outline" size="icon"><Video className="h-4 w-4"/></Button>
+                                     </AIVideoDialog>
                                      <ProductDialog shop={shop} product={p} onSave={forceRefresh}>
                                         <Button variant="ghost" size="icon"><Edit className="h-4 w-4"/></Button>
                                      </ProductDialog>
@@ -1004,7 +1091,7 @@ function Step5SeoAndPreview({ shop, onSave }: { shop: any; onSave: (newData: any
         <div className="mt-6 pt-6 border-t">
             {shop.status === 'draft' || shop.status === 'rejected' ? (
               <Button onClick={handleSubmitForReview} disabled={isSubmitting}>
-                {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
+                {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="ml-2 h-4 w-4" />}
                 Submit for Review
               </Button>
             ) : (
