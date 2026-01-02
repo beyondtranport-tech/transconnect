@@ -1,3 +1,4 @@
+
 import { NextRequest, NextResponse } from 'next/server';
 import { getFirestore, Timestamp, FieldValue } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
@@ -20,7 +21,7 @@ function serializeTimestamps(docData: any): any {
     return newDocData;
 }
 
-async function verifyAdmin(request: NextRequest) {
+export async function verifyAdmin(request: NextRequest) {
     const { app, error: initError } = getAdminApp();
     if (initError || !app) {
         throw new Error(`Admin SDK not initialized: ${initError}`);
@@ -50,21 +51,31 @@ export async function POST(req: NextRequest) {
 
         switch (action) {
             case 'getMembers': {
-                const usersSnap = await db.collection('users').get();
-                const users = usersSnap.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
-
                 const companiesSnap = await db.collection('companies').get();
-                const companyMap = new Map(companiesSnap.docs.map(doc => [doc.id, doc.data()]));
+                const companies = companiesSnap.docs.map(doc => ({ ...serializeTimestamps(doc.data()), id: doc.id }));
                 
-                const data = users.map(user => {
-                    const company = user.companyId ? companyMap.get(user.companyId) : null;
+                // Create a map of ownerIds to company data
+                const ownerIdToCompanyMap = new Map();
+                companies.forEach(company => {
+                    if (company.ownerId) {
+                        ownerIdToCompanyMap.set(company.ownerId, company);
+                    }
+                });
+
+                const usersSnap = await db.collection('users').get();
+                const data = usersSnap.docs.map(userDoc => {
+                    const user = serializeTimestamps(userDoc.data());
+                    const company = ownerIdToCompanyMap.get(userDoc.id);
                     return {
                         ...user,
+                        id: userDoc.id,
                         companyName: company?.companyName,
                         membershipId: company?.membershipId,
                         walletBalance: company?.walletBalance,
+                        companyId: company?.id,
                     }
                 });
+
 
                 return NextResponse.json({ success: true, data });
             }

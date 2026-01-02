@@ -64,7 +64,7 @@ export function useDoc<T = any>(
         setError(null);
 
         try {
-            const token = await getClientSideAuthToken(true); // Force refresh token
+            const token = await getClientSideAuthToken();
             const path = memoizedDocRef.path;
             
             const response = await fetch('/api/getUserSubcollection', {

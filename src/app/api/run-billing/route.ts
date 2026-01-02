@@ -1,29 +1,7 @@
+
 import { NextRequest, NextResponse } from 'next/server';
 import { getFirestore, Timestamp, FieldValue } from 'firebase-admin/firestore';
-import { getAuth } from 'firebase-admin/auth';
-import { getAdminApp } from '@/lib/firebase-admin';
-
-async function verifyAdmin(request: NextRequest) {
-    const { app, error: initError } = getAdminApp();
-    if (initError || !app) {
-        throw new Error(`Admin SDK not initialized: ${initError}`);
-    }
-
-    const authorization = request.headers.get('authorization');
-    if (!authorization?.startsWith('Bearer ')) {
-        throw new Error('Unauthorized: Missing or invalid token.');
-    }
-    const token = authorization.split('Bearer ')[1];
-    
-    const adminAuth = getAuth(app);
-    const decodedToken = await adminAuth.verifyIdToken(token);
-    
-    if (decodedToken.email !== 'beyondtransport@gmail.com') {
-        throw new Error('Forbidden: Admin access required.');
-    }
-
-    return { db: getFirestore(app), uid: decodedToken.uid };
-}
+import { verifyAdmin } from '@/app/api/admin/route';
 
 export async function POST(req: NextRequest) {
     try {

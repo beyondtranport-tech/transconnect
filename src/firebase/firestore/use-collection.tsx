@@ -79,7 +79,7 @@ export function useCollection<T = any>(
         setError(null);
 
         try {
-            const token = await getClientSideAuthToken(true); // Force refresh token
+            const token = await getClientSideAuthToken();
 
             const path: string =
                 memoizedTargetRefOrQuery.type === 'collection'
@@ -113,7 +113,7 @@ export function useCollection<T = any>(
     };
 
     fetchData();
-  }, [memoizedTargetRefOrQuery, refreshKey]); // Removed user and isUserLoading from dependencies
+  }, [memoizedTargetRefOrQuery, refreshKey]); 
 
   return { data, isLoading, error, forceRefresh };
 }
