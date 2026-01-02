@@ -129,7 +129,7 @@ export default function WalletTransactionsList() {
                         const memberName = member ? `${member.firstName || ''} ${member.lastName || ''}`.trim() : p.companyId;
                         return {
                             ...p,
-                            memberName: memberName || p.companyId
+                            memberName: memberName || p.companyId,
                         };
                     });
                 enhancedPayments.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
