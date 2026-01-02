@@ -61,12 +61,12 @@ export default function MemberFundingRecords({ memberId }: { memberId: string })
                  fetch('/api/getUserSubcollection', {
                     method: 'POST',
                     headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ path: `companies/${memberId}/quotes`, type: 'collection' }),
+                    body: JSON.stringify({ path: `members/${memberId}/quotes`, type: 'collection' }),
                 }),
                  fetch('/api/getUserSubcollection', {
                     method: 'POST',
                     headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ path: `companies/${memberId}/enquiries`, type: 'collection' }),
+                    body: JSON.stringify({ path: `members/${memberId}/enquiries`, type: 'collection' }),
                 })
             ]);
             
@@ -109,7 +109,7 @@ export default function MemberFundingRecords({ memberId }: { memberId: string })
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ path: `companies/${memberId}/${subcollection}/${recordId}` }),
+                body: JSON.stringify({ path: `members/${memberId}/${subcollection}/${recordId}` }),
             });
 
             if (!response.ok) {

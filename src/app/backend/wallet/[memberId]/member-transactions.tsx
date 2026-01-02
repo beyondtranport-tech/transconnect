@@ -37,7 +37,7 @@ export default function MemberTransactions({ memberId }: { memberId: string }) {
         if (!firestore) return;
         setIsLoading(true);
 
-        const transactionsRef = collection(firestore, `companies/${memberId}/transactions`);
+        const transactionsRef = collection(firestore, `members/${memberId}/transactions`);
         const q = query(transactionsRef, orderBy('date', 'desc'));
 
         const unsubscribe = onSnapshot(q, 

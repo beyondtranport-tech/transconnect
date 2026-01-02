@@ -11,8 +11,7 @@ import Link from 'next/link';
 import { getClientSideAuthToken } from '@/firebase';
 
 interface Member {
-    userId: string;
-    companyId: string;
+    id: string;
     firstName?: string;
     lastName?: string;
     email?: string;
@@ -131,7 +130,7 @@ export default function MembersList() {
                         </TableHeader>
                         <TableBody>
                             {members && members.length > 0 ? members.map(member => (
-                                <TableRow key={member.companyId}>
+                                <TableRow key={member.id}>
                                     <TableCell>
                                         <div className="font-medium">{member.firstName || ''} {member.lastName || ''}</div>
                                         <div className="text-sm text-muted-foreground">{member.email || ''}</div>
@@ -143,7 +142,7 @@ export default function MembersList() {
                                     <TableCell>{formatDate(member.createdAt)}</TableCell>
                                     <TableCell className="text-right">
                                         <Button asChild variant="ghost" size="sm">
-                                            <Link href={`/backend?view=wallet&memberId=${member.companyId}`}>
+                                            <Link href={`/backend?view=wallet&memberId=${member.id}`}>
                                                 <Wallet className="mr-2 h-4 w-4" />
                                                 Wallet
                                             </Link>

@@ -57,7 +57,7 @@ export default function MemberWalletPayments({ memberId, onUpdate }: { memberId:
             const response = await fetch('/api/getUserSubcollection', {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ path: `companies/${memberId}/walletPayments`, type: 'collection' }),
+                body: JSON.stringify({ path: `members/${memberId}/walletPayments`, type: 'collection' }),
             });
             
             const result = await response.json();
@@ -89,7 +89,7 @@ export default function MemberWalletPayments({ memberId, onUpdate }: { memberId:
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ path: `companies/${memberId}/walletPayments/${paymentId}` }),
+                body: JSON.stringify({ path: `members/${memberId}/walletPayments/${paymentId}` }),
             });
 
             if (!response.ok) {

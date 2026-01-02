@@ -5,7 +5,7 @@ import { verifyAdmin } from '@/app/api/admin/route';
 
 export async function POST(req: NextRequest) {
     try {
-        const { db, uid: adminUid } = await verifyAdmin(req);
+        const { db, adminUid } = await verifyAdmin(req);
         
         const now = new Date();
         
@@ -17,12 +17,12 @@ export async function POST(req: NextRequest) {
             prices[doc.id] = data.price;
         });
 
-        // 2. Fetch all companies with a paid membership plan
-        const companiesQuery = db.collection('companies').where('membershipId', '!=', 'free');
-        const companiesSnap = await companiesQuery.get();
+        // 2. Fetch all members with a paid membership plan
+        const membersQuery = db.collection('members').where('membershipId', '!=', 'free');
+        const membersSnap = await membersQuery.get();
 
-        if (companiesSnap.empty) {
-            return NextResponse.json({ success: true, message: "No companies with paid plans found.", billedCount: 0, totalBilled: 0 });
+        if (membersSnap.empty) {
+            return NextResponse.json({ success: true, message: "No members with paid plans found.", billedCount: 0, totalBilled: 0 });
         }
 
         const batch = db.batch();
@@ -30,32 +30,32 @@ export async function POST(req: NextRequest) {
         let totalBilled = 0;
         let errors: string[] = [];
 
-        for (const companyDoc of companiesSnap.docs) {
-            const company = companyDoc.data();
-            const companyId = companyDoc.id;
+        for (const memberDoc of membersSnap.docs) {
+            const member = memberDoc.data();
+            const memberId = memberDoc.id;
 
-            if (!company.nextBillingDate) continue;
+            if (!member.nextBillingDate) continue;
 
-            const nextBillingDate = (company.nextBillingDate as Timestamp).toDate();
+            const nextBillingDate = (member.nextBillingDate as Timestamp).toDate();
 
             // 3. Check if the billing date is in the past
             if (nextBillingDate <= now) {
-                const planId = company.membershipId;
-                const cycle = company.billingCycle || 'monthly';
+                const planId = member.membershipId;
+                const cycle = member.billingCycle || 'monthly';
                 const planPrice = cycle === 'annual' ? prices[planId]?.annual : prices[planId]?.monthly;
 
                 if (typeof planPrice !== 'number') {
-                    errors.push(`Price for plan '${planId}' on company ${companyId} not found.`);
+                    errors.push(`Price for plan '${planId}' on member ${memberId} not found.`);
                     continue;
                 }
 
-                if (company.walletBalance < planPrice) {
-                    errors.push(`Company ${companyId} has insufficient funds for ${planId} plan.`);
+                if (member.walletBalance < planPrice) {
+                    errors.push(`Member ${memberId} has insufficient funds for ${planId} plan.`);
                     continue;
                 }
 
                 // 4. Create batch operations for a successful billing
-                const newBalance = company.walletBalance - planPrice;
+                const newBalance = member.walletBalance - planPrice;
                 
                 const newNextBillingDate = new Date(nextBillingDate);
                 if (cycle === 'monthly') {
@@ -64,14 +64,14 @@ export async function POST(req: NextRequest) {
                     newNextBillingDate.setFullYear(newNextBillingDate.getFullYear() + 1);
                 }
                 
-                // Update company's balance and next billing date
-                batch.update(companyDoc.ref, { 
+                // Update member's balance and next billing date
+                batch.update(memberDoc.ref, { 
                     walletBalance: newBalance, 
                     nextBillingDate: newNextBillingDate 
                 });
 
                 // Create transaction record
-                const transactionRef = db.collection(`companies/${companyId}/transactions`).doc();
+                const transactionRef = db.collection(`members/${memberId}/transactions`).doc();
                 batch.set(transactionRef, {
                     transactionId: transactionRef.id,
                     type: 'debit',
@@ -94,11 +94,11 @@ export async function POST(req: NextRequest) {
         
         return NextResponse.json({ 
             success: true, 
-            message: `Billing run completed. ${billedCount} companies billed.`,
+            message: `Billing run completed. ${billedCount} members billed.`,
             billedCount,
             totalBilled,
             errors,
-            checkedCount: companiesSnap.size
+            checkedCount: membersSnap.size
         });
 
     } catch (error: any) {

@@ -51,7 +51,7 @@ export async function POST(req: NextRequest) {
 
         switch (action) {
             case 'getMembers': {
-                const membersSnap = await db.collection('companies').get();
+                const membersSnap = await db.collection('members').get();
                 const members = membersSnap.docs.map(doc => {
                     return {
                         ...serializeTimestamps(doc.data()),
@@ -65,12 +65,12 @@ export async function POST(req: NextRequest) {
                 const data = snapshot.docs.map(doc => {
                     const docPath = doc.ref.path;
                     const pathSegments = docPath.split('/');
-                    const companiesIndex = pathSegments.indexOf('companies');
-                    const companyId = companiesIndex > -1 && pathSegments.length > companiesIndex + 1 ? pathSegments[companiesIndex + 1] : null;
+                    const membersIndex = pathSegments.indexOf('members');
+                    const memberId = membersIndex > -1 && pathSegments.length > membersIndex + 1 ? pathSegments[membersIndex + 1] : null;
 
                     return { 
                         id: doc.id,
-                        companyId: companyId, 
+                        memberId: memberId, 
                         ...serializeTimestamps(doc.data()) 
                     };
                 });
@@ -81,12 +81,12 @@ export async function POST(req: NextRequest) {
                 const data = snapshot.docs.map(doc => {
                      const docPath = doc.ref.path;
                     const pathSegments = docPath.split('/');
-                    const companiesIndex = pathSegments.indexOf('companies');
-                    const companyId = companiesIndex > -1 && pathSegments.length > companiesIndex + 1 ? pathSegments[companiesIndex + 1] : null;
+                    const membersIndex = pathSegments.indexOf('members');
+                    const memberId = membersIndex > -1 && pathSegments.length > membersIndex + 1 ? pathSegments[membersIndex + 1] : null;
 
                     return { 
                         id: doc.id,
-                        companyId: companyId,
+                        memberId: memberId,
                         ...serializeTimestamps(doc.data()) 
                     };
                 });
@@ -112,24 +112,30 @@ export async function POST(req: NextRequest) {
                     db.collectionGroup('quotes').get(),
                     db.collectionGroup('enquiries').get()
                 ]);
-                const quotes = quotesSnap.docs.map(doc => ({ ...serializeTimestamps(doc.data()), id: doc.id, recordType: 'Quote' }));
-                const enquiries = enquiriesSnap.docs.map(doc => ({ ...serializeTimestamps(doc.data()), id: doc.id, recordType: 'Enquiry' }));
+                const quotes = enquiriesSnap.docs.map(doc => {
+                    const data = serializeTimestamps(doc.data());
+                    return { ...data, id: doc.id, recordType: 'Quote', applicantId: data.memberId };
+                });
+                const enquiries = enquiriesSnap.docs.map(doc => {
+                    const data = serializeTimestamps(doc.data());
+                    return { ...data, id: doc.id, recordType: 'Enquiry', applicantId: data.memberId };
+                });
 
                 const combined = [...quotes, ...enquiries].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
                 return NextResponse.json({ success: true, data: combined });
             }
             case 'approveWalletPayment': {
-                 const { companyId, paymentId, amount, description, reconciliationId } = payload;
-                 if (!companyId || !paymentId || !amount || !description) {
+                 const { memberId, paymentId, amount, description, reconciliationId } = payload;
+                 if (!memberId || !paymentId || !amount || !description) {
                     throw new Error("Missing required payload for approveWalletPayment.");
                  }
 
                  const batch = db.batch();
                  
-                 const companyRef = db.doc(`companies/${companyId}`);
-                 batch.update(companyRef, { walletBalance: FieldValue.increment(amount) });
+                 const memberRef = db.doc(`members/${memberId}`);
+                 batch.update(memberRef, { walletBalance: FieldValue.increment(amount) });
                  
-                 const transactionRef = db.collection(`companies/${companyId}/transactions`).doc();
+                 const transactionRef = db.collection(`members/${memberId}/transactions`).doc();
                  batch.set(transactionRef, {
                     transactionId: transactionRef.id,
                     reconciliationId: reconciliationId || null,
@@ -141,19 +147,19 @@ export async function POST(req: NextRequest) {
                     isAdjustment: false,
                     chartOfAccountsCode: '4410',
                     postedBy: adminUid,
-                    companyId: companyId,
+                    memberId: memberId,
                  });
 
-                 const paymentRef = db.doc(`companies/${companyId}/walletPayments/${paymentId}`);
+                 const paymentRef = db.doc(`members/${memberId}/walletPayments/${paymentId}`);
                  batch.delete(paymentRef);
 
                  await batch.commit();
                  return NextResponse.json({ success: true, message: "Payment approved and wallet updated." });
             }
             case 'deleteTransaction': {
-                const { companyId, transactionId } = payload;
-                if (!companyId || !transactionId) throw new Error("companyId and transactionId are required.");
-                await db.doc(`companies/${companyId}/transactions/${transactionId}`).delete();
+                const { memberId, transactionId } = payload;
+                if (!memberId || !transactionId) throw new Error("memberId and transactionId are required.");
+                await db.doc(`members/${memberId}/transactions/${transactionId}`).delete();
                 return NextResponse.json({ success: true });
             }
             default:
