@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
@@ -11,11 +12,11 @@ import { useConfig } from '@/hooks/use-config';
 import { useToast } from '@/hooks/use-toast';
 
 interface Member {
-    id: string; // This is the user's UID (ownerId)
+    userId: string;
+    companyId: string;
     firstName?: string;
     lastName?: string;
     companyName?: string;
-    companyId?: string; // This is the company document ID
 }
 
 interface Payment {

@@ -52,22 +52,23 @@ export async function POST(req: NextRequest) {
         switch (action) {
             case 'getMembers': {
                 const companiesSnap = await db.collection('companies').get();
-                const ownerIds = companiesSnap.docs.map(doc => doc.data().ownerId).filter(Boolean);
+                const usersSnap = await db.collection('users').get();
                 
-                let usersData: { [key: string]: any } = {};
-                if (ownerIds.length > 0) {
-                    const usersSnap = await db.collection('users').where('__name__', 'in', ownerIds).get();
-                    usersSnap.forEach(doc => {
-                        usersData[doc.id] = serializeTimestamps(doc.data());
-                    });
-                }
+                const usersByCompanyId: { [key: string]: any } = {};
+                usersSnap.forEach(doc => {
+                    const user = doc.data();
+                    if (user.companyId) {
+                        usersByCompanyId[user.companyId] = serializeTimestamps(user);
+                    }
+                });
                 
                 const members = companiesSnap.docs.map(companyDoc => {
                     const company = serializeTimestamps(companyDoc.data());
-                    const owner = usersData[company.ownerId];
+                    const owner = usersByCompanyId[company.id];
+                    
                     return {
-                        id: company.ownerId, // User UID
-                        companyId: company.id, // The company document ID
+                        companyId: company.id,
+                        userId: company.ownerId,
                         firstName: owner?.firstName,
                         lastName: owner?.lastName,
                         email: owner?.email,

@@ -11,7 +11,8 @@ import Link from 'next/link';
 import { getClientSideAuthToken } from '@/firebase';
 
 interface Member {
-    id: string;
+    userId: string;
+    companyId: string;
     firstName?: string;
     lastName?: string;
     email?: string;
@@ -19,7 +20,6 @@ interface Member {
     membershipId?: string;
     walletBalance?: number;
     createdAt?: string;
-    companyId?: string;
 }
 
 async function fetchFromAdminAPI(action: string, payload?: any) {
@@ -131,7 +131,7 @@ export default function MembersList() {
                         </TableHeader>
                         <TableBody>
                             {members && members.length > 0 ? members.map(member => (
-                                <TableRow key={member.id}>
+                                <TableRow key={member.companyId}>
                                     <TableCell>
                                         <div className="font-medium">{member.firstName || ''} {member.lastName || ''}</div>
                                         <div className="text-sm text-muted-foreground">{member.email || ''}</div>
