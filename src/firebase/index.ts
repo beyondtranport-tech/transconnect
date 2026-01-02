@@ -30,21 +30,16 @@ export function initializeFirebase() {
 }
 
 
-export async function getClientSideAuthToken(): Promise<string | null> {
+export async function getClientSideAuthToken(forceRefresh = false): Promise<string | null> {
     const auth = getAuth();
     if (auth.currentUser) {
         try {
-            // The `false` means it will return the cached token unless it's expired.
-            // This is safer for avoiding quota issues.
-            return await getIdToken(auth.currentUser, false);
+            // The `forceRefresh` parameter will be used to get a new token.
+            return await getIdToken(auth.currentUser, forceRefresh);
         } catch (error) {
-            // If getting the token fails, try to force a refresh as a fallback.
-            try {
-                return await getIdToken(auth.currentUser, true);
-            } catch (refreshError) {
-                console.error("Error getting auth token after forced refresh:", refreshError);
-                return null;
-            }
+            console.error("Error getting auth token:", error);
+            // If even a forced refresh fails, return null.
+            return null;
         }
     }
     return null;
