@@ -3,7 +3,7 @@ export const GA_TRACKING_ID = process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS_ID;
 
 // https://developers.google.com/analytics/devguides/collection/gtagjs/pages
 export const pageview = (url: URL) => {
-  if (typeof window.gtag !== 'function') {
+  if (typeof window.gtag !== 'function' || !GA_TRACKING_ID) {
     return;
   }
   window.gtag("config", GA_TRACKING_ID as string, {
@@ -20,7 +20,7 @@ type GTagEvent = {
 
 // https://developers.google.com/analytics/devguides/collection/gtagjs/events
 export const event = ({ action, category, label, value }: GTagEvent) => {
-   if (typeof window.gtag !== 'function') {
+   if (typeof window.gtag !== 'function' || !GA_TRACKING_ID) {
     return;
   }
   window.gtag("event", action, {

@@ -228,6 +228,10 @@ export default function MallPage() {
 
         // Add analytics and wrap the actions
         const wrapAction = (originalAction: () => void, intent: string) => () => {
+            if (!process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS_ID) {
+                originalAction();
+                return;
+            }
             gtag.event({
                 action: 'intent_capture',
                 category: 'Mall Navigation',
@@ -311,7 +315,7 @@ export default function MallPage() {
                                         <p className="mt-4 text-lg text-muted-foreground">
                                             {mall.description}
                                         </p>
-                                        <Button onClick={() => handleExploreClick(mall.id, mall.href)} className="mt-6" variant="outline">
+                                        <Button onClick={() => handleExploreClick(mall.id, mall.href)} className="mt-6">
                                             Explore Mall <ArrowRight className="ml-2 h-4 w-4" />
                                         </Button>
                                     </div>

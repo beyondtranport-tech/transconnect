@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Button } from "@/components/ui/button";
@@ -28,6 +29,7 @@ export default function SupplierMallPage() {
 
 
     const handleSupplierClick = (supplierId: string) => {
+        if (!process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS_ID) return;
         gtag.event({
             action: 'view_supplier_profile',
             category: 'Supplier Mall',
@@ -37,6 +39,7 @@ export default function SupplierMallPage() {
     };
 
     const handleClaimProfileClick = () => {
+        if (!process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS_ID) return;
         gtag.event({
             action: 'claim_profile_click',
             category: 'Supplier Mall',
@@ -161,9 +164,11 @@ export default function SupplierMallPage() {
                         </div>
                     )}
                      <div className="text-center mt-16">
-                        <Button size="lg" onClick={handleClaimProfileClick}>
-                            <Sparkles className="mr-2 h-5 w-5" />
-                            Are you a supplier? Create Your Shop!
+                        <Button size="lg" asChild>
+                           <Link href="/account?view=shop" onClick={handleClaimProfileClick}>
+                                <Sparkles className="mr-2 h-5 w-5" />
+                                Are you a supplier? Create Your Shop!
+                           </Link>
                         </Button>
                     </div>
                 </div>
@@ -171,5 +176,3 @@ export default function SupplierMallPage() {
         </div>
     );
 }
-
-    

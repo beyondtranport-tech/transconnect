@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from "react";
@@ -107,6 +108,14 @@ export default function ConnectPage() {
     
     const handleSliderInteraction = <T extends number | number[]>(setter: React.Dispatch<React.SetStateAction<T>>) => (value: T) => {
         if (!hasInteracted) {
+            if (process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS_ID) {
+                gtag.event({
+                    action: 'interact_with_calculator',
+                    category: 'Connect Page',
+                    label: 'Savings Calculator',
+                    value: 1
+                });
+            }
             setHasInteracted(true);
             setIsModalOpen(true);
         }
@@ -114,6 +123,7 @@ export default function ConnectPage() {
     }
     
     const handlePlanExplore = (planId: string) => {
+        if (!process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS_ID) return;
         gtag.event({
             action: 'explore_plan',
             category: 'Connect Page',

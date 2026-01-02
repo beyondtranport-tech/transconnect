@@ -49,6 +49,7 @@ const featuredTransporters = [
 export default function TransporterMallPage() {
 
     const handleTransporterClick = (transporterId: string) => {
+        if (!process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS_ID) return;
         gtag.event({
             action: 'view_transporter_profile',
             category: 'Transporter Mall',
@@ -58,6 +59,7 @@ export default function TransporterMallPage() {
     };
 
     const handleGetFeaturedClick = () => {
+        if (!process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS_ID) return;
         gtag.event({
             action: 'get_featured_click',
             category: 'Transporter Mall',
@@ -163,9 +165,11 @@ export default function TransporterMallPage() {
                         ))}
                     </div>
                     <div className="text-center mt-16">
-                        <Button size="lg" variant="outline" onClick={handleGetFeaturedClick}>
-                            <Sparkles className="mr-2 h-5 w-5" />
-                            Need a Transport Partner? Join TransConnect!
+                        <Button asChild size="lg" variant="outline" onClick={handleGetFeaturedClick}>
+                           <Link href="/join">
+                             <Sparkles className="mr-2 h-5 w-5" />
+                             Want to get featured? Join TransConnect!
+                           </Link>
                         </Button>
                     </div>
                 </div>

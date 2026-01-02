@@ -49,6 +49,7 @@ const financierCategories = [
 export default function FinanceMallPage() {
 
     const handleApplyClick = () => {
+        if (!process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS_ID) return;
         gtag.event({
             action: 'apply_for_funding',
             category: 'Finance Mall',
@@ -58,6 +59,7 @@ export default function FinanceMallPage() {
     };
     
     const handleJoinNetworkClick = () => {
+         if (!process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS_ID) return;
          gtag.event({
             action: 'join_financier_network',
             category: 'Finance Mall',
@@ -67,6 +69,7 @@ export default function FinanceMallPage() {
     }
 
     const handleCategoryClick = (categoryId: string, userType: 'borrower' | 'lender') => {
+        if (!process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS_ID) return;
         gtag.event({
             action: userType === 'borrower' ? 'view_borrower_journey' : 'view_lender_journey',
             category: 'Finance Mall',
@@ -92,7 +95,9 @@ export default function FinanceMallPage() {
                 <div className="relative h-full flex flex-col items-center justify-center text-center text-primary-foreground z-10 p-4">
                     <h1 className="text-4xl md:text-5xl font-bold font-headline">Finance Mall</h1>
                     <p className="mt-4 text-lg md:text-xl max-w-3xl">Your central hub for finding the right funding. We connect you with a diverse network of financiers to fuel your business's growth.</p>
-                     <Button size="lg" className="mt-8" onClick={handleApplyClick}>Apply For Funding</Button>
+                     <Button size="lg" className="mt-8" asChild>
+                        <Link href="/funding/apply" onClick={handleApplyClick}>Apply For Funding</Link>
+                     </Button>
                 </div>
             </section>
             
