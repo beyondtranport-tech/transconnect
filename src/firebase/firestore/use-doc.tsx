@@ -7,7 +7,7 @@ import {
   DocumentData,
   FirestoreError,
 } from 'firebase/firestore';
-import { getClientSideAuthToken, useUser } from '@/firebase';
+import { getClientSideAuthToken } from '@/firebase';
 
 /** Utility type to add an 'id' field to a given type T. */
 type WithId<T> = T & { id: string };
@@ -45,7 +45,6 @@ export function useDoc<T = any>(
   const [isLoading, setIsLoading] = useState<boolean>(true); // Start as true
   const [error, setError] = useState<Error | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
-  const { user, isUserLoading } = useUser();
 
   const forceRefresh = useCallback(() => {
     setRefreshKey(oldKey => oldKey + 1);
@@ -97,10 +96,9 @@ export function useDoc<T = any>(
         }
     };
 
-    // The fetch should not depend on user loading status if the path might be public
     fetchData();
 
-  }, [memoizedDocRef, refreshKey]); // Removed user and isUserLoading from dependencies
+  }, [memoizedDocRef, refreshKey]);
 
   return { data, isLoading, error, forceRefresh };
 }
