@@ -93,8 +93,8 @@ export default function WalletTransactionsList() {
         setIsLoading(true);
         setError(null);
         try {
-            const membersData = await fetchFromAdminAPI('getMembers');
-            const newMemberMap = new Map(membersData.data.map((m: Member) => [m.companyId, m]));
+            const membersResult = await fetchFromAdminAPI('getMembers');
+            const newMemberMap = new Map(membersResult.data.map((m: Member) => [m.companyId, m]));
             setMemberMap(newMemberMap);
 
             const [paymentsData, transactionsData] = await Promise.all([
@@ -240,5 +240,4 @@ export default function WalletTransactionsList() {
             </Card>
         </div>
     );
-
-    
+}
