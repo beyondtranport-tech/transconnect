@@ -13,7 +13,7 @@ function serializeTimestamps(docData: any): any {
         const value = docData[key];
         if (value instanceof Timestamp) {
             newDocData[key] = value.toDate().toISOString();
-        } else if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+        } else if (value && typeof value === 'object' && value !== null && !Array.isArray(value)) {
             newDocData[key] = serializeTimestamps(value); // Recursively serialize nested objects
         } else {
             newDocData[key] = value;
@@ -22,10 +22,10 @@ function serializeTimestamps(docData: any): any {
     return newDocData;
 }
 
-
 export async function POST(req: NextRequest) {
     const { app, error: initError } = getAdminApp();
     if (initError || !app) {
+        console.error("Admin SDK init error:", initError);
         return NextResponse.json({ success: false, error: `Internal Server Error: Could not connect to Firebase. ${initError}` }, { status: 500 });
     }
 
@@ -34,65 +34,54 @@ export async function POST(req: NextRequest) {
     if (!path || !type) {
         return NextResponse.json({ success: false, error: 'Bad Request: "path" and "type" are required.' }, { status: 400 });
     }
-    
-    // Public paths that do not require any authentication
-    const publicPrefixes = ['memberships', 'configuration'];
-    const isPublicPath = publicPrefixes.some(prefix => path.startsWith(prefix)) || (path.startsWith('shops') && type !== 'collection-group');
 
     const headersList = headers();
     const authorization = headersList.get('authorization');
     const idToken = authorization?.split('Bearer ')[1];
-    
-    // For non-public paths, a token is required
-    if (!isPublicPath && !idToken) {
-        return NextResponse.json({ success: false, error: 'Unauthorized: No token provided for a private route.' }, { status: 401 });
-    }
-    
-    try {
-        const adminAuth = getAuth(app);
-        const db = getFirestore(app);
-        let decodedToken;
 
+    const publicPrefixes = ['memberships', 'configuration'];
+    const isPublicPath = publicPrefixes.some(prefix => path.startsWith(prefix));
+
+    try {
+        const db = getFirestore(app);
+        const adminAuth = getAuth(app);
+        let decodedToken;
+        
         if (idToken) {
             decodedToken = await adminAuth.verifyIdToken(idToken);
+        } else if (!isPublicPath) {
+            // If it's not a public path and there's no token, it's unauthorized.
+            return NextResponse.json({ success: false, error: 'Unauthorized: No token provided for a private route.' }, { status: 401 });
         }
 
         const isAdmin = decodedToken?.email === 'beyondtransport@gmail.com';
+        const uid = decodedToken?.uid;
 
-        // Admin can access everything
-        if (isAdmin) {
-            // Proceed without further checks
-        } else if (isPublicPath) {
-            // Public paths are allowed for everyone
-        } else if (decodedToken) {
-             // Non-admin user authorization logic for private paths
-            const uid = decodedToken.uid;
-            const pathSegments = path.split('/');
-            
-            let isAuthorized = false;
-            
-            // Allow access to own user document
-            if (pathSegments.length >= 2 && pathSegments[0] === 'users' && pathSegments[1] === uid) {
-                 isAuthorized = true;
-            }
-            // Allow access to own company and its subcollections
-            else if (pathSegments.length >= 2 && pathSegments[0] === 'companies') {
-                const companyId = pathSegments[1];
-                const companyDoc = await db.collection('companies').doc(companyId).get();
-                if (companyDoc.exists && companyDoc.data()?.ownerId === uid) {
+        // Admin can access everything.
+        if (!isAdmin) {
+             // Non-admin authorization logic
+             if (!isPublicPath) {
+                let isAuthorized = false;
+                const pathSegments = path.split('/');
+
+                if (pathSegments.length >= 2 && pathSegments[0] === 'users' && pathSegments[1] === uid) {
+                     isAuthorized = true;
+                } else if (pathSegments.length >= 2 && pathSegments[0] === 'companies' && uid) {
+                    const companyId = pathSegments[1];
+                    const companyDoc = await db.collection('companies').doc(companyId).get();
+                    if (companyDoc.exists && companyDoc.data()?.ownerId === uid) {
+                        isAuthorized = true;
+                    }
+                } else if (path.startsWith('shops')) { // Publicly readable shops
                     isAuthorized = true;
                 }
-            }
-
-            if (!isAuthorized) {
-                return NextResponse.json({ success: false, error: 'Forbidden: You do not have permission to access this resource.' }, { status: 403 });
-            }
-        } else {
-            // This should already be caught by the idToken check, but as a fallback.
-            return NextResponse.json({ success: false, error: 'Unauthorized: Invalid request for private route.' }, { status: 401 });
+                
+                if (!isAuthorized) {
+                     return NextResponse.json({ success: false, error: 'Forbidden: You do not have permission to access this resource.' }, { status: 403 });
+                }
+             }
         }
-
-
+        
         // --- Data Fetching Logic ---
         if (type === 'collection') {
             const collectionRef = db.collection(path);
@@ -115,9 +104,10 @@ export async function POST(req: NextRequest) {
         } else {
              return NextResponse.json({ success: false, error: 'Bad Request: "type" must be "collection", "document", or "collection-group".' }, { status: 400 });
         }
+
     } catch (error: any) {
-        console.error(`Error in API route for path "${path}":`, error);
-        if (error.code === 'auth/id-token-expired' || error.code === 'auth/argument-error') {
+        console.error(`API Error in route for path "${path}":`, error);
+        if (error.code === 'auth/id-token-expired' || error.code === 'auth/argument-error' || error.code === 'auth/id-token-revoked') {
            return NextResponse.json({ success: false, error: 'Unauthorized: Invalid token.' }, { status: 401 });
         }
         return NextResponse.json({ success: false, error: `Internal Server Error: ${error.message}` }, { status: 500 });
