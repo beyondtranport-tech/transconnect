@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useForm } from 'react-hook-form';
@@ -19,10 +18,8 @@ import { useState, useEffect } from 'react';
 import { Loader2, Building, Save } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useUser, useFirestore, useMemoFirebase, getClientSideAuthToken } from '@/firebase';
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { doc } from 'firebase/firestore';
 import { useDoc } from '@/firebase/firestore/use-doc';
-import { errorEmitter } from '@/firebase/error-emitter';
-import { FirestorePermissionError } from '@/firebase/errors';
 import { Separator } from '@/components/ui/separator';
 
 const companyFormSchema = z.object({
@@ -43,12 +40,19 @@ export default function CompanyContent() {
   const { toast } = useToast();
   const [isSaving, setIsSaving] = useState(false);
 
-  const memberDocRef = useMemoFirebase(() => {
+  // Step 1: Get the user's profile to find their companyId
+  const userDocRef = useMemoFirebase(() => {
     if (!firestore || !user) return null;
-    return doc(firestore, 'members', user.uid);
+    return doc(firestore, 'users', user.uid);
   }, [firestore, user]);
+  const { data: userData, isLoading: isUserDocLoading } = useDoc<{ companyId: string }>(userDocRef);
 
-  const { data: memberData, isLoading: isMemberLoading } = useDoc(memberDocRef);
+  // Step 2: Use the companyId to get the company document
+  const companyDocRef = useMemoFirebase(() => {
+    if (!firestore || !userData?.companyId) return null;
+    return doc(firestore, 'companies', userData.companyId);
+  }, [firestore, userData]);
+  const { data: companyData, isLoading: isCompanyLoading } = useDoc(companyDocRef);
 
   const form = useForm<CompanyFormValues>({
     resolver: zodResolver(companyFormSchema),
@@ -64,30 +68,30 @@ export default function CompanyContent() {
   });
 
   useEffect(() => {
-    if (memberData) {
+    if (companyData) {
       form.reset({
-        companyName: memberData.companyName || '',
-        registrationNumber: memberData.registrationNumber || '',
-        vatNumber: memberData.vatNumber || '',
-        streetAddress: memberData.streetAddress || '',
-        city: memberData.city || '',
-        province: memberData.province || '',
-        postalCode: memberData.postalCode || '',
+        companyName: companyData.companyName || '',
+        registrationNumber: companyData.registrationNumber || '',
+        vatNumber: companyData.vatNumber || '',
+        streetAddress: companyData.streetAddress || '',
+        city: companyData.city || '',
+        province: companyData.province || '',
+        postalCode: companyData.postalCode || '',
       });
     }
-  }, [memberData, form]);
+  }, [companyData, form]);
 
   const onSubmit = async (values: CompanyFormValues) => {
     setIsSaving(true);
-    if (!user) {
-      toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in to update your profile.' });
+    if (!user || !userData?.companyId) {
+      toast({ variant: 'destructive', title: 'Error', description: 'Could not find company information. Please log in again.' });
       setIsSaving(false);
       return;
     }
 
     const dataToUpdate = {
         ...values,
-        updatedAt: { _methodName: 'serverTimestamp' }, // Use placeholder for server-side conversion
+        updatedAt: { _methodName: 'serverTimestamp' },
     };
 
     try {
@@ -103,7 +107,7 @@ export default function CompanyContent() {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-                path: `members/${user.uid}`,
+                path: `companies/${userData.companyId}`, // Correct path to the company document
                 data: dataToUpdate
             }),
         });
@@ -130,7 +134,7 @@ export default function CompanyContent() {
     }
   };
 
-  const isLoading = isUserLoading || isMemberLoading;
+  const isLoading = isUserLoading || isUserDocLoading || isCompanyLoading;
 
   return (
     <Card>

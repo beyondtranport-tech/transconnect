@@ -49,18 +49,34 @@ export async function POST(req: NextRequest) {
     const pathSegments = path.split('/');
     
     let isAuthorized = false;
-    // A user can update their own member document or a document in a subcollection thereof
-    if (pathSegments[0] === 'members' && pathSegments[1] === uid) {
+    const docRef = db.doc(path);
+
+    // Check permissions based on collection
+    if (pathSegments[0] === 'users' && pathSegments[1] === uid) {
+        // A user can update their own user document
         isAuthorized = true;
+    } else if (pathSegments[0] === 'companies' && pathSegments.length > 1) {
+        // For a company document, check if the user is the owner
+        const companyId = pathSegments[1];
+        const companySnap = await db.collection('companies').doc(companyId).get();
+        if (companySnap.exists && companySnap.data()?.ownerId === uid) {
+            isAuthorized = true;
+        }
+    } else if (pathSegments[0] === 'companies' && pathSegments[2] === 'shops') {
+        // For a shop subcollection, verify ownership of the parent company
+        const companyId = pathSegments[1];
+        const companySnap = await db.collection('companies').doc(companyId).get();
+        if (companySnap.exists && companySnap.data()?.ownerId === uid) {
+            isAuthorized = true;
+        }
     }
+
 
     if (!isAuthorized) {
-        return NextResponse.json({ success: false, error: 'Forbidden: You can only modify your own data.' }, { status: 403 });
+        return NextResponse.json({ success: false, error: 'Forbidden: You do not have permission to modify this resource.' }, { status: 403 });
     }
 
-    const docRef = db.doc(path);
     const deserializedData = deserializeData(data);
-
     await docRef.update(deserializedData);
 
     return NextResponse.json({ success: true, message: 'Document updated successfully.' });
