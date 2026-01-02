@@ -90,7 +90,8 @@ export function useCollection<T = any>(
             const response = await fetch('/api/getUserSubcollection', {
                 method: 'POST',
                 headers: {
-                    'Authorization': `Bearer ${token}`, // Always send token
+                    // Always send token if available, the API will decide if it's needed
+                    ...(token && { 'Authorization': `Bearer ${token}` }),
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({ path, type: 'collection' }),

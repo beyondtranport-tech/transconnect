@@ -56,23 +56,31 @@ export async function POST(req: NextRequest) {
 
         const isAdmin = decodedToken?.email === 'beyondtransport@gmail.com';
         const uid = decodedToken?.uid;
-
-        // Admin can access everything.
-        if (!isAdmin) {
-             // Non-admin authorization logic
+        
+        // --- ADMIN ACCESS LOGIC ---
+        // If the user is an admin, they can access anything.
+        if (isAdmin) {
+             // Proceed with data fetching for admin...
+        } else {
+             // --- NON-ADMIN AUTHORIZATION LOGIC ---
              if (!isPublicPath) {
                 let isAuthorized = false;
                 const pathSegments = path.split('/');
 
+                // Rule: Can access their own user document
                 if (pathSegments.length >= 2 && pathSegments[0] === 'users' && pathSegments[1] === uid) {
                      isAuthorized = true;
-                } else if (pathSegments.length >= 2 && pathSegments[0] === 'companies' && uid) {
+                } 
+                // Rule: Can access their own company document and its subcollections
+                else if (pathSegments.length >= 2 && pathSegments[0] === 'companies' && uid) {
                     const companyId = pathSegments[1];
-                    const companyDoc = await db.collection('companies').doc(companyId).get();
-                    if (companyDoc.exists && companyDoc.data()?.ownerId === uid) {
+                    const userDoc = await db.collection('users').doc(uid).get();
+                    if (userDoc.exists && userDoc.data()?.companyId === companyId) {
                         isAuthorized = true;
                     }
-                } else if (path.startsWith('shops')) { // Publicly readable shops
+                } 
+                // Rule: Can access public shops
+                else if (path.startsWith('shops')) {
                     isAuthorized = true;
                 }
                 
@@ -82,7 +90,7 @@ export async function POST(req: NextRequest) {
              }
         }
         
-        // --- Data Fetching Logic ---
+        // --- DATA FETCHING LOGIC ---
         if (type === 'collection') {
             const collectionRef = db.collection(path);
             const snapshot = await collectionRef.get();
