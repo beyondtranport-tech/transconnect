@@ -1,185 +1,129 @@
 
 'use client';
 
-import { useUser, useFirestore, useMemoFirebase } from '@/firebase';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Award, FileText, Gem, User, Loader2, DollarSign, HeartHandshake, ArrowRight, Sparkles, Wallet, ShieldAlert, Landmark } from "lucide-react";
-import { doc } from 'firebase/firestore';
-import { useDoc } from '@/firebase/firestore/use-doc';
+import { ArrowRight, Users, Store, Banknote, Settings, BarChart, Combine } from "lucide-react";
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
-import EnquiriesCard from './enquiries-card';
-import QuotesCard from './quotes-card';
+import { useEffect, useState } from "react";
+import { getClientSideAuthToken } from "@/firebase";
+import { Loader2 } from "lucide-react";
+
+async function fetchStats(action: string) {
+    const token = await getClientSideAuthToken();
+    if (!token) throw new Error("Authentication failed.");
+    
+    const response = await fetch('/api/admin', {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ action }),
+    });
+
+    const result = await response.json();
+    if (!response.ok || !result.success) {
+        throw new Error(result.error || `API Error for action: ${action}`);
+    }
+    return result.data;
+}
+
 
 export default function AccountDashboard() {
-    const { user, isUserLoading } = useUser();
-    const firestore = useFirestore();
+    const [stats, setStats] = useState({ members: 0, shops: 0 });
+    const [isLoading, setIsLoading] = useState(true);
 
-    // Explicit Admin Check - this is the most important check
-    const isAdmin = user && user.email === 'beyondtransport@gmail.com';
+    useEffect(() => {
+        async function loadStats() {
+            setIsLoading(true);
+            try {
+                const [membersData, shopsData] = await Promise.all([
+                    fetchStats('getMembers'),
+                    fetchStats('getShops')
+                ]);
+                setStats({
+                    members: membersData.length || 0,
+                    shops: shopsData.length || 0,
+                });
+            } catch (error) {
+                console.error("Failed to load admin dashboard stats:", error);
+            } finally {
+                setIsLoading(false);
+            }
+        }
+        loadStats();
+    }, []);
 
-    const userDocRef = useMemoFirebase(() => {
-        if (!firestore || !user) return null;
-        return doc(firestore, 'users', user.uid);
-    }, [firestore, user]);
-    const { data: userData } = useDoc<{ companyId: string, firstName: string }>(userDocRef);
-
-    const companyDocRef = useMemoFirebase(() => {
-        if (!firestore || !userData?.companyId) return null;
-        return doc(firestore, 'companies', userData.companyId);
-    }, [firestore, userData]);
-
-    const { data: companyData, isLoading: isCompanyLoading, error } = useDoc(companyDocRef);
-    
-    const isFreeMember = companyData?.membershipId === 'free';
-    
-    const formatPrice = (price: number) => {
-        return new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(price);
-    };
-    
-    if (isUserLoading || (user && isCompanyLoading)) {
-        return (
-            <div className="flex justify-center items-center min-h-[calc(100vh-8rem)] w-full">
-                <Loader2 className="h-12 w-12 animate-spin text-primary" />
-            </div>
-        );
-    }
-    
-    if (error) {
-        return (
-            <div className="flex justify-center items-center min-h-[calc(100vh-8rem)] w-full">
-                <Card className="m-4">
-                    <CardHeader>
-                        <CardTitle className="text-destructive">Error Loading Dashboard</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <p>There was a problem fetching your account data.</p>
-                        <p className="text-xs text-muted-foreground mt-2">{error.message}</p>
-                    </CardContent>
-                    <CardFooter>
-                        <Button onClick={() => window.location.reload()}>Try Again</Button>
-                    </CardFooter>
-                </Card>
-            </div>
-        )
-    }
-
-    if (!user) {
-        return null; // or a message telling user to sign in
-    }
-    
+    const operationalCards = [
+        {
+            title: "Member & Shop Management",
+            description: "Oversee all users, manage shops, and view platform-wide contributions.",
+            href: "/backend",
+            icon: Users,
+            cta: "Go to Platform Backend"
+        },
+        {
+            title: "Bank & Reconciliation",
+            description: "Reconcile bank statements for both member wallets and the main business operating account.",
+            href: "/adminaccount?view=bank-reconciliation",
+            icon: Combine,
+            cta: "Reconcile Transactions"
+        },
+        {
+            title: "Revenue & Pricing",
+            description: "Manage membership plan pricing, mall commissions, and other revenue streams.",
+            href: "/backend?view=revenue-membership",
+            icon: Settings,
+            cta: "Manage Revenue"
+        },
+         {
+            title: "Analytics",
+            description: "View detailed analytics on user behavior and platform performance via Google Analytics.",
+            href: "https://analytics.google.com",
+            icon: BarChart,
+            cta: "View Analytics"
+        }
+    ];
 
     return (
         <div className="w-full space-y-8">
             <div className="flex items-center gap-4">
                 <div>
-                    <h1 className="text-3xl md:text-4xl font-bold font-headline">Dashboard</h1>
-                    <p className="text-lg text-muted-foreground">Welcome back, {userData?.firstName || 'Member'}!</p>
+                    <h1 className="text-3xl md:text-4xl font-bold font-headline">Business Account Dashboard</h1>
+                    <p className="text-lg text-muted-foreground">High-level overview and quick access to platform operations.</p>
                 </div>
             </div>
 
-            {isAdmin && (
-                 <Card className="border-primary bg-primary/5">
-                    <CardHeader>
-                        <div className="flex items-center gap-4">
-                            <ShieldAlert className="h-10 w-10 text-primary" />
-                            <div>
-                                <CardTitle className="text-2xl">Administrator's Business Account</CardTitle>
-                                <CardDescription className="text-primary/90">This is your company's member-facing dashboard.</CardDescription>
-                            </div>
-                        </div>
-                    </CardHeader>
-                    <CardContent>
-                        <p className="text-lg">
-                           All platform-wide administrative functions, including banking, reconciliation, and member management, are located in the secure <span className="font-semibold">Admin Backend</span>.
-                        </p>
-                    </CardContent>
-                    <CardFooter>
-                        <Button variant="default" size="lg" asChild>
-                            <Link href="/backend">
-                                Go to Admin Backend <ArrowRight className="ml-2 h-5 w-5" />
-                            </Link>
-                        </Button>
-                    </CardFooter>
-                </Card>
-            )}
-
-            {isFreeMember && (
-                 <Card className="bg-primary/5 border-primary/20">
-                    <CardHeader>
-                        <div className="flex items-start gap-4">
-                            <div className="bg-primary/10 p-3 rounded-full">
-                               <Sparkles className="h-6 w-6 text-primary" />
-                            </div>
-                            <div>
-                                <CardTitle>Unlock Your Full Potential</CardTitle>
-                                <CardDescription className="mt-1">
-                                    You are currently on the Free plan. Upgrade your membership to access powerful tools, exclusive discounts, and new revenue opportunities.
-                                </CardDescription>
-                            </div>
-                        </div>
-                    </CardHeader>
-                    <CardContent>
-                         <p className="text-sm text-muted-foreground">
-                            By upgrading, you gain access to our advanced Tech division, including the AI Freight Matcher, plus the ability to activate Loyalty and Actions plans to save money and earn commission.
-                        </p>
-                    </CardContent>
-                    <CardFooter>
-                        <Button asChild>
-                            <Link href="/pricing">
-                                Compare Plans and Upgrade <ArrowRight className="ml-2 h-4 w-4" />
-                            </Link>
-                        </Button>
-                    </CardFooter>
-                </Card>
-            )}
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                 <Card>
-                    <CardHeader className="flex flex-row items-center justify-between pb-2">
-                        <CardTitle className="text-sm font-medium">Membership Tier</CardTitle>
-                        <Gem className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold text-primary capitalize">{companyData?.membershipId || 'Free'}</div>
-                         {isFreeMember ? (
-                             <Button asChild variant="link" size="sm" className="p-0 h-auto">
-                                <Link href="/pricing">Upgrade to a paid plan</Link>
-                            </Button>
-                         ) : (
-                            <p className="text-xs text-muted-foreground">You have a premium membership.</p>
-                         )}
-                    </CardContent>
-                </Card>
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between pb-2">
-                        <CardTitle className="text-sm font-medium">Reward Points</CardTitle>
-                        <Award className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">{companyData?.rewardPoints || 0}</div>
-                        <p className="text-xs text-muted-foreground">Earned from community actions.</p>
-                    </CardContent>
-                </Card>
-                 <Card>
-                    <CardHeader className="flex flex-row items-center justify-between pb-2">
-                        <CardTitle className="text-sm font-medium">Community Contribution</CardTitle>
-                        <HeartHandshake className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                        <p className="text-sm text-muted-foreground mb-4">Help the community and unlock greater savings by sharing anonymous data.</p>
-                         <Button asChild>
-                            <Link href="/contribute">Contribute Data</Link>
-                        </Button>
-                    </CardContent>
-                </Card>
-            </div>
-            
-            <div className="space-y-8">
-                <QuotesCard />
-                <EnquiriesCard />
-            </div>
+             {isLoading ? (
+                <div className="flex justify-center items-center py-20">
+                    <Loader2 className="h-12 w-12 animate-spin text-primary" />
+                </div>
+             ): (
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    {operationalCards.map(card => (
+                        <Card key={card.title} className="flex flex-col">
+                            <CardHeader className="flex-row items-start gap-4">
+                                <div className="bg-primary/10 p-3 rounded-lg">
+                                    <card.icon className="h-6 w-6 text-primary" />
+                                </div>
+                                <div>
+                                    <CardTitle>{card.title}</CardTitle>
+                                    <CardDescription className="mt-1">{card.description}</CardDescription>
+                                </div>
+                            </CardHeader>
+                            <CardContent className="flex-grow" />
+                            <CardFooter>
+                                 <Button asChild className="w-full">
+                                    <Link href={card.href} target={card.href.startsWith('http') ? '_blank' : '_self'}>
+                                        {card.cta} <ArrowRight className="ml-2 h-4 w-4" />
+                                    </Link>
+                                </Button>
+                            </CardFooter>
+                        </Card>
+                    ))}
+                </div>
+             )}
         </div>
     );
 }
