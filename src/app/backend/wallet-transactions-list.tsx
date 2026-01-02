@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
@@ -8,7 +7,6 @@ import { Loader2, DollarSign, Clock, ArrowRight, CheckCircle } from 'lucide-reac
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { getClientSideAuthToken } from '@/firebase';
-import { useConfig } from '@/hooks/use-config';
 import { useToast } from '@/hooks/use-toast';
 
 interface Member {
