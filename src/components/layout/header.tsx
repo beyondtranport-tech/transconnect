@@ -137,15 +137,21 @@ export function Header() {
                     </div>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem asChild>
-                    <Link href="/account">Account</Link>
-                  </DropdownMenuItem>
-                  {isAdmin && (
+                  {isAdmin ? (
+                    <>
                       <DropdownMenuItem asChild>
                         <Link href="/backend">
                             <ShieldCheck className="mr-2 h-4 w-4" />
-                            Backend
+                            Admin Backend
                         </Link>
+                      </DropdownMenuItem>
+                       <DropdownMenuItem asChild>
+                            <Link href="/account">Member View</Link>
+                      </DropdownMenuItem>
+                    </>
+                  ) : (
+                      <DropdownMenuItem asChild>
+                        <Link href="/account">My Account</Link>
                       </DropdownMenuItem>
                   )}
                   <DropdownMenuSeparator />
@@ -227,9 +233,9 @@ export function Header() {
                        <div className="h-10 w-full rounded-md bg-muted/50 animate-pulse" />
                     ) : user ? (
                       <Button asChild className="w-full justify-start" >
-                        <Link href="/account" onClick={() => setIsSheetOpen(false)}>
+                        <Link href={isAdmin ? "/backend" : "/account"} onClick={() => setIsSheetOpen(false)}>
                             <User className="mr-2 h-5 w-5" />
-                            My Account
+                            {isAdmin ? 'Admin Backend' : 'My Account'}
                         </Link>
                       </Button>
                     ) : (
