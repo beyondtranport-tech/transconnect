@@ -76,6 +76,7 @@ const MallCommissions = dynamic(() => import('./revenue/mall-commissions'), { lo
 const MarketplaceFees = dynamic(() => import('./revenue/marketplace-fees'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const ConnectPlanPricing = dynamic(() => import('./revenue/connect-plan-pricing'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const TechPricing = dynamic(() => import('./revenue/tech-pricing'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const PlatformTransactions = dynamic(() => import('./platform-transactions'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 
 
 // --- START: Division Specific Dashboards ---
@@ -419,6 +420,8 @@ export default function BackendPageContent() {
             return <MemberWallet memberId={memberId} />;
         }
         return <WalletTransactionsList />; // Fallback if no memberId
+      case 'platform-transactions':
+        return <PlatformTransactions />;
       case 'platform-logs':
         return <PlatformLogsContent />;
       case 'platform-tasks':
@@ -518,7 +521,11 @@ export default function BackendPageContent() {
                      <SidebarMenuSub>
                         <SidebarMenuSubButton isActive={activeView === 'wallet-transactions'} onClick={() => router.push('/backend?view=wallet-transactions', { scroll: false })}>
                             <DollarSign />
-                            <span>Transactions</span>
+                            <span>Member Wallet Ledger</span>
+                        </SidebarMenuSubButton>
+                        <SidebarMenuSubButton isActive={activeView === 'platform-transactions'} onClick={() => router.push('/backend?view=platform-transactions', { scroll: false })}>
+                            <Banknote />
+                            <span>Platform Ledger</span>
                         </SidebarMenuSubButton>
                         <SidebarMenuSubButton isActive={activeView === 'wallet-reconciliation'} onClick={() => router.push('/backend?view=wallet-reconciliation', { scroll: false })}>
                             <Combine />
@@ -637,5 +644,3 @@ export default function BackendPageContent() {
     </SidebarProvider>
   );
 }
-
-    
