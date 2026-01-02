@@ -12,7 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useFirestore, useUser, useStorage, useCollection, useMemoFirebase, getClientSideAuthToken } from '@/firebase';
 import { doc, collection } from 'firebase/firestore';
 import { ref as storageRef, uploadBytesResumable, getDownloadURL } from "firebase/storage";
-import { Loader2, Save, CheckCircle, LayoutGrid, List, Image as ImageIcon, Sparkles, PlusCircle, Edit, Trash2, Send, Eye, ShoppingCart, Mail, Phone, UploadCloud, GalleryHorizontal } from 'lucide-react';
+import { Loader2, Save, CheckCircle, LayoutGrid, List, Image as ImageIcon, Sparkles, PlusCircle, Edit, Trash2, Send, Eye, ShoppingCart, Mail, Phone, UploadCloud, GalleryHorizontal, Wand2 } from 'lucide-react';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -277,6 +277,11 @@ function ProductDialog({ shop, product, onSave, children }: { shop: any, product
     );
   };
 
+  const onEnhance = (enhancedUrl: string) => {
+    form.setValue('imageUrl', enhancedUrl, { shouldValidate: true });
+    toast({ title: "Image Enhanced!", description: "The new image has been applied." });
+  }
+
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>{children}</DialogTrigger>
@@ -301,15 +306,24 @@ function ProductDialog({ shop, product, onSave, children }: { shop: any, product
                     )} />
                 </div>
                  <FormField control={form.control} name="imageUrl" render={({ field }) => (
-                    <FormItem><FormLabel>Product Image</FormLabel>
-                    <FormControl>
-                        <div>
-                             <Input type="file" accept="image/*" onChange={handleImageUpload} className="mb-2" />
-                             {uploadProgress !== null && <Progress value={uploadProgress} className="h-2" />}
-                             {field.value && <Image src={field.value} alt="Product preview" width={100} height={100} className="mt-2 rounded-md object-cover" />}
-                        </div>
-                    </FormControl>
-                    <FormMessage /></FormItem>
+                    <FormItem>
+                      <FormLabel>Product Image</FormLabel>
+                      <FormControl>
+                          <div>
+                              <Input type="file" accept="image/*" onChange={handleImageUpload} className="mb-2" />
+                              {uploadProgress !== null && <Progress value={uploadProgress} className="h-2" />}
+                              {field.value && 
+                                <div className="mt-2 relative w-24 h-24">
+                                  <Image src={field.value} alt="Product preview" width={100} height={100} className="rounded-md object-cover" />
+                                  <AIEnhanceDialog currentImageUri={field.value} onEnhance={onEnhance}>
+                                    <Button variant="outline" size="sm" className="absolute -top-2 -right-2 h-7 w-7 p-1 rounded-full"><Wand2 className="h-4 w-4" /></Button>
+                                  </AIEnhanceDialog>
+                                </div>
+                              }
+                          </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
                 )} />
                 <DialogFooter>
                      <Button type="submit" disabled={isSaving || form.formState.isSubmitting || (uploadProgress !== null && uploadProgress < 100)}>
@@ -322,6 +336,73 @@ function ProductDialog({ shop, product, onSave, children }: { shop: any, product
       </DialogContent>
     </Dialog>
   )
+}
+
+function AIEnhanceDialog({ currentImageUri, onEnhance, children }: { currentImageUri: string, onEnhance: (newUrl: string) => void, children: React.ReactNode}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [prompt, setPrompt] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
+
+  const handleEnhance = async () => {
+    if (!prompt) {
+      toast({ variant: 'destructive', title: 'Prompt is required.'});
+      return;
+    }
+    setIsLoading(true);
+
+    try {
+      const token = await getClientSideAuthToken();
+      if (!token) throw new Error("Authentication token not found.");
+      
+      const response = await fetch('/api/enhanceImage', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ imageDataUri: currentImageUri, prompt: prompt })
+      });
+      
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || 'Failed to enhance image');
+
+      onEnhance(result.enhancedImageDataUri);
+      setIsOpen(false);
+    } catch (e: any) {
+      toast({ variant: 'destructive', title: 'Enhancement Failed', description: e.message });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogTrigger asChild>{children}</DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>AI Image Enhancement</DialogTitle>
+          <DialogDescription>Describe how you want to change the image. For example: "place this on a clean white background".</DialogDescription>
+        </DialogHeader>
+        <div className="space-y-4 py-4">
+          <div className="relative w-40 h-40 mx-auto rounded-md overflow-hidden">
+             <Image src={currentImageUri} alt="Current product" fill className="object-cover"/>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="prompt">Your Instructions</Label>
+            <Input id="prompt" value={prompt} onChange={(e) => setPrompt(e.target.value)} placeholder="e.g., make the background a workshop setting" />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setIsOpen(false)}>Cancel</Button>
+          <Button onClick={handleEnhance} disabled={isLoading}>
+            {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Sparkles className="mr-2 h-4 w-4" />}
+            Enhance Image
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
 }
 
 function Step2Products({ shop, onSave }: { shop: any, onSave: (newData?: any) => void }) {
