@@ -146,7 +146,7 @@ export function Header() {
                         </Link>
                       </DropdownMenuItem>
                        <DropdownMenuItem asChild>
-                            <Link href="/account">Member View</Link>
+                            <Link href="/adminaccount">My Business Account</Link>
                       </DropdownMenuItem>
                     </>
                   ) : (
