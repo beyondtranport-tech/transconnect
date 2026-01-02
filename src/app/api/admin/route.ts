@@ -66,8 +66,8 @@ export async function POST(req: NextRequest) {
                     const company = serializeTimestamps(companyDoc.data());
                     const owner = usersData[company.ownerId];
                     return {
-                        id: company.ownerId, // User UID is the primary ID for this list
-                        companyId: company.id,
+                        id: company.ownerId, // User UID
+                        companyId: company.id, // The company document ID
                         firstName: owner?.firstName,
                         lastName: owner?.lastName,
                         email: owner?.email,
