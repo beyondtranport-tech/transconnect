@@ -1,13 +1,12 @@
-
 'use client';
     
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   DocumentReference,
   DocumentData,
   FirestoreError,
 } from 'firebase/firestore';
-import { getClientSideAuthToken } from '@/firebase';
+import { getClientSideAuthToken, useUser } from '@/firebase';
 
 /** Utility type to add an 'id' field to a given type T. */
 type WithId<T> = T & { id: string };
@@ -40,9 +39,10 @@ export function useDoc<T = any>(
   memoizedDocRef: DocumentReference<DocumentData> | null | undefined,
 ): UseDocResult<T> {
   type StateDataType = WithId<T> | null;
-
+  
+  const { user, isUserLoading } = useUser();
   const [data, setData] = useState<StateDataType>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(true); // Start as true
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<Error | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
 
@@ -50,13 +50,26 @@ export function useDoc<T = any>(
     setRefreshKey(oldKey => oldKey + 1);
   }, []);
 
+  const path = useMemo(() => memoizedDocRef?.path, [memoizedDocRef]);
+
+  const isPublicPath = useMemo(() => {
+    if (!path) return false;
+    const publicPrefixes = ['memberships', 'configuration', 'shops'];
+    return publicPrefixes.some(prefix => path.startsWith(prefix));
+  }, [path]);
+
   useEffect(() => {
-    // If the doc ref isn't ready, reset state and do nothing.
-    if (!memoizedDocRef) {
+    if (!path) {
       setData(null);
       setIsLoading(false);
       setError(null);
       return;
+    }
+
+    // Wait for user auth state to be resolved before fetching private data
+    if (!isPublicPath && isUserLoading) {
+        setIsLoading(true);
+        return;
     }
 
     const fetchData = async () => {
@@ -64,13 +77,18 @@ export function useDoc<T = any>(
         setError(null);
 
         try {
-            const token = await getClientSideAuthToken();
-            const path = memoizedDocRef.path;
+            let token: string | null = null;
+            if (!isPublicPath) {
+                token = await getClientSideAuthToken();
+                // After loading is done, if it's a private path and we still have no token, it's an error.
+                if (!token) {
+                    throw new Error("Authentication is required to access this resource.");
+                }
+            }
             
             const response = await fetch('/api/getUserSubcollection', {
                 method: 'POST',
                 headers: {
-                    // Always send token if available, the API will decide if it's needed
                     ...(token && { 'Authorization': `Bearer ${token}` }),
                     'Content-Type': 'application/json',
                 },
@@ -95,7 +113,7 @@ export function useDoc<T = any>(
 
     fetchData();
 
-  }, [memoizedDocRef, refreshKey]);
+  }, [path, isPublicPath, isUserLoading, refreshKey]);
 
   return { data, isLoading, error, forceRefresh };
 }

@@ -21,7 +21,7 @@ function serializeTimestamps(docData: any): any {
     return newDocData;
 }
 
-export async function verifyAdmin(request: NextRequest) {
+export async function verifyAdmin(request: NextRequest): Promise<{ db: FirebaseFirestore.Firestore, adminUid: string }> {
     const { app, error: initError } = getAdminApp();
     if (initError || !app) {
         throw new Error(`Admin SDK not initialized: ${initError}`);
@@ -40,13 +40,13 @@ export async function verifyAdmin(request: NextRequest) {
         throw new Error('Forbidden: Admin access required.');
     }
 
-    return { db: getFirestore(app), uid: decodedToken.uid };
+    return { db: getFirestore(app), adminUid: decodedToken.uid };
 }
 
 
 export async function POST(req: NextRequest) {
     try {
-        const { db, uid: adminUid } = await verifyAdmin(req);
+        const { db, adminUid } = await verifyAdmin(req);
         const { action, payload } = await req.json();
 
         switch (action) {
@@ -54,7 +54,6 @@ export async function POST(req: NextRequest) {
                 const companiesSnap = await db.collection('companies').get();
                 const companies = companiesSnap.docs.map(doc => ({ ...serializeTimestamps(doc.data()), id: doc.id }));
                 
-                // Create a map of ownerIds to company data
                 const ownerIdToCompanyMap = new Map();
                 companies.forEach(company => {
                     if (company.ownerId) {
@@ -65,7 +64,7 @@ export async function POST(req: NextRequest) {
                 const usersSnap = await db.collection('users').get();
                 const data = usersSnap.docs.map(userDoc => {
                     const user = serializeTimestamps(userDoc.data());
-                    const company = ownerIdToCompanyMap.get(userDoc.id);
+                    const company = ownerIdToCompanyMap.get(userDoc.id); // User's UID is the ownerId
                     return {
                         ...user,
                         id: userDoc.id,
@@ -75,7 +74,6 @@ export async function POST(req: NextRequest) {
                         companyId: company?.id,
                     }
                 });
-
 
                 return NextResponse.json({ success: true, data });
             }
@@ -112,28 +110,25 @@ export async function POST(req: NextRequest) {
                  }
 
                  const batch = db.batch();
-
-                 // 1. Increment company wallet balance
+                 
                  const companyRef = db.doc(`companies/${companyId}`);
                  batch.update(companyRef, { walletBalance: FieldValue.increment(amount) });
-
-                 // 2. Create transaction record
+                 
                  const transactionRef = db.collection(`companies/${companyId}/transactions`).doc();
                  batch.set(transactionRef, {
                     transactionId: transactionRef.id,
-                    reconciliationId: reconciliationId || null, // Save the ref number
+                    reconciliationId: reconciliationId || null,
                     type: 'credit',
                     amount: amount,
                     date: Timestamp.now(),
                     description: `EFT Payment: ${description}`,
                     status: 'allocated',
                     isAdjustment: false,
-                    chartOfAccountsCode: '4410', // Wallet Transaction Fees (adjust as needed)
+                    chartOfAccountsCode: '4410',
                     postedBy: adminUid,
                     userId,
                  });
 
-                 // 3. Delete pending payment record
                  const paymentRef = db.doc(`companies/${companyId}/walletPayments/${paymentId}`);
                  batch.delete(paymentRef);
 

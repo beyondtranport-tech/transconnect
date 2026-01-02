@@ -14,7 +14,7 @@ function serializeTimestamps(docData: any): any {
         if (value instanceof Timestamp) {
             newDocData[key] = value.toDate().toISOString();
         } else if (value && typeof value === 'object' && value !== null && !Array.isArray(value)) {
-            newDocData[key] = serializeTimestamps(value); // Recursively serialize nested objects
+            newDocData[key] = serializeTimestamps(value);
         } else {
             newDocData[key] = value;
         }
@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
     const authorization = headersList.get('authorization');
     const idToken = authorization?.split('Bearer ')[1];
 
-    const publicPrefixes = ['memberships', 'configuration'];
+    const publicPrefixes = ['memberships', 'configuration', 'shops'];
     const isPublicPath = publicPrefixes.some(prefix => path.startsWith(prefix));
 
     try {
@@ -50,47 +50,31 @@ export async function POST(req: NextRequest) {
         if (idToken) {
             decodedToken = await adminAuth.verifyIdToken(idToken);
         } else if (!isPublicPath) {
-            // If it's not a public path and there's no token, it's unauthorized.
             return NextResponse.json({ success: false, error: 'Unauthorized: No token provided for a private route.' }, { status: 401 });
         }
 
         const isAdmin = decodedToken?.email === 'beyondtransport@gmail.com';
         const uid = decodedToken?.uid;
         
-        // --- ADMIN ACCESS LOGIC ---
-        // If the user is an admin, they can access anything.
-        if (isAdmin) {
-             // Proceed with data fetching for admin...
-        } else {
-             // --- NON-ADMIN AUTHORIZATION LOGIC ---
-             if (!isPublicPath) {
-                let isAuthorized = false;
-                const pathSegments = path.split('/');
+        if (!isAdmin && !isPublicPath) {
+            let isAuthorized = false;
+            const pathSegments = path.split('/');
 
-                // Rule: Can access their own user document
-                if (pathSegments.length >= 2 && pathSegments[0] === 'users' && pathSegments[1] === uid) {
-                     isAuthorized = true;
-                } 
-                // Rule: Can access their own company document and its subcollections
-                else if (pathSegments.length >= 2 && pathSegments[0] === 'companies' && uid) {
-                    const companyId = pathSegments[1];
-                    const userDoc = await db.collection('users').doc(uid).get();
-                    if (userDoc.exists && userDoc.data()?.companyId === companyId) {
-                        isAuthorized = true;
-                    }
-                } 
-                // Rule: Can access public shops
-                else if (path.startsWith('shops')) {
+            if (pathSegments.length >= 2 && pathSegments[0] === 'users' && pathSegments[1] === uid) {
+                 isAuthorized = true;
+            } 
+            else if (pathSegments.length >= 2 && pathSegments[0] === 'companies' && uid) {
+                const userDoc = await db.collection('users').doc(uid).get();
+                if (userDoc.exists && userDoc.data()?.companyId === pathSegments[1]) {
                     isAuthorized = true;
                 }
-                
-                if (!isAuthorized) {
-                     return NextResponse.json({ success: false, error: 'Forbidden: You do not have permission to access this resource.' }, { status: 403 });
-                }
-             }
+            }
+            
+            if (!isAuthorized) {
+                 return NextResponse.json({ success: false, error: 'Forbidden: You do not have permission to access this resource.' }, { status: 403 });
+            }
         }
         
-        // --- DATA FETCHING LOGIC ---
         if (type === 'collection') {
             const collectionRef = db.collection(path);
             const snapshot = await collectionRef.get();
@@ -115,7 +99,7 @@ export async function POST(req: NextRequest) {
 
     } catch (error: any) {
         console.error(`API Error in route for path "${path}":`, error);
-        if (error.code === 'auth/id-token-expired' || error.code === 'auth/argument-error' || error.code === 'auth/id-token-revoked') {
+        if (error.code === 'auth/id-token-expired' || error.code?.includes('auth/')) {
            return NextResponse.json({ success: false, error: 'Unauthorized: Invalid token.' }, { status: 401 });
         }
         return NextResponse.json({ success: false, error: `Internal Server Error: ${error.message}` }, { status: 500 });

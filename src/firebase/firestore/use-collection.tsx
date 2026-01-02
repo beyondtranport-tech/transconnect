@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -24,18 +23,6 @@ export interface UseCollectionResult<T> {
   forceRefresh: () => void; // Function to manually trigger a re-fetch
 }
 
-/* Internal implementation of Query:
-  https://github.com/firebase/firebase-js-sdk/blob/c5f08a9bc5da0d2b0207802c972d53724ccef055/packages/firestore/src/lite-api/reference.ts#L143
-*/
-export interface InternalQuery extends Query<DocumentData> {
-  _query: {
-    path: {
-      canonicalString(): string;
-      toString(): string;
-    }
-  }
-}
-
 /**
  * React hook to fetch a Firestore collection via a secure API route.
  * This hook is designed to bypass client-side security rule issues by fetching
@@ -56,8 +43,9 @@ export function useCollection<T = any>(
   type ResultItemType = WithId<T>;
   type StateDataType = ResultItemType[] | null;
 
+  const { user, isUserLoading } = useUser();
   const [data, setData] = useState<StateDataType>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(true); // Start as true
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<Error | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
 
@@ -65,12 +53,30 @@ export function useCollection<T = any>(
     setRefreshKey(oldKey => oldKey + 1);
   }, []);
 
+  const path = useMemo(() => {
+      if (!memoizedTargetRefOrQuery) return null;
+      return memoizedTargetRefOrQuery.type === 'collection'
+          ? (memoizedTargetRefOrQuery as CollectionReference).path
+          : (memoizedTargetRefOrQuery as Query)._query.path.segments.join('/');
+  }, [memoizedTargetRefOrQuery]);
+
+  const isPublicPath = useMemo(() => {
+    if (!path) return false;
+    const publicPrefixes = ['memberships', 'configuration', 'shops'];
+    return publicPrefixes.some(prefix => path.startsWith(prefix));
+  }, [path]);
+
   useEffect(() => {
-    // If the query isn't ready, reset state and do nothing.
-    if (!memoizedTargetRefOrQuery) {
+    if (!path) {
       setData(null);
       setIsLoading(false);
       setError(null);
+      return;
+    }
+
+    // Wait for user auth state to be resolved before fetching private data
+    if (!isPublicPath && isUserLoading) {
+      setIsLoading(true);
       return;
     }
 
@@ -79,18 +85,17 @@ export function useCollection<T = any>(
         setError(null);
 
         try {
-            const token = await getClientSideAuthToken();
-
-            const path: string =
-                memoizedTargetRefOrQuery.type === 'collection'
-                ? (memoizedTargetRefOrQuery as CollectionReference).path
-                // This is a more robust way to get the path from a query
-                : (memoizedTargetRefOrQuery as Query)._query.path.segments.join('/');
+            let token: string | null = null;
+            if (!isPublicPath) {
+                token = await getClientSideAuthToken();
+                if (!token) {
+                    throw new Error("Authentication is required to access this resource.");
+                }
+            }
             
             const response = await fetch('/api/getUserSubcollection', {
                 method: 'POST',
                 headers: {
-                    // Always send token if available, the API will decide if it's needed
                     ...(token && { 'Authorization': `Bearer ${token}` }),
                     'Content-Type': 'application/json',
                 },
@@ -114,17 +119,7 @@ export function useCollection<T = any>(
     };
 
     fetchData();
-  }, [memoizedTargetRefOrQuery, refreshKey]); 
+  }, [path, isPublicPath, isUserLoading, refreshKey]); 
 
   return { data, isLoading, error, forceRefresh };
-}
-
-/**
- * A hook for accessing public collections that don't require user authentication.
- * It's a lightweight wrapper around useCollection that doesn't depend on the user's auth state.
- */
-export function usePublicCollection<T = any>(
-    memoizedTargetRefOrQuery: ((CollectionReference<DocumentData> | Query<DocumentData>) & {__memo?: boolean})  | null | undefined,
-): UseCollectionResult<T> {
-    return useCollection<T>(memoizedTargetRefOrQuery);
 }
