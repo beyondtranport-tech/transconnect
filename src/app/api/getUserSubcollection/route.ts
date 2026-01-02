@@ -51,33 +51,30 @@ export async function POST(req: NextRequest) {
                 const uid = decodedToken.uid;
                 const isAdmin = decodedToken.email === 'beyondtransport@gmail.com';
 
-                const pathSegments = path.split('/');
-                const db = getFirestore(app);
-                
-                // Check for ownership based on new /users and /companies structure
-                const isUsersPathOwner = pathSegments.length >= 2 && pathSegments[0] === 'users' && pathSegments[1] === uid;
-                
-                let isAuthorized = isAdmin || isUsersPathOwner;
+                // Admin can access everything
+                if (isAdmin) {
+                    // Proceed with fetching data for admin
+                } else {
+                    // Non-admin user authorization logic
+                    const pathSegments = path.split('/');
+                    const db = getFirestore(app);
+                    
+                    const isUsersPathOwner = pathSegments.length >= 2 && pathSegments[0] === 'users' && pathSegments[1] === uid;
+                    
+                    let isAuthorized = isUsersPathOwner;
 
-                // Allow access to a company document or its subcollections if the user is the owner.
-                if (!isAuthorized && pathSegments.length >= 2 && pathSegments[0] === 'companies') {
-                    const companyId = pathSegments[1];
-                    const companyDoc = await db.collection('companies').doc(companyId).get();
-                     if (companyDoc.exists && companyDoc.data()?.ownerId === uid) {
-                        isAuthorized = true;
+                    if (!isAuthorized && pathSegments.length >= 2 && pathSegments[0] === 'companies') {
+                        const companyId = pathSegments[1];
+                        const companyDoc = await db.collection('companies').doc(companyId).get();
+                        if (companyDoc.exists && companyDoc.data()?.ownerId === uid) {
+                            isAuthorized = true;
+                        }
+                    }
+
+                    if (!isAuthorized) {
+                         return NextResponse.json({ success: false, error: 'Forbidden: You do not have permission to access this resource.' }, { status: 403 });
                     }
                 }
-
-
-                // Collection group queries are admin-level, other private paths must be owned or accessed by admin.
-                if (type === 'collection-group' && !isAdmin) {
-                    return NextResponse.json({ success: false, error: 'Forbidden: Collection group queries require admin privileges.' }, { status: 403 });
-                }
-
-                if (type !== 'collection-group' && !isAuthorized) {
-                     return NextResponse.json({ success: false, error: 'Forbidden: You do not have permission to access this resource.' }, { status: 403 });
-                }
-
 
             } catch (error: any) {
                  return NextResponse.json({ success: false, error: 'Unauthorized: Invalid token.' }, { status: 401 });
