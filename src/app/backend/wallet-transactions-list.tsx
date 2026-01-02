@@ -39,27 +39,7 @@ interface Transaction {
     memberName?: string;
 }
 
-async function fetchCollectionGroup(collectionId: string) {
-    const token = await getClientSideAuthToken();
-    if (!token) throw new Error("Authentication failed.");
-    
-    const response = await fetch('/api/getUserSubcollection', {
-        method: 'POST',
-        headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ path: collectionId, type: 'collection-group' }),
-    });
-
-    const result = await response.json();
-    if (!result.success) {
-        throw new Error(result.error || `Failed to fetch ${collectionId}`);
-    }
-    return result.data;
-}
-
-async function fetchMembers() {
+async function fetchFromAdminAPI(action: string, payload?: any) {
     const token = await getClientSideAuthToken();
     if (!token) throw new Error("Authentication failed.");
     
@@ -69,15 +49,16 @@ async function fetchMembers() {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ action: 'getMembers' }),
+        body: JSON.stringify({ action, payload }),
     });
 
     const result = await response.json();
     if (!response.ok || !result.success) {
-        throw new Error(result.error || `API Error for action: getMembers`);
+        throw new Error(result.error || `API Error for action: ${action}`);
     }
-    return result.data;
+    return result;
 }
+
 
 const formatCurrency = (amount: number) => {
     if (typeof amount !== 'number') return 'N/A';
@@ -112,17 +93,17 @@ export default function WalletTransactionsList() {
         setIsLoading(true);
         setError(null);
         try {
-            const [membersData, paymentsData, transactionsData] = await Promise.all([
-                fetchMembers(),
-                fetchCollectionGroup('walletPayments'),
-                fetchCollectionGroup('transactions')
-            ]);
-
-            const newMemberMap = new Map(membersData.map((m: Member) => [m.companyId, m]));
+            const membersData = await fetchFromAdminAPI('getMembers');
+            const newMemberMap = new Map(membersData.data.map((m: Member) => [m.companyId, m]));
             setMemberMap(newMemberMap);
 
-            if (paymentsData) {
-                const enhancedPayments = paymentsData
+            const [paymentsData, transactionsData] = await Promise.all([
+                fetchFromAdminAPI('getWalletPayments'),
+                fetchFromAdminAPI('getWalletTransactions')
+            ]);
+            
+            if (paymentsData.data) {
+                const enhancedPayments = paymentsData.data
                     .filter((p: any) => p.status === 'pending')
                     .map((p: any) => {
                         const member = newMemberMap.get(p.companyId);
@@ -136,8 +117,8 @@ export default function WalletTransactionsList() {
                 setPendingPayments(enhancedPayments);
             }
 
-            if (transactionsData) {
-                 const enhancedTransactions = transactionsData.map((tx: any) => {
+            if (transactionsData.data) {
+                 const enhancedTransactions = transactionsData.data.map((tx: any) => {
                     const member = newMemberMap.get(tx.companyId);
                     const memberName = member ? `${member.firstName || ''} ${member.lastName || ''}`.trim() : tx.companyId;
                     return {
@@ -259,4 +240,5 @@ export default function WalletTransactionsList() {
             </Card>
         </div>
     );
-}
+
+    

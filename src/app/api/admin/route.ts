@@ -54,17 +54,14 @@ export async function POST(req: NextRequest) {
                 const companiesSnap = await db.collection('companies').get();
                 const usersSnap = await db.collection('users').get();
                 
-                const usersByCompanyId: { [key: string]: any } = {};
+                const usersByUid: { [key: string]: any } = {};
                 usersSnap.forEach(doc => {
-                    const user = doc.data();
-                    if (user.companyId) {
-                        usersByCompanyId[user.companyId] = serializeTimestamps(user);
-                    }
+                    usersByUid[doc.id] = serializeTimestamps(doc.data());
                 });
-                
+
                 const members = companiesSnap.docs.map(companyDoc => {
                     const company = serializeTimestamps(companyDoc.data());
-                    const owner = usersByCompanyId[company.id];
+                    const owner = usersByUid[company.ownerId];
                     
                     return {
                         companyId: company.id,
@@ -80,6 +77,25 @@ export async function POST(req: NextRequest) {
                 });
                 
                 return NextResponse.json({ success: true, data: members });
+            }
+            case 'getWalletPayments': {
+                const snapshot = await db.collectionGroup('walletPayments').get();
+                const data = snapshot.docs.map(doc => {
+                    const docData = doc.data();
+                    // Extract companyId from the path: companies/{companyId}/walletPayments/{paymentId}
+                    const companyId = doc.ref.parent.parent?.id;
+                    return { id: doc.id, companyId, ...serializeTimestamps(docData) };
+                });
+                return NextResponse.json({ success: true, data });
+            }
+            case 'getWalletTransactions': {
+                const snapshot = await db.collectionGroup('transactions').get();
+                const data = snapshot.docs.map(doc => {
+                     const docData = doc.data();
+                     const companyId = doc.ref.parent.parent?.id;
+                     return { id: doc.id, companyId, ...serializeTimestamps(docData) };
+                });
+                return NextResponse.json({ success: true, data });
             }
              case 'getMemberships': {
                 const snapshot = await db.collection('memberships').get();
@@ -154,3 +170,5 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ success: false, error: error.message }, { status });
     }
 }
+
+    
