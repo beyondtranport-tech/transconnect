@@ -47,30 +47,30 @@ export async function POST(req: NextRequest) {
     
     const db = getFirestore(app);
     const pathSegments = path.split('/');
+    const docRef = db.doc(path);
     
     let isAuthorized = false;
-    const docRef = db.doc(path);
 
-    // Check permissions based on collection
+    // A user can update their own user document
     if (pathSegments[0] === 'users' && pathSegments[1] === uid) {
-        // A user can update their own user document
         isAuthorized = true;
-    } else if (pathSegments[0] === 'companies' && pathSegments.length > 1) {
-        // For a company document, check if the user is the owner
-        const companyId = pathSegments[1];
-        const companySnap = await db.collection('companies').doc(companyId).get();
-        if (companySnap.exists && companySnap.data()?.ownerId === uid) {
-            isAuthorized = true;
-        }
-    } else if (pathSegments[0] === 'companies' && pathSegments[2] === 'shops') {
-        // For a shop subcollection, verify ownership of the parent company
-        const companyId = pathSegments[1];
-        const companySnap = await db.collection('companies').doc(companyId).get();
+    }
+    // A user can update their own company document
+    else if (pathSegments[0] === 'companies' && pathSegments.length === 2) {
+        const companySnap = await docRef.get();
         if (companySnap.exists && companySnap.data()?.ownerId === uid) {
             isAuthorized = true;
         }
     }
-
+    // A user can update documents in their own company's subcollections (e.g., shops)
+    else if (pathSegments[0] === 'companies' && pathSegments.length > 2 && pathSegments[1]) {
+        const companyId = pathSegments[1];
+        const companyRef = db.collection('companies').doc(companyId);
+        const companySnap = await companyRef.get();
+        if (companySnap.exists && companySnap.data()?.ownerId === uid) {
+            isAuthorized = true;
+        }
+    }
 
     if (!isAuthorized) {
         return NextResponse.json({ success: false, error: 'Forbidden: You do not have permission to modify this resource.' }, { status: 403 });

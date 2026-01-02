@@ -22,31 +22,31 @@ export async function POST(req: NextRequest) {
   try {
     const adminAuth = getAuth(app);
     const decodedToken = await adminAuth.verifyIdToken(idToken);
-    const user: UserRecord = await adminAuth.getUser(decodedToken.uid);
+    const firebaseUser: UserRecord = await adminAuth.getUser(decodedToken.uid);
     
     const db = getFirestore(app);
-    const memberDocRef = db.collection('members').doc(user.uid);
-    const memberDocSnap = await memberDocRef.get();
+    const userDocRef = db.collection('users').doc(firebaseUser.uid);
+    const userDocSnap = await userDocRef.get();
 
-    if (memberDocSnap.exists) {
-        return NextResponse.json({ success: true, message: 'Member document already exists.' });
+    if (userDocSnap.exists) {
+        return NextResponse.json({ success: true, message: 'User document already exists.' });
     }
 
-    // --- Member document does NOT exist, so create it ---
-    console.log(`Document for member ${user.uid} not found. Creating member document.`);
+    // --- User document does NOT exist, so create it and the associated company ---
+    console.log(`Document for user ${firebaseUser.uid} not found. Creating user and company documents.`);
 
-    const displayName = user.displayName || '';
+    const displayName = firebaseUser.displayName || '';
     const nameParts = displayName.split(' ');
     const firstName = nameParts[0] || 'New';
     const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : 'User';
+
+    // Create a new company document first
+    const companyRef = db.collection('companies').doc();
     
-    const newMemberData = {
-        id: user.uid,
-        firstName,
-        lastName,
-        email: user.email,
-        phone: user.phoneNumber || '',
-        companyName: user.displayName ? `${user.displayName}'s Company` : 'My Company',
+    const newCompanyData = {
+        id: companyRef.id,
+        ownerId: firebaseUser.uid,
+        companyName: firebaseUser.displayName ? `${firebaseUser.displayName}'s Company` : 'My Company',
         membershipId: 'free',
         rewardPoints: 0,
         walletBalance: 0,
@@ -54,11 +54,27 @@ export async function POST(req: NextRequest) {
         updatedAt: FieldValue.serverTimestamp(),
     };
 
-    await memberDocRef.set(newMemberData);
+    // Create the new user document
+    const newUserData = {
+        id: firebaseUser.uid,
+        firstName,
+        lastName,
+        email: firebaseUser.email,
+        phone: firebaseUser.phoneNumber || '',
+        companyId: companyRef.id, // Link to the new company
+        createdAt: FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp(),
+    };
+    
+    // Use a batch to write both documents atomically
+    const batch = db.batch();
+    batch.set(companyRef, newCompanyData);
+    batch.set(userDocRef, newUserData);
+    await batch.commit();
 
-    console.log(`Successfully created member document for ${user.uid}.`);
+    console.log(`Successfully created user ${firebaseUser.uid} and company ${companyRef.id}.`);
 
-    return NextResponse.json({ success: true, message: 'Member document created successfully.' });
+    return NextResponse.json({ success: true, message: 'User and company documents created successfully.' });
 
   } catch (error: any) {
     console.error(`Error in checkAndCreateUser for user ${idToken ? getAuth(app).verifyIdToken(idToken).then(t=>t.uid).catch(()=>'unknown') : 'unknown'}:`, error);

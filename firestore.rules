@@ -9,40 +9,40 @@ service cloud.firestore {
       return request.auth != null && request.auth.uid == userId;
     }
     
+    function isCompanyOwner(companyId) {
+        let companyData = get(/databases/$(database)/documents/companies/$(companyId)).data;
+        return request.auth != null && request.auth.uid == companyData.ownerId;
+    }
+    
     function isAdmin() {
       // In a real app, this would check a custom claim, not an email address.
       return request.auth != null && request.auth.token.email == 'beyondtransport@gmail.com';
     }
 
-    // --- Member Profiles (Primary Collection) ---
-    // A member can create their own document.
-    // A member can only read or update their own document. Admins have full access.
-    match /members/{memberId} {
-      allow create: if isOwner(memberId);
-      allow get, update: if isOwner(memberId) || isAdmin();
+    // --- User Profiles ---
+    // A user can create their own profile during sign-up.
+    // A user can only read or update their own profile document.
+    match /users/{userId} {
+      allow read, update, create: if isOwner(userId);
+      allow list: if isAdmin();
+    }
+    
+    // --- Company Profiles ---
+    // A user can create a company document (via backend function).
+    // A user can read or update their own company document. Admins have full access.
+    match /companies/{companyId} {
+      allow create: if request.auth != null; // Controlled by backend function
+      allow get: if isCompanyOwner(companyId) || isAdmin();
+      allow update: if isCompanyOwner(companyId);
       allow list: if isAdmin();
 
-      // --- Member Subcollections ---
-      // The owner of the parent member document has full access to all subcollections. Admins also have full access.
-      match /staff/{staffId} {
-        allow read, write: if isOwner(memberId) || isAdmin();
-      }
-      match /quotes/{quoteId} {
-        allow read, write: if isOwner(memberId) || isAdmin();
-      }
-      match /enquiries/{enquiryId} {
-        allow read, write: if isOwner(memberId) || isAdmin();
-      }
-      match /walletPayments/{paymentId} {
-        allow read, write: if isOwner(memberId) || isAdmin();
-      }
-      match /transactions/{transactionId} {
-        allow read, write: if isOwner(memberId) || isAdmin();
-      }
-      match /shops/{shopId} {
-        allow read, write: if isOwner(memberId) || isAdmin();
+      // --- Company Subcollections ---
+      // The owner of the parent company document has full access to all subcollections. Admins also have full access.
+      match /{allSubcollections=**} {
+        allow read, write: if isCompanyOwner(companyId) || isAdmin();
       }
     }
+
 
     // --- Public & Global Collections ---
 
@@ -53,7 +53,6 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
     
-    // Simple collection to log unique visitors.
     // Anyone can create (to log their visit), but only admins can read.
     match /visitors/{visitorId} {
       allow create: if true;
