@@ -1,14 +1,13 @@
-
 'use client';
 
 import { useUser, useFirestore, useMemoFirebase, useCollection, useDoc } from '@/firebase';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
-import { Loader2, DollarSign, Wallet, Clock, Info } from 'lucide-react';
+import { Loader2, DollarSign, Wallet, Clock, Info, Gem } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { collection, query, orderBy, limit, doc } from 'firebase/firestore';
-import { format } from 'date-fns';
+import { format, formatDistanceToNow } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useConfig } from '@/hooks/use-config';
@@ -17,6 +16,9 @@ import { useToast } from '@/hooks/use-toast';
 import { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import PayServicesDialog from './pay-services-dialog';
+
 
 const formatCurrency = (amount: number) => {
     if (typeof amount !== 'number') return 'N/A';
@@ -54,7 +56,7 @@ export default function WalletContent() {
         if (!firestore || !user) return null;
         return doc(firestore, 'members', user.uid);
     }, [firestore, user]);
-    const { data: memberData, isLoading: isMemberLoading } = useDoc(memberDocRef);
+    const { data: memberData, isLoading: isMemberLoading, forceRefresh: forceRefreshMember } = useDoc(memberDocRef);
 
     const transactionsQuery = useMemoFirebase(() => {
         if (!firestore || !user) return null;
@@ -78,7 +80,7 @@ export default function WalletContent() {
     const { data: bankDetails, isLoading: isBankDetailsLoading } = useConfig<any>('bankDetails');
 
     const { data: transactions, isLoading: isLoadingTransactions, error: transactionsError } = useCollection(transactionsQuery);
-    const { data: pendingPayments, isLoading: isLoadingPayments, error: paymentsError, forceRefresh } = useCollection(pendingPaymentsQuery);
+    const { data: pendingPayments, isLoading: isLoadingPayments, error: paymentsError, forceRefresh: forceRefreshPayments } = useCollection(pendingPaymentsQuery);
 
     const isLoading = isUserLoading || isMemberLoading || isLoadingTransactions || isLoadingPayments || isTechPricingLoading || isBankDetailsLoading;
     const error = transactionsError || paymentsError;
@@ -116,7 +118,7 @@ export default function WalletContent() {
 
             toast({ title: "Proof Submitted!", description: "An admin will review and credit your wallet shortly."});
             setPaymentAmount('');
-            forceRefresh(); // Refresh the list of pending payments
+            forceRefreshPayments(); // Refresh the list of pending payments
         } catch (e: any) {
             toast({ variant: 'destructive', title: "Submission Failed", description: e.message });
         } finally {
@@ -136,12 +138,19 @@ export default function WalletContent() {
             </CardHeader>
             <CardContent className="space-y-8">
                 <div className="p-4 bg-muted/50 rounded-lg">
-                    <p className="text-sm text-muted-foreground">Current Allocated Balance</p>
-                    {isMemberLoading ? (
-                        <Loader2 className="h-6 w-6 animate-spin mt-1" />
-                    ) : (
-                        <p className="text-3xl font-bold">{formatCurrency(memberData?.walletBalance || 0)}</p>
-                    )}
+                    <div className="flex justify-between items-center">
+                         <div>
+                            <p className="text-sm text-muted-foreground">Current Allocated Balance</p>
+                            {isMemberLoading ? (
+                                <Loader2 className="h-6 w-6 animate-spin mt-1" />
+                            ) : (
+                                <p className="text-3xl font-bold">{formatCurrency(memberData?.walletBalance || 0)}</p>
+                            )}
+                        </div>
+                        {memberData && (
+                            <PayServicesDialog member={memberData} onPaymentSuccess={forceRefreshMember} />
+                        )}
+                    </div>
                 </div>
 
                 <div className="space-y-4">
