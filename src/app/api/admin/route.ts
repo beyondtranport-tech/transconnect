@@ -1,6 +1,5 @@
-
 import { NextRequest, NextResponse } from 'next/server';
-import { getFirestore, Timestamp } from 'firebase-admin/firestore';
+import { getFirestore, Timestamp, FieldValue } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
 import { getAdminApp } from '@/lib/firebase-admin';
 
@@ -46,7 +45,7 @@ async function verifyAdmin(request: NextRequest) {
 
 export async function POST(req: NextRequest) {
     try {
-        const { db } = await verifyAdmin(req);
+        const { db, uid: adminUid } = await verifyAdmin(req);
         const { action, payload } = await req.json();
 
         switch (action) {
@@ -94,6 +93,40 @@ export async function POST(req: NextRequest) {
 
                 const combined = [...quotes, ...enquiries].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
                 return NextResponse.json({ success: true, data: combined });
+            }
+            case 'approveWalletPayment': {
+                 const { companyId, paymentId, amount, description, userId } = payload;
+                 if (!companyId || !paymentId || !amount || !description || !userId) {
+                    throw new Error("Missing required payload for approveWalletPayment.");
+                 }
+
+                 const batch = db.batch();
+
+                 // 1. Increment company wallet balance
+                 const companyRef = db.doc(`companies/${companyId}`);
+                 batch.update(companyRef, { walletBalance: FieldValue.increment(amount) });
+
+                 // 2. Create transaction record
+                 const transactionRef = db.collection(`companies/${companyId}/transactions`).doc();
+                 batch.set(transactionRef, {
+                    transactionId: transactionRef.id,
+                    type: 'credit',
+                    amount: amount,
+                    date: Timestamp.now(),
+                    description: `EFT Payment: ${description}`,
+                    status: 'allocated',
+                    isAdjustment: false,
+                    chartOfAccountsCode: '4410', // Wallet Transaction Fees (adjust as needed)
+                    postedBy: adminUid,
+                    userId,
+                 });
+
+                 // 3. Delete pending payment record
+                 const paymentRef = db.doc(`companies/${companyId}/walletPayments/${paymentId}`);
+                 batch.delete(paymentRef);
+
+                 await batch.commit();
+                 return NextResponse.json({ success: true, message: "Payment approved and wallet updated." });
             }
             case 'deleteTransaction': {
                 const { companyId, transactionId } = payload;

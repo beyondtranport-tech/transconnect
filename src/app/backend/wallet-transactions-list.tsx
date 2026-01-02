@@ -1,14 +1,14 @@
-
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
-import { Loader2, DollarSign, Clock, ArrowRight } from 'lucide-react';
+import { Loader2, DollarSign, Clock, ArrowRight, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { getClientSideAuthToken } from '@/firebase';
 import { useConfig } from '@/hooks/use-config';
+import { useToast } from '@/hooks/use-toast';
 
 interface Member {
     id: string;
@@ -105,50 +105,100 @@ export default function WalletTransactionsList() {
     const [allocatedTransactions, setAllocatedTransactions] = useState<Transaction[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [isApproving, setIsApproving] = useState<string | null>(null);
+    const { toast } = useToast();
+
+    const fetchAllWalletData = useCallback(async () => {
+        setIsLoading(true);
+        setError(null);
+        try {
+            const [membersData, paymentsData, transactionsData] = await Promise.all([
+                fetchMembers(),
+                fetchCollectionGroup('walletPayments'),
+                fetchCollectionGroup('transactions')
+            ]);
+
+            const newMemberMap = new Map(membersData.map((m: Member) => [m.companyId, m]));
+            setMemberMap(newMemberMap);
+
+            if (paymentsData) {
+                const enhancedPayments = paymentsData
+                    .filter((p: any) => p.status === 'pending')
+                    .map((p: any) => ({
+                        ...p,
+                        memberName: `${newMemberMap.get(p.companyId)?.firstName || ''} ${newMemberMap.get(p.companyId)?.lastName || ''}`.trim() || p.companyId,
+                    }));
+                enhancedPayments.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+                setPendingPayments(enhancedPayments);
+            }
+
+            if (transactionsData) {
+                 const enhancedTransactions = transactionsData.map((tx: any) => ({
+                    ...tx,
+                    memberName: `${newMemberMap.get(tx.companyId)?.firstName || ''} ${newMemberMap.get(tx.companyId)?.lastName || ''}`.trim() || tx.companyId,
+                }));
+                enhancedTransactions.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+                setAllocatedTransactions(enhancedTransactions);
+            }
+
+        } catch (e: any) {
+            setError(e.message || 'An unexpected error occurred.');
+        } finally {
+            setIsLoading(false);
+        }
+    }, []);
 
     useEffect(() => {
-        async function fetchAllWalletData() {
-            setIsLoading(true);
-            setError(null);
-            try {
-                const [membersData, paymentsData, transactionsData] = await Promise.all([
-                    fetchMembers(),
-                    fetchCollectionGroup('walletPayments'),
-                    fetchCollectionGroup('transactions')
-                ]);
-
-                const newMemberMap = new Map(membersData.map((m: Member) => [m.companyId, m]));
-                setMemberMap(newMemberMap);
-
-                if (paymentsData) {
-                    const enhancedPayments = paymentsData
-                        .filter((p: any) => p.status === 'pending')
-                        .map((p: any) => ({
-                            ...p,
-                            memberName: `${newMemberMap.get(p.companyId)?.firstName || ''} ${newMemberMap.get(p.companyId)?.lastName || ''}`.trim() || p.companyId,
-                        }));
-                    enhancedPayments.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-                    setPendingPayments(enhancedPayments);
-                }
-
-                if (transactionsData) {
-                     const enhancedTransactions = transactionsData.map((tx: any) => ({
-                        ...tx,
-                        memberName: `${newMemberMap.get(tx.companyId)?.firstName || ''} ${newMemberMap.get(tx.companyId)?.lastName || ''}`.trim() || tx.companyId,
-                    }));
-                    enhancedTransactions.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-                    setAllocatedTransactions(enhancedTransactions);
-                }
-
-            } catch (e: any) {
-                setError(e.message || 'An unexpected error occurred.');
-            } finally {
-                setIsLoading(false);
-            }
-        }
-
         fetchAllWalletData();
-    }, []);
+    }, [fetchAllWalletData]);
+
+    const handleApprove = async (payment: Payment) => {
+        setIsApproving(payment.id);
+        try {
+            const token = await getClientSideAuthToken();
+            if (!token) throw new Error("Authentication token not found.");
+            
+            const response = await fetch('/api/admin', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    action: 'approveWalletPayment',
+                    payload: {
+                        companyId: payment.companyId,
+                        paymentId: payment.id,
+                        amount: payment.amount,
+                        description: payment.description,
+                        userId: payment.userId,
+                    }
+                }),
+            });
+            const result = await response.json();
+            if (!response.ok || !result.success) {
+                throw new Error(result.error || `Failed to approve payment.`);
+            }
+
+            toast({
+                title: "Payment Approved!",
+                description: `${formatCurrency(payment.amount)} has been credited to ${payment.memberName}.`
+            });
+            
+            // Refetch all data to get the latest state
+            await fetchAllWalletData();
+
+        } catch(e: any) {
+            toast({
+                variant: 'destructive',
+                title: 'Approval Failed',
+                description: e.message
+            })
+        } finally {
+            setIsApproving(null);
+        }
+    }
+
 
     const unallocatedTotal = pendingPayments?.reduce((sum, p) => sum + p.amount, 0) || 0;
 
@@ -183,10 +233,18 @@ export default function WalletTransactionsList() {
                                         <TableCell>{p.description}</TableCell>
                                         <TableCell className="font-semibold">{formatCurrency(p.amount)}</TableCell>
                                         <TableCell className="text-right">
-                                            <Button asChild size="sm" variant="outline">
-                                                <Link href={`/backend?view=wallet&memberId=${p.companyId}`}>
-                                                    Reconcile <ArrowRight className="ml-2 h-4 w-4" />
-                                                </Link>
+                                            <Button 
+                                                size="sm" 
+                                                variant="default"
+                                                onClick={() => handleApprove(p)}
+                                                disabled={isApproving === p.id}
+                                            >
+                                                {isApproving === p.id ? (
+                                                    <Loader2 className="mr-2 h-4 w-4 animate-spin"/>
+                                                ) : (
+                                                    <CheckCircle className="mr-2 h-4 w-4"/>
+                                                )}
+                                                Approve
                                             </Button>
                                         </TableCell>
                                     </TableRow>
