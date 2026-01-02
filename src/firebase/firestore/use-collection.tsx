@@ -79,7 +79,7 @@ export function useCollection<T = any>(
         setError(null);
 
         try {
-            const token = await getClientSideAuthToken();
+            const token = await getClientSideAuthToken(true); // Force refresh token
 
             const path: string =
                 memoizedTargetRefOrQuery.type === 'collection'
