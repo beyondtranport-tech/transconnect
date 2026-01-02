@@ -50,19 +50,22 @@ export async function POST(req: NextRequest) {
         const { action, payload } = await req.json();
 
         switch (action) {
-            case 'getUsers': {
-                const snapshot = await db.collection('users').get();
-                const users = snapshot.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
+            case 'getMembers': {
+                const usersSnap = await db.collection('users').get();
+                const users = usersSnap.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
 
                 const companiesSnap = await db.collection('companies').get();
                 const companyMap = new Map(companiesSnap.docs.map(doc => [doc.id, doc.data()]));
                 
-                const data = users.map(user => ({
-                    ...user,
-                    companyName: companyMap.get(user.companyId)?.companyName,
-                    membershipId: companyMap.get(user.companyId)?.membershipId,
-                    walletBalance: companyMap.get(user.companyId)?.walletBalance,
-                }));
+                const data = users.map(user => {
+                    const company = user.companyId ? companyMap.get(user.companyId) : null;
+                    return {
+                        ...user,
+                        companyName: company?.companyName,
+                        membershipId: company?.membershipId,
+                        walletBalance: company?.walletBalance,
+                    }
+                });
 
                 return NextResponse.json({ success: true, data });
             }

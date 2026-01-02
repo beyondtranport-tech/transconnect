@@ -15,11 +15,13 @@ interface Member {
     firstName?: string;
     lastName?: string;
     companyName?: string;
+    companyId?: string;
 }
 
 interface Payment {
     id: string;
-    applicantId: string;
+    userId: string;
+    companyId: string;
     amount: number;
     description: string;
     createdAt: any;
@@ -28,7 +30,7 @@ interface Payment {
 
 interface Transaction {
     id: string;
-    memberId: string;
+    companyId: string;
     type: 'credit' | 'debit';
     amount: number;
     description: string;
@@ -115,7 +117,7 @@ export default function WalletTransactionsList() {
                     fetchCollectionGroup('transactions')
                 ]);
 
-                const newMemberMap = new Map(membersData.map((m: Member) => [m.id, m]));
+                const newMemberMap = new Map(membersData.map((m: Member) => [m.companyId, m]));
                 setMemberMap(newMemberMap);
 
                 if (paymentsData) {
@@ -123,7 +125,7 @@ export default function WalletTransactionsList() {
                         .filter((p: any) => p.status === 'pending')
                         .map((p: any) => ({
                             ...p,
-                            memberName: `${newMemberMap.get(p.applicantId)?.firstName || ''} ${newMemberMap.get(p.applicantId)?.lastName || ''}`.trim() || p.applicantId,
+                            memberName: `${newMemberMap.get(p.companyId)?.firstName || ''} ${newMemberMap.get(p.companyId)?.lastName || ''}`.trim() || p.companyId,
                         }));
                     enhancedPayments.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
                     setPendingPayments(enhancedPayments);
@@ -132,7 +134,7 @@ export default function WalletTransactionsList() {
                 if (transactionsData) {
                      const enhancedTransactions = transactionsData.map((tx: any) => ({
                         ...tx,
-                        memberName: `${newMemberMap.get(tx.memberId)?.firstName || ''} ${newMemberMap.get(tx.memberId)?.lastName || ''}`.trim() || tx.memberId,
+                        memberName: `${newMemberMap.get(tx.companyId)?.firstName || ''} ${newMemberMap.get(tx.companyId)?.lastName || ''}`.trim() || tx.companyId,
                     }));
                     enhancedTransactions.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
                     setAllocatedTransactions(enhancedTransactions);
@@ -182,7 +184,7 @@ export default function WalletTransactionsList() {
                                         <TableCell className="font-semibold">{formatCurrency(p.amount)}</TableCell>
                                         <TableCell className="text-right">
                                             <Button asChild size="sm" variant="outline">
-                                                <Link href={`/backend?view=wallet&memberId=${p.applicantId}`}>
+                                                <Link href={`/backend?view=wallet&memberId=${p.companyId}`}>
                                                     Reconcile <ArrowRight className="ml-2 h-4 w-4" />
                                                 </Link>
                                             </Button>
@@ -192,8 +194,8 @@ export default function WalletTransactionsList() {
                             </TableBody>
                             <TableFooter>
                                 <TableRow>
-                                    <TableCell colSpan={3} className="text-right font-bold">Total Pending Allocation</TableCell>
-                                    <TableCell colSpan={2} className="text-right font-bold text-lg">{formatCurrency(unallocatedTotal)}</TableCell>
+                                    <TableCell colSpan={4} className="text-right font-bold">Total Pending Allocation</TableCell>
+                                    <TableCell className="text-right font-bold text-lg">{formatCurrency(unallocatedTotal)}</TableCell>
                                 </TableRow>
                             </TableFooter>
                         </Table>
@@ -229,7 +231,7 @@ export default function WalletTransactionsList() {
                                         <TableCell>{formatDate(tx.date)}</TableCell>
                                         <TableCell>
                                             <div className="font-medium">{tx.memberName}</div>
-                                            <div className="text-xs text-muted-foreground font-mono">{tx.memberId}</div>
+                                            <div className="text-xs text-muted-foreground font-mono">{tx.companyId}</div>
                                         </TableCell>
                                         <TableCell>{tx.description}</TableCell>
                                         <TableCell className={`text-right font-mono font-semibold ${tx.type === 'credit' ? 'text-green-600' : 'text-destructive'}`}>
