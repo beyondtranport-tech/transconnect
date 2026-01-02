@@ -35,12 +35,6 @@ import dynamic from 'next/dynamic';
 
 // Dynamically import all the components that will be rendered in the admin account view
 const DashboardContent = dynamic(() => import('@/app/adminaccount/dashboard'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const ProfileContent = dynamic(() => import('@/app/adminaccount/profile-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const CompanyContent = dynamic(() => import('@/app/adminaccount/company-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const StaffContent = dynamic(() => import('@/app/adminaccount/staff-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const ShopContent = dynamic(() => import('@/app/adminaccount/shop-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const WalletContent = dynamic(() => import('@/app/adminaccount/wallet-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const BillingContent = dynamic(() => import('@/app/adminaccount/billing-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const BankDetailsSettings = dynamic(() => import('@/app/backend/bank-details-settings'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const ReconciliationContent = dynamic(() => import('@/app/adminaccount/reconciliation-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 
@@ -82,12 +76,6 @@ function AdminAccountPageContent() {
   const renderContent = () => {
     switch (activeView) {
       case 'dashboard': return <DashboardContent />;
-      case 'profile': return <ProfileContent />;
-      case 'company': return <CompanyContent />;
-      case 'staff': return <StaffContent />;
-      case 'shop': return <ShopContent />;
-      case 'wallet': return <WalletContent />;
-      case 'billing': return <BillingContent />;
       case 'bank-settings': return <BankDetailsSettings />;
       case 'bank-reconciliation': return <ReconciliationContent />;
       default: return <DashboardContent />;
@@ -137,40 +125,6 @@ function AdminAccountPageContent() {
                     </SidebarMenuSubButton>
                 </SidebarMenuSub>
               </SidebarMenuItem>
-               <SidebarMenuItem>
-                    <SidebarMenuButton tooltip="Wallet">
-                        <Wallet />
-                        <span>Wallet</span>
-                    </SidebarMenuButton>
-                     <SidebarMenuSub>
-                        <SidebarMenuSubButton isActive={activeView === 'wallet'} onClick={() => router.push('/adminaccount?view=wallet', { scroll: false })}>
-                            My Wallet
-                        </SidebarMenuSubButton>
-                         <SidebarMenuSubButton isActive={activeView === 'billing'} onClick={() => router.push('/adminaccount?view=billing', { scroll: false })}>
-                            Billing
-                        </SidebarMenuSubButton>
-                    </SidebarMenuSub>
-                </SidebarMenuItem>
-                <SidebarMenuItem>
-                    <SidebarMenuButton tooltip="Company Details">
-                        <Users />
-                        <span>Company</span>
-                    </SidebarMenuButton>
-                     <SidebarMenuSub>
-                        <SidebarMenuSubButton isActive={activeView === 'profile'} onClick={() => router.push('/adminaccount?view=profile', { scroll: false })}>
-                            My Profile
-                        </SidebarMenuSubButton>
-                         <SidebarMenuSubButton isActive={activeView === 'company'} onClick={() => router.push('/adminaccount?view=company', { scroll: false })}>
-                            Company Details
-                        </SidebarMenuSubButton>
-                         <SidebarMenuSubButton isActive={activeView === 'staff'} onClick={() => router.push('/adminaccount?view=staff', { scroll: false })}>
-                            Staff
-                        </SidebarMenuSubButton>
-                         <SidebarMenuSubButton isActive={activeView === 'shop'} onClick={() => router.push('/adminaccount?view=shop', { scroll: false })}>
-                            My Shop
-                        </SidebarMenuSubButton>
-                    </SidebarMenuSub>
-                </SidebarMenuItem>
           </SidebarGroup>
         </SidebarContent>
         <SidebarFooter>

@@ -3,7 +3,7 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Users, Store, Banknote, Settings, BarChart, Combine } from "lucide-react";
+import { ArrowRight, Users, Store, Banknote, Settings, BarChart, Combine, BookOpen } from "lucide-react";
 import Link from 'next/link';
 import { useEffect, useState } from "react";
 import { getClientSideAuthToken } from "@/firebase";
@@ -31,48 +31,33 @@ async function fetchStats(action: string) {
 
 
 export default function AccountDashboard() {
-    const [stats, setStats] = useState({ members: 0, shops: 0 });
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
-        async function loadStats() {
-            setIsLoading(true);
-            try {
-                const [membersData, shopsData] = await Promise.all([
-                    fetchStats('getMembers'),
-                    fetchStats('getShops')
-                ]);
-                setStats({
-                    members: membersData.length || 0,
-                    shops: shopsData.length || 0,
-                });
-            } catch (error) {
-                console.error("Failed to load admin dashboard stats:", error);
-            } finally {
-                setIsLoading(false);
-            }
-        }
-        loadStats();
+        // In a real app, you might fetch some high-level stats here.
+        // For now, we'll just simulate a loading state.
+        const timer = setTimeout(() => setIsLoading(false), 500);
+        return () => clearTimeout(timer);
     }, []);
 
     const operationalCards = [
         {
-            title: "Member & Shop Management",
-            description: "Oversee all users, manage shops, and view platform-wide contributions.",
-            href: "/backend",
-            icon: Users,
-            cta: "Go to Platform Backend"
-        },
-        {
             title: "Bank & Reconciliation",
-            description: "Reconcile bank statements for both member wallets and the main business operating account.",
+            description: "Reconcile bank statements for the main business operating account.",
             href: "/adminaccount?view=bank-reconciliation",
             icon: Combine,
             cta: "Reconcile Transactions"
         },
         {
-            title: "Revenue & Pricing",
-            description: "Manage membership plan pricing, mall commissions, and other revenue streams.",
+            title: "Platform Ledger",
+            description: "View and manage the general ledger for all platform revenue and expenses.",
+            href: "/backend?view=platform-transactions",
+            icon: BookOpen,
+            cta: "View Ledger"
+        },
+        {
+            title: "Revenue Configuration",
+            description: "Manage membership pricing, mall commissions, and other revenue streams.",
             href: "/backend?view=revenue-membership",
             icon: Settings,
             cta: "Manage Revenue"
