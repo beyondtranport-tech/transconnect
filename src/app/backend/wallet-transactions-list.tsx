@@ -12,8 +12,7 @@ import { useConfig } from '@/hooks/use-config';
 import { useToast } from '@/hooks/use-toast';
 
 interface Member {
-    userId: string;
-    companyId: string;
+    id: string;
     firstName?: string;
     lastName?: string;
     companyName?: string;
@@ -21,8 +20,7 @@ interface Member {
 
 interface Payment {
     id: string;
-    userId: string;
-    companyId: string;
+    memberId: string;
     amount: number;
     description: string;
     createdAt: any;
@@ -31,7 +29,7 @@ interface Payment {
 
 interface Transaction {
     id: string;
-    companyId: string;
+    memberId: string;
     type: 'credit' | 'debit';
     amount: number;
     description: string;
@@ -94,7 +92,7 @@ export default function WalletTransactionsList() {
         setError(null);
         try {
             const membersResult = await fetchFromAdminAPI('getMembers');
-            const newMemberMap = new Map(membersResult.data.map((m: Member) => [m.companyId, m]));
+            const newMemberMap = new Map(membersResult.data.map((m: Member) => [m.id, m]));
             setMemberMap(newMemberMap);
 
             const [paymentsData, transactionsData] = await Promise.all([
@@ -106,11 +104,11 @@ export default function WalletTransactionsList() {
                 const enhancedPayments = paymentsData.data
                     .filter((p: any) => p.status === 'pending')
                     .map((p: any) => {
-                        const member = newMemberMap.get(p.companyId);
-                        const memberName = member ? `${member.firstName || ''} ${member.lastName || ''}`.trim() : p.companyId;
+                        const member = newMemberMap.get(p.memberId);
+                        const memberName = member ? `${member.firstName || ''} ${member.lastName || ''}`.trim() : p.memberId;
                         return {
                             ...p,
-                            memberName: memberName || p.companyId,
+                            memberName: memberName || p.memberId,
                         };
                     });
                 enhancedPayments.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
@@ -119,11 +117,11 @@ export default function WalletTransactionsList() {
 
             if (transactionsData.data) {
                  const enhancedTransactions = transactionsData.data.map((tx: any) => {
-                    const member = newMemberMap.get(tx.companyId);
-                    const memberName = member ? `${member.firstName || ''} ${member.lastName || ''}`.trim() : tx.companyId;
+                    const member = newMemberMap.get(tx.memberId);
+                    const memberName = member ? `${member.firstName || ''} ${member.lastName || ''}`.trim() : tx.memberId;
                     return {
                         ...tx,
-                        memberName: memberName || tx.companyId
+                        memberName: memberName || tx.memberId
                     };
                 });
                 enhancedTransactions.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
@@ -175,7 +173,7 @@ export default function WalletTransactionsList() {
                                         <TableCell className="font-semibold">{formatCurrency(p.amount)}</TableCell>
                                         <TableCell className="text-right">
                                             <Button asChild size="sm" variant="default">
-                                                <Link href={`/backend/approve-payment/${p.companyId}/${p.id}`}>
+                                                <Link href={`/backend/approve-payment/${p.memberId}/${p.id}`}>
                                                     <CheckCircle className="mr-2 h-4 w-4"/>
                                                     Approve
                                                 </Link>
@@ -223,7 +221,7 @@ export default function WalletTransactionsList() {
                                         <TableCell>{formatDate(tx.date)}</TableCell>
                                         <TableCell>
                                             <div className="font-medium">{tx.memberName}</div>
-                                            <div className="text-xs text-muted-foreground font-mono">{tx.companyId}</div>
+                                            <div className="text-xs text-muted-foreground font-mono">{tx.memberId}</div>
                                         </TableCell>
                                         <TableCell>{tx.description}</TableCell>
                                         <TableCell className={`text-right font-mono font-semibold ${tx.type === 'credit' ? 'text-green-600' : 'text-destructive'}`}>

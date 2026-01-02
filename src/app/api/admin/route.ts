@@ -62,12 +62,33 @@ export async function POST(req: NextRequest) {
             }
             case 'getWalletPayments': {
                 const snapshot = await db.collectionGroup('walletPayments').get();
-                const data = snapshot.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
+                const data = snapshot.docs.map(doc => {
+                    const docPath = doc.ref.path;
+                    const pathSegments = docPath.split('/');
+                    // Assuming path is members/{memberId}/walletPayments/{paymentId}
+                    const memberId = pathSegments.length > 1 ? pathSegments[1] : null;
+
+                    return { 
+                        id: doc.id,
+                        memberId: memberId, 
+                        ...serializeTimestamps(doc.data()) 
+                    };
+                });
                 return NextResponse.json({ success: true, data });
             }
             case 'getWalletTransactions': {
                 const snapshot = await db.collectionGroup('transactions').get();
-                const data = snapshot.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
+                const data = snapshot.docs.map(doc => {
+                     const docPath = doc.ref.path;
+                    const pathSegments = docPath.split('/');
+                    // Assuming path is members/{memberId}/transactions/{transactionId}
+                    const memberId = pathSegments.length > 1 ? pathSegments[1] : null;
+                    return { 
+                        id: doc.id,
+                        memberId: memberId,
+                        ...serializeTimestamps(doc.data()) 
+                    };
+                });
                 return NextResponse.json({ success: true, data });
             }
              case 'getMemberships': {
@@ -97,7 +118,7 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, data: combined });
             }
             case 'approveWalletPayment': {
-                 const { memberId, paymentId, amount, description, userId, reconciliationId } = payload;
+                 const { memberId, paymentId, amount, description, reconciliationId } = payload;
                  if (!memberId || !paymentId || !amount || !description) {
                     throw new Error("Missing required payload for approveWalletPayment.");
                  }

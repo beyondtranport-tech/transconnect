@@ -24,6 +24,12 @@ const formatDate = (dateValue: any) => {
     if (dateValue && typeof dateValue.toDate === 'function') {
         return new Date(dateValue.toDate()).toLocaleString('en-ZA', { dateStyle: 'long', timeStyle: 'short' });
     }
+     if (typeof dateValue === 'string') {
+        const date = new Date(dateValue);
+        if (!isNaN(date.getTime())) {
+            return new Date(dateValue).toLocaleString('en-ZA', { dateStyle: 'long', timeStyle: 'short' });
+        }
+    }
     return 'N/A';
 };
 
@@ -35,14 +41,14 @@ function ApprovePaymentComponent() {
     const [reconciliationId, setReconciliationId] = useState('');
     const [isApproving, setIsApproving] = useState(false);
 
-    // slug will be [companyId, paymentId]
-    const companyId = Array.isArray(params.slug) ? params.slug[0] : '';
+    // slug will be [memberId, paymentId]
+    const memberId = Array.isArray(params.slug) ? params.slug[0] : '';
     const paymentId = Array.isArray(params.slug) ? params.slug[1] : '';
 
     const paymentRef = useMemoFirebase(() => {
-        if (!firestore || !companyId || !paymentId) return null;
-        return doc(firestore, `companies/${companyId}/walletPayments/${paymentId}`);
-    }, [firestore, companyId, paymentId]);
+        if (!firestore || !memberId || !paymentId) return null;
+        return doc(firestore, `members/${memberId}/walletPayments/${paymentId}`);
+    }, [firestore, memberId, paymentId]);
 
     const { data: payment, isLoading, error } = useDoc(paymentRef);
     
@@ -62,11 +68,10 @@ function ApprovePaymentComponent() {
                 body: JSON.stringify({
                     action: 'approveWalletPayment',
                     payload: {
-                        companyId: payment.companyId,
+                        memberId: memberId,
                         paymentId: payment.id,
                         amount: payment.amount,
                         description: payment.description,
-                        userId: payment.userId,
                         reconciliationId: reconciliationId, // Pass the reference number
                     }
                 }),
@@ -124,7 +129,7 @@ function ApprovePaymentComponent() {
                     <Landmark className="h-4 w-4" />
                     <AlertTitle>Confirm Payment Details</AlertTitle>
                     <AlertDescription className="space-y-2 mt-2">
-                       <div className="flex justify-between"><span>Member ID:</span><span className="font-mono">{payment.companyId}</span></div>
+                       <div className="flex justify-between"><span>Member ID:</span><span className="font-mono">{memberId}</span></div>
                        <div className="flex justify-between"><span>Date Logged:</span><span className="font-semibold">{formatDate(payment.createdAt)}</span></div>
                        <div className="flex justify-between"><span>Description:</span><span className="font-semibold">{payment.description}</span></div>
                        <div className="flex justify-between text-lg"><span>Amount:</span><span className="font-bold text-primary">{formatCurrency(payment.amount)}</span></div>
