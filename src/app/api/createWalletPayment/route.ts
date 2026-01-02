@@ -55,7 +55,11 @@ export async function POST(req: NextRequest) {
     const collectionRef = db.collection(collectionPath);
     
     const deserializedData = deserializeData(data);
-    const newDocRef = await collectionRef.add(deserializedData);
+    
+    // Ensure companyId is part of the document data itself
+    const finalData = { ...deserializedData, companyId: data.companyId };
+
+    const newDocRef = await collectionRef.add(finalData);
 
     return NextResponse.json({ success: true, id: newDocRef.id, message: 'Wallet payment created successfully.' });
 
