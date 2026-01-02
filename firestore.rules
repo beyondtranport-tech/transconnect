@@ -20,11 +20,26 @@ service cloud.firestore {
     match /members/{memberId} {
       allow create: if isOwner(memberId);
       allow get, update: if isOwner(memberId) || isAdmin();
-      allow list: if isAdmin(); // Only admins can list all members
+      allow list: if isAdmin();
 
       // --- Member Subcollections ---
       // The owner of the parent member document has full access to all subcollections. Admins also have full access.
-      match /{subcollection}/{docId=**} {
+      match /staff/{staffId} {
+        allow read, write: if isOwner(memberId) || isAdmin();
+      }
+      match /quotes/{quoteId} {
+        allow read, write: if isOwner(memberId) || isAdmin();
+      }
+      match /enquiries/{enquiryId} {
+        allow read, write: if isOwner(memberId) || isAdmin();
+      }
+      match /walletPayments/{paymentId} {
+        allow read, write: if isOwner(memberId) || isAdmin();
+      }
+      match /transactions/{transactionId} {
+        allow read, write: if isOwner(memberId) || isAdmin();
+      }
+      match /shops/{shopId} {
         allow read, write: if isOwner(memberId) || isAdmin();
       }
     }
