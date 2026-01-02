@@ -64,6 +64,7 @@ export async function POST(req: NextRequest) {
                  isAuthorized = true;
             } 
             else if (pathSegments.length >= 2 && pathSegments[0] === 'companies' && uid) {
+                // To check ownership, we must fetch the user doc to get their companyId
                 const userDoc = await db.collection('users').doc(uid).get();
                 if (userDoc.exists && userDoc.data()?.companyId === pathSegments[1]) {
                     isAuthorized = true;
@@ -93,8 +94,14 @@ export async function POST(req: NextRequest) {
              const snapshot = await collectionGroupRef.get();
              const data = snapshot.docs.map(doc => {
                 const docData = doc.data();
-                // Extract companyId from the parent path (`companies/{companyId}`)
-                const companyId = doc.ref.parent.parent?.id;
+                // This logic correctly finds the 'companies' collection in the path and extracts its ID.
+                const pathSegments = doc.ref.path.split('/');
+                let companyId = null;
+                const companiesIndex = pathSegments.indexOf('companies');
+                if (companiesIndex > -1 && companiesIndex < pathSegments.length - 1) {
+                    companyId = pathSegments[companiesIndex + 1];
+                }
+                
                 return { 
                     id: doc.id, 
                     companyId, 
