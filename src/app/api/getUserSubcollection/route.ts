@@ -94,7 +94,6 @@ export async function POST(req: NextRequest) {
              const snapshot = await collectionGroupRef.get();
              const data = snapshot.docs.map(doc => {
                 const docData = doc.data();
-                // This logic correctly finds the 'companies' collection in the path and extracts its ID.
                 const pathSegments = doc.ref.path.split('/');
                 let companyId = null;
                 const companiesIndex = pathSegments.indexOf('companies');
