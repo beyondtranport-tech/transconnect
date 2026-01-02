@@ -91,7 +91,16 @@ export async function POST(req: NextRequest) {
         } else if (type === 'collection-group') {
              const collectionGroupRef = db.collectionGroup(path);
              const snapshot = await collectionGroupRef.get();
-             const data = snapshot.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
+             const data = snapshot.docs.map(doc => {
+                const docData = doc.data();
+                // Extract companyId from the parent path (`companies/{companyId}`)
+                const companyId = doc.ref.parent.parent?.id;
+                return { 
+                    id: doc.id, 
+                    companyId, 
+                    ...serializeTimestamps(docData) 
+                };
+             });
              return NextResponse.json({ success: true, data });
         } else {
              return NextResponse.json({ success: false, error: 'Bad Request: "type" must be "collection", "document", or "collection-group".' }, { status: 400 });
