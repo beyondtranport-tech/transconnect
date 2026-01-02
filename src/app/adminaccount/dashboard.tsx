@@ -56,11 +56,11 @@ export default function AccountDashboard() {
             cta: "View Ledger"
         },
         {
-            title: "Revenue Configuration",
-            description: "Manage membership pricing, mall commissions, and other revenue streams.",
-            href: "/backend?view=revenue-membership",
-            icon: Settings,
-            cta: "Manage Revenue"
+            title: "Budgets",
+            description: "Manage and review the operational budgets for the platform.",
+            href: "/adminaccount?view=budgets",
+            icon: BookOpen,
+            cta: "Manage Budgets"
         },
          {
             title: "Analytics",
