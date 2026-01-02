@@ -100,7 +100,7 @@ function ReconciliationReportComponent() {
                 </div>
                  <div className="flex gap-2">
                     <Button variant="outline" asChild>
-                        <Link href="/backend?view=wallet-reconciliation"><ArrowLeft className="mr-2 h-4 w-4"/> Back to List</Link>
+                        <Link href="/adminaccount?view=bank-reconciliation"><ArrowLeft className="mr-2 h-4 w-4"/> Back to List</Link>
                     </Button>
                     <Button onClick={() => window.print()}><Printer className="mr-2 h-4 w-4"/> Print</Button>
                 </div>
@@ -189,5 +189,3 @@ export default function ReconciliationReportPage({ params }: { params: { reconci
         </div>
     )
 }
-
-    
