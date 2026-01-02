@@ -9,25 +9,22 @@ export async function POST(req: NextRequest) {
         
         const now = new Date();
         
-        // 1. Fetch all membership plans to get their pricing
         const membershipsSnap = await db.collection('memberships').get();
-        const prices: { [key: string]: { monthly: number, annual: number } } = {};
+        const prices: { [key: string]: { monthly: number, annual: number, name: string } } = {};
         membershipsSnap.forEach(doc => {
             const data = doc.data();
-            prices[doc.id] = data.price;
+            prices[doc.id] = { price: data.price, name: data.name };
         });
 
-        // 2. Fetch all members with a paid membership plan
         const membersQuery = db.collection('members').where('membershipId', '!=', 'free');
         const membersSnap = await membersQuery.get();
 
         if (membersSnap.empty) {
-            return NextResponse.json({ success: true, message: "No members with paid plans found.", billedCount: 0, totalBilled: 0 });
+            return NextResponse.json({ success: true, message: "No members with paid plans found.", createdCount: 0 });
         }
 
         const batch = db.batch();
-        let billedCount = 0;
-        let totalBilled = 0;
+        let createdCount = 0;
         let errors: string[] = [];
 
         for (const memberDoc of membersSnap.docs) {
@@ -38,65 +35,46 @@ export async function POST(req: NextRequest) {
 
             const nextBillingDate = (member.nextBillingDate as Timestamp).toDate();
 
-            // 3. Check if the billing date is in the past
             if (nextBillingDate <= now) {
                 const planId = member.membershipId;
                 const cycle = member.billingCycle || 'monthly';
-                const planPrice = cycle === 'annual' ? prices[planId]?.annual : prices[planId]?.monthly;
+                const planPrice = cycle === 'annual' ? prices[planId]?.price.annual : prices[planId]?.price.monthly;
+                const planName = prices[planId]?.name || planId;
 
                 if (typeof planPrice !== 'number') {
                     errors.push(`Price for plan '${planId}' on member ${memberId} not found.`);
                     continue;
                 }
-
-                if (member.walletBalance < planPrice) {
-                    errors.push(`Member ${memberId} has insufficient funds for ${planId} plan.`);
-                    continue;
-                }
-
-                // 4. Create batch operations for a successful billing
-                const newBalance = member.walletBalance - planPrice;
                 
+                // Create a receivable record in walletPayments
+                const paymentRef = db.collection(`members/${memberId}/walletPayments`).doc();
+                batch.set(paymentRef, {
+                    memberId: memberId,
+                    status: 'pending',
+                    description: `Membership Fee: ${planName} (${cycle})`,
+                    amount: planPrice,
+                    createdAt: FieldValue.serverTimestamp(),
+                });
+
+                // Update the member's next billing date so they aren't billed again immediately
                 const newNextBillingDate = new Date(nextBillingDate);
                 if (cycle === 'monthly') {
                     newNextBillingDate.setMonth(newNextBillingDate.getMonth() + 1);
                 } else {
                     newNextBillingDate.setFullYear(newNextBillingDate.getFullYear() + 1);
                 }
+                batch.update(memberDoc.ref, { nextBillingDate: newNextBillingDate });
                 
-                // Update member's balance and next billing date
-                batch.update(memberDoc.ref, { 
-                    walletBalance: newBalance, 
-                    nextBillingDate: newNextBillingDate 
-                });
-
-                // Create transaction record
-                const transactionRef = db.collection(`members/${memberId}/transactions`).doc();
-                batch.set(transactionRef, {
-                    transactionId: transactionRef.id,
-                    type: 'debit',
-                    amount: planPrice,
-                    date: Timestamp.now(),
-                    description: `Membership Fee: ${planId} (${cycle})`,
-                    status: 'allocated',
-                    isAdjustment: false,
-                    chartOfAccountsCode: '4010',
-                    postedBy: adminUid,
-                });
-
-                billedCount++;
-                totalBilled += planPrice;
+                createdCount++;
             }
         }
         
-        // 5. Commit all batched operations
         await batch.commit();
         
         return NextResponse.json({ 
             success: true, 
-            message: `Billing run completed. ${billedCount} members billed.`,
-            billedCount,
-            totalBilled,
+            message: `Billing run completed. ${createdCount} receivable records created.`,
+            createdCount,
             errors,
             checkedCount: membersSnap.size
         });

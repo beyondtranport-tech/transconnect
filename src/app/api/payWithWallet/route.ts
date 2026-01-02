@@ -4,10 +4,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getAuth } from 'firebase-admin/auth';
 import { getAdminApp } from '@/lib/firebase-admin';
 
-async function handleMembershipPayment(db: FirebaseFirestore.Firestore, adminUid: string, payload: any) {
-    const { memberId, planId, cycle, amount } = payload;
-    if (!memberId || !planId || !cycle || typeof amount !== 'number') {
-        throw new Error('Missing required fields for membership payment.');
+async function handleServicePayment(db: FirebaseFirestore.Firestore, adminUid: string, payload: any) {
+    const { memberId, paymentId, amount, description } = payload;
+    if (!memberId || !paymentId || typeof amount !== 'number' || !description) {
+        throw new Error('Missing required fields for service payment.');
     }
 
     const memberRef = db.doc(`members/${memberId}`);
@@ -18,39 +18,35 @@ async function handleMembershipPayment(db: FirebaseFirestore.Firestore, adminUid
         throw new Error('Insufficient wallet balance.');
     }
 
-    const nextBillingDate = new Date();
-    if (cycle === 'monthly') {
-        nextBillingDate.setMonth(nextBillingDate.getMonth() + 1);
-    } else {
-        nextBillingDate.setFullYear(nextBillingDate.getFullYear() + 1);
-    }
-
     const batch = db.batch();
 
-    // 1. Update member document
+    // 1. Update member's wallet balance
     batch.update(memberRef, {
         walletBalance: FieldValue.increment(-amount),
-        nextBillingDate: Timestamp.fromDate(nextBillingDate),
         updatedAt: FieldValue.serverTimestamp(),
     });
 
-    // 2. Create transaction record
+    // 2. Create a transaction record for this payment
     const transactionRef = db.collection(`members/${memberId}/transactions`).doc();
     batch.set(transactionRef, {
         transactionId: transactionRef.id,
         type: 'debit',
         amount: amount,
         date: FieldValue.serverTimestamp(),
-        description: `Membership Fee: ${planId} (${cycle})`,
+        description: description,
         status: 'allocated',
         isAdjustment: false,
-        chartOfAccountsCode: '4010', // Standard membership revenue
+        chartOfAccountsCode: description.toLowerCase().includes('membership') ? '4010' : '4410', // Simple logic for CoA
         postedBy: adminUid,
         memberId: memberId,
     });
 
+    // 3. Delete the pending payment record
+    const paymentRef = db.doc(`members/${memberId}/walletPayments/${paymentId}`);
+    batch.delete(paymentRef);
+
     await batch.commit();
-    return { success: true, message: 'Membership renewed successfully.' };
+    return { success: true, message: 'Payment processed successfully.' };
 }
 
 
@@ -77,15 +73,9 @@ export async function POST(req: NextRequest) {
     if (uid !== payload.memberId) {
         return NextResponse.json({ success: false, error: 'Forbidden: You can only make payments for your own account.' }, { status: 403 });
     }
-
-    let result;
-    switch(payload.service) {
-        case 'membership':
-            result = await handleMembershipPayment(db, uid, payload);
-            break;
-        default:
-            throw new Error('Invalid service specified for payment.');
-    }
+    
+    // For now, all payments from the dialog are generic service payments
+    const result = await handleServicePayment(db, uid, payload);
     
     return NextResponse.json(result);
 

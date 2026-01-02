@@ -5,10 +5,10 @@ import { useState, useEffect, useMemo } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { useDoc, useFirestore, useMemoFirebase, getClientSideAuthToken } from '@/firebase';
-import { doc } from 'firebase/firestore';
-import { Loader2, Gem, Wallet } from 'lucide-react';
-import { format, formatDistanceToNow } from 'date-fns';
+import { useCollection, useFirestore, useMemoFirebase, getClientSideAuthToken } from '@/firebase';
+import { collection, query, where } from 'firebase/firestore';
+import { Loader2, Gem, Wallet, AlertCircle } from 'lucide-react';
+import { format } from 'date-fns';
 
 const formatCurrency = (amount: number) => {
     if (typeof amount !== 'number') return 'N/A';
@@ -19,40 +19,37 @@ export default function PayServicesDialog({ member, onPaymentSuccess }: { member
     const { toast } = useToast();
     const firestore = useFirestore();
     const [isOpen, setIsOpen] = useState(false);
-    const [isProcessing, setIsProcessing] = useState(false);
+    const [isProcessing, setIsProcessing] = useState<string | null>(null);
     
-    const membershipRef = useMemoFirebase(() => {
-        if (!firestore || !member.membershipId) return null;
-        return doc(firestore, 'memberships', member.membershipId);
-    }, [firestore, member.membershipId]);
-    
-    const { data: membership, isLoading: isMembershipLoading } = useDoc(membershipRef);
+    const pendingPaymentsQuery = useMemoFirebase(() => {
+        if (!firestore || !member) return null;
+        return query(collection(firestore, `members/${member.id}/walletPayments`), where('status', '==', 'pending'));
+    }, [firestore, member]);
 
-    const price = useMemo(() => {
-        if (!membership) return 0;
-        return member.billingCycle === 'annual' ? membership.price.annual : membership.price.monthly;
-    }, [membership, member.billingCycle]);
+    const { data: payments, isLoading: arePaymentsLoading, forceRefresh } = useCollection(pendingPaymentsQuery);
 
-    const nextBillingDate = member.nextBillingDate?.toDate ? member.nextBillingDate.toDate() : null;
-    const isDue = nextBillingDate ? new Date() > nextBillingDate : false;
+    useEffect(() => {
+        if (isOpen) {
+            forceRefresh();
+        }
+    }, [isOpen, forceRefresh]);
     
-    const handlePayMembership = async () => {
-        if (!member || !membership || !price || member.walletBalance < price) {
-            toast({ variant: 'destructive', title: 'Payment Failed', description: 'Insufficient funds or membership details not found.' });
+    const handlePay = async (payment: any) => {
+        if (!member || member.walletBalance < payment.amount) {
+            toast({ variant: 'destructive', title: 'Payment Failed', description: 'Insufficient funds.' });
             return;
         }
 
-        setIsProcessing(true);
+        setIsProcessing(payment.id);
         try {
             const token = await getClientSideAuthToken();
             if (!token) throw new Error("Authentication failed.");
 
             const payload = {
                 memberId: member.id,
-                service: 'membership',
-                planId: membership.id,
-                cycle: member.billingCycle,
-                amount: price,
+                paymentId: payment.id,
+                amount: payment.amount,
+                description: payment.description,
             };
 
             const response = await fetch('/api/payWithWallet', {
@@ -64,13 +61,13 @@ export default function PayServicesDialog({ member, onPaymentSuccess }: { member
             const result = await response.json();
             if (!response.ok) throw new Error(result.error || 'Payment processing failed.');
 
-            toast({ title: 'Payment Successful!', description: `Your ${membership.name} membership has been renewed.`});
-            onPaymentSuccess();
-            setIsOpen(false);
+            toast({ title: 'Payment Successful!', description: `${payment.description} has been paid.`});
+            onPaymentSuccess(); // Refresh member balance
+            forceRefresh(); // Refresh payments list
         } catch (e: any) {
             toast({ variant: 'destructive', title: 'Payment Failed', description: e.message });
         } finally {
-            setIsProcessing(false);
+            setIsProcessing(null);
         }
     };
 
@@ -87,39 +84,33 @@ export default function PayServicesDialog({ member, onPaymentSuccess }: { member
                         Use your wallet balance to pay for outstanding services.
                     </DialogDescription>
                 </DialogHeader>
-                <div className="py-4">
-                    {isMembershipLoading ? (
+                <div className="py-4 space-y-4">
+                    {arePaymentsLoading ? (
                         <div className="flex justify-center"><Loader2 className="h-6 w-6 animate-spin" /></div>
-                    ) : membership ? (
-                        <div className="p-4 border rounded-lg space-y-2">
-                           <div className="flex justify-between items-center">
-                             <div className="flex items-center gap-2">
-                                <Gem className="h-5 w-5 text-primary" />
-                                <div>
-                                    <h4 className="font-semibold">{membership.name} Membership</h4>
-                                    <p className="text-sm text-muted-foreground capitalize">
-                                        {member.billingCycle} billing cycle
-                                    </p>
+                    ) : payments && payments.length > 0 ? (
+                        payments.map(payment => (
+                             <div key={payment.id} className="p-4 border rounded-lg space-y-2">
+                                <div className="flex justify-between items-center">
+                                    <h4 className="font-semibold">{payment.description}</h4>
+                                    <p className="font-bold text-lg">{formatCurrency(payment.amount)}</p>
                                 </div>
-                             </div>
-                             <p className="font-bold text-lg">{formatCurrency(price)}</p>
-                           </div>
-                           {nextBillingDate && (
-                                <p className={`text-xs ${isDue ? 'text-destructive' : 'text-muted-foreground'}`}>
-                                    {isDue ? 'Due ' : 'Next payment due '} {format(nextBillingDate, 'dd MMM yyyy')} ({formatDistanceToNow(nextBillingDate, { addSuffix: true })})
-                                </p>
-                           )}
-                           <Button 
-                                className="w-full mt-2" 
-                                onClick={handlePayMembership}
-                                disabled={isProcessing || !isDue || member.walletBalance < price}
-                            >
-                                {isProcessing ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Wallet className="mr-2 h-4 w-4"/>}
-                                {member.walletBalance < price ? 'Insufficient Balance' : 'Pay Now'}
-                           </Button>
-                        </div>
+                                <p className="text-xs text-muted-foreground">Due: {format(payment.createdAt, "dd MMM yyyy")}</p>
+                                <Button 
+                                    className="w-full mt-2" 
+                                    onClick={() => handlePay(payment)}
+                                    disabled={!!isProcessing || member.walletBalance < payment.amount}
+                                >
+                                    {isProcessing === payment.id ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Wallet className="mr-2 h-4 w-4"/>}
+                                    {member.walletBalance < payment.amount ? 'Insufficient Balance' : 'Pay Now'}
+                                </Button>
+                            </div>
+                        ))
                     ) : (
-                        <p className="text-center text-muted-foreground">No active membership found.</p>
+                         <div className="text-center py-10 border-2 border-dashed rounded-lg">
+                            <AlertCircle className="mx-auto h-12 w-12 text-muted-foreground" />
+                            <h3 className="mt-4 text-lg font-semibold">No Pending Payments</h3>
+                            <p className="text-muted-foreground mt-1">There are no outstanding items due for payment.</p>
+                        </div>
                     )}
                 </div>
             </DialogContent>
