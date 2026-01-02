@@ -19,10 +19,13 @@ import {
   Settings,
   LogOut,
   LayoutDashboard,
-  Wallet,
   Banknote,
   Combine,
   Truck,
+  Building,
+  TrendingUp,
+  LineChart,
+  Book,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -78,6 +81,12 @@ function AdminAccountPageContent() {
       case 'dashboard': return <DashboardContent />;
       case 'bank-settings': return <BankDetailsSettings />;
       case 'bank-reconciliation': return <ReconciliationContent />;
+      // Add placeholders for new views
+      case 'business': return <div><h1>Business</h1></div>;
+      case 'staff': return <div><h1>Staff</h1></div>;
+      case 'marketing': return <div><h1>Marketing</h1></div>;
+      case 'forecasting': return <div><h1>Forecasting</h1></div>;
+      case 'budgets': return <div><h1>Budgets</h1></div>;
       default: return <DashboardContent />;
     }
   };
@@ -124,6 +133,36 @@ function AdminAccountPageContent() {
                         <span>Bank Details</span>
                     </SidebarMenuSubButton>
                 </SidebarMenuSub>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton tooltip="Business" isActive={activeView === 'business'} onClick={() => router.push('/adminaccount?view=business', { scroll: false })}>
+                  <Building />
+                  <span>Business</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton tooltip="Staff" isActive={activeView === 'staff'} onClick={() => router.push('/adminaccount?view=staff', { scroll: false })}>
+                  <Users />
+                  <span>Staff</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton tooltip="Marketing" isActive={activeView === 'marketing'} onClick={() => router.push('/adminaccount?view=marketing', { scroll: false })}>
+                  <TrendingUp />
+                  <span>Marketing</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton tooltip="Forecasting" isActive={activeView === 'forecasting'} onClick={() => router.push('/adminaccount?view=forecasting', { scroll: false })}>
+                  <LineChart />
+                  <span>Forecasting</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton tooltip="Budgets" isActive={activeView === 'budgets'} onClick={() => router.push('/adminaccount?view=budgets', { scroll: false })}>
+                  <Book />
+                  <span>Budgets</span>
+                </SidebarMenuButton>
               </SidebarMenuItem>
           </SidebarGroup>
         </SidebarContent>
