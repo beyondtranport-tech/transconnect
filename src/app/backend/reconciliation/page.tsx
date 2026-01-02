@@ -47,9 +47,10 @@ async function fetchPendingPayments() {
         .map((p: any, index: number) => ({
             id: index + 1,
             paymentId: p.id,
+            companyId: p.companyId,
             date: new Date(p.createdAt).toISOString().split('T')[0],
             description: p.description,
-            reference: p.applicantId,
+            reference: p.companyId,
             amount: p.amount,
             type: 'credit',
         }));
@@ -267,18 +268,54 @@ function ReconciliationDashboard() {
     );
 }
 
-export default function ReconciliationPage() {
-    const searchParams = useSearchParams();
-    const reconciliationId = searchParams.get('reconciliationId');
-    
-    // This is a client component, so we can use hooks.
-    // However, to show a different view based on URL, we have to handle it this way.
-    // The reconciliationId in the URL determines which view to show.
-    const reconciliationIdFromPath = window.location.pathname.split('/reconciliation/')[1];
+function ReconciliationReportPageWrapper() {
+  const [reconciliationId, setReconciliationId] = useState<string | null>(null);
 
-    if (reconciliationIdFromPath) {
-        return <Suspense fallback={<Loader2 className="h-16 w-16 animate-spin" />}><ReconciliationReport params={{reconciliationId: reconciliationIdFromPath}} /></Suspense>
+  useEffect(() => {
+    // This check is safe because this component is only rendered on the client.
+    if (typeof window !== 'undefined') {
+      const idFromPath = window.location.pathname.split('/reconciliation/')[1];
+      if (idFromPath) {
+        setReconciliationId(idFromPath);
+      }
+    }
+  }, []);
+
+  if (!reconciliationId) {
+    return <Loader2 className="h-16 w-16 animate-spin" />;
+  }
+
+  return <ReconciliationReport params={{ reconciliationId }} />;
+}
+
+export default function ReconciliationPage() {
+    // This top-level component will decide what to render based on the URL.
+    // It avoids conditional hook calls by having two separate components.
+    const [isClient, setIsClient] = useState(false);
+    const [isReportView, setIsReportView] = useState(false);
+
+    useEffect(() => {
+        setIsClient(true);
+        if (window.location.pathname.includes('/backend/reconciliation/')) {
+            setIsReportView(true);
+        }
+    }, []);
+
+    if (!isClient) {
+        return <div className="flex justify-center items-center min-h-[calc(100vh-8rem)]"><Loader2 className="h-16 w-16 animate-spin" /></div>;
+    }
+
+    if (isReportView) {
+        return (
+            <Suspense fallback={<div className="flex justify-center items-center min-h-[calc(100vh-8rem)]"><Loader2 className="h-16 w-16 animate-spin" /></div>}>
+                <ReconciliationReportPageWrapper />
+            </Suspense>
+        );
     }
     
-    return <Suspense fallback={<Loader2 className="h-16 w-16 animate-spin" />}><ReconciliationDashboard /></Suspense>
+    return (
+        <Suspense fallback={<div className="flex justify-center items-center min-h-[calc(100vh-8rem)]"><Loader2 className="h-16 w-16 animate-spin" /></div>}>
+            <ReconciliationDashboard />
+        </Suspense>
+    );
 }
