@@ -105,10 +105,10 @@ export default function WalletTransactionsList() {
                     .filter((p: any) => p.status === 'pending')
                     .map((p: any) => {
                         const member = newMemberMap.get(p.memberId);
-                        const memberName = member ? `${member.firstName || ''} ${member.lastName || ''}`.trim() : p.memberId;
+                        const memberName = member ? `${member.firstName || ''} ${member.lastName || ''}`.trim() : 'Unknown Member';
                         return {
                             ...p,
-                            memberName: memberName || p.memberId,
+                            memberName: memberName,
                         };
                     });
                 enhancedPayments.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
@@ -118,10 +118,10 @@ export default function WalletTransactionsList() {
             if (transactionsData.data) {
                  const enhancedTransactions = transactionsData.data.map((tx: any) => {
                     const member = newMemberMap.get(tx.memberId);
-                    const memberName = member ? `${member.firstName || ''} ${member.lastName || ''}`.trim() : tx.memberId;
+                    const memberName = member ? `${member.firstName || ''} ${member.lastName || ''}`.trim() : 'Unknown Member';
                     return {
                         ...tx,
-                        memberName: memberName || tx.memberId
+                        memberName: memberName
                     };
                 });
                 enhancedTransactions.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
@@ -158,7 +158,8 @@ export default function WalletTransactionsList() {
                             <TableHeader>
                                 <TableRow>
                                     <TableHead>Date Logged</TableHead>
-                                    <TableHead>Member</TableHead>
+                                    <TableHead>Member Name</TableHead>
+                                    <TableHead>Member ID</TableHead>
                                     <TableHead>Description</TableHead>
                                     <TableHead>Amount</TableHead>
                                     <TableHead className="text-right">Action</TableHead>
@@ -169,6 +170,7 @@ export default function WalletTransactionsList() {
                                     <TableRow key={p.id} className="bg-amber-50 dark:bg-amber-900/20">
                                         <TableCell>{formatDate(p.createdAt)}</TableCell>
                                         <TableCell className="font-medium">{p.memberName}</TableCell>
+                                        <TableCell className="font-mono text-xs">{p.memberId}</TableCell>
                                         <TableCell>{p.description}</TableCell>
                                         <TableCell className="font-semibold">{formatCurrency(p.amount)}</TableCell>
                                         <TableCell className="text-right">
@@ -184,7 +186,7 @@ export default function WalletTransactionsList() {
                             </TableBody>
                             <TableFooter>
                                 <TableRow>
-                                    <TableCell colSpan={4} className="text-right font-bold">Total Pending Allocation</TableCell>
+                                    <TableCell colSpan={5} className="text-right font-bold">Total Pending Allocation</TableCell>
                                     <TableCell className="text-right font-bold text-lg">{formatCurrency(unallocatedTotal)}</TableCell>
                                 </TableRow>
                             </TableFooter>
@@ -210,7 +212,8 @@ export default function WalletTransactionsList() {
                             <TableHeader>
                                 <TableRow>
                                     <TableHead>Date</TableHead>
-                                    <TableHead>Member</TableHead>
+                                    <TableHead>Member Name</TableHead>
+                                    <TableHead>Member ID</TableHead>
                                     <TableHead>Description</TableHead>
                                     <TableHead className="text-right">Amount</TableHead>
                                 </TableRow>
@@ -219,10 +222,8 @@ export default function WalletTransactionsList() {
                                 {allocatedTransactions.slice(0, 20).map(tx => ( // Show latest 20
                                     <TableRow key={tx.id}>
                                         <TableCell>{formatDate(tx.date)}</TableCell>
-                                        <TableCell>
-                                            <div className="font-medium">{tx.memberName}</div>
-                                            <div className="text-xs text-muted-foreground font-mono">{tx.memberId}</div>
-                                        </TableCell>
+                                        <TableCell className="font-medium">{tx.memberName}</TableCell>
+                                        <TableCell className="font-mono text-xs">{tx.memberId}</TableCell>
                                         <TableCell>{tx.description}</TableCell>
                                         <TableCell className={`text-right font-mono font-semibold ${tx.type === 'credit' ? 'text-green-600' : 'text-destructive'}`}>
                                             {tx.type === 'credit' ? '+' : '-'} {formatCurrency(tx.amount)}
