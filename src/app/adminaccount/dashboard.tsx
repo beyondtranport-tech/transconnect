@@ -3,7 +3,7 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Users, Store, Banknote, Settings, BarChart, Combine, BookOpen } from "lucide-react";
+import { ArrowRight, Users, Store, Banknote, Settings, BarChart, Combine, BookOpen, LineChart } from "lucide-react";
 import Link from 'next/link';
 import { useEffect, useState } from "react";
 import { getClientSideAuthToken } from "@/firebase";
@@ -34,8 +34,6 @@ export default function AccountDashboard() {
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
-        // In a real app, you might fetch some high-level stats here.
-        // For now, we'll just simulate a loading state.
         const timer = setTimeout(() => setIsLoading(false), 500);
         return () => clearTimeout(timer);
     }, []);
@@ -51,7 +49,7 @@ export default function AccountDashboard() {
         {
             title: "Platform Ledger",
             description: "View and manage the general ledger for all platform revenue and expenses.",
-            href: "/backend?view=platform-transactions",
+            href: "/adminaccount?view=platform-transactions",
             icon: BookOpen,
             cta: "View Ledger"
         },
@@ -66,7 +64,7 @@ export default function AccountDashboard() {
             title: "Analytics",
             description: "View detailed analytics on user behavior and platform performance via Google Analytics.",
             href: "https://analytics.google.com",
-            icon: BarChart,
+            icon: LineChart,
             cta: "View Analytics"
         }
     ];

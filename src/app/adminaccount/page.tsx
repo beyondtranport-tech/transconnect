@@ -40,6 +40,7 @@ import dynamic from 'next/dynamic';
 const DashboardContent = dynamic(() => import('@/app/adminaccount/dashboard'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const BankDetailsSettings = dynamic(() => import('@/app/backend/bank-details-settings'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const ReconciliationContent = dynamic(() => import('@/app/adminaccount/reconciliation-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const PlatformTransactions = dynamic(() => import('@/app/backend/platform-transactions'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 
 
 function AdminAccountPageContent() {
@@ -81,6 +82,7 @@ function AdminAccountPageContent() {
       case 'dashboard': return <DashboardContent />;
       case 'bank-settings': return <BankDetailsSettings />;
       case 'bank-reconciliation': return <ReconciliationContent />;
+      case 'platform-transactions': return <PlatformTransactions />;
       // Add placeholders for new views
       case 'business': return <div><h1>Business</h1></div>;
       case 'staff': return <div><h1>Staff</h1></div>;
@@ -127,6 +129,10 @@ function AdminAccountPageContent() {
                     <SidebarMenuSubButton isActive={activeView === 'bank-reconciliation'} onClick={() => router.push('/adminaccount?view=bank-reconciliation', { scroll: false })}>
                         <Combine />
                         <span>Reconciliation</span>
+                    </SidebarMenuSubButton>
+                    <SidebarMenuSubButton isActive={activeView === 'platform-transactions'} onClick={() => router.push('/adminaccount?view=platform-transactions', { scroll: false })}>
+                        <Book />
+                        <span>Platform Ledger</span>
                     </SidebarMenuSubButton>
                     <SidebarMenuSubButton isActive={activeView === 'bank-settings'} onClick={() => router.push('/adminaccount?view=bank-settings', { scroll: false })}>
                         <Settings />
