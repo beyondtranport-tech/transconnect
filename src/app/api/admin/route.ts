@@ -95,7 +95,7 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, data: combined });
             }
             case 'approveWalletPayment': {
-                 const { companyId, paymentId, amount, description, userId } = payload;
+                 const { companyId, paymentId, amount, description, userId, reconciliationId } = payload;
                  if (!companyId || !paymentId || !amount || !description || !userId) {
                     throw new Error("Missing required payload for approveWalletPayment.");
                  }
@@ -110,6 +110,7 @@ export async function POST(req: NextRequest) {
                  const transactionRef = db.collection(`companies/${companyId}/transactions`).doc();
                  batch.set(transactionRef, {
                     transactionId: transactionRef.id,
+                    reconciliationId: reconciliationId || null, // Save the ref number
                     type: 'credit',
                     amount: amount,
                     date: Timestamp.now(),

@@ -105,7 +105,6 @@ export default function WalletTransactionsList() {
     const [allocatedTransactions, setAllocatedTransactions] = useState<Transaction[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [isApproving, setIsApproving] = useState<string | null>(null);
     const { toast } = useToast();
 
     const fetchAllWalletData = useCallback(async () => {
@@ -152,54 +151,6 @@ export default function WalletTransactionsList() {
         fetchAllWalletData();
     }, [fetchAllWalletData]);
 
-    const handleApprove = async (payment: Payment) => {
-        setIsApproving(payment.id);
-        try {
-            const token = await getClientSideAuthToken();
-            if (!token) throw new Error("Authentication token not found.");
-            
-            const response = await fetch('/api/admin', {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    action: 'approveWalletPayment',
-                    payload: {
-                        companyId: payment.companyId,
-                        paymentId: payment.id,
-                        amount: payment.amount,
-                        description: payment.description,
-                        userId: payment.userId,
-                    }
-                }),
-            });
-            const result = await response.json();
-            if (!response.ok || !result.success) {
-                throw new Error(result.error || `Failed to approve payment.`);
-            }
-
-            toast({
-                title: "Payment Approved!",
-                description: `${formatCurrency(payment.amount)} has been credited to ${payment.memberName}.`
-            });
-            
-            // Refetch all data to get the latest state
-            await fetchAllWalletData();
-
-        } catch(e: any) {
-            toast({
-                variant: 'destructive',
-                title: 'Approval Failed',
-                description: e.message
-            })
-        } finally {
-            setIsApproving(null);
-        }
-    }
-
-
     const unallocatedTotal = pendingPayments?.reduce((sum, p) => sum + p.amount, 0) || 0;
 
     return (
@@ -233,18 +184,11 @@ export default function WalletTransactionsList() {
                                         <TableCell>{p.description}</TableCell>
                                         <TableCell className="font-semibold">{formatCurrency(p.amount)}</TableCell>
                                         <TableCell className="text-right">
-                                            <Button 
-                                                size="sm" 
-                                                variant="default"
-                                                onClick={() => handleApprove(p)}
-                                                disabled={isApproving === p.id}
-                                            >
-                                                {isApproving === p.id ? (
-                                                    <Loader2 className="mr-2 h-4 w-4 animate-spin"/>
-                                                ) : (
+                                            <Button asChild size="sm" variant="default">
+                                                <Link href={`/backend/approve-payment/${p.companyId}/${p.id}`}>
                                                     <CheckCircle className="mr-2 h-4 w-4"/>
-                                                )}
-                                                Approve
+                                                    Approve
+                                                </Link>
                                             </Button>
                                         </TableCell>
                                     </TableRow>
