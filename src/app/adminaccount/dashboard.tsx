@@ -85,8 +85,8 @@ export default function AccountDashboard() {
                         <div className="flex items-center gap-4">
                             <ShieldAlert className="h-10 w-10 text-primary" />
                             <div>
-                                <CardTitle className="text-2xl">Administrator Account</CardTitle>
-                                <CardDescription className="text-primary/90">You are currently viewing your business dashboard.</CardDescription>
+                                <CardTitle className="text-2xl">Administrator's Business Account</CardTitle>
+                                <CardDescription className="text-primary/90">This is your company's member-facing dashboard.</CardDescription>
                             </div>
                         </div>
                     </CardHeader>

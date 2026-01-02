@@ -123,11 +123,7 @@ export default function EnquiriesCard() {
             setIsDeleting(null);
         }
     };
-
-    if (user && user.email === 'beyondtransport@gmail.com' && window.location.pathname.startsWith('/account')) {
-        return null;
-    }
-
+    
     return (
         <Card>
             <CardHeader>

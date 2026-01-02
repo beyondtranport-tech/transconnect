@@ -8,7 +8,7 @@ import { Loader2, Store, PlusCircle } from 'lucide-react';
 import { useUser, useFirestore, useMemoFirebase, useDoc, getClientSideAuthToken } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
-import ShopWizard from './shop-wizard';
+import ShopWizard from '@/app/account/shop-wizard';
 
 export default function ShopContent() {
   const { user, isUserLoading } = useUser();
