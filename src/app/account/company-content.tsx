@@ -18,7 +18,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useState, useEffect } from 'react';
 import { Loader2, Building, Save } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useUser, useFirestore, useMemoFirebase } from '@/firebase';
+import { useUser, useFirestore, useMemoFirebase, getClientSideAuthToken } from '@/firebase';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { useDoc } from '@/firebase/firestore/use-doc';
 import { errorEmitter } from '@/firebase/error-emitter';
@@ -79,35 +79,55 @@ export default function CompanyContent() {
 
   const onSubmit = async (values: CompanyFormValues) => {
     setIsSaving(true);
-    if (!memberDocRef || !firestore) {
-      toast({ variant: 'destructive', title: 'Error', description: 'Not logged in or database not available.' });
+    if (!user) {
+      toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in to update your profile.' });
       setIsSaving(false);
       return;
     }
 
     const dataToUpdate = {
         ...values,
-        updatedAt: serverTimestamp(),
+        updatedAt: { _methodName: 'serverTimestamp' }, // Use placeholder for server-side conversion
     };
-    
-    setDoc(memberDocRef, dataToUpdate, { merge: true })
-      .then(() => {
-          toast({
-              title: 'Company Info Updated',
-              description: 'Your company information has been saved.',
-          });
-      })
-      .catch((serverError: any) => {
-          const permissionError = new FirestorePermissionError({
-              path: memberDocRef.path,
-              operation: 'update',
-              requestResourceData: dataToUpdate,
-          });
-          errorEmitter.emit('permission-error', permissionError);
-      })
-      .finally(() => {
-          setIsSaving(false);
-      });
+
+    try {
+        const token = await getClientSideAuthToken();
+        if (!token) {
+            throw new Error('Authentication token not found.');
+        }
+
+        const response = await fetch('/api/updateUserDoc', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                path: `members/${user.uid}`,
+                data: dataToUpdate
+            }),
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+            throw new Error(result.error || 'Failed to update company information.');
+        }
+
+        toast({
+            title: 'Company Info Updated',
+            description: 'Your company information has been saved.',
+        });
+    } catch (error: any) {
+        console.error("Error updating company info:", error);
+        toast({
+            variant: 'destructive',
+            title: 'Update Failed',
+            description: error.message || 'An unexpected error occurred.',
+        });
+    } finally {
+        setIsSaving(false);
+    }
   };
 
   const isLoading = isUserLoading || isMemberLoading;
