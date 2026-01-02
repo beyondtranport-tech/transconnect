@@ -112,7 +112,7 @@ export async function POST(req: NextRequest) {
                     db.collectionGroup('quotes').get(),
                     db.collectionGroup('enquiries').get()
                 ]);
-                const quotes = enquiriesSnap.docs.map(doc => {
+                const quotes = quotesSnap.docs.map(doc => {
                     const data = serializeTimestamps(doc.data());
                     return { ...data, id: doc.id, recordType: 'Quote', applicantId: data.memberId };
                 });
