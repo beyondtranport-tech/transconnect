@@ -140,13 +140,13 @@ export function Header() {
                   {isAdmin ? (
                     <>
                       <DropdownMenuItem asChild>
-                        <Link href="/backend">
+                        <Link href="/adminaccount">
                             <ShieldCheck className="mr-2 h-4 w-4" />
-                            Admin Backend
+                            Admin Account
                         </Link>
                       </DropdownMenuItem>
                        <DropdownMenuItem asChild>
-                            <Link href="/adminaccount">My Business Account</Link>
+                            <Link href="/backend">Member Management</Link>
                       </DropdownMenuItem>
                     </>
                   ) : (
@@ -233,9 +233,9 @@ export function Header() {
                        <div className="h-10 w-full rounded-md bg-muted/50 animate-pulse" />
                     ) : user ? (
                       <Button asChild className="w-full justify-start" >
-                        <Link href={isAdmin ? "/backend" : "/account"} onClick={() => setIsSheetOpen(false)}>
+                        <Link href={isAdmin ? "/adminaccount" : "/account"} onClick={() => setIsSheetOpen(false)}>
                             <User className="mr-2 h-5 w-5" />
-                            {isAdmin ? 'Admin Backend' : 'My Account'}
+                            {isAdmin ? 'Admin Account' : 'My Account'}
                         </Link>
                       </Button>
                     ) : (
