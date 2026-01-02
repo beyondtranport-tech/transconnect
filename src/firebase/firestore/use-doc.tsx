@@ -64,17 +64,13 @@ export function useDoc<T = any>(
         setError(null);
 
         try {
-            // Always try to get the auth token.
-            // The API route will decide if it's needed based on the path.
             const token = await getClientSideAuthToken();
-
             const path = memoizedDocRef.path;
             
             const response = await fetch('/api/getUserSubcollection', {
                 method: 'POST',
                 headers: {
-                    // Conditionally add the Authorization header ONLY if a token was successfully retrieved.
-                    ...(token && { 'Authorization': `Bearer ${token}` }),
+                    'Authorization': `Bearer ${token}`, // Always send token
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({ path, type: 'document' }),
