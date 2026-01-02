@@ -37,6 +37,13 @@ service cloud.firestore {
       allow get, list: if true;
       allow write: if isAdmin();
     }
+    
+    // Simple collection to log unique visitors.
+    // Anyone can create (to log their visit), but only admins can read.
+    match /visitors/{visitorId} {
+      allow create: if true;
+      allow read: if isAdmin();
+    }
 
     // Publicly readable collection for membership plans.
     // Only the admin can create, update, or delete plans.

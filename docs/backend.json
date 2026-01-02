@@ -31,6 +31,20 @@
       },
       "required": ["id", "firstName", "lastName", "email", "companyName", "membershipId"]
     },
+    "Visitor": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Visitor",
+      "type": "object",
+      "description": "Represents a single unique visitor to the site.",
+      "properties": {
+        "id": { "type": "string" },
+        "firstVisitedAt": { "type": "object" },
+        "lastVisitedAt": { "type": "object" },
+        "initialReferrer": { "type": "string" },
+        "userAgent": { "type": "string" }
+      },
+      "required": ["id", "firstVisitedAt", "userAgent"]
+    },
     "Shop": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Shop",
@@ -220,6 +234,14 @@
           "entityName": "Member",
           "schema": { "$ref": "#/entities/Member" },
           "description": "Stores member profiles, containing both user and company data. A member can only read/write their own document."
+        }
+      },
+       {
+        "path": "/visitors/{visitorId}",
+        "definition": {
+          "entityName": "Visitor",
+          "schema": { "$ref": "#/entities/Visitor" },
+          "description": "Stores information about unique site visitors. Writable by anyone, readable by admin."
         }
       },
       {
