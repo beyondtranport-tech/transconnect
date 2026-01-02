@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview An AI-powered video generation tool using Google's Veo model.
@@ -13,8 +14,8 @@ import { MediaPart } from 'genkit';
 import { Readable } from 'stream';
 
 export const GenerateVideoInputSchema = z.object({
-  prompt: z.string().describe('The text prompt describing the desired video content.'),
-  durationSeconds: z.number().min(1).max(8).optional().default(5).describe('The duration of the video in seconds.'),
+  prompt: z.string().describe('The text prompt describing the desired video content, including any narration.'),
+  durationSeconds: z.number().min(1).max(8).optional().default(8).describe('The duration of the video in seconds.'),
 });
 export type GenerateVideoInput = z.infer<typeof GenerateVideoInputSchema>;
 
@@ -45,14 +46,13 @@ const generateVideoFlow = ai.defineFlow(
     inputSchema: GenerateVideoInputSchema,
     outputSchema: GenerateVideoOutputSchema,
   },
-  async ({ prompt, durationSeconds }) => {
+  async ({ prompt }) => {
     
     // 1. Start the video generation process. This returns an operation, not the final video.
     let { operation } = await ai.generate({
-        model: 'googleai/veo-2.0-generate-001',
+        model: 'googleai/veo-3.0-generate-preview',
         prompt: prompt,
         config: {
-            durationSeconds: durationSeconds,
             aspectRatio: '16:9',
         },
     });

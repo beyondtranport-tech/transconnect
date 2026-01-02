@@ -431,7 +431,7 @@ function AIVideoDialog({ children }: { children: React.ReactNode }) {
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ prompt, durationSeconds: 5 })
+                body: JSON.stringify({ prompt, durationSeconds: 8 })
             });
             
             const result = await response.json();

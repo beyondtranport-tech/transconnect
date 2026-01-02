@@ -55,3 +55,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ success: false, error: errorMessage }, { status: statusCode });
     }
 }
+
+// Increase the timeout for this specific route
+export const maxDuration = 120;
+
