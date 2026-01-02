@@ -8,9 +8,9 @@ import { doc, writeBatch, collection, serverTimestamp, increment } from 'firebas
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
-import { Loader2, Banknote, ClipboardCopy, ArrowRight, CheckCircle } from 'lucide-react';
+import { Loader2, Banknote, ClipboardCopy, ArrowRight, CheckCircle, Wallet, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
-import { useConfig } from '@/hooks/use-config';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 const formatPrice = (price: number) => {
     return new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(price);
@@ -32,8 +32,14 @@ function CheckoutComponent() {
       if (!firestore || !planId) return null;
       return doc(firestore, 'memberships', planId);
   }, [firestore, planId]);
+
+  const memberRef = useMemoFirebase(() => {
+    if (!firestore || !user) return null;
+    return doc(firestore, 'members', user.uid);
+  }, [firestore, user]);
   
   const { data: plan, isLoading: isPlanLoading } = useDoc(planRef);
+  const { data: member, isLoading: isMemberLoading, forceRefresh } = useDoc(memberRef);
 
   useEffect(() => {
     if (!isUserLoading && !user) {
@@ -50,50 +56,73 @@ function CheckoutComponent() {
     return plan.price.monthly;
   }, [plan, cycle]);
 
-  const handleConfirmPlan = async () => {
-    if (!user || !plan) {
-        toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in and select a valid plan.' });
+  const handlePurchaseWithWallet = async () => {
+    if (!user || !plan || !member || !firestore) {
+        toast({ variant: 'destructive', title: 'Error', description: 'User, plan, or database not available.' });
         return;
     }
+    if (member.walletBalance < price) {
+        toast({ variant: 'destructive', title: 'Insufficient Funds', description: 'Your wallet balance is too low to complete this purchase.' });
+        return;
+    }
+
     setIsProcessing(true);
     
     try {
         const token = await getClientSideAuthToken();
         if (!token) throw new Error("Authentication failed.");
 
-        const paymentData = {
-            memberId: user.uid,
-            status: 'pending',
-            description: `Membership Fee: ${plan.name} (${cycle})`,
-            amount: price,
-            createdAt: { _methodName: 'serverTimestamp' },
-        };
-        
-        const response = await fetch('/api/createWalletPayment', {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ data: paymentData }),
-        });
+        const batch = writeBatch(firestore);
 
-        if (!response.ok) {
-            throw new Error((await response.json()).error || 'Failed to create payment record.');
+        const newNextBillingDate = new Date();
+        if (cycle === 'monthly') {
+            newNextBillingDate.setMonth(newNextBillingDate.getMonth() + 1);
+        } else {
+            newNextBillingDate.setFullYear(newNextBillingDate.getFullYear() + 1);
         }
 
+        // 1. Update member's plan and balance
+        const memberDocRef = doc(firestore, 'members', user.uid);
+        batch.update(memberDocRef, {
+            membershipId: plan.id,
+            billingCycle: cycle,
+            nextBillingDate: newNextBillingDate,
+            walletBalance: increment(-price)
+        });
+
+        // 2. Create transaction record
+        const transactionRef = doc(collection(firestore, 'members', user.uid, 'transactions'));
+        batch.set(transactionRef, {
+            transactionId: transactionRef.id,
+            type: 'debit',
+            amount: price,
+            date: serverTimestamp(),
+            description: `Membership Purchase: ${plan.name} (${cycle})`,
+            status: 'allocated',
+            isAdjustment: false,
+            chartOfAccountsCode: '4010',
+            postedBy: 'system',
+            memberId: user.uid,
+        });
+
+        await batch.commit();
+
         toast({
-            title: 'Plan Confirmed!',
-            description: `A payment for ${plan.name} has been added to your wallet. Please proceed to pay.`,
+            title: 'Purchase Successful!',
+            description: `You are now subscribed to the ${plan.name} plan.`,
         });
         
-        router.push('/account?view=wallet');
+        router.push('/account?view=dashboard');
 
     } catch (error: any) {
-        toast({ variant: 'destructive', title: 'Action Failed', description: error.message });
+        toast({ variant: 'destructive', title: 'Purchase Failed', description: error.message });
     } finally {
         setIsProcessing(false);
     }
   };
 
-  const isLoading = isUserLoading || isPlanLoading;
+  const isLoading = isUserLoading || isPlanLoading || isMemberLoading;
+  const hasSufficientFunds = member && member.walletBalance >= price;
 
   if (isLoading || !user) {
       return <div className="flex justify-center items-center h-full"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
@@ -105,28 +134,40 @@ function CheckoutComponent() {
   return (
     <Card className="w-full max-w-lg">
       <CardHeader>
-        <CardTitle className="text-2xl font-bold font-headline">Confirm Your Plan</CardTitle>
-        <CardDescription>You are selecting the <span className="font-semibold text-primary">{plan.name}</span> plan.</CardDescription>
+        <CardTitle className="text-2xl font-bold font-headline">Confirm and Pay</CardTitle>
+        <CardDescription>You are purchasing the <span className="font-semibold text-primary">{plan.name}</span> plan.</CardDescription>
       </CardHeader>
-      <CardContent>
-        <div className="mb-6 p-4 bg-muted/50 rounded-lg">
+      <CardContent className="space-y-6">
+        <div className="p-4 bg-muted/50 rounded-lg space-y-4">
             <div className="flex justify-between items-center">
                 <p className="font-medium">{plan.name} ({cycle === 'annual' ? 'Annual' : 'Monthly'})</p>
                 <p className="font-bold text-lg">{formatPrice(price)}</p>
             </div>
-             <p className="text-xs text-muted-foreground mt-2">
-                By confirming, a receivable for this amount will be added to your wallet. You can then pay it using your wallet balance.
-            </p>
+             <div className="flex justify-between items-center border-t pt-4">
+                <p className="font-medium">Your Wallet Balance</p>
+                <p className="font-bold text-lg">{formatPrice(member?.walletBalance || 0)}</p>
+            </div>
         </div>
-        <Button onClick={handleConfirmPlan} disabled={isProcessing} className="w-full">
-            {isProcessing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle className="mr-2 h-4 w-4" />}
-            Confirm and Proceed to Wallet
+        
+        {!hasSufficientFunds && (
+             <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>Insufficient Funds</AlertTitle>
+                <AlertDescription>
+                    You do not have enough funds in your wallet to complete this purchase. Please top-up your wallet first.
+                </AlertDescription>
+            </Alert>
+        )}
+
+        <Button onClick={handlePurchaseWithWallet} disabled={isProcessing || !hasSufficientFunds} className="w-full">
+            {isProcessing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Wallet className="mr-2 h-4 w-4" />}
+            {hasSufficientFunds ? `Pay ${formatPrice(price)} with Wallet` : 'Insufficient Funds'}
         </Button>
       </CardContent>
        <CardFooter className="flex flex-col items-center justify-center text-xs text-muted-foreground pt-4">
-            <p>Ensure you have sufficient funds in your wallet before paying.</p>
-             <Button asChild variant="link" className="p-0 h-auto mt-2">
-                <Link href="/account?view=wallet">Go to Wallet to Top-up</Link>
+            <p>Need to add funds?</p>
+             <Button asChild variant="link" className="p-0 h-auto mt-1">
+                <Link href="/account?view=wallet">Go to Your Wallet to Top-up</Link>
              </Button>
        </CardFooter>
     </Card>
