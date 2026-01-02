@@ -1,5 +1,4 @@
-
-import { getFirestore, FieldValue, Timestamp } from 'firebase-admin/firestore';
+import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuth } from 'firebase-admin/auth';
 import { getAdminApp } from '@/lib/firebase-admin';
@@ -41,9 +40,25 @@ async function handleServicePayment(db: FirebaseFirestore.Firestore, adminUid: s
         memberId: memberId,
     });
 
-    // 3. Delete the pending payment record
-    const paymentRef = db.doc(`members/${memberId}/walletPayments/${paymentId}`);
-    batch.delete(paymentRef);
+    // 3. If it's a pending payment from the dialog, delete the record. Otherwise, if it's a membership purchase, update membership details.
+    if (payload.membershipDetails) {
+        const { planId, cycle } = payload.membershipDetails;
+        const newNextBillingDate = new Date();
+        if (cycle === 'monthly') {
+            newNextBillingDate.setMonth(newNextBillingDate.getMonth() + 1);
+        } else {
+            newNextBillingDate.setFullYear(newNextBillingDate.getFullYear() + 1);
+        }
+        batch.update(memberRef, {
+            membershipId: planId,
+            billingCycle: cycle,
+            nextBillingDate: newNextBillingDate,
+        });
+    } else {
+        const paymentRef = db.doc(`members/${memberId}/walletPayments/${paymentId}`);
+        batch.delete(paymentRef);
+    }
+
 
     await batch.commit();
     return { success: true, message: 'Payment processed successfully.' };

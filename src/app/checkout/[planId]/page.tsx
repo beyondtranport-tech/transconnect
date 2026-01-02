@@ -4,7 +4,7 @@ import { Suspense, useState, useEffect, useMemo } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { useUser, useFirestore, useMemoFirebase, useDoc, getClientSideAuthToken } from '@/firebase';
-import { doc, writeBatch, collection, serverTimestamp, increment } from 'firebase/firestore';
+import { doc } from 'firebase/firestore';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
@@ -39,7 +39,7 @@ function CheckoutComponent() {
   }, [firestore, user]);
   
   const { data: plan, isLoading: isPlanLoading } = useDoc(planRef);
-  const { data: member, isLoading: isMemberLoading, forceRefresh } = useDoc(memberRef);
+  const { data: member, isLoading: isMemberLoading } = useDoc(memberRef);
 
   useEffect(() => {
     if (!isUserLoading && !user) {
@@ -72,43 +72,31 @@ function CheckoutComponent() {
         const token = await getClientSideAuthToken();
         if (!token) throw new Error("Authentication failed.");
 
-        const batch = writeBatch(firestore);
+        const payload = {
+            memberId: user.uid,
+            paymentId: `membership_${plan.id}_${Date.now()}`, // Create a unique ID for the transaction
+            amount: price,
+            description: `Membership Purchase: ${plan.name} (${cycle})`,
+            // This payload includes extra info for the new API to handle the membership update
+            membershipDetails: {
+              planId: plan.id,
+              cycle: cycle,
+            }
+        };
 
-        const newNextBillingDate = new Date();
-        if (cycle === 'monthly') {
-            newNextBillingDate.setMonth(newNextBillingDate.getMonth() + 1);
-        } else {
-            newNextBillingDate.setFullYear(newNextBillingDate.getFullYear() + 1);
+        const response = await fetch('/api/payWithWallet', {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+        });
+
+        if (!response.ok) {
+          const result = await response.json();
+          throw new Error(result.error || 'Payment processing failed.');
         }
 
-        // 1. Update member's plan and balance
-        const memberDocRef = doc(firestore, 'members', user.uid);
-        batch.update(memberDocRef, {
-            membershipId: plan.id,
-            billingCycle: cycle,
-            nextBillingDate: newNextBillingDate,
-            walletBalance: increment(-price)
-        });
-
-        // 2. Create transaction record
-        const transactionRef = doc(collection(firestore, 'members', user.uid, 'transactions'));
-        batch.set(transactionRef, {
-            transactionId: transactionRef.id,
-            type: 'debit',
-            amount: price,
-            date: serverTimestamp(),
-            description: `Membership Purchase: ${plan.name} (${cycle})`,
-            status: 'allocated',
-            isAdjustment: false,
-            chartOfAccountsCode: '4010',
-            postedBy: 'system',
-            memberId: user.uid,
-        });
-
-        await batch.commit();
-
         toast({
-            title: 'Purchase Successful!',
+            title: 'Payment Successful!',
             description: `You are now subscribed to the ${plan.name} plan.`,
         });
         
