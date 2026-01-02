@@ -8,7 +8,7 @@ import { doc, writeBatch, collection, serverTimestamp, increment } from 'firebas
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
-import { Loader2, Banknote, ClipboardCopy, ArrowRight } from 'lucide-react';
+import { Loader2, Banknote, ClipboardCopy, ArrowRight, CheckCircle } from 'lucide-react';
 import Link from 'next/link';
 import { useConfig } from '@/hooks/use-config';
 
