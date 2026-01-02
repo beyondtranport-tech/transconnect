@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useUser, useFirestore, useMemoFirebase } from '@/firebase';
@@ -16,26 +15,59 @@ export default function AccountDashboard() {
     const { user, isUserLoading } = useUser();
     const firestore = useFirestore();
 
+    // Explicit Admin Check - this is the most important check
+    const isAdmin = user && user.email === 'beyondtransport@gmail.com';
+
     const userDocRef = useMemoFirebase(() => {
-        if (!firestore || !user) return null;
+        if (isAdmin || !firestore || !user) return null;
         return doc(firestore, 'users', user.uid);
-    }, [firestore, user]);
+    }, [firestore, user, isAdmin]);
     const { data: userData } = useDoc<{ companyId: string }>(userDocRef);
 
     const companyDocRef = useMemoFirebase(() => {
-        if (!firestore || !userData?.companyId) return null;
+        if (isAdmin || !firestore || !userData?.companyId) return null;
         return doc(firestore, 'companies', userData.companyId);
-    }, [firestore, userData]);
+    }, [firestore, userData, isAdmin]);
 
     const { data: companyData, isLoading: isCompanyLoading, error } = useDoc(companyDocRef);
     
-    // Explicit Admin Check
-    const isAdmin = user && user.email === 'beyondtransport@gmail.com';
     const isFreeMember = companyData?.membershipId === 'free';
     
     const formatPrice = (price: number) => {
         return new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(price);
     };
+    
+    // Admin View: If the user is an admin, show a clear message and a link to the backend.
+    if (isAdmin) {
+        return (
+             <div className="w-full space-y-8">
+                 <Card className="border-primary bg-primary/5">
+                    <CardHeader>
+                        <div className="flex items-center gap-4">
+                            <ShieldAlert className="h-10 w-10 text-primary" />
+                            <div>
+                                <CardTitle className="text-2xl">Administrator Account</CardTitle>
+                                <CardDescription className="text-primary/90">You are currently viewing the standard member dashboard.</CardDescription>
+                            </div>
+                        </div>
+                    </CardHeader>
+                    <CardContent>
+                        <p className="text-lg">
+                           All administrative functions, including banking, reconciliation, and member management, are located in the secure <span className="font-semibold">Admin Backend</span>.
+                        </p>
+                    </CardContent>
+                    <CardFooter>
+                        <Button variant="default" size="lg" asChild>
+                            <Link href="/backend">
+                                Go to Admin Backend <ArrowRight className="ml-2 h-5 w-5" />
+                            </Link>
+                        </Button>
+                    </CardFooter>
+                </Card>
+             </div>
+        )
+    }
+
 
     if (isUserLoading || (user && isCompanyLoading)) {
         return (
@@ -68,33 +100,6 @@ export default function AccountDashboard() {
         return null; // or a message telling user to sign in
     }
     
-    if (isAdmin) {
-        return (
-             <div className="w-full space-y-8">
-                 <Card className="mb-8 border-destructive bg-destructive/10">
-                    <CardHeader>
-                        <div className="flex items-center gap-4">
-                            <ShieldAlert className="h-8 w-8 text-destructive" />
-                            <div>
-                                <CardTitle>Admin Account</CardTitle>
-                                <CardDescription className="text-destructive/80">You have successfully logged in as an administrator.</CardDescription>
-                            </div>
-                        </div>
-                    </CardHeader>
-                    <CardContent>
-                        <p className="text-muted-foreground">Your primary dashboard is the Admin Backend. Use the button below or the link in the avatar menu to access it.</p>
-                    </CardContent>
-                    <CardFooter>
-                        <Button variant="destructive" asChild>
-                            <Link href="/backend">
-                                Go to Backend <ArrowRight className="ml-2 h-4 w-4" />
-                            </Link>
-                        </Button>
-                    </CardFooter>
-                </Card>
-             </div>
-        )
-    }
 
     return (
         <div className="w-full space-y-8">
