@@ -1,3 +1,4 @@
+
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuth } from 'firebase-admin/auth';
@@ -18,29 +19,48 @@ async function handleServicePayment(db: FirebaseFirestore.Firestore, adminUid: s
     }
 
     const batch = db.batch();
+    const now = FieldValue.serverTimestamp();
 
-    // 1. Update member's wallet balance
+    // 1. Debit member's wallet balance
     batch.update(memberRef, {
         walletBalance: FieldValue.increment(-amount),
-        updatedAt: FieldValue.serverTimestamp(),
+        updatedAt: now,
     });
 
-    // 2. Create a transaction record for this payment
-    const transactionRef = db.collection(`members/${memberId}/transactions`).doc();
-    batch.set(transactionRef, {
-        transactionId: transactionRef.id,
+    // 2. Create a DEBIT transaction record in the member's wallet ledger
+    const memberTransactionRef = db.collection(`members/${memberId}/transactions`).doc();
+    const chartOfAccountsCode = description.toLowerCase().includes('membership') ? '4010' : '4410';
+    batch.set(memberTransactionRef, {
+        transactionId: memberTransactionRef.id,
         type: 'debit',
         amount: amount,
-        date: FieldValue.serverTimestamp(),
+        date: now,
         description: description,
         status: 'allocated',
         isAdjustment: false,
-        chartOfAccountsCode: description.toLowerCase().includes('membership') ? '4010' : '4410', // Simple logic for CoA
+        chartOfAccountsCode, 
         postedBy: adminUid,
         memberId: memberId,
     });
 
-    // 3. If it's a pending payment from the dialog, delete the record. Otherwise, if it's a membership purchase, update membership details.
+    // 3. Create a corresponding CREDIT transaction in the PLATFORM's ledger (as revenue)
+    const platformTransactionRef = db.collection('platformTransactions').doc();
+    const memberName = `${memberData.firstName || ''} ${memberData.lastName || ''}`.trim();
+    batch.set(platformTransactionRef, {
+        transactionId: platformTransactionRef.id,
+        type: 'credit',
+        amount: amount,
+        date: now,
+        description: `Revenue: ${description} from ${memberName}`,
+        status: 'allocated',
+        chartOfAccountsCode,
+        isAdjustment: false,
+        postedBy: 'system',
+        memberId: memberId, // Link to the member for reference
+    });
+
+
+    // 4. If it's a pending payment from the dialog, delete the record. If it's a new membership purchase, update membership details.
     if (payload.membershipDetails) {
         const { planId, cycle } = payload.membershipDetails;
         const newNextBillingDate = new Date();

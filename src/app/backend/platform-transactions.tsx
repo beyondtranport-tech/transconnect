@@ -2,10 +2,10 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { useForm, useFieldArray } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,7 +15,6 @@ import { useToast } from "@/hooks/use-toast";
 import { useFirestore, useUser, useCollection, useMemoFirebase } from "@/firebase";
 import { collection, query, orderBy, addDoc, serverTimestamp, deleteDoc, doc } from 'firebase/firestore';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 
 const transactionSchema = z.object({
@@ -23,11 +22,17 @@ const transactionSchema = z.object({
   description: z.string().min(1, "Description is required."),
   chartOfAccountsCode: z.string().min(1, "Account code is required."),
   amount: z.coerce.number().positive("Amount must be a positive number."),
+  type: z.enum(['credit', 'debit']),
 });
 
 type TransactionFormValues = z.infer<typeof transactionSchema>;
 
 const chartOfAccounts = {
+    revenue: [
+        { code: '4010', name: 'Membership Fees' },
+        { code: '4210', name: 'Finance Mall Commission' },
+        { code: '4410', name: 'Wallet Transaction Fees' },
+    ],
     expenses: [
         { code: '7010', name: 'Bank Charges' },
         { code: '7020', name: 'Software & Subscriptions' },
@@ -72,6 +77,7 @@ function AddTransactionForm({ onTransactionAdded }: { onTransactionAdded: () => 
             description: '',
             chartOfAccountsCode: '',
             amount: '' as any,
+            type: 'debit',
         },
     });
 
@@ -87,7 +93,6 @@ function AddTransactionForm({ onTransactionAdded }: { onTransactionAdded: () => 
             const collectionRef = collection(firestore, 'platformTransactions');
             const data = {
                 ...values,
-                type: 'debit', // All platform transactions are debits from business account
                 date: new Date(values.date),
                 postedBy: user.uid,
                 postedAt: serverTimestamp(),
@@ -95,8 +100,8 @@ function AddTransactionForm({ onTransactionAdded }: { onTransactionAdded: () => 
             };
             await addDoc(collectionRef, data);
 
-            toast({ title: 'Transaction Added', description: 'The platform expense has been recorded.' });
-            form.reset({ date: formatDate(new Date()), description: '', chartOfAccountsCode: '', amount: '' as any });
+            toast({ title: 'Transaction Added', description: 'The transaction has been recorded in the platform ledger.' });
+            form.reset({ date: formatDate(new Date()), description: '', chartOfAccountsCode: '', amount: '' as any, type: 'debit' });
             onTransactionAdded();
         } catch (e: any) {
             toast({ variant: 'destructive', title: 'Error', description: e.message });
@@ -106,7 +111,7 @@ function AddTransactionForm({ onTransactionAdded }: { onTransactionAdded: () => 
     };
 
     return (
-        <form onSubmit={form.handleSubmit(onSubmit)} className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4 items-end">
+        <form onSubmit={form.handleSubmit(onSubmit)} className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-6 gap-4 items-end">
             <div className="space-y-1">
                 <Label htmlFor="date">Date</Label>
                 <Input id="date" type="date" {...form.register('date')} />
@@ -122,12 +127,27 @@ function AddTransactionForm({ onTransactionAdded }: { onTransactionAdded: () => 
                  <Select onValueChange={(value) => form.setValue('chartOfAccountsCode', value)} value={form.watch('chartOfAccountsCode')}>
                     <SelectTrigger><SelectValue placeholder="Select account..." /></SelectTrigger>
                     <SelectContent>
+                        <Label className="px-2 text-xs font-semibold text-muted-foreground">Revenue</Label>
+                        {chartOfAccounts.revenue.map(acc => (
+                            <SelectItem key={acc.code} value={acc.code}>{acc.code} - {acc.name}</SelectItem>
+                        ))}
+                         <Label className="px-2 text-xs font-semibold text-muted-foreground mt-2">Expenses</Label>
                         {chartOfAccounts.expenses.map(acc => (
                             <SelectItem key={acc.code} value={acc.code}>{acc.code} - {acc.name}</SelectItem>
                         ))}
                     </SelectContent>
                 </Select>
                  {form.formState.errors.chartOfAccountsCode && <p className="text-xs text-destructive">{form.formState.errors.chartOfAccountsCode.message}</p>}
+            </div>
+             <div className="space-y-1">
+                <Label htmlFor="type">Type</Label>
+                <Select onValueChange={(value: 'credit' | 'debit') => form.setValue('type', value)} value={form.watch('type')}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="debit">Debit (Expense)</SelectItem>
+                        <SelectItem value="credit">Credit (Income)</SelectItem>
+                    </SelectContent>
+                </Select>
             </div>
             <div className="space-y-1">
                 <Label htmlFor="amount">Amount (R)</Label>
@@ -170,7 +190,7 @@ export default function PlatformTransactions() {
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2"><Banknote /> Platform Ledger</CardTitle>
                     <CardDescription>
-                       Record and manage transactions for the Business Operating Account, such as platform expenses or payments to external creditors.
+                       Record and manage transactions for the Business Operating Account, such as platform expenses, revenue, or payments to external creditors.
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -204,8 +224,8 @@ export default function PlatformTransactions() {
                                         <TableCell>{formatDisplayDate(tx.date)}</TableCell>
                                         <TableCell>{tx.description}</TableCell>
                                         <TableCell className="font-mono">{tx.chartOfAccountsCode}</TableCell>
-                                        <TableCell className="text-right font-mono font-semibold text-destructive">
-                                            - {formatCurrency(tx.amount)}
+                                        <TableCell className={`text-right font-mono font-semibold ${tx.type === 'credit' ? 'text-green-600' : 'text-destructive'}`}>
+                                            {tx.type === 'credit' ? '+' : '-'} {formatCurrency(tx.amount)}
                                         </TableCell>
                                         <TableCell className="text-right">
                                             <Button variant="ghost" size="icon" onClick={() => handleDelete(tx.id)}><Trash2 className="h-4 w-4 text-destructive"/></Button>
