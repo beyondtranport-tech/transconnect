@@ -48,16 +48,10 @@ export async function POST(req: NextRequest) {
     const db = getFirestore(app);
     const pathSegments = path.split('/');
     
-    // Security check: path must be /users/{uid} or /companies/{companyId} where user is owner
     let isAuthorized = false;
-    if (pathSegments[0] === 'users' && pathSegments[1] === uid) {
+    // A user can update their own member document or a document in a subcollection thereof
+    if (pathSegments[0] === 'members' && pathSegments[1] === uid) {
         isAuthorized = true;
-    } else if (pathSegments[0] === 'companies') {
-        const companyId = pathSegments[1];
-        const companyDoc = await db.collection('companies').doc(companyId).get();
-        if (companyDoc.exists && companyDoc.data()?.ownerId === uid) {
-            isAuthorized = true;
-        }
     }
 
     if (!isAuthorized) {

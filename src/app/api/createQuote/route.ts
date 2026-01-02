@@ -36,8 +36,8 @@ export async function POST(req: NextRequest) {
   
   try {
     const { data } = await req.json();
-    if (!data || !data.companyId) {
-        return NextResponse.json({ success: false, error: 'Bad Request: "companyId" is required.' }, { status: 400 });
+    if (!data) {
+        return NextResponse.json({ success: false, error: 'Bad Request: "data" is required.' }, { status: 400 });
     }
 
     const adminAuth = getAuth(app);
@@ -45,17 +45,11 @@ export async function POST(req: NextRequest) {
     const uid = decodedToken.uid;
     
     const db = getFirestore(app);
-    
-    // Security check
-    const companyDoc = await db.collection('companies').doc(data.companyId).get();
-    if (!companyDoc.exists || companyDoc.data()?.ownerId !== uid) {
-        return NextResponse.json({ success: false, error: 'Forbidden: You can only add quotes to your own company.' }, { status: 403 });
-    }
 
-    const collectionPath = `companies/${data.companyId}/quotes`;
+    const collectionPath = `members/${uid}/quotes`;
     const collectionRef = db.collection(collectionPath);
     
-    const deserializedData = deserializeData(data);
+    const deserializedData = { ...deserializeData(data), memberId: uid };
     const newDocRef = await collectionRef.add(deserializedData);
 
     return NextResponse.json({ success: true, id: newDocRef.id, message: 'Quote created successfully.' });

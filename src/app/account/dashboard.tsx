@@ -16,30 +16,22 @@ export default function AccountDashboard() {
     const { user, isUserLoading } = useUser();
     const firestore = useFirestore();
 
-    // Step 1: Get the user document to find their companyId
-    const userDocRef = useMemoFirebase(() => {
+    const memberDocRef = useMemoFirebase(() => {
         if (!firestore || !user) return null;
-        return doc(firestore, 'users', user.uid);
+        return doc(firestore, 'members', user.uid);
     }, [firestore, user]);
-    const { data: userData, isLoading: isUserDocLoading } = useDoc(userDocRef);
 
-    // Step 2: Get the company document using the companyId from the user document
-    const companyDocRef = useMemoFirebase(() => {
-        if (!firestore || !userData?.companyId) return null;
-        return doc(firestore, 'companies', userData.companyId);
-    }, [firestore, userData]);
-
-    const { data: companyData, isLoading: isCompanyLoading, error } = useDoc(companyDocRef);
+    const { data: memberData, isLoading: isMemberLoading, error } = useDoc(memberDocRef);
     
     // Explicit Admin Check
     const isAdmin = user && user.email === 'beyondtransport@gmail.com';
-    const isFreeMember = companyData?.membershipId === 'free';
+    const isFreeMember = memberData?.membershipId === 'free';
     
     const formatPrice = (price: number) => {
         return new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(price);
     };
 
-    if (isUserLoading || (user && (isUserDocLoading || isCompanyLoading))) {
+    if (isUserLoading || (user && isMemberLoading)) {
         return (
             <div className="flex justify-center items-center min-h-[calc(100vh-8rem)] w-full">
                 <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -103,7 +95,7 @@ export default function AccountDashboard() {
             <div className="flex items-center gap-4">
                 <div>
                     <h1 className="text-3xl md:text-4xl font-bold font-headline">Dashboard</h1>
-                    <p className="text-lg text-muted-foreground">Welcome back, {userData?.firstName || 'Member'}!</p>
+                    <p className="text-lg text-muted-foreground">Welcome back, {memberData?.firstName || 'Member'}!</p>
                 </div>
             </div>
 
@@ -144,7 +136,7 @@ export default function AccountDashboard() {
                         <Gem className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold text-primary capitalize">{companyData?.membershipId || 'Free'}</div>
+                        <div className="text-2xl font-bold text-primary capitalize">{memberData?.membershipId || 'Free'}</div>
                          {isFreeMember ? (
                              <Button asChild variant="link" size="sm" className="p-0 h-auto">
                                 <Link href="/pricing">Upgrade to a paid plan</Link>
@@ -160,7 +152,7 @@ export default function AccountDashboard() {
                         <Award className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">{companyData?.rewardPoints || 0}</div>
+                        <div className="text-2xl font-bold">{memberData?.rewardPoints || 0}</div>
                         <p className="text-xs text-muted-foreground">Earned from community actions.</p>
                     </CardContent>
                 </Card>
@@ -185,5 +177,3 @@ export default function AccountDashboard() {
         </div>
     );
 }
-
-    

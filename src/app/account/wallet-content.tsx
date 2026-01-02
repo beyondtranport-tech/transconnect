@@ -44,45 +44,35 @@ const statusColors: { [key: string]: 'default' | 'secondary' | 'destructive' | '
 };
 
 export default function WalletContent() {
-    const { user } = useUser();
+    const { user, isUserLoading } = useUser();
     const firestore = useFirestore();
     const { toast } = useToast();
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [paymentAmount, setPaymentAmount] = useState<string>('');
 
-    // Step 1: Get User to find CompanyID
-    const userDocRef = useMemoFirebase(() => {
+    const memberDocRef = useMemoFirebase(() => {
         if (!firestore || !user) return null;
-        return doc(firestore, 'users', user.uid);
+        return doc(firestore, 'members', user.uid);
     }, [firestore, user]);
-    const { data: userData, isLoading: isUserDocLoading } = useDoc(userDocRef);
-    const companyId = userData?.companyId;
-
-    // Step 2: Use CompanyID to get company data (for wallet balance)
-    const companyDocRef = useMemoFirebase(() => {
-        if (!firestore || !companyId) return null;
-        return doc(firestore, 'companies', companyId);
-    }, [firestore, companyId]);
-    const { data: companyData, isLoading: isCompanyLoading } = useDoc(companyDocRef);
-
+    const { data: memberData, isLoading: isMemberLoading } = useDoc(memberDocRef);
 
     const transactionsQuery = useMemoFirebase(() => {
-        if (!firestore || !companyId) return null;
+        if (!firestore || !user) return null;
         return query(
-            collection(firestore, 'companies', companyId, 'transactions'), 
+            collection(firestore, 'members', user.uid, 'transactions'), 
             orderBy('date', 'desc'), 
             limit(5)
         );
-    }, [firestore, companyId]);
+    }, [firestore, user]);
 
     const pendingPaymentsQuery = useMemoFirebase(() => {
-        if (!firestore || !companyId) return null;
+        if (!firestore || !user) return null;
         return query(
-            collection(firestore, 'companies', companyId, 'walletPayments'),
+            collection(firestore, 'members', user.uid, 'walletPayments'),
             orderBy('createdAt', 'desc'),
             limit(5)
         );
-    }, [firestore, companyId]);
+    }, [firestore, user]);
     
     const { data: techPricing, isLoading: isTechPricingLoading } = useConfig<{ eftTopUpFee?: number }>('techPricing');
     const { data: bankDetails, isLoading: isBankDetailsLoading } = useConfig<any>('bankDetails');
@@ -90,17 +80,13 @@ export default function WalletContent() {
     const { data: transactions, isLoading: isLoadingTransactions, error: transactionsError } = useCollection(transactionsQuery);
     const { data: pendingPayments, isLoading: isLoadingPayments, error: paymentsError, forceRefresh } = useCollection(pendingPaymentsQuery);
 
-    const isLoading = isLoadingTransactions || isLoadingPayments || isUserDocLoading || isCompanyLoading || isTechPricingLoading || isBankDetailsLoading;
+    const isLoading = isUserLoading || isMemberLoading || isLoadingTransactions || isLoadingPayments || isTechPricingLoading || isBankDetailsLoading;
     const error = transactionsError || paymentsError;
 
     const unallocatedTotal = pendingPayments?.reduce((sum, p) => sum + p.amount, 0) || 0;
-
-    if (user && user.email === 'beyondtransport@gmail.com') {
-        return null;
-    }
     
     const handleSubmitProofOfPayment = async () => {
-        if (!user || !companyId) return;
+        if (!user) return;
         const amountValue = parseFloat(paymentAmount);
         if (isNaN(amountValue) || amountValue <= 0) {
             toast({ variant: 'destructive', title: "Invalid Amount", description: "Please enter a valid payment amount."});
@@ -113,8 +99,7 @@ export default function WalletContent() {
             if (!token) throw new Error("Authentication failed");
             
             const paymentData = {
-                userId: user.uid,
-                companyId: companyId,
+                memberId: user.uid,
                 status: 'pending',
                 description: 'Wallet Top-up via EFT',
                 amount: amountValue,
@@ -152,10 +137,10 @@ export default function WalletContent() {
             <CardContent className="space-y-8">
                 <div className="p-4 bg-muted/50 rounded-lg">
                     <p className="text-sm text-muted-foreground">Current Allocated Balance</p>
-                    {isCompanyLoading ? (
+                    {isMemberLoading ? (
                         <Loader2 className="h-6 w-6 animate-spin mt-1" />
                     ) : (
-                        <p className="text-3xl font-bold">{formatCurrency(companyData?.walletBalance || 0)}</p>
+                        <p className="text-3xl font-bold">{formatCurrency(memberData?.walletBalance || 0)}</p>
                     )}
                 </div>
 
@@ -165,7 +150,7 @@ export default function WalletContent() {
                         <Info className="h-4 w-4" />
                         <AlertTitle>How to Top Up</AlertTitle>
                         <AlertDescription>
-                           To add funds, make an EFT payment to the bank details below using your Company ID as the reference. Then, enter the amount and click "I've made a payment" to notify us.
+                           To add funds, make an EFT payment to the bank details below using your Member ID as the reference. Then, enter the amount and click "I've made a payment" to notify us.
                            {techPricing?.eftTopUpFee && techPricing.eftTopUpFee > 0 && (
                                 <span className="font-semibold block mt-2">Please note: A {formatCurrency(techPricing.eftTopUpFee)} admin fee applies to EFT top-ups.</span>
                            )}
@@ -177,7 +162,7 @@ export default function WalletContent() {
                                 <div className="flex justify-center p-4">
                                     <Loader2 className="h-6 w-6 animate-spin"/>
                                 </div>
-                             ) : bankDetails ? (
+                             ) : bankDetails && user ? (
                                 <>
                                     {Object.entries(bankDetails).filter(([key]) => !['id', 'updatedAt'].includes(key)).map(([key, value]) => (
                                         <div key={key} className="flex justify-between">
@@ -187,7 +172,7 @@ export default function WalletContent() {
                                     ))}
                                     <div className="flex justify-between pt-2 border-t">
                                         <span className="text-muted-foreground">Reference</span>
-                                        <span className="font-mono text-primary">{companyId}</span>
+                                        <span className="font-mono text-primary">{user.uid}</span>
                                     </div>
                                 </>
                             ) : (
@@ -206,7 +191,7 @@ export default function WalletContent() {
                                 onChange={(e) => setPaymentAmount(e.target.value)}
                             />
                          </div>
-                         <Button onClick={handleSubmitProofOfPayment} disabled={isSubmitting || !paymentAmount} className="w-full sm:w-auto">
+                         <Button onClick={handleSubmitProofOfPayment} disabled={isSubmitting || !paymentAmount}>
                             {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null}
                             I've made a payment
                          </Button>

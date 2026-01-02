@@ -36,8 +36,8 @@ export async function POST(req: NextRequest) {
   
   try {
     const { data } = await req.json();
-    if (!data || !data.companyId) {
-        return NextResponse.json({ success: false, error: 'Bad Request: "data" with "companyId" is required.' }, { status: 400 });
+    if (!data) {
+        return NextResponse.json({ success: false, error: 'Bad Request: "data" is required.' }, { status: 400 });
     }
       
     const adminAuth = getAuth(app);
@@ -46,19 +46,13 @@ export async function POST(req: NextRequest) {
     
     const db = getFirestore(app);
 
-    // Security Check
-    const companyDoc = await db.collection('companies').doc(data.companyId).get();
-    if (!companyDoc.exists || companyDoc.data()?.ownerId !== uid) {
-        return NextResponse.json({ success: false, error: 'Forbidden: You can only add enquiries to your own company.' }, { status: 403 });
-    }
-
-    const collectionPath = `companies/${data.companyId}/enquiries`;
+    const collectionPath = `members/${uid}/enquiries`;
     const collectionRef = db.collection(collectionPath);
     
     const deserializedData = deserializeData(data);
     const newDocRef = collectionRef.doc();
     
-    const finalData = { ...deserializedData, id: newDocRef.id };
+    const finalData = { ...deserializedData, id: newDocRef.id, memberId: uid };
     
     await newDocRef.set(finalData);
 

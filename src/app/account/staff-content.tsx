@@ -29,7 +29,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { useToast } from '@/hooks/use-toast';
 import { useUser, useFirestore, useMemoFirebase } from '@/firebase';
 import { useCollection } from '@/firebase/firestore/use-collection';
-import { useDoc } from '@/firebase/firestore/use-doc';
 import { addDoc, collection, serverTimestamp, doc } from 'firebase/firestore';
 import { Loader2, PlusCircle, UserPlus, Users } from 'lucide-react';
 import { errorEmitter } from '@/firebase/error-emitter';
@@ -46,7 +45,7 @@ const staffFormSchema = z.object({
 
 type StaffFormValues = z.infer<typeof staffFormSchema>;
 
-function AddStaffDialog({ companyId, onStaffAdded }: { companyId: string; onStaffAdded: () => void }) {
+function AddStaffDialog({ memberId, onStaffAdded }: { memberId: string; onStaffAdded: () => void }) {
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const firestore = useFirestore();
@@ -64,17 +63,17 @@ function AddStaffDialog({ companyId, onStaffAdded }: { companyId: string; onStaf
 
   const onSubmit = async (values: StaffFormValues) => {
     setIsLoading(true);
-    if (!firestore || !companyId) {
-      toast({ variant: 'destructive', title: 'Error', description: 'Database not available or company not found.' });
+    if (!firestore || !memberId) {
+      toast({ variant: 'destructive', title: 'Error', description: 'Database not available or member not found.' });
       setIsLoading(false);
       return;
     }
 
     try {
-      const staffCollectionRef = collection(firestore, `companies/${companyId}/staff`);
+      const staffCollectionRef = collection(firestore, `members/${memberId}/staff`);
       const staffData = {
         ...values,
-        companyId,
+        memberId: memberId,
         createdAt: serverTimestamp(),
       };
       
@@ -119,7 +118,7 @@ function AddStaffDialog({ companyId, onStaffAdded }: { companyId: string; onStaf
         <DialogHeader>
           <DialogTitle>Add New Staff Member</DialogTitle>
           <DialogDescription>
-            Enter the details of the new staff member to add them to your company profile.
+            Enter the details of the new staff member to add them to your profile.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -194,21 +193,14 @@ export default function StaffContent() {
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
 
-  const userDocRef = useMemoFirebase(() => {
-    if (!firestore || !user) return null;
-    return doc(firestore, 'users', user.uid);
-  }, [firestore, user]);
-  const { data: userData, isLoading: isUserDocLoading } = useDoc(userDocRef);
-
   const staffCollectionRef = useMemoFirebase(() => {
-    if (!firestore || !userData?.companyId) return null;
-    return collection(firestore, `companies/${userData.companyId}/staff`);
-  }, [firestore, userData]);
+    if (!firestore || !user) return null;
+    return collection(firestore, `members/${user.uid}/staff`);
+  }, [firestore, user]);
 
   const { data: staff, isLoading: isStaffLoading, forceRefresh } = useCollection(staffCollectionRef);
 
-  const isLoading = isUserLoading || isUserDocLoading || isStaffLoading;
-  const companyId = userData?.companyId;
+  const isLoading = isUserLoading || isStaffLoading;
 
   return (
     <Card>
@@ -219,7 +211,7 @@ export default function StaffContent() {
                 </CardTitle>
                 <CardDescription>Add and manage your company's staff members.</CardDescription>
             </div>
-            {companyId && <AddStaffDialog companyId={companyId} onStaffAdded={forceRefresh} />}
+            {user && <AddStaffDialog memberId={user.uid} onStaffAdded={forceRefresh} />}
         </CardHeader>
         <CardContent>
             {isLoading && (

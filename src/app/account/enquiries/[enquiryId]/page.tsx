@@ -66,18 +66,10 @@ function EnquiryDetail() {
     const firestore = useFirestore();
     const { user, isUserLoading } = useUser();
 
-    // Get user's companyId
-    const userDocRef = useMemoFirebase(() => {
-        if (!firestore || !user) return null;
-        return doc(firestore, 'users', user.uid);
-    }, [firestore, user]);
-    const { data: userData } = useDoc(userDocRef);
-    const companyId = userData?.companyId;
-
     const enquiryRef = useMemoFirebase(() => {
-        if (!firestore || !companyId || !enquiryId) return null;
-        return doc(firestore, 'companies', companyId, 'enquiries', enquiryId);
-    }, [firestore, companyId, enquiryId]);
+        if (!firestore || !user || !enquiryId) return null;
+        return doc(firestore, 'members', user.uid, 'enquiries', enquiryId);
+    }, [firestore, user, enquiryId]);
 
     const { data: enquiry, isLoading, error } = useDoc(enquiryRef);
 

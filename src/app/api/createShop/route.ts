@@ -1,5 +1,6 @@
+
 import { NextRequest, NextResponse } from 'next/server';
-import { getFirestore } from 'firebase-admin/firestore';
+import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
 import { getAdminApp } from '@/lib/firebase-admin';
 
@@ -22,36 +23,24 @@ export async function POST(req: NextRequest) {
 
         const db = getFirestore(app);
         
-        // Find the user's companyId
-        const userDocRef = db.collection('users').doc(uid);
-        const userDoc = await userDocRef.get();
-        if (!userDoc.exists) {
-            throw new Error("User profile not found.");
-        }
-        const companyId = userDoc.data()?.companyId;
-        if (!companyId) {
-            throw new Error("User is not associated with a company.");
-        }
-
-        const companyRef = db.collection('companies').doc(companyId);
-        const shopCollectionRef = companyRef.collection('shops');
+        const memberRef = db.collection('members').doc(uid);
+        const shopCollectionRef = memberRef.collection('shops');
         
         const newShopRef = shopCollectionRef.doc();
 
         const newShopData = {
           ownerId: uid,
-          companyId: companyId,
           status: 'draft',
           shopName: `${decodedToken.name || 'My'}'s New Shop`,
           category: '',
-          createdAt: new Date(),
-          updatedAt: new Date(),
+          createdAt: FieldValue.serverTimestamp(),
+          updatedAt: FieldValue.serverTimestamp(),
           id: newShopRef.id,
         };
         
         const batch = db.batch();
         batch.set(newShopRef, newShopData);
-        batch.update(companyRef, { shopId: newShopRef.id });
+        batch.update(memberRef, { shopId: newShopRef.id });
         await batch.commit();
 
         return NextResponse.json({ success: true, shopId: newShopRef.id });

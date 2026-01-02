@@ -29,7 +29,6 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useToast } from '@/hooks/use-toast';
-import { useDoc } from '@/firebase/firestore/use-doc';
 
 const formatCurrency = (amount: number) => {
     if (typeof amount !== 'number') return 'N/A';
@@ -93,30 +92,22 @@ export default function EnquiriesCard() {
     const { toast } = useToast();
     const [isDeleting, setIsDeleting] = useState<string | null>(null);
 
-    // Get user's companyId
-    const userDocRef = useMemoFirebase(() => {
-        if (!firestore || !user) return null;
-        return doc(firestore, 'users', user.uid);
-    }, [firestore, user]);
-    const { data: userData } = useDoc(userDocRef);
-    const companyId = userData?.companyId;
-
     const enquiriesQuery = useMemoFirebase(() => {
-        if (!firestore || !companyId) return null;
+        if (!firestore || !user) return null;
         return query(
-            collection(firestore, 'companies', companyId, 'enquiries'), 
+            collection(firestore, 'members', user.uid, 'enquiries'), 
             orderBy('createdAt', 'desc'),
             limit(10)
         );
-    }, [firestore, companyId]);
+    }, [firestore, user]);
 
     const { data: enquiries, isLoading, error, forceRefresh } = useCollection(enquiriesQuery);
 
     const handleDelete = async (enquiryId: string) => {
-        if (!firestore || !companyId) return;
+        if (!firestore || !user) return;
         setIsDeleting(enquiryId);
         try {
-            await deleteDoc(doc(firestore, 'companies', companyId, 'enquiries', enquiryId));
+            await deleteDoc(doc(firestore, 'members', user.uid, 'enquiries', enquiryId));
             toast({ title: "Enquiry Deleted", description: "The enquiry has been removed." });
             forceRefresh(); // Refresh the list
         } catch (e: any) {

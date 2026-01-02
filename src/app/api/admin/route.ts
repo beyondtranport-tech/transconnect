@@ -51,50 +51,23 @@ export async function POST(req: NextRequest) {
 
         switch (action) {
             case 'getMembers': {
-                const companiesSnap = await db.collection('companies').get();
-                const usersSnap = await db.collection('users').get();
-                
-                const usersByUid: { [key: string]: any } = {};
-                usersSnap.forEach(doc => {
-                    usersByUid[doc.id] = serializeTimestamps(doc.data());
-                });
-
-                const members = companiesSnap.docs.map(companyDoc => {
-                    const company = serializeTimestamps(companyDoc.data());
-                    const owner = usersByUid[company.ownerId];
-                    
+                const membersSnap = await db.collection('members').get();
+                const members = membersSnap.docs.map(doc => {
                     return {
-                        companyId: company.id,
-                        userId: company.ownerId,
-                        firstName: owner?.firstName,
-                        lastName: owner?.lastName,
-                        email: owner?.email,
-                        createdAt: owner?.createdAt,
-                        companyName: company.companyName,
-                        membershipId: company.membershipId,
-                        walletBalance: company.walletBalance,
+                        ...serializeTimestamps(doc.data()),
+                        id: doc.id // Ensure ID is part of the object
                     };
                 });
-                
                 return NextResponse.json({ success: true, data: members });
             }
             case 'getWalletPayments': {
                 const snapshot = await db.collectionGroup('walletPayments').get();
-                const data = snapshot.docs.map(doc => {
-                    const docData = doc.data();
-                    // Extract companyId from the path: companies/{companyId}/walletPayments/{paymentId}
-                    const companyId = doc.ref.parent.parent?.id;
-                    return { id: doc.id, companyId, ...serializeTimestamps(docData) };
-                });
+                const data = snapshot.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
                 return NextResponse.json({ success: true, data });
             }
             case 'getWalletTransactions': {
                 const snapshot = await db.collectionGroup('transactions').get();
-                const data = snapshot.docs.map(doc => {
-                     const docData = doc.data();
-                     const companyId = doc.ref.parent.parent?.id;
-                     return { id: doc.id, companyId, ...serializeTimestamps(docData) };
-                });
+                const data = snapshot.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
                 return NextResponse.json({ success: true, data });
             }
              case 'getMemberships': {
@@ -124,17 +97,17 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, data: combined });
             }
             case 'approveWalletPayment': {
-                 const { companyId, paymentId, amount, description, userId, reconciliationId } = payload;
-                 if (!companyId || !paymentId || !amount || !description || !userId) {
+                 const { memberId, paymentId, amount, description, userId, reconciliationId } = payload;
+                 if (!memberId || !paymentId || !amount || !description) {
                     throw new Error("Missing required payload for approveWalletPayment.");
                  }
 
                  const batch = db.batch();
                  
-                 const companyRef = db.doc(`companies/${companyId}`);
-                 batch.update(companyRef, { walletBalance: FieldValue.increment(amount) });
+                 const memberRef = db.doc(`members/${memberId}`);
+                 batch.update(memberRef, { walletBalance: FieldValue.increment(amount) });
                  
-                 const transactionRef = db.collection(`companies/${companyId}/transactions`).doc();
+                 const transactionRef = db.collection(`members/${memberId}/transactions`).doc();
                  batch.set(transactionRef, {
                     transactionId: transactionRef.id,
                     reconciliationId: reconciliationId || null,
@@ -146,19 +119,19 @@ export async function POST(req: NextRequest) {
                     isAdjustment: false,
                     chartOfAccountsCode: '4410',
                     postedBy: adminUid,
-                    userId,
+                    memberId: memberId,
                  });
 
-                 const paymentRef = db.doc(`companies/${companyId}/walletPayments/${paymentId}`);
+                 const paymentRef = db.doc(`members/${memberId}/walletPayments/${paymentId}`);
                  batch.delete(paymentRef);
 
                  await batch.commit();
                  return NextResponse.json({ success: true, message: "Payment approved and wallet updated." });
             }
             case 'deleteTransaction': {
-                const { companyId, transactionId } = payload;
-                if (!companyId || !transactionId) throw new Error("companyId and transactionId are required.");
-                await db.doc(`companies/${companyId}/transactions/${transactionId}`).delete();
+                const { memberId, transactionId } = payload;
+                if (!memberId || !transactionId) throw new Error("memberId and transactionId are required.");
+                await db.doc(`members/${memberId}/transactions/${transactionId}`).delete();
                 return NextResponse.json({ success: true });
             }
             default:
@@ -170,5 +143,3 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ success: false, error: error.message }, { status });
     }
 }
-
-    

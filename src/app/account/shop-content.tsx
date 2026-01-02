@@ -16,31 +16,21 @@ export default function ShopContent() {
   const { toast } = useToast();
   const [isCreating, setIsCreating] = useState(false);
 
-  // 1. Get the user document to check for a companyId
-  const userDocRef = useMemoFirebase(() => {
+  const memberDocRef = useMemoFirebase(() => {
     if (!firestore || !user) return null;
-    return doc(firestore, `users/${user.uid}`);
+    return doc(firestore, `members/${user.uid}`);
   }, [firestore, user]);
 
-  const { data: userData, isLoading: isUserDocLoading, forceRefresh: forceUserRefresh } = useDoc(userDocRef);
+  const { data: memberData, isLoading: isMemberLoading, forceRefresh } = useDoc(memberDocRef);
 
-  // 2. Use the companyId from the user data to fetch the company document for its shopId
-  const companyRef = useMemoFirebase(() => {
-    if (!firestore || !userData?.companyId) return null;
-    return doc(firestore, `companies/${userData.companyId}`);
-  }, [firestore, userData]);
-
-  const { data: companyData, isLoading: isCompanyLoading, forceRefresh: forceCompanyRefresh } = useDoc(companyRef);
-
-  // 3. Use the shopId from the company data to fetch the actual shop document
   const shopRef = useMemoFirebase(() => {
-    if (!firestore || !companyData?.shopId || !companyData.id) return null;
-    return doc(firestore, `companies/${companyData.id}/shops/${companyData.shopId}`);
-  }, [firestore, companyData]);
+    if (!firestore || !memberData?.shopId || !user) return null;
+    return doc(firestore, `members/${user.uid}/shops/${memberData.shopId}`);
+  }, [firestore, memberData, user]);
 
   const { data: userShop, isLoading: isShopLoading } = useDoc(shopRef);
 
-  const isLoading = isUserLoading || isUserDocLoading || isCompanyLoading;
+  const isLoading = isUserLoading || isMemberLoading;
 
   const handleCreateShop = async () => {
     if (!user) {
@@ -67,8 +57,7 @@ export default function ShopContent() {
 
       if (response.ok && result.success) {
         toast({ title: 'Shop Draft Created!', description: "Let's get started with the details." });
-        forceUserRefresh();
-        forceCompanyRefresh();
+        forceRefresh();
       } else {
         throw new Error(result.error || 'Failed to create shop.');
       }
@@ -85,7 +74,7 @@ export default function ShopContent() {
     }
   };
 
-  const shopExists = !!companyData?.shopId;
+  const shopExists = !!memberData?.shopId;
 
   return (
     <Card>

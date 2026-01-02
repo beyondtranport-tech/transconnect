@@ -10,35 +10,22 @@ service cloud.firestore {
     }
     
     function isAdmin() {
+      // In a real app, this would check a custom claim, not an email address.
       return request.auth != null && request.auth.token.email == 'beyondtransport@gmail.com';
     }
 
-    // A user can read a company document if they are the owner of that company.
-    function isCompanyOwner(companyId) {
-        let companyOwnerId = get(/databases/$(database)/documents/companies/$(companyId)).data.ownerId;
-        return request.auth != null && companyOwnerId == request.auth.uid;
-    }
+    // --- Member Profiles (Primary Collection) ---
+    // A member can create their own document.
+    // A member can only read or update their own document. Admins have full access.
+    match /members/{memberId} {
+      allow create: if isOwner(memberId);
+      allow get, update: if isOwner(memberId) || isAdmin();
+      allow list: if isAdmin(); // Only admins can list all members
 
-    // --- User Profiles ---
-    // A user can create their own profile.
-    // A user can only read or update their own profile. Admins can read any profile.
-    match /users/{userId} {
-      allow create: if isOwner(userId);
-      allow get, update: if isOwner(userId) || isAdmin();
-      allow list: if isAdmin();
-    }
-
-    // --- Company Profiles ---
-    // An authenticated user can create a company document.
-    // A company document can be read or updated by its owner, or by an admin.
-    match /companies/{companyId} {
-      allow create: if request.auth != null;
-      allow get, update, delete: if isCompanyOwner(companyId) || isAdmin();
-
-      // --- Company Subcollections ---
-      // The owner of the parent company has full access to all subcollections. Admins also have full access.
+      // --- Member Subcollections ---
+      // The owner of the parent member document has full access to all subcollections. Admins also have full access.
       match /{subcollection}/{docId=**} {
-        allow read, write: if isCompanyOwner(companyId) || isAdmin();
+        allow read, write: if isOwner(memberId) || isAdmin();
       }
     }
 
@@ -48,6 +35,7 @@ service cloud.firestore {
     // Writes are handled by admin-only backend functions.
     match /shops/{shopId}/{path=**} {
       allow get, list: if true;
+      allow write: if isAdmin();
     }
 
     // Publicly readable collection for membership plans.

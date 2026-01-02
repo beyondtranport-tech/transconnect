@@ -39,12 +39,12 @@ export default function ProfileContent() {
   const { toast } = useToast();
   const [isSaving, setIsSaving] = useState(false);
 
-  const userDocRef = useMemoFirebase(() => {
+  const memberDocRef = useMemoFirebase(() => {
     if (!firestore || !user) return null;
-    return doc(firestore, 'users', user.uid);
+    return doc(firestore, 'members', user.uid);
   }, [firestore, user]);
 
-  const { data: userData, isLoading: isUserDocLoading } = useDoc(userDocRef);
+  const { data: memberData, isLoading: isMemberLoading } = useDoc(memberDocRef);
 
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileFormSchema),
@@ -57,19 +57,19 @@ export default function ProfileContent() {
   });
 
   useEffect(() => {
-    if (userData) {
+    if (memberData) {
       form.reset({
-        firstName: userData.firstName || '',
-        lastName: userData.lastName || '',
-        phone: userData.phone || '',
-        email: userData.email || '',
+        firstName: memberData.firstName || '',
+        lastName: memberData.lastName || '',
+        phone: memberData.phone || '',
+        email: memberData.email || '',
       });
     }
-  }, [userData, form]);
+  }, [memberData, form]);
 
   const onSubmit = async (values: ProfileFormValues) => {
     setIsSaving(true);
-    if (!userDocRef) {
+    if (!memberDocRef) {
       toast({ variant: 'destructive', title: 'Error', description: 'Not logged in.' });
       setIsSaving(false);
       return;
@@ -82,7 +82,7 @@ export default function ProfileContent() {
         updatedAt: serverTimestamp(),
     };
     
-    updateDoc(userDocRef, dataToUpdate)
+    updateDoc(memberDocRef, dataToUpdate)
       .then(() => {
         toast({
           title: 'Profile Updated',
@@ -91,7 +91,7 @@ export default function ProfileContent() {
       })
       .catch((serverError) => {
         const permissionError = new FirestorePermissionError({
-            path: userDocRef.path,
+            path: memberDocRef.path,
             operation: 'update',
             requestResourceData: dataToUpdate,
         });
@@ -107,7 +107,7 @@ export default function ProfileContent() {
       });
   };
 
-  const isLoading = isUserLoading || isUserDocLoading;
+  const isLoading = isUserLoading || isMemberLoading;
 
   return (
     <Card>

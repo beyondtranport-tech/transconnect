@@ -29,7 +29,6 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useToast } from '@/hooks/use-toast';
 import { useState } from 'react';
-import { useDoc } from '@/firebase/firestore/use-doc';
 
 const formatCurrency = (amount: number) => {
     if (typeof amount !== 'number') return 'N/A';
@@ -49,30 +48,22 @@ export default function QuotesCard() {
     const { toast } = useToast();
     const [isDeleting, setIsDeleting] = useState<string | null>(null);
 
-    // Get user's companyId
-    const userDocRef = useMemoFirebase(() => {
-        if (!firestore || !user) return null;
-        return doc(firestore, 'users', user.uid);
-    }, [firestore, user]);
-    const { data: userData } = useDoc(userDocRef);
-    const companyId = userData?.companyId;
-
     const quotesQuery = useMemoFirebase(() => {
-        if (!firestore || !companyId) return null;
+        if (!firestore || !user) return null;
         return query(
-            collection(firestore, 'companies', companyId, 'quotes'), 
+            collection(firestore, 'members', user.uid, 'quotes'), 
             orderBy('createdAt', 'desc'), 
             limit(10)
         );
-    }, [firestore, companyId]);
+    }, [firestore, user]);
 
     const { data: quotes, isLoading, error, forceRefresh } = useCollection(quotesQuery);
     
     const handleDelete = async (quoteId: string) => {
-        if (!firestore || !companyId) return;
+        if (!firestore || !user) return;
         setIsDeleting(quoteId);
         try {
-            await deleteDoc(doc(firestore, 'companies', companyId, 'quotes', quoteId));
+            await deleteDoc(doc(firestore, 'members', user.uid, 'quotes', quoteId));
             toast({ title: "Quote Deleted", description: "The quote has been removed from your saved list." });
             forceRefresh();
         } catch (e: any) {

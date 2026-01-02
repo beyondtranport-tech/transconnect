@@ -33,14 +33,10 @@ export async function POST(req: NextRequest) {
     const isAdmin = decodedToken.email === 'beyondtransport@gmail.com';
     
     let isAuthorized = false;
-    if (pathSegments[0] === 'users' && pathSegments[1] === uid) {
+
+    // A user can delete their own member document or any subcollection document within it.
+    if (pathSegments[0] === 'members' && pathSegments[1] === uid) {
         isAuthorized = true;
-    } else if (pathSegments[0] === 'companies') {
-        const companyId = pathSegments[1];
-        const companyDoc = await db.collection('companies').doc(companyId).get();
-        if (companyDoc.exists && companyDoc.data()?.ownerId === uid) {
-            isAuthorized = true;
-        }
     }
 
     if (!isAuthorized && !isAdmin) {

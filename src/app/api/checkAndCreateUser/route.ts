@@ -25,28 +25,27 @@ export async function POST(req: NextRequest) {
     const user: UserRecord = await adminAuth.getUser(decodedToken.uid);
     
     const db = getFirestore(app);
-    const userDocRef = db.collection('users').doc(user.uid);
-    const userDocSnap = await userDocRef.get();
+    const memberDocRef = db.collection('members').doc(user.uid);
+    const memberDocSnap = await memberDocRef.get();
 
-    if (userDocSnap.exists) {
-        return NextResponse.json({ success: true, message: 'User document already exists.' });
+    if (memberDocSnap.exists) {
+        return NextResponse.json({ success: true, message: 'Member document already exists.' });
     }
 
-    // --- User document does NOT exist, so create user and company ---
-    console.log(`Document for user ${user.uid} not found. Creating user and company.`);
+    // --- Member document does NOT exist, so create it ---
+    console.log(`Document for member ${user.uid} not found. Creating member document.`);
 
     const displayName = user.displayName || '';
     const nameParts = displayName.split(' ');
     const firstName = nameParts[0] || 'New';
     const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : 'User';
     
-    const batch = db.batch();
-    
-    // 1. Create Company Document
-    const companyDocRef = db.collection('companies').doc();
-    const companyData = {
-        id: companyDocRef.id,
-        ownerId: user.uid,
+    const newMemberData = {
+        id: user.uid,
+        firstName,
+        lastName,
+        email: user.email,
+        phone: user.phoneNumber || '',
         companyName: user.displayName ? `${user.displayName}'s Company` : 'My Company',
         membershipId: 'free',
         rewardPoints: 0,
@@ -54,25 +53,12 @@ export async function POST(req: NextRequest) {
         createdAt: FieldValue.serverTimestamp(),
         updatedAt: FieldValue.serverTimestamp(),
     };
-    batch.set(companyDocRef, companyData);
 
-    // 2. Create User Document
-    const userData = {
-        id: user.uid,
-        firstName,
-        lastName,
-        email: user.email,
-        phone: user.phoneNumber || '',
-        companyId: companyDocRef.id,
-        createdAt: FieldValue.serverTimestamp(),
-        updatedAt: FieldValue.serverTimestamp(),
-    };
-    batch.set(userDocRef, userData);
+    await memberDocRef.set(newMemberData);
 
-    await batch.commit();
-    console.log(`Successfully created user ${user.uid} and company ${companyDocRef.id}.`);
+    console.log(`Successfully created member document for ${user.uid}.`);
 
-    return NextResponse.json({ success: true, message: 'User and company documents created successfully.' });
+    return NextResponse.json({ success: true, message: 'Member document created successfully.' });
 
   } catch (error: any) {
     console.error(`Error in checkAndCreateUser for user ${idToken ? getAuth(app).verifyIdToken(idToken).then(t=>t.uid).catch(()=>'unknown') : 'unknown'}:`, error);

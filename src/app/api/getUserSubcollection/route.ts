@@ -13,7 +13,7 @@ function serializeTimestamps(docData: any): any {
         const value = docData[key];
         if (value instanceof Timestamp) {
             newDocData[key] = value.toDate().toISOString();
-        } else if (value && typeof value === 'object' && value !== null && !Array.isArray(value)) {
+        } else if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
             newDocData[key] = serializeTimestamps(value);
         } else {
             newDocData[key] = value;
@@ -60,15 +60,8 @@ export async function POST(req: NextRequest) {
             let isAuthorized = false;
             const pathSegments = path.split('/');
 
-            if (pathSegments.length >= 2 && pathSegments[0] === 'users' && pathSegments[1] === uid) {
+            if (pathSegments.length >= 2 && pathSegments[0] === 'members' && pathSegments[1] === uid) {
                  isAuthorized = true;
-            } 
-            else if (pathSegments.length >= 2 && pathSegments[0] === 'companies' && uid) {
-                // To check ownership, we must fetch the user doc to get their companyId
-                const userDoc = await db.collection('users').doc(uid).get();
-                if (userDoc.exists && userDoc.data()?.companyId === pathSegments[1]) {
-                    isAuthorized = true;
-                }
             }
             
             if (!isAuthorized) {
@@ -95,15 +88,15 @@ export async function POST(req: NextRequest) {
              const data = snapshot.docs.map(doc => {
                 const docData = doc.data();
                 const pathSegments = doc.ref.path.split('/');
-                let companyId = null;
-                const companiesIndex = pathSegments.indexOf('companies');
-                if (companiesIndex > -1 && companiesIndex < pathSegments.length - 1) {
-                    companyId = pathSegments[companiesIndex + 1];
+                let memberId = null;
+                const membersIndex = pathSegments.indexOf('members');
+                if (membersIndex > -1 && membersIndex < pathSegments.length - 1) {
+                    memberId = pathSegments[membersIndex + 1];
                 }
                 
                 return { 
                     id: doc.id, 
-                    companyId, 
+                    memberId, 
                     ...serializeTimestamps(docData) 
                 };
              });

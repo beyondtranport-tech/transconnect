@@ -19,7 +19,7 @@ import { useState, useEffect } from 'react';
 import { Loader2, Building, Save } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useUser, useFirestore, useMemoFirebase } from '@/firebase';
-import { doc, getDoc, setDoc, serverTimestamp, collection } from 'firebase/firestore';
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { useDoc } from '@/firebase/firestore/use-doc';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
@@ -43,20 +43,12 @@ export default function CompanyContent() {
   const { toast } = useToast();
   const [isSaving, setIsSaving] = useState(false);
 
-  // First, get the user document to find their companyId
-  const userDocRef = useMemoFirebase(() => {
+  const memberDocRef = useMemoFirebase(() => {
     if (!firestore || !user) return null;
-    return doc(firestore, 'users', user.uid);
+    return doc(firestore, 'members', user.uid);
   }, [firestore, user]);
-  const { data: userData, isLoading: isUserDocLoading } = useDoc(userDocRef);
 
-  // Then, use the companyId to get the company document
-  const companyDocRef = useMemoFirebase(() => {
-    if (!firestore || !userData?.companyId) return null;
-    return doc(firestore, 'companies', userData.companyId);
-  }, [firestore, userData]);
-
-  const { data: companyData, isLoading: isCompanyLoading } = useDoc(companyDocRef);
+  const { data: memberData, isLoading: isMemberLoading } = useDoc(memberDocRef);
 
   const form = useForm<CompanyFormValues>({
     resolver: zodResolver(companyFormSchema),
@@ -72,22 +64,22 @@ export default function CompanyContent() {
   });
 
   useEffect(() => {
-    if (companyData) {
+    if (memberData) {
       form.reset({
-        companyName: companyData.companyName || '',
-        registrationNumber: companyData.registrationNumber || '',
-        vatNumber: companyData.vatNumber || '',
-        streetAddress: companyData.streetAddress || '',
-        city: companyData.city || '',
-        province: companyData.province || '',
-        postalCode: companyData.postalCode || '',
+        companyName: memberData.companyName || '',
+        registrationNumber: memberData.registrationNumber || '',
+        vatNumber: memberData.vatNumber || '',
+        streetAddress: memberData.streetAddress || '',
+        city: memberData.city || '',
+        province: memberData.province || '',
+        postalCode: memberData.postalCode || '',
       });
     }
-  }, [companyData, form]);
+  }, [memberData, form]);
 
   const onSubmit = async (values: CompanyFormValues) => {
     setIsSaving(true);
-    if (!companyDocRef || !firestore) {
+    if (!memberDocRef || !firestore) {
       toast({ variant: 'destructive', title: 'Error', description: 'Not logged in or database not available.' });
       setIsSaving(false);
       return;
@@ -98,7 +90,7 @@ export default function CompanyContent() {
         updatedAt: serverTimestamp(),
     };
     
-    setDoc(companyDocRef, dataToUpdate, { merge: true })
+    setDoc(memberDocRef, dataToUpdate, { merge: true })
       .then(() => {
           toast({
               title: 'Company Info Updated',
@@ -107,7 +99,7 @@ export default function CompanyContent() {
       })
       .catch((serverError: any) => {
           const permissionError = new FirestorePermissionError({
-              path: companyDocRef.path,
+              path: memberDocRef.path,
               operation: 'update',
               requestResourceData: dataToUpdate,
           });
@@ -118,7 +110,7 @@ export default function CompanyContent() {
       });
   };
 
-  const isLoading = isUserLoading || isUserDocLoading || isCompanyLoading;
+  const isLoading = isUserLoading || isMemberLoading;
 
   return (
     <Card>
