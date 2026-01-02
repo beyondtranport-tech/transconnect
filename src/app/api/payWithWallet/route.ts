@@ -5,33 +5,36 @@ import { getAuth } from 'firebase-admin/auth';
 import { getAdminApp } from '@/lib/firebase-admin';
 
 async function handleServicePayment(db: FirebaseFirestore.Firestore, adminUid: string, payload: any) {
-    const { memberId, paymentId, amount, description } = payload;
-    if (!memberId || !paymentId || typeof amount !== 'number' || !description) {
+    const { companyId, paymentId, amount, description } = payload;
+    if (!companyId || !paymentId || typeof amount !== 'number' || !description) {
         throw new Error('Missing required fields for service payment.');
     }
 
-    const memberRef = db.doc(`members/${memberId}`);
-    const memberSnap = await memberRef.get();
-    const memberData = memberSnap.data();
+    const companyRef = db.doc(`companies/${companyId}`);
+    const companySnap = await companyRef.get();
+    const companyData = companySnap.data();
 
-    if (!memberData || memberData.walletBalance < amount) {
+    if (!companyData || companyData.walletBalance < amount) {
         throw new Error('Insufficient wallet balance.');
     }
+    
+    const userDoc = await db.collection('users').doc(companyData.ownerId).get();
+    const memberName = `${userDoc.data()?.firstName || ''} ${userDoc.data()?.lastName || ''}`.trim();
 
     const batch = db.batch();
     const now = FieldValue.serverTimestamp();
 
-    // 1. Debit member's wallet balance
-    batch.update(memberRef, {
+    // 1. Debit company's wallet balance
+    batch.update(companyRef, {
         walletBalance: FieldValue.increment(-amount),
         updatedAt: now,
     });
 
-    // 2. Create a DEBIT transaction record in the member's wallet ledger
-    const memberTransactionRef = db.collection(`members/${memberId}/transactions`).doc();
+    // 2. Create a DEBIT transaction record in the company's wallet ledger
+    const companyTransactionRef = db.collection(`companies/${companyId}/transactions`).doc();
     const chartOfAccountsCode = description.toLowerCase().includes('membership') ? '4010' : '4410';
-    batch.set(memberTransactionRef, {
-        transactionId: memberTransactionRef.id,
+    batch.set(companyTransactionRef, {
+        transactionId: companyTransactionRef.id,
         type: 'debit',
         amount: amount,
         date: now,
@@ -40,23 +43,22 @@ async function handleServicePayment(db: FirebaseFirestore.Firestore, adminUid: s
         isAdjustment: false,
         chartOfAccountsCode, 
         postedBy: adminUid,
-        memberId: memberId,
+        companyId: companyId,
     });
 
     // 3. Create a corresponding CREDIT transaction in the PLATFORM's ledger (as revenue)
     const platformTransactionRef = db.collection('platformTransactions').doc();
-    const memberName = `${memberData.firstName || ''} ${memberData.lastName || ''}`.trim();
     batch.set(platformTransactionRef, {
         transactionId: platformTransactionRef.id,
         type: 'credit',
         amount: amount,
         date: now,
-        description: `Revenue: ${description} from ${memberName}`,
+        description: `Revenue: ${description} from ${memberName} (${companyId})`,
         status: 'allocated',
         chartOfAccountsCode,
         isAdjustment: false,
         postedBy: 'system',
-        memberId: memberId, // Link to the member for reference
+        companyId: companyId,
     });
 
 
@@ -69,13 +71,13 @@ async function handleServicePayment(db: FirebaseFirestore.Firestore, adminUid: s
         } else {
             newNextBillingDate.setFullYear(newNextBillingDate.getFullYear() + 1);
         }
-        batch.update(memberRef, {
+        batch.update(companyRef, {
             membershipId: planId,
             billingCycle: cycle,
             nextBillingDate: newNextBillingDate,
         });
     } else {
-        const paymentRef = db.doc(`members/${memberId}/walletPayments/${paymentId}`);
+        const paymentRef = db.doc(`companies/${companyId}/walletPayments/${paymentId}`);
         batch.delete(paymentRef);
     }
 
@@ -105,8 +107,10 @@ export async function POST(req: NextRequest) {
 
     const payload = await req.json();
 
-    if (uid !== payload.memberId) {
-        return NextResponse.json({ success: false, error: 'Forbidden: You can only make payments for your own account.' }, { status: 403 });
+    // Verify user owns the company they are trying to pay from
+    const userDoc = await db.collection('users').doc(uid).get();
+    if (userDoc.data()?.companyId !== payload.companyId) {
+        return NextResponse.json({ success: false, error: 'Forbidden: You can only make payments for your own company.' }, { status: 403 });
     }
     
     // For now, all payments from the dialog are generic service payments

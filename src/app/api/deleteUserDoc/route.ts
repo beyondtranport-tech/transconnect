@@ -34,10 +34,19 @@ export async function POST(req: NextRequest) {
     
     let isAuthorized = false;
 
-    // A user can delete their own member document or any subcollection document within it.
-    if (pathSegments[0] === 'members' && pathSegments[1] === uid) {
+    // A user can delete their own user document
+    if (pathSegments[0] === 'users' && pathSegments[1] === uid) {
         isAuthorized = true;
     }
+    
+    // A user can delete documents in their own company's subcollections
+    const userDoc = await db.collection('users').doc(uid).get();
+    const companyId = userDoc.data()?.companyId;
+
+    if (companyId && pathSegments[0] === 'companies' && pathSegments[1] === companyId) {
+        isAuthorized = true;
+    }
+
 
     if (!isAuthorized && !isAdmin) {
       return NextResponse.json({ success: false, error: 'Forbidden: You can only delete your own data.' }, { status: 403 });

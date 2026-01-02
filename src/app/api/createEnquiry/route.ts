@@ -46,13 +46,21 @@ export async function POST(req: NextRequest) {
     
     const db = getFirestore(app);
 
-    const collectionPath = `members/${uid}/enquiries`;
+    // Get companyId from user document
+    const userDoc = await db.collection('users').doc(uid).get();
+    const userData = userDoc.data();
+    if (!userData || !userData.companyId) {
+        return NextResponse.json({ success: false, error: 'Forbidden: Company information not found for user.' }, { status: 403 });
+    }
+    const companyId = userData.companyId;
+
+    const collectionPath = `companies/${companyId}/enquiries`;
     const collectionRef = db.collection(collectionPath);
     
     const deserializedData = deserializeData(data);
     const newDocRef = collectionRef.doc();
     
-    const finalData = { ...deserializedData, id: newDocRef.id, memberId: uid };
+    const finalData = { ...deserializedData, id: newDocRef.id, userId: uid, companyId: companyId };
     
     await newDocRef.set(finalData);
 

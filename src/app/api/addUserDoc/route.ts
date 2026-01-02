@@ -51,9 +51,12 @@ export async function POST(req: NextRequest) {
     const db = getFirestore(app);
     const pathSegments = collectionPath.split('/');
     
-    // Security Check: Ensure the user is adding to a subcollection of their own member document.
-    if (pathSegments.length < 2 || pathSegments[0] !== 'members' || pathSegments[1] !== uid) {
-        return NextResponse.json({ success: false, error: 'Forbidden: You can only add data to your own member subcollections.' }, { status: 403 });
+    // Security Check: Ensure the user is adding to a subcollection of their own company document.
+    const userDoc = await db.collection('users').doc(uid).get();
+    const companyId = userDoc.data()?.companyId;
+
+    if (!companyId || pathSegments.length < 2 || pathSegments[0] !== 'companies' || pathSegments[1] !== companyId) {
+        return NextResponse.json({ success: false, error: 'Forbidden: You can only add data to your own company subcollections.' }, { status: 403 });
     }
 
     const collectionRef = db.collection(collectionPath);

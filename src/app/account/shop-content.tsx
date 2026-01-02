@@ -16,25 +16,35 @@ export default function ShopContent() {
   const { toast } = useToast();
   const [isCreating, setIsCreating] = useState(false);
 
-  const memberDocRef = useMemoFirebase(() => {
+  const userDocRef = useMemoFirebase(() => {
     if (!firestore || !user) return null;
-    return doc(firestore, `members/${user.uid}`);
+    return doc(firestore, `users/${user.uid}`);
   }, [firestore, user]);
+  const { data: userData, isLoading: isUserDataLoading, forceRefresh: forceRefreshUser } = useDoc(userDocRef);
 
-  const { data: memberData, isLoading: isMemberLoading, forceRefresh } = useDoc(memberDocRef);
+  const companyDocRef = useMemoFirebase(() => {
+    if (!firestore || !userData?.companyId) return null;
+    return doc(firestore, `companies/${userData.companyId}`);
+  }, [firestore, userData]);
+  const { data: companyData, isLoading: isCompanyLoading, forceRefresh: forceRefreshCompany } = useDoc(companyDocRef);
 
   const shopRef = useMemoFirebase(() => {
-    if (!firestore || !memberData?.shopId || !user) return null;
-    return doc(firestore, `members/${user.uid}/shops/${memberData.shopId}`);
-  }, [firestore, memberData, user]);
+    if (!firestore || !companyData?.shopId || !userData?.companyId) return null;
+    return doc(firestore, `companies/${userData.companyId}/shops/${companyData.shopId}`);
+  }, [firestore, companyData, userData]);
 
   const { data: userShop, isLoading: isShopLoading } = useDoc(shopRef);
 
-  const isLoading = isUserLoading || isMemberLoading;
+  const isLoading = isUserLoading || isUserDataLoading || isCompanyLoading;
+
+  const forceRefresh = () => {
+    forceRefreshUser();
+    forceRefreshCompany();
+  };
 
   const handleCreateShop = async () => {
-    if (!user) {
-      toast({ variant: 'destructive', title: 'You must be logged in to create a shop.' });
+    if (!user || !userData?.companyId) {
+      toast({ variant: 'destructive', title: 'User or company not found.' });
       return;
     }
     setIsCreating(true);
@@ -74,7 +84,7 @@ export default function ShopContent() {
     }
   };
 
-  const shopExists = !!memberData?.shopId;
+  const shopExists = !!companyData?.shopId;
 
   return (
     <Card>
@@ -112,7 +122,7 @@ export default function ShopContent() {
             <Store className="mx-auto h-12 w-12 text-muted-foreground" />
             <h3 className="mt-4 text-xl font-semibold">You don't have a shop yet.</h3>
             <p className="mt-2 text-muted-foreground">Ready to start selling? Create your shop to get started.</p>
-            <Button onClick={handleCreateShop} disabled={isCreating} className="mt-6">
+            <Button onClick={handleCreateShop} disabled={isCreating}>
               {isCreating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PlusCircle className="mr-2 h-4 w-4" />}
               Create My Shop
             </Button>

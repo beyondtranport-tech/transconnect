@@ -45,11 +45,19 @@ export async function POST(req: NextRequest) {
     const uid = decodedToken.uid;
     
     const db = getFirestore(app);
+    
+    // Get companyId from user document
+    const userDoc = await db.collection('users').doc(uid).get();
+    const userData = userDoc.data();
+    if (!userData || !userData.companyId) {
+        return NextResponse.json({ success: false, error: 'Forbidden: Company information not found for user.' }, { status: 403 });
+    }
+    const companyId = userData.companyId;
 
-    const collectionPath = `members/${uid}/quotes`;
+    const collectionPath = `companies/${companyId}/quotes`;
     const collectionRef = db.collection(collectionPath);
     
-    const deserializedData = { ...deserializeData(data), memberId: uid };
+    const deserializedData = { ...deserializeData(data), userId: uid, companyId: companyId };
     const newDocRef = await collectionRef.add(deserializedData);
 
     return NextResponse.json({ success: true, id: newDocRef.id, message: 'Quote created successfully.' });

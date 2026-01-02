@@ -36,21 +36,21 @@ export async function POST(req: NextRequest) {
   
   try {
     const { data } = await req.json();
-    if (!data || !data.memberId) {
-        return NextResponse.json({ success: false, error: 'Bad Request: "data" object with "memberId" is required.' }, { status: 400 });
+    if (!data || !data.userId || !data.companyId) {
+        return NextResponse.json({ success: false, error: 'Bad Request: "data" object with "userId" and "companyId" is required.' }, { status: 400 });
     }
 
     const adminAuth = getAuth(app);
     const decodedToken = await adminAuth.verifyIdToken(idToken);
     const uid = decodedToken.uid;
     
-    if (uid !== data.memberId) {
+    if (uid !== data.userId) {
         return NextResponse.json({ success: false, error: 'Forbidden: You can only create payments for your own account.' }, { status: 403 });
     }
     
     const db = getFirestore(app);
     
-    const collectionPath = `members/${data.memberId}/walletPayments`;
+    const collectionPath = `companies/${data.companyId}/walletPayments`;
     const collectionRef = db.collection(collectionPath);
     
     const deserializedData = deserializeData(data);
