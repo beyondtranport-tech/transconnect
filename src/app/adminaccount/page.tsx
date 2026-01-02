@@ -86,7 +86,9 @@ function AdminAccountPageContent() {
       // Add placeholders for new views
       case 'business': return <div><h1>Business</h1></div>;
       case 'staff': return <div><h1>Staff</h1></div>;
-      case 'marketing': return <div><h1>Marketing</h1></div>;
+      case 'marketing':
+        router.push('/marketing');
+        return null;
       case 'forecasting': return <div><h1>Forecasting</h1></div>;
       case 'budgets': return <div><h1>Budgets</h1></div>;
       default: return <DashboardContent />;
@@ -153,7 +155,7 @@ function AdminAccountPageContent() {
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Marketing" isActive={activeView === 'marketing'} onClick={() => router.push('/adminaccount?view=marketing', { scroll: false })}>
+                <SidebarMenuButton tooltip="Marketing" isActive={activeView === 'marketing'} onClick={() => router.push('/marketing', { scroll: false })}>
                   <TrendingUp />
                   <span>Marketing</span>
                 </SidebarMenuButton>
