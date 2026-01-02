@@ -86,6 +86,10 @@ export default function WalletContent() {
     const error = transactionsError || paymentsError;
 
     const unallocatedTotal = pendingPayments?.reduce((sum, p) => sum + p.amount, 0) || 0;
+    const recentTransactionsTotal = transactions?.reduce((sum, tx) => {
+        const amount = tx.type === 'credit' ? tx.amount : -tx.amount;
+        return sum + amount;
+    }, 0) || 0;
     
     const handleSubmitProofOfPayment = async () => {
         if (!user) return;
@@ -298,6 +302,12 @@ export default function WalletContent() {
                                                 </TableRow>
                                             ))}
                                         </TableBody>
+                                         <TableFooter>
+                                            <TableRow>
+                                                <TableCell colSpan={2} className="text-right font-semibold">Net Change from Recent Transactions</TableCell>
+                                                <TableCell className="text-right font-bold text-lg">{formatCurrency(recentTransactionsTotal)}</TableCell>
+                                            </TableRow>
+                                        </TableFooter>
                                     </Table>
                                 </div>
                             ) : (
