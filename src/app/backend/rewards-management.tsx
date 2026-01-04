@@ -1,47 +1,10 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Loader2, Users, Star, Gem, Percent, ArrowRight } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
+import { useState, useEffect } from 'react';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
+import { Loader2, Star } from 'lucide-react';
+import MemberLoyaltyStatus from './member-loyalty-status';
 import { getClientSideAuthToken } from '@/firebase';
-import { Button } from '@/components/ui/button';
-import Link from 'next/link';
-import { cn } from '@/lib/utils';
-
-
-interface Company {
-    id: string;
-    companyName?: string;
-    membershipId?: string;
-    rewardPoints?: number;
-    loyaltyTier?: 'bronze' | 'silver' | 'gold';
-    ownerId: string;
-    firstName?: string;
-    lastName?: string;
-    email?: string;
-}
-
-interface Membership {
-    id: string;
-    name: string;
-    commissionShare?: number;
-    discountShare?: number;
-}
-
-interface EnrichedMember {
-    companyId: string;
-    ownerId: string;
-    companyName?: string;
-    ownerName?: string;
-    email?: string;
-    loyaltyTier?: 'bronze' | 'silver' | 'gold';
-    rewardPoints?: number;
-    membershipTier?: string;
-    commissionShare?: number;
-    discountShare?: number;
-}
 
 async function fetchAdminData(action: string) {
     const token = await getClientSideAuthToken();
@@ -57,18 +20,12 @@ async function fetchAdminData(action: string) {
     if (!response.ok || !result.success) {
         throw new Error(result.error || `API Error for action: ${action}`);
     }
-    // Ensure data is always an array to prevent .map errors
     return result.data || [];
 }
 
-const tierColors: { [key: string]: string } = {
-    bronze: 'bg-orange-200 text-orange-800',
-    silver: 'bg-slate-200 text-slate-800',
-    gold: 'bg-yellow-200 text-yellow-800',
-};
-
 export default function RewardsManagement() {
-    const [enrichedMembers, setEnrichedMembers] = useState<EnrichedMember[]>([]);
+    const [companies, setCompanies] = useState<any[]>([]);
+    const [memberships, setMemberships] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
@@ -77,33 +34,12 @@ export default function RewardsManagement() {
             setIsLoading(true);
             setError(null);
             try {
-                const [companies, memberships] = await Promise.all([
+                const [companiesData, membershipsData] = await Promise.all([
                     fetchAdminData('getMembers'),
                     fetchAdminData('getMemberships')
                 ]);
-
-                const membershipMap = new Map<string, Membership>(memberships.map((m: Membership) => [m.id, m]));
-
-                const enrichedData = companies.map((company: Company) => {
-                    const membership = membershipMap.get(company.membershipId || '');
-                    
-                    return {
-                        companyId: company.id,
-                        ownerId: company.ownerId,
-                        companyName: company.companyName,
-                        ownerName: `${company.firstName || ''} ${company.lastName || ''}`.trim() || 'N/A',
-                        email: company.email,
-                        loyaltyTier: company.loyaltyTier,
-                        rewardPoints: company.rewardPoints,
-                        membershipTier: membership?.name || company.membershipId,
-                        commissionShare: membership?.commissionShare,
-                        discountShare: membership?.discountShare,
-                    };
-                });
-                
-                enrichedData.sort((a, b) => (b.rewardPoints || 0) - (a.rewardPoints || 0));
-
-                setEnrichedMembers(enrichedData);
+                setCompanies(companiesData);
+                setMemberships(membershipsData);
             } catch (e: any) {
                 setError(e.message);
             } finally {
@@ -112,6 +48,23 @@ export default function RewardsManagement() {
         }
         loadData();
     }, []);
+
+    if (isLoading) {
+        return (
+            <div className="flex justify-center items-center py-20">
+                <Loader2 className="h-10 w-10 animate-spin text-primary" />
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="text-center py-20 text-destructive border-2 border-destructive/50 rounded-lg bg-destructive/10">
+                <h3 className="text-xl font-semibold">Error Loading Data</h3>
+                <p className="mt-2 text-sm">{error}</p>
+            </div>
+        );
+    }
 
     return (
         <Card>
@@ -122,61 +75,8 @@ export default function RewardsManagement() {
                 </CardDescription>
             </CardHeader>
             <CardContent>
-                {isLoading ? (
-                    <div className="flex justify-center items-center py-20">
-                        <Loader2 className="h-10 w-10 animate-spin text-primary" />
-                    </div>
-                ) : error ? (
-                    <div className="text-center py-20 text-destructive border-2 border-destructive/50 rounded-lg bg-destructive/10">
-                        <h3 className="text-xl font-semibold">Error Loading Data</h3>
-                        <p className="mt-2 text-sm">{error}</p>
-                    </div>
-                ) : (
-                    <div className="border rounded-md">
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Member</TableHead>
-                                    <TableHead>Loyalty Tier</TableHead>
-                                    <TableHead><div className="flex items-center gap-1.5"><Gem className="h-4 w-4"/>Points</div></TableHead>
-                                    <TableHead><div className="flex items-center gap-1.5"><Percent className="h-4 w-4"/>Commission Share</div></TableHead>
-                                    <TableHead><div className="flex items-center gap-1.5"><Percent className="h-4 w-4"/>Discount Share</div></TableHead>
-                                    <TableHead className="text-right">Actions</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {enrichedMembers.map(member => (
-                                    <TableRow key={member.companyId}>
-                                        <TableCell>
-                                            <div className="font-medium">{member.ownerName}</div>
-                                            <div className="text-xs text-muted-foreground">{member.companyName}</div>
-                                        </TableCell>
-                                        <TableCell>
-                                            <Badge className={cn("capitalize", tierColors[member.loyaltyTier || 'bronze'])}>
-                                                <Star className="mr-1 h-3 w-3" />
-                                                {member.loyaltyTier || 'bronze'}
-                                            </Badge>
-                                        </TableCell>
-                                        <TableCell className="font-mono font-semibold">{member.rewardPoints?.toLocaleString() || 0}</TableCell>
-                                        <TableCell className="font-mono font-semibold">{member.commissionShare || 0}%</TableCell>
-                                        <TableCell className="font-mono font-semibold">{member.discountShare || 0}%</TableCell>
-                                        <TableCell className="text-right">
-                                             <Button asChild variant="outline" size="sm">
-                                                <Link href={`/backend?view=wallet&memberId=${member.companyId}`}>
-                                                    View Wallet <ArrowRight className="ml-2 h-4 w-4" />
-                                                </Link>
-                                            </Button>
-                                        </TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    </div>
-                )}
+                <MemberLoyaltyStatus companies={companies} memberships={memberships} />
             </CardContent>
-            <CardFooter>
-                 <p className="text-xs text-muted-foreground">This table reflects the real-time loyalty status of all members on the platform.</p>
-            </CardFooter>
         </Card>
     );
 }
