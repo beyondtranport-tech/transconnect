@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useConfig } from '@/hooks/use-config';
