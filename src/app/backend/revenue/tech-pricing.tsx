@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -29,11 +28,9 @@ const formSchema = z.object({
   advancedAnalytics: z.coerce.number().min(0, 'Must be non-negative.'),
   promotionsPlus: z.coerce.number().min(0, 'Must be non-negative.'),
   
-  // Wallet & Financial Services
-  walletMaintenanceFee: z.coerce.number().min(0, 'Must be non-negative.'),
-  paymentProcessingFee: z.coerce.number().min(0).max(100, 'Must be 0-100'),
-  eftTopUpFee: z.coerce.number().min(0, 'Fee must be non-negative.'),
-  walletTransferFee: z.coerce.number().min(0).max(100, 'Must be between 0 and 100'),
+  // Generative AI
+  aiImageGenerator: z.coerce.number().min(0, 'Must be non-negative.'),
+  aiVideoGenerator: z.coerce.number().min(0, 'Must be non-negative.'),
 
   // API & Data Services
   aiFreightMatcher: z.coerce.number().min(0, 'Must be non-negative.'),
@@ -58,10 +55,8 @@ export default function TechPricing() {
       seoBooster: 0,
       advancedAnalytics: 0,
       promotionsPlus: 0,
-      walletMaintenanceFee: 0,
-      paymentProcessingFee: 0,
-      eftTopUpFee: 0,
-      walletTransferFee: 0,
+      aiImageGenerator: 0,
+      aiVideoGenerator: 0,
       aiFreightMatcher: 0,
       analyticsDashboard: 0,
       apiAccessPerCall: 0,
@@ -110,64 +105,42 @@ export default function TechPricing() {
                 <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
                     
-                    {/* Shop Enhancements */}
+                    {/* Generative AI */}
                     <div>
-                        <h3 className="text-lg font-semibold mb-2">Shop Enhancements</h3>
-                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 p-4 border rounded-md">
-                            <FormField control={form.control} name="premiumThemes" render={({ field }) => (
-                                <FormItem><FormLabel>Premium Themes (R/mo)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
+                        <h3 className="text-lg font-semibold mb-2">Generative AI Suite (per generation)</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 border rounded-md">
+                             <FormField control={form.control} name="aiImageGenerator" render={({ field }) => (
+                                <FormItem><FormLabel>AI Designer / Image Generation (R)</FormLabel><FormControl><Input type="number" {...field} step="0.50" /></FormControl><FormMessage /></FormItem>
                             )} />
-                            <FormField control={form.control} name="seoBooster" render={({ field }) => (
-                                <FormItem><FormLabel>SEO Booster (R/mo)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
-                            )} />
-                            <FormField control={form.control} name="advancedAnalytics" render={({ field }) => (
-                                <FormItem><FormLabel>Advanced Analytics (R/mo)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
-                            )} />
-                             <FormField control={form.control} name="promotionsPlus" render={({ field }) => (
-                                <FormItem><FormLabel>Promotions Plus (R/mo)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
+                             <FormField control={form.control} name="aiVideoGenerator" render={({ field }) => (
+                                <FormItem><FormLabel>AI Video Ad Generation (R)</FormLabel><FormControl><Input type="number" {...field} step="1.00" /></FormControl><FormMessage /></FormItem>
                             )} />
                         </div>
                     </div>
                     
-                    {/* Wallet & Financial Services */}
+                    {/* Shop Enhancements */}
                     <div>
-                        <h3 className="text-lg font-semibold mb-2">Wallet & Financial Services</h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 p-4 border rounded-md">
-                             <FormField control={form.control} name="walletMaintenanceFee" render={({ field }) => (
-                                <FormItem><FormLabel>Wallet Maintenance (R/mo)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
+                        <h3 className="text-lg font-semibold mb-2">Shop Enhancements (per month)</h3>
+                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 p-4 border rounded-md">
+                            <FormField control={form.control} name="premiumThemes" render={({ field }) => (
+                                <FormItem><FormLabel>Premium Themes</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
                             )} />
-                            <FormField control={form.control} name="paymentProcessingFee" render={({ field }) => (
-                                <FormItem><FormLabel>Payment Processing (%)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
+                            <FormField control={form.control} name="seoBooster" render={({ field }) => (
+                                <FormItem><FormLabel>SEO Booster</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
                             )} />
-                            <FormField
-                                control={form.control}
-                                name="eftTopUpFee"
-                                render={({ field }) => (
-                                    <FormItem>
-                                    <FormLabel>EFT Top-up Fee (R)</FormLabel>
-                                    <FormControl><Input type="number" {...field} /></FormControl>
-                                    <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                            <FormField
-                                control={form.control}
-                                name="walletTransferFee"
-                                render={({ field }) => (
-                                    <FormItem>
-                                    <FormLabel>Wallet Transfer Fee (%)</FormLabel>
-                                    <FormControl><Input type="number" {...field} /></FormControl>
-                                    <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
+                            <FormField control={form.control} name="advancedAnalytics" render={({ field }) => (
+                                <FormItem><FormLabel>Advanced Analytics</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
+                            )} />
+                             <FormField control={form.control} name="promotionsPlus" render={({ field }) => (
+                                <FormItem><FormLabel>Promotions Plus</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
+                            )} />
                         </div>
                     </div>
 
                     {/* API & Data Services */}
                     <div>
                         <h3 className="text-lg font-semibold mb-2">API & Data Services</h3>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 p-4 border rounded-md">
                             <FormField control={form.control} name="aiFreightMatcher" render={({ field }) => (
                                 <FormItem><FormLabel>AI Freight Matcher (R/mo)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
                             )} />

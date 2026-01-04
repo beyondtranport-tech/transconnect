@@ -1,24 +1,21 @@
-
 'use client';
 
 import { useConfig } from '@/hooks/use-config';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, Store, Wallet, Code, Cpu } from 'lucide-react';
+import { Loader2, Store, Wallet, Code, Cpu, Sparkles, Video, Search } from 'lucide-react';
 import FreightMatcher from './freight-matcher';
 import TechCard from './tech-card';
 
 const techOfferings = {
   shop: [
     { id: 'premiumThemes', name: 'Premium Themes', description: 'Unlock advanced, high-conversion themes for your shop.', icon: Store },
-    { id: 'seoBooster', name: 'SEO Booster', description: 'AI-powered SEO content generation for meta titles, descriptions, and tags.', icon: Store },
+    { id: 'seoBooster', name: 'AI SEO Booster', description: 'AI-powered SEO content generation for meta titles, descriptions, and tags.', icon: Search },
     { id: 'advancedAnalytics', name: 'Advanced Analytics', description: 'Get deeper insights into your shop visitors and sales performance.', icon: Store },
     { id: 'promotionsPlus', name: 'Promotions Plus', description: 'Increase the number of promotional blocks you can display on your shop page.', icon: Store },
   ],
-  wallet: [
-    { id: 'walletMaintenanceFee', name: 'Wallet Maintenance', description: 'A recurring fee for the secure operation and maintenance of your wallet.', icon: Wallet },
-    { id: 'paymentProcessingFee', name: 'Payment Processing', description: 'A percentage-based fee for processing payments for goods and services.', icon: Wallet, isPercentage: true },
-    { id: 'eftTopUpFee', name: 'EFT Top-up Fee', description: 'A fixed administrative fee for manually processing EFT deposits.', icon: Wallet },
-    { id: 'walletTransferFee', name: 'Wallet Transfer Fee', description: 'A percentage-based fee for transferring funds between wallets.', icon: Wallet, isPercentage: true },
+  generative: [
+    { id: 'aiImageGenerator', name: 'AI Designer', description: 'Generate logos, banners, and product images from a text prompt.', icon: Sparkles },
+    { id: 'aiVideoGenerator', name: 'AI Video Ads', description: 'Create stunning video advertisements for your products automatically.', icon: Video },
   ],
   api: [
     { id: 'aiFreightMatcher', name: 'AI Freight Matcher', description: 'Monthly access to the AI-powered freight matching tool.', icon: Code },
@@ -49,14 +46,6 @@ export default function TechPage() {
                     </div>
                  ) : (
                     <div className="space-y-16">
-                        <div>
-                             <h2 className="text-2xl md:text-3xl font-bold font-headline mb-8 text-center">Shop Enhancements</h2>
-                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-                                {techOfferings.shop.map(item => (
-                                    <TechCard key={item.id} {...item} price={pricing?.[item.id]} />
-                                ))}
-                             </div>
-                        </div>
 
                         <div className="max-w-4xl mx-auto">
                             <Card>
@@ -71,12 +60,21 @@ export default function TechPage() {
                         </div>
                         
                         <div>
-                            <h2 className="text-2xl md:text-3xl font-bold font-headline mb-8 text-center">Wallet & Financial Services</h2>
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-                               {techOfferings.wallet.map(item => (
+                             <h2 className="text-2xl md:text-3xl font-bold font-headline mb-8 text-center">Generative AI Suite</h2>
+                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-3xl mx-auto">
+                                {techOfferings.generative.map(item => (
                                     <TechCard key={item.id} {...item} price={pricing?.[item.id]} />
                                 ))}
-                            </div>
+                             </div>
+                        </div>
+
+                        <div>
+                             <h2 className="text-2xl md:text-3xl font-bold font-headline mb-8 text-center">Shop Enhancements</h2>
+                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                                {techOfferings.shop.map(item => (
+                                    <TechCard key={item.id} {...item} price={pricing?.[item.id]} />
+                                ))}
+                             </div>
                         </div>
                         
                         <div>
