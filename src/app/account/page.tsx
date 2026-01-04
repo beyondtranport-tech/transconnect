@@ -26,12 +26,15 @@ import {
   CreditCard,
   Wallet,
   Gift,
+  Star,
+  Award,
+  Percent,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useState, useEffect, Suspense } from 'react';
-import { useUser, useAuth } from '@/firebase';
+import { useState, useEffect, Suspense, useMemo } from 'react';
+import { useUser, useAuth, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { signOut } from 'firebase/auth';
 import AccountDashboard from './dashboard';
 import { Loader2 } from 'lucide-react';
@@ -42,6 +45,8 @@ import ShopContent from './shop-content';
 import BillingContent from './billing-content';
 import WalletContent from './wallet-content';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { cn } from '@/lib/utils';
+import { doc } from 'firebase/firestore';
 
 function DocumentsContent() {
     return (
@@ -61,17 +66,98 @@ function SettingsContent() {
 }
 
 function RewardsContent() {
+    const { user, isUserLoading } = useUser();
+    const firestore = useFirestore();
+
+    const userDocRef = useMemoFirebase(() => {
+        if (!firestore || !user) return null;
+        return doc(firestore, 'users', user.uid);
+    }, [firestore, user]);
+    const { data: userData, isLoading: isUserDocLoading } = useDoc(userDocRef);
+
+    const companyDocRef = useMemoFirebase(() => {
+        if (!firestore || !userData?.companyId) return null;
+        return doc(firestore, 'companies', userData.companyId);
+    }, [firestore, userData]);
+
+    const { data: companyData, isLoading: isCompanyLoading } = useDoc(companyDocRef);
+
+    const isLoading = isUserLoading || isUserDocLoading || isCompanyLoading;
+    
+    const tier = companyData?.loyaltyTier || 'bronze';
+    const tierColors: {[key: string]: string} = {
+        bronze: 'bg-orange-200 text-orange-800',
+        silver: 'bg-slate-200 text-slate-800',
+        gold: 'bg-yellow-200 text-yellow-800',
+    }
+
     return (
         <Card>
             <CardHeader>
-                <CardTitle className="flex items-center gap-2"><Gift /> My Rewards</CardTitle>
-                <CardDescription>View your earned rewards and redeem them for valuable items.</CardDescription>
+                <CardTitle className="flex items-center gap-2 text-2xl"><Gift /> My Rewards Dashboard</CardTitle>
+                <CardDescription>Your current loyalty status, points, and benefits.</CardDescription>
             </CardHeader>
-            <CardContent>
-                <div className="text-center py-20 border-2 border-dashed rounded-lg">
-                    <p className="text-muted-foreground">Your rewards redemption portal is coming soon.</p>
-                    <p className="text-sm text-muted-foreground mt-1">You will be able to redeem points for fuel vouchers and more.</p>
-                </div>
+            <CardContent className="space-y-8">
+                 {isLoading ? (
+                    <div className="flex justify-center items-center py-20">
+                        <Loader2 className="h-10 w-10 animate-spin text-primary" />
+                    </div>
+                 ) : companyData ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div className="space-y-6">
+                            <Card className="bg-muted/50">
+                                <CardHeader>
+                                    <CardTitle className="flex items-center gap-2"><Star /> Loyalty Status</CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <div className={cn("w-fit text-2xl font-bold px-4 py-2 rounded-lg capitalize flex items-center gap-2", tierColors[tier])}>
+                                       <Award /> {tier}
+                                    </div>
+                                </CardContent>
+                            </Card>
+                            <Card className="bg-muted/50">
+                                <CardHeader>
+                                    <CardTitle className="flex items-center gap-2"><Percent /> Your Tier Benefits</CardTitle>
+                                </CardHeader>
+                                <CardContent className="space-y-4">
+                                     <div className="flex justify-between items-center text-lg">
+                                        <p>Commission Share:</p>
+                                        <p className="font-bold text-primary">{companyData.commissionShare || 0}%</p>
+                                    </div>
+                                     <div className="flex justify-between items-center text-lg">
+                                        <p>Discount Share:</p>
+                                        <p className="font-bold text-primary">{companyData.discountShare || 0}%</p>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        </div>
+                        <div className="space-y-6">
+                             <Card className="bg-muted/50">
+                                <CardHeader>
+                                    <CardTitle className="flex items-center gap-2"><Gift /> Reward Points</CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <p className="text-5xl font-extrabold text-primary">{companyData.rewardPoints || 0}</p>
+                                </CardContent>
+                            </Card>
+                            <Card>
+                                 <CardHeader>
+                                    <CardTitle className="flex items-center gap-2">Redeem Points</CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="text-center py-10 border-2 border-dashed rounded-lg">
+                                        <p className="text-muted-foreground">The Rewards Store is coming soon.</p>
+                                        <p className="text-sm text-muted-foreground mt-1">You'll be able to redeem points for fuel vouchers and more.</p>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        </div>
+                    </div>
+                 ) : (
+                    <div className="text-center py-20">
+                        <p className="text-muted-foreground">Could not load your rewards information.</p>
+                    </div>
+                 )}
             </CardContent>
         </Card>
     )
