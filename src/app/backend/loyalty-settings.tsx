@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useForm } from 'react-hook-form';
@@ -15,7 +16,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { useState, useEffect } from 'react';
-import { Loader2, Save, Star, Gift, UserPlus, Store, Package, Sparkles, Edit, Video, Search, Truck, Building, Users, Handshake, Briefcase, Bot, Code, ShoppingCart, ShieldCheck, Warehouse } from 'lucide-react';
+import { Loader2, Save, Star, Gift, UserPlus, Store, Package, Sparkles, Edit, Video, Search, Truck, Building, Users, Handshake, Briefcase, Bot, Code, ShoppingCart, Warehouse, ShieldCheck } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
@@ -167,22 +168,23 @@ export default function LoyaltySettings() {
                                 <h4 className="font-semibold text-base mb-3 flex items-center gap-2"><ShoppingCart className="h-5 w-5 text-muted-foreground"/>Vendors</h4>
                                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                                     {renderPointsField('shopCreationPoints', 'Points Per Shop Creation', Store)}
-                                    {renderPointsField('productAddPoints', 'Points Per Product Add', Package)}
+                                    {renderPointsField('productAddPoints', 'Points Per Product', Package)}
                                     {renderPointsField('supplierContributionPoints', 'Points Per Supplier', Building)}
                                     {renderPointsField('debtorContributionPoints', 'Points Per Debtor', Users)}
                                 </div>
                             </div>
                              <div>
-                                <h4 className="font-semibold text-base mb-3 flex items-center gap-2"><Truck className="h-5 w-5 text-muted-foreground"/>Buyers / Transporters</h4>
+                                <h4 className="font-semibold text-base mb-3 flex items-center gap-2"><Truck className="h-5 w-5 text-muted-foreground"/>Transporters (Buyers)</h4>
                                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                                      {renderPointsField('truckContributionPoints', 'Points Per Truck', Truck)}
                                      {renderPointsField('trailerContributionPoints', 'Points Per Trailer', Warehouse)}
                                 </div>
                             </div>
                             <div>
-                                <h4 className="font-semibold text-base mb-3 flex items-center gap-2"><Handshake className="h-5 w-5 text-muted-foreground"/>Partners</h4>
+                                <h4 className="font-semibold text-base mb-3 flex items-center gap-2"><Handshake className="h-5 w-5 text-muted-foreground"/>Partners & Referrals</h4>
                                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                                    {renderPointsField('partnerReferralPoints', 'Points Per Referral', UserPlus)}
+                                    {renderPointsField('partnerReferralPoints', 'Points Per Member Referral', UserPlus)}
+                                    {renderPointsField('isaSaleCommissionPoints', 'Points for ISA Sale', Bot)}
                                 </div>
                             </div>
                              <div>
@@ -191,12 +193,7 @@ export default function LoyaltySettings() {
                                     {renderPointsField('associateServiceListingPoints', 'Points Per Service Listing', Package)}
                                 </div>
                             </div>
-                            <div>
-                                <h4 className="font-semibold text-base mb-3 flex items-center gap-2"><Bot className="h-5 w-5 text-muted-foreground"/>ISA Agents</h4>
-                                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                                    {renderPointsField('isaSaleCommissionPoints', 'Points Per Sale', Star)}
-                                </div>
-                            </div>
+                            
                              <div>
                                 <h4 className="font-semibold text-base mb-3 flex items-center gap-2"><Users className="h-5 w-5 text-muted-foreground"/>Drivers</h4>
                                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">

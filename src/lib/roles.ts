@@ -56,10 +56,10 @@ export const roles = [
     {
         id: "isa-agent",
         icon: Bot,
-        title: "ISA Agents",
-        description: "Leverage our platform to connect buyers and sellers and earn commissions as an Independent Sales Agent.",
+        title: "ISA Agents (Elite)",
+        description: "Top-performing referrers can achieve ISA status, unlocking higher commission tiers and exclusive bonuses.",
         cta: "Become an ISA Agent",
-        longDescription: "As an Independent Sales Agent (ISA), you are a key connector in our marketplace. Leverage your network and our platform to facilitate deals between buyers and sellers, earning commissions on successful transactions. It's a flexible way to generate revenue by using your industry connections.",
+        longDescription: "The Independent Sales Agent (ISA) program is an elite tier for our most active and successful referrers. By consistently bringing new members and facilitating service sales, you can be invited to the ISA program, which grants access to higher commissions, performance bonuses, and a closer working relationship with the TransConnect team. It's the ultimate level for those who want to turn referrals into a significant revenue stream.",
         image: roleImages['isa-agent']
     },
     {

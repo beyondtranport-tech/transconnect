@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import Image from "next/image";
 import Link from "next/link";
 import data from "@/lib/placeholder-images.json";
-import { ArrowRight, Boxes, FileText, Heart, Shield, LifeBuoy, Gift } from "lucide-react";
+import { ArrowRight, Boxes, FileText, Heart, Shield, LifeBuoy, Gift, Handshake } from "lucide-react";
 import * as React from "react";
 
 const { placeholderImages } = data;
@@ -15,48 +15,48 @@ const products = [
     {
         id: "ecosystem-membership",
         icon: <Boxes className="h-8 w-8 text-primary" />,
-        title: "Ecosystem Membership",
-        description: "Sell the core TransConnect membership. Give businesses access to our powerful ecosystem of malls, marketplaces, and technology.",
-        linkUrl: "/pricing",
+        title: "Refer New Members",
+        description: "Invite other businesses to join TransConnect. You earn reward points for every new member who signs up for a paid plan through your referral.",
+        linkUrl: "/account?view=referrals", // This page would need to be created
         isExternal: false,
     },
     {
         id: "raf-assist",
         icon: <FileText className="h-8 w-8 text-primary" />,
-        title: "RAF Assist",
-        description: "Offer a valuable service that helps members navigate the complexities of the Road Accident Fund claims process, ensuring they get the support they deserve.",
+        title: "Offer RAF Assist",
+        description: "Help members navigate the Road Accident Fund claims process. Earn a commission for every successful referral to this valuable service.",
         linkUrl: "/brochures/raf-assist.pdf",
         isExternal: true,
     },
     {
         id: "open-loyalty-funeral",
         icon: <Heart className="h-8 w-8 text-primary" />,
-        title: "Open Loyalty Funeral",
-        description: "Provide peace of mind with a funeral benefit plan tailored for the transport community, offered through our Open Loyalty program.",
+        title: "Promote Funeral Plans",
+        description: "Provide peace of mind by offering funeral benefit plans tailored for the transport community. Earn for every policy sold.",
         linkUrl: "/brochures/open-loyalty-funeral.pdf",
         isExternal: true,
     },
     {
         id: "open-loyalty-roadside-assist",
         icon: <LifeBuoy className="h-8 w-8 text-primary" />,
-        title: "Open Loyalty Roadside Assist",
-        description: "Sell an essential roadside assistance package that gets drivers and their vehicles back on the road faster after a breakdown.",
+        title: "Sell Roadside Assist",
+        description: "Offer an essential roadside assistance package that gets drivers back on the road faster. A valuable product with great earning potential.",
         linkUrl: "/brochures/open-loyalty-roadside-assist.pdf",
         isExternal: true,
     },
     {
         id: "open-loyalty-liability",
         icon: <Shield className="h-8 w-8 text-primary" />,
-        title: "Open Loyalty Liability",
-        description: "Offer specialized liability coverage designed to protect transport businesses from unforeseen events and financial loss.",
+        title: "Introduce Liability Cover",
+        description: "Connect businesses with specialized liability coverage designed to protect them from financial loss, and earn on each policy.",
         linkUrl: "/brochures/open-loyalty-liability.pdf",
         isExternal: true,
     },
     {
         id: "mahala-hub",
         icon: <Gift className="h-8 w-8 text-primary" />,
-        title: "Mahala Hub",
-        description: "Promote a hub of exclusive deals, freebies, and discounts. A powerful tool to attract and retain members in the ecosystem.",
+        title: "Share Mahala Hub Deals",
+        description: "Promote exclusive deals and discounts from the Mahala Hub. It's a powerful tool to attract new members and earn rewards.",
         linkUrl: "/brochures/mahala-hub.pdf",
         isExternal: true,
     }
@@ -78,17 +78,17 @@ export default function IncentivesPage() {
                 )}
                 <div className="absolute inset-0 bg-black/60" />
                 <div className="relative h-full flex flex-col items-center justify-center text-center text-primary-foreground z-10 p-4">
-                    <h1 className="text-4xl md:text-5xl font-bold font-headline">Join the TransConnect Sales Network</h1>
-                    <p className="mt-4 text-lg md:text-xl max-w-3xl">Turn your industry connections into revenue. Earn commission by selling powerful products that every transport professional needs.</p>
+                    <h1 className="text-4xl md:text-5xl font-bold font-headline">The TransConnect Referral Program</h1>
+                    <p className="mt-4 text-lg md:text-xl max-w-3xl">Turn your industry connections into revenue. Earn points and commission by sharing the value of TransConnect with your network.</p>
                 </div>
             </section>
 
             <section id="opportunity" className="py-16 md:py-24 bg-background">
                 <div className="container mx-auto px-4 text-center">
                     <div className="max-w-3xl mx-auto">
-                        <h2 className="text-3xl md:text-4xl font-bold font-headline">The Opportunity</h2>
+                        <h2 className="text-3xl md:text-4xl font-bold font-headline">The Opportunity: Earn By Sharing</h2>
                         <p className="mt-4 text-lg text-muted-foreground">
-                            You have the network. We have the products. As an Independent Sales Agent (ISA) or a Driver in our sales network, you have the opportunity to build a new revenue stream. You'll be armed with a portfolio of high-demand products and the full backing of the TransConnect ecosystem. There are no limits to what you can earn.
+                            You have the network. We have the products. Our referral program allows every TransConnect member to earn by recommending our high-demand services and memberships. There are no limits to what you can earn. Top performers can qualify for our elite ISA (Independent Sales Agent) program, unlocking even higher commission tiers and exclusive bonuses.
                         </p>
                     </div>
                 </div>
@@ -97,9 +97,9 @@ export default function IncentivesPage() {
             <section id="products" className="py-16 md:py-24 bg-card">
                 <div className="container mx-auto px-4">
                     <div className="text-center max-w-3xl mx-auto mb-16">
-                        <h2 className="text-3xl md:text-4xl font-bold font-headline">Your Product Portfolio</h2>
+                        <h2 className="text-3xl md:text-4xl font-bold font-headline">Your Earning Portfolio</h2>
                         <p className="mt-4 text-lg text-muted-foreground">
-                            We've packaged the most valuable services in the transport industry into six powerful products that are easy to sell.
+                           We've created a portfolio of valuable products and services that are easy to share and beneficial to your network.
                         </p>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -135,11 +135,11 @@ export default function IncentivesPage() {
                 <div className="container mx-auto px-4 text-center">
                     <h2 className="text-3xl md:text-4xl font-bold font-headline">Ready to Start Earning?</h2>
                     <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
-                        Join our network of Independent Sales Agents today. It's free to sign up and you'll get immediate access to the tools and support you need to succeed.
+                        Your referral dashboard is waiting in your account. Join TransConnect today to get your unique sharing links and start earning rewards.
                     </p>
                     <Button asChild size="lg" className="mt-8">
-                        <Link href="/join?role=isa-agent">
-                            Become an ISA Agent <ArrowRight className="ml-2 h-4 w-4" />
+                        <Link href="/join">
+                            Join TransConnect Now <ArrowRight className="ml-2 h-4 w-4" />
                         </Link>
                     </Button>
                 </div>
