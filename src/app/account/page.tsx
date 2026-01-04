@@ -25,6 +25,7 @@ import {
   Store,
   CreditCard,
   Wallet,
+  Gift,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -40,6 +41,7 @@ import CompanyContent from './company-content';
 import ShopContent from './shop-content';
 import BillingContent from './billing-content';
 import WalletContent from './wallet-content';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
 function DocumentsContent() {
     return (
@@ -55,6 +57,23 @@ function SettingsContent() {
             <h1 className="text-2xl font-bold">Settings</h1>
             <p className="mt-2 text-muted-foreground">This is where account settings will go.</p>
         </div>
+    )
+}
+
+function RewardsContent() {
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2"><Gift /> My Rewards</CardTitle>
+                <CardDescription>View your earned rewards and redeem them for valuable items.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <div className="text-center py-20 border-2 border-dashed rounded-lg">
+                    <p className="text-muted-foreground">Your rewards redemption portal is coming soon.</p>
+                    <p className="text-sm text-muted-foreground mt-1">You will be able to redeem points for fuel vouchers and more.</p>
+                </div>
+            </CardContent>
+        </Card>
     )
 }
 
@@ -107,6 +126,8 @@ function AccountPageContent() {
         return <WalletContent />;
       case 'billing':
         return <BillingContent />;
+      case 'rewards':
+        return <RewardsContent />;
       case 'documents':
         return <DocumentsContent />;
       case 'settings':
@@ -174,6 +195,12 @@ function AccountPageContent() {
                 <SidebarMenuButton tooltip="Wallet" isActive={activeView === 'wallet'} onClick={() => router.push('/account?view=wallet', { scroll: false })}>
                   <Wallet />
                   <span>Wallet</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+               <SidebarMenuItem>
+                <SidebarMenuButton tooltip="Rewards" isActive={activeView === 'rewards'} onClick={() => router.push('/account?view=rewards', { scroll: false })}>
+                  <Gift />
+                  <span>Rewards</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
