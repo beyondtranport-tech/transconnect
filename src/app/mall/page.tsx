@@ -19,10 +19,10 @@ import * as gtag from '@/lib/gtag';
 const { placeholderImages } = data;
 
 const mallHeroImage = placeholderImages.find(p => p.id === 'mall-division');
-const fundingImage = placeholderImages.find(p => p.id === 'funding-division');
-const marketplaceImage = placeholderImages.find(p => p.id === 'marketplace-division');
-const techImage = placeholderImages.find(p => p.id === 'tech-division');
-const tiresImage = placeholderImages.find(p => p.id === 'product-tires');
+const fundingImage = placeholderImages.find(p => p.id === 'funding-division')!;
+const marketplaceImage = placeholderImages.find(p => p.id === 'marketplace-division')!;
+const techImage = placeholderImages.find(p => p.id === 'tech-division')!;
+const tiresImage = placeholderImages.find(p => p.id === 'product-tires')!;
 
 const formatPrice = (price: number) => {
     const formattedPrice = new Intl.NumberFormat('en-ZA', {
