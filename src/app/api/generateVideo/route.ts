@@ -1,4 +1,6 @@
 
+'use server';
+
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuth } from 'firebase-admin/auth';
 import { getAdminApp } from '@/lib/firebase-admin';
@@ -58,4 +60,3 @@ export async function POST(req: NextRequest) {
 
 // Increase the timeout for this specific route
 export const maxDuration = 120;
-
