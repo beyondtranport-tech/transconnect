@@ -77,9 +77,9 @@ export default function RewardStatus() {
                   {section.actions.map(action => (
                     <TableRow key={action.id}>
                       <TableCell className="font-medium pl-8">{action.name}</TableCell>
-                      <TableCell><Input type="number" placeholder="0" className="text-center" /></TableCell>
-                      <TableCell><Input type="number" placeholder="e.g., 100" className="text-center" /></TableCell>
-                      <TableCell><Input type="number" placeholder="e.g., 500" className="text-center" /></TableCell>
+                      <TableCell><Input type="number" defaultValue="0" className="text-center" /></TableCell>
+                      <TableCell><Input type="number" defaultValue="100" className="text-center" /></TableCell>
+                      <TableCell><Input type="number" defaultValue="500" className="text-center" /></TableCell>
                       <TableCell><Input type="number" placeholder="-" className="text-center" disabled /></TableCell>
                       <TableCell className="text-right"><Input type="text" placeholder="R 0.00" className="text-right font-mono" disabled /></TableCell>
                     </TableRow>
@@ -93,5 +93,3 @@ export default function RewardStatus() {
     </Card>
   );
 }
-
-    
