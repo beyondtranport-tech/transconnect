@@ -14,6 +14,7 @@ interface TechCardProps {
     icon: LucideIcon;
     isPercentage?: boolean;
     per?: string;
+    priceKey?: string; // Add this to link to the pricing config
 }
 
 const formatPrice = (price: number, isPercentage?: boolean, per?: string) => {
