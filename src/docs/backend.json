@@ -228,6 +228,22 @@
         "processedAt": { "type": "object" }
       },
       "required": ["id", "statementPeriod", "openingBalance", "status"]
+    },
+    "Reward": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Reward",
+      "type": "object",
+      "description": "A redeemable reward in the loyalty program.",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "pointsCost": { "type": "number" },
+        "type": { "type": "string", "enum": ["voucher", "discount", "product"] },
+        "isActive": { "type": "boolean" },
+        "imageUrl": { "type": "string" }
+      },
+      "required": ["id", "title", "pointsCost", "type", "isActive"]
     }
   },
   "auth": {
@@ -321,6 +337,14 @@
           "entityName": "Membership",
           "schema": { "$ref": "#/entities/Membership" },
           "description": "Public collection for available membership plans."
+        }
+      },
+       {
+        "path": "/rewards/{rewardId}",
+        "definition": {
+          "entityName": "Reward",
+          "schema": { "$ref": "#/entities/Reward" },
+          "description": "Admin-managed collection of redeemable rewards."
         }
       },
       {

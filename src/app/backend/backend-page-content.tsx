@@ -74,6 +74,7 @@ const ReconciliationPage = dynamic(() => import('./reconciliation/page'), { load
 const BankDetailsSettings = dynamic(() => import('./bank-details-settings'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const ChartOfAccountsSettings = dynamic(() => import('./chart-of-accounts-settings'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const LoyaltySettings = dynamic(() => import('./loyalty-settings'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const RewardsManagement = dynamic(() => import('./rewards-management'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const PricingManagement = dynamic(() => import('./revenue/pricing-management'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const MallCommissions = dynamic(() => import('./revenue/mall-commissions'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const MarketplaceFees = dynamic(() => import('./revenue/marketplace-fees'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
@@ -430,8 +431,8 @@ export default function BackendPageContent() {
         return <PlatformSettingsContent />;
       case 'loyalty-settings':
         return <LoyaltySettings />;
-      case 'rewards': // Placeholder for new rewards link
-        return <div><h1>Rewards Management</h1><p>This is where rewards settings and redemption will go.</p></div>;
+      case 'rewards':
+        return <RewardsManagement />;
       case 'revenue-membership':
         return <PricingManagement />;
       case 'revenue-mall-commissions':
@@ -661,3 +662,5 @@ export default function BackendPageContent() {
     </SidebarProvider>
   );
 }
+
+    
