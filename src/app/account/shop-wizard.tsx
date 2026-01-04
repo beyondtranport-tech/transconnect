@@ -13,7 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useFirestore, useUser, useStorage, useCollection, useMemoFirebase, getClientSideAuthToken } from '@/firebase';
 import { doc, collection } from 'firebase/firestore';
 import { ref as storageRef, uploadBytesResumable, getDownloadURL } from "firebase/storage";
-import { Loader2, Save, CheckCircle, LayoutGrid, List, Image as ImageIcon, Sparkles, PlusCircle, Edit, Trash2, Send, Eye, ShoppingCart, Mail, Phone, UploadCloud, GalleryHorizontal, Wand2, Video } from 'lucide-react';
+import { Loader2, Save, CheckCircle, LayoutGrid, List, Image as ImageIcon, Sparkles, PlusCircle, Edit, Trash2, Send, Eye, ShoppingCart, Mail, Phone, UploadCloud, GalleryHorizontal, Wand2, Video, Search } from 'lucide-react';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -50,10 +50,11 @@ const shopStep1Schema = z.object({
 
 type Step1FormValues = z.infer<typeof shopStep1Schema>;
 
-function Step1CoreIdentity({ shop, onSave }: { shop: any, onSave: (newData: any) => void }) {
+function Step1CoreIdentity({ shop, onSave, onSeoGenerated }: { shop: any, onSave: (newData: any) => void, onSeoGenerated: (seoData: any) => void }) {
   const { user } = useUser();
   const { toast } = useToast();
   const [isSaving, setIsSaving] = useState(false);
+  const [isGeneratingSeo, setIsGeneratingSeo] = useState(false);
 
   const form = useForm<Step1FormValues>({
     resolver: zodResolver(shopStep1Schema),
@@ -65,6 +66,25 @@ function Step1CoreIdentity({ shop, onSave }: { shop: any, onSave: (newData: any)
       contactPhone: shop.contactPhone || '',
     }
   });
+
+  const handleGenerateSeo = async () => {
+    setIsGeneratingSeo(true);
+    try {
+        const result = await generateShopSeo({
+            shopName: form.getValues('shopName'),
+            shopDescription: form.getValues('shopDescription'),
+        });
+        if (result) {
+            onSeoGenerated(result);
+            toast({ title: 'SEO Content Generated!', description: 'Your new meta title, description, and tags have been populated.' });
+        }
+    } catch(e: any) {
+        toast({ variant: 'destructive', title: 'AI Generation Failed', description: e.message });
+    } finally {
+        setIsGeneratingSeo(false);
+    }
+  };
+
 
   const onSubmit = async (values: Step1FormValues) => {
     if (!user) return;
@@ -86,7 +106,7 @@ function Step1CoreIdentity({ shop, onSave }: { shop: any, onSave: (newData: any)
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-                path: `members/${user.uid}/shops/${shop.id}`,
+                path: `companies/${user.uid}/shops/${shop.id}`,
                 data: dataToUpdate
             }),
         });
@@ -154,6 +174,21 @@ function Step1CoreIdentity({ shop, onSave }: { shop: any, onSave: (newData: any)
                 </FormItem>
             )} />
          </div>
+
+         <Separator />
+
+        <div className="p-4 bg-primary/5 border border-primary/20 rounded-lg space-y-3">
+            <h3 className="font-semibold flex items-center gap-2"><Search className="h-5 w-5 text-primary"/> AI SEO Booster</h3>
+            <p className="text-sm text-muted-foreground">
+                Let our AI assistant generate an SEO-friendly title, description, and tags for your shop based on the name and description you provided above. This will help customers find you on search engines.
+            </p>
+            <Button type="button" onClick={handleGenerateSeo} disabled={isGeneratingSeo}>
+                {isGeneratingSeo ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Sparkles className="mr-2 h-4 w-4" />}
+                Generate SEO Content
+            </Button>
+        </div>
+
+
         <Button type="submit" disabled={isSaving}>
           {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
           Save & Continue
@@ -218,7 +253,7 @@ function ProductDialog({ shop, product, onSave, children }: { shop: any, product
             response = await fetch('/api/updateUserDoc', {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ path: `members/${user.uid}/shops/${shop.id}/products/${product.id}`, data: productData }),
+                body: JSON.stringify({ path: `companies/${user.uid}/shops/${shop.id}/products/${product.id}`, data: productData }),
             });
             if (response.ok) toast({ title: 'Product Updated!' });
         } else { // Creating new product
@@ -232,7 +267,7 @@ function ProductDialog({ shop, product, onSave, children }: { shop: any, product
             response = await fetch('/api/addUserDoc', {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ collectionPath: `members/${user.uid}/shops/${shop.id}/products`, data: productData }),
+                body: JSON.stringify({ collectionPath: `companies/${user.uid}/shops/${shop.id}/products`, data: productData }),
             });
             if (response.ok) toast({ title: 'Product Added!' });
         }
@@ -496,7 +531,7 @@ function Step2Products({ shop, onSave }: { shop: any, onSave: (newData?: any) =>
 
   const productsCollection = useMemoFirebase(() => {
     if (!firestore || !user) return null;
-    return collection(firestore, `members/${user.uid}/shops/${shop.id}/products`);
+    return collection(firestore, `companies/${user.uid}/shops/${shop.id}/products`);
   }, [firestore, user, shop.id]);
 
   const { data: products, isLoading, forceRefresh } = useCollection(productsCollection);
@@ -510,7 +545,7 @@ function Step2Products({ shop, onSave }: { shop: any, onSave: (newData?: any) =>
         const response = await fetch('/api/deleteUserDoc', {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ path: `members/${user.uid}/shops/${shop.id}/products/${productId}` }),
+            body: JSON.stringify({ path: `companies/${user.uid}/shops/${shop.id}/products/${productId}` }),
         });
 
         if (!response.ok) {
@@ -743,7 +778,7 @@ function Step3Promotions({ shop, onSave }: { shop: any, onSave: (newData: any) =
             const response = await fetch('/api/updateUserDoc', {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ path: `members/${user.uid}/shops/${shop.id}`, data: dataToUpdate }),
+                body: JSON.stringify({ path: `companies/${user.uid}/shops/${shop.id}`, data: dataToUpdate }),
             });
 
             if (!response.ok) throw new Error((await response.json()).error || 'Failed to save.');
@@ -847,7 +882,7 @@ function Step4Appearance({ shop, onSave }: { shop: any, onSave: (newData: any) =
         const response = await fetch('/api/updateUserDoc', {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ path: `members/${user.uid}/shops/${shop.id}`, data: dataToUpdate }),
+            body: JSON.stringify({ path: `companies/${user.uid}/shops/${shop.id}`, data: dataToUpdate }),
         });
 
         if (!response.ok) throw new Error((await response.json()).error || 'Failed to save.');
@@ -931,7 +966,7 @@ function Step5SeoAndPreview({ shop, onSave }: { shop: any; onSave: (newData: any
 
   const productsCollection = useMemoFirebase(() => {
     if (!firestore || !user) return null;
-    return collection(firestore, `members/${user.uid}/shops/${shop.id}/products`);
+    return collection(firestore, `companies/${user.uid}/shops/${shop.id}/products`);
   }, [firestore, user, shop.id]);
 
   const { data: products, isLoading: areProductsLoading } = useCollection(productsCollection);
@@ -977,7 +1012,7 @@ function Step5SeoAndPreview({ shop, onSave }: { shop: any; onSave: (newData: any
         const response = await fetch('/api/updateUserDoc', {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ path: `members/${user.uid}/shops/${shop.id}`, data: dataToUpdate }),
+            body: JSON.stringify({ path: `companies/${user.uid}/shops/${shop.id}`, data: dataToUpdate }),
         });
 
         if (!response.ok) throw new Error((await response.json()).error || 'Failed to save.');
@@ -1007,7 +1042,7 @@ function Step5SeoAndPreview({ shop, onSave }: { shop: any; onSave: (newData: any
       const response = await fetch('/api/updateUserDoc', {
           method: 'POST',
           headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ path: `members/${user.uid}/shops/${shop.id}`, data: dataToUpdate }),
+          body: JSON.stringify({ path: `companies/${user.uid}/shops/${shop.id}`, data: dataToUpdate }),
       });
 
       if (!response.ok) throw new Error((await response.json()).error || 'Failed to submit.');
@@ -1133,12 +1168,15 @@ export default function ShopWizard({ shop }: { shop: any }) {
     setShopData(updatedShopData);
   }, [shopData]);
 
+  const handleSeoGenerated = useCallback((seoData: any) => {
+    setShopData((prevData: any) => ({ ...prevData, ...seoData }));
+  }, []);
 
   const renderStepContent = () => {
     const stepId = STEPS[currentStepIndex].id;
     switch (stepId) {
       case 'identity':
-        return <Step1CoreIdentity shop={shopData} onSave={handleSaveAndNext} />;
+        return <Step1CoreIdentity shop={shopData} onSave={handleSaveAndNext} onSeoGenerated={handleSeoGenerated} />;
       case 'products':
         return <Step2Products shop={shopData} onSave={handleSaveAndNext} />;
       case 'promotions':

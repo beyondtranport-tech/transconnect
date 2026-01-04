@@ -64,11 +64,12 @@ export async function POST(req: NextRequest) {
         }
     }
     // A user can update documents in their own company's subcollections (e.g., shops)
-    else if (pathSegments[0] === 'companies' && pathSegments.length > 2 && pathSegments[1]) {
+    else if (pathSegments[0] === 'companies' && pathSegments.length > 2) {
         const companyId = pathSegments[1];
-        const companyRef = db.collection('companies').doc(companyId);
-        const companySnap = await companyRef.get();
-        if (companySnap.exists && companySnap.data()?.ownerId === uid) {
+        // Ensure the companyId from the path matches the user's companyId
+        const userDoc = await db.collection('users').doc(uid).get();
+        const userCompanyId = userDoc.data()?.companyId;
+        if(userCompanyId === companyId) {
             isAuthorized = true;
         }
     }

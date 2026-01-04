@@ -50,18 +50,18 @@ export async function POST(req: NextRequest) {
     
     const db = getFirestore(app);
     
-    // Get user's companyId
-    const userDocSnap = await db.collection('users').doc(uid).get();
-    const companyId = userDocSnap.data()?.companyId;
-
-    if (!companyId) {
-        return NextResponse.json({ success: false, error: 'Forbidden: User company not found.' }, { status: 403 });
-    }
-
     const pathSegments = collectionPath.split('/');
-    if (pathSegments[0] !== 'companies' || pathSegments[1] !== companyId) {
-         return NextResponse.json({ success: false, error: 'Forbidden: You can only add data to your own company subcollections.' }, { status: 403 });
+     // A user can only add to their own subcollections under 'companies'
+    if (pathSegments[0] === 'companies') {
+        const companyId = pathSegments[1];
+        const userDocSnap = await db.collection('users').doc(uid).get();
+        if (userDocSnap.data()?.companyId !== companyId) {
+             return NextResponse.json({ success: false, error: 'Forbidden: You can only add data to your own company subcollections.' }, { status: 403 });
+        }
+    } else {
+        return NextResponse.json({ success: false, error: 'Forbidden: You can only add documents to company subcollections.' }, { status: 403 });
     }
+
 
     const batch = db.batch();
     const collectionRef = db.collection(collectionPath);
@@ -73,8 +73,8 @@ export async function POST(req: NextRequest) {
     // Check if a product is being added and award points if so
     if (collectionPath.endsWith('/products')) {
         const loyaltyConfigDoc = await db.collection('configuration').doc('loyaltySettings').get();
-        const productAddPoints = loyaltyConfigDoc.data()?.vendorProductAddPoints || 5; // Default to 5
-        const companyRef = db.collection('companies').doc(companyId);
+        const productAddPoints = loyaltyConfigDoc.data()?.productAddPoints || 5; // Default to 5
+        const companyRef = db.doc(`companies/${pathSegments[1]}`);
         batch.update(companyRef, { rewardPoints: FieldValue.increment(productAddPoints) });
     }
 
