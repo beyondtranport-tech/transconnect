@@ -46,6 +46,7 @@ import {
   HandCoins,
   TicketPercent,
   Star,
+  Gift,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -429,6 +430,8 @@ export default function BackendPageContent() {
         return <PlatformSettingsContent />;
       case 'loyalty-settings':
         return <LoyaltySettings />;
+      case 'rewards': // Placeholder for new rewards link
+        return <div><h1>Rewards Management</h1><p>This is where rewards settings and redemption will go.</p></div>;
       case 'revenue-membership':
         return <PricingManagement />;
       case 'revenue-mall-commissions':
@@ -557,14 +560,18 @@ export default function BackendPageContent() {
                 </SidebarMenuItem>
 
                 <SidebarMenuItem>
-                    <SidebarMenuButton tooltip="Loyalty">
+                    <SidebarMenuButton tooltip="Rewards and Loyalty">
                         <Star />
-                        <span>Loyalty</span>
+                        <span>Rewards and Loyalty</span>
                     </SidebarMenuButton>
                     <SidebarMenuSub>
                         <SidebarMenuSubButton isActive={activeView === 'loyalty-settings'} onClick={() => router.push('/backend?view=loyalty-settings', { scroll: false })}>
                             <Settings />
                             <span>Tier Settings</span>
+                        </SidebarMenuSubButton>
+                        <SidebarMenuSubButton isActive={activeView === 'rewards'} onClick={() => router.push('/backend?view=rewards', { scroll: false })}>
+                            <Gift />
+                            <span>Rewards</span>
                         </SidebarMenuSubButton>
                     </SidebarMenuSub>
                 </SidebarMenuItem>
