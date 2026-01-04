@@ -55,6 +55,11 @@ export async function POST(req: NextRequest) {
     }
     const companyId = userData.companyId;
 
+    // Fetch the points for contribution from config
+    const loyaltyConfigDoc = await db.collection('configuration').doc('loyaltySettings').get();
+    const loyaltyConfig = loyaltyConfigDoc.data();
+    const pointsToAward = loyaltyConfig?.contributionPoints || 10; // Default to 10 if not set
+
     const contributionData = {
         userId: uid,
         companyId: companyId,
@@ -70,7 +75,7 @@ export async function POST(req: NextRequest) {
     batch.set(contributionRef, contributionData);
     
     const companyRef = db.collection('companies').doc(companyId);
-    batch.update(companyRef, { rewardPoints: FieldValue.increment(10) });
+    batch.update(companyRef, { rewardPoints: FieldValue.increment(pointsToAward) });
 
     await batch.commit();
 
@@ -84,5 +89,3 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: false, error: `Internal Server Error: ${error.message}` }, { status: 500 });
   }
 }
-
-    
