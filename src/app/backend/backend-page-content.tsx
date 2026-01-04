@@ -47,6 +47,7 @@ import {
   TicketPercent,
   Star,
   Gift,
+  Award,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -75,6 +76,7 @@ const BankDetailsSettings = dynamic(() => import('./bank-details-settings'), { l
 const ChartOfAccountsSettings = dynamic(() => import('./chart-of-accounts-settings'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const LoyaltySettings = dynamic(() => import('./loyalty-settings'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const RewardsManagement = dynamic(() => import('./rewards-management'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const RewardStatus = dynamic(() => import('./reward-status'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const PricingManagement = dynamic(() => import('./revenue/pricing-management'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const MallCommissions = dynamic(() => import('./revenue/mall-commissions'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const MarketplaceFees = dynamic(() => import('./revenue/marketplace-fees'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
@@ -433,6 +435,8 @@ export default function BackendPageContent() {
         return <LoyaltySettings />;
       case 'rewards':
         return <RewardsManagement />;
+      case 'reward-status':
+        return <RewardStatus />;
       case 'revenue-membership':
         return <PricingManagement />;
       case 'revenue-mall-commissions':
@@ -561,18 +565,22 @@ export default function BackendPageContent() {
                 </SidebarMenuItem>
 
                 <SidebarMenuItem>
-                    <SidebarMenuButton tooltip="Rewards and Loyalty">
+                    <SidebarMenuButton tooltip="Rewards and Loyalty" isActive={activeView.includes('loyalty') || activeView.includes('reward')}>
                         <Star />
                         <span>Rewards and Loyalty</span>
                     </SidebarMenuButton>
                     <SidebarMenuSub>
                         <SidebarMenuSubButton isActive={activeView === 'loyalty-settings'} onClick={() => router.push('/backend?view=loyalty-settings', { scroll: false })}>
                             <Settings />
-                            <span>Tier Settings</span>
+                            <span>Tier & Point Settings</span>
+                        </SidebarMenuSubButton>
+                        <SidebarMenuSubButton isActive={activeView === 'reward-status'} onClick={() => router.push('/backend?view=reward-status', { scroll: false })}>
+                            <Award />
+                            <span>Reward Status</span>
                         </SidebarMenuSubButton>
                         <SidebarMenuSubButton isActive={activeView === 'rewards'} onClick={() => router.push('/backend?view=rewards', { scroll: false })}>
                             <Gift />
-                            <span>Rewards</span>
+                            <span>Redeemable Rewards</span>
                         </SidebarMenuSubButton>
                     </SidebarMenuSub>
                 </SidebarMenuItem>
@@ -662,5 +670,3 @@ export default function BackendPageContent() {
     </SidebarProvider>
   );
 }
-
-    
