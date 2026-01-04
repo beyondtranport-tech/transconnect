@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useForm } from 'react-hook-form';
@@ -16,10 +17,7 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { useState } from 'react';
 import { Loader2 } from 'lucide-react';
-import { useFirestore, useUser } from '@/firebase';
-import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
-import { errorEmitter } from '@/firebase/error-emitter';
-import { FirestorePermissionError } from '@/firebase/errors';
+import { useUser, getClientSideAuthToken } from '@/firebase';
 
 const formSchema = z.object({
   make: z.string().min(1, 'Trailer make is required'),
@@ -40,7 +38,6 @@ type TrailerFormValues = z.infer<typeof formSchema>;
 export default function TrailerForm() {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
-  const firestore = useFirestore();
   const { user } = useUser();
 
   const form = useForm<TrailerFormValues>({
@@ -63,52 +60,42 @@ export default function TrailerForm() {
   const onSubmit = async (values: TrailerFormValues) => {
     setIsLoading(true);
 
-    if (!firestore || !user) {
-      toast({
-        variant: 'destructive',
-        title: 'Error',
-        description: 'You must be logged in to contribute.',
-      });
+    if (!user) {
+      toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in to contribute.' });
       setIsLoading(false);
       return;
     }
     
     try {
-      const contributionsCollectionRef = collection(firestore, 'contributions');
-      const contributionData = {
-        userId: user.uid,
-        createdAt: serverTimestamp(),
-        type: 'trailer',
-        data: values,
-      };
+      const token = await getClientSideAuthToken();
+      if (!token) throw new Error("Authentication token not found.");
       
-      addDoc(contributionsCollectionRef, contributionData)
-        .catch((serverError) => {
-            const permissionError = new FirestorePermissionError({
-                path: contributionsCollectionRef.path,
-                operation: 'create',
-                requestResourceData: contributionData,
-            });
-            errorEmitter.emit('permission-error', permissionError);
-             toast({
-                variant: 'destructive',
-                title: 'Submission Failed',
-                description: 'You do not have permission to submit this data.',
-            });
-        });
+      const response = await fetch('/api/createContribution', {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ type: 'trailer', data: values }),
+      });
 
+      if (!response.ok) {
+        const result = await response.json();
+        throw new Error(result.error || 'Failed to submit contribution.');
+      }
+      
       toast({
         title: 'Submission Received!',
-        description: 'Thank you for contributing your trailer data.',
+        description: 'Thank you for contributing. 10 Reward Points have been added to your account.',
       });
       
       form.reset();
 
-    } catch (error) {
+    } catch (error: any) {
        toast({
         variant: 'destructive',
         title: 'An unexpected error occurred',
-        description: 'Please try again later.',
+        description: error.message || 'Please try again later.',
       });
     } finally {
         setIsLoading(false);
@@ -271,3 +258,5 @@ export default function TrailerForm() {
     </Form>
   );
 }
+
+    

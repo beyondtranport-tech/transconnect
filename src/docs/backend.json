@@ -38,8 +38,10 @@
         "billingCycle": { "type": "string", "enum": ["monthly", "annual"] },
         "nextBillingDate": { "type": "string", "format": "date-time" },
         "shopId": { "type": "string", "description": "The ID of the shop owned by this company." },
-        "rewardPoints": { "type": "number" },
+        "rewardPoints": { "type": "number", "description": "Points earned for community actions." },
         "walletBalance": { "type": "number", "description": "Cash balance in ZAR." },
+        "loyaltyTier": { "type": "string", "enum": ["bronze", "silver", "gold"], "description": "The current loyalty status of the member." },
+        "activePlans": { "type": "array", "items": { "type": "string" }, "description": "A list of activated Connect plans (e.g., 'loyalty', 'rewards')." },
         "createdAt": { "type": "object" },
         "updatedAt": { "type": "object" }
       },
@@ -144,11 +146,12 @@
       "description": "Represents a single data contribution from a user.",
       "properties": {
         "userId": { "type": "string" },
+        "companyId": { "type": "string" },
         "type": { "type": "string", "enum": ["truck", "trailer", "supplier", "client"] },
         "data": { "type": "object" },
         "createdAt": { "type": "object" }
       },
-      "required": ["userId", "type", "data", "createdAt"]
+      "required": ["userId", "companyId", "type", "data", "createdAt"]
     },
     "Quote": {
       "$schema": "http://json-schema.org/draft-07/schema#",
@@ -348,3 +351,5 @@
     "reasoning": "The data model is refactored to separate user identity from business entities. A new `/users` collection stores individual user profiles, linked via Firebase Auth UID. A new `/companies` collection stores business-related data, including wallet balance, membership status, and subcollections for transactions, staff, quotes, etc. This creates a cleaner, more scalable architecture where a user owns a company, rather than the user and company being the same entity. This prevents data duplication and clarifies ownership for security rules."
   }
 }
+
+    

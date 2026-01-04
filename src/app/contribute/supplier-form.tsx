@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useForm } from 'react-hook-form';
@@ -16,10 +17,7 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { useState } from 'react';
 import { Loader2 } from 'lucide-react';
-import { useFirestore, useUser } from '@/firebase';
-import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
-import { errorEmitter } from '@/firebase/error-emitter';
-import { FirestorePermissionError } from '@/firebase/errors';
+import { useUser, getClientSideAuthToken } from '@/firebase';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
@@ -39,7 +37,6 @@ type SupplierFormValues = z.infer<typeof formSchema>;
 export default function SupplierForm() {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
-  const firestore = useFirestore();
   const { user } = useUser();
 
   const form = useForm<SupplierFormValues>({
@@ -59,55 +56,42 @@ export default function SupplierForm() {
   const onSubmit = async (values: SupplierFormValues) => {
     setIsLoading(true);
 
-    if (!firestore || !user) {
-      toast({
-        variant: 'destructive',
-        title: 'Error',
-        description: 'You must be logged in to contribute.',
-      });
+    if (!user) {
+      toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in to contribute.' });
       setIsLoading(false);
       return;
     }
     
     try {
-      const contributionsCollectionRef = collection(firestore, 'contributions');
-      const contributionData = {
-        userId: user.uid,
-        createdAt: serverTimestamp(),
-        type: 'supplier',
-        data: {
-          ...values,
-          hasCreditFacility: values.hasCreditFacility === 'yes' ? true : (values.hasCreditFacility === 'no' ? false : undefined),
-        }
-      };
+      const token = await getClientSideAuthToken();
+      if (!token) throw new Error("Authentication token not found.");
       
-      addDoc(contributionsCollectionRef, contributionData)
-        .catch((serverError) => {
-            const permissionError = new FirestorePermissionError({
-                path: contributionsCollectionRef.path,
-                operation: 'create',
-                requestResourceData: contributionData,
-            });
-            errorEmitter.emit('permission-error', permissionError);
-             toast({
-                variant: 'destructive',
-                title: 'Submission Failed',
-                description: 'You do not have permission to submit this data.',
-            });
-        });
+      const response = await fetch('/api/createContribution', {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ type: 'supplier', data: values }),
+      });
 
+      if (!response.ok) {
+        const result = await response.json();
+        throw new Error(result.error || 'Failed to submit contribution.');
+      }
+      
       toast({
         title: 'Submission Received!',
-        description: 'Thank you for contributing your supplier data.',
+        description: 'Thank you for contributing. 10 Reward Points have been added to your account.',
       });
       
       form.reset();
 
-    } catch (error) {
+    } catch (error: any) {
        toast({
         variant: 'destructive',
         title: 'An unexpected error occurred',
-        description: 'Please try again later.',
+        description: error.message || 'Please try again later.',
       });
     } finally {
         setIsLoading(false);
@@ -241,3 +225,5 @@ export default function SupplierForm() {
     </Form>
   );
 }
+
+    

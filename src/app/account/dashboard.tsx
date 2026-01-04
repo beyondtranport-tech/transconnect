@@ -1,21 +1,22 @@
+
 'use client';
 
 import { useUser, useFirestore, useMemoFirebase } from '@/firebase';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Award, FileText, Gem, User, Loader2, DollarSign, HeartHandshake, ArrowRight, Sparkles, Wallet, ShieldAlert, Landmark } from "lucide-react";
+import { Award, FileText, Gem, User, Loader2, DollarSign, HeartHandshake, ArrowRight, Sparkles, Wallet, ShieldAlert, Landmark, Star } from "lucide-react";
 import { doc } from 'firebase/firestore';
 import { useDoc } from '@/firebase/firestore/use-doc';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import EnquiriesCard from './enquiries-card';
 import QuotesCard from './quotes-card';
+import { cn } from '@/lib/utils';
 
 export default function AccountDashboard() {
     const { user, isUserLoading } = useUser();
     const firestore = useFirestore();
 
-    // Explicit Admin Check - this is the most important check
     const isAdmin = user && user.email === 'beyondtransport@gmail.com';
 
     const userDocRef = useMemoFirebase(() => {
@@ -33,11 +34,14 @@ export default function AccountDashboard() {
     
     const isFreeMember = companyData?.membershipId === 'free';
     
-    const formatPrice = (price: number) => {
-        return new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(price);
-    };
+    const loyaltyTier = companyData?.loyaltyTier || 'bronze';
+    const tierColors: {[key: string]: string} = {
+        bronze: 'bg-orange-200 text-orange-800',
+        silver: 'bg-slate-200 text-slate-800',
+        gold: 'bg-yellow-200 text-yellow-800',
+    }
     
-    // Admin View: If the user is an admin, show a clear message and a link to the backend.
+    // Admin View
     if (isAdmin) {
         return (
              <div className="w-full space-y-8">
@@ -53,7 +57,7 @@ export default function AccountDashboard() {
                     </CardHeader>
                     <CardContent>
                         <p className="text-lg">
-                           All administrative functions, including banking, reconciliation, and member management, are located in the secure <span className="font-semibold">Admin Backend</span>.
+                           All administrative functions are located in the secure <span className="font-semibold">Admin Backend</span>.
                         </p>
                     </CardContent>
                     <CardFooter>
@@ -67,7 +71,6 @@ export default function AccountDashboard() {
              </div>
         )
     }
-
 
     if (isUserLoading || (user && isCompanyLoading)) {
         return (
@@ -97,10 +100,9 @@ export default function AccountDashboard() {
     }
 
     if (!user) {
-        return null; // or a message telling user to sign in
+        return null;
     }
     
-
     return (
         <div className="w-full space-y-8">
             <div className="flex items-center gap-4">
@@ -159,12 +161,18 @@ export default function AccountDashboard() {
                 </Card>
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between pb-2">
-                        <CardTitle className="text-sm font-medium">Reward Points</CardTitle>
-                        <Award className="h-4 w-4 text-muted-foreground" />
+                        <CardTitle className="text-sm font-medium">Loyalty Status</CardTitle>
+                        <div className="flex items-center gap-1">
+                             <Award className="h-4 w-4 text-muted-foreground" />
+                             <Star className="h-4 w-4 text-muted-foreground" />
+                        </div>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">{companyData?.rewardPoints || 0}</div>
-                        <p className="text-xs text-muted-foreground">Earned from community actions.</p>
+                        <div className="text-2xl font-bold flex items-center gap-2">
+                            <span className={cn("px-2 py-1 rounded-md text-base", tierColors[loyaltyTier])}>{loyaltyTier.charAt(0).toUpperCase() + loyaltyTier.slice(1)}</span>
+                            <span>{companyData?.rewardPoints || 0} Points</span>
+                        </div>
+                        <p className="text-xs text-muted-foreground">Earn points for community actions.</p>
                     </CardContent>
                 </Card>
                  <Card>
@@ -173,7 +181,7 @@ export default function AccountDashboard() {
                         <HeartHandshake className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                        <p className="text-sm text-muted-foreground mb-4">Help the community and unlock greater savings by sharing anonymous data.</p>
+                        <p className="text-sm text-muted-foreground mb-4">Help the community and unlock greater savings by sharing anonymous data. Each contribution earns you 10 points.</p>
                          <Button asChild>
                             <Link href="/contribute">Contribute Data</Link>
                         </Button>
@@ -188,3 +196,5 @@ export default function AccountDashboard() {
         </div>
     );
 }
+
+    
