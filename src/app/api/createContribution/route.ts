@@ -26,7 +26,6 @@ const actionToPointsKey: Record<string, string> = {
     trailer: 'trailerContributionPoints',
     supplier: 'supplierContributionPoints',
     debtor: 'debtorContributionPoints',
-    creditor: 'creditorContributionPoints',
 };
 
 export async function POST(req: NextRequest) {
@@ -44,9 +43,9 @@ export async function POST(req: NextRequest) {
   const idToken = authorization.split('Bearer ')[1];
   
   try {
-    const { type, data } = await req.json();
-    if (!type || !data) {
-        return NextResponse.json({ success: false, error: 'Bad Request: "type" and "data" are required.' }, { status: 400 });
+    const { type, items } = await req.json();
+    if (!type || !Array.isArray(items) || items.length === 0) {
+        return NextResponse.json({ success: false, error: 'Bad Request: "type" and a non-empty "items" array are required.' }, { status: 400 });
     }
       
     const adminAuth = getAuth(app);
@@ -55,7 +54,6 @@ export async function POST(req: NextRequest) {
     
     const db = getFirestore(app);
 
-    // Get companyId from user document
     const userDoc = await db.collection('users').doc(uid).get();
     const userData = userDoc.data();
     if (!userData || !userData.companyId) {
@@ -63,7 +61,6 @@ export async function POST(req: NextRequest) {
     }
     const companyId = userData.companyId;
 
-    // Fetch the specific points for this contribution type from config
     const loyaltyConfigDoc = await db.collection('configuration').doc('loyaltySettings').get();
     const loyaltyConfig = loyaltyConfigDoc.data();
     
@@ -72,28 +69,30 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ success: false, error: `Invalid contribution type: ${type}`}, { status: 400 });
     }
     
-    const pointsToAward = loyaltyConfig?.[pointsKey] || 10; // Default to 10 if not set
+    const pointsPerItem = loyaltyConfig?.[pointsKey] || 10;
+    const totalPointsToAward = items.length * pointsPerItem;
 
-    const contributionData = {
-        userId: uid,
-        companyId: companyId,
-        type: type,
-        data: deserializeData(data),
-        createdAt: FieldValue.serverTimestamp(),
-    };
-
-    // Use a batch to write the contribution and update the company's reward points
     const batch = db.batch();
+    const contributionsCollection = db.collection('contributions');
     
-    const contributionRef = db.collection('contributions').doc();
-    batch.set(contributionRef, contributionData);
+    items.forEach(itemData => {
+        const contributionRef = contributionsCollection.doc();
+        const contributionData = {
+            userId: uid,
+            companyId: companyId,
+            type: type,
+            data: deserializeData(itemData),
+            createdAt: FieldValue.serverTimestamp(),
+        };
+        batch.set(contributionRef, contributionData);
+    });
     
     const companyRef = db.collection('companies').doc(companyId);
-    batch.update(companyRef, { rewardPoints: FieldValue.increment(pointsToAward) });
+    batch.update(companyRef, { rewardPoints: FieldValue.increment(totalPointsToAward) });
 
     await batch.commit();
 
-    return NextResponse.json({ success: true, id: contributionRef.id, message: `Contribution received and ${pointsToAward} reward points awarded.` });
+    return NextResponse.json({ success: true, message: `Contribution received for ${items.length} item(s). ${totalPointsToAward} reward points awarded.` });
 
   } catch (error: any) {
     console.error(`Error in createContribution:`, error);

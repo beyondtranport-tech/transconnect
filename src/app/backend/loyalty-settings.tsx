@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useForm } from 'react-hook-form';
@@ -27,8 +26,10 @@ const formSchema = z.object({
   silver: z.coerce.number().min(0, 'Points must be 0 or more.'),
   gold: z.coerce.number().min(0, 'Points must be 0 or more.'),
   
-  // Platform Actions
+  // General Platform Actions
   userSignupPoints: z.coerce.number().min(0, 'Points must be 0 or more.'),
+  shopCreationPoints: z.coerce.number().min(0, 'Points must be 0 or more.'),
+  productAddPoints: z.coerce.number().min(0, 'Points must be 0 or more.'),
   
   // AI Tool Actions
   seoBoosterPoints: z.coerce.number().min(0, 'Points must be 0 or more.'),
@@ -37,15 +38,11 @@ const formSchema = z.object({
   aiVideoGeneratorPoints: z.coerce.number().min(0, 'Points must be 0 or more.'),
 
   // Role-based Data Contribution Actions
-  vendorShopCreationPoints: z.coerce.number().min(0),
-  vendorProductAddPoints: z.coerce.number().min(0),
-  vendorSupplierContributionPoints: z.coerce.number().min(0),
-  vendorDebtorContributionPoints: z.coerce.number().min(0),
+  truckContributionPoints: z.coerce.number().min(0),
+  trailerContributionPoints: z.coerce.number().min(0),
+  supplierContributionPoints: z.coerce.number().min(0),
+  debtorContributionPoints: z.coerce.number().min(0),
   
-  buyerTruckContributionPoints: z.coerce.number().min(0),
-  buyerTrailerContributionPoints: z.coerce.number().min(0),
-  buyerDebtorContributionPoints: z.coerce.number().min(0),
-
   partnerReferralPoints: z.coerce.number().min(0),
   associateServiceListingPoints: z.coerce.number().min(0),
   isaSaleCommissionPoints: z.coerce.number().min(0),
@@ -70,17 +67,16 @@ export default function LoyaltySettings() {
       silver: 1000,
       gold: 5000,
       userSignupPoints: 50,
+      shopCreationPoints: 100,
+      productAddPoints: 5,
       seoBoosterPoints: 15,
       aiImageGeneratorPoints: 2,
       imageEnhancerPoints: 1,
       aiVideoGeneratorPoints: 20,
-      vendorShopCreationPoints: 100,
-      vendorProductAddPoints: 5,
-      vendorSupplierContributionPoints: 15,
-      vendorDebtorContributionPoints: 20,
-      buyerTruckContributionPoints: 10,
-      buyerTrailerContributionPoints: 10,
-      buyerDebtorContributionPoints: 20,
+      truckContributionPoints: 10,
+      trailerContributionPoints: 10,
+      supplierContributionPoints: 15,
+      debtorContributionPoints: 20,
       partnerReferralPoints: 200,
       associateServiceListingPoints: 50,
       isaSaleCommissionPoints: 25,
@@ -170,60 +166,59 @@ export default function LoyaltySettings() {
                             <div>
                                 <h4 className="font-semibold text-base mb-3 flex items-center gap-2"><ShoppingCart className="h-5 w-5 text-muted-foreground"/>Vendors</h4>
                                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                                    {renderPointsField('vendorShopCreationPoints', 'Shop Creation', Store)}
-                                    {renderPointsField('vendorProductAddPoints', 'Product Add', Package)}
-                                    {renderPointsField('vendorSupplierContributionPoints', 'Supplier Data', Building)}
-                                    {renderPointsField('vendorDebtorContributionPoints', 'Debtor Data', Users)}
+                                    {renderPointsField('shopCreationPoints', 'Points Per Shop Creation', Store)}
+                                    {renderPointsField('productAddPoints', 'Points Per Product Add', Package)}
+                                    {renderPointsField('supplierContributionPoints', 'Points Per Supplier', Building)}
+                                    {renderPointsField('debtorContributionPoints', 'Points Per Debtor', Users)}
                                 </div>
                             </div>
                              <div>
                                 <h4 className="font-semibold text-base mb-3 flex items-center gap-2"><Truck className="h-5 w-5 text-muted-foreground"/>Buyers / Transporters</h4>
                                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                                     {renderPointsField('buyerTruckContributionPoints', 'Truck Data', Truck)}
-                                     {renderPointsField('buyerTrailerContributionPoints', 'Trailer Data', Warehouse)}
-                                     {renderPointsField('buyerDebtorContributionPoints', 'Debtor Data', Users)}
+                                     {renderPointsField('truckContributionPoints', 'Points Per Truck', Truck)}
+                                     {renderPointsField('trailerContributionPoints', 'Points Per Trailer', Warehouse)}
                                 </div>
                             </div>
                             <div>
                                 <h4 className="font-semibold text-base mb-3 flex items-center gap-2"><Handshake className="h-5 w-5 text-muted-foreground"/>Partners</h4>
                                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                                    {renderPointsField('partnerReferralPoints', 'Referral', UserPlus)}
+                                    {renderPointsField('partnerReferralPoints', 'Points Per Referral', UserPlus)}
                                 </div>
                             </div>
                              <div>
                                 <h4 className="font-semibold text-base mb-3 flex items-center gap-2"><Briefcase className="h-5 w-5 text-muted-foreground"/>Associates</h4>
                                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                                    {renderPointsField('associateServiceListingPoints', 'Service Listing', Package)}
+                                    {renderPointsField('associateServiceListingPoints', 'Points Per Service Listing', Package)}
                                 </div>
                             </div>
                             <div>
                                 <h4 className="font-semibold text-base mb-3 flex items-center gap-2"><Bot className="h-5 w-5 text-muted-foreground"/>ISA Agents</h4>
                                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                                    {renderPointsField('isaSaleCommissionPoints', 'Sale Made', Star)}
+                                    {renderPointsField('isaSaleCommissionPoints', 'Points Per Sale', Star)}
                                 </div>
                             </div>
                              <div>
                                 <h4 className="font-semibold text-base mb-3 flex items-center gap-2"><Users className="h-5 w-5 text-muted-foreground"/>Drivers</h4>
                                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                                    {renderPointsField('driverSafetyRecordPoints', 'Safety Record Upload', ShieldCheck)}
+                                    {renderPointsField('driverSafetyRecordPoints', 'Points Per Safety Record', ShieldCheck)}
                                 </div>
                             </div>
                             <div>
                                 <h4 className="font-semibold text-base mb-3 flex items-center gap-2"><Code className="h-5 w-5 text-muted-foreground"/>Developers</h4>
                                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                                    {renderPointsField('developerApiIntegrationPoints', 'API Integration', Code)}
+                                    {renderPointsField('developerApiIntegrationPoints', 'Points Per API Integration', Code)}
                                 </div>
                             </div>
 
                             <Separator />
 
-                            <h4 className="font-semibold text-base mb-3 pt-4">General Actions</h4>
+                            <h4 className="font-semibold text-base mb-3 pt-4">General Platform & AI Actions</h4>
                             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                                {renderPointsField('userSignupPoints', 'User Sign-up', UserPlus)}
-                                {renderPointsField('seoBoosterPoints', 'AI SEO Booster Use', Search)}
-                                {renderPointsField('aiImageGeneratorPoints', 'AI Designer Use', Sparkles)}
-                                {renderPointsField('imageEnhancerPoints', 'Image Enhancer Use', Edit)}
-                                {renderPointsField('aiVideoGeneratorPoints', 'AI Video Ad Use', Video)}
+                                {renderPointsField('userSignupPoints', 'Points Per Sign-up', UserPlus)}
+                                {renderPointsField('seoBoosterPoints', 'Points Per AI SEO Use', Search)}
+                                {renderPointsField('aiImageGeneratorPoints', 'Points Per AI Image', Sparkles)}
+                                {renderPointsField('imageEnhancerPoints', 'Points Per Image Enhance', Edit)}
+                                {renderPointsField('aiVideoGeneratorPoints', 'Points Per AI Video', Video)}
                             </div>
                         </div>
 
@@ -240,4 +235,3 @@ export default function LoyaltySettings() {
     </Card>
   );
 }
-
