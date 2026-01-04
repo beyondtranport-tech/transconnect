@@ -16,7 +16,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { useState, useEffect } from 'react';
-import { Loader2, Save, Star, Gift, UserPlus, Store, Package, Sparkles, Edit, Video, Search, Truck, Building, Users, Handshake, Briefcase, Bot, Code, ShoppingCart } from 'lucide-react';
+import { Loader2, Save, Star, Gift, UserPlus, Store, Package, Sparkles, Edit, Video, Search, Truck, Building, Users, Handshake, Briefcase, Bot, Code, ShoppingCart, ShieldCheck, Warehouse } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
@@ -220,7 +220,7 @@ export default function LoyaltySettings() {
                             <h4 className="font-semibold text-base mb-3 pt-4">General Actions</h4>
                             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                                 {renderPointsField('userSignupPoints', 'User Sign-up', UserPlus)}
-                                {renderPointsField('seoBoosterPoints', 'SEO Booster Use', Search)}
+                                {renderPointsField('seoBoosterPoints', 'AI SEO Booster Use', Search)}
                                 {renderPointsField('aiImageGeneratorPoints', 'AI Designer Use', Sparkles)}
                                 {renderPointsField('imageEnhancerPoints', 'Image Enhancer Use', Edit)}
                                 {renderPointsField('aiVideoGeneratorPoints', 'AI Video Ad Use', Video)}
@@ -240,3 +240,4 @@ export default function LoyaltySettings() {
     </Card>
   );
 }
+
