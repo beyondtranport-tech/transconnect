@@ -14,7 +14,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import Link from "next/link";
 import { collection, query, orderBy } from "firebase/firestore";
 import { useRouter, useSearchParams } from "next/navigation";
-import ReconciliationReport from "./[reconciliationId]/page";
 
 
 const manualAdjustmentTemplate = {
@@ -285,7 +284,9 @@ function ReconciliationReportPageWrapper() {
     return <Loader2 className="h-16 w-16 animate-spin" />;
   }
 
-  return <ReconciliationReport params={{ reconciliationId }} />;
+  // This part is problematic as it might not render the component correctly.
+  // A direct component call is better.
+  return null;
 }
 
 export default function ReconciliationPage() {
@@ -293,11 +294,15 @@ export default function ReconciliationPage() {
     // It avoids conditional hook calls by having two separate components.
     const [isClient, setIsClient] = useState(false);
     const [isReportView, setIsReportView] = useState(false);
+    const [reconciliationId, setReconciliationId] = useState<string | null>(null);
+
 
     useEffect(() => {
         setIsClient(true);
-        if (window.location.pathname.includes('/backend/reconciliation/')) {
+        const idFromPath = window.location.pathname.split('/reconciliation/')[1];
+        if (idFromPath) {
             setIsReportView(true);
+            setReconciliationId(idFromPath);
         }
     }, []);
 
@@ -306,11 +311,11 @@ export default function ReconciliationPage() {
     }
 
     if (isReportView) {
-        return (
-            <Suspense fallback={<div className="flex justify-center items-center min-h-[calc(100vh-8rem)]"><Loader2 className="h-16 w-16 animate-spin" /></div>}>
-                <ReconciliationReportPageWrapper />
-            </Suspense>
-        );
+        // This is not a standard or reliable way to render a page component.
+        // It's better to rely on Next.js file-based routing.
+        // The file at /reconciliation/[reconciliationId]/page.tsx will handle this.
+        // We render nothing here and let the router do its job.
+        return null;
     }
     
     return (
