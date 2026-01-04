@@ -25,8 +25,8 @@ const planSchema = z.object({
     monthly: z.coerce.number().min(0, 'Price must be 0 or more'),
     annual: z.coerce.number().min(0, 'Price must be 0 or more'),
   }),
-  annualDiscount: z.coerce.number().min(0).optional(),
-  sessionDiscount: z.coerce.number().min(0).optional(),
+  annualDiscount: z.coerce.number().min(0).max(100, "Must be between 0-100").optional(),
+  sessionDiscount: z.coerce.number().min(0).max(100, "Must be between 0-100").optional(),
   features: z.array(z.string()).min(1, 'At least one feature is required'),
   isPopular: z.boolean().default(false),
 });
@@ -57,6 +57,12 @@ function PlanDialog({ plan, onSave }: { plan?: PlanFormValues; onSave: () => voi
     control: form.control,
     name: 'features',
   });
+  
+  useEffect(() => {
+    if (plan) {
+      form.reset(plan);
+    }
+  }, [plan, form]);
 
   const onSubmit = async (values: PlanFormValues) => {
     setIsLoading(true);
@@ -112,10 +118,10 @@ function PlanDialog({ plan, onSave }: { plan?: PlanFormValues; onSave: () => voi
             </div>
              <div className="grid grid-cols-2 gap-4">
                 <FormField name="annualDiscount" control={form.control} render={({ field }) => (
-                    <FormItem><FormLabel>Annual Discount (%)</FormLabel><FormControl><Input type="number" placeholder="e.g., 15" {...field} /></FormControl><FormMessage /></FormItem>
+                    <FormItem><FormLabel>Commission Share (%)</FormLabel><FormControl><Input type="number" placeholder="e.g., 15" {...field} /></FormControl><FormMessage /></FormItem>
                 )} />
                 <FormField name="sessionDiscount" control={form.control} render={({ field }) => (
-                    <FormItem><FormLabel>Session Discount (%)</FormLabel><FormControl><Input type="number" placeholder="e.g., 10" {...field} /></FormControl><FormMessage /></FormItem>
+                    <FormItem><FormLabel>Discount Share (%)</FormLabel><FormControl><Input type="number" placeholder="e.g., 10" {...field} /></FormControl><FormMessage /></FormItem>
                 )} />
             </div>
             <div>
@@ -186,8 +192,8 @@ export default function PricingManagement() {
                   <TableHead>Plan Name</TableHead>
                   <TableHead>Monthly Price</TableHead>
                   <TableHead>Annual Price</TableHead>
-                  <TableHead>Annual Discount</TableHead>
-                  <TableHead>Session Discount</TableHead>
+                  <TableHead>Commission Share</TableHead>
+                  <TableHead>Discount Share</TableHead>
                   <TableHead>Features</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
@@ -215,3 +221,5 @@ export default function PricingManagement() {
     </Card>
   );
 }
+
+    

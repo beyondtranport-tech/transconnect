@@ -133,8 +133,8 @@
               "annual": { "type": "number" }
           }
         },
-        "annualDiscount": { "type": "number" },
-        "sessionDiscount": { "type": "number" },
+        "annualDiscount": { "type": "number", "description": "The member's percentage share of earned commissions (e.g., from product sales)." },
+        "sessionDiscount": { "type": "number", "description": "The member's percentage share of a negotiated group discount." },
         "features": { "type": "array", "items": { "type": "string" } }
       },
       "required": ["id", "name", "description"]

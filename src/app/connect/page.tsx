@@ -14,6 +14,8 @@ import { DataContributionModal } from "./data-contribution-modal";
 import React from "react";
 import * as gtag from '@/lib/gtag';
 import { useConfig } from '@/hooks/use-config';
+import { useCollection, useFirestore, useMemoFirebase } from "@/firebase";
+import { collection, query } from "firebase/firestore";
 
 const { placeholderImages } = data;
 
@@ -39,12 +41,10 @@ const formatPrice = (price: number) => {
     return formattedPrice.replace(/\s/g, ' ');
 };
 
-const tierPercentages = [20, 40, 60, 80];
-
 export default function ConnectPage() {
     const [monthlySpend, setMonthlySpend] = useState(20000);
     const [supplierDiscount, setSupplierDiscount] = useState(7.5);
-    const [loyaltyTier, setLoyaltyTier] = useState(4); // Represents tier 1, 2, 3, 4
+    const [loyaltyTierIndex, setLoyaltyTierIndex] = useState(0); // 0=free, 1=basic, etc.
     const [potentialSavings, setPotentialSavings] = useState(0);
     const [isClient, setIsClient] = useState(false);
     const [hasInteracted, setHasInteracted] = useState(false);
@@ -55,6 +55,23 @@ export default function ConnectPage() {
       loyaltyPlanPrice: number;
       actionsPlanPrice: number;
     }>('connectPlans');
+
+    const firestore = useFirestore();
+    const membershipsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'memberships')) : null, [firestore]);
+    const { data: tiers, isLoading: areTiersLoading } = useCollection(membershipsQuery);
+
+    const sortedTiers = useMemo(() => {
+        if (!tiers) return [];
+        const order = ['free', 'basic', 'standard', 'professional', 'enterprise', 'premium'];
+        return [...tiers].sort((a, b) => {
+            const aIndex = order.indexOf(a.id);
+            const bIndex = order.indexOf(b.id);
+            if (aIndex === -1 && bIndex === -1) return (a.price?.monthly || 0) - (b.price?.monthly || 0);
+            if (aIndex === -1) return 1;
+            if (bIndex === -1) return -1;
+            return aIndex - bIndex;
+        });
+    }, [tiers]);
 
     const plans = [
         {
@@ -101,10 +118,13 @@ export default function ConnectPage() {
     }, []);
 
     useEffect(() => {
-        const loyaltyShare = tierPercentages[loyaltyTier - 1];
-        const savings = monthlySpend * (supplierDiscount / 100) * (loyaltyShare / 100);
-        setPotentialSavings(savings);
-    }, [monthlySpend, supplierDiscount, loyaltyTier]);
+        if (sortedTiers.length > 0) {
+            const currentTier = sortedTiers[loyaltyTierIndex];
+            const loyaltyShare = currentTier?.sessionDiscount || 0; // Use sessionDiscount for member's share
+            const savings = monthlySpend * (supplierDiscount / 100) * (loyaltyShare / 100);
+            setPotentialSavings(savings);
+        }
+    }, [monthlySpend, supplierDiscount, loyaltyTierIndex, sortedTiers]);
     
     const handleSliderInteraction = <T extends number | number[]>(setter: React.Dispatch<React.SetStateAction<T>>) => (value: T) => {
         if (!hasInteracted) {
@@ -131,6 +151,9 @@ export default function ConnectPage() {
             value: 0
         });
     };
+
+    const currentTierName = sortedTiers[loyaltyTierIndex]?.name || '...';
+    const currentTierShare = sortedTiers[loyaltyTierIndex]?.sessionDiscount || 0;
 
 
     return (
@@ -211,59 +234,66 @@ export default function ConnectPage() {
                         Use the sliders to estimate how much you could save with the <span className="font-semibold text-primary">Loyalty Plan</span>.
                     </p>
                     <div className="mt-10 max-w-2xl mx-auto p-8 bg-background rounded-lg shadow-inner">
-                        <div className="space-y-6">
-                            <div>
-                                <div className="flex justify-between items-center mb-2">
-                                    <Label htmlFor="spend-slider" className="text-lg font-medium">Monthly Spend</Label>
-                                    <span className="text-lg font-bold text-foreground">{isClient ? formatPrice(monthlySpend) : 'R 20,000'}</span>
-                                </div>
-                                <Slider
-                                    id="spend-slider"
-                                    min={0}
-                                    max={100000}
-                                    step={1000}
-                                    value={[monthlySpend]}
-                                    onValueChange={handleSliderInteraction((value) => setMonthlySpend(value[0]))}
-                                />
+                        {areTiersLoading ? (
+                             <div className="flex justify-center items-center h-48">
+                                <Loader2 className="h-8 w-8 animate-spin text-primary" />
                             </div>
-                            <div>
-                                <div className="flex justify-between items-center mb-2">
-                                    <Label htmlFor="discount-slider" className="text-lg font-medium">Average Supplier Discount</Label>
-                                    <span className="text-lg font-bold text-foreground">{supplierDiscount.toFixed(1)}%</span>
+                        ) : (
+                            <div className="space-y-6">
+                                <div>
+                                    <div className="flex justify-between items-center mb-2">
+                                        <Label htmlFor="spend-slider" className="text-lg font-medium">Monthly Spend</Label>
+                                        <span className="text-lg font-bold text-foreground">{isClient ? formatPrice(monthlySpend) : 'R 20,000'}</span>
+                                    </div>
+                                    <Slider
+                                        id="spend-slider"
+                                        min={0}
+                                        max={100000}
+                                        step={1000}
+                                        value={[monthlySpend]}
+                                        onValueChange={handleSliderInteraction((value) => setMonthlySpend(value[0]))}
+                                    />
                                 </div>
-                                <Slider
-                                    id="discount-slider"
-                                    min={1}
-                                    max={20}
-                                    step={0.5}
-                                    value={[supplierDiscount]}
-                                    onValueChange={handleSliderInteraction((value) => setSupplierDiscount(value[0]))}
-                                />
-                            </div>
-                            <div>
-                                <div className="flex justify-between items-center mb-2">
-                                    <Label htmlFor="share-slider" className="text-lg font-medium">Your Loyalty Tier</Label>
-                                    <span className="text-lg font-bold text-foreground">
-                                        Tier {loyaltyTier}: {tierPercentages[loyaltyTier - 1]}%
-                                    </span>
+                                <div>
+                                    <div className="flex justify-between items-center mb-2">
+                                        <Label htmlFor="discount-slider" className="text-lg font-medium">Average Supplier Discount</Label>
+                                        <span className="text-lg font-bold text-foreground">{supplierDiscount.toFixed(1)}%</span>
+                                    </div>
+                                    <Slider
+                                        id="discount-slider"
+                                        min={1}
+                                        max={20}
+                                        step={0.5}
+                                        value={[supplierDiscount]}
+                                        onValueChange={handleSliderInteraction((value) => setSupplierDiscount(value[0]))}
+                                    />
                                 </div>
-                                <Slider
-                                    id="share-slider"
-                                    min={1}
-                                    max={4}
-                                    step={1}
-                                    value={[loyaltyTier]}
-                                    onValueChange={handleSliderInteraction((value) => setLoyaltyTier(value[0]))}
-                                />
-                            </div>
+                                <div>
+                                    <div className="flex justify-between items-center mb-2">
+                                        <Label htmlFor="share-slider" className="text-lg font-medium">Your Loyalty Tier</Label>
+                                        <span className="text-lg font-bold text-foreground capitalize">
+                                            {currentTierName} ({currentTierShare}%)
+                                        </span>
+                                    </div>
+                                    <Slider
+                                        id="share-slider"
+                                        min={0}
+                                        max={sortedTiers.length > 0 ? sortedTiers.length - 1 : 0}
+                                        step={1}
+                                        value={[loyaltyTierIndex]}
+                                        onValueChange={handleSliderInteraction((value) => setLoyaltyTierIndex(value[0]))}
+                                        disabled={sortedTiers.length === 0}
+                                    />
+                                </div>
 
-                            <div className="border-t border-dashed pt-4">
-                                <div className="flex justify-between items-center">
-                                    <p className="text-xl font-semibold">Your Potential Monthly Savings:</p>
-                                    <p className="text-3xl font-bold text-primary">{isClient ? formatPrice(potentialSavings) : 'R 1,200'}</p>
+                                <div className="border-t border-dashed pt-4">
+                                    <div className="flex justify-between items-center">
+                                        <p className="text-xl font-semibold">Your Potential Monthly Savings:</p>
+                                        <p className="text-3xl font-bold text-primary">{isClient ? formatPrice(potentialSavings) : 'R 0'}</p>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
+                        )}
                     </div>
 
                     <Button asChild size="lg" className="mt-12">
@@ -274,3 +304,5 @@ export default function ConnectPage() {
         </div>
     );
 }
+
+    
