@@ -3,17 +3,17 @@
 
 import { useConfig } from '@/hooks/use-config';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, Store, Wallet, Code, Cpu, Sparkles, Video, Search } from 'lucide-react';
+import { Loader2, Store, Wallet, Code, Cpu, Sparkles, Video, Search, Bot, Edit } from 'lucide-react';
 import FreightMatcher from './freight-matcher';
 import TechCard from './tech-card';
 
 const aiTools = [
-    { id: 'aiFreightMatcher', name: 'AI Freight Matcher', description: 'Monthly access to the AI-powered freight matching tool.', icon: Code },
-    { id: 'seoBooster', name: 'AI SEO Booster', description: 'AI-powered SEO content generation for meta titles, descriptions, and tags.', icon: Search },
+    { id: 'aiFreightMatcher', name: 'AI Freight Matcher', description: 'Find the most profitable loads with our intelligent freight matching engine.', icon: Bot },
+    { id: 'seoBooster', name: 'AI SEO Booster', description: 'Automatically generate SEO-friendly titles, descriptions, and tags for your shop.', icon: Search },
     { id: 'aiImageGenerator', name: 'AI Designer', description: 'Generate logos, banners, and product images from a text prompt.', icon: Sparkles },
     { id: 'aiVideoGenerator', name: 'AI Video Ads', description: 'Create stunning video advertisements for your products automatically.', icon: Video },
-    { id: 'analyticsDashboard', name: 'Analytics Dashboard', description: 'Monthly access to the platform-wide analytics and trends dashboard.', icon: Code },
-    { id: 'apiAccessPerCall', name: 'API Access', description: 'Pay-per-call access to the TransConnect API for custom integrations.', icon: Code, per: 'call' },
+    { id: 'imageEnhancer', name: 'AI Image Enhancer', description: 'Edit and improve your existing product photos with simple text commands.', icon: Edit },
+    { id: 'apiAccessPerCall', name: 'API Access', description: 'Integrate your own systems with TransConnect data via pay-per-call API access.', icon: Code, per: 'call' },
 ];
 
 
@@ -43,7 +43,7 @@ export default function TechPage() {
                         <div className="max-w-4xl mx-auto">
                             <Card>
                                 <CardHeader>
-                                    <CardTitle>AI Freight Matcher Tool</CardTitle>
+                                    <CardTitle>Interactive Tool: AI Freight Matcher</CardTitle>
                                     <CardDescription>Enter your details to find matching loads instantly. This tool is available with the AI Freight Matcher subscription.</CardDescription>
                                 </CardHeader>
                                 <CardContent>
@@ -53,7 +53,7 @@ export default function TechPage() {
                         </div>
                         
                         <div>
-                             <h2 className="text-2xl md:text-3xl font-bold font-headline mb-8 text-center">Your AI Toolkit</h2>
+                             <h2 className="text-2xl md:text-3xl font-bold font-headline mb-8 text-center">The TransConnect AI Toolkit</h2>
                              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                                 {aiTools.map(item => (
                                     <TechCard key={item.id} {...item} price={pricing?.[item.id]} />
