@@ -56,12 +56,26 @@ export async function POST(req: NextRequest) {
         const isAdmin = decodedToken?.email === 'beyondtransport@gmail.com';
         const uid = decodedToken?.uid;
         
+        // Authorization Logic
         if (!isAdmin && !isPublicPath) {
             let isAuthorized = false;
             const pathSegments = path.split('/');
-
-            if (pathSegments.length >= 2 && pathSegments[0] === 'members' && pathSegments[1] === uid) {
-                 isAuthorized = true;
+            
+            // Check if the path starts with `users/{uid}` or `companies/{companyId}`
+            // and if the UID/companyId belongs to the authenticated user.
+            if (pathSegments.length >= 2) {
+                if (pathSegments[0] === 'users' && pathSegments[1] === uid) {
+                    isAuthorized = true;
+                } else if (pathSegments[0] === 'companies') {
+                    // To check company access, we first need to get the user's companyId
+                    if (uid) {
+                        const userDoc = await db.collection('users').doc(uid).get();
+                        const userCompanyId = userDoc.data()?.companyId;
+                        if (userCompanyId && pathSegments[1] === userCompanyId) {
+                            isAuthorized = true;
+                        }
+                    }
+                }
             }
             
             if (!isAuthorized) {
