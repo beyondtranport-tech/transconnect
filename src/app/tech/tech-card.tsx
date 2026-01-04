@@ -31,17 +31,22 @@ const formatPrice = (price: number, isPercentage?: boolean, per?: string) => {
         maximumFractionDigits: 2,
     }).format(price);
     
-    let suffix = '/mo';
-    if (per) {
+    let suffix = '/mo'; // Default to per month for subscriptions
+    if (per) { // If a specific unit is provided (like 'image' or 'use')
         suffix = `/${per}`;
     }
 
-    // For prices less than 1 but not 0, there is no per-month assumption.
-    if(price > 0 && price < 1 && per) {
+    // For prices that are per-use and less than 1, don't assume per month.
+    if(per && price > 0) {
       return `${formattedPrice}/${per}`;
     }
 
-    return `${formattedPrice}${suffix}`;
+    // For subscription prices (no 'per' unit)
+    if (!per) {
+      return `${formattedPrice}/mo`;
+    }
+
+    return formattedPrice;
 };
 
 
@@ -59,7 +64,7 @@ export default function TechCard({ name, description, price, icon: Icon, isPerce
             </CardContent>
             <CardFooter className="flex-col items-start pt-4 border-t">
                  <p className="text-2xl font-bold text-primary mb-4">
-                    {formatPrice(price ?? 0, isPercentage, per)}
+                    {formatPrice(price, isPercentage, per)}
                 </p>
                 <Button asChild className="w-full">
                     <Link href="/account">Activate</Link>
