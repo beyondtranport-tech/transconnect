@@ -1,7 +1,6 @@
-
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Loader2, Users, Star, Gem, Percent, ArrowRight } from 'lucide-react';
@@ -9,6 +8,8 @@ import { Badge } from '@/components/ui/badge';
 import { getClientSideAuthToken } from '@/firebase';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
+import { cn } from '@/lib/utils';
+
 
 interface Company {
     id: string;
@@ -17,10 +18,6 @@ interface Company {
     rewardPoints?: number;
     loyaltyTier?: 'bronze' | 'silver' | 'gold';
     ownerId: string;
-}
-
-interface User {
-    id: string;
     firstName?: string;
     lastName?: string;
     email?: string;
@@ -60,7 +57,8 @@ async function fetchAdminData(action: string) {
     if (!response.ok || !result.success) {
         throw new Error(result.error || `API Error for action: ${action}`);
     }
-    return result.data;
+    // Ensure data is always an array to prevent .map errors
+    return result.data || [];
 }
 
 const tierColors: { [key: string]: string } = {
@@ -79,24 +77,22 @@ export default function RewardsManagement() {
             setIsLoading(true);
             setError(null);
             try {
-                const [companies, users, memberships] = await Promise.all([
-                    fetchAdminData('getMembers'), // Already fetches companies and merges user info
+                const [companies, memberships] = await Promise.all([
+                    fetchAdminData('getMembers'),
                     fetchAdminData('getMemberships')
                 ]);
 
-                const userMap = new Map<string, User>(companies.map((u: any) => [u.userId, { id: u.userId, firstName: u.firstName, lastName: u.lastName, email: u.email }]));
                 const membershipMap = new Map<string, Membership>(memberships.map((m: Membership) => [m.id, m]));
 
                 const enrichedData = companies.map((company: Company) => {
-                    const owner = userMap.get(company.ownerId);
                     const membership = membershipMap.get(company.membershipId || '');
                     
                     return {
                         companyId: company.id,
                         ownerId: company.ownerId,
                         companyName: company.companyName,
-                        ownerName: owner ? `${owner.firstName} ${owner.lastName}`.trim() : 'N/A',
-                        email: owner?.email,
+                        ownerName: `${company.firstName || ''} ${company.lastName || ''}`.trim() || 'N/A',
+                        email: company.email,
                         loyaltyTier: company.loyaltyTier,
                         rewardPoints: company.rewardPoints,
                         membershipTier: membership?.name || company.membershipId,
