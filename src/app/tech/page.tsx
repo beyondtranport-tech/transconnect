@@ -9,8 +9,8 @@ import TechCard from './tech-card';
 
 const techOfferings = {
   shop: [
-    { id: 'premiumThemes', name: 'Premium Themes', description: 'Unlock advanced, high-conversion themes for your shop.', icon: Store },
     { id: 'seoBooster', name: 'AI SEO Booster', description: 'AI-powered SEO content generation for meta titles, descriptions, and tags.', icon: Search },
+    { id: 'premiumThemes', name: 'Premium Themes', description: 'Unlock advanced, high-conversion themes for your shop.', icon: Store },
     { id: 'advancedAnalytics', name: 'Advanced Analytics', description: 'Get deeper insights into your shop visitors and sales performance.', icon: Store },
     { id: 'promotionsPlus', name: 'Promotions Plus', description: 'Increase the number of promotional blocks you can display on your shop page.', icon: Store },
   ],
