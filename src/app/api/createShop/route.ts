@@ -1,6 +1,6 @@
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getFirestore, FieldValue } from 'firebase-admin/firestore';
+import { getFirestore, FieldValue, increment } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
 import { getAdminApp } from '@/lib/firebase-admin';
 
@@ -31,6 +31,11 @@ export async function POST(req: NextRequest) {
         }
         const companyId = userData.companyId;
         const companyRef = db.collection('companies').doc(companyId);
+        
+        // Fetch loyalty settings for shop creation points
+        const loyaltyConfigDoc = await db.collection('configuration').doc('loyaltySettings').get();
+        const shopCreationPoints = loyaltyConfigDoc.data()?.shopCreationPoints || 100; // Default to 100
+
 
         const shopCollectionRef = companyRef.collection('shops');
         
@@ -49,7 +54,10 @@ export async function POST(req: NextRequest) {
         
         const batch = db.batch();
         batch.set(newShopRef, newShopData);
-        batch.update(companyRef, { shopId: newShopRef.id });
+        batch.update(companyRef, { 
+            shopId: newShopRef.id,
+            rewardPoints: FieldValue.increment(shopCreationPoints) // Award points for creating a shop
+        });
         await batch.commit();
 
         return NextResponse.json({ success: true, shopId: newShopRef.id });

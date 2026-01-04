@@ -35,6 +35,10 @@ export async function POST(req: NextRequest) {
 
     // --- User document does NOT exist, so create it and the associated company ---
     console.log(`Document for user ${firebaseUser.uid} not found. Creating user and company documents.`);
+    
+    // Fetch loyalty settings to get signup points
+    const loyaltyConfigDoc = await db.collection('configuration').doc('loyaltySettings').get();
+    const signupPoints = loyaltyConfigDoc.data()?.userSignupPoints || 50; // Default to 50 if not set
 
     const displayName = firebaseUser.displayName || '';
     const nameParts = displayName.split(' ');
@@ -49,8 +53,9 @@ export async function POST(req: NextRequest) {
         ownerId: firebaseUser.uid,
         companyName: firebaseUser.displayName ? `${firebaseUser.displayName}'s Company` : 'My Company',
         membershipId: 'free',
-        rewardPoints: 0,
+        rewardPoints: signupPoints, // Award sign-up points
         walletBalance: 0,
+        loyaltyTier: 'bronze',
         createdAt: FieldValue.serverTimestamp(),
         updatedAt: FieldValue.serverTimestamp(),
     };

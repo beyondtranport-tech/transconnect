@@ -1,5 +1,5 @@
 
-import { getFirestore, FieldValue } from 'firebase-admin/firestore';
+import { getFirestore, FieldValue, increment } from 'firebase-admin/firestore';
 import { NextRequest, NextResponse } from 'next/server';
 import { headers } from 'next/headers';
 import { getAuth } from 'firebase-admin/auth';
@@ -58,10 +58,23 @@ export async function POST(req: NextRequest) {
     if (!companyId || pathSegments.length < 2 || pathSegments[0] !== 'companies' || pathSegments[1] !== companyId) {
         return NextResponse.json({ success: false, error: 'Forbidden: You can only add data to your own company subcollections.' }, { status: 403 });
     }
+    
+    const isAddingProduct = collectionPath.endsWith('/products');
 
+    const batch = db.batch();
     const collectionRef = db.collection(collectionPath);
     const deserializedData = deserializeData(data);
     const newDocRef = await collectionRef.add(deserializedData);
+    
+    // If a product is being added, award points.
+    if (isAddingProduct) {
+        const loyaltyConfigDoc = await db.collection('configuration').doc('loyaltySettings').get();
+        const productAddPoints = loyaltyConfigDoc.data()?.productAddPoints || 5; // Default to 5
+        const companyRef = db.collection('companies').doc(companyId);
+        batch.update(companyRef, { rewardPoints: FieldValue.increment(productAddPoints) });
+        await batch.commit();
+    }
+
 
     return NextResponse.json({ success: true, id: newDocRef.id, message: 'Document created successfully.' });
 

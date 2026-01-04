@@ -16,7 +16,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { useState, useEffect } from 'react';
-import { Loader2, Save, Star, Gift } from 'lucide-react';
+import { Loader2, Save, Star, Gift, UserPlus, Store, Package } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
@@ -26,7 +26,13 @@ const formSchema = z.object({
   bronze: z.coerce.number().min(0, 'Points must be 0 or more.'),
   silver: z.coerce.number().min(0, 'Points must be 0 or more.'),
   gold: z.coerce.number().min(0, 'Points must be 0 or more.'),
+  
+  // Action Points
   contributionPoints: z.coerce.number().min(0, 'Points must be 0 or more.'),
+  userSignupPoints: z.coerce.number().min(0, 'Points must be 0 or more.'),
+  shopCreationPoints: z.coerce.number().min(0, 'Points must be 0 or more.'),
+  productAddPoints: z.coerce.number().min(0, 'Points must be 0 or more.'),
+
 });
 
 type LoyaltySettingsFormValues = z.infer<typeof formSchema>;
@@ -46,6 +52,9 @@ export default function LoyaltySettings() {
       silver: 1000,
       gold: 5000,
       contributionPoints: 10,
+      userSignupPoints: 50,
+      shopCreationPoints: 100,
+      productAddPoints: 5,
     },
   });
 
@@ -73,14 +82,14 @@ export default function LoyaltySettings() {
   };
 
   return (
-    <Card className="w-full max-w-2xl">
+    <Card className="w-full max-w-4xl">
         <CardHeader>
             <div className="flex items-center gap-4">
                 <Star className="h-8 w-8 text-primary"/>
                 <div>
                     <CardTitle>Loyalty & Points Settings</CardTitle>
                     <CardDescription>
-                        Define the point thresholds for loyalty tiers and the points awarded for member actions.
+                        Define point thresholds for loyalty tiers and points awarded for member actions.
                     </CardDescription>
                 </div>
             </div>
@@ -97,39 +106,9 @@ export default function LoyaltySettings() {
                         <h3 className="text-lg font-medium flex items-center gap-2"><Star className="h-5 w-5" /> Loyalty Tier Thresholds</h3>
                         <p className="text-sm text-muted-foreground mt-1">Set the minimum points needed to enter each tier.</p>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
-                            <FormField
-                                control={form.control}
-                                name="bronze"
-                                render={({ field }) => (
-                                    <FormItem>
-                                    <FormLabel>Bronze Tier</FormLabel>
-                                    <FormControl><Input type="number" {...field} disabled /></FormControl>
-                                    <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                            <FormField
-                                control={form.control}
-                                name="silver"
-                                render={({ field }) => (
-                                    <FormItem>
-                                    <FormLabel>Silver Tier</FormLabel>
-                                    <FormControl><Input type="number" {...field} /></FormControl>
-                                    <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                            <FormField
-                                control={form.control}
-                                name="gold"
-                                render={({ field }) => (
-                                    <FormItem>
-                                    <FormLabel>Gold Tier</FormLabel>
-                                    <FormControl><Input type="number" {...field} /></FormControl>
-                                    <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
+                            <FormField control={form.control} name="bronze" render={({ field }) => (<FormItem><FormLabel>Bronze Tier</FormLabel><FormControl><Input type="number" {...field} disabled /></FormControl><FormMessage /></FormItem>)} />
+                            <FormField control={form.control} name="silver" render={({ field }) => (<FormItem><FormLabel>Silver Tier</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                            <FormField control={form.control} name="gold" render={({ field }) => (<FormItem><FormLabel>Gold Tier</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
                         </div>
                     </div>
 
@@ -138,24 +117,17 @@ export default function LoyaltySettings() {
                     <div>
                         <h3 className="text-lg font-medium flex items-center gap-2"><Gift className="h-5 w-5" /> Action Points</h3>
                          <p className="text-sm text-muted-foreground mt-1">Set how many points are awarded for specific member actions.</p>
-                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
-                              <FormField
-                                control={form.control}
-                                name="contributionPoints"
-                                render={({ field }) => (
-                                    <FormItem>
-                                    <FormLabel>Data Contribution</FormLabel>
-                                    <FormControl><Input type="number" {...field} /></FormControl>
-                                    <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
+                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
+                            <FormField control={form.control} name="userSignupPoints" render={({ field }) => (<FormItem><FormLabel className="flex items-center"><UserPlus className="mr-2 h-4 w-4"/>User Sign-up</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                            <FormField control={form.control} name="shopCreationPoints" render={({ field }) => (<FormItem><FormLabel className="flex items-center"><Store className="mr-2 h-4 w-4"/>Shop Creation</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                            <FormField control={form.control} name="productAddPoints" render={({ field }) => (<FormItem><FormLabel className="flex items-center"><Package className="mr-2 h-4 w-4"/>Product Added</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                            <FormField control={form.control} name="contributionPoints" render={({ field }) => (<FormItem><FormLabel className="flex items-center"><Gift className="mr-2 h-4 w-4"/>Data Contribution</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)}/>
                          </div>
                     </div>
 
                     <Button type="submit" disabled={isSaving} className="mt-4">
-                    {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                    Save All Settings
+                        {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                        Save All Settings
                     </Button>
                 </form>
                 </Form>
