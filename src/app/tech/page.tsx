@@ -79,7 +79,7 @@ export default function TechPage() {
                         </div>
                         
                         <div>
-                            <h2 className="text-2xl md:text-3xl font-bold font-headline mb-8 text-center">API & Data Services</h2>
+                            <h2 className="text-2xl md:text-3xl font-bold font-headline mb-8 text-center">API &amp; Data Services</h2>
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                                 {techOfferings.api.map(item => (
                                     <TechCard key={item.id} {...item} price={pricing?.[item.id]} />
