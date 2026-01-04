@@ -1,84 +1,94 @@
-
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
-import { Loader2, Award } from 'lucide-react';
-import MemberLoyaltyStatus from './member-loyalty-status';
-import { getClientSideAuthToken } from '@/firebase';
+import React from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Input } from '@/components/ui/input';
+import { Award, Bot, Briefcase, Building, Code, Edit, Gift, Handshake, Heart, LifeBuoy, Package, Search, ShieldCheck, ShoppingCart, Sparkles, Star, Store, Truck, UserPlus, Users, Video, Warehouse } from 'lucide-react';
 
-async function fetchAdminData(action: string) {
-    const token = await getClientSideAuthToken();
-    if (!token) throw new Error("Authentication failed.");
-    
-    const response = await fetch('/api/admin', {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action }),
-    });
-
-    const result = await response.json();
-    if (!response.ok || !result.success) {
-        throw new Error(result.error || `API Error for action: ${action}`);
-    }
-    return result.data || [];
-}
+const rewardActions = [
+    { category: 'Vendors', icon: ShoppingCart, actions: [
+        { id: 'shopCreationPoints', name: 'Shop Creation' },
+        { id: 'productAddPoints', name: 'Product Add' },
+        { id: 'supplierContributionPoints', name: 'Supplier Contribution' },
+        { id: 'debtorContributionPoints', name: 'Debtor Contribution' },
+    ]},
+    { category: 'Transporters (Buyers)', icon: Truck, actions: [
+        { id: 'truckContributionPoints', name: 'Truck Contribution' },
+        { id: 'trailerContributionPoints', name: 'Trailer Contribution' },
+    ]},
+    { category: 'Partners & Referrals', icon: Handshake, actions: [
+        { id: 'partnerReferralPoints', name: 'Member Referral' },
+        { id: 'isaSaleCommissionPoints', name: 'ISA Sale' },
+    ]},
+    { category: 'Associates', icon: Briefcase, actions: [
+        { id: 'associateServiceListingPoints', name: 'Service Listing' },
+    ]},
+    { category: 'Drivers', icon: Users, actions: [
+        { id: 'driverSafetyRecordPoints', name: 'Safety Record Submission' },
+    ]},
+    { category: 'Developers', icon: Code, actions: [
+        { id: 'developerApiIntegrationPoints', name: 'API Integration' },
+    ]},
+    { category: 'General & AI Actions', icon: Sparkles, actions: [
+        { id: 'userSignupPoints', name: 'User Sign-up' },
+        { id: 'seoBoosterPoints', name: 'AI SEO Booster Use' },
+        { id: 'aiImageGeneratorPoints', name: 'AI Image Generation' },
+        { id: 'imageEnhancerPoints', name: 'AI Image Enhancement' },
+        { id: 'aiVideoGeneratorPoints', name: 'AI Video Generation' },
+    ]},
+];
 
 export default function RewardStatus() {
-    const [companies, setCompanies] = useState<any[]>([]);
-    const [memberships, setMemberships] = useState<any[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
 
-    useEffect(() => {
-        async function loadData() {
-            setIsLoading(true);
-            setError(null);
-            try {
-                // Fetch both companies (which includes user info) and memberships
-                const [companiesData, membershipsData] = await Promise.all([
-                    fetchAdminData('getMembers'),
-                    fetchAdminData('getMemberships')
-                ]);
-                setCompanies(companiesData);
-                setMemberships(membershipsData);
-            } catch (e: any) {
-                setError(e.message);
-            } finally {
-                setIsLoading(false);
-            }
-        }
-        loadData();
-    }, []);
-
-    if (isLoading) {
-        return (
-            <div className="flex justify-center items-center py-20">
-                <Loader2 className="h-10 w-10 animate-spin text-primary" />
-            </div>
-        );
-    }
-
-    if (error) {
-        return (
-            <div className="text-center py-20 text-destructive border-2 border-destructive/50 rounded-lg bg-destructive/10">
-                <h3 className="text-xl font-semibold">Error Loading Reward Status</h3>
-                <p className="mt-2 text-sm">{error}</p>
-            </div>
-        );
-    }
-
-    return (
-        <Card>
-            <CardHeader>
-                <CardTitle className="flex items-center gap-2"><Award className="h-6 w-6" /> Member Reward Status</CardTitle>
-                <CardDescription>
-                    This dashboard provides a detailed overview of each member's loyalty status, their accumulated points, and the financial benefits they are entitled to based on their current tier.
-                </CardDescription>
-            </CardHeader>
-            <CardContent>
-                <MemberLoyaltyStatus companies={companies} memberships={memberships} />
-            </CardContent>
-        </Card>
-    );
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2"><Award className="h-6 w-6" />Reward Status Framework</CardTitle>
+        <CardDescription>
+          This dashboard outlines the structure for tracking member rewards. It shows each action, the points required per tier to unlock benefits from that action, the member's actual earned points, and the resulting financial savings.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="border rounded-lg overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-1/3">Action</TableHead>
+                <TableHead className="text-center">Target (Bronze)</TableHead>
+                <TableHead className="text-center">Target (Silver)</TableHead>
+                <TableHead className="text-center">Target (Gold)</TableHead>
+                <TableHead className="text-center">Actual Points</TableHead>
+                <TableHead className="text-right">Result (Savings)</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {rewardActions.map(section => (
+                <React.Fragment key={section.category}>
+                  <TableRow className="bg-muted/50">
+                    <TableCell colSpan={6}>
+                      <h3 className="font-semibold text-primary flex items-center gap-2">
+                        <section.icon className="h-5 w-5" />
+                        {section.category}
+                      </h3>
+                    </TableCell>
+                  </TableRow>
+                  {section.actions.map(action => (
+                    <TableRow key={action.id}>
+                      <TableCell className="font-medium pl-8">{action.name}</TableCell>
+                      <TableCell><Input type="number" placeholder="0" className="text-center" /></TableCell>
+                      <TableCell><Input type="number" placeholder="e.g., 100" className="text-center" /></TableCell>
+                      <TableCell><Input type="number" placeholder="e.g., 500" className="text-center" /></TableCell>
+                      <TableCell><Input type="number" placeholder="-" className="text-center" disabled /></TableCell>
+                      <TableCell className="text-right"><Input type="text" placeholder="R 0.00" className="text-right font-mono" disabled /></TableCell>
+                    </TableRow>
+                  ))}
+                </React.Fragment>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      </CardContent>
+    </Card>
+  );
 }
