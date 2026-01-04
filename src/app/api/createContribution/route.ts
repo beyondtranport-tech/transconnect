@@ -21,6 +21,14 @@ function deserializeData(data: any): any {
     return newData;
 }
 
+const actionToPointsKey: Record<string, string> = {
+    truck: 'truckContributionPoints',
+    trailer: 'trailerContributionPoints',
+    supplier: 'supplierContributionPoints',
+    debtor: 'debtorContributionPoints',
+    creditor: 'creditorContributionPoints',
+};
+
 export async function POST(req: NextRequest) {
   const { app, error: initError } = getAdminApp();
   if (initError || !app) {
@@ -55,10 +63,16 @@ export async function POST(req: NextRequest) {
     }
     const companyId = userData.companyId;
 
-    // Fetch the points for contribution from config
+    // Fetch the specific points for this contribution type from config
     const loyaltyConfigDoc = await db.collection('configuration').doc('loyaltySettings').get();
     const loyaltyConfig = loyaltyConfigDoc.data();
-    const pointsToAward = loyaltyConfig?.contributionPoints || 10; // Default to 10 if not set
+    
+    const pointsKey = actionToPointsKey[type];
+    if (!pointsKey) {
+        return NextResponse.json({ success: false, error: `Invalid contribution type: ${type}`}, { status: 400 });
+    }
+    
+    const pointsToAward = loyaltyConfig?.[pointsKey] || 10; // Default to 10 if not set
 
     const contributionData = {
         userId: uid,
@@ -79,7 +93,7 @@ export async function POST(req: NextRequest) {
 
     await batch.commit();
 
-    return NextResponse.json({ success: true, id: contributionRef.id, message: 'Contribution received and reward points awarded.' });
+    return NextResponse.json({ success: true, id: contributionRef.id, message: `Contribution received and ${pointsToAward} reward points awarded.` });
 
   } catch (error: any) {
     console.error(`Error in createContribution:`, error);
