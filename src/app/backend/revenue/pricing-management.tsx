@@ -25,8 +25,8 @@ const planSchema = z.object({
     monthly: z.coerce.number().min(0, 'Price must be 0 or more'),
     annual: z.coerce.number().min(0, 'Price must be 0 or more'),
   }),
-  annualDiscount: z.coerce.number().min(0).max(100, "Must be between 0-100").optional(),
-  sessionDiscount: z.coerce.number().min(0).max(100, "Must be between 0-100").optional(),
+  commissionShare: z.coerce.number().min(0).max(100, "Must be between 0-100").optional(),
+  discountShare: z.coerce.number().min(0).max(100, "Must be between 0-100").optional(),
   features: z.array(z.string()).min(1, 'At least one feature is required'),
   isPopular: z.boolean().default(false),
 });
@@ -46,8 +46,8 @@ function PlanDialog({ plan, onSave }: { plan?: PlanFormValues; onSave: () => voi
       name: '',
       description: '',
       price: { monthly: 0, annual: 0 },
-      annualDiscount: 0,
-      sessionDiscount: 0,
+      commissionShare: 0,
+      discountShare: 0,
       features: [''],
       isPopular: false,
     },
@@ -117,10 +117,10 @@ function PlanDialog({ plan, onSave }: { plan?: PlanFormValues; onSave: () => voi
               )} />
             </div>
              <div className="grid grid-cols-2 gap-4">
-                <FormField name="annualDiscount" control={form.control} render={({ field }) => (
+                <FormField name="commissionShare" control={form.control} render={({ field }) => (
                     <FormItem><FormLabel>Commission Share (%)</FormLabel><FormControl><Input type="number" placeholder="e.g., 15" {...field} /></FormControl><FormMessage /></FormItem>
                 )} />
-                <FormField name="sessionDiscount" control={form.control} render={({ field }) => (
+                <FormField name="discountShare" control={form.control} render={({ field }) => (
                     <FormItem><FormLabel>Discount Share (%)</FormLabel><FormControl><Input type="number" placeholder="e.g., 10" {...field} /></FormControl><FormMessage /></FormItem>
                 )} />
             </div>
@@ -204,8 +204,8 @@ export default function PricingManagement() {
                     <TableCell className="font-semibold">{plan.name}</TableCell>
                     <TableCell>R {plan.price.monthly}</TableCell>
                     <TableCell>R {plan.price.annual}</TableCell>
-                    <TableCell>{plan.annualDiscount || 0}%</TableCell>
-                    <TableCell>{plan.sessionDiscount || 0}%</TableCell>
+                    <TableCell>{plan.commissionShare || 0}%</TableCell>
+                    <TableCell>{plan.discountShare || 0}%</TableCell>
                     <TableCell>{plan.features.length}</TableCell>
                     <TableCell className="text-right">
                         <PlanDialog plan={plan} onSave={forceRefresh} />

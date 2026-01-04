@@ -120,7 +120,7 @@ export default function ConnectPage() {
     useEffect(() => {
         if (sortedTiers.length > 0) {
             const currentTier = sortedTiers[loyaltyTierIndex];
-            const loyaltyShare = currentTier?.sessionDiscount || 0; // Use sessionDiscount for member's share
+            const loyaltyShare = currentTier?.discountShare || 0; // Use discountShare for member's share
             const savings = monthlySpend * (supplierDiscount / 100) * (loyaltyShare / 100);
             setPotentialSavings(savings);
         }
@@ -153,7 +153,7 @@ export default function ConnectPage() {
     };
 
     const currentTierName = sortedTiers[loyaltyTierIndex]?.name || '...';
-    const currentTierShare = sortedTiers[loyaltyTierIndex]?.sessionDiscount || 0;
+    const currentTierShare = sortedTiers[loyaltyTierIndex]?.discountShare || 0;
 
 
     return (

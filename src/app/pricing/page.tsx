@@ -103,7 +103,7 @@ export default function MembershipPage() {
       return [...tiers].sort((a, b) => {
           const aIndex = order.indexOf(a.id);
           const bIndex = order.indexOf(b.id);
-          if (aIndex === -1 && bIndex === -1) return a.price.monthly - b.price.monthly;
+          if (aIndex === -1 && bIndex === -1) return (a.price?.monthly || 0) - (b.price?.monthly || 0);
           if (aIndex === -1) return 1;
           if (bIndex === -1) return -1;
           return aIndex - bIndex;
@@ -137,7 +137,7 @@ export default function MembershipPage() {
         ) : (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-7xl mx-auto">
               {sortedTiers?.map((tier:any) => {
-                  const annualPrice = tier.price.annual || tier.price.monthly * 12 * (1 - (tier.annualDiscount || 0) / 100);
+                  const annualPrice = tier.price.annual || tier.price.monthly * 12 * (1 - (tier.commissionShare || 0) / 100);
                   const priceToShow = billingCycle === 'annual' ? annualPrice / 12 : tier.price.monthly;
 
                   return (
@@ -237,3 +237,5 @@ export default function MembershipPage() {
     </div>
   );
 }
+
+    
