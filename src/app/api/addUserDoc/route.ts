@@ -64,7 +64,9 @@ export async function POST(req: NextRequest) {
     const batch = db.batch();
     const collectionRef = db.collection(collectionPath);
     const deserializedData = deserializeData(data);
-    const newDocRef = await collectionRef.add(deserializedData);
+    const newDocRef = collectionRef.doc(); // Generate ref before using it
+    
+    batch.set(newDocRef, deserializedData);
     
     // If a product is being added, award points.
     if (isAddingProduct) {
@@ -72,9 +74,9 @@ export async function POST(req: NextRequest) {
         const productAddPoints = loyaltyConfigDoc.data()?.productAddPoints || 5; // Default to 5
         const companyRef = db.collection('companies').doc(companyId);
         batch.update(companyRef, { rewardPoints: FieldValue.increment(productAddPoints) });
-        await batch.commit();
     }
 
+    await batch.commit();
 
     return NextResponse.json({ success: true, id: newDocRef.id, message: 'Document created successfully.' });
 

@@ -16,7 +16,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { useState, useEffect } from 'react';
-import { Loader2, Save, Star, Gift, UserPlus, Store, Package } from 'lucide-react';
+import { Loader2, Save, Star, Gift, UserPlus, Store, Package, Sparkles, Edit, Video, Search } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
@@ -28,10 +28,14 @@ const formSchema = z.object({
   gold: z.coerce.number().min(0, 'Points must be 0 or more.'),
   
   // Action Points
-  contributionPoints: z.coerce.number().min(0, 'Points must be 0 or more.'),
   userSignupPoints: z.coerce.number().min(0, 'Points must be 0 or more.'),
   shopCreationPoints: z.coerce.number().min(0, 'Points must be 0 or more.'),
   productAddPoints: z.coerce.number().min(0, 'Points must be 0 or more.'),
+  contributionPoints: z.coerce.number().min(0, 'Points must be 0 or more.'),
+  seoBoosterPoints: z.coerce.number().min(0, 'Points must be 0 or more.'),
+  aiImageGeneratorPoints: z.coerce.number().min(0, 'Points must be 0 or more.'),
+  imageEnhancerPoints: z.coerce.number().min(0, 'Points must be 0 or more.'),
+  aiVideoGeneratorPoints: z.coerce.number().min(0, 'Points must be 0 or more.'),
 
 });
 
@@ -51,10 +55,14 @@ export default function LoyaltySettings() {
       bronze: 0,
       silver: 1000,
       gold: 5000,
-      contributionPoints: 10,
       userSignupPoints: 50,
       shopCreationPoints: 100,
       productAddPoints: 5,
+      contributionPoints: 10,
+      seoBoosterPoints: 15,
+      aiImageGeneratorPoints: 2,
+      imageEnhancerPoints: 1,
+      aiVideoGeneratorPoints: 20,
     },
   });
 
@@ -122,6 +130,10 @@ export default function LoyaltySettings() {
                             <FormField control={form.control} name="shopCreationPoints" render={({ field }) => (<FormItem><FormLabel className="flex items-center"><Store className="mr-2 h-4 w-4"/>Shop Creation</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)}/>
                             <FormField control={form.control} name="productAddPoints" render={({ field }) => (<FormItem><FormLabel className="flex items-center"><Package className="mr-2 h-4 w-4"/>Product Added</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)}/>
                             <FormField control={form.control} name="contributionPoints" render={({ field }) => (<FormItem><FormLabel className="flex items-center"><Gift className="mr-2 h-4 w-4"/>Data Contribution</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                            <FormField control={form.control} name="seoBoosterPoints" render={({ field }) => (<FormItem><FormLabel className="flex items-center"><Search className="mr-2 h-4 w-4"/>SEO Booster Use</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                            <FormField control={form.control} name="aiImageGeneratorPoints" render={({ field }) => (<FormItem><FormLabel className="flex items-center"><Sparkles className="mr-2 h-4 w-4"/>AI Designer Use</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                            <FormField control={form.control} name="imageEnhancerPoints" render={({ field }) => (<FormItem><FormLabel className="flex items-center"><Edit className="mr-2 h-4 w-4"/>Image Enhancer Use</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                            <FormField control={form.control} name="aiVideoGeneratorPoints" render={({ field }) => (<FormItem><FormLabel className="flex items-center"><Video className="mr-2 h-4 w-4"/>AI Video Ad Use</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)}/>
                          </div>
                     </div>
 
