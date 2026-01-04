@@ -49,17 +49,19 @@ export async function POST(req: NextRequest) {
     const uid = decodedToken.uid;
     
     const db = getFirestore(app);
-    const pathSegments = collectionPath.split('/');
     
-    // Security Check: Ensure the user is adding to a subcollection of their own company document.
-    const userDoc = await db.collection('users').doc(uid).get();
-    const companyId = userDoc.data()?.companyId;
+    // Get user's companyId
+    const userDocSnap = await db.collection('users').doc(uid).get();
+    const companyId = userDocSnap.data()?.companyId;
 
-    if (!companyId || pathSegments.length < 2 || pathSegments[0] !== 'companies' || pathSegments[1] !== companyId) {
-        return NextResponse.json({ success: false, error: 'Forbidden: You can only add data to your own company subcollections.' }, { status: 403 });
+    if (!companyId) {
+        return NextResponse.json({ success: false, error: 'Forbidden: User company not found.' }, { status: 403 });
     }
-    
-    const isAddingProduct = collectionPath.endsWith('/products');
+
+    const pathSegments = collectionPath.split('/');
+    if (pathSegments[0] !== 'companies' || pathSegments[1] !== companyId) {
+         return NextResponse.json({ success: false, error: 'Forbidden: You can only add data to your own company subcollections.' }, { status: 403 });
+    }
 
     const batch = db.batch();
     const collectionRef = db.collection(collectionPath);
@@ -68,10 +70,10 @@ export async function POST(req: NextRequest) {
     
     batch.set(newDocRef, deserializedData);
     
-    // If a product is being added, award points.
-    if (isAddingProduct) {
+    // Check if a product is being added and award points if so
+    if (collectionPath.endsWith('/products')) {
         const loyaltyConfigDoc = await db.collection('configuration').doc('loyaltySettings').get();
-        const productAddPoints = loyaltyConfigDoc.data()?.productAddPoints || 5; // Default to 5
+        const productAddPoints = loyaltyConfigDoc.data()?.vendorProductAddPoints || 5; // Default to 5
         const companyRef = db.collection('companies').doc(companyId);
         batch.update(companyRef, { rewardPoints: FieldValue.increment(productAddPoints) });
     }

@@ -16,7 +16,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { useState, useEffect } from 'react';
-import { Loader2, Save, Star, Gift, UserPlus, Store, Package, Sparkles, Edit, Video, Search, Truck, Building, Users } from 'lucide-react';
+import { Loader2, Save, Star, Gift, UserPlus, Store, Package, Sparkles, Edit, Video, Search, Truck, Building, Users, Handshake, Briefcase, Bot, Code, ShoppingCart } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
@@ -29,8 +29,6 @@ const formSchema = z.object({
   
   // Platform Actions
   userSignupPoints: z.coerce.number().min(0, 'Points must be 0 or more.'),
-  shopCreationPoints: z.coerce.number().min(0, 'Points must be 0 or more.'),
-  productAddPoints: z.coerce.number().min(0, 'Points must be 0 or more.'),
   
   // AI Tool Actions
   seoBoosterPoints: z.coerce.number().min(0, 'Points must be 0 or more.'),
@@ -38,12 +36,21 @@ const formSchema = z.object({
   imageEnhancerPoints: z.coerce.number().min(0, 'Points must be 0 or more.'),
   aiVideoGeneratorPoints: z.coerce.number().min(0, 'Points must be 0 or more.'),
 
-  // Data Contribution Actions
-  truckContributionPoints: z.coerce.number().min(0, 'Points must be non-negative.'),
-  trailerContributionPoints: z.coerce.number().min(0, 'Points must be non-negative.'),
-  supplierContributionPoints: z.coerce.number().min(0, 'Points must be non-negative.'),
-  debtorContributionPoints: z.coerce.number().min(0, 'Points must be non-negative.'),
-  creditorContributionPoints: z.coerce.number().min(0, 'Points must be non-negative.'),
+  // Role-based Data Contribution Actions
+  vendorShopCreationPoints: z.coerce.number().min(0),
+  vendorProductAddPoints: z.coerce.number().min(0),
+  vendorSupplierContributionPoints: z.coerce.number().min(0),
+  vendorDebtorContributionPoints: z.coerce.number().min(0),
+  
+  buyerTruckContributionPoints: z.coerce.number().min(0),
+  buyerTrailerContributionPoints: z.coerce.number().min(0),
+  buyerDebtorContributionPoints: z.coerce.number().min(0),
+
+  partnerReferralPoints: z.coerce.number().min(0),
+  associateServiceListingPoints: z.coerce.number().min(0),
+  isaSaleCommissionPoints: z.coerce.number().min(0),
+  driverSafetyRecordPoints: z.coerce.number().min(0),
+  developerApiIntegrationPoints: z.coerce.number().min(0),
 });
 
 type LoyaltySettingsFormValues = z.infer<typeof formSchema>;
@@ -63,17 +70,22 @@ export default function LoyaltySettings() {
       silver: 1000,
       gold: 5000,
       userSignupPoints: 50,
-      shopCreationPoints: 100,
-      productAddPoints: 5,
       seoBoosterPoints: 15,
       aiImageGeneratorPoints: 2,
       imageEnhancerPoints: 1,
       aiVideoGeneratorPoints: 20,
-      truckContributionPoints: 10,
-      trailerContributionPoints: 10,
-      supplierContributionPoints: 15,
-      debtorContributionPoints: 20,
-      creditorContributionPoints: 20,
+      vendorShopCreationPoints: 100,
+      vendorProductAddPoints: 5,
+      vendorSupplierContributionPoints: 15,
+      vendorDebtorContributionPoints: 20,
+      buyerTruckContributionPoints: 10,
+      buyerTrailerContributionPoints: 10,
+      buyerDebtorContributionPoints: 20,
+      partnerReferralPoints: 200,
+      associateServiceListingPoints: 50,
+      isaSaleCommissionPoints: 25,
+      driverSafetyRecordPoints: 50,
+      developerApiIntegrationPoints: 500,
     },
   });
 
@@ -99,6 +111,23 @@ export default function LoyaltySettings() {
         setIsSaving(false);
     }
   };
+
+  const renderPointsField = (name: keyof LoyaltySettingsFormValues, label: string, icon: React.ElementType) => {
+      const Icon = icon;
+      return (
+        <FormField
+            control={form.control}
+            name={name}
+            render={({ field }) => (
+                <FormItem>
+                    <FormLabel className="flex items-center"><Icon className="mr-2 h-4 w-4"/>{label}</FormLabel>
+                    <FormControl><Input type="number" {...field} /></FormControl>
+                    <FormMessage />
+                </FormItem>
+            )}
+        />
+      );
+  }
 
   return (
     <Card className="w-full max-w-4xl">
@@ -135,41 +164,72 @@ export default function LoyaltySettings() {
 
                     <div>
                         <h3 className="text-lg font-medium flex items-center gap-2"><Gift className="h-5 w-5" /> Action Points</h3>
-                         <p className="text-sm text-muted-foreground mt-1">Set how many points are awarded for specific member actions.</p>
+                        <p className="text-sm text-muted-foreground mt-1">Set how many points are awarded for specific member actions.</p>
                         
-                        <div className="mt-6">
-                            <h4 className="font-semibold text-base mb-3">Platform & Shop Actions</h4>
-                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                                <FormField control={form.control} name="userSignupPoints" render={({ field }) => (<FormItem><FormLabel className="flex items-center"><UserPlus className="mr-2 h-4 w-4"/>User Sign-up</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)}/>
-                                <FormField control={form.control} name="shopCreationPoints" render={({ field }) => (<FormItem><FormLabel className="flex items-center"><Store className="mr-2 h-4 w-4"/>Shop Creation</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)}/>
-                                <FormField control={form.control} name="productAddPoints" render={({ field }) => (<FormItem><FormLabel className="flex items-center"><Package className="mr-2 h-4 w-4"/>Product Added</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                         <div className="mt-6 space-y-6">
+                            <div>
+                                <h4 className="font-semibold text-base mb-3 flex items-center gap-2"><ShoppingCart className="h-5 w-5 text-muted-foreground"/>Vendors</h4>
+                                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                                    {renderPointsField('vendorShopCreationPoints', 'Shop Creation', Store)}
+                                    {renderPointsField('vendorProductAddPoints', 'Product Add', Package)}
+                                    {renderPointsField('vendorSupplierContributionPoints', 'Supplier Data', Building)}
+                                    {renderPointsField('vendorDebtorContributionPoints', 'Debtor Data', Users)}
+                                </div>
                             </div>
-                        </div>
+                             <div>
+                                <h4 className="font-semibold text-base mb-3 flex items-center gap-2"><Truck className="h-5 w-5 text-muted-foreground"/>Buyers / Transporters</h4>
+                                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                                     {renderPointsField('buyerTruckContributionPoints', 'Truck Data', Truck)}
+                                     {renderPointsField('buyerTrailerContributionPoints', 'Trailer Data', Warehouse)}
+                                     {renderPointsField('buyerDebtorContributionPoints', 'Debtor Data', Users)}
+                                </div>
+                            </div>
+                            <div>
+                                <h4 className="font-semibold text-base mb-3 flex items-center gap-2"><Handshake className="h-5 w-5 text-muted-foreground"/>Partners</h4>
+                                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                                    {renderPointsField('partnerReferralPoints', 'Referral', UserPlus)}
+                                </div>
+                            </div>
+                             <div>
+                                <h4 className="font-semibold text-base mb-3 flex items-center gap-2"><Briefcase className="h-5 w-5 text-muted-foreground"/>Associates</h4>
+                                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                                    {renderPointsField('associateServiceListingPoints', 'Service Listing', Package)}
+                                </div>
+                            </div>
+                            <div>
+                                <h4 className="font-semibold text-base mb-3 flex items-center gap-2"><Bot className="h-5 w-5 text-muted-foreground"/>ISA Agents</h4>
+                                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                                    {renderPointsField('isaSaleCommissionPoints', 'Sale Made', Star)}
+                                </div>
+                            </div>
+                             <div>
+                                <h4 className="font-semibold text-base mb-3 flex items-center gap-2"><Users className="h-5 w-5 text-muted-foreground"/>Drivers</h4>
+                                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                                    {renderPointsField('driverSafetyRecordPoints', 'Safety Record Upload', ShieldCheck)}
+                                </div>
+                            </div>
+                            <div>
+                                <h4 className="font-semibold text-base mb-3 flex items-center gap-2"><Code className="h-5 w-5 text-muted-foreground"/>Developers</h4>
+                                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                                    {renderPointsField('developerApiIntegrationPoints', 'API Integration', Code)}
+                                </div>
+                            </div>
 
-                        <div className="mt-6">
-                            <h4 className="font-semibold text-base mb-3">AI Tool Usage</h4>
+                            <Separator />
+
+                            <h4 className="font-semibold text-base mb-3 pt-4">General Actions</h4>
                             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                                <FormField control={form.control} name="seoBoosterPoints" render={({ field }) => (<FormItem><FormLabel className="flex items-center"><Search className="mr-2 h-4 w-4"/>SEO Booster Use</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)}/>
-                                <FormField control={form.control} name="aiImageGeneratorPoints" render={({ field }) => (<FormItem><FormLabel className="flex items-center"><Sparkles className="mr-2 h-4 w-4"/>AI Designer Use</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)}/>
-                                <FormField control={form.control} name="imageEnhancerPoints" render={({ field }) => (<FormItem><FormLabel className="flex items-center"><Edit className="mr-2 h-4 w-4"/>Image Enhancer Use</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)}/>
-                                <FormField control={form.control} name="aiVideoGeneratorPoints" render={({ field }) => (<FormItem><FormLabel className="flex items-center"><Video className="mr-2 h-4 w-4"/>AI Video Ad Use</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)}/>
-                            </div>
-                        </div>
-                        
-                         <div className="mt-6">
-                            <h4 className="font-semibold text-base mb-3">Data Contributions</h4>
-                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                                <FormField control={form.control} name="truckContributionPoints" render={({ field }) => (<FormItem><FormLabel className="flex items-center"><Truck className="mr-2 h-4 w-4"/>Truck Data</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)}/>
-                                <FormField control={form.control} name="trailerContributionPoints" render={({ field }) => (<FormItem><FormLabel className="flex items-center"><Truck className="mr-2 h-4 w-4"/>Trailer Data</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)}/>
-                                <FormField control={form.control} name="supplierContributionPoints" render={({ field }) => (<FormItem><FormLabel className="flex items-center"><Building className="mr-2 h-4 w-4"/>Supplier Data</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)}/>
-                                <FormField control={form.control} name="debtorContributionPoints" render={({ field }) => (<FormItem><FormLabel className="flex items-center"><Users className="mr-2 h-4 w-4"/>Debtor Data</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)}/>
-                                 <FormField control={form.control} name="creditorContributionPoints" render={({ field }) => (<FormItem><FormLabel className="flex items-center"><Users className="mr-2 h-4 w-4"/>Creditor Data</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                                {renderPointsField('userSignupPoints', 'User Sign-up', UserPlus)}
+                                {renderPointsField('seoBoosterPoints', 'SEO Booster Use', Search)}
+                                {renderPointsField('aiImageGeneratorPoints', 'AI Designer Use', Sparkles)}
+                                {renderPointsField('imageEnhancerPoints', 'Image Enhancer Use', Edit)}
+                                {renderPointsField('aiVideoGeneratorPoints', 'AI Video Ad Use', Video)}
                             </div>
                         </div>
 
                     </div>
 
-                    <Button type="submit" disabled={isSaving} className="mt-4">
+                    <Button type="submit" disabled={isSaving} className="mt-8">
                         {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                         Save All Settings
                     </Button>
