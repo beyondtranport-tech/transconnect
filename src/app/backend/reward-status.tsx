@@ -1,10 +1,11 @@
+
 'use client';
 
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
-import { Award, Bot, Briefcase, Building, Code, Edit, Gift, Handshake, Heart, LifeBuoy, Package, Search, ShieldCheck, ShoppingCart, Sparkles, Star, Store, Truck, UserPlus, Users, Video, Warehouse } from 'lucide-react';
+import { Award, Bot, Briefcase, Code, Handshake, Search, ShieldCheck, ShoppingCart, Sparkles, Truck, UserPlus, Users, Video, Wand2, Warehouse } from 'lucide-react';
 
 const rewardActions = [
     { category: 'Vendors', icon: ShoppingCart, actions: [
@@ -92,3 +93,5 @@ export default function RewardStatus() {
     </Card>
   );
 }
+
+    

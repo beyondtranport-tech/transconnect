@@ -1,21 +1,22 @@
 
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Loader2, PlusCircle, Save, Edit, Trash2 } from 'lucide-react';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
-import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, doc, writeBatch, serverTimestamp } from 'firebase/firestore';
+import { useFirestore, useCollection, useMemoFirebase, getClientSideAuthToken } from '@/firebase';
+import { collection, query, doc, deleteDoc } from 'firebase/firestore';
 import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 
 const planSchema = z.object({
   id: z.string().min(1, 'ID is required (e.g., "basic")'),
@@ -37,7 +38,6 @@ function PlanDialog({ plan, onSave }: { plan?: PlanFormValues; onSave: () => voi
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
-  const firestore = useFirestore();
 
   const form = useForm<PlanFormValues>({
     resolver: zodResolver(planSchema),
@@ -59,20 +59,35 @@ function PlanDialog({ plan, onSave }: { plan?: PlanFormValues; onSave: () => voi
   });
   
   useEffect(() => {
-    if (plan) {
-      form.reset(plan);
+    if (isOpen) {
+        if (plan) {
+          form.reset(plan);
+        } else {
+          form.reset({
+            id: '', name: '', description: '', price: { monthly: 0, annual: 0 },
+            commissionShare: 0, discountShare: 0, features: [''], isPopular: false,
+          });
+        }
     }
-  }, [plan, form]);
+  }, [isOpen, plan, form]);
 
   const onSubmit = async (values: PlanFormValues) => {
     setIsLoading(true);
-    if (!firestore) return;
 
     try {
-      const planRef = doc(firestore, 'memberships', values.id);
-      await writeBatch(firestore)
-        .set(planRef, { ...values, updatedAt: serverTimestamp() }, { merge: true })
-        .commit();
+      const token = await getClientSideAuthToken();
+      if (!token) throw new Error("Authentication failed.");
+
+      const response = await fetch('/api/updateConfigDoc', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          path: `memberships/${values.id}`,
+          data: { ...values, updatedAt: { _methodName: 'serverTimestamp' } }
+        }),
+      });
+
+      if (!response.ok) throw new Error((await response.json()).error || 'Failed to save plan.');
       
       toast({ title: 'Plan Saved!', description: `${values.name} has been saved.` });
       onSave();
@@ -100,7 +115,7 @@ function PlanDialog({ plan, onSave }: { plan?: PlanFormValues; onSave: () => voi
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField name="id" control={form.control} render={({ field }) => (
-              <FormItem><FormLabel>Plan ID</FormLabel><FormControl><Input {...field} disabled={!!plan} /></FormControl><FormMessage /></FormItem>
+              <FormItem><FormLabel>Plan ID</FormLabel><FormControl><Input {...field} disabled={!!plan} placeholder="e.g. basic"/></FormControl><FormMessage /></FormItem>
             )} />
             <FormField name="name" control={form.control} render={({ field }) => (
               <FormItem><FormLabel>Plan Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
@@ -110,10 +125,10 @@ function PlanDialog({ plan, onSave }: { plan?: PlanFormValues; onSave: () => voi
             )} />
             <div className="grid grid-cols-2 gap-4">
               <FormField name="price.monthly" control={form.control} render={({ field }) => (
-                <FormItem><FormLabel>Monthly Price</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
+                <FormItem><FormLabel>Monthly Price (R)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
               )} />
               <FormField name="price.annual" control={form.control} render={({ field }) => (
-                <FormItem><FormLabel>Annual Price</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
+                <FormItem><FormLabel>Annual Price (R)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
               )} />
             </div>
              <div className="grid grid-cols-2 gap-4">
@@ -134,6 +149,20 @@ function PlanDialog({ plan, onSave }: { plan?: PlanFormValues; onSave: () => voi
               ))}
               <Button type="button" size="sm" variant="outline" className="mt-2" onClick={() => append('')}>Add Feature</Button>
             </div>
+            <FormField
+                control={form.control}
+                name="isPopular"
+                render={({ field }) => (
+                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                        <div className="space-y-0.5">
+                            <FormLabel>Mark as Popular</FormLabel>
+                        </div>
+                        <FormControl>
+                            <Switch checked={field.value} onCheckedChange={field.onChange} />
+                        </FormControl>
+                    </FormItem>
+                )}
+            />
             <DialogFooter>
               <Button type="submit" disabled={isLoading}>
                 {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
@@ -159,11 +188,20 @@ export default function PricingManagement() {
   const { data: plans, isLoading, forceRefresh } = useCollection<PlanFormValues>(membershipsQuery);
 
   const handleDelete = async (planId: string) => {
-     if (!firestore) return;
+     if (!firestore || planId === 'free') {
+         toast({ variant: 'destructive', title: 'Cannot Delete', description: 'The free plan cannot be deleted.' });
+         return;
+     }
 
     try {
-      const planRef = doc(firestore, 'memberships', planId);
-      await writeBatch(firestore).delete(planRef).commit();
+      const token = await getClientSideAuthToken();
+      if (!token) throw new Error("Authentication failed.");
+
+      await fetch('/api/deleteConfigDoc', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ path: `memberships/${planId}` }),
+      });
       
       toast({ title: 'Plan Deleted', description: 'The membership plan has been removed.' });
       forceRefresh();
@@ -209,7 +247,7 @@ export default function PricingManagement() {
                     <TableCell>{plan.features.length}</TableCell>
                     <TableCell className="text-right">
                         <PlanDialog plan={plan} onSave={forceRefresh} />
-                        <Button variant="ghost" size="icon" onClick={() => handleDelete(plan.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                        <Button variant="ghost" size="icon" onClick={() => handleDelete(plan.id)} disabled={plan.id === 'free'}><Trash2 className="h-4 w-4 text-destructive" /></Button>
                     </TableCell>
                   </TableRow>
                 ))}

@@ -135,7 +135,8 @@
         },
         "commissionShare": { "type": "number", "description": "The member's percentage share of earned commissions (e.g., from product sales)." },
         "discountShare": { "type": "number", "description": "The member's percentage share of a negotiated group discount." },
-        "features": { "type": "array", "items": { "type": "string" } }
+        "features": { "type": "array", "items": { "type": "string" } },
+        "isPopular": { "type": "boolean" }
       },
       "required": ["id", "name", "description"]
     },
