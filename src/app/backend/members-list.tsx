@@ -3,15 +3,16 @@
 
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
-import { Loader2, Users, Wallet } from 'lucide-react';
+import { Loader2, Users, Wallet, Gem, Star } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { getClientSideAuthToken } from '@/firebase';
+import { cn } from '@/lib/utils';
 
 interface Member {
-    id: string;
+    id: string; // This will now be the Company ID
     firstName?: string;
     lastName?: string;
     email?: string;
@@ -19,6 +20,8 @@ interface Member {
     membershipId?: string;
     walletBalance?: number;
     createdAt?: string;
+    rewardPoints?: number;
+    loyaltyTier?: 'bronze' | 'silver' | 'gold';
 }
 
 async function fetchFromAdminAPI(action: string, payload?: any) {
@@ -42,11 +45,6 @@ async function fetchFromAdminAPI(action: string, payload?: any) {
 }
 
 
-const formatCurrency = (amount: number | undefined) => {
-    if (amount === undefined) return 'N/A';
-    return new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(amount);
-};
-
 const formatDate = (isoString: string | undefined) => {
     if (!isoString) return 'N/A';
     try {
@@ -55,6 +53,13 @@ const formatDate = (isoString: string | undefined) => {
         return 'Invalid Date';
     }
 };
+
+const tierColors: { [key: string]: string } = {
+    bronze: 'bg-orange-200 text-orange-800',
+    silver: 'bg-slate-200 text-slate-800',
+    gold: 'bg-yellow-200 text-yellow-800',
+};
+
 
 export default function MembersList() {
     const [members, setMembers] = useState<Member[] | null>(null);
@@ -121,9 +126,11 @@ export default function MembersList() {
                     <Table>
                         <TableHeader>
                             <TableRow>
-                                <TableHead>Name</TableHead>
+                                <TableHead>Owner</TableHead>
                                 <TableHead>Company</TableHead>
                                 <TableHead>Membership</TableHead>
+                                <TableHead>Loyalty Tier</TableHead>
+                                <TableHead>Reward Points</TableHead>
                                 <TableHead>Joined</TableHead>
                                 <TableHead className="text-right">Actions</TableHead>
                             </TableRow>
@@ -139,6 +146,17 @@ export default function MembersList() {
                                     <TableCell>
                                         <Badge variant="outline" className="capitalize">{member.membershipId || 'N/A'}</Badge>
                                     </TableCell>
+                                    <TableCell>
+                                         <Badge className={cn("capitalize", tierColors[member.loyaltyTier || 'bronze'])}>
+                                            <Star className="mr-1 h-3 w-3"/>
+                                            {member.loyaltyTier || 'bronze'}
+                                         </Badge>
+                                    </TableCell>
+                                     <TableCell>
+                                        <div className="flex items-center gap-1 font-semibold">
+                                           <Gem className="h-3 w-3 text-primary"/> {member.rewardPoints || 0}
+                                        </div>
+                                    </TableCell>
                                     <TableCell>{formatDate(member.createdAt)}</TableCell>
                                     <TableCell className="text-right">
                                         <Button asChild variant="ghost" size="sm">
@@ -151,7 +169,7 @@ export default function MembersList() {
                                 </TableRow>
                             )) : (
                                 <TableRow>
-                                    <TableCell colSpan={5} className="text-center h-24">No members found.</TableCell>
+                                    <TableCell colSpan={7} className="text-center h-24">No members found.</TableCell>
                                 </TableRow>
                             )}
                         </TableBody>

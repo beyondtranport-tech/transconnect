@@ -51,11 +51,22 @@ export async function POST(req: NextRequest) {
 
         switch (action) {
             case 'getMembers': {
-                const membersSnap = await db.collection('members').get();
-                const members = membersSnap.docs.map(doc => {
+                const companiesSnap = await db.collection('companies').get();
+                const usersSnap = await db.collection('users').get();
+                
+                const usersMap = new Map();
+                usersSnap.forEach(doc => usersMap.set(doc.id, doc.data()));
+
+                const members = companiesSnap.docs.map(doc => {
+                    const companyData = doc.data();
+                    const ownerInfo = usersMap.get(companyData.ownerId) || {};
                     return {
-                        ...serializeTimestamps(doc.data()),
-                        id: doc.id // Ensure ID is part of the object
+                        ...serializeTimestamps(companyData),
+                        id: doc.id, // Company ID is the primary ID for this record
+                        userId: companyData.ownerId,
+                        firstName: ownerInfo.firstName,
+                        lastName: ownerInfo.lastName,
+                        email: ownerInfo.email,
                     };
                 });
                 return NextResponse.json({ success: true, data: members });
