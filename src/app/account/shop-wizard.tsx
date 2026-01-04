@@ -624,6 +624,69 @@ const shopStep3Schema = z.object({
 });
 type Step3FormValues = z.infer<typeof shopStep3Schema>;
 
+function AIGenerateImageDialog({ onGenerate, children }: { onGenerate: (url: string) => void, children: React.ReactNode }) {
+    const [isOpen, setIsOpen] = useState(false);
+    const [prompt, setPrompt] = useState("");
+    const [isLoading, setIsLoading] = useState(false);
+    const { toast } = useToast();
+
+    const handleGenerate = async () => {
+        if (!prompt) {
+            toast({ variant: 'destructive', title: 'Prompt is required.' });
+            return;
+        }
+        setIsLoading(true);
+
+        try {
+            const token = await getClientSideAuthToken();
+            if (!token) throw new Error("Authentication token not found.");
+            
+            const response = await fetch('/api/generateImage', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ prompt }),
+            });
+
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.error || 'Failed to generate image');
+
+            onGenerate(result.imageDataUri);
+            toast({ title: 'Image Generated!', description: 'The new image has been applied.' });
+            setIsOpen(false);
+        } catch (e: any) {
+            toast({ variant: 'destructive', title: 'Image Generation Failed', description: e.message });
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    return (
+        <Dialog open={isOpen} onOpenChange={setIsOpen}>
+            <DialogTrigger asChild>{children}</DialogTrigger>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>AI Image Generator</DialogTitle>
+                    <DialogDescription>Describe the image you want to create for your banner or promotion.</DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="image-prompt">Your Prompt</Label>
+                        <Textarea id="image-prompt" value={prompt} onChange={(e) => setPrompt(e.target.value)} placeholder="e.g., A dramatic hero shot of a red Scania truck on a mountain pass at sunset" />
+                    </div>
+                </div>
+                <DialogFooter>
+                    <Button variant="outline" onClick={() => setIsOpen(false)}>Cancel</Button>
+                    <Button onClick={handleGenerate} disabled={isLoading}>
+                        {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Sparkles className="mr-2 h-4 w-4" />}
+                        Generate Image
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    );
+}
+
+
 function ImageGalleryDialog({ category, onSelect, children }: { category: string, onSelect: (url: string) => void, children: React.ReactNode }) {
     const [isOpen, setIsOpen] = useState(false);
 
@@ -706,6 +769,11 @@ function ImagePicker({ onUpload, title, currentImage, category }: { onUpload: (u
             }
         );
     };
+    
+    const onImageGenerated = (url: string) => {
+        onUpload(url);
+        setPreview(url);
+    };
 
     return (
         <div className="space-y-2">
@@ -717,18 +785,26 @@ function ImagePicker({ onUpload, title, currentImage, category }: { onUpload: (u
                         <Button variant="destructive" size="sm" className="absolute top-2 right-2" onClick={() => { setPreview(null); onUpload(''); }}>Change</Button>
                     </div>
                 ) : (
-                    <div className="flex items-center justify-center w-full h-32 border-2 border-border border-dashed rounded-lg bg-card hover:bg-accent flex-col gap-2">
-                         <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleUpload} />
-                         <Button type="button" onClick={() => fileInputRef.current?.click()} variant="ghost">
-                            <UploadCloud className="mr-2 h-4 w-4" />
-                            Upload Image
-                         </Button>
-                        <ImageGalleryDialog category={category} onSelect={(url) => { onUpload(url); setPreview(url); }}>
-                           <Button type="button" variant="ghost">
-                             <GalleryHorizontal className="mr-2 h-4 w-4" />
-                             Choose from Gallery
+                    <div className="flex flex-col items-center justify-center w-full h-32 border-2 border-border border-dashed rounded-lg bg-card hover:bg-accent gap-2">
+                        <div className="flex gap-2">
+                             <Button type="button" onClick={() => fileInputRef.current?.click()} variant="ghost">
+                                <UploadCloud className="mr-2 h-4 w-4" />
+                                Upload
+                             </Button>
+                            <ImageGalleryDialog category={category} onSelect={(url) => { onUpload(url); setPreview(url); }}>
+                               <Button type="button" variant="ghost">
+                                 <GalleryHorizontal className="mr-2 h-4 w-4" />
+                                 Gallery
+                               </Button>
+                            </ImageGalleryDialog>
+                        </div>
+                         <AIGenerateImageDialog onGenerate={onImageGenerated}>
+                           <Button type="button" variant="outline" size="sm" className="w-fit">
+                             <Sparkles className="mr-2 h-4 w-4" />
+                             Generate with AI
                            </Button>
-                        </ImageGalleryDialog>
+                        </AIGenerateImageDialog>
+                         <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleUpload} />
                     </div>
                 )}
                  {uploadProgress !== null && uploadProgress < 100 && <Progress value={uploadProgress} className="h-1 mt-2" />}
@@ -1230,3 +1306,4 @@ export default function ShopWizard({ shop }: { shop: any }) {
     </div>
   );
 }
+
