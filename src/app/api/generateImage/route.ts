@@ -57,3 +57,6 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ success: false, error: errorMessage }, { status: statusCode });
     }
 }
+
+// Increase the timeout for this specific route to handle long-running image generation.
+export const maxDuration = 120;
