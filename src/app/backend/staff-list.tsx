@@ -1,7 +1,8 @@
+
 'use client';
 
 import * as React from 'react';
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2, Users } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
@@ -45,43 +46,39 @@ async function fetchAdminData(action: string) {
 }
 
 export default function StaffList() {
-  const [enrichedStaff, setEnrichedStaff] = useState<Staff[]>([]);
+  const [staff, setStaff] = useState<Staff[]>([]);
+  const [companies, setCompanies] = useState<Company[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchData = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
-        const [staffData, companyData] = await Promise.all([
-            fetchAdminData('getStaff'),
-            fetchAdminData('getMembers'),
-        ]);
-        const companyMap = new Map(companyData.map((c: Company) => [c.id, c.companyName]));
-        const enriched = staffData.map((s: Staff) => ({
-          ...s,
-          companyName: companyMap.get(s.companyId) || 'Unknown Company',
-        }));
-        setEnrichedStaff(enriched);
-    } catch(e: any) {
-         setError(e.message || "An unknown error occurred");
-    } finally {
-        setIsLoading(false);
-    }
-  }, []);
-
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
-  
-  const handleUpdate = useCallback((staffId: string, updates: Partial<Staff>) => {
-    setEnrichedStaff(currentStaff => {
-        if (updates._deleted) {
-            return currentStaff.filter(s => s.id !== staffId);
+    const fetchData = async () => {
+        setIsLoading(true);
+        setError(null);
+        try {
+            const [staffData, companyData] = await Promise.all([
+                fetchAdminData('getStaff'),
+                fetchAdminData('getMembers'), // getMembers returns company objects
+            ]);
+            setStaff(staffData);
+            setCompanies(companyData);
+        } catch(e: any) {
+             setError(e.message || "An unknown error occurred");
+        } finally {
+            setIsLoading(false);
         }
-        return currentStaff.map(s => s.id === staffId ? { ...s, ...updates } : s);
-    });
+      };
+    fetchData();
   }, []);
+  
+  const enrichedStaff = useMemo(() => {
+    if (!staff || !companies) return [];
+    const companyMap = new Map(companies.map((c: Company) => [c.id, c.companyName]));
+    return staff.map((s: Staff) => ({
+      ...s,
+      companyName: companyMap.get(s.companyId) || 'Unknown Company',
+    }));
+  }, [staff, companies]);
 
   const columns: ColumnDef<Staff>[] = useMemo(() => [
     { accessorKey: 'companyName', header: 'Company', cell: ({ row }) => <div>{row.original.companyName}</div> },
@@ -102,9 +99,9 @@ export default function StaffList() {
     {
       id: 'actions',
       header: 'Actions',
-      cell: ({ row }) => <StaffActionMenu staffMember={row.original} onUpdate={handleUpdate} />,
+      cell: ({ row }) => <StaffActionMenu staffMember={row.original} />,
     },
-  ], [handleUpdate]);
+  ], [enrichedStaff]);
 
   return (
     <Card>

@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -44,21 +45,21 @@ const staffFormSchema = z.object({
 
 type StaffFormValues = z.infer<typeof staffFormSchema>;
 
-function EditStaffDialog({ staffMember, onUpdate }: { staffMember: any, onUpdate: (updatedData: Partial<StaffFormValues>) => void }) {
+function EditStaffDialog({ staffMember: initialStaffMember, onUpdate }: { staffMember: any, onUpdate: (updatedData: Partial<StaffFormValues>) => void }) {
   const [isOpen, setIsOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
 
   const form = useForm<StaffFormValues>({
     resolver: zodResolver(staffFormSchema),
-    defaultValues: staffMember,
+    defaultValues: initialStaffMember,
   });
   
   React.useEffect(() => {
     if (isOpen) {
-      form.reset(staffMember);
+      form.reset(initialStaffMember);
     }
-  }, [isOpen, staffMember, form]);
+  }, [isOpen, initialStaffMember, form]);
 
   const onSubmit = async (values: StaffFormValues) => {
     setIsSaving(true);
@@ -72,8 +73,8 @@ function EditStaffDialog({ staffMember, onUpdate }: { staffMember: any, onUpdate
         body: JSON.stringify({
           action: 'updateStaffMember',
           payload: {
-            companyId: staffMember.companyId,
-            staffId: staffMember.id,
+            companyId: initialStaffMember.companyId,
+            staffId: initialStaffMember.id,
             data: values
           }
         }),
@@ -103,7 +104,7 @@ function EditStaffDialog({ staffMember, onUpdate }: { staffMember: any, onUpdate
         <DialogHeader>
           <DialogTitle>Edit Staff Member</DialogTitle>
           <DialogDescription>
-            Update the details for {staffMember.firstName} {staffMember.lastName}.
+            Update the details for {initialStaffMember.firstName} {initialStaffMember.lastName}.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -133,24 +134,19 @@ function EditStaffDialog({ staffMember, onUpdate }: { staffMember: any, onUpdate
   );
 }
 
-export default function StaffActionMenu({ staffMember: initialStaffMember, onUpdate }: { staffMember: any; onUpdate: (id: string, updates: Partial<any>) => void }) {
+export default function StaffActionMenu({ staffMember: initialStaffMember }: { staffMember: any; }) {
   const [staffMember, setStaffMember] = useState(initialStaffMember);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const [isAlertOpen, setIsAlertOpen] = useState(false);
   const { toast } = useToast();
 
-  const handleStatusChange = (newStatus: 'confirmed' | 'unconfirmed') => {
-    setIsUpdating(true);
-    updateStaffMember({ status: newStatus }, `status is now ${newStatus}`);
-  };
-  
   const handleDialogUpdate = (updatedData: Partial<StaffFormValues>) => {
-      onUpdate(staffMember.id, updatedData);
       setStaffMember((prev: any) => ({ ...prev, ...updatedData }));
   };
 
   const updateStaffMember = async (payload: object, successMessage: string) => {
+    setIsUpdating(true);
     try {
       const token = await getClientSideAuthToken();
       if (!token) throw new Error('Authentication failed.');
@@ -168,7 +164,6 @@ export default function StaffActionMenu({ staffMember: initialStaffMember, onUpd
       if (!response.ok) throw new Error(result.error || 'Failed to update staff member.');
       
       toast({ title: 'Success', description: `${staffMember.firstName}'s ${successMessage}.` });
-      onUpdate(staffMember.id, payload);
       setStaffMember((prev: any) => ({ ...prev, ...payload }));
     } catch (e: any) {
       toast({ variant: 'destructive', title: 'Update Failed', description: e.message });
@@ -197,15 +192,19 @@ export default function StaffActionMenu({ staffMember: initialStaffMember, onUpd
       if (!response.ok) throw new Error(result.error || 'Failed to delete staff member.');
 
       toast({ title: 'Staff Member Deleted' });
-      onUpdate(staffMember.id, { _deleted: true });
+      // To visually remove it, we can't easily re-fetch, so we can hide it.
+      setStaffMember(null); 
     } catch (e: any) {
       toast({ variant: 'destructive', title: 'Deletion Failed', description: e.message });
-    } finally {
       setIsDeleting(false);
     }
   };
 
   const isLoading = isDeleting || isUpdating;
+
+  if (!staffMember) {
+      return null;
+  }
 
   return (
     <div className="text-right">
@@ -224,11 +223,11 @@ export default function StaffActionMenu({ staffMember: initialStaffMember, onUpd
              </DropdownMenuItem>
              <EditStaffDialog staffMember={staffMember} onUpdate={handleDialogUpdate} />
             {staffMember.status !== 'confirmed' ? (
-              <DropdownMenuItem onClick={() => handleStatusChange('confirmed')}>
+              <DropdownMenuItem onClick={() => updateStaffMember({ status: 'confirmed' }, 'status is now confirmed')}>
                 <CheckCircle className="mr-2 h-4 w-4" /> Confirm
               </DropdownMenuItem>
             ) : (
-              <DropdownMenuItem onClick={() => handleStatusChange('unconfirmed')}>
+              <DropdownMenuItem onClick={() => updateStaffMember({ status: 'unconfirmed' }, 'status is now unconfirmed')}>
                 <XCircle className="mr-2 h-4 w-4" /> Un-confirm
               </DropdownMenuItem>
             )}
