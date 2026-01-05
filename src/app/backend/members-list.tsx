@@ -20,6 +20,7 @@ interface Member {
     membershipId?: string;
     walletBalance?: number;
     createdAt?: string;
+    email?: string;
 }
 
 const tierColors: { [key: string]: string } = {
@@ -30,7 +31,6 @@ const tierColors: { [key: string]: string } = {
   enterprise: 'bg-yellow-200 text-yellow-800',
 };
 
-// Helper function moved outside the component to ensure it's stable
 async function fetchFromAdminAPI(action: string, payload?: any) {
     const token = await getClientSideAuthToken();
     if (!token) throw new Error("Authentication failed.");
