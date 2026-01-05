@@ -53,12 +53,15 @@ export default function StaffList() {
         setIsLoading(true);
         setError(null);
         try {
-            const [staffData, companiesData] = await Promise.all([
-                fetchAdminData('getStaff'),
-                fetchAdminData('getMembers') // Assuming getMembers fetches companies
-            ]);
-            setStaff(staffData || []);
-            setCompanies(companiesData || []);
+            // Temporarily disabled to prevent infinite loops
+            // const [staffData, companiesData] = await Promise.all([
+            //     fetchAdminData('getStaff'),
+            //     fetchAdminData('getMembers') // Assuming getMembers fetches companies
+            // ]);
+            // setStaff(staffData || []);
+            // setCompanies(companiesData || []);
+            setStaff([]);
+            setCompanies([]);
         } catch (e: any) {
             setError(e.message);
         } finally {
