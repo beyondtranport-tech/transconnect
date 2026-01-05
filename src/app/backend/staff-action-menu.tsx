@@ -78,7 +78,7 @@ function EditStaffDialog({ staffMember, onUpdate, open, setOpen }: { staffMember
 
       toast({ title: 'Staff Member Updated' });
       onUpdate();
-      setOpen(false);
+      setOpen(false); // Close dialog on success
     } catch (e: any) {
       toast({ variant: 'destructive', title: 'Update Failed', description: e.message });
     } finally {
