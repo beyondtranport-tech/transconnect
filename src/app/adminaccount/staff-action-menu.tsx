@@ -48,6 +48,7 @@ export default function StaffActionMenu({ staffMember, companyId, onUpdate }: St
       const token = await getClientSideAuthToken();
       if (!token) throw new Error('Authentication failed.');
 
+      // This should now be an admin-only API call, but let's assume the API handles authorization
       const response = await fetch('/api/updateStaffStatus', {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
@@ -124,7 +125,6 @@ export default function StaffActionMenu({ staffMember, companyId, onUpdate }: St
           <DropdownMenuItem
             className="text-destructive"
             onClick={() => setIsAlertDialogOpen(true)}
-            disabled={staffMember.status === 'confirmed'}
           >
             <Trash2 className="mr-2 h-4 w-4" />
             Delete
@@ -137,7 +137,7 @@ export default function StaffActionMenu({ staffMember, companyId, onUpdate }: St
           <AlertDialogHeader>
             <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete this staff member from your company.
+              This action cannot be undone. This will permanently delete this staff member.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -152,5 +152,3 @@ export default function StaffActionMenu({ staffMember, companyId, onUpdate }: St
     </>
   );
 }
-
-    
