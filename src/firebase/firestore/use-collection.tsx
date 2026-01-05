@@ -88,9 +88,10 @@ export function useCollection<T = any>(
             let token: string | null = null;
             if (!isPublicPath) {
                 token = await getClientSideAuthToken();
-                if (!token) {
+                if (!token && !isUserLoading) {
                     throw new Error("Authentication is required to access this resource.");
                 }
+                 if (!token) return; // Don't fetch if token isn't available yet
             }
             
             const response = await fetch('/api/getUserSubcollection', {
@@ -119,7 +120,7 @@ export function useCollection<T = any>(
     };
 
     fetchData();
-  }, [path, isPublicPath, isUserLoading, refreshKey]); 
+  }, [path, isPublicPath, refreshKey, user]); 
 
   return { data, isLoading, error, forceRefresh };
 }

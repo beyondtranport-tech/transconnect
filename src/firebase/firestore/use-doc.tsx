@@ -81,9 +81,10 @@ export function useDoc<T = any>(
             if (!isPublicPath) {
                 token = await getClientSideAuthToken();
                 // After loading is done, if it's a private path and we still have no token, it's an error.
-                if (!token) {
+                if (!token && !isUserLoading) {
                     throw new Error("Authentication is required to access this resource.");
                 }
+                 if (!token) return; // Don't fetch if token isn't available yet
             }
             
             const response = await fetch('/api/getUserSubcollection', {
@@ -113,7 +114,7 @@ export function useDoc<T = any>(
 
     fetchData();
 
-  }, [path, isPublicPath, isUserLoading, refreshKey]);
+  }, [path, isPublicPath, refreshKey, user]);
 
   return { data, isLoading, error, forceRefresh };
 }
