@@ -420,7 +420,7 @@ export default function BackendPageContent() {
       case 'members':
         return <MembersList />;
       case 'staff':
-        return <StaffList />;
+        return <div className="text-center py-20"><p className="text-muted-foreground">The staff management page is temporarily disabled.</p></div>;
       case 'shops':
         return <ShopsList />;
       case 'wallet':
@@ -510,12 +510,6 @@ export default function BackendPageContent() {
                 <SidebarMenuButton tooltip="Members" isActive={activeView === 'members'} onClick={() => router.push('/backend?view=members', { scroll: false })}>
                   <Users />
                   <span>Members</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Staff" isActive={activeView === 'staff'} onClick={() => router.push('/backend?view=staff', { scroll: false })}>
-                  <Users />
-                  <span>Staff</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
