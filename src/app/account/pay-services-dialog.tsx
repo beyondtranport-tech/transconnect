@@ -94,7 +94,7 @@ export default function PayServicesDialog({ member, onPaymentSuccess }: { member
                                     <h4 className="font-semibold">{payment.description}</h4>
                                     <p className="font-bold text-lg">{formatCurrency(payment.amount)}</p>
                                 </div>
-                                <p className="text-xs text-muted-foreground">Due: {format(payment.createdAt, "dd MMM yyyy")}</p>
+                                <p className="text-xs text-muted-foreground">Due: {format(new Date(payment.createdAt), "dd MMM yyyy")}</p>
                                 <Button 
                                     className="w-full mt-2" 
                                     onClick={() => handlePay(payment)}

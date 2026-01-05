@@ -7,7 +7,8 @@ import {
   FirestoreError,
   CollectionReference,
 } from 'firebase/firestore';
-import { getClientSideAuthToken, useUser } from '@/firebase';
+import { getClientSideAuthToken } from '@/firebase';
+import { useUser } from '@/firebase/hooks';
 
 /** Utility type to add an 'id' field to a given type T. */
 export type WithId<T> = T & { id: string };
@@ -120,7 +121,7 @@ export function useCollection<T = any>(
     };
 
     fetchData();
-  }, [path, isPublicPath, refreshKey, user]); 
+  }, [path, isPublicPath, refreshKey, user, isUserLoading]); 
 
   return { data, isLoading, error, forceRefresh };
 }

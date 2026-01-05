@@ -1,4 +1,3 @@
-
 'use client';
 
 import { firebaseConfig } from '@/firebase/config';
@@ -54,6 +53,7 @@ export async function getClientSideAuthToken(): Promise<string | null> {
 
 export * from './provider';
 export * from './client-provider';
+export * from './hooks';
 export * from './firestore/use-collection';
 export * from './firestore/use-doc';
 export * from './errors';
