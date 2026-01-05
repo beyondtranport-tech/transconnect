@@ -40,7 +40,7 @@ service cloud.firestore {
       // --- Staff Management ---
       // The company owner can manage their own staff members.
       match /staff/{staffId} {
-        allow read, write: if isCompanyOwner(companyId) || isAdmin();
+        allow read, write, list: if isCompanyOwner(companyId) || isAdmin();
       }
 
       // --- Other Company Subcollections ---
