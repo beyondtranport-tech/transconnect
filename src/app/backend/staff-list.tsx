@@ -1,8 +1,7 @@
-
 'use client';
 
 import * as React from 'react';
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2, Users } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
@@ -16,61 +15,65 @@ interface Company {
     companyName?: string;
 }
 
-async function fetchAdminData(action: string) {
-    const token = await getClientSideAuthToken();
-    if (!token) throw new Error("Authentication failed.");
-    
-    const response = await fetch('/api/admin', {
-        method: 'POST',
-        headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ action }),
-    });
-
-    const result = await response.json();
-    if (!response.ok || !result.success) {
-        throw new Error(result.error || `API Error for action: ${action}`);
-    }
-    return result.data;
-}
-
-
 export default function StaffList() {
   const [staff, setStaff] = useState<any[] | null>(null);
+  const [companies, setCompanies] = useState<Company[] | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
 
-  useEffect(() => {
-    async function fetchData() {
-        setIsLoading(true);
-        setError(null);
-        try {
-            const [staffData, companyData] = await Promise.all([
-                fetchAdminData('getStaff'),
-                fetchAdminData('getMembers')
-            ]);
-            
-            const companyMap = new Map(companyData.map((c: Company) => [c.id, c.companyName]));
-            
-            const enrichedStaff = staffData.map((s: any) => ({
-                ...s,
-                companyName: companyMap.get(s.companyId) || 'Unknown Company',
-            }));
+  const fetchData = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+        const token = await getClientSideAuthToken();
+        if (!token) throw new Error("Authentication failed.");
+        
+        const [staffResponse, companiesResponse] = await Promise.all([
+            fetch('/api/admin', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'getStaff' })
+            }),
+            fetch('/api/admin', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'getMembers' })
+            })
+        ]);
 
-            setStaff(enrichedStaff);
-        } catch(e: any) {
-             setError(e.message || "An unknown error occurred");
-        } finally {
-            setIsLoading(false);
+        const staffResult = await staffResponse.json();
+        const companiesResult = await companiesResponse.json();
+
+        if (!staffResult.success || !companiesResult.success) {
+            throw new Error(staffResult.error || companiesResult.error || 'Failed to fetch data');
         }
+
+        setStaff(staffResult.data || []);
+        setCompanies(companiesResult.data || []);
+    } catch(e: any) {
+         setError(e.message || "An unknown error occurred");
+    } finally {
+        setIsLoading(false);
     }
+  }, []);
+
+  useEffect(() => {
     fetchData();
-  }, [refreshKey]);
+  }, [fetchData, refreshKey]);
   
-  const handleUpdate = () => setRefreshKey(prev => prev + 1);
+  const handleUpdate = useCallback(() => {
+    setRefreshKey(prev => prev + 1);
+  }, []);
+
+  const enrichedStaff = useMemo(() => {
+    if (!staff || !companies) return [];
+    const companyMap = new Map(companies.map(c => [c.id, c.companyName]));
+    return staff.map(s => ({
+      ...s,
+      companyName: companyMap.get(s.companyId) || 'Unknown Company',
+    }));
+  }, [staff, companies]);
 
   const columns: ColumnDef<any>[] = useMemo(() => [
     {
@@ -140,7 +143,7 @@ export default function StaffList() {
                     <p className="text-sm">{error}</p>
                 </div>
             ) : (
-                <DataTable columns={columns} data={staff || []} />
+                <DataTable columns={columns} data={enrichedStaff} />
             )}
         </CardContent>
     </Card>
