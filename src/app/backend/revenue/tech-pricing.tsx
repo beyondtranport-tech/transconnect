@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -18,9 +18,7 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Save, Cpu } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useFirestore, useDoc, useMemoFirebase } from '@/firebase';
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
-import { Separator } from '@/components/ui/separator';
+import { getClientSideAuthToken } from '@/firebase';
 
 const formSchema = z.object({
   // Shop Enhancements
@@ -38,13 +36,27 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
+async function fetchConfig(configId: string) {
+    const token = await getClientSideAuthToken();
+    if (!token) throw new Error("Authentication failed.");
+
+    const response = await fetch('/api/getUserSubcollection', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ path: `configuration/${configId}`, type: 'document' }),
+    });
+
+    const result = await response.json();
+    if (!result.success) {
+        throw new Error(result.error || `Failed to fetch config: ${configId}`);
+    }
+    return result.data;
+}
+
 export default function TechPricing() {
   const { toast } = useToast();
-  const firestore = useFirestore();
-  const [isLoading, setIsLoading] = useState(false);
-
-  const configRef = useMemoFirebase(() => firestore ? doc(firestore, 'configuration', 'techPricing') : null, [firestore]);
-  const { data: techPriceConfig, isLoading: isConfigLoading } = useDoc<FormValues>(configRef);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isConfigLoading, setIsConfigLoading] = useState(true);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -58,23 +70,47 @@ export default function TechPricing() {
     },
   });
 
-  useEffect(() => {
-    if (techPriceConfig) {
-      form.reset(techPriceConfig);
+  const loadConfig = useCallback(async () => {
+    setIsConfigLoading(true);
+    try {
+        const configData = await fetchConfig('techPricing');
+        if (configData) {
+            form.reset(configData);
+        }
+    } catch (e: any) {
+        toast({ variant: 'destructive', title: 'Error Loading Config', description: e.message });
+    } finally {
+        setIsConfigLoading(false);
     }
-  }, [techPriceConfig, form]);
+  }, [form, toast]);
+
+  useEffect(() => {
+    loadConfig();
+  }, [loadConfig]);
 
   const onSubmit = async (values: FormValues) => {
-    if (!configRef) return;
-    setIsLoading(true);
+    setIsSaving(true);
     
     try {
-      await setDoc(configRef, { ...values, updatedAt: serverTimestamp() }, { merge: true });
+        const token = await getClientSideAuthToken();
+        if (!token) throw new Error("Authentication failed.");
+
+        const response = await fetch('/api/updateConfigDoc', {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ path: 'configuration/techPricing', data: { ...values, updatedAt: { _methodName: 'serverTimestamp' } } }),
+        });
+        
+        if (!response.ok) {
+            throw new Error((await response.json()).error || 'Failed to save settings.');
+        }
+
       toast({ title: 'Tech Pricing Updated!', description: 'The new SaaS prices have been saved.' });
+      loadConfig();
     } catch (e: any) {
       toast({ variant: 'destructive', title: 'Update Failed', description: e.message });
     } finally {
-      setIsLoading(false);
+      setIsSaving(false);
     }
   };
 
@@ -152,12 +188,12 @@ export default function TechPricing() {
                         )} />
                     </div>
                     
-                    <Separator />
-                    
-                    <Button type="submit" disabled={isLoading} className="mt-4">
-                        {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                        Save All Tech Prices
-                    </Button>
+                    <div className="border-t pt-6">
+                        <Button type="submit" disabled={isSaving} className="mt-4">
+                            {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                            Save All Tech Prices
+                        </Button>
+                    </div>
                 </form>
                 </Form>
             )}
