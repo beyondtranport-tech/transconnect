@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -45,6 +46,7 @@ import {
   Boxes,
   Server,
   ListTodo,
+  Wallet,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -476,6 +478,11 @@ export default function BackendPageContent() {
     );
   }
 
+  const getInitials = (name: string | null | undefined) => {
+    if (!name) return "AD";
+    return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+  };
+
   return (
     <SidebarProvider>
       <Sidebar>
@@ -644,7 +651,7 @@ export default function BackendPageContent() {
         <SidebarFooter>
           <div className="flex items-center gap-3 p-2 rounded-md bg-sidebar-accent">
             <Avatar className="h-10 w-10">
-              <AvatarFallback>SA</AvatarFallback>
+              <AvatarFallback>{getInitials(user.displayName)}</AvatarFallback>
             </Avatar>
             <div className="flex flex-col">
               <span className="text-sm font-medium text-sidebar-foreground">
