@@ -5,6 +5,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2, Star } from 'lucide-react';
 import MemberLoyaltyStatus from './member-loyalty-status';
+import { getClientSideAuthToken } from '@/firebase';
 
 interface Member {
     id: string;
@@ -27,15 +28,50 @@ interface Membership {
     discountShare?: number;
 }
 
-// NOTE: Data fetching is temporarily disabled to prevent infinite loops.
-// The component will render with empty static data.
+async function fetchAdminData(action: string) {
+    const token = await getClientSideAuthToken();
+    if (!token) throw new Error("Authentication failed.");
+    
+    const response = await fetch('/api/admin', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action }),
+    });
+
+    const result = await response.json();
+    if (!response.ok || !result.success) {
+        throw new Error(result.error || `API Error for action: ${action}`);
+    }
+    return result.data;
+}
+
 
 export default function RewardsManagement() {
-    const [companies] = useState<Member[]>([]);
-    const [memberships] = useState<Membership[]>([]);
-    const [isLoading] = useState(false);
-    const [error] = useState<string | null>(null);
+    const [companies, setCompanies] = useState<Member[]>([]);
+    const [memberships, setMemberships] = useState<Membership[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
+    const loadData = useCallback(async () => {
+        setIsLoading(true);
+        setError(null);
+        try {
+            const [companiesData, membershipsData] = await Promise.all([
+                fetchAdminData('getMembers'),
+                fetchAdminData('getMemberships')
+            ]);
+            setCompanies(companiesData || []);
+            setMemberships(membershipsData || []);
+        } catch (e: any) {
+            setError(e.message || 'An unknown error occurred');
+        } finally {
+            setIsLoading(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        loadData();
+    }, [loadData]);
     
     if (isLoading) {
         return (
