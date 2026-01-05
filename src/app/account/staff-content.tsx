@@ -211,10 +211,14 @@ function AddStaffDialog({ companyId, onStaffAdded }: { companyId: string; onStaf
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="Admin">Admin</SelectItem>
-                          <SelectItem value="Manager">Manager</SelectItem>
-                          <SelectItem value="User">User</SelectItem>
-                           <SelectItem value="Viewer">Viewer</SelectItem>
+                          <SelectItem value="Executive">Executive</SelectItem>
+                          <SelectItem value="non executive">Non-Executive</SelectItem>
+                          <SelectItem value="operations">Operations</SelectItem>
+                          <SelectItem value="marketing">Marketing</SelectItem>
+                          <SelectItem value="IT">IT</SelectItem>
+                          <SelectItem value="logistics">Logistics</SelectItem>
+                          <SelectItem value="store">Store</SelectItem>
+                          <SelectItem value="sales">Sales</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />
