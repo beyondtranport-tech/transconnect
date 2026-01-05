@@ -35,6 +35,7 @@ import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import StaffActionMenu from '../adminaccount/staff-action-menu';
 
 const staffFormSchema = z.object({
   firstName: z.string().min(1, 'First name is required'),
@@ -244,7 +245,7 @@ export default function StaffContent() {
                                     <Badge variant="outline">{staffMember.role}</Badge>
                                 </TableCell>
                                 <TableCell className="text-right">
-                                    <Button variant="ghost" size="sm">Edit</Button>
+                                    <StaffActionMenu staffMember={staffMember} companyId={userData?.companyId || ''} onUpdate={forceRefresh} />
                                 </TableCell>
                             </TableRow>
                         ))}
