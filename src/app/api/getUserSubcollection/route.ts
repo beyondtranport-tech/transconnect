@@ -62,13 +62,10 @@ export async function POST(req: NextRequest) {
             let isAuthorized = false;
             const pathSegments = path.split('/');
             
-            // Check if the path starts with `users/{uid}` or `companies/{companyId}`
-            // and if the UID/companyId belongs to the authenticated user.
             if (pathSegments.length >= 2) {
                 if (pathSegments[0] === 'users' && pathSegments[1] === uid) {
                     isAuthorized = true;
                 } else if (pathSegments[0] === 'companies') {
-                    // To check company access, we first need to get the user's companyId
                     if (uid) {
                         const userDoc = await db.collection('users').doc(uid).get();
                         const userCompanyId = userDoc.data()?.companyId;
@@ -98,6 +95,25 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, data: null });
             }
         } else if (type === 'collection-group') {
+            // Special handling for staff to enrich with companyName
+            if (path === 'staff') {
+                const companiesSnap = await db.collection('companies').get();
+                const companyMap = new Map(companiesSnap.docs.map(doc => [doc.id, doc.data().companyName]));
+                
+                const staffSnap = await db.collectionGroup('staff').get();
+                const staffData = staffSnap.docs.map(doc => {
+                    const data = doc.data();
+                    const companyId = data.companyId;
+                    return {
+                        id: doc.id,
+                        companyName: companyMap.get(companyId) || 'Unknown Company',
+                        ...serializeTimestamps(data)
+                    };
+                });
+                 return NextResponse.json({ success: true, data: staffData });
+            }
+
+
              const collectionGroupRef = db.collectionGroup(path);
              const snapshot = await collectionGroupRef.get();
              const data = snapshot.docs.map(doc => {
@@ -128,4 +144,3 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ success: false, error: `Internal Server Error: ${error.message}` }, { status: 500 });
     }
 }
-
