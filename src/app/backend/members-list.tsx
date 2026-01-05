@@ -117,7 +117,7 @@ export default function MembersList() {
             header: 'Reward Points',
             cell: ({ row }) => (
                 <div className="flex items-center gap-1 font-semibold">
-                   <Gem className="h-3 w-3 text-primary"/> {row.original.rewardPoints || 0}
+                   <Gem className="mr-1 h-3 w-3 text-primary"/> {row.original.rewardPoints || 0}
                 </div>
             )
         },
