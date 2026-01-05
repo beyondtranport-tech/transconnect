@@ -95,25 +95,6 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, data: null });
             }
         } else if (type === 'collection-group') {
-            // Special handling for staff to enrich with companyName
-            if (path === 'staff') {
-                const companiesSnap = await db.collection('companies').get();
-                const companyMap = new Map(companiesSnap.docs.map(doc => [doc.id, doc.data().companyName]));
-                
-                const staffSnap = await db.collectionGroup('staff').get();
-                const staffData = staffSnap.docs.map(doc => {
-                    const data = doc.data();
-                    const companyId = data.companyId;
-                    return {
-                        id: doc.id,
-                        companyName: companyMap.get(companyId) || 'Unknown Company',
-                        ...serializeTimestamps(data)
-                    };
-                });
-                 return NextResponse.json({ success: true, data: staffData });
-            }
-
-
              const collectionGroupRef = db.collectionGroup(path);
              const snapshot = await collectionGroupRef.get();
              const data = snapshot.docs.map(doc => {

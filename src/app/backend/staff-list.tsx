@@ -1,7 +1,8 @@
 
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import * as React from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2, Users } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
@@ -10,7 +11,7 @@ import { type ColumnDef } from '@/hooks/use-data-table';
 import { getClientSideAuthToken } from '@/firebase';
 import StaffActionMenu from './staff-action-menu';
 
-async function fetchAllStaff() {
+async function fetchCollectionGroup(path: string) {
     const token = await getClientSideAuthToken();
     if (!token) throw new Error("Authentication failed.");
     
@@ -20,12 +21,32 @@ async function fetchAllStaff() {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ path: 'staff', type: 'collection-group' }),
+        body: JSON.stringify({ path: path, type: 'collection-group' }),
     });
 
     const result = await response.json();
-    if (!result.success) {
-        throw new Error(result.error || `API Error for action: getStaff`);
+    if (!response.ok || !result.success) {
+        throw new Error(result.error || `API Error for path: ${path}`);
+    }
+    return result.data;
+}
+
+async function fetchCollection(path: string) {
+    const token = await getClientSideAuthToken();
+    if (!token) throw new Error("Authentication failed.");
+
+    const response = await fetch('/api/getUserSubcollection', {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ path: path, type: 'collection' }),
+    });
+
+    const result = await response.json();
+    if (!response.ok || !result.success) {
+        throw new Error(result.error || `API Error for path: ${path}`);
     }
     return result.data;
 }
@@ -40,8 +61,19 @@ export default function StaffList() {
     setIsLoading(true);
     setError(null);
     try {
-        const data = await fetchAllStaff();
-        setStaff(data);
+        const [staffData, companiesData] = await Promise.all([
+            fetchCollectionGroup('staff'),
+            fetchCollection('companies')
+        ]);
+        
+        const companyMap = new Map(companiesData.map((c: any) => [c.id, c.companyName]));
+
+        const enrichedStaff = staffData.map((s: any) => ({
+            ...s,
+            companyName: companyMap.get(s.companyId) || 'Unknown Company',
+        }));
+        
+        setStaff(enrichedStaff);
     } catch(e: any) {
         setError(e.message);
     } finally {
