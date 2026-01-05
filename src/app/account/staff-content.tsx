@@ -233,6 +233,7 @@ export default function StaffContent() {
                             <TableHead>Name</TableHead>
                             <TableHead>Email</TableHead>
                             <TableHead>Role</TableHead>
+                            <TableHead>Status</TableHead>
                             <TableHead className="text-right">Actions</TableHead>
                         </TableRow>
                     </TableHeader>
@@ -243,6 +244,11 @@ export default function StaffContent() {
                                 <TableCell>{staffMember.email}</TableCell>
                                 <TableCell>
                                     <Badge variant="outline">{staffMember.role}</Badge>
+                                </TableCell>
+                                <TableCell>
+                                    <Badge variant={staffMember.status === 'confirmed' ? 'default' : 'secondary'} className="capitalize">
+                                        {staffMember.status || 'unconfirmed'}
+                                    </Badge>
                                 </TableCell>
                                 <TableCell className="text-right">
                                     <StaffActionMenu staffMember={staffMember} companyId={userData?.companyId || ''} onUpdate={forceRefresh} />
