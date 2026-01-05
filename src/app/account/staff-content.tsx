@@ -189,12 +189,9 @@ function AddStaffDialog({ companyId, onStaffAdded }: { companyId: string; onStaf
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="Fleet Manager">Fleet Manager</SelectItem>
-                          <SelectItem value="Operations Manager">Operations Manager</SelectItem>
-                          <SelectItem value="Driver">Driver</SelectItem>
-                          <SelectItem value="Administrator">Administrator</SelectItem>
-                          <SelectItem value="Finance Clerk">Finance Clerk</SelectItem>
-                           <SelectItem value="Owner">Owner</SelectItem>
+                          <SelectItem value="Director">Director</SelectItem>
+                          <SelectItem value="Manager">Manager</SelectItem>
+                          <SelectItem value="Admin">Admin</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />
