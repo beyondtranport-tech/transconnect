@@ -238,3 +238,4 @@ export default function StaffActionMenu({ staffMember, onUpdate }: { staffMember
     </div>
   );
 }
+
