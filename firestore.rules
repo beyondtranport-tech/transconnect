@@ -37,17 +37,9 @@ service cloud.firestore {
       allow update: if isCompanyOwner(companyId);
       allow list: if isAdmin();
 
-      // --- Staff Management ---
-      // The company owner can manage their own staff members.
-      match /staff/{staffId} {
-        allow read, write, list: if isCompanyOwner(companyId) || isAdmin();
-      }
-
-      // --- Other Company Subcollections ---
-      // The owner of the parent company document has full access to other subcollections.
-      match /{subcollection}/{docId} {
-        // This rule applies to quotes, enquiries, walletPayments, transactions, shops, etc.
-        // It intentionally does NOT match /staff/{staffId} which has its own rule above.
+      // --- Company Subcollections ---
+      // The company owner has full access to all of their own subcollections.
+      match /{subcollection}/{docId=**} {
         allow read, write: if isCompanyOwner(companyId) || isAdmin();
       }
     }
