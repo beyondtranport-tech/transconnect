@@ -67,18 +67,14 @@ export default function MembersList() {
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
-        async function fetchMembers() {
-            setIsLoading(true);
-            try {
-                const result = await fetchFromAdminAPI('getMembers');
-                setMembers(result.data);
-            } catch (e: any) {
-                 setError(e.message || 'Failed to fetch members.');
-            } finally {
-                setIsLoading(false);
-            }
+        // Temporarily disabled to prevent infinite loops and quota errors.
+        // This will be re-enabled correctly in a future step.
+        const fetchMembers = async () => {
+          setIsLoading(true);
+          // Simulating no data being loaded to prevent API calls
+          setMembers([]);
+          setIsLoading(false);
         }
-
         fetchMembers();
     }, []);
 
@@ -169,7 +165,10 @@ export default function MembersList() {
                                 </TableRow>
                             )) : (
                                 <TableRow>
-                                    <TableCell colSpan={7} className="text-center h-24">No members found.</TableCell>
+                                    <TableCell colSpan={7} className="h-24 text-center">
+                                      {/* Temporarily showing this message while data fetching is disabled */}
+                                      No members found.
+                                    </TableCell>
                                 </TableRow>
                             )}
                         </TableBody>
