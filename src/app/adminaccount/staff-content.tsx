@@ -33,6 +33,7 @@ import { collection, doc } from 'firebase/firestore';
 import { Loader2, PlusCircle, UserPlus, Users } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
+import StaffActionMenu from './staff-action-menu';
 
 const staffFormSchema = z.object({
   firstName: z.string().min(1, 'First name is required'),
@@ -74,6 +75,7 @@ function AddStaffDialog({ companyId, onStaffAdded }: { companyId: string; onStaf
       const staffData = {
         ...values,
         companyId: companyId,
+        status: 'unconfirmed',
         createdAt: { _methodName: 'serverTimestamp' },
       };
 
@@ -282,6 +284,7 @@ export default function StaffContent() {
                             <TableHead>Email</TableHead>
                             <TableHead>Title</TableHead>
                             <TableHead>Role</TableHead>
+                            <TableHead>Status</TableHead>
                             <TableHead className="text-right">Actions</TableHead>
                         </TableRow>
                     </TableHeader>
@@ -294,8 +297,13 @@ export default function StaffContent() {
                                 <TableCell>
                                     <Badge variant="outline">{staffMember.role}</Badge>
                                 </TableCell>
+                                <TableCell>
+                                    <Badge variant={staffMember.status === 'confirmed' ? 'default' : 'secondary'}>
+                                        {staffMember.status || 'unconfirmed'}
+                                    </Badge>
+                                </TableCell>
                                 <TableCell className="text-right">
-                                    <Button variant="ghost" size="sm">Edit</Button>
+                                    <StaffActionMenu staffMember={staffMember} companyId={userData?.companyId || ''} onUpdate={forceRefresh} />
                                 </TableCell>
                             </TableRow>
                         ))}
@@ -311,5 +319,3 @@ export default function StaffContent() {
             )}
         </CardContent>
     </Card>
-  );
-}
