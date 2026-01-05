@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -45,8 +44,7 @@ const staffFormSchema = z.object({
 
 type StaffFormValues = z.infer<typeof staffFormSchema>;
 
-
-function EditStaffDialog({ staffMember, onUpdate }: { staffMember: any, onUpdate: () => void }) {
+function EditStaffDialog({ staffMember, onUpdate }: { staffMember: any, onUpdate: (updatedData: Partial<StaffFormValues>) => void }) {
   const [isOpen, setIsOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
@@ -85,7 +83,7 @@ function EditStaffDialog({ staffMember, onUpdate }: { staffMember: any, onUpdate
       if (!response.ok) throw new Error(result.error || 'Failed to update staff member.');
 
       toast({ title: 'Staff Member Updated' });
-      onUpdate();
+      onUpdate(values);
       setIsOpen(false);
     } catch (e: any) {
       toast({ variant: 'destructive', title: 'Update Failed', description: e.message });
@@ -135,14 +133,24 @@ function EditStaffDialog({ staffMember, onUpdate }: { staffMember: any, onUpdate
   );
 }
 
-export default function StaffActionMenu({ staffMember, onUpdate }: { staffMember: any; onUpdate: () => void }) {
+export default function StaffActionMenu({ staffMember: initialStaffMember, onUpdate }: { staffMember: any; onUpdate: (id: string, updates: Partial<any>) => void }) {
+  const [staffMember, setStaffMember] = useState(initialStaffMember);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const [isAlertOpen, setIsAlertOpen] = useState(false);
   const { toast } = useToast();
 
-  const handleUpdateStatus = async (status: 'confirmed' | 'unconfirmed') => {
+  const handleStatusChange = (newStatus: 'confirmed' | 'unconfirmed') => {
     setIsUpdating(true);
+    updateStaffMember({ status: newStatus }, `status is now ${newStatus}`);
+  };
+  
+  const handleDialogUpdate = (updatedData: Partial<StaffFormValues>) => {
+      onUpdate(staffMember.id, updatedData);
+      setStaffMember((prev: any) => ({ ...prev, ...updatedData }));
+  };
+
+  const updateStaffMember = async (payload: object, successMessage: string) => {
     try {
       const token = await getClientSideAuthToken();
       if (!token) throw new Error('Authentication failed.');
@@ -150,22 +158,25 @@ export default function StaffActionMenu({ staffMember, onUpdate }: { staffMember
       const response = await fetch('/api/admin', {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-            action: 'updateStaffStatus', 
-            payload: { companyId: staffMember.companyId, staffId: staffMember.id, status }
+        body: JSON.stringify({
+          action: 'updateStaffMember',
+          payload: { companyId: staffMember.companyId, staffId: staffMember.id, data: payload }
         }),
       });
+
       const result = await response.json();
-      if (!response.ok) throw new Error(result.error || 'Failed to update status.');
+      if (!response.ok) throw new Error(result.error || 'Failed to update staff member.');
       
-      toast({ title: 'Status Updated', description: `${staffMember.firstName}'s status is now ${status}.` });
-      onUpdate();
+      toast({ title: 'Success', description: `${staffMember.firstName}'s ${successMessage}.` });
+      onUpdate(staffMember.id, payload);
+      setStaffMember((prev: any) => ({ ...prev, ...payload }));
     } catch (e: any) {
       toast({ variant: 'destructive', title: 'Update Failed', description: e.message });
     } finally {
       setIsUpdating(false);
     }
   };
+
 
   const handleDelete = async () => {
     setIsDeleting(true);
@@ -186,7 +197,7 @@ export default function StaffActionMenu({ staffMember, onUpdate }: { staffMember
       if (!response.ok) throw new Error(result.error || 'Failed to delete staff member.');
 
       toast({ title: 'Staff Member Deleted' });
-      onUpdate();
+      onUpdate(staffMember.id, { _deleted: true });
     } catch (e: any) {
       toast({ variant: 'destructive', title: 'Deletion Failed', description: e.message });
     } finally {
@@ -211,13 +222,13 @@ export default function StaffActionMenu({ staffMember, onUpdate }: { staffMember
                     <Eye className="mr-2 h-4 w-4" /> View Company
                 </Link>
              </DropdownMenuItem>
-             <EditStaffDialog staffMember={staffMember} onUpdate={onUpdate} />
+             <EditStaffDialog staffMember={staffMember} onUpdate={handleDialogUpdate} />
             {staffMember.status !== 'confirmed' ? (
-              <DropdownMenuItem onClick={() => handleUpdateStatus('confirmed')}>
+              <DropdownMenuItem onClick={() => handleStatusChange('confirmed')}>
                 <CheckCircle className="mr-2 h-4 w-4" /> Confirm
               </DropdownMenuItem>
             ) : (
-              <DropdownMenuItem onClick={() => handleUpdateStatus('unconfirmed')}>
+              <DropdownMenuItem onClick={() => handleStatusChange('unconfirmed')}>
                 <XCircle className="mr-2 h-4 w-4" /> Un-confirm
               </DropdownMenuItem>
             )}

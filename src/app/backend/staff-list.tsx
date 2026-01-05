@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -25,9 +24,10 @@ interface Staff {
     title?: string;
     role?: string;
     status?: string;
+    companyName?: string;
 }
 
-async function fetchFromAdminAPI(action: string) {
+async function fetchAdminData(action: string) {
     const token = await getClientSideAuthToken();
     if (!token) throw new Error("Authentication failed.");
     
@@ -45,77 +45,51 @@ async function fetchFromAdminAPI(action: string) {
 }
 
 export default function StaffList() {
-  const [staff, setStaff] = useState<Staff[] | null>(null);
-  const [companies, setCompanies] = useState<Company[] | null>(null);
+  const [enrichedStaff, setEnrichedStaff] = useState<Staff[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [refreshKey, setRefreshKey] = useState(0);
 
-  const handleUpdate = useCallback(() => {
-    setRefreshKey(prev => prev + 1);
+  const fetchData = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+        const [staffData, companyData] = await Promise.all([
+            fetchAdminData('getStaff'),
+            fetchAdminData('getMembers'),
+        ]);
+        const companyMap = new Map(companyData.map((c: Company) => [c.id, c.companyName]));
+        const enriched = staffData.map((s: Staff) => ({
+          ...s,
+          companyName: companyMap.get(s.companyId) || 'Unknown Company',
+        }));
+        setEnrichedStaff(enriched);
+    } catch(e: any) {
+         setError(e.message || "An unknown error occurred");
+    } finally {
+        setIsLoading(false);
+    }
   }, []);
 
   useEffect(() => {
-    const fetchData = async () => {
-        setIsLoading(true);
-        setError(null);
-        try {
-            const [staffData, companyData] = await Promise.all([
-                fetchFromAdminAPI('getStaff'),
-                fetchFromAdminAPI('getMembers'),
-            ]);
-            setStaff(staffData || []);
-            setCompanies(companyData || []);
-        } catch(e: any) {
-             setError(e.message || "An unknown error occurred");
-        } finally {
-            setIsLoading(false);
-        }
-    };
-    
     fetchData();
-  }, [refreshKey]);
+  }, [fetchData]);
   
-  const enrichedStaff = useMemo(() => {
-    if (!staff || !companies) return [];
-    const companyMap = new Map(companies.map(c => [c.id, c.companyName]));
-    return staff.map(s => ({
-      ...s,
-      companyName: companyMap.get(s.companyId) || 'Unknown Company',
-    }));
-  }, [staff, companies]);
+  const handleUpdate = useCallback((staffId: string, updates: Partial<Staff>) => {
+    setEnrichedStaff(currentStaff => {
+        if (updates._deleted) {
+            return currentStaff.filter(s => s.id !== staffId);
+        }
+        return currentStaff.map(s => s.id === staffId ? { ...s, ...updates } : s);
+    });
+  }, []);
 
-  const columns: ColumnDef<any>[] = useMemo(() => [
-    {
-      accessorKey: 'companyName',
-      header: 'Company',
-      cell: ({ row }) => <div>{row.original.companyName}</div>,
-    },
-    {
-      accessorKey: 'firstName',
-      header: 'First Name',
-      cell: ({ row }) => <div>{row.original.firstName}</div>,
-    },
-    {
-      accessorKey: 'lastName',
-      header: 'Last Name',
-      cell: ({ row }) => <div>{row.original.lastName}</div>,
-    },
-    {
-      accessorKey: 'email',
-      header: 'Email',
-      cell: ({ row }) => <div>{row.original.email}</div>,
-    },
-    {
-      accessorKey: 'title',
-      header: 'Title',
-      cell: ({ row }) => <div>{row.original.title}</div>,
-    },
-    {
-      accessorKey: 'role',
-      header: 'Role',
-      cell: ({ row }) => <Badge variant="outline">{row.original.role}</Badge>,
-    },
+  const columns: ColumnDef<Staff>[] = useMemo(() => [
+    { accessorKey: 'companyName', header: 'Company', cell: ({ row }) => <div>{row.original.companyName}</div> },
+    { accessorKey: 'firstName', header: 'First Name', cell: ({ row }) => <div>{row.original.firstName}</div> },
+    { accessorKey: 'lastName', header: 'Last Name', cell: ({ row }) => <div>{row.original.lastName}</div> },
+    { accessorKey: 'email', header: 'Email', cell: ({ row }) => <div>{row.original.email}</div> },
+    { accessorKey: 'title', header: 'Title', cell: ({ row }) => <div>{row.original.title}</div> },
+    { accessorKey: 'role', header: 'Role', cell: ({ row }) => <Badge variant="outline">{row.original.role}</Badge> },
     {
         accessorKey: 'status',
         header: 'Status',
@@ -130,7 +104,7 @@ export default function StaffList() {
       header: 'Actions',
       cell: ({ row }) => <StaffActionMenu staffMember={row.original} onUpdate={handleUpdate} />,
     },
-  ], [companies, handleUpdate]);
+  ], [handleUpdate]);
 
   return (
     <Card>
