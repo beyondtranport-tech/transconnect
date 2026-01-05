@@ -18,8 +18,8 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Save, HandCoins } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useFirestore, useDoc, useMemoFirebase } from '@/firebase';
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { useFirestore, useDoc, useMemoFirebase, getClientSideAuthToken } from '@/firebase';
+import { doc } from 'firebase/firestore';
 
 const formSchema = z.object({
   loyaltyPlanPrice: z.coerce.number().min(0, 'Price must be non-negative.'),
@@ -32,10 +32,10 @@ type FormValues = z.infer<typeof formSchema>;
 export default function ConnectPlanPricing() {
   const { toast } = useToast();
   const firestore = useFirestore();
-  const [isLoading, setIsLoading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   const configRef = useMemoFirebase(() => firestore ? doc(firestore, 'configuration', 'connectPlans') : null, [firestore]);
-  const { data: connectPlanConfig, isLoading: isConfigLoading } = useDoc<FormValues>(configRef);
+  const { data: connectPlanConfig, isLoading: isConfigLoading, forceRefresh } = useDoc<FormValues>(configRef);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -54,15 +54,24 @@ export default function ConnectPlanPricing() {
 
   const onSubmit = async (values: FormValues) => {
     if (!configRef) return;
-    setIsLoading(true);
+    setIsSaving(true);
     
     try {
-      await setDoc(configRef, { ...values, updatedAt: serverTimestamp() }, { merge: true });
+        const token = await getClientSideAuthToken();
+        if (!token) throw new Error("Authentication failed.");
+
+        await fetch('/api/updateConfigDoc', {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ path: configRef.path, data: { ...values, updatedAt: { _methodName: 'serverTimestamp' } } }),
+        });
+
       toast({ title: 'Connect Plan Prices Updated!', description: 'The new prices have been saved.' });
+      forceRefresh();
     } catch (e: any) {
       toast({ variant: 'destructive', title: 'Update Failed', description: e.message });
     } finally {
-      setIsLoading(false);
+      setIsSaving(false);
     }
   };
 
@@ -122,8 +131,8 @@ export default function ConnectPlanPricing() {
                             )}
                         />
                     </div>
-                    <Button type="submit" disabled={isLoading} className="mt-4">
-                    {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                    <Button type="submit" disabled={isSaving} className="mt-4">
+                    {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                     Save Prices
                     </Button>
                 </form>
