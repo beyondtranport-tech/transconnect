@@ -200,7 +200,7 @@ export default function StaffActionMenu({ staffMember, onUpdate }: { staffMember
                     <Eye className="mr-2 h-4 w-4" /> View Company
                 </Link>
              </DropdownMenuItem>
-             <DropdownMenuItem onSelect={() => setIsEditOpen(true)}>
+             <DropdownMenuItem onSelect={(e) => { e.preventDefault(); setIsEditOpen(true); }}>
                 <Edit className="mr-2 h-4 w-4" /> Edit
              </DropdownMenuItem>
             {staffMember.status !== 'confirmed' ? (
