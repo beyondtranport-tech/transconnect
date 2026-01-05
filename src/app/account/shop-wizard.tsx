@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
@@ -672,6 +673,7 @@ function AIGenerateImageDialog({ onGenerate, children }: { onGenerate: (url: str
                     <div className="space-y-2">
                         <Label htmlFor="image-prompt">Your Prompt</Label>
                         <Textarea id="image-prompt" value={prompt} onChange={(e) => setPrompt(e.target.value)} placeholder="e.g., A dramatic hero shot of a red Scania truck on a mountain pass at sunset" />
+                        <p className="text-xs text-muted-foreground">For best results, use a descriptive prompt of at least 5-7 words.</p>
                     </div>
                 </div>
                 <DialogFooter>
