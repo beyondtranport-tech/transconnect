@@ -124,7 +124,7 @@ export default function MembersList() {
         { accessorKey: 'createdAt', header: 'Joined', cell: ({ row }) => <div>{formatDate(row.original.createdAt)}</div> },
         {
             id: 'actions',
-            header: () => <div className="text-right">Actions</div>,
+            header: 'Actions',
             cell: ({ row }) => (
                 <div className="text-right">
                     <Button asChild variant="ghost" size="sm">
@@ -184,5 +184,3 @@ export default function MembersList() {
         </Card>
     );
 }
-
-    
