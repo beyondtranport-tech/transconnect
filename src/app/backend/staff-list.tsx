@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -22,50 +23,53 @@ export default function StaffList() {
   const [error, setError] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
 
-  const fetchData = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
-        const token = await getClientSideAuthToken();
-        if (!token) throw new Error("Authentication failed.");
-        
-        const [staffResponse, companiesResponse] = await Promise.all([
-            fetch('/api/admin', {
-                method: 'POST',
-                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action: 'getStaff' })
-            }),
-            fetch('/api/admin', {
-                method: 'POST',
-                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action: 'getMembers' })
-            })
-        ]);
-
-        const staffResult = await staffResponse.json();
-        const companiesResult = await companiesResponse.json();
-
-        if (!staffResult.success || !companiesResult.success) {
-            throw new Error(staffResult.error || companiesResult.error || 'Failed to fetch data');
-        }
-
-        setStaff(staffResult.data || []);
-        setCompanies(companiesResult.data || []);
-    } catch(e: any) {
-         setError(e.message || "An unknown error occurred");
-    } finally {
-        setIsLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchData();
-  }, [fetchData, refreshKey]);
-  
   const handleUpdate = useCallback(() => {
     setRefreshKey(prev => prev + 1);
   }, []);
 
+  useEffect(() => {
+    const fetchData = async () => {
+        setIsLoading(true);
+        setError(null);
+        try {
+            const token = await getClientSideAuthToken();
+            if (!token) throw new Error("Authentication failed.");
+            
+            const [staffResponse, companiesResponse] = await Promise.all([
+                fetch('/api/admin', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'getStaff' })
+                }),
+                fetch('/api/admin', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'getMembers' })
+                })
+            ]);
+
+            const staffResult = await staffResponse.json();
+            const companiesResult = await companiesResponse.json();
+
+            if (!staffResult.success) {
+                throw new Error(staffResult.error || 'Failed to fetch staff data');
+            }
+            if (!companiesResult.success) {
+                 throw new Error(companiesResult.error || 'Failed to fetch company data');
+            }
+
+            setStaff(staffResult.data || []);
+            setCompanies(companiesResult.data || []);
+        } catch(e: any) {
+             setError(e.message || "An unknown error occurred");
+        } finally {
+            setIsLoading(false);
+        }
+    };
+    
+    fetchData();
+  }, [refreshKey]);
+  
   const enrichedStaff = useMemo(() => {
     if (!staff || !companies) return [];
     const companyMap = new Map(companies.map(c => [c.id, c.companyName]));
