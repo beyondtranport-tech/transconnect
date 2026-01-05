@@ -75,14 +75,15 @@ export async function POST(req: NextRequest) {
              case 'getStaff': {
                 const staffSnap = await db.collectionGroup('staff').get();
                 const companiesSnap = await db.collection('companies').get();
-                const companyMap = new Map(companiesSnap.docs.map(doc => [doc.id, doc.data().companyName]));
+                const companyMap = new Map(companiesSnap.docs.map(doc => [doc.id, doc.data()]));
 
                 const staff = staffSnap.docs.map(doc => {
                     const data = doc.data();
+                    const companyData = companyMap.get(data.companyId) || {};
                     return {
                         ...serializeTimestamps(data),
                         id: doc.id,
-                        companyName: companyMap.get(data.companyId) || 'Unknown Company',
+                        companyName: companyData.companyName || 'Unknown Company',
                     };
                 });
                 return NextResponse.json({ success: true, data: staff });
