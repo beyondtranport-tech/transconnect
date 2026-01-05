@@ -36,6 +36,7 @@ import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
 import { useDoc } from '@/firebase/firestore/use-doc';
 import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const staffFormSchema = z.object({
   firstName: z.string().min(1, 'First name is required'),
@@ -44,7 +45,7 @@ const staffFormSchema = z.object({
   title: z.string().min(1, 'Title is required'),
   role: z.string().min(1, 'Role is required'),
   jobDescription: z.string().optional(),
-  function: z.string().optional(),
+  function: z.string().min(1, 'Function is required'),
 });
 
 type StaffFormValues = z.infer<typeof staffFormSchema>;
@@ -175,15 +176,27 @@ function AddStaffDialog({ companyId, onStaffAdded }: { companyId: string; onStaf
               )}
             />
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <FormField
+               <FormField
                   control={form.control}
                   name="title"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Title</FormLabel>
-                      <FormControl>
-                        <Input placeholder="e.g., Fleet Manager" {...field} />
-                      </FormControl>
+                       <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a title" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="Fleet Manager">Fleet Manager</SelectItem>
+                          <SelectItem value="Operations Manager">Operations Manager</SelectItem>
+                          <SelectItem value="Driver">Driver</SelectItem>
+                          <SelectItem value="Administrator">Administrator</SelectItem>
+                          <SelectItem value="Finance Clerk">Finance Clerk</SelectItem>
+                           <SelectItem value="Owner">Owner</SelectItem>
+                        </SelectContent>
+                      </Select>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -194,9 +207,19 @@ function AddStaffDialog({ companyId, onStaffAdded }: { companyId: string; onStaf
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Role</FormLabel>
-                      <FormControl>
-                        <Input placeholder="e.g., Admin, User" {...field} />
-                      </FormControl>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a role" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="Admin">Admin</SelectItem>
+                          <SelectItem value="Manager">Manager</SelectItem>
+                          <SelectItem value="User">User</SelectItem>
+                           <SelectItem value="Viewer">Viewer</SelectItem>
+                        </SelectContent>
+                      </Select>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -207,10 +230,22 @@ function AddStaffDialog({ companyId, onStaffAdded }: { companyId: string; onStaf
               name="function"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Function (Optional)</FormLabel>
-                  <FormControl>
-                    <Input placeholder="e.g., Operations, Finance" {...field} />
-                  </FormControl>
+                  <FormLabel>Function</FormLabel>
+                   <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a function" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="Operations">Operations</SelectItem>
+                          <SelectItem value="Finance">Finance</SelectItem>
+                          <SelectItem value="Administration">Administration</SelectItem>
+                           <SelectItem value="Human Resources">Human Resources</SelectItem>
+                           <SelectItem value="Sales">Sales</SelectItem>
+                           <SelectItem value="IT">IT</SelectItem>
+                        </SelectContent>
+                      </Select>
                   <FormMessage />
                 </FormItem>
               )}
