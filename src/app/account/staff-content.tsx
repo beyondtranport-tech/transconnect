@@ -28,21 +28,23 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useToast } from '@/hooks/use-toast';
 import { useUser, useFirestore, useMemoFirebase, getClientSideAuthToken } from '@/firebase';
 import { useCollection } from '@/firebase/firestore/use-collection';
-import { addDoc, collection, serverTimestamp, doc } from 'firebase/firestore';
+import { collection, doc } from 'firebase/firestore';
 import { Loader2, PlusCircle, UserPlus, Users } from 'lucide-react';
-import { errorEmitter } from '@/firebase/error-emitter';
-import { FirestorePermissionError } from '@/firebase/errors';
 import { Badge } from '@/components/ui/badge';
 import StaffActionMenu from '../adminaccount/staff-action-menu';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
 import { useDoc } from '@/firebase/firestore/use-doc';
+import { Textarea } from '@/components/ui/textarea';
 
 const staffFormSchema = z.object({
   firstName: z.string().min(1, 'First name is required'),
   lastName: z.string().min(1, 'Last name is required'),
   email: z.string().email('Invalid email address'),
+  title: z.string().min(1, 'Title is required'),
   role: z.string().min(1, 'Role is required'),
+  jobDescription: z.string().optional(),
+  function: z.string().optional(),
 });
 
 type StaffFormValues = z.infer<typeof staffFormSchema>;
@@ -50,7 +52,6 @@ type StaffFormValues = z.infer<typeof staffFormSchema>;
 function AddStaffDialog({ companyId, onStaffAdded }: { companyId: string; onStaffAdded: () => void }) {
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const firestore = useFirestore();
   const { toast } = useToast();
 
   const form = useForm<StaffFormValues>({
@@ -59,18 +60,16 @@ function AddStaffDialog({ companyId, onStaffAdded }: { companyId: string; onStaf
       firstName: '',
       lastName: '',
       email: '',
+      title: '',
       role: '',
+      jobDescription: '',
+      function: '',
     },
   });
 
   const onSubmit = async (values: StaffFormValues) => {
     setIsLoading(true);
-    if (!firestore || !companyId) {
-      toast({ variant: 'destructive', title: 'Error', description: 'Database not available or company not found.' });
-      setIsLoading(false);
-      return;
-    }
-
+    
     try {
       const token = await getClientSideAuthToken();
       if (!token) throw new Error("Authentication token not found.");
@@ -78,23 +77,24 @@ function AddStaffDialog({ companyId, onStaffAdded }: { companyId: string; onStaf
       const staffData = {
         ...values,
         companyId: companyId,
+        status: 'unconfirmed',
         createdAt: { _methodName: 'serverTimestamp' },
       };
-      
+
       const response = await fetch('/api/addUserDoc', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          collectionPath: `companies/${companyId}/staff`,
-          data: staffData
+            collectionPath: `companies/${companyId}/staff`,
+            data: staffData
         }),
       });
       
+      const result = await response.json();
       if (!response.ok) {
-        const result = await response.json();
         throw new Error(result.error || 'Failed to add staff member.');
       }
 
@@ -124,7 +124,7 @@ function AddStaffDialog({ companyId, onStaffAdded }: { companyId: string; onStaf
           <PlusCircle className="mr-2 h-4 w-4" /> Add Staff
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[625px]">
         <DialogHeader>
           <DialogTitle>Add New Staff Member</DialogTitle>
           <DialogDescription>
@@ -133,32 +133,34 @@ function AddStaffDialog({ companyId, onStaffAdded }: { companyId: string; onStaf
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
-            <FormField
-              control={form.control}
-              name="firstName"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>First Name</FormLabel>
-                  <FormControl>
-                    <Input placeholder="John" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="lastName"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Last Name</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Doe" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="firstName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>First Name</FormLabel>
+                      <FormControl>
+                        <Input placeholder="John" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="lastName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Last Name</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Doe" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+            </div>
             <FormField
               control={form.control}
               name="email"
@@ -172,14 +174,55 @@ function AddStaffDialog({ companyId, onStaffAdded }: { companyId: string; onStaf
                 </FormItem>
               )}
             />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="title"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Title</FormLabel>
+                      <FormControl>
+                        <Input placeholder="e.g., Fleet Manager" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="role"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Role</FormLabel>
+                      <FormControl>
+                        <Input placeholder="e.g., Admin, User" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+            </div>
              <FormField
               control={form.control}
-              name="role"
+              name="function"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Role</FormLabel>
+                  <FormLabel>Function (Optional)</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g., Driver, Admin" {...field} />
+                    <Input placeholder="e.g., Operations, Finance" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="jobDescription"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Job Description (Optional)</FormLabel>
+                  <FormControl>
+                    <Textarea placeholder="Describe the staff member's responsibilities..." {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -235,6 +278,11 @@ export default function StaffContent() {
       cell: ({ row }) => <div>{row.email}</div>,
     },
     {
+      accessorKey: 'title',
+      header: 'Title',
+      cell: ({ row }) => <div>{row.title}</div>,
+    },
+    {
       accessorKey: 'role',
       header: 'Role',
       cell: ({ row }) => <Badge variant="outline">{row.role}</Badge>,
@@ -276,5 +324,5 @@ export default function StaffContent() {
             )}
         </CardContent>
     </Card>
-  )
+  );
 }
