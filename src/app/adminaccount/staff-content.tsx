@@ -298,7 +298,7 @@ export default function StaffContent() {
                                     <Badge variant="outline">{staffMember.role}</Badge>
                                 </TableCell>
                                 <TableCell>
-                                    <Badge variant={staffMember.status === 'confirmed' ? 'default' : 'secondary'}>
+                                    <Badge variant={staffMember.status === 'confirmed' ? 'default' : 'secondary'} className="capitalize">
                                         {staffMember.status || 'unconfirmed'}
                                     </Badge>
                                 </TableCell>
