@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -15,8 +16,19 @@ interface Company {
     companyName?: string;
 }
 
+interface Staff {
+    id: string;
+    companyId: string;
+    firstName?: string;
+    lastName?: string;
+    email?: string;
+    title?: string;
+    role?: string;
+    status?: string;
+}
+
 export default function StaffList() {
-  const [staff, setStaff] = useState<any[] | null>(null);
+  const [staff, setStaff] = useState<Staff[] | null>(null);
   const [companies, setCompanies] = useState<Company[] | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
