@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
@@ -116,7 +115,7 @@ export default function StaffList() {
         },
         {
             id: 'actions',
-            header: 'Actions',
+            header: () => <div className="text-right">Actions</div>,
             cell: ({ row }) => (
                 <StaffActionMenu 
                     staffMember={row.original} 

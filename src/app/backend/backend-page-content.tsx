@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -17,22 +16,17 @@ import {
 import {
   Users,
   Settings,
-  Truck,
-  LayoutDashboard,
   LogOut,
-  Server,
-  FileText,
-  ListTodo,
-  DollarSign,
-  TrendingUp,
-  Boxes,
-  HeartHandshake,
-  Wallet,
+  LayoutDashboard,
   Banknote,
+  Combine,
+  Truck,
+  Building,
+  TrendingUp,
+  LineChart,
   Book,
   Loader2,
   ShieldAlert,
-  Combine,
   Store,
   Wrench,
   CheckCircle,
@@ -41,7 +35,6 @@ import {
   Cpu,
   Landmark,
   ArrowRight,
-  LineChart,
   Key,
   HandCoins,
   TicketPercent,
@@ -420,7 +413,7 @@ export default function BackendPageContent() {
       case 'members':
         return <MembersList />;
       case 'staff':
-        return <div className="text-center py-20"><p className="text-muted-foreground">The staff management page is temporarily disabled.</p></div>;
+        return <StaffList />;
       case 'shops':
         return <ShopsList />;
       case 'wallet':
@@ -510,6 +503,12 @@ export default function BackendPageContent() {
                 <SidebarMenuButton tooltip="Members" isActive={activeView === 'members'} onClick={() => router.push('/backend?view=members', { scroll: false })}>
                   <Users />
                   <span>Members</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+               <SidebarMenuItem>
+                <SidebarMenuButton tooltip="Staff" isActive={activeView === 'staff'} onClick={() => router.push('/backend?view=staff', { scroll: false })}>
+                  <Users />
+                  <span>Staff</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
