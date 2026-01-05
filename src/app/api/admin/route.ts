@@ -74,19 +74,13 @@ export async function POST(req: NextRequest) {
             }
              case 'getStaff': {
                 const staffSnap = await db.collectionGroup('staff').get();
-                const companiesSnap = await db.collection('companies').get();
-                const companyMap = new Map(companiesSnap.docs.map(doc => [doc.id, doc.data()]));
-
-                const staff = staffSnap.docs.map(doc => {
-                    const data = doc.data();
-                    const companyData = companyMap.get(data.companyId) || {};
+                const data = staffSnap.docs.map(doc => {
                     return {
-                        ...serializeTimestamps(data),
+                        ...serializeTimestamps(doc.data()),
                         id: doc.id,
-                        companyName: companyData.companyName || 'Unknown Company',
                     };
                 });
-                return NextResponse.json({ success: true, data: staff });
+                return NextResponse.json({ success: true, data: data });
             }
             case 'getWalletPayments': {
                 const snapshot = await db.collectionGroup('walletPayments').get();

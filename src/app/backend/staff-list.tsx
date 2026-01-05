@@ -2,7 +2,7 @@
 'use client';
 
 import * as React from 'react';
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2, Users } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
@@ -11,7 +11,12 @@ import { type ColumnDef } from '@/hooks/use-data-table';
 import { getClientSideAuthToken } from '@/firebase';
 import StaffActionMenu from './staff-action-menu';
 
-async function fetchFromAdminAPI(action: string) {
+interface Company {
+    id: string;
+    companyName?: string;
+}
+
+async function fetchAdminData(action: string) {
     const token = await getClientSideAuthToken();
     if (!token) throw new Error("Authentication failed.");
     
@@ -24,14 +29,8 @@ async function fetchFromAdminAPI(action: string) {
         body: JSON.stringify({ action }),
     });
 
-    if (!response.ok) {
-        // We throw the raw response to be handled by the caller
-        throw response;
-    }
-    
     const result = await response.json();
-
-    if (!result.success) {
+    if (!response.ok || !result.success) {
         throw new Error(result.error || `API Error for action: ${action}`);
     }
     return result.data;
@@ -42,30 +41,38 @@ export default function StaffList() {
   const [staff, setStaff] = useState<any[] | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  const fetchData = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
-        const staffData = await fetchFromAdminAPI('getStaff');
-        setStaff(staffData);
-    } catch(e: any) {
-        // If the error is a Response object, it means the server returned an error page (HTML)
-        if (e instanceof Response) {
-             setError(`Unexpected token '<', "${await e.text().then(text => text.slice(0,15))}..." is not valid JSON`);
-        } else {
-             setError(e.message);
-        }
-    } finally {
-        setIsLoading(false);
-    }
-  }, []);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    async function fetchData() {
+        setIsLoading(true);
+        setError(null);
+        try {
+            const [staffData, companyData] = await Promise.all([
+                fetchAdminData('getStaff'),
+                fetchAdminData('getMembers')
+            ]);
+            
+            const companyMap = new Map(companyData.map((c: Company) => [c.id, c.companyName]));
+            
+            const enrichedStaff = staffData.map((s: any) => ({
+                ...s,
+                companyName: companyMap.get(s.companyId) || 'Unknown Company',
+            }));
 
-  const columns: ColumnDef<any>[] = [
+            setStaff(enrichedStaff);
+        } catch(e: any) {
+             setError(e.message || "An unknown error occurred");
+        } finally {
+            setIsLoading(false);
+        }
+    }
+    fetchData();
+  }, [refreshKey]);
+  
+  const handleUpdate = () => setRefreshKey(prev => prev + 1);
+
+  const columns: ColumnDef<any>[] = useMemo(() => [
     {
       accessorKey: 'companyName',
       header: 'Company',
@@ -108,9 +115,9 @@ export default function StaffList() {
     {
       id: 'actions',
       header: 'Actions',
-      cell: ({ row }) => <StaffActionMenu staffMember={row.original} onUpdate={fetchData} />,
+      cell: ({ row }) => <StaffActionMenu staffMember={row.original} onUpdate={handleUpdate} />,
     },
-  ];
+  ], [handleUpdate]);
 
   return (
     <Card>
