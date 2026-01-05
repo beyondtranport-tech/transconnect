@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -44,6 +43,7 @@ const staffFormSchema = z.object({
   email: z.string().email('Invalid email address'),
   title: z.string().min(1, 'Title is required'),
   role: z.string().min(1, 'Role is required'),
+  function: z.string().min(1, 'Function is required'),
   jobDescription: z.string().optional(),
 });
 
@@ -62,6 +62,7 @@ function AddStaffDialog({ companyId, onStaffAdded }: { companyId: string; onStaf
       email: '',
       title: '',
       role: '',
+      function: '',
       jobDescription: '',
     },
   });
@@ -173,7 +174,7 @@ function AddStaffDialog({ companyId, onStaffAdded }: { companyId: string; onStaf
                 </FormItem>
               )}
             />
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                <FormField
                   control={form.control}
                   name="title"
@@ -210,13 +211,38 @@ function AddStaffDialog({ companyId, onStaffAdded }: { companyId: string; onStaf
                         </FormControl>
                         <SelectContent>
                           <SelectItem value="Executive">Executive</SelectItem>
-                          <SelectItem value="non executive">Non-Executive</SelectItem>
+                          <SelectItem value="non-executive">Non-Executive</SelectItem>
                           <SelectItem value="operations">Operations</SelectItem>
                           <SelectItem value="marketing">Marketing</SelectItem>
                           <SelectItem value="IT">IT</SelectItem>
                           <SelectItem value="logistics">Logistics</SelectItem>
                           <SelectItem value="store">Store</SelectItem>
                           <SelectItem value="sales">Sales</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="function"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Function</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a function" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                            <SelectItem value="Set Policy">Set Policy</SelectItem>
+                            <SelectItem value="Manage Staff">Manage Staff</SelectItem>
+                            <SelectItem value="Set Budgets">Set Budgets</SelectItem>
+                            <SelectItem value="Ensure Implementation">Ensure Implementation</SelectItem>
+                            <SelectItem value="Monitor Deliverables">Monitor Deliverables</SelectItem>
+                            <SelectItem value="Ensure Compliance">Ensure Compliance</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -335,3 +361,5 @@ export default function StaffContent() {
     </Card>
   );
 }
+
+    
