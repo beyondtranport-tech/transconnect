@@ -77,14 +77,21 @@ function EditStaffDialog({ staffMember, onUpdate, open, setOpen }: { staffMember
       if (!response.ok) throw new Error(result.error || 'Failed to update staff member.');
 
       toast({ title: 'Staff Member Updated' });
-      onUpdate();
-      setOpen(false); // Close dialog on success
+      // Close the dialog first. The parent will handle the refresh.
+      setOpen(false);
     } catch (e: any) {
       toast({ variant: 'destructive', title: 'Update Failed', description: e.message });
     } finally {
       setIsSaving(false);
     }
   };
+  
+  // This effect will be triggered when setOpen(false) is called, which in turn triggers onUpdate in the parent.
+  React.useEffect(() => {
+    if (!open) {
+      onUpdate();
+    }
+  }, [open, onUpdate]);
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -238,4 +245,3 @@ export default function StaffActionMenu({ staffMember, onUpdate }: { staffMember
     </div>
   );
 }
-

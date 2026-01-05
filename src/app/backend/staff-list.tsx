@@ -14,13 +14,13 @@ async function fetchAllStaff() {
     const token = await getClientSideAuthToken();
     if (!token) throw new Error("Authentication failed.");
     
-    const response = await fetch('/api/getUserSubcollection', {
+    const response = await fetch('/api/admin', {
         method: 'POST',
         headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ path: 'staff', type: 'collection-group' }),
+        body: JSON.stringify({ action: 'getStaff' }),
     });
 
     const result = await response.json();
@@ -28,25 +28,7 @@ async function fetchAllStaff() {
         throw new Error(result.error || `API Error for action: getStaff`);
     }
 
-    const companiesResponse = await fetch('/api/getUserSubcollection', {
-        method: 'POST',
-        headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ path: 'companies', type: 'collection' }),
-    });
-    const companiesResult = await companiesResponse.json();
-    if (!companiesResult.success) {
-        throw new Error(companiesResult.error || 'Failed to fetch companies');
-    }
-    
-    const companyMap = new Map(companiesResult.data.map((c: any) => [c.id, c.companyName]));
-
-    return result.data.map((staff: any) => ({
-        ...staff,
-        companyName: companyMap.get(staff.companyId) || 'Unknown Company',
-    }));
+    return result.data;
 }
 
 
