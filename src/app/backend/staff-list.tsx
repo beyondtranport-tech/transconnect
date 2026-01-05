@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -49,11 +48,11 @@ export default function StaffList() {
             ]);
 
             const staffResult = await staffResponse.json();
-            const companiesResult = await companiesResponse.json();
-
             if (!staffResult.success) {
                 throw new Error(staffResult.error || 'Failed to fetch staff data');
             }
+
+            const companiesResult = await companiesResponse.json();
             if (!companiesResult.success) {
                  throw new Error(companiesResult.error || 'Failed to fetch company data');
             }
