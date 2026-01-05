@@ -114,7 +114,6 @@
         "title": { "type": "string", "description": "The official job title of the staff member." },
         "role": { "type": "string", "description": "The assigned permission role (e.g., admin, user)." },
         "jobDescription": { "type": "string", "description": "A brief description of the staff member's responsibilities." },
-        "function": { "type": "string", "description": "The business function or department (e.g., Operations, Finance)." },
         "companyId": { "type": "string", "description": "The ID of the parent company this staff member belongs to." },
         "status": { "type": "string", "enum": ["confirmed", "unconfirmed"], "description": "The confirmation status of the staff member." },
         "createdAt": { "type": "object" }

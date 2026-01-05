@@ -45,7 +45,6 @@ const staffFormSchema = z.object({
   title: z.string().min(1, 'Title is required'),
   role: z.string().min(1, 'Role is required'),
   jobDescription: z.string().optional(),
-  function: z.string().min(1, 'Function is required'),
 });
 
 type StaffFormValues = z.infer<typeof staffFormSchema>;
@@ -64,7 +63,6 @@ function AddStaffDialog({ companyId, onStaffAdded }: { companyId: string; onStaf
       title: '',
       role: '',
       jobDescription: '',
-      function: '',
     },
   });
 
@@ -226,31 +224,6 @@ function AddStaffDialog({ companyId, onStaffAdded }: { companyId: string; onStaf
                   )}
                 />
             </div>
-             <FormField
-              control={form.control}
-              name="function"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Function</FormLabel>
-                   <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select a function" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="Operations">Operations</SelectItem>
-                          <SelectItem value="Finance">Finance</SelectItem>
-                          <SelectItem value="Administration">Administration</SelectItem>
-                           <SelectItem value="Human Resources">Human Resources</SelectItem>
-                           <SelectItem value="Sales">Sales</SelectItem>
-                           <SelectItem value="IT">IT</SelectItem>
-                        </SelectContent>
-                      </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
             <FormField
               control={form.control}
               name="jobDescription"
@@ -258,7 +231,7 @@ function AddStaffDialog({ companyId, onStaffAdded }: { companyId: string; onStaf
                 <FormItem>
                   <FormLabel>Job Description (Optional)</FormLabel>
                   <FormControl>
-                    <Textarea placeholder="Describe the staff member's responsibilities..." {...field} />
+                    <Textarea placeholder="Describe the staff member's responsibilities, e.g., manage performance, set budgets, ensure compliance..." {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
