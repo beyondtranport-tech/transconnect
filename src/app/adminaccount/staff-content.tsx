@@ -26,16 +26,17 @@ import {
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { useUser, useFirestore, useMemoFirebase, useDoc, getClientSideAuthToken } from '@/firebase';
+import { useUser, useFirestore, useMemoFirebase, getClientSideAuthToken } from '@/firebase';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { collection, doc } from 'firebase/firestore';
 import { Loader2, PlusCircle, UserPlus, Users } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { Textarea } from '@/components/ui/textarea';
-import StaffActionMenu from './staff-action-menu';
+import StaffActionMenu from '../adminaccount/staff-action-menu';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
-
+import { useDoc } from '@/firebase/firestore/use-doc';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const staffFormSchema = z.object({
   firstName: z.string().min(1, 'First name is required'),
@@ -43,8 +44,8 @@ const staffFormSchema = z.object({
   email: z.string().email('Invalid email address'),
   title: z.string().min(1, 'Title is required'),
   role: z.string().min(1, 'Role is required'),
+  function: z.string().min(1, 'Function is required'),
   jobDescription: z.string().optional(),
-  function: z.string().optional(),
 });
 
 type StaffFormValues = z.infer<typeof staffFormSchema>;
@@ -62,8 +63,8 @@ function AddStaffDialog({ companyId, onStaffAdded }: { companyId: string; onStaf
       email: '',
       title: '',
       role: '',
-      jobDescription: '',
       function: '',
+      jobDescription: '',
     },
   });
 
@@ -174,16 +175,26 @@ function AddStaffDialog({ companyId, onStaffAdded }: { companyId: string; onStaf
                 </FormItem>
               )}
             />
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <FormField
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+               <FormField
                   control={form.control}
                   name="title"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Title</FormLabel>
-                      <FormControl>
-                        <Input placeholder="e.g., Fleet Manager" {...field} />
-                      </FormControl>
+                       <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a title" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="Executive Director">Executive Director</SelectItem>
+                          <SelectItem value="Non-Executive Director">Non-Executive Director</SelectItem>
+                          <SelectItem value="Manager">Manager</SelectItem>
+                          <SelectItem value="Admin">Admin</SelectItem>
+                        </SelectContent>
+                      </Select>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -194,27 +205,51 @@ function AddStaffDialog({ companyId, onStaffAdded }: { companyId: string; onStaf
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Role</FormLabel>
-                      <FormControl>
-                        <Input placeholder="e.g., Admin, User" {...field} />
-                      </FormControl>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a role" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="operations">Operations</SelectItem>
+                          <SelectItem value="marketing">Marketing</SelectItem>
+                          <SelectItem value="IT">IT</SelectItem>
+                          <SelectItem value="logistics">Logistics</SelectItem>
+                          <SelectItem value="store">Store</SelectItem>
+                          <SelectItem value="sales">Sales</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="function"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Function</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a function" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                            <SelectItem value="Set Policy">Set Policy</SelectItem>
+                            <SelectItem value="Manage Staff">Manage Staff</SelectItem>
+                            <SelectItem value="Set Budgets">Set Budgets</SelectItem>
+                            <SelectItem value="Ensure Implementation">Ensure Implementation</SelectItem>
+                            <SelectItem value="Monitor Deliverables">Monitor Deliverables</SelectItem>
+                            <SelectItem value="Ensure Compliance">Ensure Compliance</SelectItem>
+                        </SelectContent>
+                      </Select>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
             </div>
-             <FormField
-              control={form.control}
-              name="function"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Function (Optional)</FormLabel>
-                  <FormControl>
-                    <Input placeholder="e.g., Operations, Finance" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
             <FormField
               control={form.control}
               name="jobDescription"
@@ -222,7 +257,7 @@ function AddStaffDialog({ companyId, onStaffAdded }: { companyId: string; onStaf
                 <FormItem>
                   <FormLabel>Job Description (Optional)</FormLabel>
                   <FormControl>
-                    <Textarea placeholder="Describe the staff member's responsibilities..." {...field} />
+                    <Textarea placeholder="Describe the staff member's responsibilities, e.g., manage performance, set budgets, ensure compliance..." {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -326,3 +361,5 @@ export default function StaffContent() {
     </Card>
   );
 }
+
+    

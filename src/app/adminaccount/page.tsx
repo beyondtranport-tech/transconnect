@@ -41,6 +41,7 @@ const DashboardContent = dynamic(() => import('@/app/adminaccount/dashboard'), {
 const BankDetailsSettings = dynamic(() => import('@/app/backend/bank-details-settings'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const ReconciliationContent = dynamic(() => import('@/app/adminaccount/reconciliation-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const PlatformTransactions = dynamic(() => import('@/app/adminaccount/platform-transactions'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const StaffContent = dynamic(() => import('@/app/adminaccount/staff-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 
 
 function AdminAccountPageContent() {
@@ -85,7 +86,7 @@ function AdminAccountPageContent() {
       case 'platform-transactions': return <PlatformTransactions />;
       // Add placeholders for new views
       case 'business': return <div><h1>Business</h1></div>;
-      case 'staff': return <div><h1>Staff</h1></div>;
+      case 'staff': return <StaffContent />;
       case 'marketing':
         router.push('/marketing');
         return null;
@@ -215,3 +216,5 @@ export default function AdminAccountPage() {
     </Suspense>
   );
 }
+
+    
