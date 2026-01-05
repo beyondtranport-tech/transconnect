@@ -26,7 +26,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { useUser, useFirestore, useMemoFirebase, useDoc } from '@/firebase';
+import { useUser, useFirestore, useMemoFirebase, getClientSideAuthToken } from '@/firebase';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { addDoc, collection, serverTimestamp, doc } from 'firebase/firestore';
 import { Loader2, PlusCircle, UserPlus, Users } from 'lucide-react';
@@ -36,6 +36,7 @@ import { Badge } from '@/components/ui/badge';
 import StaffActionMenu from '../adminaccount/staff-action-menu';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
+import { useDoc } from '@/firebase/firestore/use-doc';
 
 const staffFormSchema = z.object({
   firstName: z.string().min(1, 'First name is required'),
@@ -71,23 +72,31 @@ function AddStaffDialog({ companyId, onStaffAdded }: { companyId: string; onStaf
     }
 
     try {
-      const staffCollectionRef = collection(firestore, `companies/${companyId}/staff`);
+      const token = await getClientSideAuthToken();
+      if (!token) throw new Error("Authentication token not found.");
+      
       const staffData = {
         ...values,
         companyId: companyId,
-        createdAt: serverTimestamp(),
+        createdAt: { _methodName: 'serverTimestamp' },
       };
       
-      await addDoc(staffCollectionRef, staffData)
-        .catch((serverError) => {
-            const permissionError = new FirestorePermissionError({
-                path: staffCollectionRef.path,
-                operation: 'create',
-                requestResourceData: staffData,
-            });
-            errorEmitter.emit('permission-error', permissionError);
-            throw serverError; // Rethrow to be caught by outer catch
-        });
+      const response = await fetch('/api/addUserDoc', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          collectionPath: `companies/${companyId}/staff`,
+          data: staffData
+        }),
+      });
+      
+      if (!response.ok) {
+        const result = await response.json();
+        throw new Error(result.error || 'Failed to add staff member.');
+      }
 
       toast({
         title: 'Staff Added',
