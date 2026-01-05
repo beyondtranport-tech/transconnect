@@ -51,7 +51,7 @@ export default function QuotesCard() {
     const quotesQuery = useMemoFirebase(() => {
         if (!firestore || !user) return null;
         return query(
-            collection(firestore, 'members', user.uid, 'quotes'), 
+            collection(firestore, `companies/${user.uid}/quotes`), 
             orderBy('createdAt', 'desc'), 
             limit(10)
         );
@@ -63,7 +63,7 @@ export default function QuotesCard() {
         if (!firestore || !user) return;
         setIsDeleting(quoteId);
         try {
-            await deleteDoc(doc(firestore, 'members', user.uid, 'quotes', quoteId));
+            await deleteDoc(doc(firestore, `companies/${user.uid}/quotes`, quoteId));
             toast({ title: "Quote Deleted", description: "The quote has been removed from your saved list." });
             forceRefresh();
         } catch (e: any) {
@@ -180,3 +180,5 @@ export default function QuotesCard() {
         </Card>
     );
 }
+
+    

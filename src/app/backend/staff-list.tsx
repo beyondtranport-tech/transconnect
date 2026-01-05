@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
 import { getClientSideAuthToken } from '@/firebase';
+import StaffActionMenu from './staff-action-menu';
 
 interface StaffMember {
     id: string;
@@ -55,7 +56,7 @@ export default function StaffList() {
         try {
             const [staffData, companiesData] = await Promise.all([
                 fetchAdminData('getStaff'),
-                fetchAdminData('getMembers') // Assuming getMembers fetches companies
+                fetchAdminData('getMembers')
             ]);
             setStaff(staffData || []);
             setCompanies(companiesData || []);
@@ -113,7 +114,12 @@ export default function StaffList() {
                 </Badge>
             ),
         },
-    ], []);
+        {
+            id: 'actions',
+            header: () => <div className="text-right">Actions</div>,
+            cell: ({ row }) => <div className="text-right"><StaffActionMenu staffMember={row.original} onUpdate={fetchData} /></div>,
+        }
+    ], [fetchData]);
 
     return (
         <Card>
@@ -142,3 +148,5 @@ export default function StaffList() {
         </Card>
     );
 }
+
+    

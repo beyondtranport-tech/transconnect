@@ -95,7 +95,7 @@ export default function EnquiriesCard() {
     const enquiriesQuery = useMemoFirebase(() => {
         if (!firestore || !user) return null;
         return query(
-            collection(firestore, 'members', user.uid, 'enquiries'), 
+            collection(firestore, `companies/${user.uid}/enquiries`), 
             orderBy('createdAt', 'desc'),
             limit(10)
         );
@@ -107,7 +107,7 @@ export default function EnquiriesCard() {
         if (!firestore || !user) return;
         setIsDeleting(enquiryId);
         try {
-            await deleteDoc(doc(firestore, 'members', user.uid, 'enquiries', enquiryId));
+            await deleteDoc(doc(firestore, `companies/${user.uid}/enquiries`, enquiryId));
             toast({ title: "Enquiry Deleted", description: "The enquiry has been removed." });
             forceRefresh(); // Refresh the list
         } catch (e: any) {
@@ -238,3 +238,5 @@ export default function EnquiriesCard() {
         </Card>
     );
 }
+
+    

@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -290,13 +290,13 @@ export default function StaffContent() {
   const staffCollectionRef = useMemoFirebase(() => {
     if (!firestore || !userData?.companyId) return null;
     return collection(firestore, `companies/${userData.companyId}/staff`);
-  }, [firestore, userData]);
+  }, [firestore, userData?.companyId]);
 
   const { data: staff, isLoading: isStaffLoading, forceRefresh } = useCollection(staffCollectionRef);
 
   const isLoading = isUserLoading || isUserDocLoading || isStaffLoading;
 
-  const columns: ColumnDef<any>[] = [
+  const columns: ColumnDef<any>[] = useMemo(() => [
     {
       accessorKey: 'firstName',
       header: 'First Name',
@@ -336,7 +336,7 @@ export default function StaffContent() {
         header: 'Actions',
         cell: ({ row }) => <StaffActionMenu staffMember={row.original} companyId={userData?.companyId || ''} onUpdate={forceRefresh} />,
     },
-  ];
+  ], [forceRefresh, userData?.companyId]);
 
   return (
     <Card>
@@ -361,3 +361,5 @@ export default function StaffContent() {
     </Card>
   );
 }
+
+    

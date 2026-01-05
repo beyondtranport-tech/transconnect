@@ -52,7 +52,8 @@ export default function ContributionsList() {
         setError(null);
         try {
             const result = await fetchFromAdminAPI('getContributions');
-            setContributions(result.data as Contribution[]);
+            const sortedData = (result.data as Contribution[]).sort((a,b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+            setContributions(sortedData);
         } catch (e: any) {
             setError(e.message || 'An unexpected error occurred.');
         } finally {
@@ -178,3 +179,5 @@ export default function ContributionsList() {
         </Card>
     );
 }
+
+    

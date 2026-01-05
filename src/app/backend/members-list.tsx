@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Loader2, Users, Wallet, Gem, Star } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -10,6 +10,8 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { getClientSideAuthToken } from '@/firebase';
 import { cn } from '@/lib/utils';
+import { DataTable } from '@/components/ui/data-table';
+import { type ColumnDef } from '@/hooks/use-data-table';
 
 interface Member {
     id: string; // This will now be the Company ID
@@ -82,6 +84,60 @@ export default function MembersList() {
     useEffect(() => {
         fetchMembers();
     }, [fetchMembers]);
+    
+    const columns: ColumnDef<Member>[] = useMemo(() => [
+        {
+            accessorKey: 'firstName',
+            header: 'Owner',
+            cell: ({ row }) => (
+                <div>
+                    <div className="font-medium">{row.original.firstName || ''} {row.original.lastName || ''}</div>
+                    <div className="text-sm text-muted-foreground">{row.original.email || ''}</div>
+                </div>
+            )
+        },
+        { accessorKey: 'companyName', header: 'Company', cell: ({ row }) => <div>{row.original.companyName}</div> },
+        { 
+            accessorKey: 'membershipId', 
+            header: 'Membership', 
+            cell: ({ row }) => <Badge variant="outline" className="capitalize">{row.original.membershipId || 'N/A'}</Badge>
+        },
+        {
+            accessorKey: 'loyaltyTier',
+            header: 'Loyalty Tier',
+            cell: ({ row }) => (
+                <Badge className={cn("capitalize", tierColors[row.original.loyaltyTier || 'bronze'])}>
+                    <Star className="mr-1 h-3 w-3"/>
+                    {row.original.loyaltyTier || 'bronze'}
+                </Badge>
+            )
+        },
+        {
+            accessorKey: 'rewardPoints',
+            header: 'Reward Points',
+            cell: ({ row }) => (
+                <div className="flex items-center gap-1 font-semibold">
+                   <Gem className="h-3 w-3 text-primary"/> {row.original.rewardPoints || 0}
+                </div>
+            )
+        },
+        { accessorKey: 'createdAt', header: 'Joined', cell: ({ row }) => <div>{formatDate(row.original.createdAt)}</div> },
+        {
+            id: 'actions',
+            header: () => <div className="text-right">Actions</div>,
+            cell: ({ row }) => (
+                <div className="text-right">
+                    <Button asChild variant="ghost" size="sm">
+                        <Link href={`/backend?view=wallet&memberId=${row.original.id}`}>
+                            <Wallet className="mr-2 h-4 w-4" />
+                            Wallet
+                        </Link>
+                    </Button>
+                </div>
+            )
+        }
+    ], []);
+
 
     if (isLoading) {
         return (
@@ -123,62 +179,10 @@ export default function MembersList() {
                 </CardDescription>
             </CardHeader>
             <CardContent>
-                 <div className="overflow-x-auto">
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Owner</TableHead>
-                                <TableHead>Company</TableHead>
-                                <TableHead>Membership</TableHead>
-                                <TableHead>Loyalty Tier</TableHead>
-                                <TableHead>Reward Points</TableHead>
-                                <TableHead>Joined</TableHead>
-                                <TableHead className="text-right">Actions</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {members && members.length > 0 ? members.map(member => (
-                                <TableRow key={member.id}>
-                                    <TableCell>
-                                        <div className="font-medium">{member.firstName || ''} {member.lastName || ''}</div>
-                                        <div className="text-sm text-muted-foreground">{member.email || ''}</div>
-                                    </TableCell>
-                                    <TableCell>{member.companyName}</TableCell>
-                                    <TableCell>
-                                        <Badge variant="outline" className="capitalize">{member.membershipId || 'N/A'}</Badge>
-                                    </TableCell>
-                                    <TableCell>
-                                         <Badge className={cn("capitalize", tierColors[member.loyaltyTier || 'bronze'])}>
-                                            <Star className="mr-1 h-3 w-3"/>
-                                            {member.loyaltyTier || 'bronze'}
-                                         </Badge>
-                                    </TableCell>
-                                     <TableCell>
-                                        <div className="flex items-center gap-1 font-semibold">
-                                           <Gem className="h-3 w-3 text-primary"/> {member.rewardPoints || 0}
-                                        </div>
-                                    </TableCell>
-                                    <TableCell>{formatDate(member.createdAt)}</TableCell>
-                                    <TableCell className="text-right">
-                                        <Button asChild variant="ghost" size="sm">
-                                            <Link href={`/backend?view=wallet&memberId=${member.id}`}>
-                                                <Wallet className="mr-2 h-4 w-4" />
-                                                Wallet
-                                            </Link>
-                                        </Button>
-                                    </TableCell>
-                                </TableRow>
-                            )) : (
-                                <TableRow>
-                                    <TableCell colSpan={7} className="h-24 text-center">
-                                      No members found.
-                                    </TableCell>
-                                </TableRow>
-                            )}
-                        </TableBody>
-                    </Table>
-                </div>
+                 <DataTable columns={columns} data={members || []} />
             </CardContent>
         </Card>
     );
 }
+
+    

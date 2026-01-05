@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2, Star } from 'lucide-react';
 import { getClientSideAuthToken } from '@/firebase';
@@ -111,3 +111,5 @@ export default function RewardsManagement() {
         </div>
     );
 }
+
+    

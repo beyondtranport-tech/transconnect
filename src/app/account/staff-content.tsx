@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -31,7 +31,7 @@ import { useCollection } from '@/firebase/firestore/use-collection';
 import { collection, doc } from 'firebase/firestore';
 import { Loader2, PlusCircle, UserPlus, Users } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import StaffActionMenu from '../adminaccount/staff-action-menu';
+import StaffActionMenu from '../backend/staff-action-menu'; // Note: Re-using admin component
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
 import { useDoc } from '@/firebase/firestore/use-doc';
@@ -290,53 +290,57 @@ export default function StaffContent() {
   const staffCollectionRef = useMemoFirebase(() => {
     if (!firestore || !userData?.companyId) return null;
     return collection(firestore, `companies/${userData.companyId}/staff`);
-  }, [firestore, userData]);
+  }, [firestore, userData?.companyId]);
 
   const { data: staff, isLoading: isStaffLoading, forceRefresh } = useCollection(staffCollectionRef);
 
   const isLoading = isUserLoading || isUserDocLoading || isStaffLoading;
 
-  const columns: ColumnDef<any>[] = [
+  const columns: ColumnDef<any>[] = useMemo(() => [
     {
       accessorKey: 'firstName',
       header: 'First Name',
-      cell: ({ row }) => <div>{row.firstName}</div>,
+      cell: ({ row }) => <div>{row.original.firstName}</div>,
     },
     {
       accessorKey: 'lastName',
       header: 'Last Name',
-      cell: ({ row }) => <div>{row.lastName}</div>,
+      cell: ({ row }) => <div>{row.original.lastName}</div>,
     },
     {
       accessorKey: 'email',
       header: 'Email',
-      cell: ({ row }) => <div>{row.email}</div>,
+      cell: ({ row }) => <div>{row.original.email}</div>,
     },
     {
       accessorKey: 'title',
       header: 'Title',
-      cell: ({ row }) => <div>{row.title}</div>,
+      cell: ({ row }) => <div>{row.original.title}</div>,
     },
     {
       accessorKey: 'role',
       header: 'Role',
-      cell: ({ row }) => <Badge variant="outline">{row.role}</Badge>,
+      cell: ({ row }) => <Badge variant="outline">{row.original.role}</Badge>,
     },
     {
         accessorKey: 'status',
         header: 'Status',
         cell: ({ row }) => (
-            <Badge variant={row.status === 'confirmed' ? 'default' : 'secondary'} className="capitalize">
-                {row.status || 'unconfirmed'}
+            <Badge variant={row.original.status === 'confirmed' ? 'default' : 'secondary'} className="capitalize">
+                {row.original.status || 'unconfirmed'}
             </Badge>
         ),
     },
     {
-        accessorKey: 'actions',
-        header: 'Actions',
-        cell: ({ row }) => <StaffActionMenu staffMember={row} companyId={userData?.companyId || ''} onUpdate={forceRefresh} />,
+        id: 'actions',
+        header: () => <div className="text-right">Actions</div>,
+        cell: ({ row }) => (
+            <div className="text-right">
+                <StaffActionMenu staffMember={row.original} onUpdate={forceRefresh} />
+            </div>
+        ),
     },
-  ];
+  ], [forceRefresh]);
 
   return (
     <Card>
@@ -361,3 +365,5 @@ export default function StaffContent() {
     </Card>
   );
 }
+
+    

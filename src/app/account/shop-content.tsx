@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Loader2, Store, PlusCircle } from 'lucide-react';
@@ -25,13 +25,13 @@ export default function ShopContent() {
   const companyDocRef = useMemoFirebase(() => {
     if (!firestore || !userData?.companyId) return null;
     return doc(firestore, `companies/${userData.companyId}`);
-  }, [firestore, userData]);
+  }, [firestore, userData?.companyId]);
   const { data: companyData, isLoading: isCompanyLoading, forceRefresh: forceRefreshCompany } = useDoc(companyDocRef);
 
   const shopRef = useMemoFirebase(() => {
     if (!firestore || !companyData?.shopId || !userData?.companyId) return null;
     return doc(firestore, `companies/${userData.companyId}/shops/${companyData.shopId}`);
-  }, [firestore, companyData, userData]);
+  }, [firestore, companyData?.shopId, userData?.companyId]);
 
   const { data: userShop, isLoading: isShopLoading } = useDoc(shopRef);
 
@@ -132,3 +132,5 @@ export default function ShopContent() {
     </Card>
   );
 }
+
+    
