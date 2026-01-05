@@ -84,6 +84,7 @@ function AdminAccountPageContent() {
       case 'bank-settings': return <BankDetailsSettings />;
       case 'bank-reconciliation': return <ReconciliationContent />;
       case 'platform-transactions': return <PlatformTransactions />;
+      case 'staff': return <StaffContent />;
       // Add placeholders for new views
       case 'business': return <div><h1>Business</h1></div>;
       case 'marketing':
@@ -146,6 +147,12 @@ function AdminAccountPageContent() {
                 <SidebarMenuButton tooltip="Business" isActive={activeView === 'business'} onClick={() => router.push('/adminaccount?view=business', { scroll: false })}>
                   <Building />
                   <span>Business</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+               <SidebarMenuItem>
+                <SidebarMenuButton tooltip="Staff" isActive={activeView === 'staff'} onClick={() => router.push('/adminaccount?view=staff', { scroll: false })}>
+                  <Users />
+                  <span>Staff</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>

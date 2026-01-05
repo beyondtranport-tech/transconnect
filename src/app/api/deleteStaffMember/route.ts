@@ -32,8 +32,10 @@ export async function POST(req: NextRequest) {
     const companySnap = await companyRef.get();
     const companyData = companySnap.data();
 
-    // Authorization: Only the owner of the company can delete staff
-    if (companyData?.ownerId !== uid) {
+    const isAdmin = decodedToken.email === 'beyondtransport@gmail.com';
+
+    // Authorization: Only the owner of the company OR an admin can delete staff
+    if (companyData?.ownerId !== uid && !isAdmin) {
         return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
     }
 
