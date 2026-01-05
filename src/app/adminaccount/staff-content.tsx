@@ -94,9 +94,9 @@ export default function StaffContent() {
         ),
     },
     {
-        accessorKey: 'actions',
+        id: 'actions',
         header: 'Actions',
-        cell: ({ row }) => <StaffActionMenu staffMember={row} companyId={row.companyId || ''} onUpdate={fetchData} />,
+        cell: ({ row }) => <StaffActionMenu staffMember={row.original} companyId={row.original.companyId} onUpdate={fetchData} />,
     },
   ];
 

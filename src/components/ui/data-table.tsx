@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -46,13 +47,17 @@ export function DataTable<TData>({ columns, data }: DataTableProps<TData>) {
             <TableRow>
               {columns.map(column => (
                 <TableHead key={column.accessorKey as string}>
-                  <Button
-                    variant="ghost"
-                    onClick={() => handleSort(column.accessorKey as string)}
-                  >
-                    {column.header}
-                    <ArrowUpDown className="ml-2 h-4 w-4" />
-                  </Button>
+                  {column.id === 'actions' ? (
+                     <span className="flex justify-end pr-4">{column.header}</span>
+                  ) : (
+                    <Button
+                        variant="ghost"
+                        onClick={() => column.accessorKey && handleSort(column.accessorKey as string)}
+                    >
+                        {column.header}
+                        <ArrowUpDown className="ml-2 h-4 w-4" />
+                    </Button>
+                  )}
                 </TableHead>
               ))}
             </TableRow>

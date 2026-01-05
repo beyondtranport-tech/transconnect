@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -5,7 +6,7 @@ import { useState, useMemo } from 'react';
 export interface ColumnDef<TData> {
   accessorKey: keyof TData | string;
   header: React.ReactNode;
-  cell: (props: { row: TData }) => React.ReactNode;
+  cell: (props: { row: { original: TData } }) => React.ReactNode;
 }
 
 export type SortingState = {
@@ -46,13 +47,16 @@ export function useDataTable<TData>(data: TData[], columns: ColumnDef<TData>[]) 
 
     return dataToSort;
   }, [filteredData, sorting]);
+  
+  const rows = useMemo(() => sortedData.map(original => ({ original })), [sortedData]);
+
 
   const getNestedValue = (obj: any, path: string): any => {
     return path.split('.').reduce((acc, part) => acc && acc[part], obj);
   };
 
   return {
-    rows: sortedData,
+    rows,
     setSorting,
     setGlobalFilter,
     sorting,

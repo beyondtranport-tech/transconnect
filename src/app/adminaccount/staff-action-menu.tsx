@@ -24,6 +24,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken } from '@/firebase';
 import { MoreVertical, Eye, CheckCircle, XCircle, Trash2, Loader2 } from 'lucide-react';
+import { useUser } from '@/firebase';
 
 interface StaffMember {
   id: string;
@@ -41,6 +42,7 @@ export default function StaffActionMenu({ staffMember, companyId, onUpdate }: St
   const [isAlertDialogOpen, setIsAlertDialogOpen] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const { toast } = useToast();
+  const { user } = useUser(); // Using admin user for actions
 
   const handleStatusChange = async (newStatus: 'confirmed' | 'unconfirmed') => {
     setIsProcessing(true);
@@ -48,7 +50,8 @@ export default function StaffActionMenu({ staffMember, companyId, onUpdate }: St
       const token = await getClientSideAuthToken();
       if (!token) throw new Error('Authentication failed.');
 
-      // This should now be an admin-only API call, but let's assume the API handles authorization
+      // In a real admin scenario, the API would verify the admin's rights.
+      // Here we assume the logged-in user is an admin if they can see this component.
       const response = await fetch('/api/updateStaffStatus', {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
