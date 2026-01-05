@@ -68,6 +68,7 @@ import MemberWallet from './wallet/[memberId]/member-wallet';
 
 const DashboardContent = dynamic(() => import('./dashboard-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const MembersList = dynamic(() => import('./members-list'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const StaffList = dynamic(() => import('./staff-list'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const ShopsList = dynamic(() => import('./shops-list'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const ContributionsList = dynamic(() => import('./contributions-list'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const WalletTransactionsList = dynamic(() => import('./wallet-transactions-list'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
@@ -418,6 +419,8 @@ export default function BackendPageContent() {
         return <DashboardContent />;
       case 'members':
         return <MembersList />;
+      case 'staff':
+        return <StaffList />;
       case 'shops':
         return <ShopsList />;
       case 'wallet':
@@ -507,6 +510,12 @@ export default function BackendPageContent() {
                 <SidebarMenuButton tooltip="Members" isActive={activeView === 'members'} onClick={() => router.push('/backend?view=members', { scroll: false })}>
                   <Users />
                   <span>Members</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton tooltip="Staff" isActive={activeView === 'staff'} onClick={() => router.push('/backend?view=staff', { scroll: false })}>
+                  <Users />
+                  <span>Staff</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>

@@ -5,7 +5,6 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2, Users } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import StaffActionMenu from './staff-action-menu';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
 import { getClientSideAuthToken } from '@/firebase';
@@ -14,24 +13,44 @@ async function fetchAllStaff() {
     const token = await getClientSideAuthToken();
     if (!token) throw new Error("Authentication failed.");
     
-    const response = await fetch('/api/admin', {
+    const response = await fetch('/api/getUserSubcollection', {
         method: 'POST',
         headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ action: 'getStaff' }),
+        body: JSON.stringify({ path: 'staff', type: 'collection-group' }),
     });
 
     const result = await response.json();
     if (!response.ok || !result.success) {
         throw new Error(result.error || `API Error for action: getStaff`);
     }
-    return result.data;
+
+    // We need to get company names as well
+    const companiesResponse = await fetch('/api/getUserSubcollection', {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ path: 'companies', type: 'collection' }),
+    });
+    const companiesResult = await companiesResponse.json();
+    if (!companiesResult.success) {
+        throw new Error(companiesResult.error || 'Failed to fetch companies');
+    }
+    
+    const companyMap = new Map(companiesResult.data.map((c: any) => [c.id, c.companyName]));
+
+    return result.data.map((staff: any) => ({
+        ...staff,
+        companyName: companyMap.get(staff.companyId) || 'Unknown Company',
+    }));
 }
 
 
-export default function StaffContent() {
+export default function StaffList() {
   const [staff, setStaff] = useState<any[] | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -57,46 +76,41 @@ export default function StaffContent() {
     {
       accessorKey: 'companyName',
       header: 'Company',
-      cell: ({ row }) => <div>{row.companyName}</div>,
+      cell: ({ row }) => <div>{row.original.companyName}</div>,
     },
     {
       accessorKey: 'firstName',
       header: 'First Name',
-      cell: ({ row }) => <div>{row.firstName}</div>,
+      cell: ({ row }) => <div>{row.original.firstName}</div>,
     },
     {
       accessorKey: 'lastName',
       header: 'Last Name',
-      cell: ({ row }) => <div>{row.lastName}</div>,
+      cell: ({ row }) => <div>{row.original.lastName}</div>,
     },
     {
       accessorKey: 'email',
       header: 'Email',
-      cell: ({ row }) => <div>{row.email}</div>,
+      cell: ({ row }) => <div>{row.original.email}</div>,
     },
     {
       accessorKey: 'title',
       header: 'Title',
-      cell: ({ row }) => <div>{row.title}</div>,
+      cell: ({ row }) => <div>{row.original.title}</div>,
     },
     {
       accessorKey: 'role',
       header: 'Role',
-      cell: ({ row }) => <Badge variant="outline">{row.role}</Badge>,
+      cell: ({ row }) => <Badge variant="outline">{row.original.role}</Badge>,
     },
     {
         accessorKey: 'status',
         header: 'Status',
         cell: ({ row }) => (
-            <Badge variant={row.status === 'confirmed' ? 'default' : 'secondary'} className="capitalize">
-                {row.status || 'unconfirmed'}
+            <Badge variant={row.original.status === 'confirmed' ? 'default' : 'secondary'} className="capitalize">
+                {row.original.status || 'unconfirmed'}
             </Badge>
         ),
-    },
-    {
-        id: 'actions',
-        header: 'Actions',
-        cell: ({ row }) => <StaffActionMenu staffMember={row.original} companyId={row.original.companyId} onUpdate={fetchData} />,
     },
   ];
 

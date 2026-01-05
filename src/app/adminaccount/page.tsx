@@ -86,7 +86,6 @@ function AdminAccountPageContent() {
       case 'platform-transactions': return <PlatformTransactions />;
       // Add placeholders for new views
       case 'business': return <div><h1>Business</h1></div>;
-      case 'staff': return <StaffContent />;
       case 'marketing':
         router.push('/marketing');
         return null;
@@ -150,12 +149,6 @@ function AdminAccountPageContent() {
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Staff" isActive={activeView === 'staff'} onClick={() => router.push('/adminaccount?view=staff', { scroll: false })}>
-                  <Users />
-                  <span>Staff</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
                 <SidebarMenuButton tooltip="Marketing" isActive={activeView === 'marketing'} onClick={() => router.push('/marketing', { scroll: false })}>
                   <TrendingUp />
                   <span>Marketing</span>
@@ -216,6 +209,3 @@ export default function AdminAccountPage() {
     </Suspense>
   );
 }
-    
-
-    
