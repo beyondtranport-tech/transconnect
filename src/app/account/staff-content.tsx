@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -188,7 +189,8 @@ function AddStaffDialog({ companyId, onStaffAdded }: { companyId: string; onStaf
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="Director">Director</SelectItem>
+                          <SelectItem value="Executive Director">Executive Director</SelectItem>
+                          <SelectItem value="Non-Executive Director">Non-Executive Director</SelectItem>
                           <SelectItem value="Manager">Manager</SelectItem>
                           <SelectItem value="Admin">Admin</SelectItem>
                         </SelectContent>
@@ -210,8 +212,6 @@ function AddStaffDialog({ companyId, onStaffAdded }: { companyId: string; onStaf
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="Executive">Executive</SelectItem>
-                          <SelectItem value="non-executive">Non-Executive</SelectItem>
                           <SelectItem value="operations">Operations</SelectItem>
                           <SelectItem value="marketing">Marketing</SelectItem>
                           <SelectItem value="IT">IT</SelectItem>
@@ -361,5 +361,3 @@ export default function StaffContent() {
     </Card>
   );
 }
-
-    
