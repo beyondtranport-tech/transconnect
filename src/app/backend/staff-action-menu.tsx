@@ -1,6 +1,7 @@
 
 'use client';
 
+import * as React from 'react';
 import { useState } from 'react';
 import {
   DropdownMenu,
@@ -77,21 +78,13 @@ function EditStaffDialog({ staffMember, onUpdate, open, setOpen }: { staffMember
       if (!response.ok) throw new Error(result.error || 'Failed to update staff member.');
 
       toast({ title: 'Staff Member Updated' });
-      // Close the dialog first. The parent will handle the refresh.
-      setOpen(false);
+      setOpen(false); // This will trigger the useEffect in the parent
     } catch (e: any) {
       toast({ variant: 'destructive', title: 'Update Failed', description: e.message });
     } finally {
       setIsSaving(false);
     }
   };
-  
-  // This effect will be triggered when setOpen(false) is called, which in turn triggers onUpdate in the parent.
-  React.useEffect(() => {
-    if (!open) {
-      onUpdate();
-    }
-  }, [open, onUpdate]);
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -135,6 +128,13 @@ export default function StaffActionMenu({ staffMember, onUpdate }: { staffMember
   const [isAlertOpen, setIsAlertOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const { toast } = useToast();
+
+  React.useEffect(() => {
+    // When the edit dialog is closed, trigger a refresh of the parent list.
+    if (!isEditOpen) {
+      onUpdate();
+    }
+  }, [isEditOpen, onUpdate]);
 
   const handleUpdateStatus = async (status: 'confirmed' | 'unconfirmed') => {
     setIsUpdating(true);
