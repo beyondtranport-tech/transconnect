@@ -207,6 +207,15 @@ export async function POST(req: NextRequest) {
                 await staffRef.delete();
                 return NextResponse.json({ success: true, message: "Staff member deleted." });
             }
+            case 'updateStaffMember': {
+                const { companyId, staffId, data } = payload;
+                if (!companyId || !staffId || !data) {
+                    throw new Error("Missing companyId, staffId, or data for update.");
+                }
+                const staffRef = db.doc(`companies/${companyId}/staff/${staffId}`);
+                await staffRef.update({ ...data, updatedAt: FieldValue.serverTimestamp() });
+                return NextResponse.json({ success: true, message: "Staff member updated." });
+            }
             default:
                 return NextResponse.json({ success: false, error: 'Invalid action' }, { status: 400 });
         }
