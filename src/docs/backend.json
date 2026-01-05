@@ -111,11 +111,14 @@
         "firstName": { "type": "string" },
         "lastName": { "type": "string" },
         "email": { "type": "string", "format": "email" },
-        "role": { "type": "string" },
+        "title": { "type": "string", "description": "The official job title of the staff member." },
+        "role": { "type": "string", "description": "The assigned permission role (e.g., admin, user)." },
+        "jobDescription": { "type": "string", "description": "A brief description of the staff member's responsibilities." },
+        "function": { "type": "string", "description": "The business function or department (e.g., Operations, Finance)." },
         "companyId": { "type": "string", "description": "The ID of the parent company this staff member belongs to." },
         "createdAt": { "type": "object" }
       },
-      "required": ["firstName", "lastName", "email", "role", "companyId"]
+      "required": ["firstName", "lastName", "email", "title", "role", "companyId"]
     },
     "Membership": {
       "$schema": "http://json-schema.org/draft-07/schema#",
@@ -376,6 +379,4 @@
     "reasoning": "The data model is refactored to separate user identity from business entities. A new `/users` collection stores individual user profiles, linked via Firebase Auth UID. A new `/companies` collection stores business-related data, including wallet balance, membership status, and subcollections for transactions, staff, quotes, etc. This creates a cleaner, more scalable architecture where a user owns a company, rather than the user and company being the same entity. This prevents data duplication and clarifies ownership for security rules."
   }
 }
-    
-
     
