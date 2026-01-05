@@ -46,7 +46,8 @@ const staffFormSchema = z.object({
 type StaffFormValues = z.infer<typeof staffFormSchema>;
 
 
-function EditStaffDialog({ staffMember, onUpdate, open, setOpen }: { staffMember: any, onUpdate: () => void, open: boolean, setOpen: (open: boolean) => void }) {
+function EditStaffDialog({ staffMember, onUpdate }: { staffMember: any, onUpdate: () => void }) {
+  const [isOpen, setIsOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
 
@@ -54,6 +55,12 @@ function EditStaffDialog({ staffMember, onUpdate, open, setOpen }: { staffMember
     resolver: zodResolver(staffFormSchema),
     defaultValues: staffMember,
   });
+  
+  React.useEffect(() => {
+    if (isOpen) {
+      form.reset(staffMember);
+    }
+  }, [isOpen, staffMember, form]);
 
   const onSubmit = async (values: StaffFormValues) => {
     setIsSaving(true);
@@ -78,7 +85,8 @@ function EditStaffDialog({ staffMember, onUpdate, open, setOpen }: { staffMember
       if (!response.ok) throw new Error(result.error || 'Failed to update staff member.');
 
       toast({ title: 'Staff Member Updated' });
-      setOpen(false); // This will trigger the useEffect in the parent
+      onUpdate();
+      setIsOpen(false);
     } catch (e: any) {
       toast({ variant: 'destructive', title: 'Update Failed', description: e.message });
     } finally {
@@ -87,7 +95,12 @@ function EditStaffDialog({ staffMember, onUpdate, open, setOpen }: { staffMember
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogTrigger asChild>
+        <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+            <Edit className="mr-2 h-4 w-4" /> Edit
+        </DropdownMenuItem>
+      </DialogTrigger>
       <DialogContent className="sm:max-w-[625px]">
         <DialogHeader>
           <DialogTitle>Edit Staff Member</DialogTitle>
@@ -109,7 +122,7 @@ function EditStaffDialog({ staffMember, onUpdate, open, setOpen }: { staffMember
             </div>
             <FormField control={form.control} name="jobDescription" render={({ field }) => (<FormItem><FormLabel>Job Description</FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage /></FormItem>)} />
             <DialogFooter>
-              <Button type="button" variant="ghost" onClick={() => setOpen(false)}>Cancel</Button>
+              <Button type="button" variant="ghost" onClick={() => setIsOpen(false)}>Cancel</Button>
               <Button type="submit" disabled={isSaving}>
                 {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Save Changes
@@ -126,15 +139,7 @@ export default function StaffActionMenu({ staffMember, onUpdate }: { staffMember
   const [isDeleting, setIsDeleting] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const [isAlertOpen, setIsAlertOpen] = useState(false);
-  const [isEditOpen, setIsEditOpen] = useState(false);
   const { toast } = useToast();
-
-  React.useEffect(() => {
-    // When the edit dialog is closed, trigger a refresh of the parent list.
-    if (!isEditOpen) {
-      onUpdate();
-    }
-  }, [isEditOpen, onUpdate]);
 
   const handleUpdateStatus = async (status: 'confirmed' | 'unconfirmed') => {
     setIsUpdating(true);
@@ -193,7 +198,6 @@ export default function StaffActionMenu({ staffMember, onUpdate }: { staffMember
 
   return (
     <div className="text-right">
-       <EditStaffDialog staffMember={staffMember} onUpdate={onUpdate} open={isEditOpen} setOpen={setIsEditOpen} />
       <AlertDialog open={isAlertOpen} onOpenChange={setIsAlertOpen}>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -207,9 +211,7 @@ export default function StaffActionMenu({ staffMember, onUpdate }: { staffMember
                     <Eye className="mr-2 h-4 w-4" /> View Company
                 </Link>
              </DropdownMenuItem>
-             <DropdownMenuItem onSelect={(e) => { e.preventDefault(); setIsEditOpen(true); }}>
-                <Edit className="mr-2 h-4 w-4" /> Edit
-             </DropdownMenuItem>
+             <EditStaffDialog staffMember={staffMember} onUpdate={onUpdate} />
             {staffMember.status !== 'confirmed' ? (
               <DropdownMenuItem onClick={() => handleUpdateStatus('confirmed')}>
                 <CheckCircle className="mr-2 h-4 w-4" /> Confirm

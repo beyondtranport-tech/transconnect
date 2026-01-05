@@ -27,6 +27,23 @@ interface Staff {
     status?: string;
 }
 
+async function fetchFromAdminAPI(action: string) {
+    const token = await getClientSideAuthToken();
+    if (!token) throw new Error("Authentication failed.");
+    
+    const response = await fetch('/api/admin', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action })
+    });
+
+    const result = await response.json();
+    if (!response.ok || !result.success) {
+        throw new Error(result.error || `API Error for action: ${action}`);
+    }
+    return result.data;
+}
+
 export default function StaffList() {
   const [staff, setStaff] = useState<Staff[] | null>(null);
   const [companies, setCompanies] = useState<Company[] | null>(null);
@@ -43,34 +60,12 @@ export default function StaffList() {
         setIsLoading(true);
         setError(null);
         try {
-            const token = await getClientSideAuthToken();
-            if (!token) throw new Error("Authentication failed.");
-            
-            const [staffResponse, companiesResponse] = await Promise.all([
-                fetch('/api/admin', {
-                    method: 'POST',
-                    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ action: 'getStaff' })
-                }),
-                fetch('/api/admin', {
-                    method: 'POST',
-                    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ action: 'getMembers' })
-                })
+            const [staffData, companyData] = await Promise.all([
+                fetchFromAdminAPI('getStaff'),
+                fetchFromAdminAPI('getMembers'),
             ]);
-
-            const staffResult = await staffResponse.json();
-            if (!staffResult.success) {
-                throw new Error(staffResult.error || 'Failed to fetch staff data');
-            }
-
-            const companiesResult = await companiesResponse.json();
-            if (!companiesResult.success) {
-                 throw new Error(companiesResult.error || 'Failed to fetch company data');
-            }
-
-            setStaff(staffResult.data || []);
-            setCompanies(companiesResult.data || []);
+            setStaff(staffData || []);
+            setCompanies(companyData || []);
         } catch(e: any) {
              setError(e.message || "An unknown error occurred");
         } finally {
@@ -135,7 +130,7 @@ export default function StaffList() {
       header: 'Actions',
       cell: ({ row }) => <StaffActionMenu staffMember={row.original} onUpdate={handleUpdate} />,
     },
-  ], [handleUpdate]);
+  ], [companies, handleUpdate]);
 
   return (
     <Card>
