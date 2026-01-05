@@ -19,14 +19,47 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
-import { Loader2, MoreVertical, Trash2 } from 'lucide-react';
+import { Loader2, MoreVertical, CheckCircle, XCircle, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken } from '@/firebase';
 
 export default function StaffActionMenu({ staffMember, onUpdate }: { staffMember: any; onUpdate: () => void }) {
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
   const [isAlertOpen, setIsAlertOpen] = useState(false);
   const { toast } = useToast();
+
+  // Admin API uses 'updateStaffStatus' but it's part of the general /api/admin endpoint.
+  // However, for simplicity and consistency, let's assume an admin can use the same endpoint as a user,
+  // as the backend API should verify the caller is an admin.
+  // The existing /api/updateStaffStatus requires the user to be the company owner. 
+  // Let's call /api/admin instead for this admin action.
+  const handleUpdateStatus = async (status: 'confirmed' | 'unconfirmed') => {
+    setIsUpdating(true);
+    try {
+      const token = await getClientSideAuthToken();
+      if (!token) throw new Error('Authentication failed.');
+
+      // Using the main admin API endpoint for admin-level actions
+      const response = await fetch('/api/admin', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+            action: 'updateStaffStatus', 
+            payload: { companyId: staffMember.companyId, staffId: staffMember.id, status }
+        }),
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || 'Failed to update status.');
+      
+      toast({ title: 'Status Updated', description: `${staffMember.firstName}'s status is now ${status}.` });
+      onUpdate();
+    } catch (e: any) {
+      toast({ variant: 'destructive', title: 'Update Failed', description: e.message });
+    } finally {
+      setIsUpdating(false);
+    }
+  };
 
   const handleDelete = async () => {
     setIsDeleting(true);
@@ -35,10 +68,14 @@ export default function StaffActionMenu({ staffMember, onUpdate }: { staffMember
       const token = await getClientSideAuthToken();
       if (!token) throw new Error('Authentication failed.');
 
-      const response = await fetch('/api/deleteStaffMember', {
+      // Using the main admin API endpoint for admin-level actions
+      const response = await fetch('/api/admin', {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ companyId: staffMember.companyId, staffId: staffMember.id }),
+        body: JSON.stringify({ 
+            action: 'deleteStaffMember', 
+            payload: { companyId: staffMember.companyId, staffId: staffMember.id }
+        }),
       });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || 'Failed to delete staff member.');
@@ -52,17 +89,27 @@ export default function StaffActionMenu({ staffMember, onUpdate }: { staffMember
     }
   };
 
+  const isLoading = isDeleting || isUpdating;
 
   return (
     <div className="text-right">
       <AlertDialog open={isAlertOpen} onOpenChange={setIsAlertOpen}>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" disabled={isDeleting}>
-              {isDeleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <MoreVertical className="h-4 w-4" />}
+            <Button variant="ghost" size="icon" disabled={isLoading}>
+              {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <MoreVertical className="h-4 w-4" />}
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
+            {staffMember.status !== 'confirmed' ? (
+              <DropdownMenuItem onClick={() => handleUpdateStatus('confirmed')}>
+                <CheckCircle className="mr-2 h-4 w-4" /> Confirm
+              </DropdownMenuItem>
+            ) : (
+              <DropdownMenuItem onClick={() => handleUpdateStatus('unconfirmed')}>
+                <XCircle className="mr-2 h-4 w-4" /> Un-confirm
+              </DropdownMenuItem>
+            )}
             <DropdownMenuItem
               className="text-destructive"
               onSelect={(e) => { e.preventDefault(); setIsAlertOpen(true); }}
@@ -75,7 +122,7 @@ export default function StaffActionMenu({ staffMember, onUpdate }: { staffMember
           <AlertDialogHeader>
             <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete this staff member's record. You can only delete 'unconfirmed' staff.
+              This action cannot be undone. This will permanently delete this staff member's record.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
