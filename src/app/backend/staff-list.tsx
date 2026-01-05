@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
 import { getClientSideAuthToken } from '@/firebase';
+import StaffActionMenu from './staff-action-menu';
 
 async function fetchAllStaff() {
     const token = await getClientSideAuthToken();
@@ -27,7 +28,6 @@ async function fetchAllStaff() {
         throw new Error(result.error || `API Error for action: getStaff`);
     }
 
-    // We need to get company names as well
     const companiesResponse = await fetch('/api/getUserSubcollection', {
         method: 'POST',
         headers: {
@@ -111,6 +111,11 @@ export default function StaffList() {
                 {row.original.status || 'unconfirmed'}
             </Badge>
         ),
+    },
+     {
+        id: 'actions',
+        header: 'Actions',
+        cell: ({ row }) => <StaffActionMenu staffMember={row.original} onUpdate={fetchData} />,
     },
   ];
 
