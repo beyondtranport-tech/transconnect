@@ -23,7 +23,8 @@ service cloud.firestore {
     // A user can create their own profile during sign-up.
     // A user can only read or update their own profile document.
     match /users/{userId} {
-      allow read, update, create: if isOwner(userId);
+      allow read, update: if isOwner(userId);
+      allow create: if request.auth != null; // Onboarding via API
       allow list: if isAdmin();
     }
     
@@ -36,9 +37,17 @@ service cloud.firestore {
       allow update: if isCompanyOwner(companyId);
       allow list: if isAdmin();
 
-      // --- Company Subcollections ---
-      // The owner of the parent company document has full access to all subcollections. Admins also have full access.
-      match /{allSubcollections=**} {
+      // --- Staff Management ---
+      // The company owner can manage their own staff members.
+      match /staff/{staffId} {
+        allow read, write: if isCompanyOwner(companyId) || isAdmin();
+      }
+
+      // --- Other Company Subcollections ---
+      // The owner of the parent company document has full access to other subcollections.
+      match /{subcollection}/{docId} {
+        // This rule applies to quotes, enquiries, walletPayments, transactions, shops, etc.
+        // It intentionally does NOT match /staff/{staffId} which has its own rule above.
         allow read, write: if isCompanyOwner(companyId) || isAdmin();
       }
     }
