@@ -11,42 +11,28 @@ import { type ColumnDef } from '@/hooks/use-data-table';
 import { getClientSideAuthToken } from '@/firebase';
 import StaffActionMenu from './staff-action-menu';
 
-async function fetchCollectionGroup(path: string) {
+async function fetchFromAdminAPI(action: string) {
     const token = await getClientSideAuthToken();
     if (!token) throw new Error("Authentication failed.");
     
-    const response = await fetch('/api/getUserSubcollection', {
+    const response = await fetch('/api/admin', {
         method: 'POST',
         headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ path: path, type: 'collection-group' }),
+        body: JSON.stringify({ action }),
     });
 
-    const result = await response.json();
-    if (!response.ok || !result.success) {
-        throw new Error(result.error || `API Error for path: ${path}`);
+    if (!response.ok) {
+        // We throw the raw response to be handled by the caller
+        throw response;
     }
-    return result.data;
-}
-
-async function fetchCollection(path: string) {
-    const token = await getClientSideAuthToken();
-    if (!token) throw new Error("Authentication failed.");
-
-    const response = await fetch('/api/getUserSubcollection', {
-        method: 'POST',
-        headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ path: path, type: 'collection' }),
-    });
-
+    
     const result = await response.json();
-    if (!response.ok || !result.success) {
-        throw new Error(result.error || `API Error for path: ${path}`);
+
+    if (!result.success) {
+        throw new Error(result.error || `API Error for action: ${action}`);
     }
     return result.data;
 }
@@ -61,21 +47,15 @@ export default function StaffList() {
     setIsLoading(true);
     setError(null);
     try {
-        const [staffData, companiesData] = await Promise.all([
-            fetchCollectionGroup('staff'),
-            fetchCollection('companies')
-        ]);
-        
-        const companyMap = new Map(companiesData.map((c: any) => [c.id, c.companyName]));
-
-        const enrichedStaff = staffData.map((s: any) => ({
-            ...s,
-            companyName: companyMap.get(s.companyId) || 'Unknown Company',
-        }));
-        
-        setStaff(enrichedStaff);
+        const staffData = await fetchFromAdminAPI('getStaff');
+        setStaff(staffData);
     } catch(e: any) {
-        setError(e.message);
+        // If the error is a Response object, it means the server returned an error page (HTML)
+        if (e instanceof Response) {
+             setError(`Unexpected token '<', "${await e.text().then(text => text.slice(0,15))}..." is not valid JSON`);
+        } else {
+             setError(e.message);
+        }
     } finally {
         setIsLoading(false);
     }
