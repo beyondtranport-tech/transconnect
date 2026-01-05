@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Loader2, Truck, Warehouse, Building } from 'lucide-react';
@@ -47,21 +47,22 @@ export default function ContributionsList() {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    useEffect(() => {
-        async function fetchContributions() {
-            setIsLoading(true);
-            try {
-                const result = await fetchFromAdminAPI('getContributions');
-                setContributions(result.data as Contribution[]);
-            } catch (e: any) {
-                setError(e.message || 'An unexpected error occurred.');
-            } finally {
-                setIsLoading(false);
-            }
+    const fetchContributions = useCallback(async () => {
+        setIsLoading(true);
+        setError(null);
+        try {
+            const result = await fetchFromAdminAPI('getContributions');
+            setContributions(result.data as Contribution[]);
+        } catch (e: any) {
+            setError(e.message || 'An unexpected error occurred.');
+        } finally {
+            setIsLoading(false);
         }
-
-        fetchContributions();
     }, []);
+
+    useEffect(() => {
+        fetchContributions();
+    }, [fetchContributions]);
 
     const formatDate = (isoString: string | undefined) => {
         if (!isoString) return 'N/A';

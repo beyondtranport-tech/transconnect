@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Loader2, Users, Wallet, Gem, Star } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -66,17 +66,22 @@ export default function MembersList() {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    useEffect(() => {
-        // Temporarily disabled to prevent infinite loops and quota errors.
-        // This will be re-enabled correctly in a future step.
-        const fetchMembers = async () => {
-          setIsLoading(true);
-          // Simulating no data being loaded to prevent API calls
-          setMembers([]);
-          setIsLoading(false);
+    const fetchMembers = useCallback(async () => {
+        setIsLoading(true);
+        setError(null);
+        try {
+            const result = await fetchFromAdminAPI('getMembers');
+            setMembers(result.data as Member[]);
+        } catch (e: any) {
+            setError(e.message || 'An unexpected error occurred.');
+        } finally {
+            setIsLoading(false);
         }
-        fetchMembers();
     }, []);
+
+    useEffect(() => {
+        fetchMembers();
+    }, [fetchMembers]);
 
     if (isLoading) {
         return (
@@ -166,7 +171,6 @@ export default function MembersList() {
                             )) : (
                                 <TableRow>
                                     <TableCell colSpan={7} className="h-24 text-center">
-                                      {/* Temporarily showing this message while data fetching is disabled */}
                                       No members found.
                                     </TableCell>
                                 </TableRow>

@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2, Star } from 'lucide-react';
 import { getClientSideAuthToken } from '@/firebase';
@@ -51,25 +51,26 @@ export default function RewardsManagement() {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    useEffect(() => {
-        async function loadData() {
-            setIsLoading(true);
-            setError(null);
-            try {
-                const [companyData, membershipData] = await Promise.all([
-                    fetchAdminData('getMembers'),
-                    fetchAdminData('getMemberships')
-                ]);
-                setCompanies(companyData || []);
-                setMemberships(membershipData || []);
-            } catch (e: any) {
-                setError(e.message);
-            } finally {
-                setIsLoading(false);
-            }
+    const loadData = useCallback(async () => {
+        setIsLoading(true);
+        setError(null);
+        try {
+            const [companyData, membershipData] = await Promise.all([
+                fetchAdminData('getMembers'),
+                fetchAdminData('getMemberships')
+            ]);
+            setCompanies(companyData || []);
+            setMemberships(membershipData || []);
+        } catch (e: any) {
+            setError(e.message);
+        } finally {
+            setIsLoading(false);
         }
-        loadData();
     }, []);
+
+    useEffect(() => {
+        loadData();
+    }, [loadData]);
 
     if (isLoading) {
         return (
@@ -110,5 +111,3 @@ export default function RewardsManagement() {
         </div>
     );
 }
-
-    

@@ -2,7 +2,7 @@
 
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Loader2, Store, CheckCircle, Eye } from 'lucide-react';
@@ -92,8 +92,9 @@ export default function ShopsList() {
     const [error, setError] = useState<string | null>(null);
     const { toast } = useToast();
 
-    async function fetchShops() {
+    const fetchShops = useCallback(async () => {
         setIsLoading(true);
+        setError(null);
         try {
             const result = await fetchFromAdminAPI('getShops');
             if (result.data) {
@@ -105,11 +106,11 @@ export default function ShopsList() {
         } finally {
              setIsLoading(false);
         }
-    }
+    }, []);
 
     useEffect(() => {
         fetchShops();
-    }, []);
+    }, [fetchShops]);
 
     const handleApprove = async (shop: Shop) => {
         setIsApproving(shop.id);
