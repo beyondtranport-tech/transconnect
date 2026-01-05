@@ -1,24 +1,12 @@
 import { config } from 'dotenv';
 config();
 
-// CORRECTED: configureGenkit should be the primary entry point.
-import { configureGenkit } from 'genkit';
-import { googleAI } from '@genkit-ai/google-genai';
+// CORRECTED: Import the already-configured 'ai' instance.
+// Do NOT call configureGenkit() here, as it creates a conflict.
+import { ai } from '@/ai/genkit';
 
-// Configure Genkit with the Google AI plugin
-configureGenkit({
-  plugins: [
-    googleAI({
-      apiKey: process.env.GEMINI_API_KEY,
-    }),
-  ],
-  // Log developer-friendly errors to the console
-  logLevel: 'debug',
-  // Omit the flow-state history from the logs
-  enableTracingAndMetrics: true,
-});
-
-// Import all the flow files to register them with the configured Genkit instance
+// Import all flow files to register them with the single, correct Genkit instance.
+// This ensures the dev server and API routes use the same flows.
 import '@/ai/flows/ai-freight-matching.ts';
 import '@/ai/flows/seo-flow.ts';
 import '@/ai/flows/marketing-campaign-flow.ts';
