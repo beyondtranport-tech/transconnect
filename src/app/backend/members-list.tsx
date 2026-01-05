@@ -1,10 +1,9 @@
 
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { useState, useEffect, useMemo } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2, Users, Wallet, Gem, Star } from 'lucide-react';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
@@ -26,6 +25,22 @@ interface Member {
     loyaltyTier?: 'bronze' | 'silver' | 'gold';
 }
 
+const formatDate = (isoString: string | undefined) => {
+    if (!isoString) return 'N/A';
+    try {
+        return new Date(isoString).toLocaleDateString('en-ZA');
+    } catch (e) {
+        return 'Invalid Date';
+    }
+};
+
+const tierColors: { [key: string]: string } = {
+    bronze: 'bg-orange-200 text-orange-800',
+    silver: 'bg-slate-200 text-slate-800',
+    gold: 'bg-yellow-200 text-yellow-800',
+};
+
+// Helper function moved outside the component
 async function fetchFromAdminAPI(action: string, payload?: any) {
     const token = await getClientSideAuthToken();
     if (!token) throw new Error("Authentication failed.");
@@ -46,44 +61,29 @@ async function fetchFromAdminAPI(action: string, payload?: any) {
     return result;
 }
 
-const formatDate = (isoString: string | undefined) => {
-    if (!isoString) return 'N/A';
-    try {
-        return new Date(isoString).toLocaleDateString('en-ZA');
-    } catch (e) {
-        return 'Invalid Date';
-    }
-};
-
-const tierColors: { [key: string]: string } = {
-    bronze: 'bg-orange-200 text-orange-800',
-    silver: 'bg-slate-200 text-slate-800',
-    gold: 'bg-yellow-200 text-yellow-800',
-};
-
-
 export default function MembersList() {
     const [members, setMembers] = useState<Member[] | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    const fetchMembers = useCallback(async () => {
-        setIsLoading(true);
-        setError(null);
-        try {
-            const result = await fetchFromAdminAPI('getMembers');
-            setMembers(result.data as Member[]);
-        } catch (e: any) {
-            setError(e.message || 'An unexpected error occurred.');
-        } finally {
-            setIsLoading(false);
-        }
-    }, []);
-
     useEffect(() => {
-        fetchMembers();
-    }, [fetchMembers]);
-    
+        // Define the data fetching logic inside useEffect or as a stable function outside
+        const loadMembers = async () => {
+            setIsLoading(true);
+            setError(null);
+            try {
+                const result = await fetchFromAdminAPI('getMembers');
+                setMembers(result.data as Member[]);
+            } catch (e: any) {
+                setError(e.message || 'An unexpected error occurred.');
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        loadMembers();
+    }, []); // Empty dependency array ensures this runs only once
+
     const columns: ColumnDef<Member>[] = useMemo(() => [
         {
             accessorKey: 'firstName',
