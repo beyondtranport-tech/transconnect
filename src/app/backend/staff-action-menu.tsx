@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -74,7 +75,7 @@ export default function StaffActionMenu({ staffMember, onUpdate }: { staffMember
           <AlertDialogHeader>
             <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete this staff member's record. This action is not available for 'confirmed' staff.
+              This action cannot be undone. This will permanently delete this staff member's record. You can only delete 'unconfirmed' staff.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

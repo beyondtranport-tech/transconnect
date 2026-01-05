@@ -112,10 +112,10 @@ export default function StaffList() {
             </Badge>
         ),
     },
-     {
-        id: 'actions',
-        header: 'Actions',
-        cell: ({ row }) => <StaffActionMenu staffMember={row.original} onUpdate={fetchData} />,
+    {
+      id: 'actions',
+      header: 'Actions',
+      cell: ({ row }) => <StaffActionMenu staffMember={row.original} onUpdate={fetchData} />,
     },
   ];
 
