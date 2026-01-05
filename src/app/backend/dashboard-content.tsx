@@ -97,38 +97,38 @@ export default function DashboardContent() {
     const [isDeleting, setIsDeleting] = useState<string | null>(null);
     const { toast } = useToast();
 
-    useEffect(() => {
-        const loadDashboardData = async () => {
-            setIsLoading(true);
-            setError(null);
-            try {
-                const [membersResult, contributionsResult, financeResult] = await Promise.all([
-                    fetchFromAdminAPI('getMembers'),
-                    fetchFromAdminAPI('getContributions'),
-                    fetchFromAdminAPI('getFinanceApplications'),
-                ]);
-                
-                const membersData = membersResult.data || [];
-                setStats(s => ({ ...s, members: membersData.length }));
-                setMembers(membersData);
-                
-                const contributionsData = contributionsResult.data || [];
-                setStats(s => ({ ...s, contributions: contributionsData.length }));
+    const loadDashboardData = useCallback(async () => {
+        setIsLoading(true);
+        setError(null);
+        try {
+            const [membersResult, contributionsResult, financeResult] = await Promise.all([
+                fetchFromAdminAPI('getMembers'),
+                fetchFromAdminAPI('getContributions'),
+                fetchFromAdminAPI('getFinanceApplications'),
+            ]);
+            
+            const membersData = membersResult.data || [];
+            setStats(s => ({ ...s, members: membersData.length }));
+            setMembers(membersData);
+            
+            const contributionsData = contributionsResult.data || [];
+            setStats(s => ({ ...s, contributions: contributionsData.length }));
 
-                const financeData = financeResult.data || [];
-                const totalFunded = financeData.filter((app: any) => app.status === 'funded').reduce((sum: number, app: any) => sum + (app.amountRequested || 0), 0);
-                setStats(s => ({ ...s, applications: financeData.length, totalFunded }));
-                setApplications(financeData);
+            const financeData = financeResult.data || [];
+            const totalFunded = financeData.filter((app: any) => app.status === 'funded').reduce((sum: number, app: any) => sum + (app.amountRequested || 0), 0);
+            setStats(s => ({ ...s, applications: financeData.length, totalFunded }));
+            setApplications(financeData);
 
-            } catch (e: any) {
-                setError(e.message || 'An unexpected error occurred.');
-            } finally {
-                setIsLoading(false);
-            }
-        };
-
-        loadDashboardData();
+        } catch (e: any) {
+            setError(e.message || 'An unexpected error occurred.');
+        } finally {
+            setIsLoading(false);
+        }
     }, []);
+
+    useEffect(() => {
+        loadDashboardData();
+    }, [loadDashboardData]);
     
     const memberGrowthData = useMemo(() => {
         if (members.length === 0) return [];
@@ -357,5 +357,4 @@ export default function DashboardContent() {
             </div>
         </div>
     );
-
-    
+}
