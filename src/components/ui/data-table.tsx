@@ -46,7 +46,7 @@ export function DataTable<TData>({ columns, data }: DataTableProps<TData>) {
           <TableHeader>
             <TableRow>
               {columns.map(column => (
-                <TableHead key={column.accessorKey as string}>
+                <TableHead key={(column.id || column.accessorKey) as string}>
                   {column.id === 'actions' ? (
                      <span className="flex justify-end pr-4">{column.header}</span>
                   ) : (
@@ -67,7 +67,7 @@ export function DataTable<TData>({ columns, data }: DataTableProps<TData>) {
               rows.map((row, index) => (
                 <TableRow key={index}>
                   {columns.map(column => (
-                    <TableCell key={column.accessorKey as string}>
+                    <TableCell key={(column.id || column.accessorKey) as string}>
                       {column.cell({ row })}
                     </TableCell>
                   ))}
