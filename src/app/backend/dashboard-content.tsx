@@ -9,24 +9,124 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import BillingRun from './billing-run';
+import { getClientSideAuthToken } from '@/firebase';
+import { useState, useEffect, useCallback } from 'react';
 
-// Static placeholder data to avoid any API calls
-const staticStats = { members: 0, applications: 0, contributions: 0, totalFunded: 0 };
-const staticMemberGrowthData = [
-  { name: 'Jan', NewMembers: 0 },
-  { name: 'Feb', NewMembers: 0 },
-  { name: 'Mar', NewMembers: 0 },
-];
-const staticPendingApplications: any[] = [];
-const staticRecentMembers: any[] = [];
+// Helper function moved outside the component to ensure it's stable
+async function fetchFromAdminAPI(action: string, payload?: any) {
+    const token = await getClientSideAuthToken();
+    if (!token) throw new Error("Authentication failed.");
+    
+    const response = await fetch('/api/admin', {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ action, payload }),
+    });
+
+    const result = await response.json();
+    if (!response.ok || !result.success) {
+        throw new Error(result.error || `API Error for action: ${action}`);
+    }
+    return result;
+}
 
 
 export default function DashboardContent() {
+    const [stats, setStats] = useState({ members: 0, applications: 0, contributions: 0, totalFunded: 0 });
+    const [recentMembers, setRecentMembers] = useState<any[]>([]);
+    const [pendingApplications, setPendingApplications] = useState<any[]>([]);
+    const [memberGrowthData, setMemberGrowthData] = useState<any[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    const loadDashboardData = useCallback(async () => {
+        setIsLoading(true);
+        setError(null);
+        try {
+            const [membersRes, financeRes, contributionsRes] = await Promise.all([
+                fetchFromAdminAPI('getMembers').catch(e => ({ error: e })),
+                fetchFromAdminAPI('getFinanceApplications').catch(e => ({ error: e })),
+                fetchFromAdminAPI('getContributions').catch(e => ({ error: e })),
+            ]);
+
+            if (membersRes.error || financeRes.error || contributionsRes.error) {
+                throw new Error(membersRes.error?.message || financeRes.error?.message || contributionsRes.error?.message || "An error occurred fetching dashboard data.");
+            }
+
+            // Process Stats
+            const totalFunded = financeRes.data.filter((app: any) => app.status === 'funded').reduce((sum: number, app: any) => sum + (app.amountRequested || 0), 0);
+            setStats({
+                members: membersRes.data.length,
+                applications: financeRes.data.length,
+                contributions: contributionsRes.data.length,
+                totalFunded: totalFunded,
+            });
+
+            // Process Recent Members
+            const sortedMembers = [...membersRes.data].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+            setRecentMembers(sortedMembers.slice(0, 5));
+            
+            // Process Pending Applications
+            const pending = financeRes.data.filter((app: any) => app.status === 'pending');
+            setPendingApplications(pending.slice(0, 5));
+            
+            // Process Member Growth
+            const growth: { [key: string]: number } = {};
+            const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+            membersRes.data.forEach((member: any) => {
+                const joinDate = new Date(member.createdAt);
+                const monthKey = `${joinDate.getFullYear()}-${monthNames[joinDate.getMonth()]}`;
+                growth[monthKey] = (growth[monthKey] || 0) + 1;
+            });
+            const growthData = Object.keys(growth).map(key => ({ name: key.split('-')[1], NewMembers: growth[key] })).slice(-6); // Last 6 months
+            setMemberGrowthData(growthData);
+
+        } catch (e: any) {
+            setError(e.message);
+        } finally {
+            setIsLoading(false);
+        }
+    }, []); // Empty dependency array ensures this function is created only once
+
+    useEffect(() => {
+        loadDashboardData();
+    }, [loadDashboardData]); // This effect now runs only once
 
     const formatPrice = (price: number) => {
         if (typeof price !== 'number') return 'N/A';
         return new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR', notation: 'compact' }).format(price);
     };
+
+     const formatDate = (isoString: string | undefined) => {
+        if (!isoString) return 'N/A';
+        try {
+            return new Date(isoString).toLocaleDateString('en-ZA', { month: 'short', day: 'numeric' });
+        } catch (e) {
+            return 'Invalid Date';
+        }
+    };
+
+
+    if (isLoading) {
+        return <div className="flex justify-center items-center py-20"><Loader2 className="h-12 w-12 animate-spin text-primary" /></div>;
+    }
+
+    if (error) {
+        return (
+            <Card className="bg-destructive/10 border-destructive">
+                <CardHeader>
+                    <CardTitle className="text-destructive">Error Loading Dashboard</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <p>{error}</p>
+                    <Button onClick={loadDashboardData} className="mt-4">Try Again</Button>
+                </CardContent>
+            </Card>
+        )
+    }
 
     return (
         <div className="space-y-8">
@@ -43,7 +143,7 @@ export default function DashboardContent() {
                             <Users className="h-4 w-4 text-muted-foreground" />
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold">{staticStats.members}</div>
+                            <div className="text-2xl font-bold">{stats.members}</div>
                         </CardContent>
                     </Card>
                 </Link>
@@ -53,7 +153,7 @@ export default function DashboardContent() {
                         <DollarSign className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">{formatPrice(staticStats.totalFunded)}</div>
+                        <div className="text-2xl font-bold">{formatPrice(stats.totalFunded)}</div>
                     </CardContent>
                 </Card>
                 <Link href="/backend?view=divisions-funding">
@@ -63,7 +163,7 @@ export default function DashboardContent() {
                             <FileText className="h-4 w-4 text-muted-foreground" />
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold">{staticStats.applications}</div>
+                            <div className="text-2xl font-bold">{stats.applications}</div>
                         </CardContent>
                     </Card>
                 </Link>
@@ -74,7 +174,7 @@ export default function DashboardContent() {
                             <HeartHandshake className="h-4 w-4 text-muted-foreground" />
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold">{staticStats.contributions}</div>
+                            <div className="text-2xl font-bold">{stats.contributions}</div>
                         </CardContent>
                     </Card>
                 </Link>
@@ -89,7 +189,7 @@ export default function DashboardContent() {
                 </CardHeader>
                 <CardContent className="h-80">
                      <ResponsiveContainer width="100%" height="100%">
-                        <AreaChart data={staticMemberGrowthData} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
+                        <AreaChart data={memberGrowthData} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
                             <defs>
                                 <linearGradient id="colorMembers" x1="0" y1="0" x2="0" y2="1">
                                     <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.8}/>
@@ -116,15 +216,30 @@ export default function DashboardContent() {
                         <Table>
                              <TableHeader>
                                 <TableRow>
-                                    <TableHead>Pending Finance Applications ({staticPendingApplications.length})</TableHead>
+                                    <TableHead>Pending Finance Applications ({pendingApplications.length})</TableHead>
                                     <TableHead>Amount</TableHead>
                                     <TableHead className="text-right">Actions</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                <TableRow>
-                                    <TableCell colSpan={3} className="text-center h-24 text-muted-foreground">No pending funding applications.</TableCell>
-                                </TableRow>
+                                {pendingApplications.length > 0 ? pendingApplications.map(app => (
+                                    <TableRow key={app.id}>
+                                        <TableCell>
+                                            <div className="font-medium capitalize">{app.fundingType?.replace(/-/g, ' ')}</div>
+                                            <div className="text-sm text-muted-foreground">{formatDate(app.createdAt)}</div>
+                                        </TableCell>
+                                        <TableCell>{formatPrice(app.amountRequested)}</TableCell>
+                                        <TableCell className="text-right">
+                                             <Button asChild variant="outline" size="sm">
+                                                <Link href={`/backend?view=wallet&memberId=${app.applicantId}`}>View Member</Link>
+                                            </Button>
+                                        </TableCell>
+                                    </TableRow>
+                                )) : (
+                                     <TableRow>
+                                        <TableCell colSpan={3} className="text-center h-24 text-muted-foreground">No pending funding applications.</TableCell>
+                                    </TableRow>
+                                )}
                             </TableBody>
                         </Table>
                     </CardContent>
@@ -144,9 +259,20 @@ export default function DashboardContent() {
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                <TableRow>
-                                    <TableCell colSpan={3} className="text-center h-24 text-muted-foreground">No recent members to display.</TableCell>
-                                </TableRow>
+                               {recentMembers.length > 0 ? recentMembers.map(member => (
+                                   <TableRow key={member.id}>
+                                        <TableCell>
+                                            <div className="font-medium">{member.firstName} {member.lastName}</div>
+                                            <div className="text-sm text-muted-foreground">{member.email}</div>
+                                        </TableCell>
+                                        <TableCell>{member.companyName}</TableCell>
+                                        <TableCell className="text-right font-mono">{formatPrice(member.walletBalance || 0)}</TableCell>
+                                   </TableRow>
+                               )) : (
+                                     <TableRow>
+                                        <TableCell colSpan={3} className="text-center h-24 text-muted-foreground">No recent members to display.</TableCell>
+                                    </TableRow>
+                               )}
                             </TableBody>
                         </Table>
                     </CardContent>
