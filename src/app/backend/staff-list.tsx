@@ -14,20 +14,19 @@ async function fetchAllStaff() {
     const token = await getClientSideAuthToken();
     if (!token) throw new Error("Authentication failed.");
     
-    const response = await fetch('/api/admin', {
+    const response = await fetch('/api/getUserSubcollection', {
         method: 'POST',
         headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ action: 'getStaff' }),
+        body: JSON.stringify({ path: 'staff', type: 'collection-group' }),
     });
 
     const result = await response.json();
-    if (!response.ok || !result.success) {
+    if (!result.success) {
         throw new Error(result.error || `API Error for action: getStaff`);
     }
-
     return result.data;
 }
 
