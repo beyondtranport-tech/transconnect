@@ -25,7 +25,6 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
 import { useUser, useFirestore, useMemoFirebase, useDoc, getClientSideAuthToken } from '@/firebase';
 import { useCollection } from '@/firebase/firestore/use-collection';
@@ -34,6 +33,9 @@ import { Loader2, PlusCircle, UserPlus, Users } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import StaffActionMenu from './staff-action-menu';
+import { DataTable } from '@/components/ui/data-table';
+import { type ColumnDef } from '@/hooks/use-data-table';
+
 
 const staffFormSchema = z.object({
   firstName: z.string().min(1, 'First name is required'),
@@ -259,6 +261,48 @@ export default function StaffContent() {
 
   const isLoading = isUserLoading || isUserDocLoading || isStaffLoading;
 
+  const columns: ColumnDef<any>[] = [
+    {
+      accessorKey: 'firstName',
+      header: 'First Name',
+      cell: ({ row }) => <div>{row.firstName}</div>,
+    },
+    {
+      accessorKey: 'lastName',
+      header: 'Last Name',
+      cell: ({ row }) => <div>{row.lastName}</div>,
+    },
+    {
+      accessorKey: 'email',
+      header: 'Email',
+      cell: ({ row }) => <div>{row.email}</div>,
+    },
+    {
+      accessorKey: 'title',
+      header: 'Title',
+      cell: ({ row }) => <div>{row.title}</div>,
+    },
+    {
+      accessorKey: 'role',
+      header: 'Role',
+      cell: ({ row }) => <Badge variant="outline">{row.role}</Badge>,
+    },
+    {
+        accessorKey: 'status',
+        header: 'Status',
+        cell: ({ row }) => (
+            <Badge variant={row.status === 'confirmed' ? 'default' : 'secondary'} className="capitalize">
+                {row.status || 'unconfirmed'}
+            </Badge>
+        ),
+    },
+    {
+        accessorKey: 'actions',
+        header: 'Actions',
+        cell: ({ row }) => <StaffActionMenu staffMember={row} companyId={userData?.companyId || ''} onUpdate={forceRefresh} />,
+    },
+  ];
+
   return (
     <Card>
         <CardHeader className="flex flex-row items-center justify-between">
@@ -271,51 +315,12 @@ export default function StaffContent() {
             {userData?.companyId && <AddStaffDialog companyId={userData.companyId} onStaffAdded={forceRefresh} />}
         </CardHeader>
         <CardContent>
-            {isLoading && (
+            {isLoading ? (
                  <div className="flex justify-center items-center py-10">
                     <Loader2 className="h-8 w-8 animate-spin text-primary" />
                 </div>
-            )}
-            {!isLoading && staff && (
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>Name</TableHead>
-                            <TableHead>Email</TableHead>
-                            <TableHead>Title</TableHead>
-                            <TableHead>Role</TableHead>
-                            <TableHead>Status</TableHead>
-                            <TableHead className="text-right">Actions</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {staff.map((staffMember) => (
-                            <TableRow key={staffMember.id}>
-                                <TableCell className="font-medium">{staffMember.firstName} {staffMember.lastName}</TableCell>
-                                <TableCell>{staffMember.email}</TableCell>
-                                <TableCell>{staffMember.title}</TableCell>
-                                <TableCell>
-                                    <Badge variant="outline">{staffMember.role}</Badge>
-                                </TableCell>
-                                <TableCell>
-                                    <Badge variant={staffMember.status === 'confirmed' ? 'default' : 'secondary'} className="capitalize">
-                                        {staffMember.status || 'unconfirmed'}
-                                    </Badge>
-                                </TableCell>
-                                <TableCell className="text-right">
-                                    <StaffActionMenu staffMember={staffMember} companyId={userData?.companyId || ''} onUpdate={forceRefresh} />
-                                </TableCell>
-                            </TableRow>
-                        ))}
-                    </TableBody>
-                </Table>
-            )}
-            {!isLoading && (!staff || staff.length === 0) && (
-                <div className="text-center py-10 border-2 border-dashed rounded-lg">
-                    <Users className="mx-auto h-12 w-12 text-muted-foreground" />
-                    <h3 className="mt-4 text-lg font-semibold">No staff members found</h3>
-                    <p className="text-muted-foreground mt-1">Click the "Add Staff" button to add your first team member.</p>
-                </div>
+            ) : (
+                <DataTable columns={columns} data={staff || []} />
             )}
         </CardContent>
     </Card>
