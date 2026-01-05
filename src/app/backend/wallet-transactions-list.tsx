@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
@@ -9,16 +10,17 @@ import Link from 'next/link';
 import { getClientSideAuthToken } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 
-interface Member {
+interface Company {
     id: string;
     firstName?: string;
     lastName?: string;
     companyName?: string;
+    ownerId?: string;
 }
 
 interface Payment {
     id: string;
-    memberId: string;
+    companyId: string;
     amount: number;
     description: string;
     createdAt: any;
@@ -27,7 +29,7 @@ interface Payment {
 
 interface Transaction {
     id: string;
-    memberId: string;
+    companyId: string;
     type: 'credit' | 'debit';
     amount: number;
     description: string;
@@ -78,7 +80,7 @@ const formatDate = (dateValue: any) => {
 
 
 export default function WalletTransactionsList() {
-    const [memberMap, setMemberMap] = useState<Map<string, Member>>(new Map());
+    const [companyMap, setCompanyMap] = useState<Map<string, Company>>(new Map());
     const [pendingPayments, setPendingPayments] = useState<Payment[]>([]);
     const [allocatedTransactions, setAllocatedTransactions] = useState<Transaction[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -89,9 +91,9 @@ export default function WalletTransactionsList() {
         setIsLoading(true);
         setError(null);
         try {
-            const membersResult = await fetchFromAdminAPI('getMembers');
-            const newMemberMap = new Map(membersResult.data.map((m: Member) => [m.id, m]));
-            setMemberMap(newMemberMap);
+            const companiesResult = await fetchFromAdminAPI('getMembers');
+            const newCompanyMap = new Map(companiesResult.data.map((c: Company) => [c.id, c]));
+            setCompanyMap(newCompanyMap);
 
             const [paymentsData, transactionsData] = await Promise.all([
                 fetchFromAdminAPI('getWalletPayments'),
@@ -102,8 +104,8 @@ export default function WalletTransactionsList() {
                 const enhancedPayments = paymentsData.data
                     .filter((p: any) => p.status === 'pending')
                     .map((p: any) => {
-                        const member = newMemberMap.get(p.memberId);
-                        const memberName = member ? `${member.firstName || ''} ${member.lastName || ''}`.trim() : 'Unknown Member';
+                        const company = newCompanyMap.get(p.companyId);
+                        const memberName = company ? `${company.firstName || ''} ${company.lastName || ''}`.trim() : 'Unknown Member';
                         return {
                             ...p,
                             memberName: memberName,
@@ -115,8 +117,8 @@ export default function WalletTransactionsList() {
 
             if (transactionsData.data) {
                  const enhancedTransactions = transactionsData.data.map((tx: any) => {
-                    const member = newMemberMap.get(tx.memberId);
-                    const memberName = member ? `${member.firstName || ''} ${member.lastName || ''}`.trim() : 'Unknown Member';
+                    const company = newCompanyMap.get(tx.companyId);
+                    const memberName = company ? `${company.firstName || ''} ${company.lastName || ''}`.trim() : 'Unknown Member';
                     return {
                         ...tx,
                         memberName: memberName
@@ -157,7 +159,7 @@ export default function WalletTransactionsList() {
                                 <TableRow>
                                     <TableHead>Date Logged</TableHead>
                                     <TableHead>Member Name</TableHead>
-                                    <TableHead>Member ID</TableHead>
+                                    <TableHead>Company ID</TableHead>
                                     <TableHead>Description</TableHead>
                                     <TableHead>Amount</TableHead>
                                     <TableHead className="text-right">Action</TableHead>
@@ -168,12 +170,12 @@ export default function WalletTransactionsList() {
                                     <TableRow key={p.id} className="bg-amber-50 dark:bg-amber-900/20">
                                         <TableCell>{formatDate(p.createdAt)}</TableCell>
                                         <TableCell className="font-medium">{p.memberName}</TableCell>
-                                        <TableCell className="font-mono text-xs">{p.memberId}</TableCell>
+                                        <TableCell className="font-mono text-xs">{p.companyId}</TableCell>
                                         <TableCell>{p.description}</TableCell>
                                         <TableCell className="font-semibold">{formatCurrency(p.amount)}</TableCell>
                                         <TableCell className="text-right">
                                             <Button asChild size="sm" variant="default">
-                                                <Link href={`/backend/approve-payment/${p.memberId}/${p.id}`}>
+                                                <Link href={`/backend/approve-payment/${p.companyId}/${p.id}`}>
                                                     <CheckCircle className="mr-2 h-4 w-4"/>
                                                     Approve
                                                 </Link>
@@ -211,7 +213,7 @@ export default function WalletTransactionsList() {
                                 <TableRow>
                                     <TableHead>Date</TableHead>
                                     <TableHead>Member Name</TableHead>
-                                    <TableHead>Member ID</TableHead>
+                                    <TableHead>Company ID</TableHead>
                                     <TableHead>Description</TableHead>
                                     <TableHead className="text-right">Amount</TableHead>
                                 </TableRow>
@@ -221,7 +223,7 @@ export default function WalletTransactionsList() {
                                     <TableRow key={tx.id}>
                                         <TableCell>{formatDate(tx.date)}</TableCell>
                                         <TableCell className="font-medium">{tx.memberName}</TableCell>
-                                        <TableCell className="font-mono text-xs">{tx.memberId}</TableCell>
+                                        <TableCell className="font-mono text-xs">{tx.companyId}</TableCell>
                                         <TableCell>{tx.description}</TableCell>
                                         <TableCell className={`text-right font-mono font-semibold ${tx.type === 'credit' ? 'text-green-600' : 'text-destructive'}`}>
                                             {tx.type === 'credit' ? '+' : '-'} {formatCurrency(tx.amount)}

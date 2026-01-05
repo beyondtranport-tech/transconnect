@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -27,7 +28,7 @@ const formatDate = (dateValue: any) => {
     return 'N/A';
 };
 
-export default function MemberTransactions({ memberId }: { memberId: string }) {
+export default function MemberTransactions({ companyId }: { companyId: string }) {
     const [transactions, setTransactions] = useState<any[] | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<Error | null>(null);
@@ -37,7 +38,7 @@ export default function MemberTransactions({ memberId }: { memberId: string }) {
         if (!firestore) return;
         setIsLoading(true);
 
-        const transactionsRef = collection(firestore, `members/${memberId}/transactions`);
+        const transactionsRef = collection(firestore, `companies/${companyId}/transactions`);
         const q = query(transactionsRef, orderBy('date', 'desc'));
 
         const unsubscribe = onSnapshot(q, 
@@ -54,7 +55,7 @@ export default function MemberTransactions({ memberId }: { memberId: string }) {
         );
 
         return () => unsubscribe();
-    }, [firestore, memberId]);
+    }, [firestore, companyId]);
 
     return (
         <Card>

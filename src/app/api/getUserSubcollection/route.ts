@@ -1,4 +1,5 @@
 
+
 import { getFirestore, Timestamp } from 'firebase-admin/firestore';
 import { NextRequest, NextResponse } from 'next/server';
 import { headers } from 'next/headers';
@@ -102,15 +103,15 @@ export async function POST(req: NextRequest) {
              const data = snapshot.docs.map(doc => {
                 const docData = doc.data();
                 const pathSegments = doc.ref.path.split('/');
-                let memberId = null;
-                const membersIndex = pathSegments.indexOf('members');
-                if (membersIndex > -1 && membersIndex < pathSegments.length - 1) {
-                    memberId = pathSegments[membersIndex + 1];
+                let companyId = null;
+                const companiesIndex = pathSegments.indexOf('companies');
+                if (companiesIndex > -1 && companiesIndex < pathSegments.length - 1) {
+                    companyId = pathSegments[companiesIndex + 1];
                 }
                 
                 return { 
                     id: doc.id, 
-                    memberId, 
+                    companyId, 
                     ...serializeTimestamps(docData) 
                 };
              });
@@ -127,3 +128,4 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ success: false, error: `Internal Server Error: ${error.message}` }, { status: 500 });
     }
 }
+

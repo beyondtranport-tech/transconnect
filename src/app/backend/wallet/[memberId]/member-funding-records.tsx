@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -41,7 +42,7 @@ const formatDate = (isoString: string | undefined) => {
 };
 
 
-export default function MemberFundingRecords({ memberId }: { memberId: string }) {
+export default function MemberFundingRecords({ companyId }: { companyId: string }) {
     const { user, isUserLoading: isAdminLoading } = useUser();
     const [records, setRecords] = useState<any[] | null>(null);
     const [isLoading, setIsLoading] = useState(true);
@@ -61,12 +62,12 @@ export default function MemberFundingRecords({ memberId }: { memberId: string })
                  fetch('/api/getUserSubcollection', {
                     method: 'POST',
                     headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ path: `members/${memberId}/quotes`, type: 'collection' }),
+                    body: JSON.stringify({ path: `companies/${companyId}/quotes`, type: 'collection' }),
                 }),
                  fetch('/api/getUserSubcollection', {
                     method: 'POST',
                     headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ path: `members/${memberId}/enquiries`, type: 'collection' }),
+                    body: JSON.stringify({ path: `companies/${companyId}/enquiries`, type: 'collection' }),
                 })
             ]);
             
@@ -89,7 +90,7 @@ export default function MemberFundingRecords({ memberId }: { memberId: string })
             setError(e.message);
         }
         setIsLoading(false);
-    }, [memberId, isAdminLoading]);
+    }, [companyId, isAdminLoading]);
 
     useEffect(() => {
         fetchRecords();
@@ -109,7 +110,7 @@ export default function MemberFundingRecords({ memberId }: { memberId: string })
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ path: `members/${memberId}/${subcollection}/${recordId}` }),
+                body: JSON.stringify({ path: `companies/${companyId}/${subcollection}/${recordId}` }),
             });
 
             if (!response.ok) {

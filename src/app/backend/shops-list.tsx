@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -119,7 +120,7 @@ export default function ShopsList() {
             const response = await fetch('/api/approveShop', {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ shopId: shop.id, ownerId: shop.ownerId, companyId: shop.companyId }),
+                body: JSON.stringify({ shopId: shop.id, companyId: shop.companyId }),
             });
 
             if (!response.ok) {
@@ -176,7 +177,7 @@ export default function ShopsList() {
                                     <TableHead>Created</TableHead>
                                     <TableHead>Shop Name</TableHead>
                                     <TableHead>Category</TableHead>
-                                    <TableHead>Owner ID</TableHead>
+                                    <TableHead>Company ID</TableHead>
                                     <TableHead className="text-center">Status</TableHead>
                                     <TableHead className="text-right">Actions</TableHead>
                                 </TableRow>
@@ -187,7 +188,7 @@ export default function ShopsList() {
                                         <TableCell>{formatDate(shop.createdAt)}</TableCell>
                                         <TableCell className="font-medium">{shop.shopName}</TableCell>
                                         <TableCell>{shop.category}</TableCell>
-                                        <TableCell className="font-mono text-xs max-w-[150px] truncate">{shop.ownerId}</TableCell>
+                                        <TableCell className="font-mono text-xs max-w-[150px] truncate">{shop.companyId}</TableCell>
                                         <TableCell className="text-center">
                                             <Badge variant={statusColors[shop.status] || 'secondary'} className="capitalize">
                                                 {shop.status?.replace(/_/g, ' ') || 'N/A'}
@@ -224,5 +225,3 @@ export default function ShopsList() {
         </Card>
     );
 }
-
-    

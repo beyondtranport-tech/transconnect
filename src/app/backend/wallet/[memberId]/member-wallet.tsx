@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useMemo, useEffect, useCallback } from 'react';
@@ -31,7 +32,7 @@ const formatDate = (isoString: any) => {
 }
 
 export default function MemberWallet({ memberId }: { memberId: string }) {
-    const { toast } = useToast();
+    const toast = useToast();
     const { user: adminUser, isUserLoading: isAdminLoading } = useUser();
     const firestore = useFirestore();
 
@@ -40,7 +41,7 @@ export default function MemberWallet({ memberId }: { memberId: string }) {
     const [newRecordDescription, setNewRecordDescription] = useState('');
     const [formattedBalance, setFormattedBalance] = useState<string | null>(null);
 
-    const [memberData, setMemberData] = useState<any | null>(null);
+    const [companyData, setCompanyData] = useState<any | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [refreshTrigger, setRefreshTrigger] = useState(0);
@@ -59,12 +60,27 @@ export default function MemberWallet({ memberId }: { memberId: string }) {
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ path: `members/${memberId}`, type: 'document' }),
+                body: JSON.stringify({ path: `companies/${memberId}`, type: 'document' }),
             });
 
             const result = await response.json();
             if (result.success) {
-                setMemberData(result.data);
+                // Fetch user data separately
+                const userResponse = await fetch('/api/getUserSubcollection', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ path: `users/${result.data.ownerId}`, type: 'document' }),
+                });
+                const userResult = await userResponse.json();
+                if(userResult.success) {
+                    setCompanyData({...result.data, ...userResult.data});
+                } else {
+                     setCompanyData(result.data);
+                }
+
             } else {
                 setError(result.error || 'Failed to load member data.');
             }
@@ -81,12 +97,12 @@ export default function MemberWallet({ memberId }: { memberId: string }) {
 
 
     useEffect(() => {
-        if (memberData !== null && memberData !== undefined) {
-            setFormattedBalance(formatCurrency(memberData.walletBalance ?? 0));
+        if (companyData !== null && companyData !== undefined) {
+            setFormattedBalance(formatCurrency(companyData.walletBalance ?? 0));
         } else {
             setFormattedBalance(formatCurrency(0));
         }
-    }, [memberData]);
+    }, [companyData]);
 
     const getInitials = (fName?: string, lName?: string) => {
         if (!fName || !lName) return "U";
@@ -108,11 +124,11 @@ export default function MemberWallet({ memberId }: { memberId: string }) {
         
         const batch = writeBatch(firestore);
         
-        const memberDocRef = doc(firestore, 'members', memberId);
-        const transactionRef = doc(collection(firestore, 'members', memberId, 'transactions'));
+        const companyDocRef = doc(firestore, 'companies', memberId);
+        const transactionRef = doc(collection(firestore, 'companies', memberId, 'transactions'));
         
         const transactionData = {
-            memberId: memberId,
+            companyId: memberId,
             type: amount >= 0 ? 'credit' : 'debit',
             amount: Math.abs(amount),
             date: serverTimestamp(),
@@ -125,12 +141,12 @@ export default function MemberWallet({ memberId }: { memberId: string }) {
             transactionId: transactionRef.id
         };
 
-        batch.update(memberDocRef, { walletBalance: increment(amount) });
+        batch.update(companyDocRef, { walletBalance: increment(amount) });
         batch.set(transactionRef, transactionData);
         
         try {
             await batch.commit();
-            toast({ title: 'Success!', description: `Wallet updated and transaction recorded for ${memberData?.firstName}.` });
+            toast({ title: 'Success!', description: `Wallet updated and transaction recorded for ${companyData?.firstName}.` });
             setNewRecordAmount('');
             setNewRecordDescription('');
             setRefreshTrigger(prev => prev + 1); // Trigger a re-fetch
@@ -138,7 +154,7 @@ export default function MemberWallet({ memberId }: { memberId: string }) {
             errorEmitter.emit(
                 'permission-error',
                 new FirestorePermissionError({
-                    path: `members/${memberId}/transactions`,
+                    path: `companies/${memberId}/transactions`,
                     operation: 'write',
                     requestResourceData: { walletUpdate: { walletBalance: increment(amount) }, transaction: transactionData },
                 })
@@ -162,7 +178,7 @@ export default function MemberWallet({ memberId }: { memberId: string }) {
          );
     }
 
-    if (!memberData) {
+    if (!companyData) {
         return (
              <Card>
                 <CardHeader><CardTitle>Member Not Found</CardTitle></CardHeader>
@@ -177,15 +193,15 @@ export default function MemberWallet({ memberId }: { memberId: string }) {
                 <CardHeader>
                     <div className="flex items-center gap-4">
                         <Avatar className="h-16 w-16">
-                            <AvatarFallback>{getInitials(memberData?.firstName, memberData?.lastName)}</AvatarFallback>
+                            <AvatarFallback>{getInitials(companyData?.firstName, companyData?.lastName)}</AvatarFallback>
                         </Avatar>
                         <div>
-                             <CardTitle className="text-3xl">{memberData?.firstName} {memberData?.lastName}</CardTitle>
+                             <CardTitle className="text-3xl">{companyData?.firstName} {companyData?.lastName}</CardTitle>
                              <CardDescription className="flex items-center gap-2 mt-1">
-                                <Mail className="h-4 w-4" /> {memberData?.email}
+                                <Mail className="h-4 w-4" /> {companyData?.email}
                              </CardDescription>
                              <CardDescription className="flex items-center gap-2">
-                                <Calendar className="h-4 w-4" /> Joined: {formatDate(memberData?.createdAt)}
+                                <Calendar className="h-4 w-4" /> Joined: {formatDate(companyData?.createdAt)}
                             </CardDescription>
                         </div>
                     </div>
@@ -236,9 +252,9 @@ export default function MemberWallet({ memberId }: { memberId: string }) {
                 </CardFooter>
             </Card>
             
-            <MemberWalletPayments memberId={memberId} onUpdate={() => setRefreshTrigger(prev => prev + 1)} />
-            <MemberFundingRecords memberId={memberId} />
-            <MemberTransactions memberId={memberId} key={refreshTrigger} />
+            <MemberWalletPayments companyId={memberId} onUpdate={() => setRefreshTrigger(prev => prev + 1)} />
+            <MemberFundingRecords companyId={memberId} />
+            <MemberTransactions companyId={memberId} key={refreshTrigger} />
         </div>
     );
 }

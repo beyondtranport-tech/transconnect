@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -38,7 +39,7 @@ const formatDate = (isoString: string | undefined) => {
 };
 
 
-export default function MemberWalletPayments({ memberId, onUpdate }: { memberId: string, onUpdate: () => void }) {
+export default function MemberWalletPayments({ companyId, onUpdate }: { companyId: string, onUpdate: () => void }) {
     const { user, isUserLoading: isAdminLoading } = useUser();
     const [payments, setPayments] = useState<any[] | null>(null);
     const [isLoading, setIsLoading] = useState(true);
@@ -57,7 +58,7 @@ export default function MemberWalletPayments({ memberId, onUpdate }: { memberId:
             const response = await fetch('/api/getUserSubcollection', {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ path: `members/${memberId}/walletPayments`, type: 'collection' }),
+                body: JSON.stringify({ path: `companies/${companyId}/walletPayments`, type: 'collection' }),
             });
             
             const result = await response.json();
@@ -71,7 +72,7 @@ export default function MemberWalletPayments({ memberId, onUpdate }: { memberId:
             setError(e.message);
         }
         setIsLoading(false);
-    }, [memberId, isAdminLoading]);
+    }, [companyId, isAdminLoading]);
 
     useEffect(() => {
         fetchPayments();
@@ -89,7 +90,7 @@ export default function MemberWalletPayments({ memberId, onUpdate }: { memberId:
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ path: `members/${memberId}/walletPayments/${paymentId}` }),
+                body: JSON.stringify({ path: `companies/${companyId}/walletPayments/${paymentId}` }),
             });
 
             if (!response.ok) {
