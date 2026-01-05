@@ -319,3 +319,5 @@ export default function StaffContent() {
             )}
         </CardContent>
     </Card>
+  );
+}
