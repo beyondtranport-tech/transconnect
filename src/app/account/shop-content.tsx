@@ -4,17 +4,20 @@
 import { useState, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, Store, PlusCircle } from 'lucide-react';
+import { Loader2, Store, PlusCircle, ShieldAlert } from 'lucide-react';
 import { useUser, useFirestore, useMemoFirebase, useDoc, getClientSideAuthToken } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import ShopWizard from './shop-wizard';
+import { usePermissions } from '@/hooks/use-permissions';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 export default function ShopContent() {
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
   const [isCreating, setIsCreating] = useState(false);
+  const { can, isLoading: arePermissionsLoading } = usePermissions();
 
   const userDocRef = useMemoFirebase(() => {
     if (!firestore || !user) return null;
@@ -35,7 +38,7 @@ export default function ShopContent() {
 
   const { data: userShop, isLoading: isShopLoading } = useDoc(shopRef);
 
-  const isLoading = isUserLoading || isUserDataLoading || isCompanyLoading;
+  const isLoading = isUserLoading || isUserDataLoading || isCompanyLoading || arePermissionsLoading;
 
   const forceRefresh = () => {
     forceRefreshUser();
@@ -84,6 +87,7 @@ export default function ShopContent() {
     }
   };
 
+  const canCreateShop = can('create', 'shop');
   const shopExists = !!companyData?.shopId;
 
   return (
@@ -122,15 +126,28 @@ export default function ShopContent() {
             <Store className="mx-auto h-12 w-12 text-muted-foreground" />
             <h3 className="mt-4 text-xl font-semibold">You don't have a shop yet.</h3>
             <p className="mt-2 text-muted-foreground">Ready to start selling? Create your shop to get started.</p>
-            <Button onClick={handleCreateShop} disabled={isCreating}>
-              {isCreating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PlusCircle className="mr-2 h-4 w-4" />}
-              Create My Shop
-            </Button>
+            
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="inline-block mt-4">
+                    <Button onClick={handleCreateShop} disabled={isCreating || !canCreateShop}>
+                      {isCreating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PlusCircle className="mr-2 h-4 w-4" />}
+                      Create My Shop
+                    </Button>
+                  </div>
+                </TooltipTrigger>
+                {!canCreateShop && (
+                  <TooltipContent>
+                    <p className="flex items-center gap-2"><ShieldAlert className="h-4 w-4" /> You don't have permission to create a shop.</p>
+                  </TooltipContent>
+                )}
+              </Tooltip>
+            </TooltipProvider>
+
           </div>
         )}
       </CardContent>
     </Card>
   );
 }
-
-    

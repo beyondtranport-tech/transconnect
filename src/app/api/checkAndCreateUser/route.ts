@@ -68,6 +68,7 @@ export async function POST(req: NextRequest) {
         email: firebaseUser.email,
         phone: firebaseUser.phoneNumber || '',
         companyId: companyRef.id, // Link to the new company
+        role: 'owner', // The creator is always the owner
         createdAt: FieldValue.serverTimestamp(),
         updatedAt: FieldValue.serverTimestamp(),
     };
