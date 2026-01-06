@@ -126,7 +126,7 @@
       "type": "object",
       "description": "Represents a single granular permission in the system.",
       "properties": {
-        "id": { "type": "string", "description": "e.g., 'can_edit_shop'" },
+        "id": { "type": "string", "description": "e.g., 'shop:edit'" },
         "name": { "type": "string", "description": "e.g., 'Can Edit Shop'" },
         "description": { "type": "string" }
       },
@@ -437,7 +437,7 @@
         }
       },
       {
-        "path": "/permissions/roles/{roleId}",
+        "path": "/permissions/roles/all_roles/{roleId}",
         "definition": {
           "entityName": "Role",
           "schema": { "$ref": "#/entities/Role" },

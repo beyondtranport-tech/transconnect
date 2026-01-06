@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
     }
     
     // Basic path validation to ensure it's targeting an expected config collection
-    const allowedCollections = ['configuration', 'memberships', 'rewards'];
+    const allowedCollections = ['configuration', 'memberships', 'rewards', 'permissions'];
     const collectionName = path.split('/')[0];
     if (!allowedCollections.includes(collectionName)) {
         return NextResponse.json({ success: false, error: `Forbidden: Updates to collection "${collectionName}" are not allowed via this endpoint.` }, { status: 403 });

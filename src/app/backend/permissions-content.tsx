@@ -92,7 +92,7 @@ function RoleDialog({ role, onSave }: { role?: RoleFormValues, onSave: () => voi
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    path: `permissions/roles/${roleData.id}`,
+                    path: `permissions/roles/all_roles/${roleData.id}`,
                     data: roleData
                 }),
             });
@@ -195,7 +195,7 @@ export default function PermissionsContent() {
     const firestore = useFirestore();
     const { toast } = useToast();
 
-    const rolesQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'permissions/roles')) : null, [firestore]);
+    const rolesQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'permissions/roles/all_roles')) : null, [firestore]);
     const { data: roles, isLoading, forceRefresh } = useCollection(rolesQuery);
 
     const handleDelete = async (roleId: string) => {
@@ -210,7 +210,7 @@ export default function PermissionsContent() {
             await fetch('/api/deleteConfigDoc', {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ path: `permissions/roles/${roleId}` }),
+                body: JSON.stringify({ path: `permissions/roles/all_roles/${roleId}` }),
             });
             toast({ title: "Role Deleted" });
             forceRefresh();
