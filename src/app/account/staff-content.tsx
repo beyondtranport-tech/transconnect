@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -27,7 +27,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useToast } from '@/hooks/use-toast';
 import { useUser, useFirestore, useMemoFirebase, getClientSideAuthToken } from '@/firebase';
 import { useCollection } from '@/firebase/firestore/use-collection';
-import { collection, doc } from 'firebase/firestore';
+import { collection } from 'firebase/firestore';
 import { Loader2, PlusCircle, UserPlus, Users } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import StaffActionMenu from './staff-action-menu'; 

@@ -53,14 +53,16 @@ export function EditStaffDialog({ isOpen, setIsOpen, staffMember, onUpdate }: Ed
 
   const form = useForm<StaffFormValues>({
     resolver: zodResolver(staffFormSchema),
-    defaultValues: staffMember,
+    // Correctly initialize with defaultValues. The form will be reset via the key prop on the Dialog or via an effect.
+    defaultValues: staffMember, 
   });
-
+  
+  // This effect correctly resets the form ONLY when the dialog is opened or the specific staff member changes.
   useEffect(() => {
-    if (staffMember) {
-      form.reset(staffMember);
+    if (isOpen && staffMember) {
+        form.reset(staffMember);
     }
-  }, [staffMember, isOpen]);
+  }, [staffMember, isOpen, form]);
 
   const onSubmit = async (values: StaffFormValues) => {
     setIsLoading(true);
@@ -68,7 +70,7 @@ export function EditStaffDialog({ isOpen, setIsOpen, staffMember, onUpdate }: Ed
     try {
       const token = await getClientSideAuthToken();
       if (!token) throw new Error("Authentication failed.");
-
+      
       const response = await fetch('/api/updateUserDoc', {
         method: 'POST',
         headers: {
@@ -91,8 +93,8 @@ export function EditStaffDialog({ isOpen, setIsOpen, staffMember, onUpdate }: Ed
         description: `${values.firstName} ${values.lastName}'s details have been saved.`,
       });
 
-      setIsOpen(false);
       onUpdate();
+      setIsOpen(false);
     } catch (error: any) {
       toast({
         variant: 'destructive',

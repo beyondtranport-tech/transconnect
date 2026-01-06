@@ -28,11 +28,11 @@ export default function StaffActionMenu({ staffMember, onUpdate }: { staffMember
   const [isProcessing, setIsProcessing] = useState(false);
   const [isAlertOpen, setIsAlertOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
-  const [actionToConfirm, setActionToConfirm] = useState<'delete' | 'confirm' | 'unconfirm' | null>(null);
+  const [actionToConfirm, setActionToConfirm] = useState<'delete' | null>(null);
   const { toast } = useToast();
 
-  const handleAction = async () => {
-    if (!actionToConfirm || !staffMember) return;
+  const handleDelete = async () => {
+    if (!staffMember) return;
 
     setIsProcessing(true);
     setIsAlertOpen(false);
@@ -41,27 +41,10 @@ export default function StaffActionMenu({ staffMember, onUpdate }: { staffMember
       const token = await getClientSideAuthToken();
       if (!token) throw new Error('Authentication failed.');
 
-      let endpoint = '';
-      let payload: any = { staffId: staffMember.id, companyId: staffMember.companyId };
-      let successMessage = '';
-      
-      if (actionToConfirm === 'delete') {
-        endpoint = '/api/deleteUserDoc';
-        payload = { path: `members/${staffMember.companyId}/staff/${staffMember.id}` };
-        successMessage = 'Staff member has been deleted.';
-      } else {
-        // A user cannot confirm/unconfirm their own staff. This is an admin action.
-        // This logic is left here in case this menu is reused in an admin context, but it won't be reachable by the user.
-        endpoint = '/api/updateStaffStatus'; 
-        payload.status = actionToConfirm === 'confirm' ? 'confirmed' : 'unconfirmed';
-        successMessage = `${staffMember.firstName}'s status updated to ${payload.status}.`;
-      }
-
-
-      const response = await fetch(endpoint, {
+      const response = await fetch('/api/deleteUserDoc', {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({ path: `members/${staffMember.companyId}/staff/${staffMember.id}` }),
       });
 
       const result = await response.json();
@@ -69,7 +52,7 @@ export default function StaffActionMenu({ staffMember, onUpdate }: { staffMember
         throw new Error(result.error || 'Action failed.');
       }
 
-      toast({ title: 'Success', description: successMessage });
+      toast({ title: 'Success', description: 'Staff member has been deleted.' });
       onUpdate();
 
     } catch (e: any) {
@@ -80,7 +63,7 @@ export default function StaffActionMenu({ staffMember, onUpdate }: { staffMember
     }
   };
 
-  const openConfirmation = (action: 'delete' | 'confirm' | 'unconfirm') => {
+  const openConfirmation = (action: 'delete') => {
     setActionToConfirm(action);
     setIsAlertOpen(true);
   };
@@ -88,8 +71,6 @@ export default function StaffActionMenu({ staffMember, onUpdate }: { staffMember
   const getAlertStrings = () => {
     switch (actionToConfirm) {
       case 'delete': return { title: "Delete Staff Member?", description: "This will permanently delete this staff member's record. This action cannot be undone." };
-      case 'confirm': return { title: "Confirm Staff Member?", description: "This will set the staff member's status to 'confirmed'." };
-      case 'unconfirm': return { title: "Un-confirm Staff Member?", description: "This will set the staff member's status to 'unconfirmed'." };
       default: return { title: "Are you sure?", description: "This action cannot be undone." };
     }
   };
@@ -126,7 +107,7 @@ export default function StaffActionMenu({ staffMember, onUpdate }: { staffMember
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleAction} variant={actionToConfirm === 'delete' ? 'destructive' : 'default'}>
+            <AlertDialogAction onClick={handleDelete} variant={actionToConfirm === 'delete' ? 'destructive' : 'default'}>
               Yes, proceed
             </AlertDialogAction>
           </AlertDialogFooter>
