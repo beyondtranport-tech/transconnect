@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -19,9 +18,12 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
-import { Loader2, MoreVertical, CheckCircle, XCircle, Trash2 } from 'lucide-react';
+import { Loader2, MoreVertical, CheckCircle, XCircle, Trash2, Edit } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken } from '@/firebase';
+
+// Note: This component is duplicated from the /backend folder
+// It should be consolidated into a single component in a shared location
 
 export default function StaffActionMenu({ staffMember, companyId, onUpdate }: { staffMember: any; companyId: string, onUpdate: () => void }) {
   const [isDeleting, setIsDeleting] = useState(false);
@@ -35,6 +37,7 @@ export default function StaffActionMenu({ staffMember, companyId, onUpdate }: { 
       const token = await getClientSideAuthToken();
       if (!token) throw new Error('Authentication failed.');
 
+      // This endpoint needs to be fixed or created if it doesn't exist
       const response = await fetch('/api/updateStaffStatus', {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
@@ -58,7 +61,8 @@ export default function StaffActionMenu({ staffMember, companyId, onUpdate }: { 
     try {
       const token = await getClientSideAuthToken();
       if (!token) throw new Error('Authentication failed.');
-
+      
+      // This endpoint also needs to be confirmed
       const response = await fetch('/api/deleteStaffMember', {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
@@ -88,6 +92,9 @@ export default function StaffActionMenu({ staffMember, companyId, onUpdate }: { 
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
+            <DropdownMenuItem disabled>
+              <Edit className="mr-2 h-4 w-4" /> Edit
+            </DropdownMenuItem>
             {staffMember.status !== 'confirmed' ? (
               <DropdownMenuItem onClick={() => handleUpdateStatus('confirmed')}>
                 <CheckCircle className="mr-2 h-4 w-4" /> Confirm
@@ -109,7 +116,7 @@ export default function StaffActionMenu({ staffMember, companyId, onUpdate }: { 
           <AlertDialogHeader>
             <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete this staff member's record. This action is not available for 'confirmed' staff.
+              This action cannot be undone. This will permanently delete this staff member's record.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

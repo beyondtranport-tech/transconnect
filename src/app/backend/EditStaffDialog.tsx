@@ -83,13 +83,14 @@ export function EditStaffDialog({ isOpen, setIsOpen, staffMember, onUpdate }: Ed
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-                path: `members/${staffMember.companyId}/staff/${staffMember.id}`,
+                path: `companies/${staffMember.companyId}/staff/${staffMember.id}`,
                 data: { ...values, updatedAt: { _methodName: 'serverTimestamp' } }
             }),
         });
         
         if (!response.ok) {
-            throw new Error((await response.json()).error || 'Failed to update staff member.');
+            const result = await response.json();
+            throw new Error(result.error || 'Failed to update staff member.');
         }
 
       toast({
