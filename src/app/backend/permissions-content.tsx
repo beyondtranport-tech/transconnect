@@ -40,7 +40,10 @@ const resources = [
     { id: 'warehouseMall', label: 'Warehouse Mall' },
     { id: 'repurposeMall', label: 'Repurpose Mall' },
     { id: 'aftermarketMall', label: 'Aftermarket Mall' },
-    { id: 'marketplace', label: 'Marketplace Access' },
+    { id: 'marketplaceDigital', label: 'Marketplace: Digital Marketing' },
+    { id: 'marketplaceData', label: 'Marketplace: Data Services' },
+    { id: 'marketplaceLogistics', label: 'Marketplace: Logistics Networks' },
+    { id: 'marketplaceLoyalty', label: 'Marketplace: Loyalty/Incentives' },
     { id: 'tech', label: 'Tech Division Tools' },
     { id: 'contributions', label: 'Data Contributions' },
     { id: 'permissions', label: 'Permissions Management' },
@@ -82,7 +85,7 @@ function PermissionsDialog({ staffMember, onSave }: { staffMember: any, onSave: 
         }
         for (const p of permissions) {
             const [actionId, resourceId] = p.split(':');
-            if (parsed[resourceId] && actions.some(a => a.id === actionId)) {
+            if (resourceId && parsed[resourceId] && actions.some(a => a.id === actionId)) {
                 parsed[resourceId].push(actionId);
             }
         }
@@ -142,7 +145,7 @@ function PermissionsDialog({ staffMember, onSave }: { staffMember: any, onSave: 
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    path: `companies/${staffMember.companyId}/staff/${staffMember.id.split('-')[1]}`,
+                    path: `companies/${staffMember.companyId}/staff/${staffMember.id}`,
                     data: { permissions: finalPermissions }
                 }),
             });
@@ -226,7 +229,6 @@ function PermissionsDialog({ staffMember, onSave }: { staffMember: any, onSave: 
 export default function PermissionsContent() {
     const firestore = useFirestore();
     
-    // Fetch data directly using useCollection for reliability
     const staffQuery = useMemoFirebase(() => firestore ? query(collectionGroup(firestore, 'staff')) : null, [firestore]);
     const companiesQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'companies')) : null, [firestore]);
     
@@ -237,15 +239,11 @@ export default function PermissionsContent() {
         if (!staff || !companies) return [];
         const companyMap = new Map(companies.map(c => [c.id, c.companyName]));
         
-        return staff.map(s => {
-            // This composite key ensures uniqueness for the table rows
-            const uniqueRowId = `${s.companyId}-${s.id}`;
-            return {
-                ...s,
-                id: uniqueRowId, 
-                companyName: companyMap.get(s.companyId) || 'Unknown Company'
-            }
-        });
+        return staff.map(s => ({
+            ...s,
+            id: `${s.companyId}-${s.id}`, // Create a truly unique key for the table
+            companyName: companyMap.get(s.companyId) || 'Unknown Company'
+        }));
     }, [staff, companies]);
 
 

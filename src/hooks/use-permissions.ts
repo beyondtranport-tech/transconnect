@@ -23,7 +23,10 @@ export type Resource =
     'warehouseMall' |
     'repurposeMall' |
     'aftermarketMall' |
-    'marketplace' |
+    'marketplaceDigital' |
+    'marketplaceData' |
+    'marketplaceLogistics' |
+    'marketplaceLoyalty' |
     'tech' |
     'contributions' |
     'permissions';
