@@ -1,4 +1,5 @@
 
+
 import { NextRequest, NextResponse } from 'next/server';
 import { getFirestore, Timestamp, FieldValue } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
@@ -76,12 +77,12 @@ export async function POST(req: NextRequest) {
                 const data = staffSnap.docs.map(doc => {
                     const docPath = doc.ref.path;
                     const pathSegments = docPath.split('/');
-                    // companies/{companyId}/staff/{staffId} -> companyId is at index 1
-                    const companyId = pathSegments.length > 1 ? pathSegments[1] : null;
+                    // members/{memberId}/staff/{staffId} -> memberId is at index 1
+                    const memberId = pathSegments.length > 1 ? pathSegments[1] : null;
                     return {
                         ...serializeTimestamps(doc.data()),
                         id: doc.id,
-                        companyId: companyId,
+                        companyId: memberId, // Using companyId for consistency, but it's the memberId
                     };
                 });
                 return NextResponse.json({ success: true, data: data });
@@ -91,12 +92,12 @@ export async function POST(req: NextRequest) {
                 const data = snapshot.docs.map(doc => {
                     const docPath = doc.ref.path;
                     const pathSegments = docPath.split('/');
-                    const companiesIndex = pathSegments.indexOf('companies');
-                    const companyId = companiesIndex > -1 && pathSegments.length > companiesIndex + 1 ? pathSegments[companiesIndex + 1] : null;
+                    const membersIndex = pathSegments.indexOf('members');
+                    const memberId = membersIndex > -1 && pathSegments.length > membersIndex + 1 ? pathSegments[membersIndex + 1] : null;
 
                     return { 
                         id: doc.id,
-                        companyId: companyId, 
+                        companyId: memberId, 
                         ...serializeTimestamps(doc.data()) 
                     };
                 });
@@ -107,12 +108,12 @@ export async function POST(req: NextRequest) {
                 const data = snapshot.docs.map(doc => {
                      const docPath = doc.ref.path;
                     const pathSegments = docPath.split('/');
-                    const companiesIndex = pathSegments.indexOf('companies');
-                    const companyId = companiesIndex > -1 && pathSegments.length > companiesIndex + 1 ? pathSegments[companiesIndex + 1] : null;
+                    const membersIndex = pathSegments.indexOf('members');
+                    const memberId = membersIndex > -1 && pathSegments.length > membersIndex + 1 ? pathSegments[membersIndex + 1] : null;
 
                     return { 
                         id: doc.id,
-                        companyId: companyId,
+                        companyId: memberId,
                         ...serializeTimestamps(doc.data()) 
                     };
                 });
@@ -158,10 +159,10 @@ export async function POST(req: NextRequest) {
 
                  const batch = db.batch();
                  
-                 const companyRef = db.doc(`companies/${companyId}`);
-                 batch.update(companyRef, { walletBalance: FieldValue.increment(amount) });
+                 const memberRef = db.doc(`members/${companyId}`);
+                 batch.update(memberRef, { walletBalance: FieldValue.increment(amount) });
                  
-                 const transactionRef = db.collection(`companies/${companyId}/transactions`).doc();
+                 const transactionRef = db.collection(`members/${companyId}/transactions`).doc();
                  batch.set(transactionRef, {
                     transactionId: transactionRef.id,
                     reconciliationId: reconciliationId || null,
@@ -173,43 +174,43 @@ export async function POST(req: NextRequest) {
                     isAdjustment: false,
                     chartOfAccountsCode: '4410',
                     postedBy: adminUid,
-                    companyId: companyId,
+                    memberId: companyId,
                  });
 
-                 const paymentRef = db.doc(`companies/${companyId}/walletPayments/${paymentId}`);
+                 const paymentRef = db.doc(`members/${companyId}/walletPayments/${paymentId}`);
                  batch.delete(paymentRef);
 
                  await batch.commit();
                  return NextResponse.json({ success: true, message: "Payment approved and wallet updated." });
             }
             case 'deleteTransaction': {
-                const { companyId, transactionId } = payload;
-                if (!companyId || !transactionId) throw new Error("companyId and transactionId are required.");
-                await db.doc(`companies/${companyId}/transactions/${transactionId}`).delete();
+                const { memberId, transactionId } = payload;
+                if (!memberId || !transactionId) throw new Error("memberId and transactionId are required.");
+                await db.doc(`members/${memberId}/transactions/${transactionId}`).delete();
                 return NextResponse.json({ success: true });
             }
              case 'updateMemberStatus': {
-                const { companyId, status } = payload;
-                if (!companyId || !status) {
-                    throw new Error("Missing companyId or status.");
+                const { memberId, status } = payload;
+                if (!memberId || !status) {
+                    throw new Error("Missing memberId or status.");
                 }
 
                 await db.runTransaction(async (transaction) => {
-                    const companyRef = db.doc(`companies/${companyId}`);
-                    const companySnap = await transaction.get(companyRef);
-                    if (!companySnap.exists) {
+                    const memberRef = db.doc(`members/${memberId}`);
+                    const memberSnap = await transaction.get(memberRef);
+                    if (!memberSnap.exists) {
                         throw new Error("Member not found.");
                     }
-                    const beforeData = companySnap.data();
+                    const beforeData = memberSnap.data();
 
                     const updatedData = { status, updatedAt: FieldValue.serverTimestamp() };
-                    transaction.update(companyRef, updatedData);
+                    transaction.update(memberRef, updatedData);
 
                     const auditLogRef = db.collection('auditLogs').doc();
                     transaction.set(auditLogRef, {
-                        collectionPath: 'companies',
-                        documentId: companyId,
-                        userId: adminUid, // Use generic userId
+                        collectionPath: 'members',
+                        documentId: memberId,
+                        userId: adminUid,
                         action: 'update',
                         timestamp: FieldValue.serverTimestamp(),
                         before: serializeTimestamps(beforeData),
@@ -219,24 +220,24 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, message: "Member status updated and audited." });
             }
             case 'deleteMember': {
-                const { companyId } = payload;
-                if (!companyId) throw new Error("Missing companyId.");
+                const { memberId } = payload;
+                if (!memberId) throw new Error("Missing memberId.");
 
                 await db.runTransaction(async (transaction) => {
-                    const companyRef = db.doc(`companies/${companyId}`);
-                    const companySnap = await transaction.get(companyRef);
-                    if (!companySnap.exists) {
+                    const memberRef = db.doc(`members/${memberId}`);
+                    const memberSnap = await transaction.get(memberRef);
+                    if (!memberSnap.exists) {
                         throw new Error("Member not found.");
                     }
-                    const beforeData = companySnap.data();
+                    const beforeData = memberSnap.data();
                     
-                    transaction.delete(companyRef);
+                    transaction.delete(memberRef);
                     
                     const auditLogRef = db.collection('auditLogs').doc();
                     transaction.set(auditLogRef, {
-                        collectionPath: 'companies',
-                        documentId: companyId,
-                        userId: adminUid, // Use generic userId
+                        collectionPath: 'members',
+                        documentId: memberId,
+                        userId: adminUid,
                         action: 'delete',
                         timestamp: FieldValue.serverTimestamp(),
                         before: serializeTimestamps(beforeData),
@@ -246,29 +247,29 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, message: "Member deleted and action audited." });
             }
             case 'updateStaffStatus': {
-                const { companyId, staffId, status } = payload;
-                if (!companyId || !staffId || !status) {
-                    throw new Error("Missing companyId, staffId, or status.");
+                const { memberId, staffId, status } = payload;
+                if (!memberId || !staffId || !status) {
+                    throw new Error("Missing memberId, staffId, or status.");
                 }
-                const staffRef = db.doc(`companies/${companyId}/staff/${staffId}`);
+                const staffRef = db.doc(`members/${memberId}/staff/${staffId}`);
                 await staffRef.update({ status, updatedAt: FieldValue.serverTimestamp() });
                 return NextResponse.json({ success: true, message: "Staff status updated." });
             }
             case 'updateStaffMember': {
-                const { companyId, staffId, data } = payload;
-                if (!companyId || !staffId || !data) {
-                    throw new Error("Missing companyId, staffId, or data for update.");
+                const { memberId, staffId, data } = payload;
+                if (!memberId || !staffId || !data) {
+                    throw new Error("Missing memberId, staffId, or data for update.");
                 }
-                const staffRef = db.doc(`companies/${companyId}/staff/${staffId}`);
+                const staffRef = db.doc(`members/${memberId}/staff/${staffId}`);
                 await staffRef.update({ ...data, updatedAt: FieldValue.serverTimestamp() });
                 return NextResponse.json({ success: true, message: "Staff member updated." });
             }
             case 'deleteStaffMember': {
-                const { companyId, staffId } = payload;
-                 if (!companyId || !staffId) {
-                    throw new Error("Missing companyId or staffId.");
+                const { memberId, staffId } = payload;
+                 if (!memberId || !staffId) {
+                    throw new Error("Missing memberId or staffId.");
                 }
-                const staffRef = db.doc(`companies/${companyId}/staff/${staffId}`);
+                const staffRef = db.doc(`members/${memberId}/staff/${staffId}`);
                 await staffRef.delete();
                 return NextResponse.json({ success: true, message: "Staff member deleted." });
             }

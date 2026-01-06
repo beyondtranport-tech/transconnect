@@ -89,7 +89,7 @@ function AddStaffDialog({ companyId, onStaffAdded }: { companyId: string; onStaf
             'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-            collectionPath: `companies/${companyId}/staff`,
+            collectionPath: `members/${companyId}/staff`,
             data: staffData
         }),
       });
@@ -288,9 +288,9 @@ export default function StaffContent() {
   const { data: userData, isLoading: isUserDocLoading } = useDoc<{ companyId: string }>(userDocRef);
 
   const staffCollectionRef = useMemoFirebase(() => {
-    if (!firestore || !userData?.companyId) return null;
-    return collection(firestore, `companies/${userData.companyId}/staff`);
-  }, [firestore, userData?.companyId]);
+    if (!firestore || !user) return null;
+    return collection(firestore, `members/${user.uid}/staff`);
+  }, [firestore, user]);
 
   const { data: staff, isLoading: isStaffLoading, forceRefresh } = useCollection(staffCollectionRef);
 
@@ -351,7 +351,7 @@ export default function StaffContent() {
                 </CardTitle>
                 <CardDescription>Add and manage your company's staff members.</CardDescription>
             </div>
-            {userData?.companyId && <AddStaffDialog companyId={userData.companyId} onStaffAdded={forceRefresh} />}
+            {userData?.companyId && <AddStaffDialog companyId={user!.uid} onStaffAdded={forceRefresh} />}
         </CardHeader>
         <CardContent>
             {isLoading ? (
@@ -365,3 +365,4 @@ export default function StaffContent() {
     </Card>
   );
 }
+
