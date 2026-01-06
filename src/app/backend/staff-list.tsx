@@ -120,7 +120,7 @@ export default function StaffList() {
         {
             id: 'actions',
             header: () => <div className="text-right">Actions</div>,
-            cell: ({ row }) => <div className="text-right"><StaffActionMenu staffMember={row.original} onUpdate={fetchData} /></div>,
+            cell: ({ row }) => <div className="text-right"><StaffActionMenu staffMember={row.original} companyId={row.original.companyId} onUpdate={fetchData} /></div>,
         }
     ], [fetchData]);
 
