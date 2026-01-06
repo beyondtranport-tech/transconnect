@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useUser, useFirestore, useMemoFirebase, useCollection } from '@/firebase';
+import { useUser, useFirestore, useMemoFirebase, useCollection, useDoc } from '@/firebase';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Loader2, FileText, MoreVertical, Trash2 } from 'lucide-react';
@@ -48,22 +48,28 @@ export default function QuotesCard() {
     const { toast } = useToast();
     const [isDeleting, setIsDeleting] = useState<string | null>(null);
 
-    const quotesQuery = useMemoFirebase(() => {
+    const userDocRef = useMemoFirebase(() => {
         if (!firestore || !user) return null;
+        return doc(firestore, 'users', user.uid);
+    }, [firestore, user]);
+    const { data: userData } = useDoc<{ companyId: string }>(userDocRef);
+
+    const quotesQuery = useMemoFirebase(() => {
+        if (!firestore || !userData?.companyId) return null;
         return query(
-            collection(firestore, `companies/${user.uid}/quotes`), 
+            collection(firestore, `companies/${userData.companyId}/quotes`), 
             orderBy('createdAt', 'desc'), 
             limit(10)
         );
-    }, [firestore, user]);
+    }, [firestore, userData]);
 
     const { data: quotes, isLoading, error, forceRefresh } = useCollection(quotesQuery);
     
     const handleDelete = async (quoteId: string) => {
-        if (!firestore || !user) return;
+        if (!firestore || !userData?.companyId) return;
         setIsDeleting(quoteId);
         try {
-            await deleteDoc(doc(firestore, `companies/${user.uid}/quotes`, quoteId));
+            await deleteDoc(doc(firestore, `companies/${userData.companyId}/quotes`, quoteId));
             toast({ title: "Quote Deleted", description: "The quote has been removed from your saved list." });
             forceRefresh();
         } catch (e: any) {

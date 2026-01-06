@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { Suspense, useState, useEffect } from 'react';
@@ -107,11 +108,17 @@ function ApplyForm() {
 
   const enquiryId = searchParams.get('enquiryId');
 
+  const userDocRef = useMemoFirebase(() => {
+    if (!firestore || !user) return null;
+    return doc(firestore, 'users', user.uid);
+  }, [firestore, user]);
+  const { data: userData } = useDoc(userDocRef);
+
   const enquiryRef = useMemoFirebase(() => {
     // Corrected: Ensure all dependencies are loaded before creating the ref.
-    if (!firestore || !user || !enquiryId) return null;
-    return doc(firestore, `members/${user.uid}/enquiries`, enquiryId);
-  }, [firestore, user, enquiryId]);
+    if (!firestore || !userData?.companyId || !enquiryId) return null;
+    return doc(firestore, `companies/${userData.companyId}/enquiries`, enquiryId);
+  }, [firestore, userData, enquiryId]);
 
   // Pass the memoized ref to useDoc
   const { data: existingEnquiry, isLoading: isEnquiryLoading } = useDoc(enquiryRef);
@@ -221,7 +228,7 @@ function ApplyForm() {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    path: `members/${user.uid}/enquiries/${enquiryId}`,
+                    path: `companies/${userData?.companyId}/enquiries/${enquiryId}`,
                     data: enquiryData
                 }),
             });

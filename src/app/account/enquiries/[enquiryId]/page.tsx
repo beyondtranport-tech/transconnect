@@ -66,14 +66,20 @@ function EnquiryDetail() {
     const firestore = useFirestore();
     const { user, isUserLoading } = useUser();
 
+    const userDocRef = useMemoFirebase(() => {
+        if (!firestore || !user) return null;
+        return doc(firestore, 'users', user.uid);
+    }, [firestore, user]);
+    const { data: userData, isLoading: isUserDocLoading } = useDoc<{ companyId: string }>(userDocRef);
+
     const enquiryRef = useMemoFirebase(() => {
-        if (!firestore || !user || !enquiryId) return null;
-        return doc(firestore, 'members', user.uid, 'enquiries', enquiryId);
-    }, [firestore, user, enquiryId]);
+        if (!firestore || !userData?.companyId || !enquiryId) return null;
+        return doc(firestore, `companies/${userData.companyId}/enquiries`, enquiryId);
+    }, [firestore, userData, enquiryId]);
 
     const { data: enquiry, isLoading, error } = useDoc(enquiryRef);
 
-    if (isLoading || isUserLoading) {
+    if (isLoading || isUserLoading || isUserDocLoading) {
         return (
             <div className="flex justify-center items-center h-full py-20">
                 <Loader2 className="h-12 w-12 animate-spin text-primary" />

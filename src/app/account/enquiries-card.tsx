@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useUser, useFirestore, useMemoFirebase, useCollection } from '@/firebase';
+import { useUser, useFirestore, useMemoFirebase, useCollection, useDoc } from '@/firebase';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Loader2, FileText, MoreVertical, Trash2, Edit, Eye } from 'lucide-react';
@@ -92,22 +92,28 @@ export default function EnquiriesCard() {
     const { toast } = useToast();
     const [isDeleting, setIsDeleting] = useState<string | null>(null);
 
-    const enquiriesQuery = useMemoFirebase(() => {
+    const userDocRef = useMemoFirebase(() => {
         if (!firestore || !user) return null;
+        return doc(firestore, 'users', user.uid);
+    }, [firestore, user]);
+    const { data: userData } = useDoc<{ companyId: string }>(userDocRef);
+
+    const enquiriesQuery = useMemoFirebase(() => {
+        if (!firestore || !userData?.companyId) return null;
         return query(
-            collection(firestore, `companies/${user.uid}/enquiries`), 
+            collection(firestore, `companies/${userData.companyId}/enquiries`), 
             orderBy('createdAt', 'desc'),
             limit(10)
         );
-    }, [firestore, user]);
+    }, [firestore, userData]);
 
     const { data: enquiries, isLoading, error, forceRefresh } = useCollection(enquiriesQuery);
 
     const handleDelete = async (enquiryId: string) => {
-        if (!firestore || !user) return;
+        if (!firestore || !userData?.companyId) return;
         setIsDeleting(enquiryId);
         try {
-            await deleteDoc(doc(firestore, `companies/${user.uid}/enquiries`, enquiryId));
+            await deleteDoc(doc(firestore, `companies/${userData.companyId}/enquiries`, enquiryId));
             toast({ title: "Enquiry Deleted", description: "The enquiry has been removed." });
             forceRefresh(); // Refresh the list
         } catch (e: any) {
