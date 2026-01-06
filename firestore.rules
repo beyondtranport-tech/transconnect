@@ -28,11 +28,28 @@ service cloud.firestore {
       allow create: if request.auth != null; // Controlled by backend function for user creation
       allow get, list, update: if isAdmin() || get(/databases/$(database)/documents/companies/$(companyId)).data.ownerId == request.auth.uid;
 
-      // --- Company Subcollections ---
+      // --- Company Subcollections (Direct Access) ---
       // The company owner and admins have full access to all subcollections (staff, wallet, etc.).
       match /{subcollection}/{docId=**} {
         allow read, write: if isAdmin() || get(/databases/$(database)/documents/companies/$(companyId)).data.ownerId == request.auth.uid;
       }
+    }
+    
+    // --- Collection Group Queries for Admin Backend ---
+    match /{path=**}/staff/{staffId} {
+      allow list: if isAdmin();
+    }
+    match /{path=**}/walletPayments/{paymentId} {
+      allow list: if isAdmin();
+    }
+    match /{path=**}/transactions/{transactionId} {
+      allow list: if isAdmin();
+    }
+    match /{path=**}/quotes/{quoteId} {
+      allow list: if isAdmin();
+    }
+    match /{path=**}/enquiries/{enquiryId} {
+      allow list: if isAdmin();
     }
 
     // --- Public & Global Collections ---
