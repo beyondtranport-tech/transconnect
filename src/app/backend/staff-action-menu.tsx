@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -23,7 +22,7 @@ import { Button } from '@/components/ui/button';
 import { Loader2, MoreVertical, CheckCircle, XCircle, Trash2, Edit } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken } from '@/firebase';
-import { EditStaffDialog } from '@/app/account/EditStaffDialog';
+import { EditStaffDialog } from '@/app/backend/EditStaffDialog';
 
 async function performStaffAction(action: string, payload: any) {
     const token = await getClientSideAuthToken();
@@ -41,7 +40,6 @@ async function performStaffAction(action: string, payload: any) {
     }
     return result;
 }
-
 
 export default function StaffActionMenu({ staffMember, onUpdate }: { staffMember: any; onUpdate: () => void }) {
   const [isProcessing, setIsProcessing] = useState(false);

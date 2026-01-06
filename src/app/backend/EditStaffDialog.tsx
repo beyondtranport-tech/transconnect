@@ -53,15 +53,7 @@ export function EditStaffDialog({ isOpen, setIsOpen, staffMember, onUpdate }: Ed
 
   const form = useForm<StaffFormValues>({
     resolver: zodResolver(staffFormSchema),
-    defaultValues: staffMember || { 
-      firstName: '',
-      lastName: '',
-      email: '',
-      title: '',
-      role: '',
-      function: '',
-      jobDescription: '',
-    }
+    defaultValues: staffMember || {},
   });
   
   useEffect(() => {
@@ -70,30 +62,30 @@ export function EditStaffDialog({ isOpen, setIsOpen, staffMember, onUpdate }: Ed
     }
   }, [isOpen, staffMember, form]);
 
-
   const onSubmit = async (values: StaffFormValues) => {
     setIsLoading(true);
     
     try {
-        const token = await getClientSideAuthToken();
-        if (!token) throw new Error("Authentication failed.");
+      const token = await getClientSideAuthToken();
+      if (!token) throw new Error("Authentication failed.");
 
-        const response = await fetch('/api/updateUserDoc', {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                path: `members/${staffMember.companyId}/staff/${staffMember.id}`,
-                data: { ...values, updatedAt: { _methodName: 'serverTimestamp' } }
-            }),
-        });
-        
-        const result = await response.json();
-        if (!response.ok) {
-            throw new Error(result.error || 'Failed to update staff member.');
-        }
+      const response = await fetch('/api/admin', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'updateStaffMember',
+          payload: {
+            companyId: staffMember.companyId,
+            staffId: staffMember.id,
+            data: values
+          }
+        }),
+      });
+      
+      const result = await response.json();
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to update staff member.');
+      }
 
       toast({
         title: 'Staff Member Updated',
@@ -125,127 +117,18 @@ export function EditStaffDialog({ isOpen, setIsOpen, staffMember, onUpdate }: Ed
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="firstName"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>First Name</FormLabel>
-                      <FormControl><Input {...field} /></FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="lastName"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Last Name</FormLabel>
-                      <FormControl><Input {...field} /></FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                <FormField control={form.control} name="firstName" render={({ field }) => (<FormItem><FormLabel>First Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                <FormField control={form.control} name="lastName" render={({ field }) => (<FormItem><FormLabel>Last Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
             </div>
-            <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Email (Cannot be changed)</FormLabel>
-                  <FormControl><Input {...field} disabled /></FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <FormField control={form.control} name="email" render={({ field }) => (<FormItem><FormLabel>Email (Cannot be changed)</FormLabel><FormControl><Input {...field} disabled /></FormControl><FormMessage /></FormItem>)}/>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-               <FormField
-                  control={form.control}
-                  name="title"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Title</FormLabel>
-                       <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger><SelectValue placeholder="Select a title" /></SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="Executive Director">Executive Director</SelectItem>
-                          <SelectItem value="Non-Executive Director">Non-Executive Director</SelectItem>
-                          <SelectItem value="Manager">Manager</SelectItem>
-                          <SelectItem value="Admin">Admin</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="role"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Role</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger><SelectValue placeholder="Select a role" /></SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="operations">Operations</SelectItem>
-                          <SelectItem value="marketing">Marketing</SelectItem>
-                          <SelectItem value="IT">IT</SelectItem>
-                          <SelectItem value="logistics">Logistics</SelectItem>
-                          <SelectItem value="store">Store</SelectItem>
-                          <SelectItem value="sales">Sales</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="function"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Function</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger><SelectValue placeholder="Select a function" /></SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                            <SelectItem value="Set Policy">Set Policy</SelectItem>
-                            <SelectItem value="Manage Staff">Manage Staff</SelectItem>
-                            <SelectItem value="Set Budgets">Set Budgets</SelectItem>
-                            <SelectItem value="Ensure Implementation">Ensure Implementation</SelectItem>
-                            <SelectItem value="Monitor Deliverables">Monitor Deliverables</SelectItem>
-                            <SelectItem value="Ensure Compliance">Ensure Compliance</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+               <FormField control={form.control} name="title" render={({ field }) => (<FormItem><FormLabel>Title</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select a title" /></SelectTrigger></FormControl><SelectContent><SelectItem value="Executive Director">Executive Director</SelectItem><SelectItem value="Non-Executive Director">Non-Executive Director</SelectItem><SelectItem value="Manager">Manager</SelectItem><SelectItem value="Admin">Admin</SelectItem></SelectContent></Select><FormMessage /></FormItem>)}/>
+               <FormField control={form.control} name="role" render={({ field }) => (<FormItem><FormLabel>Role</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select a role" /></SelectTrigger></FormControl><SelectContent><SelectItem value="operations">Operations</SelectItem><SelectItem value="marketing">Marketing</SelectItem><SelectItem value="IT">IT</SelectItem><SelectItem value="logistics">Logistics</SelectItem><SelectItem value="store">Store</SelectItem><SelectItem value="sales">Sales</SelectItem></SelectContent></Select><FormMessage /></FormItem>)}/>
+               <FormField control={form.control} name="function" render={({ field }) => (<FormItem><FormLabel>Function</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select a function" /></SelectTrigger></FormControl><SelectContent><SelectItem value="Set Policy">Set Policy</SelectItem><SelectItem value="Manage Staff">Manage Staff</SelectItem><SelectItem value="Set Budgets">Set Budgets</SelectItem><SelectItem value="Ensure Implementation">Ensure Implementation</SelectItem><SelectItem value="Monitor Deliverables">Monitor Deliverables</SelectItem><SelectItem value="Ensure Compliance">Ensure Compliance</SelectItem></SelectContent></Select><FormMessage /></FormItem>)}/>
             </div>
-            <FormField
-              control={form.control}
-              name="jobDescription"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Job Description (Optional)</FormLabel>
-                  <FormControl>
-                    <Textarea placeholder="Describe responsibilities..." {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <FormField control={form.control} name="jobDescription" render={({ field }) => (<FormItem><FormLabel>Job Description (Optional)</FormLabel><FormControl><Textarea placeholder="Describe responsibilities..." {...field} /></FormControl><FormMessage /></FormItem>)}/>
             <DialogFooter>
-              <Button type="submit" disabled={isLoading}>
-                {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                Save Changes
-              </Button>
+              <Button type="submit" disabled={isLoading}><Save className="mr-2 h-4 w-4" />Save Changes</Button>
             </DialogFooter>
           </form>
         </Form>

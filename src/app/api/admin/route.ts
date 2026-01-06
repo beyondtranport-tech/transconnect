@@ -77,15 +77,26 @@ export async function POST(req: NextRequest) {
                 const data = staffSnap.docs.map(doc => {
                     const docPath = doc.ref.path;
                     const pathSegments = docPath.split('/');
-                    // members/{memberId}/staff/{staffId} -> memberId is at index 1
-                    const memberId = pathSegments.length > 1 ? pathSegments[1] : null;
+                    // companies/{companyId}/staff/{staffId} -> companyId is at index 1
+                    const companyId = pathSegments.length > 1 ? pathSegments[1] : null;
                     return {
                         ...serializeTimestamps(doc.data()),
                         id: doc.id,
-                        companyId: memberId, // Using companyId for consistency, but it's the memberId
+                        companyId: companyId,
                     };
                 });
                 return NextResponse.json({ success: true, data: data });
+            }
+            case 'addStaffMember': {
+                const { companyId, data } = payload;
+                if (!companyId || !data) {
+                    throw new Error("Missing companyId or data for addStaffMember.");
+                }
+                const staffCollectionRef = db.collection(`companies/${companyId}/staff`);
+                const newStaffDocRef = staffCollectionRef.doc();
+                const finalData = { ...data, id: newStaffDocRef.id, companyId: companyId };
+                await newStaffDocRef.set(finalData);
+                return NextResponse.json({ success: true, id: newStaffDocRef.id });
             }
             case 'getWalletPayments': {
                 const snapshot = await db.collectionGroup('walletPayments').get();
