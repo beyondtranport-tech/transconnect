@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -48,23 +47,6 @@ interface EditStaffDialogProps {
     onUpdate: () => void;
 }
 
-async function performStaffAction(action: string, payload: any) {
-    const token = await getClientSideAuthToken();
-    if (!token) throw new Error("Authentication failed.");
-    
-    const response = await fetch('/api/admin', {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action, payload }),
-    });
-
-    const result = await response.json();
-    if (!response.ok || !result.success) {
-        throw new Error(result.error || `API Error for action: ${action}`);
-    }
-    return result;
-}
-
 export function EditStaffDialog({ isOpen, setIsOpen, staffMember, onUpdate }: EditStaffDialogProps) {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
@@ -91,11 +73,24 @@ export function EditStaffDialog({ isOpen, setIsOpen, staffMember, onUpdate }: Ed
     setIsLoading(true);
     
     try {
-        await performStaffAction('updateStaffMember', {
-            companyId: staffMember.companyId,
-            staffId: staffMember.id,
-            data: values,
+        const token = await getClientSideAuthToken();
+        if (!token) throw new Error("Authentication failed.");
+
+        const response = await fetch('/api/updateUserDoc', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                path: `members/${staffMember.companyId}/staff/${staffMember.id}`,
+                data: { ...values, updatedAt: { _methodName: 'serverTimestamp' } }
+            }),
         });
+        
+        if (!response.ok) {
+            throw new Error((await response.json()).error || 'Failed to update staff member.');
+        }
 
       toast({
         title: 'Staff Member Updated',
