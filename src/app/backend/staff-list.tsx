@@ -27,7 +27,7 @@ interface Company {
     companyName: string;
 }
 
-// Moved helper function outside the component to make it stable
+// Moved helper function outside the component to make it stable and prevent re-creation
 async function fetchAdminData(action: string) {
     const token = await getClientSideAuthToken();
     if (!token) throw new Error("Authentication failed.");
@@ -51,11 +51,12 @@ export default function StaffList() {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    // Wrapped fetchData in useCallback with an empty dependency array
+    // useCallback ensures this function has a stable identity across re-renders
     const fetchData = useCallback(async () => {
         setIsLoading(true);
         setError(null);
         try {
+            // Fetch both in parallel
             const [staffData, companiesData] = await Promise.all([
                 fetchAdminData('getStaff'),
                 fetchAdminData('getMembers')
@@ -69,12 +70,13 @@ export default function StaffList() {
         }
     }, []);
 
-    // useEffect now correctly calls the memoized function once
+    // useEffect hook to run the fetch on initial component mount
     useEffect(() => {
         fetchData();
     }, [fetchData]);
 
     const enrichedStaff = useMemo(() => {
+        if (!staff || !companies) return [];
         const companyMap = new Map(companies.map(c => [c.id, c.companyName]));
         return staff.map(s => ({
             ...s,
@@ -120,7 +122,11 @@ export default function StaffList() {
         {
             id: 'actions',
             header: () => <div className="text-right">Actions</div>,
-            cell: ({ row }) => <div className="text-right"><StaffActionMenu staffMember={row.original} onUpdate={fetchData} /></div>,
+            cell: ({ row }) => (
+                <div className="text-right">
+                    <StaffActionMenu staffMember={row.original} onUpdate={fetchData} />
+                </div>
+            ),
         }
     ], [fetchData]);
 
