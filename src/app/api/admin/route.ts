@@ -75,16 +75,15 @@ export async function POST(req: NextRequest) {
              case 'getStaff': {
                 const staffSnap = await db.collectionGroup('staff').get();
                 const data = staffSnap.docs.map(doc => {
-                    const docPath = doc.ref.path;
-                    const pathSegments = docPath.split('/');
-                    const companyId = pathSegments[1]; // companies/{companyId}/staff/{staffId}
+                    const pathSegments = doc.ref.path.split('/');
+                    const companyId = pathSegments[pathSegments.indexOf('companies') + 1];
                     return {
                         ...serializeTimestamps(doc.data()),
                         id: doc.id,
                         companyId: companyId,
                     };
                 });
-                return NextResponse.json({ success: true, data: data });
+                return NextResponse.json({ success: true, data });
             }
             case 'addStaffMember': {
                 const { companyId, data } = payload;
@@ -292,5 +291,3 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ success: false, error: error.message }, { status });
     }
 }
-
-    
