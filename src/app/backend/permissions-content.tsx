@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from '@/components/ui/button';
 import { Loader2, Lock, Edit } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { getClientSideAuthToken } from '@/firebase';
+import { getClientSideAuthToken, useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form';
@@ -18,6 +18,7 @@ import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
+import { collection, query } from 'firebase/firestore';
 
 // --- Helper Functions and Data ---
 
@@ -38,22 +39,6 @@ const actions = [
     { id: 'delete', label: 'Delete' },
 ] as const;
 
-async function fetchAdminData(action: string, payload?: any) {
-    const token = await getClientSideAuthToken();
-    if (!token) throw new Error("Authentication failed.");
-    
-    const response = await fetch('/api/admin', {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action, payload }),
-    });
-
-    const result = await response.json();
-    if (!response.ok || !result.success) {
-        throw new Error(result.error || `API Error for action: ${action}`);
-    }
-    return result.data;
-}
 
 // --- Zod Schema for the Form ---
 
@@ -178,7 +163,7 @@ function PermissionsDialog({ staffMember, onSave }: { staffMember: any, onSave: 
                                  <div className="font-semibold flex items-center gap-2">
                                     <Checkbox
                                         checked={isAllSelected}
-                                        onCheckedChange={handleSelectAll}
+                                        onCheckedChange={(checked) => handleSelectAll(!!checked)}
                                         aria-label="Select all permissions"
                                     />
                                      Resource
@@ -224,31 +209,16 @@ function PermissionsDialog({ staffMember, onSave }: { staffMember: any, onSave: 
 }
 
 export default function PermissionsContent() {
-    const [staff, setStaff] = useState<any[]>([]);
-    const [companies, setCompanies] = useState<any[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
+    const firestore = useFirestore();
 
-    const fetchData = useCallback(async () => {
-        setIsLoading(true);
-        setError(null);
-        try {
-            const [staffData, companiesData] = await Promise.all([
-                fetchAdminData('getStaff'),
-                fetchAdminData('getMembers') // getMembers fetches company data
-            ]);
-            setStaff(staffData || []);
-            setCompanies(companiesData || []);
-        } catch (e: any) {
-            setError(e.message);
-        } finally {
-            setIsLoading(false);
-        }
-    }, []);
+    const staffQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'staff')) : null, [firestore]);
+    const companiesQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'companies')) : null, [firestore]);
 
-    useEffect(() => {
-        fetchData();
-    }, [fetchData]);
+    const { data: staff, isLoading: isLoadingStaff, error: staffError, forceRefresh: refreshStaff } = useCollection(staffQuery);
+    const { data: companies, isLoading: isLoadingCompanies, error: companiesError } = useCollection(companiesQuery);
+    
+    const isLoading = isLoadingStaff || isLoadingCompanies;
+    const error = staffError || companiesError;
 
     const enrichedStaff = useMemo(() => {
         if (!staff || !companies) return [];
@@ -279,17 +249,17 @@ export default function PermissionsContent() {
         {
           accessorKey: 'title',
           header: 'Title',
-          cell: ({ row }) => <div>{row.original.title}</div>,
+           cell: ({ row }) => <div>{row.original.title}</div>,
         },
         {
           accessorKey: 'role',
           header: 'Role',
-          cell: ({ row }) => <Badge variant="outline" className="capitalize">{row.original.role}</Badge>,
+           cell: ({ row }) => <Badge variant="outline" className="capitalize">{row.original.role}</Badge>,
         },
         {
           accessorKey: 'function',
           header: 'Function',
-          cell: ({ row }) => <Badge variant="secondary" className="capitalize">{row.original.function}</Badge>,
+           cell: ({ row }) => <Badge variant="secondary" className="capitalize">{row.original.function}</Badge>,
         },
         {
           accessorKey: 'permissions',
@@ -306,11 +276,11 @@ export default function PermissionsContent() {
             header: () => <div className="text-right">Actions</div>,
             cell: ({ row }) => (
                 <div className="text-right">
-                    <PermissionsDialog staffMember={row.original} onSave={fetchData} />
+                    <PermissionsDialog staffMember={row.original} onSave={refreshStaff} />
                 </div>
             ),
         }
-    ], [fetchData]);
+    ], [refreshStaff]);
 
 
     return (
@@ -330,7 +300,7 @@ export default function PermissionsContent() {
                ) : error ? (
                     <div className="text-destructive-foreground bg-destructive/90 p-4 rounded-md">
                         <h4 className="font-semibold">Error</h4>
-                        <p className="text-sm">{error}</p>
+                        <p className="text-sm">{error.message}</p>
                     </div>
                ) : (
                     <DataTable columns={columns} data={enrichedStaff} />
