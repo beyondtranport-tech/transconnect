@@ -22,12 +22,10 @@ import { Button } from '@/components/ui/button';
 import { Loader2, MoreVertical, CheckCircle, XCircle, Trash2, Edit } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken } from '@/firebase';
-import { EditStaffDialog } from './EditStaffDialog';
 
-export default function StaffActionMenu({ staffMember, onUpdate }: { staffMember: any; onUpdate: () => void }) {
+export default function StaffActionMenu({ staffMember, onUpdate, onEdit }: { staffMember: any; onUpdate: () => void, onEdit: () => void }) {
   const [isProcessing, setIsProcessing] = useState(false);
   const [isAlertOpen, setIsAlertOpen] = useState(false);
-  const [isEditOpen, setIsEditOpen] = useState(false);
   const [actionToConfirm, setActionToConfirm] = useState<'delete' | null>(null);
   const { toast } = useToast();
 
@@ -77,12 +75,6 @@ export default function StaffActionMenu({ staffMember, onUpdate }: { staffMember
 
   return (
     <>
-      <EditStaffDialog
-        isOpen={isEditOpen}
-        setIsOpen={setIsEditOpen}
-        staffMember={staffMember}
-        onUpdate={onUpdate}
-      />
       <AlertDialog open={isAlertOpen} onOpenChange={setIsAlertOpen}>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -91,7 +83,7 @@ export default function StaffActionMenu({ staffMember, onUpdate }: { staffMember
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem onSelect={() => setIsEditOpen(true)}>
+            <DropdownMenuItem onSelect={onEdit}>
               <Edit className="mr-2 h-4 w-4" /> Edit
             </DropdownMenuItem>
             <DropdownMenuSeparator />

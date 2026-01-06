@@ -53,16 +53,15 @@ export function EditStaffDialog({ isOpen, setIsOpen, staffMember, onUpdate }: Ed
 
   const form = useForm<StaffFormValues>({
     resolver: zodResolver(staffFormSchema),
-    // Correctly initialize with defaultValues. The form will be reset via the key prop on the Dialog or via an effect.
     defaultValues: staffMember, 
   });
   
   // This effect correctly resets the form ONLY when the dialog is opened or the specific staff member changes.
   useEffect(() => {
-    if (isOpen && staffMember) {
+    if (staffMember) {
         form.reset(staffMember);
     }
-  }, [staffMember, isOpen, form]);
+  }, [staffMember, form]);
 
   const onSubmit = async (values: StaffFormValues) => {
     setIsLoading(true);

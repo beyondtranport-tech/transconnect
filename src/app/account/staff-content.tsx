@@ -35,6 +35,7 @@ import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { EditStaffDialog } from './EditStaffDialog';
 
 const staffFormSchema = z.object({
   firstName: z.string().min(1, 'First name is required'),
@@ -280,6 +281,9 @@ function AddStaffDialog({ onStaffAdded }: { onStaffAdded: () => void }) {
 export default function StaffContent() {
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
+  const [selectedStaff, setSelectedStaff] = useState<any | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+
 
   const staffCollectionRef = useMemoFirebase(() => {
     if (!firestore || !user) return null;
@@ -289,6 +293,11 @@ export default function StaffContent() {
   const { data: staff, isLoading: isStaffLoading, forceRefresh } = useCollection(staffCollectionRef);
 
   const isLoading = isUserLoading || isStaffLoading;
+
+  const handleEdit = (staffMember: any) => {
+    setSelectedStaff(staffMember);
+    setIsEditDialogOpen(true);
+  };
 
   const columns: ColumnDef<any>[] = useMemo(() => [
     {
@@ -330,32 +339,45 @@ export default function StaffContent() {
         header: () => <div className="text-right">Actions</div>,
         cell: ({ row }) => (
             <div className="text-right">
-                <StaffActionMenu staffMember={row.original} onUpdate={forceRefresh} />
+                <StaffActionMenu staffMember={row.original} onUpdate={forceRefresh} onEdit={() => handleEdit(row.original)} />
             </div>
         ),
     },
   ], [forceRefresh]);
 
   return (
-    <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-            <div>
-                 <CardTitle className="text-2xl font-bold flex items-center gap-2">
-                    <Users /> Staff Management
-                </CardTitle>
-                <CardDescription>Add and manage your company's staff members.</CardDescription>
-            </div>
-            {user?.uid && <AddStaffDialog onStaffAdded={forceRefresh} />}
-        </CardHeader>
-        <CardContent>
-            {isLoading ? (
-                 <div className="flex justify-center items-center py-10">
-                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                </div>
-            ) : (
-                <DataTable columns={columns} data={staff || []} />
-            )}
-        </CardContent>
-    </Card>
+    <>
+      {selectedStaff && (
+        <EditStaffDialog
+          isOpen={isEditDialogOpen}
+          setIsOpen={setIsEditDialogOpen}
+          staffMember={selectedStaff}
+          onUpdate={() => {
+            forceRefresh();
+            setIsEditDialogOpen(false);
+          }}
+        />
+      )}
+      <Card>
+          <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                  <CardTitle className="text-2xl font-bold flex items-center gap-2">
+                      <Users /> Staff Management
+                  </CardTitle>
+                  <CardDescription>Add and manage your company's staff members.</CardDescription>
+              </div>
+              {user?.uid && <AddStaffDialog onStaffAdded={forceRefresh} />}
+          </CardHeader>
+          <CardContent>
+              {isLoading ? (
+                  <div className="flex justify-center items-center py-10">
+                      <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  </div>
+              ) : (
+                  <DataTable columns={columns} data={staff || []} />
+              )}
+          </CardContent>
+      </Card>
+    </>
   );
 }
