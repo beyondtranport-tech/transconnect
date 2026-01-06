@@ -128,7 +128,7 @@ export default function StaffList() {
                 </div>
             ),
         }
-    ], [fetchData]);
+    ], [fetchData, enrichedStaff]);
 
     return (
         <Card>
