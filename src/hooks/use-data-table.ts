@@ -7,6 +7,7 @@ export interface ColumnDef<TData> {
   accessorKey: keyof TData | string;
   header: React.ReactNode;
   cell: (props: { row: { original: TData } }) => React.ReactNode;
+  id?: string;
 }
 
 export type SortingState = {
@@ -17,6 +18,10 @@ export type SortingState = {
 export function useDataTable<TData>(data: TData[], columns: ColumnDef<TData>[]) {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [globalFilter, setGlobalFilter] = useState('');
+
+  const getNestedValue = (obj: any, path: string): any => {
+    return path.split('.').reduce((acc, part) => acc && acc[part], obj);
+  };
 
   const filteredData = useMemo(() => {
     if (!globalFilter) return data;
@@ -50,10 +55,6 @@ export function useDataTable<TData>(data: TData[], columns: ColumnDef<TData>[]) 
   
   const rows = useMemo(() => sortedData.map(original => ({ original })), [sortedData]);
 
-
-  const getNestedValue = (obj: any, path: string): any => {
-    return path.split('.').reduce((acc, part) => acc && acc[part], obj);
-  };
 
   return {
     rows,
