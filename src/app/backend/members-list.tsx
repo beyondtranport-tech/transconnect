@@ -108,6 +108,13 @@ export default function MembersList() {
           ),
         },
         {
+            accessorKey: 'status',
+            header: 'Status',
+            cell: ({ row }) => (
+                <Badge variant="default">Active</Badge>
+            ),
+        },
+        {
           accessorKey: 'createdAt',
           header: 'Joined',
           cell: ({ row }) => {
