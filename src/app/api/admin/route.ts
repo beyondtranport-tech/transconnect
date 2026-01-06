@@ -75,12 +75,14 @@ export async function POST(req: NextRequest) {
              case 'getStaff': {
                 const staffSnap = await db.collectionGroup('staff').get();
                 const data = staffSnap.docs.map(doc => {
+                    const docData = doc.data();
                     const pathSegments = doc.ref.path.split('/');
                     const companyIdIndex = pathSegments.indexOf('companies');
                     const companyId = companyIdIndex !== -1 && companyIdIndex < pathSegments.length - 1 ? pathSegments[companyIdIndex + 1] : null;
+                    
                     return {
-                        ...serializeTimestamps(doc.data()),
-                        id: doc.id,
+                        ...serializeTimestamps(docData),
+                        id: doc.id, // This is the staff document ID
                         companyId: companyId,
                     };
                 });
@@ -283,6 +285,42 @@ export async function POST(req: NextRequest) {
                 await staffRef.delete();
                 return NextResponse.json({ success: true, message: "Staff member deleted." });
             }
+            case 'approveShop': {
+                 const { shopId, companyId } = payload;
+                if (!shopId || !companyId) {
+                    throw new Error("Missing shopId or companyId for approveShop action.");
+                }
+                
+                const memberShopRef = db.doc(`companies/${companyId}/shops/${shopId}`);
+                const publicShopRef = db.doc(`shops/${shopId}`);
+                
+                const shopDoc = await memberShopRef.get();
+                if (!shopDoc.exists) {
+                    throw new Error(`Shop with ID ${shopId} not found for company ${companyId}.`);
+                }
+                
+                const shopData = shopDoc.data();
+                if (!shopData) {
+                    throw new Error(`Shop data is empty for shop ${shopId}.`);
+                }
+                
+                const batch = db.batch();
+
+                const publicShopData = { ...shopData, status: 'approved', updatedAt: FieldValue.serverTimestamp() };
+                
+                batch.set(publicShopRef, publicShopData);
+                batch.update(memberShopRef, { status: 'approved', updatedAt: FieldValue.serverTimestamp() });
+                
+                 // Award points for shop approval if applicable
+                const loyaltyConfigDoc = await db.collection('configuration').doc('loyaltySettings').get();
+                const shopCreationPoints = loyaltyConfigDoc.data()?.shopCreationPoints || 100;
+                const companyRef = db.doc(`companies/${companyId}`);
+                batch.update(companyRef, { rewardPoints: FieldValue.increment(shopCreationPoints) });
+                
+                await batch.commit();
+
+                return NextResponse.json({ success: true, message: 'Shop approved and published.' });
+            }
             default:
                 return NextResponse.json({ success: false, error: 'Invalid action' }, { status: 400 });
         }
@@ -292,5 +330,3 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ success: false, error: error.message }, { status });
     }
 }
-
-    

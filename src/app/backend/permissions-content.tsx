@@ -10,7 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from '@/components/ui/button';
 import { Loader2, Lock, Edit } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { getClientSideAuthToken } from '@/firebase';
+import { getClientSideAuthToken, useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form';
@@ -19,6 +19,7 @@ import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
+import { collection, query } from 'firebase/firestore';
 
 
 // --- Helper Functions and Data ---
@@ -231,39 +232,30 @@ function PermissionsDialog({ staffMember, onSave }: { staffMember: any, onSave: 
 }
 
 export default function PermissionsContent() {
-    const [staff, setStaff] = useState<any[]>([]);
-    const [companies, setCompanies] = useState<any[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
+    const firestore = useFirestore();
+    
+    // Fetch data directly using useCollection for reliability
+    const staffQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'companies')) : null, [firestore]);
+    const companiesQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'companies')) : null, [firestore]);
+    
+    const { data: staff, isLoading: isLoadingStaff } = useCollection(staffQuery);
+    const { data: companies, isLoading: isLoadingCompanies } = useCollection(companiesQuery);
+
     const [error, setError] = useState<string | null>(null);
-
-    const fetchData = useCallback(async () => {
-        setIsLoading(true);
-        setError(null);
-        try {
-            const [staffData, companiesData] = await Promise.all([
-                fetchAdminData('getStaff'),
-                fetchAdminData('getMembers'),
-            ]);
-            setStaff(staffData || []);
-            setCompanies(companiesData || []);
-        } catch (e: any) {
-            setError(e.message || 'An unknown error occurred.');
-        } finally {
-            setIsLoading(false);
-        }
-    }, []);
-
-    useEffect(() => {
-        fetchData();
-    }, [fetchData]);
 
     const enrichedStaff = useMemo(() => {
         if (!staff || !companies) return [];
         const companyMap = new Map(companies.map(c => [c.id, c.companyName]));
-        return staff.map(s => ({
-            ...s,
-            companyName: companyMap.get(s.companyId) || 'Unknown Company'
-        }));
+        
+        return staff.map(s => {
+            // Generate a truly unique ID for the row to prevent key collisions
+            const uniqueRowId = `${s.companyId}-${s.id}`;
+            return {
+                ...s,
+                id: uniqueRowId, // Override the id for the DataTable key
+                companyName: companyMap.get(s.companyId) || 'Unknown Company'
+            }
+        });
     }, [staff, companies]);
 
 
@@ -313,11 +305,11 @@ export default function PermissionsContent() {
             header: () => <div className="text-right">Actions</div>,
             cell: ({ row }) => (
                 <div className="text-right">
-                    <PermissionsDialog staffMember={row.original} onSave={fetchData} />
+                    <PermissionsDialog staffMember={row.original} onSave={() => {}} />
                 </div>
             ),
         }
-    ], [fetchData]);
+    ], []);
 
 
     return (
@@ -332,7 +324,7 @@ export default function PermissionsContent() {
                 </CardDescription>
             </CardHeader>
             <CardContent>
-               {isLoading ? (
+               {isLoadingStaff || isLoadingCompanies ? (
                     <div className="flex justify-center items-center py-20"><Loader2 className="h-10 w-10 animate-spin text-primary" /></div>
                ) : error ? (
                     <div className="text-destructive-foreground bg-destructive/90 p-4 rounded-md">
@@ -346,5 +338,3 @@ export default function PermissionsContent() {
         </Card>
     );
 }
-
-    
