@@ -21,7 +21,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
-import { Loader2, MoreVertical, CheckCircle, XCircle, Trash2, Edit, Eye } from 'lucide-react';
+import { Loader2, MoreVertical, CheckCircle, XCircle, Trash2, Edit, Eye, Wallet } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken } from '@/firebase';
 import Link from 'next/link';
@@ -113,10 +113,10 @@ export default function MemberActionMenu({ member, onUpdate }: { member: any; on
              <DropdownMenuLabel>Actions</DropdownMenuLabel>
              <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
-                <Link href={`/backend?view=wallet&memberId=${member.id}`}><Eye className="mr-2 h-4 w-4" />View Profile & Wallet</Link>
+                <Link href={`/backend?view=wallet&memberId=${member.id}`}><Wallet className="mr-2 h-4 w-4" />View Wallet</Link>
             </DropdownMenuItem>
-             <DropdownMenuItem onSelect={(e) => e.preventDefault()} disabled>
-                <Edit className="mr-2 h-4 w-4" /> Edit (Coming Soon)
+             <DropdownMenuItem asChild>
+                <Link href={`/account?view=profile`}><Edit className="mr-2 h-4 w-4" /> Edit Profile</Link>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
              <DropdownMenuItem onSelect={() => openConfirmation('confirm')}>
