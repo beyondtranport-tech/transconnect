@@ -76,14 +76,15 @@ export async function POST(req: NextRequest) {
                 const staffSnap = await db.collectionGroup('staff').get();
                 const data = staffSnap.docs.map(doc => {
                     const pathSegments = doc.ref.path.split('/');
-                    const companyId = pathSegments[pathSegments.indexOf('companies') + 1];
+                    const companyIdIndex = pathSegments.indexOf('companies');
+                    const companyId = companyIdIndex !== -1 ? pathSegments[companyIdIndex + 1] : null;
                     return {
                         ...serializeTimestamps(doc.data()),
                         id: doc.id,
                         companyId: companyId,
                     };
                 });
-                return NextResponse.json({ success: true, data });
+                return NextResponse.json({ success: true, data: data });
             }
             case 'addStaffMember': {
                 const { companyId, data } = payload;
