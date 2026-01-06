@@ -64,13 +64,17 @@ export async function POST(req: NextRequest) {
             const pathSegments = path.split('/');
             
             if (uid && pathSegments.length >= 2) {
-                // Check if user is accessing their own document
+                // Check if user is accessing their own user document
                 if (pathSegments[0] === 'users' && pathSegments[1] === uid) {
                     isAuthorized = true;
-                } 
-                // Check if user is accessing their own company or its subcollections
+                }
+                // Check if user is accessing their own member document or its subcollections
+                else if (pathSegments[0] === 'members' && pathSegments[1] === uid) {
+                    isAuthorized = true;
+                }
+                // Check if user is accessing their own company document or its subcollections
                 else if (pathSegments[0] === 'companies') {
-                    // Fetch user's companyId once
+                    // Fetch user's companyId once to check ownership
                     const userDoc = await db.collection('users').doc(uid).get();
                     const userCompanyId = userDoc.data()?.companyId;
 
