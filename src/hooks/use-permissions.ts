@@ -14,7 +14,15 @@ export type Resource =
     'enquiries' | 
     'quotes' | 
     'wallet' |
-    'mall' |
+    'supplierMall' |
+    'transporterMall' |
+    'financeMall' |
+    'loadsMall' |
+    'buySellMall' |
+    'distributionMall' |
+    'warehouseMall' |
+    'repurposeMall' |
+    'aftermarketMall' |
     'marketplace' |
     'tech' |
     'contributions' |

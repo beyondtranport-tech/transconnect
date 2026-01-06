@@ -31,7 +31,15 @@ const resources = [
     { id: 'enquiries', label: 'Funding Enquiries' },
     { id: 'quotes', label: 'Funding Quotes' },
     { id: 'wallet', label: 'Member Wallet' },
-    { id: 'mall', label: 'Mall Access' },
+    { id: 'supplierMall', label: 'Supplier Mall' },
+    { id: 'transporterMall', label: 'Transporter Mall' },
+    { id: 'financeMall', label: 'Finance Mall' },
+    { id: 'loadsMall', label: 'Loads Mall' },
+    { id: 'buySellMall', label: 'Buy & Sell Mall' },
+    { id: 'distributionMall', label: 'Distribution Mall' },
+    { id: 'warehouseMall', label: 'Warehouse Mall' },
+    { id: 'repurposeMall', label: 'Repurpose Mall' },
+    { id: 'aftermarketMall', label: 'Aftermarket Mall' },
     { id: 'marketplace', label: 'Marketplace Access' },
     { id: 'tech', label: 'Tech Division Tools' },
     { id: 'contributions', label: 'Data Contributions' },
@@ -156,7 +164,7 @@ function PermissionsDialog({ staffMember, onSave }: { staffMember: any, onSave: 
             <DialogTrigger asChild>
                  <Button variant="ghost" size="icon"><Edit className="h-4 w-4" /></Button>
             </DialogTrigger>
-            <DialogContent className="max-w-2xl">
+            <DialogContent className="max-w-4xl">
                 <DialogHeader>
                     <DialogTitle>Edit Permissions for {staffMember.firstName} {staffMember.lastName}</DialogTitle>
                     <DialogDescription>
@@ -165,7 +173,7 @@ function PermissionsDialog({ staffMember, onSave }: { staffMember: any, onSave: 
                 </DialogHeader>
                 <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                         <div className="rounded-md border p-4 max-h-[50vh] overflow-y-auto">
+                         <div className="rounded-md border p-4 max-h-[60vh] overflow-y-auto">
                             <div className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr] items-center gap-2 sticky top-0 bg-background/95 py-2">
                                  <div className="font-semibold flex items-center gap-2">
                                     <Checkbox
