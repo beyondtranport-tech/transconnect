@@ -18,7 +18,7 @@ import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
-import { collection, query } from 'firebase/firestore';
+import { collection, query, collectionGroup } from 'firebase/firestore';
 
 // --- Helper Functions and Data ---
 
@@ -211,7 +211,7 @@ function PermissionsDialog({ staffMember, onSave }: { staffMember: any, onSave: 
 export default function PermissionsContent() {
     const firestore = useFirestore();
 
-    const staffQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'staff')) : null, [firestore]);
+    const staffQuery = useMemoFirebase(() => firestore ? query(collectionGroup(firestore, 'staff')) : null, [firestore]);
     const companiesQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'companies')) : null, [firestore]);
 
     const { data: staff, isLoading: isLoadingStaff, error: staffError, forceRefresh: refreshStaff } = useCollection(staffQuery);
