@@ -31,10 +31,7 @@ async function performStaffAction(action: string, payload: any) {
     
     const response = await fetch('/api/admin', {
         method: 'POST',
-        headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-        },
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({ action, payload }),
     });
 
@@ -123,7 +120,7 @@ export default function StaffActionMenu({ staffMember, onUpdate }: { staffMember
             <DropdownMenuItem onSelect={() => openConfirmation('confirm')} disabled={staffMember.status === 'confirmed'}>
               <CheckCircle className="mr-2 h-4 w-4" /> Confirm
             </DropdownMenuItem>
-            <DropdownMenuItem onSelect={() => openConfirmation('unconfirm')} disabled={staffMember.status === 'unconfirmed'}>
+            <DropdownMenuItem onSelect={() => openConfirmation('unconfirm')} disabled={staffMember.status !== 'confirmed'}>
               <XCircle className="mr-2 h-4 w-4" /> Un-confirm
             </DropdownMenuItem>
             <DropdownMenuSeparator />

@@ -122,7 +122,7 @@ export default function StaffList() {
             header: () => <div className="text-right">Actions</div>,
             cell: ({ row }) => <div className="text-right"><StaffActionMenu staffMember={row.original} onUpdate={fetchData} /></div>,
         }
-    ], [fetchData]);
+    ], [fetchData, enrichedStaff]);
 
     return (
         <Card>
@@ -149,5 +149,3 @@ export default function StaffList() {
                 )}
             </CardContent>
         </Card>
-    );
-}
