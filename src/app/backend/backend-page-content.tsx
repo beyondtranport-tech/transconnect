@@ -53,7 +53,7 @@ import {
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useState, useEffect, Suspense, useMemo } from 'react';
+import { useState, useEffect, Suspense, useMemo, useCallback } from 'react';
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 
@@ -114,6 +114,7 @@ const statusColors: { [key: string]: 'default' | 'secondary' | 'destructive' | '
   approved: 'default',
 };
 
+// Stable helper function
 async function fetchFromAdminAPI(action: string, payload?: any) {
     const token = await getClientSideAuthToken();
     if (!token) throw new Error("Authentication failed.");
@@ -141,28 +142,31 @@ function FundingDivisionContent() {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    useEffect(() => {
-        async function loadData() {
-            setIsLoading(true);
-            try {
-                const result = await fetchFromAdminAPI('getFinanceApplications');
-                if (result.data) {
-                    const apps = result.data;
-                    const totalFunded = apps.filter((app: any) => app.status === 'funded').reduce((sum: number, app: any) => sum + (app.amountRequested || 0), 0);
-                    const totalRequested = apps.reduce((sum: number, app: any) => sum + (app.amountRequested || 0), 0);
-                    setStats({ applications: apps.length, totalRequested, totalFunded });
-                    setApplications(apps);
-                } else {
-                    setError("Failed to load funding data.");
-                }
-            } catch (e: any) {
-                setError(e.message);
-            } finally {
-                setIsLoading(false);
+    const loadData = useCallback(async () => {
+        setIsLoading(true);
+        setError(null);
+        try {
+            const result = await fetchFromAdminAPI('getFinanceApplications');
+            if (result.data) {
+                const apps = result.data;
+                const totalFunded = apps.filter((app: any) => app.status === 'funded').reduce((sum: number, app: any) => sum + (app.amountRequested || 0), 0);
+                const totalRequested = apps.reduce((sum: number, app: any) => sum + (app.amountRequested || 0), 0);
+                setStats({ applications: apps.length, totalRequested, totalFunded });
+                setApplications(apps);
+            } else {
+                setError("Failed to load funding data.");
             }
+        } catch (e: any) {
+            setError(e.message);
+        } finally {
+            setIsLoading(false);
         }
-        loadData();
     }, []);
+
+    useEffect(() => {
+        loadData();
+    }, [loadData]);
+
 
     if (isLoading) {
         return <div className="flex justify-center items-center py-20"><Loader2 className="h-12 w-12 animate-spin text-primary" /></div>;
@@ -228,30 +232,32 @@ function MallDivisionContent() {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    useEffect(() => {
-        async function loadData() {
-            setIsLoading(true);
-            try {
-                const result = await fetchFromAdminAPI('getShops');
-                if (result.data) {
-                    const allShops = result.data;
-                    setStats({
-                        total: allShops.length,
-                        pending: allShops.filter((s:any) => s.status === 'pending_review').length,
-                        approved: allShops.filter((s:any) => s.status === 'approved').length,
-                    });
-                    setShops(allShops);
-                } else {
-                    setError("Failed to load shop data.");
-                }
-            } catch(e: any) {
-                setError(e.message)
-            } finally {
-                setIsLoading(false);
+    const loadData = useCallback(async () => {
+        setIsLoading(true);
+        setError(null);
+        try {
+            const result = await fetchFromAdminAPI('getShops');
+            if (result.data) {
+                const allShops = result.data;
+                setStats({
+                    total: allShops.length,
+                    pending: allShops.filter((s:any) => s.status === 'pending_review').length,
+                    approved: allShops.filter((s:any) => s.status === 'approved').length,
+                });
+                setShops(allShops);
+            } else {
+                setError("Failed to load shop data.");
             }
+        } catch(e: any) {
+            setError(e.message)
+        } finally {
+            setIsLoading(false);
         }
-        loadData();
     }, []);
+
+    useEffect(() => {
+        loadData();
+    }, [loadData]);
 
     if (isLoading) {
         return <div className="flex justify-center items-center py-20"><Loader2 className="h-12 w-12 animate-spin text-primary" /></div>;

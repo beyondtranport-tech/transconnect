@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useCollection, useFirestore, useMemoFirebase, getClientSideAuthToken } from '@/firebase';
-import { collection, doc } from 'firebase/firestore';
+import { collection, doc, query } from 'firebase/firestore';
 import { ShopPreview } from '@/components/shop-preview';
 
 interface Shop {
@@ -93,7 +93,6 @@ export default function ShopsList() {
     const [error, setError] = useState<string | null>(null);
     const { toast } = useToast();
 
-    // Wrapped fetchShops in useCallback with an empty dependency array
     const fetchShops = useCallback(async () => {
         setIsLoading(true);
         setError(null);
@@ -110,7 +109,6 @@ export default function ShopsList() {
         }
     }, []);
 
-    // useEffect now correctly calls the memoized function once
     useEffect(() => {
         fetchShops();
     }, [fetchShops]);
