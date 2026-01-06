@@ -23,62 +23,78 @@ import { Loader2, MoreVertical, CheckCircle, XCircle, Trash2 } from 'lucide-reac
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken } from '@/firebase';
 
+async function performStaffAction(action: string, payload: any) {
+    const token = await getClientSideAuthToken();
+    if (!token) throw new Error("Authentication failed.");
+    
+    const response = await fetch('/api/admin', {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ action, payload }),
+    });
+
+    const result = await response.json();
+    if (!response.ok || !result.success) {
+        throw new Error(result.error || `API Error for action: ${action}`);
+    }
+    return result;
+}
+
+
 export default function StaffActionMenu({ staffMember, onUpdate }: { staffMember: any; onUpdate: () => void }) {
   const [isProcessing, setIsProcessing] = useState(false);
   const [isAlertOpen, setIsAlertOpen] = useState(false);
+  const [actionToConfirm, setActionToConfirm] = useState<'delete' | 'confirm' | 'unconfirm' | null>(null);
   const { toast } = useToast();
 
-  const handleUpdateStatus = async (status: 'confirmed' | 'unconfirmed') => {
-    setIsProcessing(true);
-    try {
-      const token = await getClientSideAuthToken();
-      if (!token) throw new Error('Authentication failed.');
+  const handleAction = async () => {
+    if (!actionToConfirm) return;
 
-      // Use the admin route for status updates as it's an admin-level action
-      const response = await fetch('/api/admin', {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-            action: 'updateStaffStatus',
-            payload: { companyId: staffMember.companyId, staffId: staffMember.id, status }
-        }),
-      });
-      const result = await response.json();
-      if (!response.ok) throw new Error(result.error || 'Failed to update status.');
-      
-      toast({ title: 'Status Updated', description: `${staffMember.firstName}'s status is now ${status}.` });
-      onUpdate();
-    } catch (e: any) {
-      toast({ variant: 'destructive', title: 'Update Failed', description: e.message });
-    } finally {
-      setIsProcessing(false);
-    }
-  };
-
-  const handleDelete = async () => {
     setIsProcessing(true);
     setIsAlertOpen(false);
+
     try {
-      const token = await getClientSideAuthToken();
-      if (!token) throw new Error('Authentication failed.');
+        let apiAction: string;
+        let payload: any = { companyId: staffMember.companyId, staffId: staffMember.id };
+        let successMessage = '';
 
-      // Use the specific, more secure delete route
-      const response = await fetch('/api/deleteStaffMember', {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ companyId: staffMember.companyId, staffId: staffMember.id }),
-      });
-      const result = await response.json();
-      if (!response.ok) throw new Error(result.error || 'Failed to delete staff member.');
+        if (actionToConfirm === 'delete') {
+            apiAction = 'deleteStaffMember'; // Assuming you have a more specific API for this might be better
+            successMessage = 'Staff member has been deleted.';
+        } else {
+            apiAction = 'updateStaffStatus';
+            payload.status = actionToConfirm === 'confirm' ? 'confirmed' : 'unconfirmed';
+            successMessage = `${staffMember.firstName}'s status updated to ${payload.status}.`;
+        }
+        
+        await performStaffAction(apiAction, payload);
+        toast({ title: 'Success', description: successMessage });
+        onUpdate();
 
-      toast({ title: 'Staff Member Deleted' });
-      onUpdate();
     } catch (e: any) {
-      toast({ variant: 'destructive', title: 'Deletion Failed', description: e.message });
+      toast({ variant: 'destructive', title: 'Action Failed', description: e.message });
     } finally {
       setIsProcessing(false);
+      setActionToConfirm(null);
     }
   };
+  
+  const openConfirmation = (action: 'delete' | 'confirm' | 'unconfirm') => {
+      setActionToConfirm(action);
+      setIsAlertOpen(true);
+  }
+  
+  const getAlertStrings = () => {
+      switch(actionToConfirm) {
+          case 'delete': return { title: "Delete Staff Member?", description: "This will permanently delete this staff member's record. This action cannot be undone." };
+          case 'confirm': return { title: "Confirm Staff Member?", description: "This will set the staff member's status to 'confirmed'." };
+          case 'unconfirm': return { title: "Un-confirm Staff Member?", description: "This will set the staff member's status to 'unconfirmed'." };
+          default: return { title: "Are you sure?", description: "This action cannot be undone." };
+      }
+  }
 
 
   return (
@@ -91,19 +107,15 @@ export default function StaffActionMenu({ staffMember, onUpdate }: { staffMember
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            {staffMember.status !== 'confirmed' ? (
-              <DropdownMenuItem onClick={() => handleUpdateStatus('confirmed')}>
-                <CheckCircle className="mr-2 h-4 w-4" /> Confirm
-              </DropdownMenuItem>
-            ) : (
-              <DropdownMenuItem onClick={() => handleUpdateStatus('unconfirmed')}>
-                <XCircle className="mr-2 h-4 w-4" /> Un-confirm
-              </DropdownMenuItem>
-            )}
+            <DropdownMenuItem onSelect={() => openConfirmation('confirm')} disabled={staffMember.status === 'confirmed'}>
+              <CheckCircle className="mr-2 h-4 w-4" /> Confirm
+            </DropdownMenuItem>
+            <DropdownMenuItem onSelect={() => openConfirmation('unconfirm')} disabled={staffMember.status === 'unconfirmed'}>
+              <XCircle className="mr-2 h-4 w-4" /> Un-confirm
+            </DropdownMenuItem>
             <DropdownMenuItem
               className="text-destructive"
-              onSelect={(e) => { e.preventDefault(); setIsAlertOpen(true); }}
-              disabled={staffMember.status === 'confirmed'}
+              onSelect={() => openConfirmation('delete')}
             >
               <Trash2 className="mr-2 h-4 w-4" /> Delete
             </DropdownMenuItem>
@@ -111,15 +123,13 @@ export default function StaffActionMenu({ staffMember, onUpdate }: { staffMember
         </DropdownMenu>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete this staff member's record. Confirmed staff cannot be deleted.
-            </AlertDialogDescription>
+            <AlertDialogTitle>{getAlertStrings().title}</AlertDialogTitle>
+            <AlertDialogDescription>{getAlertStrings().description}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} variant="destructive">
-              Yes, delete
+            <AlertDialogAction onClick={handleAction} variant={actionToConfirm === 'delete' ? 'destructive' : 'default'}>
+              Yes, proceed
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
