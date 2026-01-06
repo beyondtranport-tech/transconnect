@@ -53,7 +53,7 @@ export function EditStaffDialog({ isOpen, setIsOpen, staffMember, onUpdate }: Ed
 
   const form = useForm<StaffFormValues>({
     resolver: zodResolver(staffFormSchema),
-    defaultValues: staffMember || {},
+    defaultValues: staffMember,
   });
 
   useEffect(() => {
