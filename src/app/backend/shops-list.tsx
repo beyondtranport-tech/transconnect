@@ -99,7 +99,12 @@ export default function ShopsList() {
         try {
             const result = await fetchFromAdminAPI('getShops');
             if (result.data) {
-                 setShops(result.data);
+                // De-duplicate the shops array using a Map
+                const uniqueShops = new Map<string, Shop>();
+                result.data.forEach((shop: Shop) => {
+                    uniqueShops.set(shop.id, shop);
+                });
+                setShops(Array.from(uniqueShops.values()));
             }
         } catch (e: any) {
             setError(e.message || 'Failed to fetch shops.');
@@ -115,13 +120,14 @@ export default function ShopsList() {
     const handleApprove = async (shop: Shop) => {
         setIsApproving(shop.id);
         try {
+            // Re-using the admin API helper
             await fetchFromAdminAPI('approveShop', { shopId: shop.id, companyId: shop.companyId });
             
             toast({
                 title: 'Shop Approved!',
                 description: 'The shop is now public and live on the platform.',
             });
-            fetchShops();
+            fetchShops(); // Refresh the list after approval
         } catch (e: any) {
              toast({
                 variant: 'destructive',
