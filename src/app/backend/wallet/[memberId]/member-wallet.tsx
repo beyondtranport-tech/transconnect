@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, useMemo, useEffect, useCallback } from 'react';
@@ -8,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from "@/components/ui/button";
 import { useUser, getClientSideAuthToken } from '@/firebase';
 import { doc, writeBatch, collection, increment, serverTimestamp } from 'firebase/firestore';
-import { Loader2, User, Wallet, Calendar, Mail, FileCheck } from 'lucide-react';
+import { Loader2, User, Wallet, Calendar, Mail, FileCheck, Users } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
 import { Input } from '@/components/ui/input';
@@ -19,6 +18,7 @@ import { FirestorePermissionError } from '@/firebase/errors';
 import MemberFundingRecords from './member-funding-records';
 import MemberWalletPayments from './member-wallet-payments';
 import MemberTransactions from './member-transactions';
+import StaffContent from '@/app/account/staff-content';
 
 const formatCurrency = (amount: number) => new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(amount);
 const formatDate = (isoString: any) => {
@@ -251,6 +251,8 @@ export default function MemberWallet({ memberId }: { memberId: string }) {
                     </Button>
                 </CardFooter>
             </Card>
+
+            <StaffContent />
             
             <MemberWalletPayments companyId={memberId} onUpdate={() => setRefreshTrigger(prev => prev + 1)} />
             <MemberFundingRecords companyId={memberId} />
