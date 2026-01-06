@@ -8,24 +8,14 @@ service cloud.firestore {
     function isOwner(userId) {
       return request.auth != null && request.auth.uid == userId;
     }
-    
-    function isCompanyOwner(companyId) {
-        // Ensure the user is authenticated before trying to get data
-        if (request.auth == null) {
-          return false;
-        }
-        let companyDoc = get(/databases/$(database)/documents/companies/$(companyId));
-        return companyDoc.data.ownerId == request.auth.uid;
-    }
-    
+
     function isAdmin() {
       // In a real app, this would check a custom claim.
       return request.auth != null && request.auth.token.email == 'beyondtransport@gmail.com';
     }
 
     // --- User Profiles ---
-    // A user can create their own profile during sign-up.
-    // A user can only read or update their own profile document.
+    // A user can read/update their own profile. Admins can read/list all profiles.
     match /users/{userId} {
       allow read, update: if isOwner(userId) || isAdmin();
       allow create: if request.auth != null; // Onboarding via API
@@ -35,17 +25,15 @@ service cloud.firestore {
     // --- Company Profiles ---
     // A user can read or update their own company document. Admins have full access.
     match /companies/{companyId} {
-      allow get, update: if isCompanyOwner(companyId) || isAdmin();
-      allow create: if request.auth != null; // Controlled by backend function
-      allow list: if isAdmin();
+      allow create: if request.auth != null; // Controlled by backend function for user creation
+      allow get, list, update: if isAdmin() || get(/databases/$(database)/documents/companies/$(companyId)).data.ownerId == request.auth.uid;
 
       // --- Company Subcollections ---
-      // The company owner has full access to all of their own subcollections.
+      // The company owner and admins have full access to all subcollections (staff, wallet, etc.).
       match /{subcollection}/{docId=**} {
-        allow read, write: if isCompanyOwner(companyId) || isAdmin();
+        allow read, write: if isAdmin() || get(/databases/$(database)/documents/companies/$(companyId)).data.ownerId == request.auth.uid;
       }
     }
-
 
     // --- Public & Global Collections ---
 
