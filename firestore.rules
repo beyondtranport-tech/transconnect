@@ -10,12 +10,16 @@ service cloud.firestore {
     }
     
     function isCompanyOwner(companyId) {
-        let companyData = get(/databases/$(database)/documents/companies/$(companyId)).data;
-        return request.auth != null && request.auth.uid == companyData.ownerId;
+        // Ensure the user is authenticated before trying to get data
+        if (request.auth == null) {
+          return false;
+        }
+        let companyDoc = get(/databases/$(database)/documents/companies/$(companyId));
+        return companyDoc.data.ownerId == request.auth.uid;
     }
     
     function isAdmin() {
-      // In a real app, this would check a custom claim, not an email address.
+      // In a real app, this would check a custom claim.
       return request.auth != null && request.auth.token.email == 'beyondtransport@gmail.com';
     }
 
@@ -23,18 +27,16 @@ service cloud.firestore {
     // A user can create their own profile during sign-up.
     // A user can only read or update their own profile document.
     match /users/{userId} {
-      allow read, update: if isOwner(userId);
+      allow read, update: if isOwner(userId) || isAdmin();
       allow create: if request.auth != null; // Onboarding via API
       allow list: if isAdmin();
     }
     
     // --- Company Profiles ---
-    // A user can create a company document (via backend function).
     // A user can read or update their own company document. Admins have full access.
     match /companies/{companyId} {
+      allow get, update: if isCompanyOwner(companyId) || isAdmin();
       allow create: if request.auth != null; // Controlled by backend function
-      allow get: if isCompanyOwner(companyId) || isAdmin();
-      allow update: if isCompanyOwner(companyId);
       allow list: if isAdmin();
 
       // --- Company Subcollections ---
