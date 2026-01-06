@@ -184,6 +184,26 @@ export async function POST(req: NextRequest) {
                 await db.doc(`companies/${companyId}/transactions/${transactionId}`).delete();
                 return NextResponse.json({ success: true });
             }
+             case 'updateMemberStatus': {
+                const { companyId, status } = payload;
+                if (!companyId || !status) {
+                    throw new Error("Missing companyId or status.");
+                }
+                const companyRef = db.doc(`companies/${companyId}`);
+                await companyRef.update({ status, updatedAt: FieldValue.serverTimestamp() });
+                return NextResponse.json({ success: true, message: "Member status updated." });
+            }
+            case 'deleteMember': {
+                const { companyId } = payload;
+                if (!companyId) {
+                    throw new Error("Missing companyId.");
+                }
+                // This is a complex operation. For now, we'll just delete the company doc.
+                // In a real app, you'd handle cleanup of subcollections, auth user, etc.
+                await db.doc(`companies/${companyId}`).delete();
+                // We are not deleting the user auth record or user doc for now.
+                return NextResponse.json({ success: true, message: "Member's company document deleted." });
+            }
             case 'updateStaffStatus': {
                 const { companyId, staffId, status } = payload;
                 if (!companyId || !staffId || !status) {

@@ -3,15 +3,13 @@
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, Users, MoreVertical } from 'lucide-react';
+import { Loader2, Users } from 'lucide-react';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
 import { Badge } from '@/components/ui/badge';
-import Link from 'next/link';
-import { Button } from '@/components/ui/button';
 import { getClientSideAuthToken } from '@/firebase';
 import { cn } from '@/lib/utils';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import MemberActionMenu from './member-action-menu';
 
 interface Member {
     id: string;
@@ -19,7 +17,7 @@ interface Member {
     lastName?: string;
     companyName?: string;
     membershipId?: string;
-    walletBalance?: number;
+    status?: 'active' | 'suspended';
     createdAt?: string;
     email?: string;
 }
@@ -30,6 +28,11 @@ const tierColors: { [key: string]: string } = {
   standard: 'bg-green-200 text-green-800',
   premium: 'bg-purple-200 text-purple-800',
   enterprise: 'bg-yellow-200 text-yellow-800',
+};
+
+const statusColors: { [key: string]: 'default' | 'secondary' | 'destructive' | 'outline' } = {
+  active: 'default',
+  suspended: 'destructive',
 };
 
 // Moved helper function outside the component to make it stable
@@ -111,7 +114,9 @@ export default function MembersList() {
             accessorKey: 'status',
             header: 'Status',
             cell: ({ row }) => (
-                <Badge variant="default">Active</Badge>
+                <Badge variant={statusColors[row.original.status || 'active'] || 'default'} className="capitalize">
+                    {row.original.status || 'Active'}
+                </Badge>
             ),
         },
         {
@@ -127,24 +132,11 @@ export default function MembersList() {
             header: () => <div className="text-right">Actions</div>,
             cell: ({ row }) => (
                 <div className="text-right">
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon">
-                                <MoreVertical className="h-4 w-4" />
-                            </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                            <DropdownMenuItem asChild>
-                                <Link href={`/backend?view=wallet&memberId=${row.original.id}`}>View Wallet & Profile</Link>
-                            </DropdownMenuItem>
-                             <DropdownMenuItem>Edit Member</DropdownMenuItem>
-                             <DropdownMenuItem className="text-destructive">Suspend Member</DropdownMenuItem>
-                        </DropdownMenuContent>
-                    </DropdownMenu>
+                    <MemberActionMenu member={row.original} onUpdate={fetchMembers} />
                 </div>
             )
         }
-    ], []);
+    ], [fetchMembers]);
 
 
     return (
