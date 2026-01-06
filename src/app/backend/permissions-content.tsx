@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
@@ -26,13 +25,19 @@ import { collection, query, collectionGroup } from 'firebase/firestore';
 
 const resources = [
     { id: 'shop', label: 'Shop Management' },
-    { id: 'products', label: 'Products' },
+    { id: 'products', label: 'Shop Products' },
     { id: 'staff', label: 'Staff Management' },
     { id: 'billing', label: 'Billing & Invoices' },
     { id: 'enquiries', label: 'Funding Enquiries' },
     { id: 'quotes', label: 'Funding Quotes' },
     { id: 'wallet', label: 'Member Wallet' },
+    { id: 'mall', label: 'Mall Access' },
+    { id: 'marketplace', label: 'Marketplace Access' },
+    { id: 'tech', label: 'Tech Division Tools' },
+    { id: 'contributions', label: 'Data Contributions' },
+    { id: 'permissions', label: 'Permissions Management' },
 ] as const;
+
 
 const actions = [
     { id: 'view', label: 'View' },
@@ -68,7 +73,7 @@ function PermissionsDialog({ staffMember, onSave }: { staffMember: any, onSave: 
             parsed[resource.id] = [];
         }
         for (const p of permissions) {
-            const [resourceId, actionId] = p.split(':');
+            const [actionId, resourceId] = p.split(':');
             if (parsed[resourceId] && actions.some(a => a.id === actionId)) {
                 parsed[resourceId].push(actionId);
             }
@@ -110,7 +115,7 @@ function PermissionsDialog({ staffMember, onSave }: { staffMember: any, onSave: 
             const selectedActions = data[resourceId as keyof typeof data];
             if (selectedActions && selectedActions.length > 0) {
                 for (const actionId of selectedActions) {
-                    generatedPermissions.push(`${resourceId}:${actionId}`);
+                    generatedPermissions.push(`${actionId}:${resourceId}`);
                 }
             }
         }
@@ -129,7 +134,7 @@ function PermissionsDialog({ staffMember, onSave }: { staffMember: any, onSave: 
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    path: `companies/${staffMember.companyId}/staff/${staffMember.id}`,
+                    path: `companies/${staffMember.companyId}/staff/${staffMember.id.split('-')[1]}`,
                     data: { permissions: finalPermissions }
                 }),
             });
@@ -312,4 +317,3 @@ export default function PermissionsContent() {
         </Card>
     );
 }
-

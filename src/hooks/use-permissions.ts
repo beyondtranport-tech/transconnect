@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
@@ -5,7 +6,19 @@ import { doc } from 'firebase/firestore';
 import { useMemo } from 'react';
 
 export type Action = 'create' | 'view' | 'edit' | 'delete' | 'manage';
-export type Resource = 'shop' | 'products' | 'staff' | 'billing' | 'enquiries' | 'quotes' | 'wallet';
+export type Resource = 
+    'shop' | 
+    'products' | 
+    'staff' | 
+    'billing' | 
+    'enquiries' | 
+    'quotes' | 
+    'wallet' |
+    'mall' |
+    'marketplace' |
+    'tech' |
+    'contributions' |
+    'permissions';
 
 // `manage` implies all other actions
 const permissionHierarchy: { [key in Action]: Action[] } = {
@@ -62,7 +75,7 @@ export function usePermissions() {
         if (permissions.has(`manage:${resource}`)) return true;
         
         // Check for the specific action:resource permission
-        return requiredPermissions.some(perm => permissions.has(`${resource}:${perm}`));
+        return requiredPermissions.some(perm => permissions.has(`${perm}:${resource}`));
     };
     
     const isLoading = isUserLoading || (userData?.role === 'staff' && isStaffLoading);
