@@ -14,7 +14,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useFirestore, useUser, useStorage, useCollection, useMemoFirebase, getClientSideAuthToken } from '@/firebase';
 import { doc, collection } from 'firebase/firestore';
 import { ref as storageRef, uploadBytesResumable, getDownloadURL } from "firebase/storage";
-import { Loader2, Save, CheckCircle, LayoutGrid, List, Image as ImageIcon, Sparkles, PlusCircle, Edit, Trash2, Send, Eye, ShoppingCart, Mail, Phone, UploadCloud, GalleryHorizontal, Wand2, Video, Search } from 'lucide-react';
+import { Loader2, Save, CheckCircle, LayoutGrid, List, Image as ImageIcon, Sparkles, PlusCircle, Edit, Trash2, Send, Eye, ShoppingCart, Mail, Phone, UploadCloud, GalleryHorizontal, Wand2, Video, Search, ShieldAlert } from 'lucide-react';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -31,6 +31,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import placeholderImageData from '@/lib/placeholder-images.json';
 import { ShopPreview } from '@/components/shop-preview';
 import { usePermissions } from '@/hooks/use-permissions';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 const { placeholderImages } = placeholderImageData;
 
 
@@ -89,7 +90,7 @@ function Step1CoreIdentity({ shop, onSave, onSeoGenerated, canEdit }: { shop: an
 
 
   const onSubmit = async (values: Step1FormValues) => {
-    if (!user) return;
+    if (!user || !shop.companyId) return;
     setIsSaving(true);
     
     const dataToUpdate = {
@@ -108,7 +109,7 @@ function Step1CoreIdentity({ shop, onSave, onSeoGenerated, canEdit }: { shop: an
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-                path: `companies/${user.uid}/shops/${shop.id}`,
+                path: `companies/${shop.companyId}/shops/${shop.id}`,
                 data: dataToUpdate
             }),
         });
@@ -238,7 +239,7 @@ function ProductDialog({ shop, product, onSave, children, canEdit }: { shop: any
   }, [isOpen, product, form]);
 
   const onSubmit = async (values: ProductFormValues) => {
-    if (!user) return;
+    if (!user || !shop.companyId) return;
     setIsSaving(true);
     
     try {
@@ -250,27 +251,27 @@ function ProductDialog({ shop, product, onSave, children, canEdit }: { shop: any
             const productData = {
                 ...values,
                 shopId: shop.id,
-                ownerId: user.uid,
+                ownerId: shop.ownerId,
                 updatedAt: { _methodName: 'serverTimestamp' },
             };
             response = await fetch('/api/updateUserDoc', {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ path: `companies/${user.uid}/shops/${shop.id}/products/${product.id}`, data: productData }),
+                body: JSON.stringify({ path: `companies/${shop.companyId}/shops/${shop.id}/products/${product.id}`, data: productData }),
             });
             if (response.ok) toast({ title: 'Product Updated!' });
         } else { // Creating new product
              const productData = {
                 ...values,
                 shopId: shop.id,
-                ownerId: user.uid,
+                ownerId: shop.ownerId,
                 createdAt: { _methodName: 'serverTimestamp' },
                 updatedAt: { _methodName: 'serverTimestamp' },
             };
             response = await fetch('/api/addUserDoc', {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ collectionPath: `companies/${user.uid}/shops/${shop.id}/products`, data: productData }),
+                body: JSON.stringify({ collectionPath: `companies/${shop.companyId}/shops/${shop.id}/products`, data: productData }),
             });
             if (response.ok) toast({ title: 'Product Added!' });
         }
@@ -535,14 +536,14 @@ function Step2Products({ shop, onSave, canEdit }: { shop: any, onSave: (newData?
   const { toast } = useToast();
 
   const productsCollection = useMemoFirebase(() => {
-    if (!firestore || !user) return null;
-    return collection(firestore, `companies/${user.uid}/shops/${shop.id}/products`);
-  }, [firestore, user, shop.id]);
+    if (!firestore || !shop.companyId) return null;
+    return collection(firestore, `companies/${shop.companyId}/shops/${shop.id}/products`);
+  }, [firestore, shop.companyId, shop.id]);
 
   const { data: products, isLoading, forceRefresh } = useCollection(productsCollection);
   
   const handleDelete = async (productId: string) => {
-    if (!user) return;
+    if (!user || !shop.companyId) return;
     try {
         const token = await getClientSideAuthToken();
         if (!token) throw new Error("Authentication token not found.");
@@ -550,7 +551,7 @@ function Step2Products({ shop, onSave, canEdit }: { shop: any, onSave: (newData?
         const response = await fetch('/api/deleteUserDoc', {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ path: `companies/${user.uid}/shops/${shop.id}/products/${productId}` }),
+            body: JSON.stringify({ path: `companies/${shop.companyId}/shops/${shop.id}/products/${productId}` }),
         });
 
         if (!response.ok) {
@@ -849,7 +850,7 @@ function Step3Promotions({ shop, onSave, canEdit }: { shop: any, onSave: (newDat
 
 
     const onSubmit = async (values: Step3FormValues) => {
-        if (!user) return;
+        if (!user || !shop.companyId) return;
         setIsSaving(true);
         const dataToUpdate = { ...values, updatedAt: { _methodName: 'serverTimestamp' } };
 
@@ -860,7 +861,7 @@ function Step3Promotions({ shop, onSave, canEdit }: { shop: any, onSave: (newDat
             const response = await fetch('/api/updateUserDoc', {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ path: `companies/${user.uid}/shops/${shop.id}`, data: dataToUpdate }),
+                body: JSON.stringify({ path: `companies/${shop.companyId}/shops/${shop.id}`, data: dataToUpdate }),
             });
 
             if (!response.ok) throw new Error((await response.json()).error || 'Failed to save.');
@@ -954,7 +955,7 @@ function Step4Appearance({ shop, onSave, canEdit }: { shop: any, onSave: (newDat
   });
 
   const onSubmit = async (values: Step4FormValues) => {
-    if (!user) return;
+    if (!user || !shop.companyId) return;
     setIsSaving(true);
     const dataToUpdate = { ...values, updatedAt: { _methodName: 'serverTimestamp' } };
 
@@ -965,7 +966,7 @@ function Step4Appearance({ shop, onSave, canEdit }: { shop: any, onSave: (newDat
         const response = await fetch('/api/updateUserDoc', {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ path: `companies/${user.uid}/shops/${shop.id}`, data: dataToUpdate }),
+            body: JSON.stringify({ path: `companies/${shop.companyId}/shops/${shop.id}`, data: dataToUpdate }),
         });
 
         if (!response.ok) throw new Error((await response.json()).error || 'Failed to save.');
@@ -1050,9 +1051,9 @@ function Step5SeoAndPreview({ shop, onSave, canEdit }: { shop: any; onSave: (new
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const productsCollection = useMemoFirebase(() => {
-    if (!firestore || !user) return null;
-    return collection(firestore, `companies/${user.uid}/shops/${shop.id}/products`);
-  }, [firestore, user, shop.id]);
+    if (!firestore || !shop.companyId) return null;
+    return collection(firestore, `companies/${shop.companyId}/shops/${shop.id}/products`);
+  }, [firestore, shop.companyId, shop.id]);
 
   const { data: products, isLoading: areProductsLoading } = useCollection(productsCollection);
 
@@ -1086,7 +1087,7 @@ function Step5SeoAndPreview({ shop, onSave, canEdit }: { shop: any; onSave: (new
   };
 
   const onSubmit = async (values: Step5FormValues) => {
-    if (!user) return;
+    if (!user || !shop.companyId) return;
     setIsSaving(true);
     const dataToUpdate = { ...values, updatedAt: { _methodName: 'serverTimestamp' } };
 
@@ -1097,7 +1098,7 @@ function Step5SeoAndPreview({ shop, onSave, canEdit }: { shop: any; onSave: (new
         const response = await fetch('/api/updateUserDoc', {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ path: `companies/${user.uid}/shops/${shop.id}`, data: dataToUpdate }),
+            body: JSON.stringify({ path: `companies/${shop.companyId}/shops/${shop.id}`, data: dataToUpdate }),
         });
 
         if (!response.ok) throw new Error((await response.json()).error || 'Failed to save.');
@@ -1112,7 +1113,7 @@ function Step5SeoAndPreview({ shop, onSave, canEdit }: { shop: any; onSave: (new
   };
   
   const handleSubmitForReview = async () => {
-    if (!user) return;
+    if (!user || !shop.companyId) return;
 
     setIsSubmitting(true);
     const dataToUpdate = {
@@ -1127,7 +1128,7 @@ function Step5SeoAndPreview({ shop, onSave, canEdit }: { shop: any; onSave: (new
       const response = await fetch('/api/updateUserDoc', {
           method: 'POST',
           headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ path: `companies/${user.uid}/shops/${shop.id}`, data: dataToUpdate }),
+          body: JSON.stringify({ path: `companies/${shop.companyId}/shops/${shop.id}`, data: dataToUpdate }),
       });
 
       if (!response.ok) throw new Error((await response.json()).error || 'Failed to submit.');
@@ -1283,6 +1284,15 @@ export default function ShopWizard({ shop }: { shop: any }) {
 
   return (
     <div className="space-y-6">
+       {!canEdit && (
+            <Alert variant="default" className="bg-amber-100 border-amber-300 text-amber-800 dark:bg-amber-900/30 dark:text-amber-200 dark:border-amber-700">
+                <ShieldAlert className="h-4 w-4 !text-amber-800 dark:!text-amber-200" />
+                <AlertTitle>View Only Mode</AlertTitle>
+                <AlertDescription>
+                    You do not have permission to edit this shop. All fields are disabled.
+                </AlertDescription>
+            </Alert>
+        )}
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-medium">Shop Setup Progress</h3>
         <Badge variant={statusColors[status] || 'secondary'} className="capitalize">
