@@ -15,12 +15,12 @@ import { Button } from '@/components/ui/button';
 import { ArrowUpDown } from 'lucide-react';
 import React from 'react';
 
-interface DataTableProps<TData> {
+interface DataTableProps<TData extends { id: string }> {
   columns: ColumnDef<TData>[];
   data: TData[];
 }
 
-export function DataTable<TData>({ columns, data }: DataTableProps<TData>) {
+export function DataTable<TData extends { id: string }>({ columns, data }: DataTableProps<TData>) {
   const {
     rows,
     setSorting,
@@ -73,8 +73,8 @@ export function DataTable<TData>({ columns, data }: DataTableProps<TData>) {
           </TableHeader>
           <TableBody>
             {rows.length > 0 ? (
-              rows.map((row, index) => (
-                <TableRow key={index}>
+              rows.map((row) => (
+                <TableRow key={row.original.id}>
                   {columns.map(column => (
                     <TableCell key={(column.id || column.accessorKey) as string}>
                       {column.cell({ row })}
