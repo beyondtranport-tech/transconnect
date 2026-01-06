@@ -7,6 +7,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
 import {
   AlertDialog,
@@ -19,9 +20,10 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
-import { Loader2, MoreVertical, CheckCircle, XCircle, Trash2 } from 'lucide-react';
+import { Loader2, MoreVertical, CheckCircle, XCircle, Trash2, Edit } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken } from '@/firebase';
+import { EditStaffDialog } from './EditStaffDialog';
 
 async function performStaffAction(action: string, payload: any) {
     const token = await getClientSideAuthToken();
@@ -47,6 +49,7 @@ async function performStaffAction(action: string, payload: any) {
 export default function StaffActionMenu({ staffMember, onUpdate }: { staffMember: any; onUpdate: () => void }) {
   const [isProcessing, setIsProcessing] = useState(false);
   const [isAlertOpen, setIsAlertOpen] = useState(false);
+  const [isEditOpen, setIsEditOpen] = useState(false);
   const [actionToConfirm, setActionToConfirm] = useState<'delete' | 'confirm' | 'unconfirm' | null>(null);
   const { toast } = useToast();
 
@@ -62,7 +65,7 @@ export default function StaffActionMenu({ staffMember, onUpdate }: { staffMember
         let successMessage = '';
 
         if (actionToConfirm === 'delete') {
-            apiAction = 'deleteStaffMember'; // Assuming you have a more specific API for this might be better
+            apiAction = 'deleteStaffMember';
             successMessage = 'Staff member has been deleted.';
         } else {
             apiAction = 'updateStaffStatus';
@@ -98,7 +101,13 @@ export default function StaffActionMenu({ staffMember, onUpdate }: { staffMember
 
 
   return (
-    <div className="text-right">
+    <>
+      <EditStaffDialog
+        isOpen={isEditOpen}
+        setIsOpen={setIsEditOpen}
+        staffMember={staffMember}
+        onUpdate={onUpdate}
+      />
       <AlertDialog open={isAlertOpen} onOpenChange={setIsAlertOpen}>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -107,12 +116,17 @@ export default function StaffActionMenu({ staffMember, onUpdate }: { staffMember
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
+             <DropdownMenuItem onSelect={() => setIsEditOpen(true)}>
+              <Edit className="mr-2 h-4 w-4" /> Edit
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
             <DropdownMenuItem onSelect={() => openConfirmation('confirm')} disabled={staffMember.status === 'confirmed'}>
               <CheckCircle className="mr-2 h-4 w-4" /> Confirm
             </DropdownMenuItem>
             <DropdownMenuItem onSelect={() => openConfirmation('unconfirm')} disabled={staffMember.status === 'unconfirmed'}>
               <XCircle className="mr-2 h-4 w-4" /> Un-confirm
             </DropdownMenuItem>
+            <DropdownMenuSeparator />
             <DropdownMenuItem
               className="text-destructive"
               onSelect={() => openConfirmation('delete')}
@@ -134,6 +148,6 @@ export default function StaffActionMenu({ staffMember, onUpdate }: { staffMember
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+    </>
   );
 }

@@ -1,5 +1,4 @@
 
-
 import { NextRequest, NextResponse } from 'next/server';
 import { getFirestore, Timestamp, FieldValue } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
@@ -258,6 +257,15 @@ export async function POST(req: NextRequest) {
                 const staffRef = db.doc(`companies/${companyId}/staff/${staffId}`);
                 await staffRef.update({ ...data, updatedAt: FieldValue.serverTimestamp() });
                 return NextResponse.json({ success: true, message: "Staff member updated." });
+            }
+            case 'deleteStaffMember': {
+                const { companyId, staffId } = payload;
+                 if (!companyId || !staffId) {
+                    throw new Error("Missing companyId or staffId.");
+                }
+                const staffRef = db.doc(`companies/${companyId}/staff/${staffId}`);
+                await staffRef.delete();
+                return NextResponse.json({ success: true, message: "Staff member deleted." });
             }
             default:
                 return NextResponse.json({ success: false, error: 'Invalid action' }, { status: 400 });
