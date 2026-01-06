@@ -31,7 +31,7 @@ import { useCollection } from '@/firebase/firestore/use-collection';
 import { collection, doc } from 'firebase/firestore';
 import { Loader2, PlusCircle, UserPlus, Users } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import StaffActionMenu from './staff-action-menu';
+import StaffActionMenu from '../backend/staff-action-menu';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
 import { useDoc } from '@/firebase/firestore/use-doc';
@@ -89,7 +89,7 @@ function AddStaffDialog({ companyId, onStaffAdded }: { companyId: string; onStaf
             'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-            collectionPath: `companies/${companyId}/staff`,
+            collectionPath: `members/${companyId}/staff`,
             data: staffData
         }),
       });

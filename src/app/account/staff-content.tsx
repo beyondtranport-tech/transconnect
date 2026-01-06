@@ -1,7 +1,6 @@
-
 'use client';
 
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -31,10 +30,9 @@ import { useCollection } from '@/firebase/firestore/use-collection';
 import { collection, doc } from 'firebase/firestore';
 import { Loader2, PlusCircle, UserPlus, Users } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import StaffActionMenu from '../backend/staff-action-menu'; 
+import StaffActionMenu from './staff-action-menu'; 
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
-import { useDoc } from '@/firebase/firestore/use-doc';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
@@ -50,7 +48,8 @@ const staffFormSchema = z.object({
 
 type StaffFormValues = z.infer<typeof staffFormSchema>;
 
-function AddStaffDialog({ companyId, onStaffAdded }: { companyId: string; onStaffAdded: () => void }) {
+function AddStaffDialog({ onStaffAdded }: { onStaffAdded: () => void }) {
+  const { user } = useUser();
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
@@ -69,6 +68,7 @@ function AddStaffDialog({ companyId, onStaffAdded }: { companyId: string; onStaf
   });
 
   const onSubmit = async (values: StaffFormValues) => {
+    if (!user) return;
     setIsLoading(true);
     
     try {
@@ -77,7 +77,7 @@ function AddStaffDialog({ companyId, onStaffAdded }: { companyId: string; onStaf
       
       const staffData = {
         ...values,
-        companyId: companyId,
+        companyId: user.uid, 
         status: 'unconfirmed',
         createdAt: { _methodName: 'serverTimestamp' },
       };
@@ -89,7 +89,7 @@ function AddStaffDialog({ companyId, onStaffAdded }: { companyId: string; onStaf
             'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-            collectionPath: `members/${companyId}/staff`,
+            collectionPath: `members/${user.uid}/staff`, 
             data: staffData
         }),
       });
@@ -106,7 +106,7 @@ function AddStaffDialog({ companyId, onStaffAdded }: { companyId: string; onStaf
 
       form.reset();
       setIsOpen(false);
-      onStaffAdded(); // Call the refresh function
+      onStaffAdded();
     } catch (error: any) {
       toast({
         variant: 'destructive',
@@ -345,7 +345,7 @@ export default function StaffContent() {
                 </CardTitle>
                 <CardDescription>Add and manage your company's staff members.</CardDescription>
             </div>
-            {user?.uid && <AddStaffDialog companyId={user.uid} onStaffAdded={forceRefresh} />}
+            {user?.uid && <AddStaffDialog onStaffAdded={forceRefresh} />}
         </CardHeader>
         <CardContent>
             {isLoading ? (

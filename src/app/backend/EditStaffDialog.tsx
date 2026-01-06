@@ -53,7 +53,7 @@ export function EditStaffDialog({ isOpen, setIsOpen, staffMember, onUpdate }: Ed
 
   const form = useForm<StaffFormValues>({
     resolver: zodResolver(staffFormSchema),
-    defaultValues: staffMember || { // Set default values directly from props
+    defaultValues: staffMember || { 
       firstName: '',
       lastName: '',
       email: '',
@@ -64,7 +64,6 @@ export function EditStaffDialog({ isOpen, setIsOpen, staffMember, onUpdate }: Ed
     }
   });
   
-  // Reset form when the dialog opens with a new staff member
   useEffect(() => {
     if (isOpen && staffMember) {
         form.reset(staffMember);
