@@ -77,8 +77,7 @@ export async function POST(req: NextRequest) {
                 const data = staffSnap.docs.map(doc => {
                     const docPath = doc.ref.path;
                     const pathSegments = docPath.split('/');
-                    // companies/{companyId}/staff/{staffId} -> companyId is at index 1
-                    const companyId = pathSegments.length > 1 ? pathSegments[1] : null;
+                    const companyId = pathSegments[1]; // companies/{companyId}/staff/{staffId}
                     return {
                         ...serializeTimestamps(doc.data()),
                         id: doc.id,
