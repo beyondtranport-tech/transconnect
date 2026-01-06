@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -49,6 +48,7 @@ import {
   Wallet,
   DollarSign,
   FileText,
+  Lock,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -84,6 +84,7 @@ const MallCommissions = dynamic(() => import('./revenue/mall-commissions'), { lo
 const MarketplaceFees = dynamic(() => import('./revenue/marketplace-fees'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const ConnectPlanPricing = dynamic(() => import('./revenue/connect-plan-pricing'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const TechPricing = dynamic(() => import('./revenue/tech-pricing'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const PermissionsContent = dynamic(() => import('./permissions-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 
 
 // --- START: Division Specific Dashboards ---
@@ -429,6 +430,8 @@ export default function BackendPageContent() {
         return <PlatformTasksContent />;
       case 'platform-settings':
         return <PlatformSettingsContent />;
+      case 'permissions':
+        return <PermissionsContent />;
       case 'loyalty-settings':
         return <LoyaltySettings />;
       case 'rewards':
@@ -528,6 +531,12 @@ export default function BackendPageContent() {
                 <SidebarMenuButton tooltip="Contributions" isActive={activeView === 'contributions'} onClick={() => router.push('/backend?view=contributions', { scroll: false })}>
                   <HeartHandshake />
                   <span>Contributions</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton tooltip="Permissions" isActive={activeView === 'permissions'} onClick={() => router.push('/backend?view=permissions', { scroll: false })}>
+                    <Lock />
+                    <span>Permissions</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               
