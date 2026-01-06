@@ -23,37 +23,37 @@ export function useDataTable<TData>(data: TData[], columns: ColumnDef<TData>[]) 
     return path.split('.').reduce((acc, part) => acc && acc[part], obj);
   };
 
-  const filteredData = useMemo(() => {
-    if (!globalFilter) return data;
+  const rows = useMemo(() => {
+    let filteredData = [...data];
 
-    return data.filter(row =>
-      columns.some(column => {
-        const value = getNestedValue(row, column.accessorKey as string);
-        return String(value).toLowerCase().includes(globalFilter.toLowerCase());
-      })
-    );
-  }, [data, columns, globalFilter]);
+    // Apply global filter
+    if (globalFilter) {
+      filteredData = filteredData.filter(row =>
+        columns.some(column => {
+          const value = getNestedValue(row, column.accessorKey as string);
+          return String(value).toLowerCase().includes(globalFilter.toLowerCase());
+        })
+      );
+    }
+    
+    // Apply sorting
+    if (sorting.length > 0) {
+        const sortKey = sorting[0].id;
+        const sortDesc = sorting[0].desc;
 
-  const sortedData = useMemo(() => {
-    const dataToSort = [...filteredData];
-    if (sorting.length === 0) return dataToSort;
+        filteredData.sort((a, b) => {
+            const valueA = getNestedValue(a, sortKey);
+            const valueB = getNestedValue(b, sortKey);
 
-    const sortKey = sorting[0].id;
-    const sortDesc = sorting[0].desc;
+            if (valueA < valueB) return sortDesc ? 1 : -1;
+            if (valueA > valueB) return sortDesc ? -1 : 1;
+            return 0;
+        });
+    }
 
-    dataToSort.sort((a, b) => {
-      const valueA = getNestedValue(a, sortKey);
-      const valueB = getNestedValue(b, sortKey);
+    return filteredData.map(original => ({ original }));
 
-      if (valueA < valueB) return sortDesc ? 1 : -1;
-      if (valueA > valueB) return sortDesc ? -1 : 1;
-      return 0;
-    });
-
-    return dataToSort;
-  }, [filteredData, sorting]);
-  
-  const rows = useMemo(() => sortedData.map(original => ({ original })), [sortedData]);
+  }, [data, columns, globalFilter, sorting]);
 
 
   return {
