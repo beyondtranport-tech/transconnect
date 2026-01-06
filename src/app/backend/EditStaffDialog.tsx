@@ -53,21 +53,24 @@ export function EditStaffDialog({ isOpen, setIsOpen, staffMember, onUpdate }: Ed
 
   const form = useForm<StaffFormValues>({
     resolver: zodResolver(staffFormSchema),
+    defaultValues: staffMember || { // Set default values directly from props
+      firstName: '',
+      lastName: '',
+      email: '',
+      title: '',
+      role: '',
+      function: '',
+      jobDescription: '',
+    }
   });
   
+  // Reset form when the dialog opens with a new staff member
   useEffect(() => {
-    if (staffMember) {
-        form.reset({
-            firstName: staffMember.firstName || '',
-            lastName: staffMember.lastName || '',
-            email: staffMember.email || '',
-            title: staffMember.title || '',
-            role: staffMember.role || '',
-            function: staffMember.function || '',
-            jobDescription: staffMember.jobDescription || '',
-        });
+    if (isOpen && staffMember) {
+        form.reset(staffMember);
     }
-  }, [staffMember, form]);
+  }, [isOpen, staffMember, form]);
+
 
   const onSubmit = async (values: StaffFormValues) => {
     setIsLoading(true);
@@ -88,8 +91,8 @@ export function EditStaffDialog({ isOpen, setIsOpen, staffMember, onUpdate }: Ed
             }),
         });
         
+        const result = await response.json();
         if (!response.ok) {
-            const result = await response.json();
             throw new Error(result.error || 'Failed to update staff member.');
         }
 
