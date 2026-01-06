@@ -82,7 +82,7 @@ function PermissionsDialog({ staffMember, onSave }: { staffMember: any, onSave: 
         }
         for (const p of permissions) {
             const [resourceId, actionId] = p.split(':');
-            if (parsed[resourceId]) {
+            if (parsed[resourceId] && actions.some(a => a.id === actionId)) {
                 parsed[resourceId].push(actionId);
             }
         }
@@ -93,6 +93,23 @@ function PermissionsDialog({ staffMember, onSave }: { staffMember: any, onSave: 
         resolver: zodResolver(permissionsSchema),
         defaultValues: parsePermissions(staffMember.permissions),
     });
+
+    const watchedPermissions = form.watch();
+
+    const isAllSelected = useMemo(() => {
+        return resources.every(resource =>
+            actions.every(action =>
+                watchedPermissions[resource.id]?.includes(action.id)
+            )
+        );
+    }, [watchedPermissions]);
+    
+    const handleSelectAll = (checked: boolean) => {
+        const allActionIds = actions.map(a => a.id);
+        resources.forEach(resource => {
+            form.setValue(resource.id, checked ? allActionIds : []);
+        });
+    };
     
      useEffect(() => {
         if (isOpen) {
@@ -158,7 +175,14 @@ function PermissionsDialog({ staffMember, onSave }: { staffMember: any, onSave: 
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                          <div className="rounded-md border p-4 max-h-[50vh] overflow-y-auto">
                             <div className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr] items-center gap-2 sticky top-0 bg-background/95 py-2">
-                                 <div className="font-semibold">Resource</div>
+                                 <div className="font-semibold flex items-center gap-2">
+                                    <Checkbox
+                                        checked={isAllSelected}
+                                        onCheckedChange={handleSelectAll}
+                                        aria-label="Select all permissions"
+                                    />
+                                     Resource
+                                 </div>
                                  {actions.map(action => <div key={action.id} className="font-semibold text-center">{action.label}</div>)}
                             </div>
                             <Separator className="my-2" />
@@ -169,7 +193,7 @@ function PermissionsDialog({ staffMember, onSave }: { staffMember: any, onSave: 
                                     name={resource.id as any}
                                     render={({ field }) => (
                                     <FormItem className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr] items-center gap-2 py-2 border-b last:border-b-0">
-                                        <FormLabel className="font-normal">{resource.label}</FormLabel>
+                                        <FormLabel className="font-normal pl-8">{resource.label}</FormLabel>
                                         {actions.map(action => (
                                             <FormControl key={action.id} className="flex justify-center">
                                                  <Checkbox
