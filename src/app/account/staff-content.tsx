@@ -31,7 +31,7 @@ import { useCollection } from '@/firebase/firestore/use-collection';
 import { collection, doc } from 'firebase/firestore';
 import { Loader2, PlusCircle, UserPlus, Users } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import StaffActionMenu from '../backend/staff-action-menu'; // Note: Re-using admin component
+import StaffActionMenu from '../backend/staff-action-menu'; 
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
 import { useDoc } from '@/firebase/firestore/use-doc';
@@ -281,12 +281,6 @@ export default function StaffContent() {
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
 
-  const userDocRef = useMemoFirebase(() => {
-    if (!firestore || !user) return null;
-    return doc(firestore, 'users', user.uid);
-  }, [firestore, user]);
-  const { data: userData, isLoading: isUserDocLoading } = useDoc<{ companyId: string }>(userDocRef);
-
   const staffCollectionRef = useMemoFirebase(() => {
     if (!firestore || !user) return null;
     return collection(firestore, `members/${user.uid}/staff`);
@@ -294,7 +288,7 @@ export default function StaffContent() {
 
   const { data: staff, isLoading: isStaffLoading, forceRefresh } = useCollection(staffCollectionRef);
 
-  const isLoading = isUserLoading || isUserDocLoading || isStaffLoading;
+  const isLoading = isUserLoading || isStaffLoading;
 
   const columns: ColumnDef<any>[] = useMemo(() => [
     {
@@ -351,7 +345,7 @@ export default function StaffContent() {
                 </CardTitle>
                 <CardDescription>Add and manage your company's staff members.</CardDescription>
             </div>
-            {userData?.companyId && <AddStaffDialog companyId={user!.uid} onStaffAdded={forceRefresh} />}
+            {user?.uid && <AddStaffDialog companyId={user.uid} onStaffAdded={forceRefresh} />}
         </CardHeader>
         <CardContent>
             {isLoading ? (
@@ -365,4 +359,3 @@ export default function StaffContent() {
     </Card>
   );
 }
-

@@ -23,7 +23,7 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, UserPlus, Save } from 'lucide-react';
+import { Loader2, Save } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { getClientSideAuthToken } from '@/firebase';
@@ -83,7 +83,7 @@ export function EditStaffDialog({ isOpen, setIsOpen, staffMember, onUpdate }: Ed
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-                path: `companies/${staffMember.companyId}/staff/${staffMember.id}`,
+                path: `members/${staffMember.companyId}/staff/${staffMember.id}`,
                 data: { ...values, updatedAt: { _methodName: 'serverTimestamp' } }
             }),
         });
