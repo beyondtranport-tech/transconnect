@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, Suspense, useEffect } from 'react';
@@ -53,15 +54,6 @@ function SignInFormComponent() {
       password: '',
     },
   });
-  
-  useEffect(() => {
-    if (user && !isUserLoading) {
-      const isAdmin = user.email === 'beyondtransport@gmail.com';
-      const defaultRedirect = isAdmin ? '/backend' : '/account';
-      router.replace(redirectParam || defaultRedirect);
-    }
-  }, [user, isUserLoading, router, redirectParam]);
-
 
   const handlePasswordReset = async () => {
     const email = form.getValues('email');
@@ -136,7 +128,7 @@ function SignInFormComponent() {
       
       const isAdmin = loggedInUser.email === 'beyondtransport@gmail.com';
       const defaultRedirect = isAdmin ? '/backend' : '/account';
-      router.replace(redirectParam || defaultRedirect);
+      router.push(redirectParam || defaultRedirect);
       
     } catch (error: any) {
       let title = 'An error occurred.';
@@ -213,8 +205,8 @@ function SignInFormComponent() {
                 </FormItem>
               )}
             />
-            <Button type="submit" className="w-full" disabled={isLoading || (isUserLoading && !user)}>
-              {(isLoading || (isUserLoading && !user)) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            <Button type="submit" className="w-full" disabled={isLoading}>
+              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Sign In
             </Button>
           </form>
