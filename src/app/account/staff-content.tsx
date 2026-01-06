@@ -37,6 +37,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { EditStaffDialog } from './EditStaffDialog';
 import { usePermissions } from '@/hooks/use-permissions';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { ShieldAlert } from 'lucide-react';
 
 const staffFormSchema = z.object({
   firstName: z.string().min(1, 'First name is required'),
@@ -303,6 +305,8 @@ export default function StaffContent() {
     setSelectedStaff(staffMember);
     setIsEditDialogOpen(true);
   };
+  
+  const canCreateStaff = can('create', 'staff');
 
   const columns: ColumnDef<any>[] = useMemo(() => [
     {
@@ -371,7 +375,20 @@ export default function StaffContent() {
                   </CardTitle>
                   <CardDescription>Add and manage your company's staff members.</CardDescription>
               </div>
-              {userData?.companyId && <AddStaffDialog companyId={userData.companyId} onStaffAdded={forceRefresh} canCreate={can('create', 'staff')} />}
+              <TooltipProvider>
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <div className="inline-block">
+                             {userData?.companyId && <AddStaffDialog companyId={userData.companyId} onStaffAdded={forceRefresh} canCreate={canCreateStaff} />}
+                        </div>
+                    </TooltipTrigger>
+                    {!canCreateStaff && (
+                         <TooltipContent>
+                            <p className="flex items-center gap-2"><ShieldAlert className="h-4 w-4" /> You don't have permission to create staff.</p>
+                        </TooltipContent>
+                    )}
+                </Tooltip>
+              </TooltipProvider>
           </CardHeader>
           <CardContent>
               {isLoading ? (

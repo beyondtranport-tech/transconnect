@@ -58,10 +58,10 @@ export default function StaffActionMenu({ staffMember, onUpdate, onEdit }: { sta
             body: JSON.stringify({
                 companyId: staffMember.companyId,
                 staffId: staffMember.id,
-                status: actionToConfirm
+                status: actionToConfirm === 'confirm' ? 'confirmed' : 'unconfirmed'
             }),
         });
-        successMessage = `Staff member status updated to ${actionToConfirm}.`;
+        successMessage = `Staff member status updated.`;
       }
       
       const result = await response.json();
