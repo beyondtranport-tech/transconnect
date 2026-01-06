@@ -24,11 +24,11 @@ export function useDataTable<TData>(data: TData[], columns: ColumnDef<TData>[]) 
   };
 
   const rows = useMemo(() => {
-    let filteredData = [...data];
+    let processedData = [...data];
 
     // Apply global filter
     if (globalFilter) {
-      filteredData = filteredData.filter(row =>
+      processedData = processedData.filter(row =>
         columns.some(column => {
           const value = getNestedValue(row, column.accessorKey as string);
           return String(value).toLowerCase().includes(globalFilter.toLowerCase());
@@ -41,7 +41,7 @@ export function useDataTable<TData>(data: TData[], columns: ColumnDef<TData>[]) 
         const sortKey = sorting[0].id;
         const sortDesc = sorting[0].desc;
 
-        filteredData.sort((a, b) => {
+        processedData.sort((a, b) => {
             const valueA = getNestedValue(a, sortKey);
             const valueB = getNestedValue(b, sortKey);
 
@@ -51,7 +51,7 @@ export function useDataTable<TData>(data: TData[], columns: ColumnDef<TData>[]) 
         });
     }
 
-    return filteredData.map(original => ({ original }));
+    return processedData.map(original => ({ original }));
 
   }, [data, columns, globalFilter, sorting]);
 

@@ -1,8 +1,9 @@
 
 import { initializeApp, getApps, App, cert } from 'firebase-admin/app';
-import serviceAccount from '@/lib/service-account.json';
 import type { ServiceAccount } from 'firebase-admin/app';
 
+// Correctly import the service account JSON
+import serviceAccount from './service-account.json';
 
 const ADMIN_APP_NAME = 'firebase-admin-app-transconnect-studio';
 
