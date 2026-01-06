@@ -30,6 +30,7 @@ import Image from 'next/image';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import placeholderImageData from '@/lib/placeholder-images.json';
 import { ShopPreview } from '@/components/shop-preview';
+import { usePermissions } from '@/hooks/use-permissions';
 const { placeholderImages } = placeholderImageData;
 
 
@@ -51,7 +52,7 @@ const shopStep1Schema = z.object({
 
 type Step1FormValues = z.infer<typeof shopStep1Schema>;
 
-function Step1CoreIdentity({ shop, onSave, onSeoGenerated }: { shop: any, onSave: (newData: any) => void, onSeoGenerated: (seoData: any) => void }) {
+function Step1CoreIdentity({ shop, onSave, onSeoGenerated, canEdit }: { shop: any, onSave: (newData: any) => void, onSeoGenerated: (seoData: any) => void, canEdit: boolean }) {
   const { user } = useUser();
   const { toast } = useToast();
   const [isSaving, setIsSaving] = useState(false);
@@ -130,67 +131,68 @@ function Step1CoreIdentity({ shop, onSave, onSeoGenerated }: { shop: any, onSave
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        <FormField control={form.control} name="shopName" render={({ field }) => (
-          <FormItem>
-            <FormLabel>Shop Name</FormLabel>
-            <FormControl><Input placeholder="My Awesome Shop" {...field} /></FormControl>
-            <FormMessage />
-          </FormItem>
-        )} />
-        <FormField control={form.control} name="shopDescription" render={({ field }) => (
-          <FormItem>
-            <FormLabel>Shop Description</FormLabel>
-            <FormControl><Textarea placeholder="Describe what your shop sells..." {...field} /></FormControl>
-            <FormMessage />
-          </FormItem>
-        )} />
-        <FormField control={form.control} name="category" render={({ field }) => (
-          <FormItem>
-            <FormLabel>Primary Category</FormLabel>
-            <Select onValueChange={field.onChange} defaultValue={field.value}>
-              <FormControl><SelectTrigger><SelectValue placeholder="Select a category" /></SelectTrigger></FormControl>
-              <SelectContent>
-                <SelectItem value="Parts">Parts</SelectItem>
-                <SelectItem value="Services">Services</SelectItem>
-                <SelectItem value="Tires">Tires</SelectItem>
-                <SelectItem value="Equipment">Equipment</SelectItem>
-              </SelectContent>
-            </Select>
-            <FormMessage />
-          </FormItem>
-        )} />
-         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-             <FormField control={form.control} name="contactEmail" render={({ field }) => (
-                <FormItem>
-                    <FormLabel>Public Contact Email</FormLabel>
-                    <FormControl><Input placeholder="shop@example.com" {...field} /></FormControl>
-                    <FormMessage />
-                </FormItem>
+        <fieldset disabled={!canEdit} className="space-y-6">
+            <FormField control={form.control} name="shopName" render={({ field }) => (
+            <FormItem>
+                <FormLabel>Shop Name</FormLabel>
+                <FormControl><Input placeholder="My Awesome Shop" {...field} /></FormControl>
+                <FormMessage />
+            </FormItem>
             )} />
-             <FormField control={form.control} name="contactPhone" render={({ field }) => (
-                <FormItem>
-                    <FormLabel>Public Contact Phone</FormLabel>
-                    <FormControl><Input placeholder="011 123 4567" {...field} /></FormControl>
-                    <FormMessage />
-                </FormItem>
+            <FormField control={form.control} name="shopDescription" render={({ field }) => (
+            <FormItem>
+                <FormLabel>Shop Description</FormLabel>
+                <FormControl><Textarea placeholder="Describe what your shop sells..." {...field} /></FormControl>
+                <FormMessage />
+            </FormItem>
             )} />
-         </div>
+            <FormField control={form.control} name="category" render={({ field }) => (
+            <FormItem>
+                <FormLabel>Primary Category</FormLabel>
+                <Select onValueChange={field.onChange} defaultValue={field.value} disabled={!canEdit}>
+                <FormControl><SelectTrigger><SelectValue placeholder="Select a category" /></SelectTrigger></FormControl>
+                <SelectContent>
+                    <SelectItem value="Parts">Parts</SelectItem>
+                    <SelectItem value="Services">Services</SelectItem>
+                    <SelectItem value="Tires">Tires</SelectItem>
+                    <SelectItem value="Equipment">Equipment</SelectItem>
+                </SelectContent>
+                </Select>
+                <FormMessage />
+            </FormItem>
+            )} />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField control={form.control} name="contactEmail" render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Public Contact Email</FormLabel>
+                        <FormControl><Input placeholder="shop@example.com" {...field} /></FormControl>
+                        <FormMessage />
+                    </FormItem>
+                )} />
+                <FormField control={form.control} name="contactPhone" render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Public Contact Phone</FormLabel>
+                        <FormControl><Input placeholder="011 123 4567" {...field} /></FormControl>
+                        <FormMessage />
+                    </FormItem>
+                )} />
+            </div>
 
-         <Separator />
+            <Separator />
 
-        <div className="p-4 bg-primary/5 border border-primary/20 rounded-lg space-y-3">
-            <h3 className="font-semibold flex items-center gap-2"><Search className="h-5 w-5 text-primary"/> AI SEO Booster</h3>
-            <p className="text-sm text-muted-foreground">
-                Let our AI assistant generate an SEO-friendly title, description, and tags for your shop based on the name and description you provided above. This will help customers find you on search engines.
-            </p>
-            <Button type="button" onClick={handleGenerateSeo} disabled={isGeneratingSeo}>
-                {isGeneratingSeo ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Sparkles className="mr-2 h-4 w-4" />}
-                Generate SEO Content
-            </Button>
-        </div>
+            <div className="p-4 bg-primary/5 border border-primary/20 rounded-lg space-y-3">
+                <h3 className="font-semibold flex items-center gap-2"><Search className="h-5 w-5 text-primary"/> AI SEO Booster</h3>
+                <p className="text-sm text-muted-foreground">
+                    Let our AI assistant generate an SEO-friendly title, description, and tags for your shop based on the name and description you provided above. This will help customers find you on search engines.
+                </p>
+                <Button type="button" onClick={handleGenerateSeo} disabled={isGeneratingSeo || !canEdit}>
+                    {isGeneratingSeo ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Sparkles className="mr-2 h-4 w-4" />}
+                    Generate SEO Content
+                </Button>
+            </div>
+        </fieldset>
 
-
-        <Button type="submit" disabled={isSaving}>
+        <Button type="submit" disabled={isSaving || !canEdit}>
           {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
           Save & Continue
         </Button>
@@ -209,7 +211,7 @@ const productSchema = z.object({
 });
 type ProductFormValues = z.infer<typeof productSchema>;
 
-function ProductDialog({ shop, product, onSave, children }: { shop: any, product?: any, onSave: () => void, children: React.ReactNode }) {
+function ProductDialog({ shop, product, onSave, children, canEdit }: { shop: any, product?: any, onSave: () => void, children: React.ReactNode, canEdit: boolean }) {
   const { user } = useUser();
   const storage = useStorage();
   const { toast } = useToast();
@@ -328,42 +330,44 @@ function ProductDialog({ shop, product, onSave, children }: { shop: any, product
         </DialogHeader>
         <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                <FormField control={form.control} name="name" render={({ field }) => (
-                    <FormItem><FormLabel>Product Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
-                )} />
-                <FormField control={form.control} name="description" render={({ field }) => (
-                    <FormItem><FormLabel>Description</FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage /></FormItem>
-                )} />
-                <div className="grid grid-cols-2 gap-4">
-                    <FormField control={form.control} name="price" render={({ field }) => (
-                        <FormItem><FormLabel>Price (ZAR)</FormLabel><FormControl><Input type="number" step="0.01" {...field} /></FormControl><FormMessage /></FormItem>
+                <fieldset disabled={!canEdit} className="space-y-4">
+                    <FormField control={form.control} name="name" render={({ field }) => (
+                        <FormItem><FormLabel>Product Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
                     )} />
-                    <FormField control={form.control} name="sku" render={({ field }) => (
-                        <FormItem><FormLabel>SKU (Optional)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                    <FormField control={form.control} name="description" render={({ field }) => (
+                        <FormItem><FormLabel>Description</FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage /></FormItem>
                     )} />
-                </div>
-                 <FormField control={form.control} name="imageUrl" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Product Image</FormLabel>
-                      <FormControl>
-                          <div>
-                              <Input type="file" accept="image/*" onChange={handleImageUpload} className="mb-2" />
-                              {uploadProgress !== null && <Progress value={uploadProgress} className="h-2" />}
-                              {field.value && 
-                                <div className="mt-2 relative w-24 h-24">
-                                  <Image src={field.value} alt="Product preview" width={100} height={100} className="rounded-md object-cover" />
-                                  <AIEnhanceDialog currentImageUri={field.value} onEnhance={onEnhance}>
-                                    <Button variant="outline" size="sm" className="absolute -top-2 -right-2 h-7 w-7 p-1 rounded-full"><Wand2 className="h-4 w-4" /></Button>
-                                  </AIEnhanceDialog>
-                                </div>
-                              }
-                          </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                )} />
+                    <div className="grid grid-cols-2 gap-4">
+                        <FormField control={form.control} name="price" render={({ field }) => (
+                            <FormItem><FormLabel>Price (ZAR)</FormLabel><FormControl><Input type="number" step="0.01" {...field} /></FormControl><FormMessage /></FormItem>
+                        )} />
+                        <FormField control={form.control} name="sku" render={({ field }) => (
+                            <FormItem><FormLabel>SKU (Optional)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                        )} />
+                    </div>
+                    <FormField control={form.control} name="imageUrl" render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>Product Image</FormLabel>
+                        <FormControl>
+                            <div>
+                                <Input type="file" accept="image/*" onChange={handleImageUpload} className="mb-2" disabled={!canEdit} />
+                                {uploadProgress !== null && <Progress value={uploadProgress} className="h-2" />}
+                                {field.value && 
+                                    <div className="mt-2 relative w-24 h-24">
+                                    <Image src={field.value} alt="Product preview" width={100} height={100} className="rounded-md object-cover" />
+                                    <AIEnhanceDialog currentImageUri={field.value} onEnhance={onEnhance} canEdit={canEdit}>
+                                        <Button variant="outline" size="sm" className="absolute -top-2 -right-2 h-7 w-7 p-1 rounded-full" disabled={!canEdit}><Wand2 className="h-4 w-4" /></Button>
+                                    </AIEnhanceDialog>
+                                    </div>
+                                }
+                            </div>
+                        </FormControl>
+                        <FormMessage />
+                        </FormItem>
+                    )} />
+                </fieldset>
                 <DialogFooter>
-                     <Button type="submit" disabled={isSaving || form.formState.isSubmitting || (uploadProgress !== null && uploadProgress < 100)}>
+                     <Button type="submit" disabled={isSaving || form.formState.isSubmitting || (uploadProgress !== null && uploadProgress < 100) || !canEdit}>
                         {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Save className="mr-2 h-4 w-4" />}
                         Save Product
                     </Button>
@@ -375,7 +379,7 @@ function ProductDialog({ shop, product, onSave, children }: { shop: any, product
   )
 }
 
-function AIEnhanceDialog({ currentImageUri, onEnhance, children }: { currentImageUri: string, onEnhance: (newUrl: string) => void, children: React.ReactNode}) {
+function AIEnhanceDialog({ currentImageUri, onEnhance, children, canEdit }: { currentImageUri: string, onEnhance: (newUrl: string) => void, children: React.ReactNode, canEdit: boolean }) {
   const [isOpen, setIsOpen] = useState(false);
   const [prompt, setPrompt] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -421,7 +425,7 @@ function AIEnhanceDialog({ currentImageUri, onEnhance, children }: { currentImag
           <DialogTitle>AI Image Enhancement</DialogTitle>
           <DialogDescription>Describe how you want to change the image. For example: "place this on a clean white background".</DialogDescription>
         </DialogHeader>
-        <div className="space-y-4 py-4">
+        <fieldset disabled={!canEdit} className="space-y-4 py-4">
           <div className="relative w-40 h-40 mx-auto rounded-md overflow-hidden">
              <Image src={currentImageUri} alt="Current product" fill className="object-cover"/>
           </div>
@@ -429,10 +433,10 @@ function AIEnhanceDialog({ currentImageUri, onEnhance, children }: { currentImag
             <Label htmlFor="prompt">Your Instructions</Label>
             <Input id="prompt" value={prompt} onChange={(e) => setPrompt(e.target.value)} placeholder="e.g., make the background a workshop setting" />
           </div>
-        </div>
+        </fieldset>
         <DialogFooter>
           <Button variant="outline" onClick={() => setIsOpen(false)}>Cancel</Button>
-          <Button onClick={handleEnhance} disabled={isLoading}>
+          <Button onClick={handleEnhance} disabled={isLoading || !canEdit}>
             {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Sparkles className="mr-2 h-4 w-4" />}
             Enhance Image
           </Button>
@@ -442,7 +446,7 @@ function AIEnhanceDialog({ currentImageUri, onEnhance, children }: { currentImag
   );
 }
 
-function AIVideoDialog({ children }: { children: React.ReactNode }) {
+function AIVideoDialog({ children, canEdit }: { children: React.ReactNode, canEdit: boolean }) {
     const [isOpen, setIsOpen] = useState(false);
     const [prompt, setPrompt] = useState("");
     const [isLoading, setIsLoading] = useState(false);
@@ -493,7 +497,7 @@ function AIVideoDialog({ children }: { children: React.ReactNode }) {
                         For example: "A cinematic 360-degree view of a chrome truck wheel, sparkling under studio lights."
                     </DialogDescription>
                 </DialogHeader>
-                <div className="space-y-4 py-4">
+                <fieldset disabled={!canEdit} className="space-y-4 py-4">
                     <div className="space-y-2">
                         <Label htmlFor="video-prompt">Video Prompt</Label>
                         <Textarea id="video-prompt" value={prompt} onChange={(e) => setPrompt(e.target.value)} placeholder="e.g., A cinematic fly-around of a heavy-duty truck engine..." />
@@ -512,10 +516,10 @@ function AIVideoDialog({ children }: { children: React.ReactNode }) {
                             <video controls src={videoUri} className="w-full rounded-md" />
                         </div>
                     )}
-                </div>
+                </fieldset>
                 <DialogFooter>
                     <Button variant="outline" onClick={() => setIsOpen(false)}>Close</Button>
-                    <Button onClick={handleGenerate} disabled={isLoading}>
+                    <Button onClick={handleGenerate} disabled={isLoading || !canEdit}>
                         {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Sparkles className="mr-2 h-4 w-4" />}
                         Generate Video
                     </Button>
@@ -525,7 +529,7 @@ function AIVideoDialog({ children }: { children: React.ReactNode }) {
     );
 }
 
-function Step2Products({ shop, onSave }: { shop: any, onSave: (newData?: any) => void }) {
+function Step2Products({ shop, onSave, canEdit }: { shop: any, onSave: (newData?: any) => void, canEdit: boolean }) {
   const { user } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
@@ -565,8 +569,8 @@ function Step2Products({ shop, onSave }: { shop: any, onSave: (newData?: any) =>
     <div className="space-y-6">
         <div className="flex justify-between items-center">
             <h3 className="text-lg font-medium">Your Products</h3>
-            <ProductDialog shop={shop} onSave={forceRefresh}>
-                <Button><PlusCircle className="mr-2 h-4 w-4" /> Add Product</Button>
+            <ProductDialog shop={shop} onSave={forceRefresh} canEdit={canEdit}>
+                <Button disabled={!canEdit}><PlusCircle className="mr-2 h-4 w-4" /> Add Product</Button>
             </ProductDialog>
         </div>
         
@@ -586,13 +590,13 @@ function Step2Products({ shop, onSave }: { shop: any, onSave: (newData?: any) =>
                                 <TableCell className="font-medium">{p.name}</TableCell>
                                 <TableCell>R {p.price.toFixed(2)}</TableCell>
                                 <TableCell className="text-right space-x-1">
-                                     <AIVideoDialog>
-                                        <Button variant="outline" size="icon"><Video className="h-4 w-4"/></Button>
+                                     <AIVideoDialog canEdit={canEdit}>
+                                        <Button variant="outline" size="icon" disabled={!canEdit}><Video className="h-4 w-4"/></Button>
                                      </AIVideoDialog>
-                                     <ProductDialog shop={shop} product={p} onSave={forceRefresh}>
-                                        <Button variant="ghost" size="icon"><Edit className="h-4 w-4"/></Button>
+                                     <ProductDialog shop={shop} product={p} onSave={forceRefresh} canEdit={canEdit}>
+                                        <Button variant="ghost" size="icon" disabled={!canEdit}><Edit className="h-4 w-4"/></Button>
                                      </ProductDialog>
-                                     <Button variant="ghost" size="icon" onClick={() => handleDelete(p.id)}><Trash2 className="h-4 w-4 text-destructive"/></Button>
+                                     <Button variant="ghost" size="icon" onClick={() => handleDelete(p.id)} disabled={!canEdit}><Trash2 className="h-4 w-4 text-destructive"/></Button>
                                 </TableCell>
                             </TableRow>
                         ))}
@@ -605,7 +609,7 @@ function Step2Products({ shop, onSave }: { shop: any, onSave: (newData?: any) =>
             </div>
         )}
         
-        <Button onClick={() => onSave()}>
+        <Button onClick={() => onSave()} disabled={!canEdit}>
           Save & Continue
         </Button>
     </div>
@@ -625,7 +629,7 @@ const shopStep3Schema = z.object({
 });
 type Step3FormValues = z.infer<typeof shopStep3Schema>;
 
-function AIGenerateImageDialog({ onGenerate, children }: { onGenerate: (url: string) => void, children: React.ReactNode }) {
+function AIGenerateImageDialog({ onGenerate, children, canEdit }: { onGenerate: (url: string) => void, children: React.ReactNode, canEdit: boolean }) {
     const [isOpen, setIsOpen] = useState(false);
     const [prompt, setPrompt] = useState("");
     const [isLoading, setIsLoading] = useState(false);
@@ -669,16 +673,16 @@ function AIGenerateImageDialog({ onGenerate, children }: { onGenerate: (url: str
                     <DialogTitle>AI Image Generator</DialogTitle>
                     <DialogDescription>Describe the image you want to create for your banner or promotion.</DialogDescription>
                 </DialogHeader>
-                <div className="space-y-4 py-4">
+                <fieldset disabled={!canEdit} className="space-y-4 py-4">
                     <div className="space-y-2">
                         <Label htmlFor="image-prompt">Your Prompt</Label>
                         <Textarea id="image-prompt" value={prompt} onChange={(e) => setPrompt(e.target.value)} placeholder="e.g., A dramatic hero shot of a red Scania truck on a mountain pass at sunset" />
                         <p className="text-xs text-muted-foreground">For best results, use a descriptive prompt of at least 5-7 words.</p>
                     </div>
-                </div>
+                </fieldset>
                 <DialogFooter>
                     <Button variant="outline" onClick={() => setIsOpen(false)}>Cancel</Button>
-                    <Button onClick={handleGenerate} disabled={isLoading}>
+                    <Button onClick={handleGenerate} disabled={isLoading || !canEdit}>
                         {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Sparkles className="mr-2 h-4 w-4" />}
                         Generate Image
                     </Button>
@@ -732,7 +736,7 @@ function ImageGalleryDialog({ category, onSelect, children }: { category: string
     );
 }
 
-function ImagePicker({ onUpload, title, currentImage, category }: { onUpload: (url: string) => void, title: string, currentImage?: string | null, category: string }) {
+function ImagePicker({ onUpload, title, currentImage, category, canEdit }: { onUpload: (url: string) => void, title: string, currentImage?: string | null, category: string, canEdit: boolean }) {
     const { user } = useUser();
     const storage = useStorage();
     const { toast } = useToast();
@@ -784,29 +788,29 @@ function ImagePicker({ onUpload, title, currentImage, category }: { onUpload: (u
                 {preview ? (
                     <div className="relative aspect-video w-full rounded-md overflow-hidden">
                         <Image src={preview} alt="Preview" fill className="object-cover" />
-                        <Button variant="destructive" size="sm" className="absolute top-2 right-2" onClick={() => { setPreview(null); onUpload(''); }}>Change</Button>
+                        {canEdit && <Button variant="destructive" size="sm" className="absolute top-2 right-2" onClick={() => { setPreview(null); onUpload(''); }}>Change</Button>}
                     </div>
                 ) : (
                     <div className="flex flex-col items-center justify-center w-full h-32 border-2 border-border border-dashed rounded-lg bg-card hover:bg-accent gap-2">
                         <div className="flex gap-2">
-                             <Button type="button" onClick={() => fileInputRef.current?.click()} variant="ghost">
+                             <Button type="button" onClick={() => fileInputRef.current?.click()} variant="ghost" disabled={!canEdit}>
                                 <UploadCloud className="mr-2 h-4 w-4" />
                                 Upload
                              </Button>
                             <ImageGalleryDialog category={category} onSelect={(url) => { onUpload(url); setPreview(url); }}>
-                               <Button type="button" variant="ghost">
+                               <Button type="button" variant="ghost" disabled={!canEdit}>
                                  <GalleryHorizontal className="mr-2 h-4 w-4" />
                                  Gallery
                                </Button>
                             </ImageGalleryDialog>
                         </div>
-                         <AIGenerateImageDialog onGenerate={onImageGenerated}>
-                           <Button type="button" variant="outline" size="sm" className="w-fit">
+                         <AIGenerateImageDialog onGenerate={onImageGenerated} canEdit={canEdit}>
+                           <Button type="button" variant="outline" size="sm" className="w-fit" disabled={!canEdit}>
                              <Sparkles className="mr-2 h-4 w-4" />
                              Generate with AI
                            </Button>
                         </AIGenerateImageDialog>
-                         <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleUpload} />
+                         <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleUpload} disabled={!canEdit} />
                     </div>
                 )}
                  {uploadProgress !== null && uploadProgress < 100 && <Progress value={uploadProgress} className="h-1 mt-2" />}
@@ -815,7 +819,7 @@ function ImagePicker({ onUpload, title, currentImage, category }: { onUpload: (u
     );
 }
 
-function Step3Promotions({ shop, onSave }: { shop: any, onSave: (newData: any) => void }) {
+function Step3Promotions({ shop, onSave, canEdit }: { shop: any, onSave: (newData: any) => void, canEdit: boolean }) {
     const { user } = useUser();
     const { toast } = useToast();
     const [isSaving, setIsSaving] = useState(false);
@@ -873,52 +877,53 @@ function Step3Promotions({ shop, onSave }: { shop: any, onSave: (newData: any) =
     return (
         <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-                <div>
-                    <h3 className="text-lg font-medium">Hero Banner</h3>
-                    <p className="text-sm text-muted-foreground">This is the main banner at the top of your shop page.</p>
-                    <div className="mt-4">
-                        <FormField
-                            control={form.control}
-                            name="heroBannerUrl"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormControl>
-                                        <ImagePicker title="Hero Banner" onUpload={(url) => field.onChange(url)} currentImage={field.value} category={shop.category} />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                    </div>
-                </div>
-
-                <Separator />
-
-                <div>
-                    <h3 className="text-lg font-medium">Promotional Blocks</h3>
-                    <p className="text-sm text-muted-foreground">Highlight specials, new arrivals, or key categories. (Up to 3)</p>
-                     <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-6">
-                        {fields.slice(0, 3).map((field, index) => (
-                           <Card key={field.id} className="p-4 space-y-4">
-                               <FormField control={form.control} name={`promotions.${index}.imageUrl`} render={({ field: imageField }) => (
+                <fieldset disabled={!canEdit}>
+                    <div>
+                        <h3 className="text-lg font-medium">Hero Banner</h3>
+                        <p className="text-sm text-muted-foreground">This is the main banner at the top of your shop page.</p>
+                        <div className="mt-4">
+                            <FormField
+                                control={form.control}
+                                name="heroBannerUrl"
+                                render={({ field }) => (
                                     <FormItem>
                                         <FormControl>
-                                            <ImagePicker title={`Promotion ${index + 1} Image`} onUpload={(url) => imageField.onChange(url)} currentImage={imageField.value} category={shop.category} />
+                                            <ImagePicker title="Hero Banner" onUpload={(url) => field.onChange(url)} currentImage={field.value} category={shop.category} canEdit={canEdit} />
                                         </FormControl>
+                                        <FormMessage />
                                     </FormItem>
-                                )}/>
-                                <FormField control={form.control} name={`promotions.${index}.title`} render={({ field }) => (
-                                    <FormItem><FormLabel>Title</FormLabel><FormControl><Input {...field} placeholder="e.g., Tire Sale" /></FormControl></FormItem>
-                                )}/>
-                                <FormField control={form.control} name={`promotions.${index}.description`} render={({ field }) => (
-                                    <FormItem><FormLabel>Description</FormLabel><FormControl><Textarea {...field} placeholder="e.g., 20% off all truck tires" /></FormControl></FormItem>
-                                )}/>
-                           </Card>
-                        ))}
+                                )}
+                            />
+                        </div>
                     </div>
-                </div>
 
-                <Button type="submit" disabled={isSaving}>
+                    <Separator />
+
+                    <div>
+                        <h3 className="text-lg font-medium">Promotional Blocks</h3>
+                        <p className="text-sm text-muted-foreground">Highlight specials, new arrivals, or key categories. (Up to 3)</p>
+                        <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-6">
+                            {fields.slice(0, 3).map((field, index) => (
+                            <Card key={field.id} className="p-4 space-y-4">
+                                <FormField control={form.control} name={`promotions.${index}.imageUrl`} render={({ field: imageField }) => (
+                                        <FormItem>
+                                            <FormControl>
+                                                <ImagePicker title={`Promotion ${index + 1} Image`} onUpload={(url) => imageField.onChange(url)} currentImage={imageField.value} category={shop.category} canEdit={canEdit} />
+                                            </FormControl>
+                                        </FormItem>
+                                    )}/>
+                                    <FormField control={form.control} name={`promotions.${index}.title`} render={({ field }) => (
+                                        <FormItem><FormLabel>Title</FormLabel><FormControl><Input {...field} placeholder="e.g., Tire Sale" /></FormControl></FormItem>
+                                    )}/>
+                                    <FormField control={form.control} name={`promotions.${index}.description`} render={({ field }) => (
+                                        <FormItem><FormLabel>Description</FormLabel><FormControl><Textarea {...field} placeholder="e.g., 20% off all truck tires" /></FormControl></FormItem>
+                                    )}/>
+                            </Card>
+                            ))}
+                        </div>
+                    </div>
+                </fieldset>
+                <Button type="submit" disabled={isSaving || !canEdit}>
                     {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                     Save & Continue
                 </Button>
@@ -935,7 +940,7 @@ const shopStep4Schema = z.object({
 });
 type Step4FormValues = z.infer<typeof shopStep4Schema>;
 
-function Step4Appearance({ shop, onSave }: { shop: any, onSave: (newData: any) => void }) {
+function Step4Appearance({ shop, onSave, canEdit }: { shop: any, onSave: (newData: any) => void, canEdit: boolean }) {
   const { user } = useUser();
   const { toast } = useToast();
   const [isSaving, setIsSaving] = useState(false);
@@ -977,46 +982,48 @@ function Step4Appearance({ shop, onSave }: { shop: any, onSave: (newData: any) =
   return (
     <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-            <FormField control={form.control} name="template" render={({ field }) => (
-                <FormItem className="space-y-3">
-                <FormLabel className="text-base">Shop Layout Template</FormLabel>
-                <FormControl>
-                    <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormItem>
-                        <Label className={cn("flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground", field.value === 'modern-grid' && "border-primary")}>
-                            <FormControl><RadioGroupItem value="modern-grid" className="sr-only" /></FormControl>
-                            <LayoutGrid className="h-12 w-12 mb-2" />
-                            <span className="font-bold">Modern Grid</span>
-                        </Label>
-                    </FormItem>
-                     <FormItem>
-                        <Label className={cn("flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground", field.value === 'classic-list' && "border-primary")}>
-                            <FormControl><RadioGroupItem value="classic-list" className="sr-only" /></FormControl>
-                            <List className="h-12 w-12 mb-2" />
-                            <span className="font-bold">Classic List</span>
-                        </Label>
-                    </FormItem>
-                    </RadioGroup>
-                </FormControl>
-                <FormMessage />
-                </FormItem>
-            )} />
-            <FormField control={form.control} name="theme" render={({ field }) => (
-                <FormItem>
-                    <FormLabel className="text-base">Color Theme</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl><SelectTrigger><SelectValue placeholder="Select a theme" /></SelectTrigger></FormControl>
-                        <SelectContent>
-                            <SelectItem value="forest-green">Forest Green (Default)</SelectItem>
-                            <SelectItem value="ocean-blue">Ocean Blue</SelectItem>
-                            <SelectItem value="industrial-grey">Industrial Grey</SelectItem>
-                            <SelectItem value="sunset-orange">Sunset Orange</SelectItem>
-                        </SelectContent>
-                    </Select>
+            <fieldset disabled={!canEdit} className="space-y-8">
+                <FormField control={form.control} name="template" render={({ field }) => (
+                    <FormItem className="space-y-3">
+                    <FormLabel className="text-base">Shop Layout Template</FormLabel>
+                    <FormControl>
+                        <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <FormItem>
+                            <Label className={cn("flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground", field.value === 'modern-grid' && "border-primary")}>
+                                <FormControl><RadioGroupItem value="modern-grid" className="sr-only" /></FormControl>
+                                <LayoutGrid className="h-12 w-12 mb-2" />
+                                <span className="font-bold">Modern Grid</span>
+                            </Label>
+                        </FormItem>
+                        <FormItem>
+                            <Label className={cn("flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground", field.value === 'classic-list' && "border-primary")}>
+                                <FormControl><RadioGroupItem value="classic-list" className="sr-only" /></FormControl>
+                                <List className="h-12 w-12 mb-2" />
+                                <span className="font-bold">Classic List</span>
+                            </Label>
+                        </FormItem>
+                        </RadioGroup>
+                    </FormControl>
                     <FormMessage />
-                </FormItem>
-            )} />
-            <Button type="submit" disabled={isSaving}>
+                    </FormItem>
+                )} />
+                <FormField control={form.control} name="theme" render={({ field }) => (
+                    <FormItem>
+                        <FormLabel className="text-base">Color Theme</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value} disabled={!canEdit}>
+                            <FormControl><SelectTrigger><SelectValue placeholder="Select a theme" /></SelectTrigger></FormControl>
+                            <SelectContent>
+                                <SelectItem value="forest-green">Forest Green (Default)</SelectItem>
+                                <SelectItem value="ocean-blue">Ocean Blue</SelectItem>
+                                <SelectItem value="industrial-grey">Industrial Grey</SelectItem>
+                                <SelectItem value="sunset-orange">Sunset Orange</SelectItem>
+                            </SelectContent>
+                        </Select>
+                        <FormMessage />
+                    </FormItem>
+                )} />
+            </fieldset>
+            <Button type="submit" disabled={isSaving || !canEdit}>
                 {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                 Save & Continue
             </Button>
@@ -1034,7 +1041,7 @@ const shopStep5Schema = z.object({
 type Step5FormValues = z.infer<typeof shopStep5Schema>;
 
 
-function Step5SeoAndPreview({ shop, onSave }: { shop: any; onSave: (newData: any) => void }) {
+function Step5SeoAndPreview({ shop, onSave, canEdit }: { shop: any; onSave: (newData: any) => void; canEdit: boolean }) {
   const { toast } = useToast();
   const { user } = useUser();
   const firestore = useFirestore();
@@ -1144,40 +1151,42 @@ function Step5SeoAndPreview({ shop, onSave }: { shop: any; onSave: (newData: any
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        <Card className="bg-primary/5 border-primary/20">
-            <CardContent className="p-4 flex items-center justify-between">
-                <p className="max-w-prose">Let our AI assistant generate SEO-friendly content for you based on your shop name and description.</p>
-                <Button type="button" onClick={handleGenerateSeo} disabled={isGenerating}>
-                    {isGenerating ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Sparkles className="mr-2 h-4 w-4" />}
-                    Generate with AI
-                </Button>
-            </CardContent>
-        </Card>
-        <FormField control={form.control} name="metaTitle" render={({ field }) => (
-          <FormItem><FormLabel>Meta Title</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
-        )} />
-        <FormField control={form.control} name="metaDescription" render={({ field }) => (
-          <FormItem><FormLabel>Meta Description</FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage /></FormItem>
-        )} />
-        <FormField control={form.control} name="tags" render={({ field }) => (
-          <FormItem>
-            <FormLabel>Tags / Keywords</FormLabel>
-            <FormControl>
-                <Input 
-                    {...field} 
-                    value={Array.isArray(field.value) ? field.value.join(', ') : ''} 
-                    onChange={e => field.onChange(e.target.value.split(',').map(s => s.trim()))}
-                    placeholder="e.g., truck parts, scania, filters"
-                />
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        )} />
-        
+        <fieldset disabled={!canEdit} className="space-y-6">
+            <Card className="bg-primary/5 border-primary/20">
+                <CardContent className="p-4 flex items-center justify-between">
+                    <p className="max-w-prose">Let our AI assistant generate SEO-friendly content for you based on your shop name and description.</p>
+                    <Button type="button" onClick={handleGenerateSeo} disabled={isGenerating || !canEdit}>
+                        {isGenerating ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Sparkles className="mr-2 h-4 w-4" />}
+                        Generate with AI
+                    </Button>
+                </CardContent>
+            </Card>
+            <FormField control={form.control} name="metaTitle" render={({ field }) => (
+            <FormItem><FormLabel>Meta Title</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+            )} />
+            <FormField control={form.control} name="metaDescription" render={({ field }) => (
+            <FormItem><FormLabel>Meta Description</FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage /></FormItem>
+            )} />
+            <FormField control={form.control} name="tags" render={({ field }) => (
+            <FormItem>
+                <FormLabel>Tags / Keywords</FormLabel>
+                <FormControl>
+                    <Input 
+                        {...field} 
+                        value={Array.isArray(field.value) ? field.value.join(', ') : ''} 
+                        onChange={e => field.onChange(e.target.value.split(',').map(s => s.trim()))}
+                        placeholder="e.g., truck parts, scania, filters"
+                    />
+                </FormControl>
+                <FormMessage />
+            </FormItem>
+            )} />
+        </fieldset>
+
         <Separator />
 
         <div className="flex items-center gap-4">
-            <Button type="submit" disabled={isSaving}>
+            <Button type="submit" disabled={isSaving || !canEdit}>
                 {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                 Save
             </Button>
@@ -1203,7 +1212,7 @@ function Step5SeoAndPreview({ shop, onSave }: { shop: any; onSave: (newData: any
       
         <div className="mt-6 pt-6 border-t">
             {shop.status === 'draft' || shop.status === 'rejected' ? (
-              <Button onClick={handleSubmitForReview} disabled={isSubmitting}>
+              <Button onClick={handleSubmitForReview} disabled={isSubmitting || !canEdit}>
                 {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="ml-2 h-4 w-4" />}
                 Submit for Review
               </Button>
@@ -1231,6 +1240,8 @@ const STEPS = [
 export default function ShopWizard({ shop }: { shop: any }) {
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [shopData, setShopData] = useState(shop);
+  const { can, isLoading: arePermissionsLoading } = usePermissions();
+  const canEdit = can('edit', 'shop');
 
   const handleSaveAndNext = useCallback((newData: any) => {
     const updatedShopData = { ...shopData, ...newData };
@@ -1254,15 +1265,15 @@ export default function ShopWizard({ shop }: { shop: any }) {
     const stepId = STEPS[currentStepIndex].id;
     switch (stepId) {
       case 'identity':
-        return <Step1CoreIdentity shop={shopData} onSave={handleSaveAndNext} onSeoGenerated={handleSeoGenerated} />;
+        return <Step1CoreIdentity shop={shopData} onSave={handleSaveAndNext} onSeoGenerated={handleSeoGenerated} canEdit={canEdit} />;
       case 'products':
-        return <Step2Products shop={shopData} onSave={handleSaveAndNext} />;
+        return <Step2Products shop={shopData} onSave={handleSaveAndNext} canEdit={canEdit} />;
       case 'promotions':
-        return <Step3Promotions shop={shopData} onSave={handleSaveAndNext} />;
+        return <Step3Promotions shop={shopData} onSave={handleSaveAndNext} canEdit={canEdit} />;
       case 'appearance':
-        return <Step4Appearance shop={shopData} onSave={handleSaveAndNext} />;
+        return <Step4Appearance shop={shopData} onSave={handleSaveAndNext} canEdit={canEdit} />;
       case 'seo':
-        return <Step5SeoAndPreview shop={shopData} onSave={handleSave} />;
+        return <Step5SeoAndPreview shop={shopData} onSave={handleSave} canEdit={canEdit} />;
       default:
         return <div>Step not found</div>;
     }
@@ -1287,7 +1298,11 @@ export default function ShopWizard({ shop }: { shop: any }) {
           <CardDescription>Fill out the details for this step.</CardDescription>
         </CardHeader>
         <CardContent>
-            {renderStepContent()}
+            {arePermissionsLoading ? (
+                 <div className="flex justify-center items-center py-20"><Loader2 className="h-8 w-8 animate-spin"/></div>
+            ) : (
+                renderStepContent()
+            )}
         </CardContent>
       </Card>
 
@@ -1308,4 +1323,3 @@ export default function ShopWizard({ shop }: { shop: any }) {
     </div>
   );
 }
-
