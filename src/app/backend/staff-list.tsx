@@ -45,6 +45,7 @@ async function fetchAdminData(action: string) {
     return result.data;
 }
 
+
 export default function StaffList() {
     const [staff, setStaff] = useState<StaffMember[]>([]);
     const [companies, setCompanies] = useState<Company[]>([]);
@@ -128,7 +129,8 @@ export default function StaffList() {
                 </div>
             ),
         }
-    ], [fetchData, enrichedStaff]);
+    ], [fetchData]);
+
 
     return (
         <Card>
