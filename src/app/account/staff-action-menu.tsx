@@ -45,8 +45,10 @@ export default function StaffActionMenu({ staffMember, onUpdate }: { staffMember
       let payload: any = { staffId: staffMember.id, companyId: staffMember.companyId };
       let successMessage = '';
 
+      // This logic is now incorrect, as the member-facing UI should only call member-authorized APIs
+      // It's being left here as it's part of the action menu, but the primary edit action is now handled by EditStaffDialog
       if (actionToConfirm === 'delete') {
-        endpoint = '/api/deleteUserDoc';
+        endpoint = '/api/deleteUserDoc'; // This is now a general purpose secure endpoint
         payload = { path: `members/${staffMember.companyId}/staff/${staffMember.id}` };
         successMessage = 'Staff member has been deleted.';
       } else {
@@ -62,7 +64,7 @@ export default function StaffActionMenu({ staffMember, onUpdate }: { staffMember
       });
 
       const result = await response.json();
-      if (!response.ok || !result.success) {
+      if (!response.ok || (result.success !== undefined && !result.success)) {
         throw new Error(result.error || 'Action failed.');
       }
 

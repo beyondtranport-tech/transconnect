@@ -39,7 +39,6 @@ import dynamic from 'next/dynamic';
 // Dynamically import all the components that will be rendered in the admin account view
 const DashboardContent = dynamic(() => import('@/app/adminaccount/dashboard'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const BankDetailsSettings = dynamic(() => import('@/app/backend/bank-details-settings'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const ReconciliationContent = dynamic(() => import('@/app/adminaccount/reconciliation-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const PlatformTransactions = dynamic(() => import('@/app/adminaccount/platform-transactions'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const StaffContent = dynamic(() => import('@/app/adminaccount/staff-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 
@@ -71,7 +70,6 @@ function AdminAccountPageContent() {
     switch (activeView) {
       case 'dashboard': return <DashboardContent />;
       case 'bank-settings': return <BankDetailsSettings />;
-      case 'bank-reconciliation': return <ReconciliationContent />;
       case 'platform-transactions': return <PlatformTransactions />;
       case 'staff': return <StaffContent />;
       // Add placeholders for new views
@@ -118,7 +116,7 @@ function AdminAccountPageContent() {
                     <span>Bank</span>
                 </SidebarMenuButton>
                  <SidebarMenuSub>
-                    <SidebarMenuSubButton isActive={activeView === 'bank-reconciliation'} onClick={() => router.push('/adminaccount?view=bank-reconciliation', { scroll: false })}>
+                    <SidebarMenuSubButton isActive={activeView === 'bank-reconciliation'} onClick={() => router.push('/backend?view=wallet-reconciliation', { scroll: false })}>
                         <Combine />
                         <span>Reconciliation</span>
                     </SidebarMenuSubButton>

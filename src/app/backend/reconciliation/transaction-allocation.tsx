@@ -61,13 +61,13 @@ export default function TransactionAllocation({ statementData, onSuccessfulPost 
 
     const membersQuery = useMemoFirebase(() => {
         if (!firestore) return null;
-        return query(collection(firestore, 'members'));
+        return query(collection(firestore, 'companies'));
     }, [firestore]);
     const { data: members, isLoading: isLoadingMembers } = useCollection(membersQuery);
 
     const memberMap = useMemo(() => {
         if (!members) return new Map();
-        return new Map(members.map(m => [m.id, `${m.firstName} ${m.lastName}`]));
+        return new Map(members.map(m => [m.id, `${m.companyName}`]));
     }, [members]);
     
     const [transactions, setTransactions] = useState<UiTransaction[]>([]);
@@ -103,7 +103,7 @@ export default function TransactionAllocation({ statementData, onSuccessfulPost 
                     toast({
                         variant: 'destructive',
                         title: 'Invalid Member',
-                        description: 'Cannot allocate to member without a valid Member UID in the reference field.',
+                        description: 'Cannot allocate to member without a valid Company ID in the reference field.',
                     });
                     return tx;
                 }
@@ -192,12 +192,12 @@ export default function TransactionAllocation({ statementData, onSuccessfulPost 
         // Process Member Allocations
         for (const tx of memberAllocations) {
             const memberId = tx.reference;
-            const memberRef = doc(firestore, 'members', memberId);
+            const memberRef = doc(firestore, 'companies', memberId);
             const transactionAmount = tx.type === 'credit' ? tx.amount : -tx.amount;
             
             batch.update(memberRef, { walletBalance: increment(transactionAmount) });
 
-            const transactionRef = doc(collection(firestore, 'members', memberId, 'transactions'));
+            const transactionRef = doc(collection(firestore, 'companies', memberId, 'transactions'));
             batch.set(transactionRef, {
                 transactionId: transactionRef.id,
                 reconciliationId,
@@ -213,7 +213,7 @@ export default function TransactionAllocation({ statementData, onSuccessfulPost 
             });
             
             if (tx.paymentId) {
-                const pendingPaymentRef = doc(firestore, `members/${memberId}/walletPayments/${tx.paymentId}`);
+                const pendingPaymentRef = doc(firestore, `companies/${memberId}/walletPayments/${tx.paymentId}`);
                 batch.delete(pendingPaymentRef);
             }
         }
@@ -375,7 +375,7 @@ export default function TransactionAllocation({ statementData, onSuccessfulPost 
                         </TableBody>
                     </Table>
                     <datalist id="members-datalist">
-                        {members?.map(m => <option key={m.id} value={m.id}>{`${m.firstName} ${m.lastName} (${m.companyName})`}</option>)}
+                        {members?.map(m => <option key={m.id} value={m.id}>{`${m.companyName}`}</option>)}
                     </datalist>
                 </div>
                  <Button onClick={addManualRow} variant="outline" size="sm" className="mt-4"><PlusCircle className="mr-2 h-4 w-4" />Add Manual Record</Button>

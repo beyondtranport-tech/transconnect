@@ -73,12 +73,17 @@ export async function POST(req: NextRequest) {
     
     // --- Authorization Logic ---
     let isAuthorized = false;
+    // User can update their own user doc
     if (pathSegments[0] === 'users' && pathSegments[1] === uid) {
         isAuthorized = true;
-    } else if (pathSegments[0] === 'companies') {
-        const companyIdFromPath = pathSegments[1];
+    } 
+    // User can update their own company doc or its subcollections
+    else {
         const userDoc = await db.collection('users').doc(uid).get();
-        if (userDoc.data()?.companyId === companyIdFromPath) {
+        const userCompanyId = userDoc.data()?.companyId;
+
+        // Path is /companies/{companyId} or /companies/{companyId}/subcollection/{docId}
+        if (userCompanyId && (pathSegments[0] === 'companies' || pathSegments[0] === 'members') && pathSegments[1] === userCompanyId) {
             isAuthorized = true;
         }
     }
@@ -122,5 +127,3 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: false, error: `Internal Server Error: ${error.message}` }, { status: 500 });
   }
 }
-
-    

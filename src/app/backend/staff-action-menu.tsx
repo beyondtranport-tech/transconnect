@@ -22,7 +22,7 @@ import { Button } from '@/components/ui/button';
 import { Loader2, MoreVertical, CheckCircle, XCircle, Trash2, Edit } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken } from '@/firebase';
-import { EditStaffDialog } from './EditStaffDialog';
+import { EditStaffDialog } from '../account/EditStaffDialog';
 
 async function performStaffAction(action: string, payload: any) {
     const token = await getClientSideAuthToken();

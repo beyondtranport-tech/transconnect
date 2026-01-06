@@ -42,7 +42,7 @@ export default function AccountDashboard() {
         {
             title: "Bank & Reconciliation",
             description: "Reconcile bank statements for the main business operating account.",
-            href: "/adminaccount?view=bank-reconciliation",
+            href: "/backend?view=wallet-reconciliation",
             icon: Combine,
             cta: "Reconcile Transactions"
         },

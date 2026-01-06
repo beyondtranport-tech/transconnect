@@ -267,57 +267,7 @@ function ReconciliationDashboard() {
     );
 }
 
-function ReconciliationReportPageWrapper() {
-  const [reconciliationId, setReconciliationId] = useState<string | null>(null);
-
-  useEffect(() => {
-    // This check is safe because this component is only rendered on the client.
-    if (typeof window !== 'undefined') {
-      const idFromPath = window.location.pathname.split('/reconciliation/')[1];
-      if (idFromPath) {
-        setReconciliationId(idFromPath);
-      }
-    }
-  }, []);
-
-  if (!reconciliationId) {
-    return <Loader2 className="h-16 w-16 animate-spin" />;
-  }
-
-  // This part is problematic as it might not render the component correctly.
-  // A direct component call is better.
-  return null;
-}
-
 export default function ReconciliationPage() {
-    // This top-level component will decide what to render based on the URL.
-    // It avoids conditional hook calls by having two separate components.
-    const [isClient, setIsClient] = useState(false);
-    const [isReportView, setIsReportView] = useState(false);
-    const [reconciliationId, setReconciliationId] = useState<string | null>(null);
-
-
-    useEffect(() => {
-        setIsClient(true);
-        const idFromPath = window.location.pathname.split('/reconciliation/')[1];
-        if (idFromPath) {
-            setIsReportView(true);
-            setReconciliationId(idFromPath);
-        }
-    }, []);
-
-    if (!isClient) {
-        return <div className="flex justify-center items-center min-h-[calc(100vh-8rem)]"><Loader2 className="h-16 w-16 animate-spin" /></div>;
-    }
-
-    if (isReportView) {
-        // This is not a standard or reliable way to render a page component.
-        // It's better to rely on Next.js file-based routing.
-        // The file at /reconciliation/[reconciliationId]/page.tsx will handle this.
-        // We render nothing here and let the router do its job.
-        return null;
-    }
-    
     return (
         <Suspense fallback={<div className="flex justify-center items-center min-h-[calc(100vh-8rem)]"><Loader2 className="h-16 w-16 animate-spin" /></div>}>
             <ReconciliationDashboard />

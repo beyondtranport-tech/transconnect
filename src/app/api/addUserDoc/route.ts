@@ -1,4 +1,5 @@
 
+
 import { getFirestore, FieldValue, increment } from 'firebase-admin/firestore';
 import { NextRequest, NextResponse } from 'next/server';
 import { headers } from 'next/headers';
@@ -53,12 +54,10 @@ export async function POST(req: NextRequest) {
     const pathSegments = collectionPath.split('/');
     let isAuthorized = false;
 
-    // Allow writes to a user's own 'members' subcollection
-    if (pathSegments[0] === 'members' && pathSegments[1] === uid) {
+    // Authorization logic
+    if (pathSegments.length >= 2 && pathSegments[0] === 'members' && pathSegments[1] === uid) {
         isAuthorized = true;
-    }
-    // Allow writes to a user's own 'companies' subcollection
-    else if (pathSegments[0] === 'companies') {
+    } else if (pathSegments.length >= 2 && pathSegments[0] === 'companies') {
         const companyId = pathSegments[1];
         const userDocSnap = await db.collection('users').doc(uid).get();
         if (userDocSnap.data()?.companyId === companyId) {
@@ -67,7 +66,7 @@ export async function POST(req: NextRequest) {
     }
     
     if (!isAuthorized) {
-        return NextResponse.json({ success: false, error: 'Forbidden: You do not have permission to add documents to this collection.' }, { status: 403 });
+        return NextResponse.json({ success: false, error: 'Forbidden: You can only add documents to your own subcollections.' }, { status: 403 });
     }
 
     const batch = db.batch();
