@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
@@ -249,6 +250,7 @@ export default function PermissionsContent() {
         {
           accessorKey: 'companyName',
           header: 'Company',
+          cell: ({ row }) => <div>{row.original.companyName}</div>,
         },
         {
           accessorKey: 'permissions',
