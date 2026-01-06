@@ -101,7 +101,13 @@ export default function MemberActionMenu({ member, onUpdate }: { member: any; on
 
 
   return (
-    <div className="text-right">
+    <div className="flex justify-end items-center gap-1">
+        <Button asChild variant="ghost" size="icon">
+            <Link href={`/backend?view=wallet&memberId=${member.id}`}><Wallet className="h-4 w-4" /></Link>
+        </Button>
+         <Button asChild variant="ghost" size="icon">
+            <Link href={`/account?view=profile`}><Edit className="h-4 w-4" /></Link>
+        </Button>
       <AlertDialog open={isAlertOpen} onOpenChange={setIsAlertOpen}>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -110,15 +116,6 @@ export default function MemberActionMenu({ member, onUpdate }: { member: any; on
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-             <DropdownMenuLabel>Actions</DropdownMenuLabel>
-             <DropdownMenuSeparator />
-            <DropdownMenuItem asChild>
-                <Link href={`/backend?view=wallet&memberId=${member.id}`}><Wallet className="mr-2 h-4 w-4" />View Wallet</Link>
-            </DropdownMenuItem>
-             <DropdownMenuItem asChild>
-                <Link href={`/account?view=profile`}><Edit className="mr-2 h-4 w-4" /> Edit Profile</Link>
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
              <DropdownMenuItem onSelect={() => openConfirmation('confirm')}>
                 <CheckCircle className="mr-2 h-4 w-4" /> Confirm
               </DropdownMenuItem>

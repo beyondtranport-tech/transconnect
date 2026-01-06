@@ -4,7 +4,7 @@
 import { useUser, useFirestore, useMemoFirebase, useCollection } from '@/firebase';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Loader2, FileText, MoreVertical, Trash2 } from 'lucide-react';
+import { Loader2, FileText, MoreVertical, Trash2, Edit, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { collection, query, orderBy, limit, deleteDoc, doc } from 'firebase/firestore';
@@ -180,7 +180,13 @@ export default function EnquiriesCard() {
                                             <TableCell className="font-semibold whitespace-nowrap">
                                                 {formatCurrency(enquiry.amountRequested)}
                                             </TableCell>
-                                            <TableCell className="text-right">
+                                            <TableCell className="text-right space-x-1">
+                                                <Button asChild variant="ghost" size="icon">
+                                                    <Link href={`/account/enquiries/${enquiry.id}`}><Eye className="h-4 w-4" /></Link>
+                                                </Button>
+                                                <Button asChild variant="ghost" size="icon">
+                                                     <Link href={`/funding/apply?enquiryId=${enquiry.id}`}><Edit className="h-4 w-4" /></Link>
+                                                </Button>
                                                  <DropdownMenu>
                                                     <DropdownMenuTrigger asChild>
                                                         <Button variant="ghost" size="icon">
@@ -188,12 +194,6 @@ export default function EnquiriesCard() {
                                                         </Button>
                                                     </DropdownMenuTrigger>
                                                     <DropdownMenuContent align="end">
-                                                        <DropdownMenuItem asChild>
-                                                            <Link href={`/account/enquiries/${enquiry.id}`}>View Details</Link>
-                                                        </DropdownMenuItem>
-                                                        <DropdownMenuItem asChild>
-                                                            <Link href={`/funding/apply?enquiryId=${enquiry.id}`}>Edit</Link>
-                                                        </DropdownMenuItem>
                                                         <AlertDialog>
                                                             <AlertDialogTrigger asChild>
                                                                 <DropdownMenuItem
@@ -238,5 +238,3 @@ export default function EnquiriesCard() {
         </Card>
     );
 }
-
-    

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -104,46 +105,47 @@ export default function StaffActionMenu({ staffMember, onUpdate }: { staffMember
         staffMember={staffMember}
         onUpdate={onUpdate}
       />
-      <AlertDialog open={isAlertOpen} onOpenChange={setIsAlertOpen}>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" disabled={isProcessing}>
-              {isProcessing ? <Loader2 className="h-4 w-4 animate-spin" /> : <MoreVertical className="h-4 w-4" />}
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-             <DropdownMenuItem onSelect={() => setIsEditOpen(true)}>
-              <Edit className="mr-2 h-4 w-4" /> Edit
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onSelect={() => openConfirmation('confirm')} disabled={staffMember.status === 'confirmed'}>
-              <CheckCircle className="mr-2 h-4 w-4" /> Confirm
-            </DropdownMenuItem>
-            <DropdownMenuItem onSelect={() => openConfirmation('unconfirm')} disabled={staffMember.status !== 'confirmed'}>
-              <XCircle className="mr-2 h-4 w-4" /> Un-confirm
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-              className="text-destructive"
-              onSelect={() => openConfirmation('delete')}
-            >
-              <Trash2 className="mr-2 h-4 w-4" /> Delete
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>{getAlertStrings().title}</AlertDialogTitle>
-            <AlertDialogDescription>{getAlertStrings().description}</AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleAction} variant={actionToConfirm === 'delete' ? 'destructive' : 'default'}>
-              Yes, proceed
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <div className="flex justify-end items-center gap-1">
+        <Button variant="ghost" size="icon" onClick={() => setIsEditOpen(true)}>
+            <Edit className="h-4 w-4" />
+        </Button>
+        <AlertDialog open={isAlertOpen} onOpenChange={setIsAlertOpen}>
+            <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" disabled={isProcessing}>
+                {isProcessing ? <Loader2 className="h-4 w-4 animate-spin" /> : <MoreVertical className="h-4 w-4" />}
+                </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+                <DropdownMenuItem onSelect={() => openConfirmation('confirm')} disabled={staffMember.status === 'confirmed'}>
+                <CheckCircle className="mr-2 h-4 w-4" /> Confirm
+                </DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => openConfirmation('unconfirm')} disabled={staffMember.status !== 'confirmed'}>
+                <XCircle className="mr-2 h-4 w-4" /> Un-confirm
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                className="text-destructive"
+                onSelect={() => openConfirmation('delete')}
+                >
+                <Trash2 className="mr-2 h-4 w-4" /> Delete
+                </DropdownMenuItem>
+            </DropdownMenuContent>
+            </DropdownMenu>
+            <AlertDialogContent>
+            <AlertDialogHeader>
+                <AlertDialogTitle>{getAlertStrings().title}</AlertDialogTitle>
+                <AlertDialogDescription>{getAlertStrings().description}</AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={handleAction} variant={actionToConfirm === 'delete' ? 'destructive' : 'default'}>
+                Yes, proceed
+                </AlertDialogAction>
+            </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
+      </div>
     </>
   );
 }
