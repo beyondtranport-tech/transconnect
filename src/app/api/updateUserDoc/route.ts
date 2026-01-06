@@ -66,6 +66,7 @@ export async function POST(req: NextRequest) {
     const adminAuth = getAuth(app);
     const decodedToken = await adminAuth.verifyIdToken(idToken);
     const uid = decodedToken.uid;
+    const isAdmin = decodedToken.email === 'beyondtransport@gmail.com';
     
     const db = getFirestore(app);
     const docRef = db.doc(path);
@@ -73,22 +74,27 @@ export async function POST(req: NextRequest) {
     
     // --- Authorization Logic ---
     let isAuthorized = false;
-    // User can update their own user doc
-    if (pathSegments[0] === 'users' && pathSegments[1] === uid) {
-        isAuthorized = true;
-    }
-    // User can update documents within their own /members/{uid} subcollections
-    else if (pathSegments[0] === 'members' && pathSegments[1] === uid) {
-        isAuthorized = true;
-    }
-    // User can update their own company doc
-    else {
-        const userDoc = await db.collection('users').doc(uid).get();
-        const userCompanyId = userDoc.data()?.companyId;
 
-        // Path is /companies/{companyId} or a subcollection
-        if (userCompanyId && pathSegments[0] === 'companies' && pathSegments[1] === userCompanyId) {
+    if (isAdmin) {
+        isAuthorized = true;
+    } else {
+        // User can update their own user doc
+        if (pathSegments[0] === 'users' && pathSegments[1] === uid) {
             isAuthorized = true;
+        }
+        // User can update documents within their own /members/{uid} subcollections
+        else if (pathSegments[0] === 'members' && pathSegments[1] === uid) {
+            isAuthorized = true;
+        }
+        // User can update their own company doc
+        else {
+            const userDoc = await db.collection('users').doc(uid).get();
+            const userCompanyId = userDoc.data()?.companyId;
+
+            // Path is /companies/{companyId} or a subcollection
+            if (userCompanyId && pathSegments[0] === 'companies' && pathSegments[1] === userCompanyId) {
+                isAuthorized = true;
+            }
         }
     }
 
