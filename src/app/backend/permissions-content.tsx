@@ -250,7 +250,22 @@ export default function PermissionsContent() {
         {
           accessorKey: 'companyName',
           header: 'Company',
-          cell: ({ row }) => <div>{row.original.companyName}</div>,
+           cell: ({ row }) => <div>{row.original.companyName}</div>,
+        },
+        {
+          accessorKey: 'title',
+          header: 'Title',
+          cell: ({ row }) => <div>{row.original.title}</div>,
+        },
+        {
+          accessorKey: 'role',
+          header: 'Role',
+          cell: ({ row }) => <Badge variant="outline" className="capitalize">{row.original.role}</Badge>,
+        },
+        {
+          accessorKey: 'function',
+          header: 'Function',
+          cell: ({ row }) => <Badge variant="secondary" className="capitalize">{row.original.function}</Badge>,
         },
         {
           accessorKey: 'permissions',
