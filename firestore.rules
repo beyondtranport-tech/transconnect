@@ -94,5 +94,15 @@ service cloud.firestore {
     match /platformTransactions/{transactionId} {
         allow read, write: if isAdmin();
     }
+    
+    // Admin-only collection for audit trails.
+    match /auditLogs/{logId} {
+        allow read, write: if isAdmin();
+    }
+
+    // Admin-only collection for managing platform permissions.
+    match /permissions/{path=**} {
+        allow read, write: if isAdmin();
+    }
   }
 }
