@@ -27,6 +27,7 @@ import { Loader2, Save } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { getClientSideAuthToken } from '@/firebase';
+import { usePermissions } from '@/hooks/use-permissions';
 
 const staffFormSchema = z.object({
   firstName: z.string().min(1, 'First name is required'),
@@ -50,6 +51,7 @@ interface EditStaffDialogProps {
 export function EditStaffDialog({ isOpen, setIsOpen, staffMember, onUpdate }: EditStaffDialogProps) {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  const { can, isLoading: permissionsLoading } = usePermissions();
 
   const form = useForm<StaffFormValues>({
     resolver: zodResolver(staffFormSchema),
@@ -57,7 +59,7 @@ export function EditStaffDialog({ isOpen, setIsOpen, staffMember, onUpdate }: Ed
   });
   
   useEffect(() => {
-    if (staffMember) {
+    if (staffMember && isOpen) {
         form.reset(staffMember);
     }
   }, [staffMember, form, isOpen]);
@@ -103,6 +105,8 @@ export function EditStaffDialog({ isOpen, setIsOpen, staffMember, onUpdate }: Ed
       setIsLoading(false);
     }
   };
+  
+  const canEditStaff = can('edit', 'staff');
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -115,125 +119,127 @@ export function EditStaffDialog({ isOpen, setIsOpen, staffMember, onUpdate }: Ed
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <FormField
+            <fieldset disabled={!canEditStaff || permissionsLoading} className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <FormField
+                    control={form.control}
+                    name="firstName"
+                    render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>First Name</FormLabel>
+                        <FormControl><Input {...field} /></FormControl>
+                        <FormMessage />
+                    </FormItem>
+                    )}
+                />
+                <FormField
+                    control={form.control}
+                    name="lastName"
+                    render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Last Name</FormLabel>
+                        <FormControl><Input {...field} /></FormControl>
+                        <FormMessage />
+                    </FormItem>
+                    )}
+                />
+                </div>
+                <FormField
                 control={form.control}
-                name="firstName"
+                name="email"
                 render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>First Name</FormLabel>
-                    <FormControl><Input {...field} /></FormControl>
+                    <FormItem>
+                    <FormLabel>Email (Cannot be changed)</FormLabel>
+                    <FormControl><Input {...field} disabled /></FormControl>
                     <FormMessage />
-                  </FormItem>
+                    </FormItem>
                 )}
-              />
-              <FormField
+                />
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <FormField
+                    control={form.control}
+                    name="title"
+                    render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Title</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                            <SelectTrigger><SelectValue placeholder="Select a title" /></SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                            <SelectItem value="Executive Director">Executive Director</SelectItem>
+                            <SelectItem value="Non-Executive Director">Non-Executive Director</SelectItem>
+                            <SelectItem value="Manager">Manager</SelectItem>
+                            <SelectItem value="Admin">Admin</SelectItem>
+                        </SelectContent>
+                        </Select>
+                        <FormMessage />
+                    </FormItem>
+                    )}
+                />
+                <FormField
+                    control={form.control}
+                    name="role"
+                    render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Role</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                            <SelectTrigger><SelectValue placeholder="Select a role" /></SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                            <SelectItem value="operations">Operations</SelectItem>
+                            <SelectItem value="marketing">Marketing</SelectItem>
+                            <SelectItem value="IT">IT</SelectItem>
+                            <SelectItem value="logistics">Logistics</SelectItem>
+                            <SelectItem value="store">Store</SelectItem>
+                            <SelectItem value="sales">Sales</SelectItem>
+                        </SelectContent>
+                        </Select>
+                        <FormMessage />
+                    </FormItem>
+                    )}
+                />
+                <FormField
+                    control={form.control}
+                    name="function"
+                    render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Function</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                            <SelectTrigger><SelectValue placeholder="Select a function" /></SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                            <SelectItem value="Set Policy">Set Policy</SelectItem>
+                            <SelectItem value="Manage Staff">Manage Staff</SelectItem>
+                            <SelectItem value="Set Budgets">Set Budgets</SelectItem>
+                            <SelectItem value="Ensure Implementation">Ensure Implementation</SelectItem>
+                            <SelectItem value="Monitor Deliverables">Monitor Deliverables</SelectItem>
+                            <SelectItem value="Ensure Compliance">Ensure Compliance</SelectItem>
+                        </SelectContent>
+                        </Select>
+                        <FormMessage />
+                    </FormItem>
+                    )}
+                />
+                </div>
+                <FormField
                 control={form.control}
-                name="lastName"
+                name="jobDescription"
                 render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Last Name</FormLabel>
-                    <FormControl><Input {...field} /></FormControl>
+                    <FormItem>
+                    <FormLabel>Job Description (Optional)</FormLabel>
+                    <FormControl>
+                        <Textarea placeholder="Describe responsibilities..." {...field} />
+                    </FormControl>
                     <FormMessage />
-                  </FormItem>
+                    </FormItem>
                 )}
-              />
-            </div>
-            <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Email (Cannot be changed)</FormLabel>
-                  <FormControl><Input {...field} disabled /></FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <FormField
-                control={form.control}
-                name="title"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Title</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger><SelectValue placeholder="Select a title" /></SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="Executive Director">Executive Director</SelectItem>
-                        <SelectItem value="Non-Executive Director">Non-Executive Director</SelectItem>
-                        <SelectItem value="Manager">Manager</SelectItem>
-                        <SelectItem value="Admin">Admin</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="role"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Role</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger><SelectValue placeholder="Select a role" /></SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="operations">Operations</SelectItem>
-                        <SelectItem value="marketing">Marketing</SelectItem>
-                        <SelectItem value="IT">IT</SelectItem>
-                        <SelectItem value="logistics">Logistics</SelectItem>
-                        <SelectItem value="store">Store</SelectItem>
-                        <SelectItem value="sales">Sales</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="function"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Function</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger><SelectValue placeholder="Select a function" /></SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="Set Policy">Set Policy</SelectItem>
-                        <SelectItem value="Manage Staff">Manage Staff</SelectItem>
-                        <SelectItem value="Set Budgets">Set Budgets</SelectItem>
-                        <SelectItem value="Ensure Implementation">Ensure Implementation</SelectItem>
-                        <SelectItem value="Monitor Deliverables">Monitor Deliverables</SelectItem>
-                        <SelectItem value="Ensure Compliance">Ensure Compliance</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-            <FormField
-              control={form.control}
-              name="jobDescription"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Job Description (Optional)</FormLabel>
-                  <FormControl>
-                    <Textarea placeholder="Describe responsibilities..." {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                />
+            </fieldset>
             <DialogFooter>
-              <Button type="submit" disabled={isLoading}>
+              <Button type="submit" disabled={isLoading || !canEditStaff || permissionsLoading}>
                 {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                 Save Changes
               </Button>

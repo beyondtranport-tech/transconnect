@@ -22,15 +22,17 @@ import { Button } from '@/components/ui/button';
 import { Loader2, MoreVertical, CheckCircle, XCircle, Trash2, Edit } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken } from '@/firebase';
+import { usePermissions } from '@/hooks/use-permissions';
 
 export default function StaffActionMenu({ staffMember, onUpdate, onEdit }: { staffMember: any; onUpdate: () => void, onEdit: () => void }) {
   const [isProcessing, setIsProcessing] = useState(false);
   const [isAlertOpen, setIsAlertOpen] = useState(false);
-  const [actionToConfirm, setActionToConfirm] = useState<'delete' | null>(null);
+  const [actionToConfirm, setActionToConfirm] = useState<'delete' | 'confirm' | 'unconfirm' | null>(null);
   const { toast } = useToast();
+  const { can, isLoading: permissionsLoading } = usePermissions();
 
-  const handleDelete = async () => {
-    if (!staffMember) return;
+  const handleAction = async () => {
+    if (!actionToConfirm || !staffMember) return;
 
     setIsProcessing(true);
     setIsAlertOpen(false);
@@ -39,18 +41,35 @@ export default function StaffActionMenu({ staffMember, onUpdate, onEdit }: { sta
       const token = await getClientSideAuthToken();
       if (!token) throw new Error('Authentication failed.');
 
-      const response = await fetch('/api/deleteUserDoc', {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ path: `companies/${staffMember.companyId}/staff/${staffMember.id}` }),
-      });
+      let response;
+      let successMessage = '';
 
+      if (actionToConfirm === 'delete') {
+        response = await fetch('/api/deleteUserDoc', {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ path: `companies/${staffMember.companyId}/staff/${staffMember.id}` }),
+        });
+        successMessage = 'Staff member has been deleted.';
+      } else {
+         response = await fetch('/api/updateStaffStatus', {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                companyId: staffMember.companyId,
+                staffId: staffMember.id,
+                status: actionToConfirm
+            }),
+        });
+        successMessage = `Staff member status updated to ${actionToConfirm}.`;
+      }
+      
       const result = await response.json();
       if (!response.ok || (result.success !== undefined && !result.success)) {
         throw new Error(result.error || 'Action failed.');
       }
 
-      toast({ title: 'Success', description: 'Staff member has been deleted.' });
+      toast({ title: 'Success', description: successMessage });
       onUpdate();
 
     } catch (e: any) {
@@ -61,7 +80,7 @@ export default function StaffActionMenu({ staffMember, onUpdate, onEdit }: { sta
     }
   };
 
-  const openConfirmation = (action: 'delete') => {
+  const openConfirmation = (action: 'delete' | 'confirm' | 'unconfirm') => {
     setActionToConfirm(action);
     setIsAlertOpen(true);
   };
@@ -69,24 +88,36 @@ export default function StaffActionMenu({ staffMember, onUpdate, onEdit }: { sta
   const getAlertStrings = () => {
     switch (actionToConfirm) {
       case 'delete': return { title: "Delete Staff Member?", description: "This will permanently delete this staff member's record. This action cannot be undone." };
+      case 'confirm': return { title: "Confirm Staff Member?", description: "This will set the staff member's status to 'confirmed'." };
+      case 'unconfirm': return { title: "Un-confirm Staff Member?", description: "This will set the staff member's status to 'unconfirmed'." };
       default: return { title: "Are you sure?", description: "This action cannot be undone." };
     }
   };
 
+  const canEditStaff = can('edit', 'staff');
+  const canDeleteStaff = can('delete', 'staff');
+
   return (
     <div className="flex items-center justify-end gap-2">
-      <Button variant="ghost" size="icon" onClick={onEdit}>
+      <Button variant="ghost" size="icon" onClick={onEdit} disabled={!canEditStaff || permissionsLoading}>
           <Edit className="h-4 w-4" />
       </Button>
       <AlertDialog open={isAlertOpen} onOpenChange={setIsAlertOpen}>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" disabled={isProcessing}>
+            <Button variant="ghost" size="icon" disabled={isProcessing || permissionsLoading}>
               {isProcessing ? <Loader2 className="h-4 w-4 animate-spin" /> : <MoreVertical className="h-4 w-4" />}
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem className="text-destructive" onSelect={() => openConfirmation('delete')}>
+            <DropdownMenuItem onSelect={() => openConfirmation('confirm')} disabled={!canEditStaff || staffMember.status === 'confirmed'}>
+              <CheckCircle className="mr-2 h-4 w-4" /> Confirm
+            </DropdownMenuItem>
+             <DropdownMenuItem onSelect={() => openConfirmation('unconfirm')} disabled={!canEditStaff || staffMember.status !== 'confirmed'}>
+              <XCircle className="mr-2 h-4 w-4" /> Un-confirm
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem className="text-destructive" onSelect={() => openConfirmation('delete')} disabled={!canDeleteStaff}>
               <Trash2 className="mr-2 h-4 w-4" /> Delete
             </DropdownMenuItem>
           </DropdownMenuContent>
@@ -98,7 +129,7 @@ export default function StaffActionMenu({ staffMember, onUpdate, onEdit }: { sta
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} variant={actionToConfirm === 'delete' ? 'destructive' : 'default'}>
+            <AlertDialogAction onClick={handleAction} variant={actionToConfirm === 'delete' ? 'destructive' : 'default'}>
               Yes, proceed
             </AlertDialogAction>
           </AlertDialogFooter>

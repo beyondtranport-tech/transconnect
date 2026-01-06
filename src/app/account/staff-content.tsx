@@ -36,6 +36,7 @@ import { type ColumnDef } from '@/hooks/use-data-table';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { EditStaffDialog } from './EditStaffDialog';
+import { usePermissions } from '@/hooks/use-permissions';
 
 const staffFormSchema = z.object({
   firstName: z.string().min(1, 'First name is required'),
@@ -49,7 +50,7 @@ const staffFormSchema = z.object({
 
 type StaffFormValues = z.infer<typeof staffFormSchema>;
 
-function AddStaffDialog({ companyId, onStaffAdded }: { companyId: string, onStaffAdded: () => void }) {
+function AddStaffDialog({ companyId, onStaffAdded, canCreate }: { companyId: string, onStaffAdded: () => void, canCreate: boolean }) {
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
@@ -120,7 +121,7 @@ function AddStaffDialog({ companyId, onStaffAdded }: { companyId: string, onStaf
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button>
+        <Button disabled={!canCreate}>
           <PlusCircle className="mr-2 h-4 w-4" /> Add Staff
         </Button>
       </DialogTrigger>
@@ -281,6 +282,7 @@ export default function StaffContent() {
   const firestore = useFirestore();
   const [selectedStaff, setSelectedStaff] = useState<any | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const { can, isLoading: permissionsLoading } = usePermissions();
 
   const userDocRef = useMemoFirebase(() => {
     if (!firestore || !user) return null;
@@ -295,7 +297,7 @@ export default function StaffContent() {
 
   const { data: staff, isLoading: isStaffLoading, forceRefresh } = useCollection(staffCollectionRef);
 
-  const isLoading = isUserLoading || isUserDataLoading || isStaffLoading;
+  const isLoading = isUserLoading || isUserDataLoading || isStaffLoading || permissionsLoading;
 
   const handleEdit = (staffMember: any) => {
     setSelectedStaff(staffMember);
@@ -369,7 +371,7 @@ export default function StaffContent() {
                   </CardTitle>
                   <CardDescription>Add and manage your company's staff members.</CardDescription>
               </div>
-              {userData?.companyId && <AddStaffDialog companyId={userData.companyId} onStaffAdded={forceRefresh} />}
+              {userData?.companyId && <AddStaffDialog companyId={userData.companyId} onStaffAdded={forceRefresh} canCreate={can('create', 'staff')} />}
           </CardHeader>
           <CardContent>
               {isLoading ? (
