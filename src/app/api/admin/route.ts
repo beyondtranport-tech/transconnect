@@ -250,15 +250,6 @@ export async function POST(req: NextRequest) {
                 await staffRef.update({ status, updatedAt: FieldValue.serverTimestamp() });
                 return NextResponse.json({ success: true, message: "Staff status updated." });
             }
-            case 'deleteStaffMember': {
-                const { companyId, staffId } = payload;
-                if (!companyId || !staffId) {
-                    throw new Error("Missing companyId or staffId.");
-                }
-                const staffRef = db.doc(`companies/${companyId}/staff/${staffId}`);
-                await staffRef.delete();
-                return NextResponse.json({ success: true, message: "Staff member deleted." });
-            }
             case 'updateStaffMember': {
                 const { companyId, staffId, data } = payload;
                 if (!companyId || !staffId || !data) {
@@ -277,5 +268,3 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ success: false, error: error.message }, { status });
     }
 }
-
-    

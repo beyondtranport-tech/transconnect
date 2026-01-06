@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -22,27 +23,6 @@ import { Loader2, MoreVertical, CheckCircle, XCircle, Trash2 } from 'lucide-reac
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken } from '@/firebase';
 
-async function performAdminAction(action: string, payload: any) {
-    const token = await getClientSideAuthToken();
-    if (!token) throw new Error("Authentication failed.");
-    
-    const response = await fetch('/api/admin', {
-        method: 'POST',
-        headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ action, payload }),
-    });
-
-    const result = await response.json();
-    if (!response.ok || !result.success) {
-        throw new Error(result.error || `API Error for action: ${action}`);
-    }
-    return result;
-}
-
-
 export default function StaffActionMenu({ staffMember, onUpdate }: { staffMember: any; onUpdate: () => void }) {
   const [isProcessing, setIsProcessing] = useState(false);
   const [isAlertOpen, setIsAlertOpen] = useState(false);
@@ -51,9 +31,23 @@ export default function StaffActionMenu({ staffMember, onUpdate }: { staffMember
   const handleUpdateStatus = async (status: 'confirmed' | 'unconfirmed') => {
     setIsProcessing(true);
     try {
-        await performAdminAction('updateStaffStatus', { companyId: staffMember.companyId, staffId: staffMember.id, status });
-        toast({ title: 'Status Updated', description: `${staffMember.firstName}'s status is now ${status}.` });
-        onUpdate();
+      const token = await getClientSideAuthToken();
+      if (!token) throw new Error('Authentication failed.');
+
+      // Use the admin route for status updates as it's an admin-level action
+      const response = await fetch('/api/admin', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+            action: 'updateStaffStatus',
+            payload: { companyId: staffMember.companyId, staffId: staffMember.id, status }
+        }),
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || 'Failed to update status.');
+      
+      toast({ title: 'Status Updated', description: `${staffMember.firstName}'s status is now ${status}.` });
+      onUpdate();
     } catch (e: any) {
       toast({ variant: 'destructive', title: 'Update Failed', description: e.message });
     } finally {
@@ -65,15 +59,27 @@ export default function StaffActionMenu({ staffMember, onUpdate }: { staffMember
     setIsProcessing(true);
     setIsAlertOpen(false);
     try {
-        await performAdminAction('deleteStaffMember', { companyId: staffMember.companyId, staffId: staffMember.id });
-        toast({ title: 'Staff Member Deleted' });
-        onUpdate();
+      const token = await getClientSideAuthToken();
+      if (!token) throw new Error('Authentication failed.');
+
+      // Use the specific, more secure delete route
+      const response = await fetch('/api/deleteStaffMember', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ companyId: staffMember.companyId, staffId: staffMember.id }),
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || 'Failed to delete staff member.');
+
+      toast({ title: 'Staff Member Deleted' });
+      onUpdate();
     } catch (e: any) {
       toast({ variant: 'destructive', title: 'Deletion Failed', description: e.message });
     } finally {
       setIsProcessing(false);
     }
   };
+
 
   return (
     <div className="text-right">
@@ -97,6 +103,7 @@ export default function StaffActionMenu({ staffMember, onUpdate }: { staffMember
             <DropdownMenuItem
               className="text-destructive"
               onSelect={(e) => { e.preventDefault(); setIsAlertOpen(true); }}
+              disabled={staffMember.status === 'confirmed'}
             >
               <Trash2 className="mr-2 h-4 w-4" /> Delete
             </DropdownMenuItem>
@@ -111,7 +118,7 @@ export default function StaffActionMenu({ staffMember, onUpdate }: { staffMember
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} variant="destructive" disabled={staffMember.status === 'confirmed'}>
+            <AlertDialogAction onClick={handleDelete} variant="destructive">
               Yes, delete
             </AlertDialogAction>
           </AlertDialogFooter>
