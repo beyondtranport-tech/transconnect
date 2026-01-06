@@ -58,10 +58,10 @@ export function EditStaffDialog({ isOpen, setIsOpen, staffMember, onUpdate }: Ed
   
   // This effect correctly resets the form ONLY when the dialog is opened or the specific staff member changes.
   useEffect(() => {
-    if (staffMember) {
+    if (staffMember && isOpen) {
         form.reset(staffMember);
     }
-  }, [staffMember, form]);
+  }, [staffMember, isOpen, form]);
 
   const onSubmit = async (values: StaffFormValues) => {
     setIsLoading(true);
@@ -77,7 +77,7 @@ export function EditStaffDialog({ isOpen, setIsOpen, staffMember, onUpdate }: Ed
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          path: `members/${staffMember.companyId}/staff/${staffMember.id}`,
+          path: `companies/${staffMember.companyId}/staff/${staffMember.id}`,
           data: { ...values, updatedAt: { _methodName: 'serverTimestamp' } }
         }),
       });

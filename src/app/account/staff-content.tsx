@@ -25,7 +25,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { useUser, useFirestore, useMemoFirebase, getClientSideAuthToken } from '@/firebase';
+import { useUser, useFirestore, useMemoFirebase, getClientSideAuthToken, useDoc } from '@/firebase';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { collection, doc } from 'firebase/firestore';
 import { Loader2, PlusCircle, UserPlus, Users } from 'lucide-react';
@@ -49,8 +49,7 @@ const staffFormSchema = z.object({
 
 type StaffFormValues = z.infer<typeof staffFormSchema>;
 
-function AddStaffDialog({ onStaffAdded }: { onStaffAdded: () => void }) {
-  const { user } = useUser();
+function AddStaffDialog({ companyId, onStaffAdded }: { companyId: string, onStaffAdded: () => void }) {
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
@@ -69,7 +68,6 @@ function AddStaffDialog({ onStaffAdded }: { onStaffAdded: () => void }) {
   });
 
   const onSubmit = async (values: StaffFormValues) => {
-    if (!user) return;
     setIsLoading(true);
     
     try {
@@ -78,7 +76,7 @@ function AddStaffDialog({ onStaffAdded }: { onStaffAdded: () => void }) {
       
       const staffData = {
         ...values,
-        companyId: user.uid, 
+        companyId: companyId, 
         status: 'unconfirmed',
         createdAt: { _methodName: 'serverTimestamp' },
       };
@@ -90,7 +88,7 @@ function AddStaffDialog({ onStaffAdded }: { onStaffAdded: () => void }) {
             'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-            collectionPath: `members/${user.uid}/staff`, 
+            collectionPath: `companies/${companyId}/staff`, 
             data: staffData
         }),
       });
@@ -284,15 +282,20 @@ export default function StaffContent() {
   const [selectedStaff, setSelectedStaff] = useState<any | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
+  const userDocRef = useMemoFirebase(() => {
+    if (!firestore || !user) return null;
+    return doc(firestore, 'users', user.uid);
+  }, [firestore, user]);
+  const { data: userData, isLoading: isUserDataLoading } = useDoc<{ companyId: string }>(userDocRef);
 
   const staffCollectionRef = useMemoFirebase(() => {
-    if (!firestore || !user) return null;
-    return collection(firestore, `members/${user.uid}/staff`);
-  }, [firestore, user]);
+    if (!firestore || !userData?.companyId) return null;
+    return collection(firestore, `companies/${userData.companyId}/staff`);
+  }, [firestore, userData?.companyId]);
 
   const { data: staff, isLoading: isStaffLoading, forceRefresh } = useCollection(staffCollectionRef);
 
-  const isLoading = isUserLoading || isStaffLoading;
+  const isLoading = isUserLoading || isUserDataLoading || isStaffLoading;
 
   const handleEdit = (staffMember: any) => {
     setSelectedStaff(staffMember);
@@ -366,7 +369,7 @@ export default function StaffContent() {
                   </CardTitle>
                   <CardDescription>Add and manage your company's staff members.</CardDescription>
               </div>
-              {user?.uid && <AddStaffDialog onStaffAdded={forceRefresh} />}
+              {userData?.companyId && <AddStaffDialog companyId={userData.companyId} onStaffAdded={forceRefresh} />}
           </CardHeader>
           <CardContent>
               {isLoading ? (
