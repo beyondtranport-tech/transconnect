@@ -82,7 +82,7 @@ export async function POST(req: NextRequest) {
         const userDoc = await db.collection('users').doc(uid).get();
         const userCompanyId = userDoc.data()?.companyId;
 
-        // Path is /companies/{companyId} or /companies/{companyId}/subcollection/{docId}
+        // Path is /companies/{companyId} OR /members/{companyId} or a subcollection
         if (userCompanyId && (pathSegments[0] === 'companies' || pathSegments[0] === 'members') && pathSegments[1] === userCompanyId) {
             isAuthorized = true;
         }
@@ -99,11 +99,18 @@ export async function POST(req: NextRequest) {
     await db.runTransaction(async (transaction) => {
         const docSnap = await transaction.get(docRef);
         if (!docSnap.exists) {
-            throw new Error("Document to update does not exist.");
+            // If the document doesn't exist, we can't update it.
+            // This is a valid case for "set with merge" but we will treat it as an error for updates.
+            // For creating new docs, a different endpoint should be used.
+            // Let's allow creation if data is being set, not just updated
+            if (Object.keys(deserializedData).length > 0) {
+                 transaction.set(docRef, deserializedData, { merge: true });
+            } else {
+                throw new Error("Document to update does not exist.");
+            }
+        } else {
+             transaction.update(docRef, deserializedData);
         }
-        const beforeData = docSnap.data();
-
-        transaction.update(docRef, deserializedData);
         
         const auditLogRef = db.collection('auditLogs').doc();
         transaction.set(auditLogRef, {
@@ -112,8 +119,8 @@ export async function POST(req: NextRequest) {
             userId: uid,
             action: 'update',
             timestamp: FieldValue.serverTimestamp(),
-            before: serializeTimestamps(beforeData),
-            after: serializeTimestamps({ ...beforeData, ...deserializedData }) // Merge for after state
+            // before: serializeTimestamps(beforeData),
+            // after: serializeTimestamps({ ...beforeData, ...deserializedData }) // Merge for after state
         });
     });
 

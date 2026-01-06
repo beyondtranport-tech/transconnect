@@ -44,18 +44,19 @@ export default function StaffActionMenu({ staffMember, onUpdate }: { staffMember
       let endpoint = '';
       let payload: any = { staffId: staffMember.id, companyId: staffMember.companyId };
       let successMessage = '';
-
-      // This logic is now incorrect, as the member-facing UI should only call member-authorized APIs
-      // It's being left here as it's part of the action menu, but the primary edit action is now handled by EditStaffDialog
+      
       if (actionToConfirm === 'delete') {
-        endpoint = '/api/deleteUserDoc'; // This is now a general purpose secure endpoint
+        endpoint = '/api/deleteUserDoc';
         payload = { path: `members/${staffMember.companyId}/staff/${staffMember.id}` };
         successMessage = 'Staff member has been deleted.';
       } else {
-        endpoint = '/api/updateStaffStatus';
+        // A user cannot confirm/unconfirm their own staff. This is an admin action.
+        // This logic is left here in case this menu is reused in an admin context, but it won't be reachable by the user.
+        endpoint = '/api/updateStaffStatus'; 
         payload.status = actionToConfirm === 'confirm' ? 'confirmed' : 'unconfirmed';
         successMessage = `${staffMember.firstName}'s status updated to ${payload.status}.`;
       }
+
 
       const response = await fetch(endpoint, {
         method: 'POST',
@@ -111,13 +112,6 @@ export default function StaffActionMenu({ staffMember, onUpdate }: { staffMember
           <DropdownMenuContent align="end">
             <DropdownMenuItem onSelect={() => setIsEditOpen(true)}>
               <Edit className="mr-2 h-4 w-4" /> Edit
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onSelect={() => openConfirmation('confirm')} disabled={staffMember.status === 'confirmed'}>
-              <CheckCircle className="mr-2 h-4 w-4" /> Confirm
-            </DropdownMenuItem>
-            <DropdownMenuItem onSelect={() => openConfirmation('unconfirm')} disabled={staffMember.status !== 'confirmed'}>
-              <XCircle className="mr-2 h-4 w-4" /> Un-confirm
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem className="text-destructive" onSelect={() => openConfirmation('delete')}>
