@@ -1,21 +1,24 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
-import { Loader2, PlusCircle, Lock, Edit, Trash2, ShieldQuestion } from 'lucide-react';
+import { Loader2, Lock, Edit } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { useCollection, useFirestore, useMemoFirebase, getClientSideAuthToken } from '@/firebase';
-import { collection, query } from 'firebase/firestore';
+import { getClientSideAuthToken } from '@/firebase';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from '@/components/ui/dialog';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
+import { Form, FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from '@/components/ui/separator';
+import { Badge } from '@/components/ui/badge';
+import { DataTable } from '@/components/ui/data-table';
+import { type ColumnDef } from '@/hooks/use-data-table';
+
+// --- Helper Functions and Data ---
 
 const resources = [
     { id: 'shop', label: 'Shop Management' },
@@ -34,72 +37,101 @@ const actions = [
     { id: 'delete', label: 'Delete' },
 ] as const;
 
+async function fetchAdminData(action: string, payload?: any) {
+    const token = await getClientSideAuthToken();
+    if (!token) throw new Error("Authentication failed.");
+    
+    const response = await fetch('/api/admin', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action, payload }),
+    });
 
-const roleSchema = z.object({
-    id: z.string().min(2, 'ID must be at least 2 characters').regex(/^[a-z_]+$/, 'ID must be lowercase with underscores only'),
-    name: z.string().min(3, 'Name is required'),
-    description: z.string().optional(),
-    permissions: z.array(z.string()).min(1, 'At least one permission must be selected')
+    const result = await response.json();
+    if (!response.ok || !result.success) {
+        throw new Error(result.error || `API Error for action: ${action}`);
+    }
+    return result.data;
+}
+
+// --- Zod Schema for the Form ---
+
+const permissionsSchema = z.object({
+  // Dynamically create keys for each resource
+  ...resources.reduce((acc, resource) => {
+    acc[resource.id] = z.array(z.string()).optional();
+    return acc;
+  }, {} as Record<string, z.ZodOptional<z.ZodArray<z.ZodString, "many">>>),
 });
 
-type RoleFormValues = z.infer<typeof roleSchema>;
+type PermissionsFormValues = z.infer<typeof permissionsSchema>;
 
-function RoleDialog({ role, onSave }: { role?: RoleFormValues, onSave: () => void }) {
+// --- Components ---
+
+function PermissionsDialog({ staffMember, onSave }: { staffMember: any, onSave: () => void }) {
     const [isOpen, setIsOpen] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const { toast } = useToast();
 
-    const form = useForm<RoleFormValues>({
-        resolver: zodResolver(roleSchema),
-        defaultValues: role || { id: '', name: '', description: '', permissions: [] },
+    // Utility to parse permissions from 'resource:action' format
+    const parsePermissions = (permissions: string[] = []): PermissionsFormValues => {
+        const parsed: any = {};
+        for (const resource of resources) {
+            parsed[resource.id] = [];
+        }
+        for (const p of permissions) {
+            const [resourceId, actionId] = p.split(':');
+            if (parsed[resourceId]) {
+                parsed[resourceId].push(actionId);
+            }
+        }
+        return parsed;
+    };
+    
+    const form = useForm<PermissionsFormValues>({
+        resolver: zodResolver(permissionsSchema),
+        defaultValues: parsePermissions(staffMember.permissions),
     });
     
      useEffect(() => {
         if (isOpen) {
-            form.reset(role || { id: '', name: '', description: '', permissions: [] });
+            form.reset(parsePermissions(staffMember.permissions));
         }
-    }, [isOpen, role, form]);
+    }, [isOpen, staffMember, form]);
     
-    // Function to transform UI selections into 'resource:action' format
-    const processPermissions = (data: any) => {
+    const processPermissionsForSave = (data: PermissionsFormValues): string[] => {
         const generatedPermissions: string[] = [];
-        for (const resource of resources) {
-            if (data[resource.id]?.length > 0) {
-                for (const action of data[resource.id]) {
-                    generatedPermissions.push(`${resource.id}:${action}`);
+        for (const resourceId in data) {
+            const selectedActions = data[resourceId as keyof typeof data];
+            if (selectedActions && selectedActions.length > 0) {
+                for (const actionId of selectedActions) {
+                    generatedPermissions.push(`${resourceId}:${actionId}`);
                 }
             }
         }
         return generatedPermissions;
     };
     
-    const onSubmit = async (values: any) => {
+    const onSubmit = async (values: PermissionsFormValues) => {
         setIsLoading(true);
-        const finalPermissions = processPermissions(values);
-        
-        const roleData = {
-            id: values.id,
-            name: values.name,
-            description: values.description,
-            permissions: finalPermissions
-        };
+        const finalPermissions = processPermissionsForSave(values);
         
         try {
             const token = await getClientSideAuthToken();
             if (!token) throw new Error("Authentication failed.");
 
-            const response = await fetch('/api/updateConfigDoc', {
+            const response = await fetch('/api/updateUserDoc', {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    path: `permissions/roles/all_roles/${roleData.id}`,
-                    data: roleData
+                    path: `companies/${staffMember.companyId}/staff/${staffMember.id}`,
+                    data: { permissions: finalPermissions }
                 }),
             });
 
-            if (!response.ok) throw new Error((await response.json()).error || 'Failed to save role.');
+            if (!response.ok) throw new Error((await response.json()).error || 'Failed to save permissions.');
             
-            toast({ title: 'Role Saved!', description: `The role "${roleData.name}" has been saved.` });
+            toast({ title: 'Permissions Saved!', description: `Permissions for ${staffMember.firstName} have been updated.` });
             onSave();
             setIsOpen(false);
         } catch (e: any) {
@@ -112,75 +144,51 @@ function RoleDialog({ role, onSave }: { role?: RoleFormValues, onSave: () => voi
     return (
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
             <DialogTrigger asChild>
-                 {role ? (
-                    <Button variant="ghost" size="icon"><Edit className="h-4 w-4" /></Button>
-                 ) : (
-                    <Button><PlusCircle className="mr-2 h-4 w-4" /> Add Role</Button>
-                 )}
+                 <Button variant="ghost" size="icon"><Edit className="h-4 w-4" /></Button>
             </DialogTrigger>
             <DialogContent className="max-w-2xl">
                 <DialogHeader>
-                    <DialogTitle>{role ? 'Edit' : 'Create New'} Role</DialogTitle>
+                    <DialogTitle>Edit Permissions for {staffMember.firstName} {staffMember.lastName}</DialogTitle>
                     <DialogDescription>
-                        Define a role and select the actions and resources it can access.
+                        Select the actions this staff member can perform on each resource.
                     </DialogDescription>
                 </DialogHeader>
                 <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                        <div className="grid grid-cols-2 gap-4">
-                             <FormField name="name" control={form.control} render={({ field }) => (
-                                <FormItem><FormLabel>Role Name</FormLabel><FormControl><Input placeholder="e.g., Shop Manager" {...field} /></FormControl><FormMessage /></FormItem>
-                            )} />
-                             <FormField name="id" control={form.control} render={({ field }) => (
-                                <FormItem><FormLabel>Role ID</FormLabel><FormControl><Input placeholder="e.g., shop_manager" {...field} disabled={!!role} /></FormControl><FormMessage /></FormItem>
-                            )} />
-                        </div>
-                        <FormField name="description" control={form.control} render={({ field }) => (
-                            <FormItem><FormLabel>Description (Optional)</FormLabel><FormControl><Input placeholder="Briefly describe this role's purpose" {...field} /></FormControl><FormMessage /></FormItem>
-                        )} />
-
-                        <Separator />
-
-                        <div>
-                            <h3 className="text-lg font-semibold mb-4">Permissions</h3>
-                             <div className="rounded-md border p-4">
-                                <div className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr] items-center gap-2">
-                                     <div className="font-semibold">Resource</div>
-                                     {actions.map(action => <div key={action.id} className="font-semibold text-center">{action.label}</div>)}
-                                </div>
-                                <Separator className="my-2" />
-                                {resources.map((resource) => (
-                                    <FormField
-                                        key={resource.id}
-                                        control={form.control}
-                                        name={resource.id as any}
-                                        render={({ field }) => (
-                                        <FormItem className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr] items-center gap-2 py-2 border-b last:border-b-0">
-                                            <FormLabel className="font-normal">{resource.label}</FormLabel>
-                                            {actions.map(action => (
-                                                <FormControl key={action.id} className="flex justify-center">
-                                                     <Checkbox
-                                                        value={action.id}
-                                                        checked={field.value?.includes(action.id)}
-                                                        onCheckedChange={(checked) => {
-                                                            const currentValues = field.value || [];
-                                                            return checked
-                                                            ? field.onChange([...currentValues, action.id])
-                                                            : field.onChange(currentValues.filter((value: string) => value !== action.id))
-                                                        }}
-                                                    />
-                                                </FormControl>
-                                            ))}
-                                        </FormItem>
-                                        )}
-                                    />
-                                ))}
+                         <div className="rounded-md border p-4 max-h-[50vh] overflow-y-auto">
+                            <div className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr] items-center gap-2 sticky top-0 bg-background/95 py-2">
+                                 <div className="font-semibold">Resource</div>
+                                 {actions.map(action => <div key={action.id} className="font-semibold text-center">{action.label}</div>)}
                             </div>
+                            <Separator className="my-2" />
+                            {resources.map((resource) => (
+                                <FormField
+                                    key={resource.id}
+                                    control={form.control}
+                                    name={resource.id as any}
+                                    render={({ field }) => (
+                                    <FormItem className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr] items-center gap-2 py-2 border-b last:border-b-0">
+                                        <FormLabel className="font-normal">{resource.label}</FormLabel>
+                                        {actions.map(action => (
+                                            <FormControl key={action.id} className="flex justify-center">
+                                                 <Checkbox
+                                                    checked={field.value?.includes(action.id)}
+                                                    onCheckedChange={(checked) => {
+                                                        return checked
+                                                        ? field.onChange([...(field.value || []), action.id])
+                                                        : field.onChange((field.value || []).filter((value) => value !== action.id))
+                                                    }}
+                                                />
+                                            </FormControl>
+                                        ))}
+                                    </FormItem>
+                                    )}
+                                />
+                            ))}
                         </div>
-
                         <DialogFooter>
                             <Button type="submit" disabled={isLoading}>
-                                {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : null} Save Role
+                                {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : null} Save Permissions
                             </Button>
                         </DialogFooter>
                     </form>
@@ -190,87 +198,101 @@ function RoleDialog({ role, onSave }: { role?: RoleFormValues, onSave: () => voi
     );
 }
 
-
 export default function PermissionsContent() {
-    const firestore = useFirestore();
-    const { toast } = useToast();
+    const [staff, setStaff] = useState<any[]>([]);
+    const [companies, setCompanies] = useState<any[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
-    const rolesQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'permissions/roles/all_roles')) : null, [firestore]);
-    const { data: roles, isLoading, forceRefresh } = useCollection(rolesQuery);
-
-    const handleDelete = async (roleId: string) => {
-        if (roleId === 'admin') {
-            toast({ variant: 'destructive', title: 'Action Denied', description: 'The default admin role cannot be deleted.'});
-            return;
-        }
+    const fetchData = useCallback(async () => {
+        setIsLoading(true);
+        setError(null);
         try {
-             const token = await getClientSideAuthToken();
-            if (!token) throw new Error("Authentication failed.");
-
-            await fetch('/api/deleteConfigDoc', {
-                method: 'POST',
-                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ path: `permissions/roles/all_roles/${roleId}` }),
-            });
-            toast({ title: "Role Deleted" });
-            forceRefresh();
-        } catch(e: any) {
-            toast({ variant: 'destructive', title: 'Deletion Failed', description: e.message });
+            const [staffData, companiesData] = await Promise.all([
+                fetchAdminData('getStaff'),
+                fetchAdminData('getMembers') // getMembers fetches company data
+            ]);
+            setStaff(staffData || []);
+            setCompanies(companiesData || []);
+        } catch (e: any) {
+            setError(e.message);
+        } finally {
+            setIsLoading(false);
         }
-    };
+    }, []);
+
+    useEffect(() => {
+        fetchData();
+    }, [fetchData]);
+
+    const enrichedStaff = useMemo(() => {
+        if (!staff || !companies) return [];
+        const companyMap = new Map(companies.map(c => [c.id, c.companyName]));
+        return staff.map(s => ({
+            ...s,
+            companyName: companyMap.get(s.companyId) || 'Unknown Company'
+        }));
+    }, [staff, companies]);
+
+
+    const columns: ColumnDef<any>[] = useMemo(() => [
+        {
+          accessorKey: 'name',
+          header: 'Staff Member',
+          cell: ({ row }) => (
+            <div>
+              <p className="font-medium">{row.original.firstName} {row.original.lastName}</p>
+              <p className="text-xs text-muted-foreground">{row.original.email}</p>
+            </div>
+          ),
+        },
+        {
+          accessorKey: 'companyName',
+          header: 'Company',
+        },
+        {
+          accessorKey: 'permissions',
+          header: 'Permissions',
+          cell: ({ row }) => {
+            const perms = row.original.permissions;
+            return perms && perms.length > 0 
+                ? <Badge>{perms.length} assigned</Badge> 
+                : <Badge variant="secondary">None</Badge>;
+          }
+        },
+        {
+            id: 'actions',
+            header: () => <div className="text-right">Actions</div>,
+            cell: ({ row }) => (
+                <div className="text-right">
+                    <PermissionsDialog staffMember={row.original} onSave={fetchData} />
+                </div>
+            ),
+        }
+    ], [fetchData]);
 
 
     return (
         <Card>
-            <CardHeader className="flex flex-row items-start justify-between">
-                <div>
-                    <CardTitle className="flex items-center gap-2">
-                        <Lock className="h-6 w-6" />
-                        Permissions Management
-                    </CardTitle>
-                    <CardDescription>
-                        Define roles and assign permissions to control access across the platform.
-                    </CardDescription>
+            <CardHeader>
+                <div className="flex items-center gap-2">
+                    <Lock className="h-6 w-6" />
+                    <CardTitle>Staff Permissions</CardTitle>
                 </div>
-                <RoleDialog onSave={forceRefresh} />
+                <CardDescription>
+                    Select a staff member to directly manage their permissions for accessing and modifying resources.
+                </CardDescription>
             </CardHeader>
             <CardContent>
                {isLoading ? (
                     <div className="flex justify-center items-center py-20"><Loader2 className="h-10 w-10 animate-spin text-primary" /></div>
-               ) : roles && roles.length > 0 ? (
-                    <div className="border rounded-md">
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Role Name</TableHead>
-                                    <TableHead>Description</TableHead>
-                                    <TableHead className="text-center">Permissions Count</TableHead>
-                                    <TableHead className="text-right">Actions</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                             <TableBody>
-                                {roles.map(role => (
-                                    <TableRow key={role.id}>
-                                        <TableCell className="font-semibold">{role.name}</TableCell>
-                                        <TableCell>{role.description}</TableCell>
-                                        <TableCell className="text-center">{role.permissions?.length || 0}</TableCell>
-                                        <TableCell className="text-right space-x-1">
-                                            <RoleDialog role={role} onSave={forceRefresh} />
-                                            <Button variant="ghost" size="icon" onClick={() => handleDelete(role.id)} disabled={role.id === 'admin'}>
-                                                <Trash2 className="h-4 w-4 text-destructive" />
-                                            </Button>
-                                        </TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
+               ) : error ? (
+                    <div className="text-destructive-foreground bg-destructive/90 p-4 rounded-md">
+                        <h4 className="font-semibold">Error</h4>
+                        <p className="text-sm">{error}</p>
                     </div>
                ) : (
-                    <div className="text-center py-20 border-2 border-dashed rounded-lg">
-                        <ShieldQuestion className="mx-auto h-12 w-12 text-muted-foreground" />
-                        <h3 className="mt-4 text-xl font-semibold">No Roles Defined</h3>
-                        <p className="mt-2 text-muted-foreground">Click "Add Role" to create your first permission role.</p>
-                    </div>
+                    <DataTable columns={columns} data={enrichedStaff} />
                )}
             </CardContent>
         </Card>

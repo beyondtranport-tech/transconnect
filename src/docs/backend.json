@@ -116,6 +116,7 @@
         "jobDescription": { "type": "string", "description": "A brief description of the staff member's responsibilities." },
         "companyId": { "type": "string", "description": "The ID of the parent company this staff member belongs to." },
         "status": { "type": "string", "enum": ["confirmed", "unconfirmed"], "description": "The confirmation status of the staff member." },
+        "permissions": { "type": "array", "items": { "type": "string"}, "description": "List of resource:action permissions assigned directly to this staff member." },
         "createdAt": { "type": "object" }
       },
       "required": ["firstName", "lastName", "email", "title", "role", "companyId"]
