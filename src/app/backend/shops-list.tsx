@@ -99,8 +99,7 @@ export default function ShopsList() {
         try {
             const result = await fetchFromAdminAPI('getShops');
             if (result.data) {
-                 const sortedShops = result.data.sort((a: Shop, b: Shop) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-                 setShops(sortedShops);
+                 setShops(result.data);
             }
         } catch (e: any) {
             setError(e.message || 'Failed to fetch shops.');
