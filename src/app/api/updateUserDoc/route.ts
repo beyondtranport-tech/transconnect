@@ -1,10 +1,12 @@
 
+
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import { NextRequest, NextResponse } from 'next/server';
 import { headers } from 'next/headers';
 import { getAuth } from 'firebase-admin/auth';
 import { getAdminApp } from '@/lib/firebase-admin';
 
+// Helper function to deserialize special server values
 function deserializeData(data: any): any {
     if (!data) return data;
     const newData: { [key: string]: any } = {};
@@ -19,6 +21,25 @@ function deserializeData(data: any): any {
         }
     }
     return newData;
+}
+
+// Helper to convert Firestore Timestamps to JSON-serializable strings for logging
+function serializeTimestamps(docData: any): any {
+    if (!docData) return docData;
+    const newDocData: { [key: string]: any } = {};
+    for (const key in docData) {
+        const value = docData[key];
+        if (value instanceof FieldValue) {
+            newDocData[key] = { _type: 'FieldValue', _methodName: (value as any)._methodName };
+        } else if (value && typeof value.toDate === 'function') { // Check for Timestamp
+            newDocData[key] = value.toDate().toISOString();
+        } else if (value && typeof value === 'object' && !Array.isArray(value)) {
+            newDocData[key] = serializeTimestamps(value);
+        } else {
+            newDocData[key] = value;
+        }
+    }
+    return newDocData;
 }
 
 
@@ -47,29 +68,17 @@ export async function POST(req: NextRequest) {
     const uid = decodedToken.uid;
     
     const db = getFirestore(app);
-    const pathSegments = path.split('/');
     const docRef = db.doc(path);
+    const pathSegments = path.split('/');
     
+    // --- Authorization Logic ---
     let isAuthorized = false;
-
-    // A user can update their own user document
     if (pathSegments[0] === 'users' && pathSegments[1] === uid) {
         isAuthorized = true;
-    }
-    // A user can update their own company document
-    else if (pathSegments[0] === 'companies' && pathSegments.length === 2) {
-        const companySnap = await docRef.get();
-        if (companySnap.exists && companySnap.data()?.ownerId === uid) {
-            isAuthorized = true;
-        }
-    }
-    // A user can update documents in their own company's subcollections (e.g., shops)
-    else if (pathSegments[0] === 'companies' && pathSegments.length > 2) {
-        const companyId = pathSegments[1];
-        // Ensure the companyId from the path matches the user's companyId
+    } else if (pathSegments[0] === 'companies') {
+        const companyIdFromPath = pathSegments[1];
         const userDoc = await db.collection('users').doc(uid).get();
-        const userCompanyId = userDoc.data()?.companyId;
-        if(userCompanyId === companyId) {
+        if (userDoc.data()?.companyId === companyIdFromPath) {
             isAuthorized = true;
         }
     }
@@ -77,11 +86,33 @@ export async function POST(req: NextRequest) {
     if (!isAuthorized) {
         return NextResponse.json({ success: false, error: 'Forbidden: You do not have permission to modify this resource.' }, { status: 403 });
     }
+    // --- End Authorization ---
 
     const deserializedData = deserializeData(data);
-    await docRef.update(deserializedData);
 
-    return NextResponse.json({ success: true, message: 'Document updated successfully.' });
+    // Use a transaction to update the document and create an audit log entry atomically
+    await db.runTransaction(async (transaction) => {
+        const docSnap = await transaction.get(docRef);
+        if (!docSnap.exists) {
+            throw new Error("Document to update does not exist.");
+        }
+        const beforeData = docSnap.data();
+
+        transaction.update(docRef, deserializedData);
+        
+        const auditLogRef = db.collection('auditLogs').doc();
+        transaction.set(auditLogRef, {
+            collectionPath: pathSegments.slice(0, -1).join('/'),
+            documentId: pathSegments[pathSegments.length - 1],
+            userId: uid,
+            action: 'update',
+            timestamp: FieldValue.serverTimestamp(),
+            before: serializeTimestamps(beforeData),
+            after: serializeTimestamps({ ...beforeData, ...deserializedData }) // Merge for after state
+        });
+    });
+
+    return NextResponse.json({ success: true, message: 'Document updated and audited successfully.' });
 
   } catch (error: any) {
     console.error(`Error in updateUserDoc:`, error);
@@ -91,3 +122,5 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: false, error: `Internal Server Error: ${error.message}` }, { status: 500 });
   }
 }
+
+    

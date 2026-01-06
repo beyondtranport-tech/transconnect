@@ -254,18 +254,18 @@
         "$schema": "http://json-schema.org/draft-07/schema#",
         "title": "Audit Log",
         "type": "object",
-        "description": "Records a change made to a Firestore document by an admin.",
+        "description": "Records a change made to a Firestore document by an authenticated user or admin.",
         "properties": {
             "id": { "type": "string" },
             "collectionPath": { "type": "string" },
             "documentId": { "type": "string" },
-            "adminId": { "type": "string", "description": "UID of the admin who performed the action." },
+            "userId": { "type": "string", "description": "UID of the user who performed the action." },
             "action": { "type": "string", "enum": ["create", "update", "delete"] },
             "timestamp": { "type": "object" },
             "before": { "type": "object", "description": "State of the document before the change." },
             "after": { "type": "object", "description": "State of the document after the change." }
         },
-        "required": ["collectionPath", "documentId", "adminId", "action", "timestamp"]
+        "required": ["collectionPath", "documentId", "userId", "action", "timestamp"]
     }
   },
   "auth": {

@@ -190,7 +190,7 @@ export async function POST(req: NextRequest) {
                     throw new Error("Missing companyId or status.");
                 }
 
-                return await db.runTransaction(async (transaction) => {
+                await db.runTransaction(async (transaction) => {
                     const companyRef = db.doc(`companies/${companyId}`);
                     const companySnap = await transaction.get(companyRef);
                     if (!companySnap.exists) {
@@ -205,21 +205,20 @@ export async function POST(req: NextRequest) {
                     transaction.set(auditLogRef, {
                         collectionPath: 'companies',
                         documentId: companyId,
-                        adminId: adminUid,
+                        userId: adminUid, // Use generic userId
                         action: 'update',
                         timestamp: FieldValue.serverTimestamp(),
                         before: serializeTimestamps(beforeData),
                         after: serializeTimestamps({ ...beforeData, ...updatedData }),
                     });
-                    
-                    return NextResponse.json({ success: true, message: "Member status updated and audited." });
                 });
+                return NextResponse.json({ success: true, message: "Member status updated and audited." });
             }
             case 'deleteMember': {
                 const { companyId } = payload;
                 if (!companyId) throw new Error("Missing companyId.");
 
-                return await db.runTransaction(async (transaction) => {
+                await db.runTransaction(async (transaction) => {
                     const companyRef = db.doc(`companies/${companyId}`);
                     const companySnap = await transaction.get(companyRef);
                     if (!companySnap.exists) {
@@ -233,15 +232,14 @@ export async function POST(req: NextRequest) {
                     transaction.set(auditLogRef, {
                         collectionPath: 'companies',
                         documentId: companyId,
-                        adminId: adminUid,
+                        userId: adminUid, // Use generic userId
                         action: 'delete',
                         timestamp: FieldValue.serverTimestamp(),
                         before: serializeTimestamps(beforeData),
                         after: null,
                     });
-                    
-                    return NextResponse.json({ success: true, message: "Member deleted and action audited." });
                 });
+                return NextResponse.json({ success: true, message: "Member deleted and action audited." });
             }
             case 'updateStaffStatus': {
                 const { companyId, staffId, status } = payload;

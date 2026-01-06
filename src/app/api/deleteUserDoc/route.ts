@@ -1,9 +1,30 @@
 
-import { getFirestore } from 'firebase-admin/firestore';
+
+import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import { NextRequest, NextResponse } from 'next/server';
 import { headers } from 'next/headers';
 import { getAuth } from 'firebase-admin/auth';
 import { getAdminApp } from '@/lib/firebase-admin';
+
+// Helper to convert Firestore Timestamps to JSON-serializable strings
+function serializeTimestamps(docData: any): any {
+    if (!docData) return docData;
+    const newDocData: { [key: string]: any } = {};
+    for (const key in docData) {
+        const value = docData[key];
+        if (value instanceof FieldValue) {
+            // Cannot serialize FieldValue, so we represent it as a placeholder
+            newDocData[key] = { _type: 'FieldValue', _methodName: (value as any)._methodName };
+        } else if (value && typeof value.toDate === 'function') { // Check for Timestamp
+            newDocData[key] = value.toDate().toISOString();
+        } else if (value && typeof value === 'object' && !Array.isArray(value)) {
+            newDocData[key] = serializeTimestamps(value);
+        } else {
+            newDocData[key] = value;
+        }
+    }
+    return newDocData;
+}
 
 export async function POST(req: NextRequest) {
   const { app, error: initError } = getAdminApp();
@@ -30,32 +51,53 @@ export async function POST(req: NextRequest) {
     const uid = decodedToken.uid;
     const db = getFirestore(app);
     
+    const docRef = db.doc(path);
     const pathSegments = path.split('/');
     const isAdmin = decodedToken.email === 'beyondtransport@gmail.com';
     
     let isAuthorized = false;
 
-    // A user can delete their own user document
+    // Authorization logic
     if (pathSegments[0] === 'users' && pathSegments[1] === uid) {
         isAuthorized = true;
     }
-    
-    // A user can delete documents in their own company's subcollections
-    const userDoc = await db.collection('users').doc(uid).get();
-    const companyId = userDoc.data()?.companyId;
+    else {
+        const userDoc = await db.collection('users').doc(uid).get();
+        const companyId = userDoc.data()?.companyId;
 
-    if (companyId && pathSegments[0] === 'companies' && pathSegments[1] === companyId) {
-        isAuthorized = true;
+        if (companyId && pathSegments[0] === 'companies' && pathSegments[1] === companyId) {
+            isAuthorized = true;
+        }
     }
-
 
     if (!isAuthorized && !isAdmin) {
       return NextResponse.json({ success: false, error: 'Forbidden: You can only delete your own data.' }, { status: 403 });
     }
+    
+    // Use a transaction to delete and log atomically
+    await db.runTransaction(async (transaction) => {
+        const docSnap = await transaction.get(docRef);
+        if (!docSnap.exists) {
+            throw new Error("Document to delete does not exist.");
+        }
+        const beforeData = docSnap.data();
 
-    await db.doc(path).delete();
+        transaction.delete(docRef);
+        
+        const auditLogRef = db.collection('auditLogs').doc();
+        transaction.set(auditLogRef, {
+            collectionPath: pathSegments.slice(0, -1).join('/'),
+            documentId: pathSegments[pathSegments.length - 1],
+            userId: uid,
+            action: 'delete',
+            timestamp: FieldValue.serverTimestamp(),
+            before: serializeTimestamps(beforeData),
+            after: null
+        });
+    });
 
-    return NextResponse.json({ success: true, message: 'Document deleted successfully.' });
+
+    return NextResponse.json({ success: true, message: 'Document deleted and audited successfully.' });
 
   } catch (error: any) {
     console.error(`Error in deleteUserDoc:`, error);
@@ -65,3 +107,5 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: false, error: `Internal Server Error: ${error.message}` }, { status: 500 });
   }
 }
+
+    

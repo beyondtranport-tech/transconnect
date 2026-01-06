@@ -1,4 +1,5 @@
 
+
 import { getFirestore, FieldValue, increment } from 'firebase-admin/firestore';
 import { NextRequest, NextResponse } from 'next/server';
 import { headers } from 'next/headers';
@@ -51,7 +52,6 @@ export async function POST(req: NextRequest) {
     const db = getFirestore(app);
     
     const pathSegments = collectionPath.split('/');
-     // A user can only add to their own subcollections under 'companies'
     if (pathSegments[0] === 'companies') {
         const companyId = pathSegments[1];
         const userDocSnap = await db.collection('users').doc(uid).get();
@@ -62,21 +62,33 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ success: false, error: 'Forbidden: You can only add documents to company subcollections.' }, { status: 403 });
     }
 
-
     const batch = db.batch();
     const collectionRef = db.collection(collectionPath);
+    const newDocRef = collectionRef.doc();
     const deserializedData = deserializeData(data);
-    const newDocRef = collectionRef.doc(); // Generate ref before using it
+    const finalData = { ...deserializedData, id: newDocRef.id };
     
-    batch.set(newDocRef, deserializedData);
+    batch.set(newDocRef, finalData);
     
     // Check if a product is being added and award points if so
     if (collectionPath.endsWith('/products')) {
         const loyaltyConfigDoc = await db.collection('configuration').doc('loyaltySettings').get();
-        const productAddPoints = loyaltyConfigDoc.data()?.productAddPoints || 5; // Default to 5
+        const productAddPoints = loyaltyConfigDoc.data()?.productAddPoints || 5;
         const companyRef = db.doc(`companies/${pathSegments[1]}`);
         batch.update(companyRef, { rewardPoints: FieldValue.increment(productAddPoints) });
     }
+    
+    // Add audit log entry
+    const auditLogRef = db.collection('auditLogs').doc();
+    batch.set(auditLogRef, {
+      collectionPath,
+      documentId: newDocRef.id,
+      userId: uid,
+      action: 'create',
+      timestamp: FieldValue.serverTimestamp(),
+      before: null,
+      after: finalData
+    });
 
     await batch.commit();
 
@@ -90,3 +102,5 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: false, error: `Internal Server Error: ${error.message}` }, { status: 500 });
   }
 }
+
+    
