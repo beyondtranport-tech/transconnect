@@ -43,7 +43,7 @@ async function performStaffAction(action: string, payload: any) {
 }
 
 
-export default function StaffActionMenu({ staffMember, companyId, onUpdate }: { staffMember: any; companyId: string, onUpdate: () => void }) {
+export default function StaffActionMenu({ staffMember, onUpdate }: { staffMember: any; onUpdate: () => void }) {
   const [isProcessing, setIsProcessing] = useState(false);
   const [isAlertOpen, setIsAlertOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
@@ -58,7 +58,7 @@ export default function StaffActionMenu({ staffMember, companyId, onUpdate }: { 
 
     try {
         let apiAction: string;
-        let payload: any = { companyId: companyId, staffId: staffMember.id };
+        let payload: any = { companyId: staffMember.companyId, staffId: staffMember.id };
         let successMessage = '';
 
         if (actionToConfirm === 'delete') {

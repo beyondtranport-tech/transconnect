@@ -74,9 +74,14 @@ export async function POST(req: NextRequest) {
              case 'getStaff': {
                 const staffSnap = await db.collectionGroup('staff').get();
                 const data = staffSnap.docs.map(doc => {
+                    const docPath = doc.ref.path;
+                    const pathSegments = docPath.split('/');
+                    // companies/{companyId}/staff/{staffId} -> companyId is at index 1
+                    const companyId = pathSegments.length > 1 ? pathSegments[1] : null;
                     return {
                         ...serializeTimestamps(doc.data()),
                         id: doc.id,
+                        companyId: companyId,
                     };
                 });
                 return NextResponse.json({ success: true, data: data });
