@@ -76,14 +76,18 @@ export async function POST(req: NextRequest) {
     // User can update their own user doc
     if (pathSegments[0] === 'users' && pathSegments[1] === uid) {
         isAuthorized = true;
-    } 
-    // User can update their own company doc or its subcollections
+    }
+    // User can update documents within their own /members/{uid} subcollections
+    else if (pathSegments[0] === 'members' && pathSegments[1] === uid) {
+        isAuthorized = true;
+    }
+    // User can update their own company doc
     else {
         const userDoc = await db.collection('users').doc(uid).get();
         const userCompanyId = userDoc.data()?.companyId;
 
-        // Path is /companies/{companyId} OR /members/{companyId} or a subcollection
-        if (userCompanyId && (pathSegments[0] === 'companies' || pathSegments[0] === 'members') && pathSegments[1] === userCompanyId) {
+        // Path is /companies/{companyId} or a subcollection
+        if (userCompanyId && pathSegments[0] === 'companies' && pathSegments[1] === userCompanyId) {
             isAuthorized = true;
         }
     }
