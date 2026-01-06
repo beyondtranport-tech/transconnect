@@ -77,7 +77,7 @@ export async function POST(req: NextRequest) {
                 const data = staffSnap.docs.map(doc => {
                     const pathSegments = doc.ref.path.split('/');
                     const companyIdIndex = pathSegments.indexOf('companies');
-                    const companyId = companyIdIndex !== -1 ? pathSegments[companyIdIndex + 1] : null;
+                    const companyId = companyIdIndex !== -1 && companyIdIndex < pathSegments.length - 1 ? pathSegments[companyIdIndex + 1] : null;
                     return {
                         ...serializeTimestamps(doc.data()),
                         id: doc.id,
@@ -292,3 +292,5 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ success: false, error: error.message }, { status });
     }
 }
+
+    
