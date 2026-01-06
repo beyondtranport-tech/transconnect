@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
@@ -9,7 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from '@/components/ui/button';
 import { Loader2, Lock, Edit } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { getClientSideAuthToken, useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { getClientSideAuthToken } from '@/firebase';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form';
@@ -18,9 +19,30 @@ import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
-import { collection, query, collectionGroup } from 'firebase/firestore';
+
 
 // --- Helper Functions and Data ---
+
+async function fetchAdminData(action: string) {
+    const token = await getClientSideAuthToken();
+    if (!token) throw new Error("Authentication failed.");
+    
+    const response = await fetch('/api/admin', {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ action }),
+    });
+
+    const result = await response.json();
+    if (!response.ok || !result.success) {
+        throw new Error(result.error || `API Error for action: ${action}`);
+    }
+    return result.data;
+}
+
 
 const resources = [
     { id: 'shop', label: 'Shop Management' },
@@ -209,16 +231,31 @@ function PermissionsDialog({ staffMember, onSave }: { staffMember: any, onSave: 
 }
 
 export default function PermissionsContent() {
-    const firestore = useFirestore();
+    const [staff, setStaff] = useState<any[]>([]);
+    const [companies, setCompanies] = useState<any[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
-    const staffQuery = useMemoFirebase(() => firestore ? query(collectionGroup(firestore, 'staff')) : null, [firestore]);
-    const companiesQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'companies')) : null, [firestore]);
+    const fetchData = useCallback(async () => {
+        setIsLoading(true);
+        setError(null);
+        try {
+            const [staffData, companiesData] = await Promise.all([
+                fetchAdminData('getStaff'),
+                fetchAdminData('getMembers'),
+            ]);
+            setStaff(staffData || []);
+            setCompanies(companiesData || []);
+        } catch (e: any) {
+            setError(e.message || 'An unknown error occurred.');
+        } finally {
+            setIsLoading(false);
+        }
+    }, []);
 
-    const { data: staff, isLoading: isLoadingStaff, error: staffError, forceRefresh: refreshStaff } = useCollection(staffQuery);
-    const { data: companies, isLoading: isLoadingCompanies, error: companiesError } = useCollection(companiesQuery);
-    
-    const isLoading = isLoadingStaff || isLoadingCompanies;
-    const error = staffError || companiesError;
+    useEffect(() => {
+        fetchData();
+    }, [fetchData]);
 
     const enrichedStaff = useMemo(() => {
         if (!staff || !companies) return [];
@@ -276,11 +313,11 @@ export default function PermissionsContent() {
             header: () => <div className="text-right">Actions</div>,
             cell: ({ row }) => (
                 <div className="text-right">
-                    <PermissionsDialog staffMember={row.original} onSave={refreshStaff} />
+                    <PermissionsDialog staffMember={row.original} onSave={fetchData} />
                 </div>
             ),
         }
-    ], [refreshStaff]);
+    ], [fetchData]);
 
 
     return (
@@ -300,7 +337,7 @@ export default function PermissionsContent() {
                ) : error ? (
                     <div className="text-destructive-foreground bg-destructive/90 p-4 rounded-md">
                         <h4 className="font-semibold">Error</h4>
-                        <p className="text-sm">{error.message}</p>
+                        <p className="text-sm">{error}</p>
                     </div>
                ) : (
                     <DataTable columns={columns} data={enrichedStaff} />
