@@ -51,21 +51,10 @@ function AdminAccountPageContent() {
   const [activeView, setActiveView] = useState(initialView);
   const { user, isUserLoading } = useUser();
   const auth = useAuth();
-  const [authChecked, setAuthChecked] = useState(false);
-
+  
   useEffect(() => {
     setActiveView(initialView);
   }, [initialView]);
-
-  useEffect(() => {
-    if (!isUserLoading) {
-      if (!user || user.email !== 'beyondtransport@gmail.com') {
-        router.replace('/signin?redirect=/adminaccount');
-      } else {
-        setAuthChecked(true);
-      }
-    }
-  }, [user, isUserLoading, router]);
 
   const onLogout = async () => {
     if (!auth) return;
@@ -96,7 +85,7 @@ function AdminAccountPageContent() {
     }
   };
 
-  if (isUserLoading || !authChecked) {
+  if (isUserLoading || !user) {
     return (
       <div className="flex justify-center items-center min-h-[calc(100vh-8rem)]">
         <Loader2 className="h-16 w-16 animate-spin text-primary" />
