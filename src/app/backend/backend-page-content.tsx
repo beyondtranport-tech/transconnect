@@ -657,28 +657,30 @@ export default function BackendPageContent() {
           </SidebarGroup>
         </SidebarContent>
         <SidebarFooter>
-          <div className="flex items-center gap-3 p-2 rounded-md bg-sidebar-accent">
-            <Avatar className="h-10 w-10">
-              <AvatarFallback>{getInitials(user.displayName)}</AvatarFallback>
-            </Avatar>
-            <div className="flex flex-col">
-              <span className="text-sm font-medium text-sidebar-foreground">
-                Super Admin
-              </span>
-              <span className="text-xs text-sidebar-foreground/70">
-                beyondtransport@gmail.com
-              </span>
+          {user && (
+            <div className="flex items-center gap-3 p-2 rounded-md bg-sidebar-accent">
+              <Avatar className="h-10 w-10">
+                <AvatarFallback>{getInitials(user.displayName)}</AvatarFallback>
+              </Avatar>
+              <div className="flex flex-col truncate">
+                <span className="text-sm font-medium text-sidebar-foreground truncate">
+                  {user.displayName || 'Super Admin'}
+                </span>
+                <span className="text-xs text-sidebar-foreground/70 truncate">
+                  {user.email}
+                </span>
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="ml-auto"
+                onClick={onLogout}
+                title="Sign Out of Backend"
+              >
+                <LogOut className="h-5 w-5" />
+              </Button>
             </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="ml-auto"
-              onClick={onLogout}
-              title="Sign Out of Backend"
-            >
-              <LogOut className="h-5 w-5" />
-            </Button>
-          </div>
+          )}
         </SidebarFooter>
       </Sidebar>
       <SidebarInset>
