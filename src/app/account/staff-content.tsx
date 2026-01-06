@@ -373,7 +373,7 @@ export default function StaffContent() {
                   <CardTitle className="text-2xl font-bold flex items-center gap-2">
                       <Users /> Staff Management
                   </CardTitle>
-                  <CardDescription>Add and manage your company's staff members.</CardDescription>
+                  <CardDescription>Add, edit, and manage permissions for all staff members in your company.</CardDescription>
               </div>
               <TooltipProvider>
                 <Tooltip>
