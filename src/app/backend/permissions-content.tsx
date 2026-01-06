@@ -19,31 +19,10 @@ import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
-import { collection, query } from 'firebase/firestore';
+import { collection, query, collectionGroup } from 'firebase/firestore';
 
 
 // --- Helper Functions and Data ---
-
-async function fetchAdminData(action: string) {
-    const token = await getClientSideAuthToken();
-    if (!token) throw new Error("Authentication failed.");
-    
-    const response = await fetch('/api/admin', {
-        method: 'POST',
-        headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ action }),
-    });
-
-    const result = await response.json();
-    if (!response.ok || !result.success) {
-        throw new Error(result.error || `API Error for action: ${action}`);
-    }
-    return result.data;
-}
-
 
 const resources = [
     { id: 'shop', label: 'Shop Management' },
@@ -235,24 +214,22 @@ export default function PermissionsContent() {
     const firestore = useFirestore();
     
     // Fetch data directly using useCollection for reliability
-    const staffQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'companies')) : null, [firestore]);
+    const staffQuery = useMemoFirebase(() => firestore ? query(collectionGroup(firestore, 'staff')) : null, [firestore]);
     const companiesQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'companies')) : null, [firestore]);
     
-    const { data: staff, isLoading: isLoadingStaff } = useCollection(staffQuery);
+    const { data: staff, isLoading: isLoadingStaff, forceRefresh: refreshStaff } = useCollection(staffQuery);
     const { data: companies, isLoading: isLoadingCompanies } = useCollection(companiesQuery);
-
-    const [error, setError] = useState<string | null>(null);
 
     const enrichedStaff = useMemo(() => {
         if (!staff || !companies) return [];
         const companyMap = new Map(companies.map(c => [c.id, c.companyName]));
         
         return staff.map(s => {
-            // Generate a truly unique ID for the row to prevent key collisions
+            // This composite key ensures uniqueness for the table rows
             const uniqueRowId = `${s.companyId}-${s.id}`;
             return {
                 ...s,
-                id: uniqueRowId, // Override the id for the DataTable key
+                id: uniqueRowId, 
                 companyName: companyMap.get(s.companyId) || 'Unknown Company'
             }
         });
@@ -305,11 +282,13 @@ export default function PermissionsContent() {
             header: () => <div className="text-right">Actions</div>,
             cell: ({ row }) => (
                 <div className="text-right">
-                    <PermissionsDialog staffMember={row.original} onSave={() => {}} />
+                    <PermissionsDialog staffMember={row.original} onSave={refreshStaff} />
                 </div>
             ),
         }
-    ], []);
+    ], [refreshStaff]);
+    
+    const isLoading = isLoadingStaff || isLoadingCompanies;
 
 
     return (
@@ -324,13 +303,8 @@ export default function PermissionsContent() {
                 </CardDescription>
             </CardHeader>
             <CardContent>
-               {isLoadingStaff || isLoadingCompanies ? (
+               {isLoading ? (
                     <div className="flex justify-center items-center py-20"><Loader2 className="h-10 w-10 animate-spin text-primary" /></div>
-               ) : error ? (
-                    <div className="text-destructive-foreground bg-destructive/90 p-4 rounded-md">
-                        <h4 className="font-semibold">Error</h4>
-                        <p className="text-sm">{error}</p>
-                    </div>
                ) : (
                     <DataTable columns={columns} data={enrichedStaff} />
                )}
@@ -338,3 +312,4 @@ export default function PermissionsContent() {
         </Card>
     );
 }
+
