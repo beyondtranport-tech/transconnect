@@ -60,7 +60,7 @@ export function EditStaffDialog({ isOpen, setIsOpen, staffMember, onUpdate }: Ed
     if (staffMember) {
       form.reset(staffMember);
     }
-  }, [staffMember, form, isOpen]);
+  }, [staffMember, isOpen]);
 
   const onSubmit = async (values: StaffFormValues) => {
     setIsLoading(true);
