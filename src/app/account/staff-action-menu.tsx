@@ -42,7 +42,7 @@ export default function StaffActionMenu({ staffMember, onUpdate, onEdit }: { sta
       const response = await fetch('/api/deleteUserDoc', {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ path: `members/${staffMember.companyId}/staff/${staffMember.id}` }),
+        body: JSON.stringify({ path: `companies/${staffMember.companyId}/staff/${staffMember.id}` }),
       });
 
       const result = await response.json();
@@ -74,7 +74,10 @@ export default function StaffActionMenu({ staffMember, onUpdate, onEdit }: { sta
   };
 
   return (
-    <>
+    <div className="flex items-center justify-end gap-2">
+      <Button variant="ghost" size="icon" onClick={onEdit}>
+          <Edit className="h-4 w-4" />
+      </Button>
       <AlertDialog open={isAlertOpen} onOpenChange={setIsAlertOpen}>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -83,10 +86,6 @@ export default function StaffActionMenu({ staffMember, onUpdate, onEdit }: { sta
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem onSelect={onEdit}>
-              <Edit className="mr-2 h-4 w-4" /> Edit
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
             <DropdownMenuItem className="text-destructive" onSelect={() => openConfirmation('delete')}>
               <Trash2 className="mr-2 h-4 w-4" /> Delete
             </DropdownMenuItem>
@@ -105,6 +104,6 @@ export default function StaffActionMenu({ staffMember, onUpdate, onEdit }: { sta
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </>
+    </div>
   );
 }
