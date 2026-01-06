@@ -6,9 +6,10 @@ import {
   DocumentData,
   FirestoreError,
   CollectionReference,
+  onSnapshot,
 } from 'firebase/firestore';
-import { getClientSideAuthToken } from '@/firebase';
-import { useUser } from '@/firebase/hooks';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
 
 /** Utility type to add an 'id' field to a given type T. */
 export type WithId<T> = T & { id: string };
@@ -25,17 +26,14 @@ export interface UseCollectionResult<T> {
 }
 
 /**
- * React hook to fetch a Firestore collection via a secure API route.
- * This hook is designed to bypass client-side security rule issues by fetching
- * data through a backend endpoint that uses the Firebase Admin SDK.
- * It intelligently handles both public and private collections.
- * It does NOT provide real-time updates.
+ * React hook to fetch a Firestore collection in real-time.
+ * It provides live updates when the data changes in Firestore.
  *
  * IMPORTANT! YOU MUST MEMOIZE the inputted memoizedTargetRefOrQuery or BAD THINGS WILL HAPPEN
  *
  * @template T Optional type for document data. Defaults to any.
  * @param {CollectionReference<DocumentData> | Query<DocumentData> | null | undefined} memoizedTargetRefOrQuery -
- * The Firestore CollectionReference or Query. The path of this object is used for the API call.
+ * The Firestore CollectionReference or Query. Must be memoized to prevent infinite loops.
  * @returns {UseCollectionResult<T>} Object with data, isLoading, error.
  */
 export function useCollection<T = any>(
@@ -44,7 +42,6 @@ export function useCollection<T = any>(
   type ResultItemType = WithId<T>;
   type StateDataType = ResultItemType[] | null;
 
-  const { user, isUserLoading } = useUser();
   const [data, setData] = useState<StateDataType>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<Error | null>(null);
@@ -54,74 +51,43 @@ export function useCollection<T = any>(
     setRefreshKey(oldKey => oldKey + 1);
   }, []);
 
-  const path = useMemo(() => {
-      if (!memoizedTargetRefOrQuery) return null;
-      return memoizedTargetRefOrQuery.type === 'collection'
-          ? (memoizedTargetRefOrQuery as CollectionReference).path
-          : (memoizedTargetRefOrQuery as Query)._query.path.segments.join('/');
-  }, [memoizedTargetRefOrQuery]);
-
-  const isPublicPath = useMemo(() => {
-    if (!path) return false;
-    const publicPrefixes = ['memberships', 'configuration', 'shops'];
-    return publicPrefixes.some(prefix => path.startsWith(prefix));
-  }, [path]);
-
   useEffect(() => {
-    if (!path) {
+    // If the query is null or undefined, do nothing.
+    if (!memoizedTargetRefOrQuery) {
       setData(null);
       setIsLoading(false);
-      setError(null);
       return;
     }
 
-    // Wait for user auth state to be resolved before fetching private data
-    if (!isPublicPath && isUserLoading) {
-      setIsLoading(true);
-      return;
-    }
+    setIsLoading(true);
 
-    const fetchData = async () => {
-        setIsLoading(true);
+    const unsubscribe = onSnapshot(
+      memoizedTargetRefOrQuery,
+      (querySnapshot) => {
+        const documents = querySnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data() as T,
+        }));
+        setData(documents);
+        setIsLoading(false);
         setError(null);
+      },
+      (err) => {
+        console.error("useCollection onSnapshot error:", err);
+        const permissionError = new FirestorePermissionError({
+            path: (memoizedTargetRefOrQuery as any).path || 'unknown',
+            operation: 'list',
+        });
+        errorEmitter.emit('permission-error', permissionError);
+        setError(err);
+        setIsLoading(false);
+        setData(null);
+      }
+    );
 
-        try {
-            let token: string | null = null;
-            if (!isPublicPath) {
-                token = await getClientSideAuthToken();
-                if (!token && !isUserLoading) {
-                    throw new Error("Authentication is required to access this resource.");
-                }
-                 if (!token) return; // Don't fetch if token isn't available yet
-            }
-            
-            const response = await fetch('/api/getUserSubcollection', {
-                method: 'POST',
-                headers: {
-                    ...(token && { 'Authorization': `Bearer ${token}` }),
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ path, type: 'collection' }),
-            });
-
-            const result = await response.json();
-
-            if (!response.ok) {
-                throw new Error(result.error || 'Failed to fetch collection data.');
-            }
-
-            setData(result.data as ResultItemType[]);
-        } catch (e: any) {
-            console.error("useCollection fetch error:", e);
-            setError(e);
-            setData(null);
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    fetchData();
-  }, [path, isPublicPath, refreshKey, user, isUserLoading]); 
+    // Unsubscribe from the listener when the component unmounts or the query changes.
+    return () => unsubscribe();
+  }, [memoizedTargetRefOrQuery, refreshKey]); // Now correctly depends on refreshKey
 
   return { data, isLoading, error, forceRefresh };
 }
