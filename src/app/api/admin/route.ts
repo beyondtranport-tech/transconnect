@@ -189,20 +189,59 @@ export async function POST(req: NextRequest) {
                 if (!companyId || !status) {
                     throw new Error("Missing companyId or status.");
                 }
-                const companyRef = db.doc(`companies/${companyId}`);
-                await companyRef.update({ status, updatedAt: FieldValue.serverTimestamp() });
-                return NextResponse.json({ success: true, message: "Member status updated." });
+
+                return await db.runTransaction(async (transaction) => {
+                    const companyRef = db.doc(`companies/${companyId}`);
+                    const companySnap = await transaction.get(companyRef);
+                    if (!companySnap.exists) {
+                        throw new Error("Member not found.");
+                    }
+                    const beforeData = companySnap.data();
+
+                    const updatedData = { status, updatedAt: FieldValue.serverTimestamp() };
+                    transaction.update(companyRef, updatedData);
+
+                    const auditLogRef = db.collection('auditLogs').doc();
+                    transaction.set(auditLogRef, {
+                        collectionPath: 'companies',
+                        documentId: companyId,
+                        adminId: adminUid,
+                        action: 'update',
+                        timestamp: FieldValue.serverTimestamp(),
+                        before: serializeTimestamps(beforeData),
+                        after: serializeTimestamps({ ...beforeData, ...updatedData }),
+                    });
+                    
+                    return NextResponse.json({ success: true, message: "Member status updated and audited." });
+                });
             }
             case 'deleteMember': {
                 const { companyId } = payload;
-                if (!companyId) {
-                    throw new Error("Missing companyId.");
-                }
-                // This is a complex operation. For now, we'll just delete the company doc.
-                // In a real app, you'd handle cleanup of subcollections, auth user, etc.
-                await db.doc(`companies/${companyId}`).delete();
-                // We are not deleting the user auth record or user doc for now.
-                return NextResponse.json({ success: true, message: "Member's company document deleted." });
+                if (!companyId) throw new Error("Missing companyId.");
+
+                return await db.runTransaction(async (transaction) => {
+                    const companyRef = db.doc(`companies/${companyId}`);
+                    const companySnap = await transaction.get(companyRef);
+                    if (!companySnap.exists) {
+                        throw new Error("Member not found.");
+                    }
+                    const beforeData = companySnap.data();
+                    
+                    transaction.delete(companyRef);
+                    
+                    const auditLogRef = db.collection('auditLogs').doc();
+                    transaction.set(auditLogRef, {
+                        collectionPath: 'companies',
+                        documentId: companyId,
+                        adminId: adminUid,
+                        action: 'delete',
+                        timestamp: FieldValue.serverTimestamp(),
+                        before: serializeTimestamps(beforeData),
+                        after: null,
+                    });
+                    
+                    return NextResponse.json({ success: true, message: "Member deleted and action audited." });
+                });
             }
             case 'updateStaffStatus': {
                 const { companyId, staffId, status } = payload;
@@ -240,3 +279,5 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ success: false, error: error.message }, { status });
     }
 }
+
+    

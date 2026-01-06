@@ -1,0 +1,105 @@
+
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // --- Helper Functions ---
+    function isOwner(userId) {
+      return request.auth != null && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      // In a real app, this would check a custom claim.
+      return request.auth != null && request.auth.token.email == 'beyondtransport@gmail.com';
+    }
+
+    // --- User Profiles ---
+    // A user can read/update their own profile. Admins can read/list all profiles.
+    match /users/{userId} {
+      allow read, update: if isOwner(userId) || isAdmin();
+      allow create: if request.auth != null; // Onboarding via API
+      allow list: if isAdmin();
+    }
+    
+    // --- Company Profiles ---
+    // A user can read or update their own company document. Admins have full access.
+    match /companies/{companyId} {
+      allow create: if request.auth != null; // Controlled by backend function for user creation
+      allow get, list, update: if isAdmin() || get(/databases/$(database)/documents/companies/$(companyId)).data.ownerId == request.auth.uid;
+
+      // --- Company Subcollections (Direct Access) ---
+      // The company owner and admins have full access to all subcollections (staff, wallet, etc.).
+      match /{subcollection}/{docId=**} {
+        allow read, write: if isAdmin() || get(/databases/$(database)/documents/companies/$(companyId)).data.ownerId == request.auth.uid;
+      }
+    }
+    
+    // --- Collection Group Queries for Admin Backend ---
+    match /{path=**}/staff/{staffId} {
+      allow list: if isAdmin();
+    }
+    match /{path=**}/walletPayments/{paymentId} {
+      allow list: if isAdmin();
+    }
+    match /{path=**}/transactions/{transactionId} {
+      allow list: if isAdmin();
+    }
+    match /{path=**}/quotes/{quoteId} {
+      allow list: if isAdmin();
+    }
+    match /{path=**}/enquiries/{enquiryId} {
+      allow list: if isAdmin();
+    }
+
+    // --- Public & Global Collections ---
+
+    // Publicly readable collection for approved shops and their products.
+    // Writes are handled by admin-only backend functions.
+    match /shops/{shopId}/{path=**} {
+      allow get, list: if true;
+      allow write: if isAdmin();
+    }
+    
+    // Anyone can create (to log their visit), but only admins can read.
+    match /visitors/{visitorId} {
+      allow create: if true;
+      allow read: if isAdmin();
+    }
+
+    // Publicly readable collection for membership plans.
+    // Only the admin can create, update, or delete plans.
+    match /memberships/{membershipId} {
+      allow get, list: if true;
+      allow write: if isAdmin();
+    }
+    
+    // Publicly readable collection for platform-wide settings like bank details.
+    match /configuration/{configId} {
+      allow get, list: if true;
+      allow write: if isAdmin();
+    }
+
+    // Any authenticated user can create a contribution. Read access is for admins.
+    match /contributions/{contributionId} {
+      allow create: if request.auth != null;
+      allow read: if isAdmin();
+    }
+
+    // Admin-only collections for financial records
+    match /reconciliations/{reconciliationId} {
+        allow read, write: if isAdmin();
+    }
+
+    match /platformTransactions/{transactionId} {
+        allow read, write: if isAdmin();
+    }
+    
+    // Admin-only collection for audit trails.
+    match /auditLogs/{logId} {
+        allow read, write: if isAdmin();
+    }
+  }
+}
+
+    
