@@ -27,6 +27,7 @@ interface Company {
     companyName: string;
 }
 
+// Moved helper function outside the component to make it stable
 async function fetchAdminData(action: string) {
     const token = await getClientSideAuthToken();
     if (!token) throw new Error("Authentication failed.");
@@ -50,6 +51,7 @@ export default function StaffList() {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
+    // Wrapped fetchData in useCallback with an empty dependency array
     const fetchData = useCallback(async () => {
         setIsLoading(true);
         setError(null);
@@ -67,6 +69,7 @@ export default function StaffList() {
         }
     }, []);
 
+    // useEffect now correctly calls the memoized function once
     useEffect(() => {
         fetchData();
     }, [fetchData]);

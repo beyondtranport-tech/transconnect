@@ -24,6 +24,7 @@ interface Shop {
     [key: string]: any; // Allow other properties
 }
 
+// Moved helper function outside the component to make it stable
 async function fetchFromAdminAPI(action: string, payload?: any) {
     const token = await getClientSideAuthToken();
     if (!token) throw new Error("Authentication failed.");
@@ -57,7 +58,8 @@ function ShopPreviewDialog({ shop }: { shop: Shop }) {
     
     const productsCollection = useMemoFirebase(() => {
         if (!firestore) return null;
-        return collection(firestore, `companies/${shop.companyId}/shops/${shop.id}/products`);
+        // Query the company's private shop subcollection for the most up-to-date data
+        return query(collection(firestore, `companies/${shop.companyId}/shops/${shop.id}/products`));
     }, [firestore, shop.companyId, shop.id]);
 
     const { data: products, isLoading } = useCollection(productsCollection);
@@ -91,6 +93,7 @@ export default function ShopsList() {
     const [error, setError] = useState<string | null>(null);
     const { toast } = useToast();
 
+    // Wrapped fetchShops in useCallback with an empty dependency array
     const fetchShops = useCallback(async () => {
         setIsLoading(true);
         setError(null);
@@ -107,6 +110,7 @@ export default function ShopsList() {
         }
     }, []);
 
+    // useEffect now correctly calls the memoized function once
     useEffect(() => {
         fetchShops();
     }, [fetchShops]);
@@ -114,18 +118,7 @@ export default function ShopsList() {
     const handleApprove = async (shop: Shop) => {
         setIsApproving(shop.id);
         try {
-            const token = await getClientSideAuthToken();
-            if (!token) throw new Error("Authentication failed");
-
-            const response = await fetch('/api/approveShop', {
-                method: 'POST',
-                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ shopId: shop.id, companyId: shop.companyId }),
-            });
-
-            if (!response.ok) {
-                throw new Error((await response.json()).error || 'Failed to approve shop');
-            }
+            await fetchFromAdminAPI('approveShop', { shopId: shop.id, companyId: shop.companyId });
             
             toast({
                 title: 'Shop Approved!',

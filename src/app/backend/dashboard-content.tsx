@@ -12,7 +12,7 @@ import BillingRun from './billing-run';
 import { getClientSideAuthToken } from '@/firebase';
 import { useState, useEffect, useCallback } from 'react';
 
-// Helper function moved outside the component to ensure it's stable
+// Moved helper function outside the component to ensure it's stable
 async function fetchFromAdminAPI(action: string, payload?: any) {
     const token = await getClientSideAuthToken();
     if (!token) throw new Error("Authentication failed.");
@@ -42,44 +42,47 @@ export default function DashboardContent() {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
+    // Wrapped loadDashboardData in useCallback with an empty dependency array
     const loadDashboardData = useCallback(async () => {
         setIsLoading(true);
         setError(null);
         try {
             const [membersRes, financeRes, contributionsRes] = await Promise.all([
-                fetchFromAdminAPI('getMembers').catch(e => ({ error: e })),
-                fetchFromAdminAPI('getFinanceApplications').catch(e => ({ error: e })),
-                fetchFromAdminAPI('getContributions').catch(e => ({ error: e })),
+                fetchFromAdminAPI('getMembers').catch(e => ({ error: e, data: [] })),
+                fetchFromAdminAPI('getFinanceApplications').catch(e => ({ error: e, data: [] })),
+                fetchFromAdminAPI('getContributions').catch(e => ({ error: e, data: [] })),
             ]);
-
+            
             if (membersRes.error || financeRes.error || contributionsRes.error) {
-                throw new Error(membersRes.error?.message || financeRes.error?.message || contributionsRes.error?.message || "An error occurred fetching dashboard data.");
+                 throw new Error(membersRes.error?.message || financeRes.error?.message || contributionsRes.error?.message || "An error occurred fetching dashboard data.");
             }
 
             // Process Stats
-            const totalFunded = financeRes.data.filter((app: any) => app.status === 'funded').reduce((sum: number, app: any) => sum + (app.amountRequested || 0), 0);
+            const totalFunded = (financeRes.data || []).filter((app: any) => app.status === 'funded').reduce((sum: number, app: any) => sum + (app.amountRequested || 0), 0);
             setStats({
-                members: membersRes.data.length,
-                applications: financeRes.data.length,
-                contributions: contributionsRes.data.length,
+                members: (membersRes.data || []).length,
+                applications: (financeRes.data || []).length,
+                contributions: (contributionsRes.data || []).length,
                 totalFunded: totalFunded,
             });
 
             // Process Recent Members
-            const sortedMembers = [...membersRes.data].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+            const sortedMembers = [...(membersRes.data || [])].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
             setRecentMembers(sortedMembers.slice(0, 5));
             
             // Process Pending Applications
-            const pending = financeRes.data.filter((app: any) => app.status === 'pending');
+            const pending = (financeRes.data || []).filter((app: any) => app.status === 'pending');
             setPendingApplications(pending.slice(0, 5));
             
             // Process Member Growth
             const growth: { [key: string]: number } = {};
             const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-            membersRes.data.forEach((member: any) => {
+            (membersRes.data || []).forEach((member: any) => {
                 const joinDate = new Date(member.createdAt);
-                const monthKey = `${joinDate.getFullYear()}-${monthNames[joinDate.getMonth()]}`;
-                growth[monthKey] = (growth[monthKey] || 0) + 1;
+                if (!isNaN(joinDate.getTime())) {
+                    const monthKey = `${joinDate.getFullYear()}-${monthNames[joinDate.getMonth()]}`;
+                    growth[monthKey] = (growth[monthKey] || 0) + 1;
+                }
             });
             const growthData = Object.keys(growth).map(key => ({ name: key.split('-')[1], NewMembers: growth[key] })).slice(-6); // Last 6 months
             setMemberGrowthData(growthData);
@@ -89,11 +92,12 @@ export default function DashboardContent() {
         } finally {
             setIsLoading(false);
         }
-    }, []); // Empty dependency array ensures this function is created only once
+    }, []); 
 
+    // useEffect now correctly calls the memoized function once
     useEffect(() => {
         loadDashboardData();
-    }, [loadDashboardData]); // This effect now runs only once
+    }, [loadDashboardData]);
 
     const formatPrice = (price: number) => {
         if (typeof price !== 'number') return 'N/A';

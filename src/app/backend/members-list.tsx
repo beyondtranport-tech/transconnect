@@ -31,6 +31,7 @@ const tierColors: { [key: string]: string } = {
   enterprise: 'bg-yellow-200 text-yellow-800',
 };
 
+// Moved helper function outside the component to make it stable
 async function fetchFromAdminAPI(action: string, payload?: any) {
     const token = await getClientSideAuthToken();
     if (!token) throw new Error("Authentication failed.");
@@ -56,6 +57,7 @@ export default function MembersList() {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
+    // Wrapped fetchMembers in useCallback with an empty dependency array
     const fetchMembers = useCallback(async () => {
         setIsLoading(true);
         setError(null);
@@ -71,6 +73,7 @@ export default function MembersList() {
         }
     }, []);
 
+    // useEffect now correctly calls the memoized function once
     useEffect(() => {
         fetchMembers();
     }, [fetchMembers]);
