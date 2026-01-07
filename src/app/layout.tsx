@@ -24,7 +24,7 @@ export default function RootLayout({
       </head>
       <body>
         <FirebaseClientProvider>
-            {children}
+          {children}
         </FirebaseClientProvider>
       </body>
     </html>

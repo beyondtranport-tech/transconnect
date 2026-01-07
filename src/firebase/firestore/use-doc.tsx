@@ -5,10 +5,9 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   DocumentReference,
   DocumentData,
-  FirestoreError,
 } from 'firebase/firestore';
 import { getClientSideAuthToken } from '@/firebase';
-import { useUser } from '@/firebase/hooks';
+import { useUser } from '@/firebase';
 
 /** Utility type to add an 'id' field to a given type T. */
 type WithId<T> = T & { id: string };

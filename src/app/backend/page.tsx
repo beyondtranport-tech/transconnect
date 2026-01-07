@@ -4,7 +4,7 @@
 import { Suspense, useEffect } from 'react';
 import { Loader2 } from 'lucide-react';
 import BackendPageContent from './backend-page-content';
-import { useUser } from '@/firebase/hooks';
+import { useUser } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import React from 'react';
 
