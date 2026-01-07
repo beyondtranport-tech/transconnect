@@ -1,9 +1,15 @@
 'use client';
 
 import { doc } from 'firebase/firestore';
-import { useDoc } from '@/firebase/firestore/use-doc'; // Corrected import
-import { useFirestore } from '@/firebase/provider'; // Corrected import
-import { useMemoFirebase } from '@/firebase'; // Corrected import for useMemoFirebase if you have it in index
+import { useDoc } from '@/firebase/firestore/use-doc';
+import { useFirestore } from '@/firebase/provider';
+import { useMemo } from 'react';
+
+// A custom hook to memoize the document reference
+export const useMemoFirebase = (creator: () => any, deps: any[]) => {
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    return useMemo(creator, deps);
+};
 
 /**
  * A specialized hook to fetch a specific configuration document from Firestore.

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
@@ -6,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowRight, Users, Store, Banknote, Settings, BarChart, Combine, BookOpen, LineChart } from "lucide-react";
 import Link from 'next/link';
 import { useEffect, useState } from "react";
-import { getClientSideAuthToken } from "@/firebase";
+import { getClientSideAuthToken } from '@/firebase/provider';
 import { Loader2 } from "lucide-react";
 
 async function fetchStats(action: string) {

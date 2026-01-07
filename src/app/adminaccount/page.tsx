@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -33,7 +32,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useState, useEffect, Suspense, useMemo, useCallback } from 'react';
-import { useUser, useAuth } from '@/firebase';
+import { useUser, useAuth } from '@/firebase/provider';
 import { signOut } from 'firebase/auth';
 import { Loader2 } from 'lucide-react';
 import dynamic from 'next/dynamic';

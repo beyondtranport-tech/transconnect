@@ -1,14 +1,14 @@
-
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { useCollection, useFirestore, useMemoFirebase, getClientSideAuthToken, useDoc } from '@/firebase';
+import { useCollection, useFirestore, getClientSideAuthToken, useDoc } from '@/firebase/provider';
 import { collection, query, where, doc } from 'firebase/firestore';
 import { Loader2, Gem, Wallet, AlertCircle } from 'lucide-react';
 import { format } from 'date-fns';
+import { useMemoFirebase } from '@/hooks/use-config';
 
 const formatCurrency = (amount: number) => {
     if (typeof amount !== 'number') return 'N/A';

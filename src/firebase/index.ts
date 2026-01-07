@@ -32,11 +32,10 @@ export function initializeFirebase() {
 
 
 export async function getClientSideAuthToken(): Promise<string | null> {
-    const auth = getAuth(getApp());
+    const auth = getAuth(getApp()); // Use getApp() to ensure the initialized instance is used
     if (auth.currentUser) {
         try {
             // The `false` means it will return the cached token unless it's expired.
-            // This is safer for avoiding quota issues.
             return await getIdToken(auth.currentUser, false);
         } catch (error) {
             // If getting the token fails, try to force a refresh as a fallback.

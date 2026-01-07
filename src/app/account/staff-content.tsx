@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useCallback } from 'react';
@@ -26,7 +25,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { useUser, useFirestore, useMemoFirebase, getClientSideAuthToken, useDoc } from '@/firebase';
+import { useUser, useFirestore, getClientSideAuthToken, useDoc } from '@/firebase/provider';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { collection, doc } from 'firebase/firestore';
 import { Loader2, PlusCircle, UserPlus, Users } from 'lucide-react';
@@ -40,6 +39,7 @@ import { EditStaffDialog } from './EditStaffDialog';
 import { usePermissions } from '@/hooks/use-permissions';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { ShieldAlert } from 'lucide-react';
+import { useMemoFirebase } from '@/hooks/use-config';
 
 const staffFormSchema = z.object({
   firstName: z.string().min(1, 'First name is required'),

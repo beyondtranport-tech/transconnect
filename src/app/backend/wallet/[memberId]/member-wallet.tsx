@@ -1,19 +1,16 @@
-
-
 'use client';
 
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useUser, getClientSideAuthToken } from '@/firebase';
+import { useUser, getClientSideAuthToken, useFirestore } from '@/firebase/provider';
 import { doc, writeBatch, collection, increment, serverTimestamp } from 'firebase/firestore';
 import { Loader2, User, Wallet, Calendar, Mail, FileCheck, Users } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useFirestore } from '@/firebase'; 
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import MemberFundingRecords from './member-funding-records';

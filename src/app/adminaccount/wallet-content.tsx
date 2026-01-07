@@ -1,7 +1,6 @@
-
 'use client';
 
-import { useUser, useFirestore, useMemoFirebase, useCollection, useDoc } from '@/firebase';
+import { useUser, useFirestore, useCollection, useDoc } from '@/firebase/provider';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
 import { Loader2, DollarSign, Wallet, Clock, Info, Gem } from 'lucide-react';
@@ -11,7 +10,7 @@ import { collection, query, orderBy, limit, doc } from 'firebase/firestore';
 import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { useConfig } from '@/hooks/use-config';
+import { useConfig, useMemoFirebase } from '@/hooks/use-config';
 import { getClientSideAuthToken } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { useState } from 'react';
@@ -329,7 +328,7 @@ export default function WalletContent() {
             </CardContent>
             <CardFooter>
                  <Button variant="outline" asChild>
-                    <Link href="/adminaccount?view=billing">View Full Transaction History</Link>
+                    <Link href="/account?view=billing">View Full Transaction History</Link>
                 </Button>
             </CardFooter>
         </Card>

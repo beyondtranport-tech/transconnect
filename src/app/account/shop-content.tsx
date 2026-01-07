@@ -1,16 +1,17 @@
-
 'use client';
 
 import { useState, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Loader2, Store, PlusCircle, ShieldAlert } from 'lucide-react';
-import { useUser, useFirestore, useMemoFirebase, useDoc, getClientSideAuthToken } from '@/firebase';
+import { useUser, useFirestore, getClientSideAuthToken } from '@/firebase/provider';
 import { doc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import ShopWizard from './shop-wizard';
 import { usePermissions } from '@/hooks/use-permissions';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { useDoc } from '@/firebase/firestore/use-doc';
+import { useMemoFirebase } from '@/hooks/use-config';
 
 export default function ShopContent() {
   const { user, isUserLoading } = useUser();

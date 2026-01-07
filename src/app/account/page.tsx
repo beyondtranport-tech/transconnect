@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -41,8 +40,8 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useState, useEffect, Suspense, useMemo } from 'react';
-import { useUser, useAuth, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
-import { useConfig } from '@/hooks/use-config';
+import { useUser, useAuth, useFirestore, useDoc } from '@/firebase/provider';
+import { useConfig, useMemoFirebase } from '@/hooks/use-config';
 import { signOut } from 'firebase/auth';
 import AccountDashboard from './dashboard';
 import { Loader2 } from 'lucide-react';
