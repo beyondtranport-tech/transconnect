@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useForm } from 'react-hook-form';
@@ -17,11 +18,9 @@ import { useToast } from '@/hooks/use-toast';
 import { useState, useEffect } from 'react';
 import { Loader2, Building, Save } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useUser, useFirestore, getClientSideAuthToken } from '@/firebase/provider';
+import { useUser, useFirestore, getClientSideAuthToken, useDoc, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
-import { useDoc } from '@/firebase/firestore/use-doc';
 import { Separator } from '@/components/ui/separator';
-import { useMemoFirebase } from '@/hooks/use-config';
 
 const companyFormSchema = z.object({
   companyName: z.string().min(1, 'Company name is required'),

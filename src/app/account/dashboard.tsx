@@ -1,17 +1,16 @@
+
 'use client';
 
-import { useUser, useFirestore } from '@/firebase/provider';
+import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Award, FileText, Gem, User, Loader2, DollarSign, HeartHandshake, ArrowRight, Sparkles, Wallet, ShieldAlert, Landmark, Star } from "lucide-react";
 import { doc } from 'firebase/firestore';
-import { useDoc } from '@/firebase/firestore/use-doc';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import EnquiriesCard from './enquiries-card';
 import QuotesCard from './quotes-card';
 import { cn } from '@/lib/utils';
-import { useMemoFirebase } from '@/hooks/use-config';
 
 export default function AccountDashboard() {
     const { user, isUserLoading } = useUser();

@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -40,7 +41,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useState, useEffect, Suspense, useMemo } from 'react';
-import { useUser, useAuth, useFirestore, useDoc } from '@/firebase/provider';
+import { useUser, useAuth, useFirestore, useDoc } from '@/firebase';
 import { useConfig, useMemoFirebase } from '@/hooks/use-config';
 import { signOut } from 'firebase/auth';
 import AccountDashboard from './dashboard';
