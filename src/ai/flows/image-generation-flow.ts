@@ -1,45 +1,28 @@
-
 'use server';
 /**
  * @fileOverview An AI-powered image generation tool using Google's Imagen model.
- *
- * - generateImage - A function that generates an image from a text prompt.
- * - GenerateImageInputSchema - The input type for the generateImage function.
- * - GenerateImageOutputSchema - The return type for the generateImage function.
+ * This file contains the server-side Genkit flow logic.
  */
 
 import { ai } from '@/ai/genkit';
-import { z } from 'zod';
+import { GenerateImageInputSchema, GenerateImageOutputSchema } from './schemas';
+import type { GenerateImageInput } from './schemas';
 
-export const GenerateImageInputSchema = z.object({
-  prompt: z.string().describe('The text prompt describing the desired image content.'),
-});
-export type GenerateImageInput = z.infer<typeof GenerateImageInputSchema>;
-
-export const GenerateImageOutputSchema = z.object({
-  imageDataUri: z.string().describe('The generated image as a data URI.'),
-});
-export type GenerateImageOutput = z.infer<typeof GenerateImageOutputSchema>;
-
-export const generateImage = ai.defineFlow(
-  {
-    name: 'generateImageFlow',
-    inputSchema: GenerateImageInputSchema,
-    outputSchema: GenerateImageOutputSchema,
-  },
-  async ({ prompt }) => {
-    
-    const { media } = await ai.generate({
-        model: 'googleai/imagen-4.0-fast-generate-001',
-        prompt: prompt,
-    });
-
-    if (!media?.url) {
-        throw new Error('Image generation failed to return an image.');
+// This is the function that will be called by the server action.
+export async function generateImageFlow(input: GenerateImageInput) {
+    const { output } = await imageGenerationPrompt(input);
+    if (!output) {
+      throw new Error("Image generation did not return an output.");
     }
-    
-    return {
-        imageDataUri: media.url,
-    };
-  }
-);
+    return output;
+}
+
+const imageGenerationPrompt = ai.definePrompt({
+    name: 'imageGenerationPrompt',
+    input: { schema: GenerateImageInputSchema },
+    output: { schema: GenerateImageOutputSchema },
+    prompt: `Generate an image based on the following prompt: {{{prompt}}}`,
+    config: {
+        model: 'googleai/imagen-4.0-fast-generate-001'
+    }
+});
