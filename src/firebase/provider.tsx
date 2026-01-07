@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { createContext, useContext, ReactNode, useMemo, useState, useEffect } from 'react';
@@ -82,9 +81,10 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
       async (firebaseUser) => {
         setUserAuthState({ user: firebaseUser, isUserLoading: false, userError: null });
 
-        // Get the token and set it as a cookie
+        // Get the token and post it to our session API to set the cookie
         const idToken = firebaseUser ? await firebaseUser.getIdToken() : null;
         
+        // This fetch call sets or clears the server-side session cookie.
         await fetch('/api/auth/session', {
             method: 'POST',
             headers: {

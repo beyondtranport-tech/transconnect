@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -8,8 +7,8 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { formatDistanceToNow } from 'date-fns';
-import { useAuth } from '@/firebase';
-import { getIdToken } from 'firebase/auth';
+import { useUser } from '@/firebase';
+import { getAuditLogsForMember } from './actions';
 
 const getSubjectInfo = (log: any) => {
     const pathSegments = log.collectionPath.split('/');
@@ -32,58 +31,38 @@ const getSubjectInfo = (log: any) => {
     return { name: 'System Record', href: '#', icon: FileText };
 };
 
-
 export default function ActivityFeed() {
     const [logs, setLogs] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const auth = useAuth(); // Use the hook to get the auth instance
+    const { user, isUserLoading } = useUser();
 
     const loadLogs = useCallback(async () => {
-        // This is the critical check: ensure auth and currentUser are ready.
-        if (!auth || !auth.currentUser) {
-            setIsLoading(true); // Keep showing loading state until auth is ready
-            return;
-        }
-
         setIsLoading(true);
         setError(null);
         try {
-            const token = await getIdToken(auth.currentUser);
-            
-            if (!token) {
-                throw new Error("Authentication token could not be retrieved.");
-            }
-
-            const response = await fetch('/api/admin', {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ action: 'getAuditLogs' }),
-            });
-
-            const result = await response.json();
-
-            if (!response.ok || !result.success) {
+            const result = await getAuditLogsForMember();
+            if (result.success && result.data) {
+                const sortedLogs = result.data.sort((a: any, b: any) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+                setLogs(sortedLogs);
+            } else {
                 throw new Error(result.error || 'Failed to fetch audit logs.');
             }
-            
-            const sortedLogs = result.data.sort((a: any, b: any) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
-            setLogs(sortedLogs);
         } catch (e: any) {
             setError(e.message);
         } finally {
             setIsLoading(false);
         }
-    }, [auth]); // Dependency on auth ensures this function is stable and has the auth instance.
+    }, []);
 
     useEffect(() => {
-        // This effect will re-run whenever `auth` changes.
-        // Once auth is initialized and currentUser is available, loadLogs will execute.
-        loadLogs();
-    }, [auth, loadLogs]);
+        if (!isUserLoading && user) {
+            loadLogs();
+        } else if (!isUserLoading && !user) {
+            setError("You must be logged in to view the activity feed.");
+            setIsLoading(false);
+        }
+    }, [user, isUserLoading, loadLogs]);
     
     const formatDate = (isoString?: string) => {
         if (!isoString) return 'N/A';
@@ -100,7 +79,7 @@ export default function ActivityFeed() {
         delete: { color: 'destructive', text: 'deleted a' }
     };
 
-    if (isLoading) {
+    if (isLoading || isUserLoading) {
         return (
             <div className="flex justify-center items-center py-20">
                 <Loader2 className="h-12 w-12 animate-spin text-primary" />
