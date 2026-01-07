@@ -39,7 +39,7 @@ const prompt = ai.definePrompt({
   name: 'generateMarketingCampaignPrompt',
   input: { schema: MarketingBriefInputSchema },
   output: { schema: CampaignIdeaOutputSchema },
-  model: 'googleai/gemini-pro',
+  model: googleAI.model('gemini-pro'),
   prompt: `You are an expert marketing strategist specializing in the logistics and transportation sector.
   
   Your task is to develop three distinct, creative, and actionable marketing campaign ideas for the following brand:
