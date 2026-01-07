@@ -10,6 +10,7 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
+import { googleAI } from '@genkit-ai/google-genai';
 
 const MarketingBriefInputSchema = z.object({
   brandName: z.string().describe('The name of the brand or company.'),
@@ -38,6 +39,7 @@ const prompt = ai.definePrompt({
   name: 'generateMarketingCampaignPrompt',
   input: { schema: MarketingBriefInputSchema },
   output: { schema: CampaignIdeaOutputSchema },
+  model: 'googleai/gemini-pro',
   prompt: `You are an expert marketing strategist specializing in the logistics and transportation sector.
   
   Your task is to develop three distinct, creative, and actionable marketing campaign ideas for the following brand:
