@@ -376,30 +376,6 @@ function ContributionsContent() {
     )
 }
 
-function AdminAuthGuard({ children }: { children: React.ReactNode }) {
-    const { user, isUserLoading } = useUser();
-    const router = useRouter();
-
-    useEffect(() => {
-        if (!isUserLoading && !user) {
-            router.replace('/signin?redirect=/backend');
-        } else if (!isUserLoading && user && user.email !== 'beyondtransport@gmail.com') {
-            router.replace('/account');
-        }
-    }, [user, isUserLoading, router]);
-
-    if (isUserLoading || !user || user.email !== 'beyondtransport@gmail.com') {
-        return (
-            <div className="flex flex-col justify-center items-center min-h-[calc(100vh-8rem)]">
-                <Loader2 className="h-12 w-12 animate-spin text-primary" />
-                <p className="mt-4 text-muted-foreground">Verifying admin credentials...</p>
-            </div>
-        );
-    }
-    
-    return <>{children}</>;
-}
-
 
 export default function BackendPageContent() {
   const router = useRouter();
@@ -486,212 +462,210 @@ export default function BackendPageContent() {
   };
 
   return (
-    <AdminAuthGuard>
-        <SidebarProvider>
-        <Sidebar>
-            <SidebarHeader>
-            <div className="flex items-center gap-2">
-                <Truck className="h-6 w-6 text-primary" />
-                <h2 className="text-lg font-semibold text-sidebar-foreground">
-                Admin Backend
-                </h2>
-            </div>
-            </SidebarHeader>
-            <SidebarContent>
-            <SidebarGroup>
-                <SidebarMenuItem>
-                    <SidebarMenuButton tooltip="Dashboard" isActive={activeView === 'dashboard'} onClick={() => router.push('/backend?view=dashboard', { scroll: false })}>
-                    <LayoutDashboard />
-                    <span>Dashboard</span>
+    <SidebarProvider>
+    <Sidebar>
+        <SidebarHeader>
+        <div className="flex items-center gap-2">
+            <Truck className="h-6 w-6 text-primary" />
+            <h2 className="text-lg font-semibold text-sidebar-foreground">
+            Admin Backend
+            </h2>
+        </div>
+        </SidebarHeader>
+        <SidebarContent>
+        <SidebarGroup>
+            <SidebarMenuItem>
+                <SidebarMenuButton tooltip="Dashboard" isActive={activeView === 'dashboard'} onClick={() => router.push('/backend?view=dashboard', { scroll: false })}>
+                <LayoutDashboard />
+                <span>Dashboard</span>
+                </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+                <a href="https://analytics.google.com" target="_blank" rel="noopener noreferrer" className="w-full">
+                    <SidebarMenuButton tooltip="Analytics">
+                        <LineChart />
+                        <span>Analytics</span>
                     </SidebarMenuButton>
-                </SidebarMenuItem>
-                <SidebarMenuItem>
-                    <a href="https://analytics.google.com" target="_blank" rel="noopener noreferrer" className="w-full">
-                        <SidebarMenuButton tooltip="Analytics">
-                            <LineChart />
-                            <span>Analytics</span>
-                        </SidebarMenuButton>
-                    </a>
-                </SidebarMenuItem>
-                <SidebarMenuItem>
-                    <SidebarMenuButton tooltip="Members" isActive={activeView === 'members'} onClick={() => router.push('/backend?view=members', { scroll: false })}>
-                    <Users />
-                    <span>Members</span>
+                </a>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+                <SidebarMenuButton tooltip="Members" isActive={activeView === 'members'} onClick={() => router.push('/backend?view=members', { scroll: false })}>
+                <Users />
+                <span>Members</span>
+                </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+                <SidebarMenuButton tooltip="Staff" isActive={activeView === 'staff'} onClick={() => router.push('/backend?view=staff', { scroll: false })}>
+                <Users />
+                <span>Staff</span>
+                </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+                <SidebarMenuButton tooltip="Shops" isActive={activeView === 'shops'} onClick={() => router.push('/backend?view=shops', { scroll: false })}>
+                <Store />
+                <span>Shops</span>
+                </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+                <SidebarMenuButton tooltip="Contributions" isActive={activeView === 'contributions'} onClick={() => router.push('/backend?view=contributions', { scroll: false })}>
+                <HeartHandshake />
+                <span>Contributions</span>
+                </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+                <SidebarMenuButton tooltip="Permissions" isActive={activeView === 'permissions'} onClick={() => router.push('/backend?view=permissions', { scroll: false })}>
+                    <Lock />
+                    <span>Permissions</span>
+                </SidebarMenuButton>
+            </SidebarMenuItem>
+            
+            <SidebarMenuItem>
+                    <SidebarMenuButton tooltip="Wallet">
+                        <Wallet />
+                        <span>Wallet</span>
                     </SidebarMenuButton>
-                </SidebarMenuItem>
-                <SidebarMenuItem>
-                    <SidebarMenuButton tooltip="Staff" isActive={activeView === 'staff'} onClick={() => router.push('/backend?view=staff', { scroll: false })}>
-                    <Users />
-                    <span>Staff</span>
-                    </SidebarMenuButton>
-                </SidebarMenuItem>
-                <SidebarMenuItem>
-                    <SidebarMenuButton tooltip="Shops" isActive={activeView === 'shops'} onClick={() => router.push('/backend?view=shops', { scroll: false })}>
-                    <Store />
-                    <span>Shops</span>
-                    </SidebarMenuButton>
-                </SidebarMenuItem>
-                <SidebarMenuItem>
-                    <SidebarMenuButton tooltip="Contributions" isActive={activeView === 'contributions'} onClick={() => router.push('/backend?view=contributions', { scroll: false })}>
-                    <HeartHandshake />
-                    <span>Contributions</span>
-                    </SidebarMenuButton>
-                </SidebarMenuItem>
-                <SidebarMenuItem>
-                    <SidebarMenuButton tooltip="Permissions" isActive={activeView === 'permissions'} onClick={() => router.push('/backend?view=permissions', { scroll: false })}>
-                        <Lock />
-                        <span>Permissions</span>
-                    </SidebarMenuButton>
+                    <SidebarMenuSub>
+                        <SidebarMenuSubButton isActive={activeView === 'wallet-transactions'} onClick={() => router.push('/backend?view=wallet-transactions', { scroll: false })}>
+                            <DollarSign />
+                            <span>Member Wallet Ledger</span>
+                        </SidebarMenuSubButton>
+                        <SidebarMenuSubButton isActive={activeView === 'wallet-reconciliation'} onClick={() => router.push('/backend?view=wallet-reconciliation', { scroll: false })}>
+                            <Combine />
+                            <span>Reconciliation</span>
+                        </SidebarMenuSubButton>
+                    </SidebarMenuSub>
                 </SidebarMenuItem>
                 
                 <SidebarMenuItem>
-                        <SidebarMenuButton tooltip="Wallet">
-                            <Wallet />
-                            <span>Wallet</span>
-                        </SidebarMenuButton>
-                        <SidebarMenuSub>
-                            <SidebarMenuSubButton isActive={activeView === 'wallet-transactions'} onClick={() => router.push('/backend?view=wallet-transactions', { scroll: false })}>
-                                <DollarSign />
-                                <span>Member Wallet Ledger</span>
-                            </SidebarMenuSubButton>
-                            <SidebarMenuSubButton isActive={activeView === 'wallet-reconciliation'} onClick={() => router.push('/backend?view=wallet-reconciliation', { scroll: false })}>
-                                <Combine />
-                                <span>Reconciliation</span>
-                            </SidebarMenuSubButton>
-                        </SidebarMenuSub>
-                    </SidebarMenuItem>
-                    
-                    <SidebarMenuItem>
-                        <SidebarMenuButton tooltip="Divisions" isActive={activeView.startsWith('divisions')}>
-                            <Boxes />
-                            <span>Divisions</span>
-                        </SidebarMenuButton>
-                        <SidebarMenuSub>
-                            <SidebarMenuSubButton isActive={activeView === 'divisions-funding'} onClick={() => router.push('/backend?view=divisions-funding', { scroll: false })}>
-                                <Landmark />
-                                <span>Funding</span>
-                            </SidebarMenuSubButton>
-                            <SidebarMenuSubButton isActive={activeView === 'divisions-mall'} onClick={() => router.push('/backend?view=divisions-mall', { scroll: false })}>
-                                <ShoppingBasket />
-                                <span>Mall</span>
-                            </SidebarMenuSubButton>
-                            <SidebarMenuSubButton isActive={activeView === 'divisions-marketplace'} onClick={() => router.push('/backend?view=divisions-marketplace', { scroll: false })}>
-                                <Store />
-                                <span>Marketplace</span>
-                            </SidebarMenuSubButton>
-                            <SidebarMenuSubButton isActive={activeView === 'divisions-tech'} onClick={() => router.push('/backend?view=divisions-tech', { scroll: false })}>
-                                <Cpu />
-                                <span>Tech</span>
-                            </SidebarMenuSubButton>
-                        </SidebarMenuSub>
-                    </SidebarMenuItem>
+                    <SidebarMenuButton tooltip="Divisions" isActive={activeView.startsWith('divisions')}>
+                        <Boxes />
+                        <span>Divisions</span>
+                    </SidebarMenuButton>
+                    <SidebarMenuSub>
+                        <SidebarMenuSubButton isActive={activeView === 'divisions-funding'} onClick={() => router.push('/backend?view=divisions-funding', { scroll: false })}>
+                            <Landmark />
+                            <span>Funding</span>
+                        </SidebarMenuSubButton>
+                        <SidebarMenuSubButton isActive={activeView === 'divisions-mall'} onClick={() => router.push('/backend?view=divisions-mall', { scroll: false })}>
+                            <ShoppingBasket />
+                            <span>Mall</span>
+                        </SidebarMenuSubButton>
+                        <SidebarMenuSubButton isActive={activeView === 'divisions-marketplace'} onClick={() => router.push('/backend?view=divisions-marketplace', { scroll: false })}>
+                            <Store />
+                            <span>Marketplace</span>
+                        </SidebarMenuSubButton>
+                        <SidebarMenuSubButton isActive={activeView === 'divisions-tech'} onClick={() => router.push('/backend?view=divisions-tech', { scroll: false })}>
+                            <Cpu />
+                            <span>Tech</span>
+                        </SidebarMenuSubButton>
+                    </SidebarMenuSub>
+                </SidebarMenuItem>
 
-                    <SidebarMenuItem>
-                        <SidebarMenuButton tooltip="Rewards and Loyalty" isActive={activeView.includes('loyalty') || activeView.includes('reward')}>
-                            <Star />
-                            <span>Rewards and Loyalty</span>
-                        </SidebarMenuButton>
-                        <SidebarMenuSub>
-                            <SidebarMenuSubButton isActive={activeView === 'loyalty-settings'} onClick={() => router.push('/backend?view=loyalty-settings', { scroll: false })}>
-                                <Settings />
-                                <span>Tier & Point Settings</span>
-                            </SidebarMenuSubButton>
-                            <SidebarMenuSubButton isActive={activeView === 'reward-status'} onClick={() => router.push('/backend?view=reward-status', { scroll: false })}>
-                                <Award />
-                                <span>Reward Status</span>
-                            </SidebarMenuSubButton>
-                            <SidebarMenuSubButton isActive={activeView === 'rewards'} onClick={() => router.push('/backend?view=rewards', { scroll: false })}>
-                                <Gift />
-                                <span>Redeemable Rewards</span>
-                            </SidebarMenuSubButton>
-                        </SidebarMenuSub>
-                    </SidebarMenuItem>
+                <SidebarMenuItem>
+                    <SidebarMenuButton tooltip="Rewards and Loyalty" isActive={activeView.includes('loyalty') || activeView.includes('reward')}>
+                        <Star />
+                        <span>Rewards and Loyalty</span>
+                    </SidebarMenuButton>
+                    <SidebarMenuSub>
+                        <SidebarMenuSubButton isActive={activeView === 'loyalty-settings'} onClick={() => router.push('/backend?view=loyalty-settings', { scroll: false })}>
+                            <Settings />
+                            <span>Tier & Point Settings</span>
+                        </SidebarMenuSubButton>
+                        <SidebarMenuSubButton isActive={activeView === 'reward-status'} onClick={() => router.push('/backend?view=reward-status', { scroll: false })}>
+                            <Award />
+                            <span>Reward Status</span>
+                        </SidebarMenuSubButton>
+                        <SidebarMenuSubButton isActive={activeView === 'rewards'} onClick={() => router.push('/backend?view=rewards', { scroll: false })}>
+                            <Gift />
+                            <span>Redeemable Rewards</span>
+                        </SidebarMenuSubButton>
+                    </SidebarMenuSub>
+                </SidebarMenuItem>
 
-                    <SidebarMenuItem>
-                        <SidebarMenuButton tooltip="Platform">
-                            <Server />
-                            <span>Platform</span>
-                        </SidebarMenuButton>
-                        <SidebarMenuSub>
-                            <SidebarMenuSubButton isActive={activeView === 'platform-settings'} onClick={() => router.push('/backend?view=platform-settings', { scroll: false })}>
-                                <Settings />
-                                <span>Settings</span>
-                            </SidebarMenuSubButton>
-                            <SidebarMenuSubButton isActive={activeView === 'activity-feed'} onClick={() => router.push('/backend?view=activity-feed', { scroll: false })}>
-                                <Activity />
-                                <span>Activity Feed</span>
-                            </SidebarMenuSubButton>
-                            <SidebarMenuSubButton isActive={activeView === 'platform-tasks'} onClick={() => router.push('/backend?view=platform-tasks', { scroll: false })}>
-                                <ListTodo />
-                                <span>Tasks</span>
-                            </SidebarMenuSubButton>
-                        </SidebarMenuSub>
-                    </SidebarMenuItem>
-                    <SidebarMenuItem>
-                        <SidebarMenuButton tooltip="Revenue" isActive={activeView.startsWith('revenue')}>
-                            <DollarSign />
-                            <span>Revenue</span>
-                        </SidebarMenuButton>
-                        <SidebarMenuSub>
-                            <SidebarMenuSubButton tooltip="Membership Plans" isActive={activeView === 'revenue-membership'} onClick={() => router.push('/backend?view=revenue-membership', { scroll: false })}>
-                                <TrendingUp />
-                                <span>Membership</span>
-                            </SidebarMenuSubButton>
-                            <SidebarMenuSubButton tooltip="Mall Commissions" isActive={activeView === 'revenue-mall-commissions'} onClick={() => router.push('/backend?view=revenue-mall-commissions', { scroll: false })}>
-                                <ShoppingBasket />
-                                <span>Mall Commissions</span>
-                            </SidebarMenuSubButton>
-                            <SidebarMenuSubButton tooltip="Marketplace Fees" isActive={activeView === 'revenue-marketplace-fees'} onClick={() => router.push('/backend?view=revenue-marketplace-fees', { scroll: false })}>
-                                <Store />
-                                <span>Marketplace Fees</span>
-                            </SidebarMenuSubButton>
-                            <SidebarMenuSubButton tooltip="Connect Plan Pricing" isActive={activeView === 'revenue-connect-plans'} onClick={() => router.push('/backend?view=revenue-connect-plans', { scroll: false })}>
-                                <HandCoins />
-                                <span>Connect Plans</span>
-                            </SidebarMenuSubButton>
-                            <SidebarMenuSubButton tooltip="Tech Component Pricing" isActive={activeView === 'revenue-tech-pricing'} onClick={() => router.push('/backend?view=revenue-tech-pricing', { scroll: false })}>
-                                <Cpu />
-                                <span>Tech Pricing</span>
-                            </SidebarMenuSubButton>
-                        </SidebarMenuSub>
-                    </SidebarMenuItem>
-            </SidebarGroup>
-            </SidebarContent>
-            <SidebarFooter>
-            {user && (
-                <div className="flex items-center gap-3 p-2 rounded-md bg-sidebar-accent">
-                <Avatar className="h-10 w-10">
-                    <AvatarFallback>{getInitials(user.displayName)}</AvatarFallback>
-                </Avatar>
-                <div className="flex flex-col truncate">
-                    <span className="text-sm font-medium text-sidebar-foreground truncate">
-                    {user.displayName || 'Super Admin'}
-                    </span>
-                    <span className="text-xs text-sidebar-foreground/70 truncate">
-                    {user.email}
-                    </span>
-                </div>
-                <Button
-                    variant="ghost"
-                    size="icon"
-                    className="ml-auto"
-                    onClick={onLogout}
-                    title="Sign Out of Backend"
-                >
-                    <LogOut className="h-5 w-5" />
-                </Button>
-                </div>
-            )}
-            </SidebarFooter>
-        </Sidebar>
-        <SidebarInset>
-            <div className="p-6">
-                <Suspense fallback={<Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" />}>
-                {renderContent()}
-                </Suspense>
+                <SidebarMenuItem>
+                    <SidebarMenuButton tooltip="Platform">
+                        <Server />
+                        <span>Platform</span>
+                    </SidebarMenuButton>
+                    <SidebarMenuSub>
+                        <SidebarMenuSubButton isActive={activeView === 'platform-settings'} onClick={() => router.push('/backend?view=platform-settings', { scroll: false })}>
+                            <Settings />
+                            <span>Settings</span>
+                        </SidebarMenuSubButton>
+                        <SidebarMenuSubButton isActive={activeView === 'activity-feed'} onClick={() => router.push('/backend?view=activity-feed', { scroll: false })}>
+                            <Activity />
+                            <span>Activity Feed</span>
+                        </SidebarMenuSubButton>
+                        <SidebarMenuSubButton isActive={activeView === 'platform-tasks'} onClick={() => router.push('/backend?view=platform-tasks', { scroll: false })}>
+                            <ListTodo />
+                            <span>Tasks</span>
+                        </SidebarMenuSubButton>
+                    </SidebarMenuSub>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                    <SidebarMenuButton tooltip="Revenue" isActive={activeView.startsWith('revenue')}>
+                        <DollarSign />
+                        <span>Revenue</span>
+                    </SidebarMenuButton>
+                    <SidebarMenuSub>
+                        <SidebarMenuSubButton tooltip="Membership Plans" isActive={activeView === 'revenue-membership'} onClick={() => router.push('/backend?view=revenue-membership', { scroll: false })}>
+                            <TrendingUp />
+                            <span>Membership</span>
+                        </SidebarMenuSubButton>
+                        <SidebarMenuSubButton tooltip="Mall Commissions" isActive={activeView === 'revenue-mall-commissions'} onClick={() => router.push('/backend?view=revenue-mall-commissions', { scroll: false })}>
+                            <ShoppingBasket />
+                            <span>Mall Commissions</span>
+                        </SidebarMenuSubButton>
+                        <SidebarMenuSubButton tooltip="Marketplace Fees" isActive={activeView === 'revenue-marketplace-fees'} onClick={() => router.push('/backend?view=revenue-marketplace-fees', { scroll: false })}>
+                            <Store />
+                            <span>Marketplace Fees</span>
+                        </SidebarMenuSubButton>
+                        <SidebarMenuSubButton tooltip="Connect Plan Pricing" isActive={activeView === 'revenue-connect-plans'} onClick={() => router.push('/backend?view=revenue-connect-plans', { scroll: false })}>
+                            <HandCoins />
+                            <span>Connect Plans</span>
+                        </SidebarMenuSubButton>
+                        <SidebarMenuSubButton tooltip="Tech Component Pricing" isActive={activeView === 'revenue-tech-pricing'} onClick={() => router.push('/backend?view=revenue-tech-pricing', { scroll: false })}>
+                            <Cpu />
+                            <span>Tech Pricing</span>
+                        </SidebarMenuSubButton>
+                    </SidebarMenuSub>
+                </SidebarMenuItem>
+        </SidebarGroup>
+        </SidebarContent>
+        <SidebarFooter>
+        {user && (
+            <div className="flex items-center gap-3 p-2 rounded-md bg-sidebar-accent">
+            <Avatar className="h-10 w-10">
+                <AvatarFallback>{getInitials(user.displayName)}</AvatarFallback>
+            </Avatar>
+            <div className="flex flex-col truncate">
+                <span className="text-sm font-medium text-sidebar-foreground truncate">
+                {user.displayName || 'Super Admin'}
+                </span>
+                <span className="text-xs text-sidebar-foreground/70 truncate">
+                {user.email}
+                </span>
             </div>
-        </SidebarInset>
-        </SidebarProvider>
-    </AdminAuthGuard>
+            <Button
+                variant="ghost"
+                size="icon"
+                className="ml-auto"
+                onClick={onLogout}
+                title="Sign Out of Backend"
+            >
+                <LogOut className="h-5 w-5" />
+            </Button>
+            </div>
+        )}
+        </SidebarFooter>
+    </Sidebar>
+    <SidebarInset>
+        <div className="p-6">
+            <Suspense fallback={<Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" />}>
+            {renderContent()}
+            </Suspense>
+        </div>
+    </SidebarInset>
+    </SidebarProvider>
   );
 }

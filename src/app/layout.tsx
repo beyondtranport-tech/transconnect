@@ -2,6 +2,8 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import { FirebaseClientProvider } from '@/firebase/client-provider';
+import { Toaster } from '@/components/ui/toaster';
+import { AppProviders } from '@/app/providers';
 
 export const metadata: Metadata = {
   title: 'TransConnect',
@@ -24,9 +26,9 @@ export default function RootLayout({
         />
       </head>
       <body className="font-body antialiased">
-        <FirebaseClientProvider>
-            {children}
-        </FirebaseClientProvider>
+        <AppProviders>
+          {children}
+        </AppProviders>
       </body>
     </html>
   );
