@@ -3,26 +3,40 @@
 
 import { firebaseConfig } from '@/firebase/config';
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
-import { getAuth, getIdToken } from 'firebase/auth';
+import { getAuth, onIdTokenChanged, getIdToken } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 
 // IMPORTANT: DO NOT MODIFY THIS FUNCTION
 export function initializeFirebase() {
-  const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
-  const auth = getAuth(app);
-  const firestore = getFirestore(app);
-  const storage = getStorage(app); 
+  let firebaseApp;
+  if (!getApps().length) {
+    try {
+      firebaseApp = initializeApp(firebaseConfig);
+    } catch (e) {
+      if (process.env.NODE_ENV === "production") {
+        console.warn('Automatic initialization failed. Falling back to firebase config object.', e);
+      }
+      firebaseApp = initializeApp(firebaseConfig);
+    }
+  } else {
+    firebaseApp = getApp();
+  }
 
-  return { firebaseApp: app, auth, firestore, storage };
+  const auth = getAuth(firebaseApp);
+  const firestore = getFirestore(firebaseApp);
+  const storage = getStorage(firebaseApp); 
+
+  return { firebaseApp, auth, firestore, storage };
 }
 
 
 export async function getClientSideAuthToken(): Promise<string | null> {
-    const auth = getAuth(getApp()); // Use getApp() to ensure the initialized instance is used
+    const auth = getAuth();
     if (auth.currentUser) {
         try {
             // The `false` means it will return the cached token unless it's expired.
+            // This is safer for avoiding quota issues.
             return await getIdToken(auth.currentUser, false);
         } catch (error) {
             // If getting the token fails, try to force a refresh as a fallback.
@@ -37,11 +51,12 @@ export async function getClientSideAuthToken(): Promise<string | null> {
     return null;
 }
 
-// Re-export all the hooks and providers from here
+
 export * from './provider';
 export * from './client-provider';
 export * from './firestore/use-collection';
 export * from './firestore/use-doc';
 export * from './errors';
 export * from './error-emitter';
+export * from '@/hooks/use-config';
     
