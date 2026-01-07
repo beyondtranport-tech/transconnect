@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import './globals.css';
-import { AppProvider } from './app-provider'; // Import the new provider
+import { FirebaseClientProvider } from '@/firebase/client-provider'; // Correctly import the provider
 import { Toaster } from '@/components/ui/toaster';
 import { Footer } from '@/components/layout/footer';
 import { Header } from '@/components/layout/header';
@@ -28,8 +28,8 @@ export default function RootLayout({
         />
       </head>
       <body>
-        {/* Wrap the entire body content with the AppProvider */}
-        <AppProvider>
+        {/* Wrap the entire body content with the FirebaseClientProvider */}
+        <FirebaseClientProvider>
             <Analytics />
             <VisitorTracker />
             <div className="relative flex min-h-dvh flex-col bg-background">
@@ -38,7 +38,7 @@ export default function RootLayout({
                 <Footer />
             </div>
             <Toaster />
-        </AppProvider>
+        </FirebaseClientProvider>
       </body>
     </html>
   );
