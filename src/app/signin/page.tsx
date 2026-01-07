@@ -106,7 +106,6 @@ function SignInFormComponent() {
       const userCredential = await signInWithEmailAndPassword(auth, values.email, values.password);
       const loggedInUser = userCredential.user;
 
-      // Securely check and create the user document on the backend
       const token = await getIdToken(loggedInUser);
       const response = await fetch('/api/checkAndCreateUser', {
           method: 'POST',
@@ -128,7 +127,9 @@ function SignInFormComponent() {
       
       const isAdmin = loggedInUser.email === 'beyondtransport@gmail.com';
       const defaultRedirect = isAdmin ? '/backend' : '/account';
-      router.push(redirectParam || defaultRedirect);
+      
+      // Use router.replace for a clean navigation history
+      router.replace(redirectParam || defaultRedirect);
       
     } catch (error: any) {
       let title = 'An error occurred.';
