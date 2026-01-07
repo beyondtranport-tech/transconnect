@@ -10,16 +10,16 @@ export async function POST(req: NextRequest) {
         const now = new Date();
         
         const membershipsSnap = await db.collection('memberships').get();
-        const prices: { [key: string]: { monthly: number, annual: number, name: string } } = {};
+        const prices: { [key: string]: { price: { monthly: number, annual: number }, name: string } } = {};
         membershipsSnap.forEach(doc => {
             const data = doc.data();
             prices[doc.id] = { price: data.price, name: data.name };
         });
 
-        const membersQuery = db.collection('members').where('membershipId', '!=', 'free');
-        const membersSnap = await membersQuery.get();
+        const companiesQuery = db.collection('companies').where('membershipId', '!=', 'free');
+        const companiesSnap = await companiesQuery.get();
 
-        if (membersSnap.empty) {
+        if (companiesSnap.empty) {
             return NextResponse.json({ success: true, message: "No members with paid plans found.", createdCount: 0 });
         }
 
@@ -27,43 +27,50 @@ export async function POST(req: NextRequest) {
         let createdCount = 0;
         let errors: string[] = [];
 
-        for (const memberDoc of membersSnap.docs) {
-            const member = memberDoc.data();
-            const memberId = memberDoc.id;
+        for (const companyDoc of companiesSnap.docs) {
+            const company = companyDoc.data();
+            const companyId = companyDoc.id;
 
-            if (!member.nextBillingDate) continue;
+            if (!company.nextBillingDate) continue;
 
-            const nextBillingDate = (member.nextBillingDate as Timestamp).toDate();
+            const nextBillingDate = (company.nextBillingDate as Timestamp).toDate();
 
             if (nextBillingDate <= now) {
-                const planId = member.membershipId;
-                const cycle = member.billingCycle || 'monthly';
-                const planPrice = cycle === 'annual' ? prices[planId]?.price.annual : prices[planId]?.price.monthly;
-                const planName = prices[planId]?.name || planId;
+                const planId = company.membershipId;
+                const cycle = company.billingCycle || 'monthly';
+                const planDetails = prices[planId];
 
-                if (typeof planPrice !== 'number') {
-                    errors.push(`Price for plan '${planId}' on member ${memberId} not found.`);
+                if (!planDetails) {
+                    errors.push(`Price for plan '${planId}' on company ${companyId} not found.`);
                     continue;
                 }
                 
-                // Create a receivable record in walletPayments
-                const paymentRef = db.collection(`members/${memberId}/walletPayments`).doc();
+                const planPrice = cycle === 'annual' ? planDetails.price.annual : planDetails.price.monthly;
+                const planName = planDetails.name || planId;
+
+
+                if (typeof planPrice !== 'number') {
+                    errors.push(`Price for plan '${planId}' on company ${companyId} not found.`);
+                    continue;
+                }
+                
+                const paymentRef = db.collection(`companies/${companyId}/walletPayments`).doc();
                 batch.set(paymentRef, {
-                    memberId: memberId,
+                    companyId: companyId,
+                    userId: company.ownerId,
                     status: 'pending',
                     description: `Membership Fee: ${planName} (${cycle})`,
                     amount: planPrice,
                     createdAt: FieldValue.serverTimestamp(),
                 });
 
-                // Update the member's next billing date so they aren't billed again immediately
                 const newNextBillingDate = new Date(nextBillingDate);
                 if (cycle === 'monthly') {
                     newNextBillingDate.setMonth(newNextBillingDate.getMonth() + 1);
                 } else {
                     newNextBillingDate.setFullYear(newNextBillingDate.getFullYear() + 1);
                 }
-                batch.update(memberDoc.ref, { nextBillingDate: newNextBillingDate });
+                batch.update(companyDoc.ref, { nextBillingDate: newNextBillingDate });
                 
                 createdCount++;
             }
@@ -76,7 +83,7 @@ export async function POST(req: NextRequest) {
             message: `Billing run completed. ${createdCount} receivable records created.`,
             createdCount,
             errors,
-            checkedCount: membersSnap.size
+            checkedCount: companiesSnap.size
         });
 
     } catch (error: any) {
