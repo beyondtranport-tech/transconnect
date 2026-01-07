@@ -6,7 +6,7 @@ import { headers } from 'next/headers';
 import { getAuth } from 'firebase-admin/auth';
 import { getAdminApp } from '@/lib/firebase-admin';
 
-// Helper to convert Firestore Timestamps to JSON-serializable strings
+// Helper to convert Firestore Timestamps to JSON-serializable strings for logging
 function serializeTimestamps(docData: any): any {
     if (!docData) return docData;
     const newDocData: { [key: string]: any } = {};
@@ -107,5 +107,4 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: false, error: `Internal Server Error: ${error.message}` }, { status: 500 });
   }
 }
-
     

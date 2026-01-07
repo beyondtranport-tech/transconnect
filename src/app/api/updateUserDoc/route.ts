@@ -108,6 +108,8 @@ export async function POST(req: NextRequest) {
     // Use a transaction to update the document and create an audit log entry atomically
     await db.runTransaction(async (transaction) => {
         const docSnap = await transaction.get(docRef);
+        const beforeData = docSnap.exists ? docSnap.data() : null;
+
         if (!docSnap.exists) {
             // If the document doesn't exist, we can't update it.
             // This is a valid case for "set with merge" but we will treat it as an error for updates.
@@ -129,8 +131,8 @@ export async function POST(req: NextRequest) {
             userId: uid,
             action: 'update',
             timestamp: FieldValue.serverTimestamp(),
-            // before: serializeTimestamps(beforeData),
-            // after: serializeTimestamps({ ...beforeData, ...deserializedData }) // Merge for after state
+            before: serializeTimestamps(beforeData),
+            after: serializeTimestamps({ ...beforeData, ...deserializedData }) // Merge for after state
         });
     });
 

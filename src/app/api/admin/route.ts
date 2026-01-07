@@ -51,6 +51,11 @@ export async function POST(req: NextRequest) {
         const { action, payload } = await req.json();
 
         switch (action) {
+            case 'getAuditLogs': {
+                const snapshot = await db.collection('auditLogs').orderBy('timestamp', 'desc').limit(100).get();
+                const data = snapshot.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
+                return NextResponse.json({ success: true, data });
+            }
             case 'getMembers': {
                 const companiesSnap = await db.collection('companies').get();
                 const usersSnap = await db.collection('users').get();

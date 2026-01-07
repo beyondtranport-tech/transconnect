@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -358,12 +359,88 @@ function PlatformSettingsContent() {
 }
 
 function PlatformLogsContent() {
+    const [logs, setLogs] = useState<any[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    const loadLogs = useCallback(async () => {
+        setIsLoading(true);
+        setError(null);
+        try {
+            const result = await fetchFromAdminAPI('getAuditLogs');
+            if (result.data) {
+                // Ensure logs are sorted by timestamp, most recent first
+                const sortedLogs = result.data.sort((a: any, b: any) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+                setLogs(sortedLogs);
+            } else {
+                setError("Failed to load audit logs.");
+            }
+        } catch (e: any) {
+            setError(e.message);
+        } finally {
+            setIsLoading(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        loadLogs();
+    }, [loadLogs]);
+    
+    const formatDate = (isoString?: string) => {
+        if (!isoString) return 'N/A';
+        try {
+            return new Date(isoString).toLocaleString('en-ZA', { dateStyle: 'medium', timeStyle: 'short' });
+        } catch {
+            return 'Invalid Date';
+        }
+    };
+    
+    const actionColors: { [key: string]: 'default' | 'secondary' | 'destructive' | 'outline' } = {
+        create: 'default',
+        update: 'secondary',
+        delete: 'destructive'
+    };
+
     return (
-        <div>
-            <h1 className="text-2xl font-bold">Platform Logs</h1>
-            <p className="mt-2 text-muted-foreground">Monitor system activity and errors.</p>
-        </div>
-    )
+        <Card>
+            <CardHeader>
+                <CardTitle>Platform Audit Logs</CardTitle>
+                <CardDescription>A chronological record of all significant actions performed on the platform.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                 {isLoading ? (
+                    <div className="flex justify-center items-center py-20"><Loader2 className="h-10 w-10 animate-spin text-primary" /></div>
+                 ) : error ? (
+                    <div className="text-destructive-foreground bg-destructive/90 p-4 rounded-md"><p>{error}</p></div>
+                 ) : logs.length > 0 ? (
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Timestamp</TableHead>
+                                <TableHead>User ID</TableHead>
+                                <TableHead>Action</TableHead>
+                                <TableHead>Document Path</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {logs.map(log => (
+                                <TableRow key={log.id}>
+                                    <TableCell className="font-mono text-xs">{formatDate(log.timestamp)}</TableCell>
+                                    <TableCell className="font-mono text-xs">{log.userId}</TableCell>
+                                    <TableCell>
+                                        <Badge variant={actionColors[log.action] || 'outline'} className="capitalize">{log.action}</Badge>
+                                    </TableCell>
+                                    <TableCell className="font-mono text-xs">{log.collectionPath}/{log.documentId}</TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                 ) : (
+                    <div className="text-center text-muted-foreground py-10">No audit logs found.</div>
+                 )}
+            </CardContent>
+        </Card>
+    );
 }
 
 function PlatformTasksContent() {
