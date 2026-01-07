@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview An AI-powered marketing campaign generator.
@@ -8,6 +9,7 @@
  */
 
 import { ai } from '@/ai/genkit';
+import { googleAI } from '@genkit-ai/google-genai';
 import { z } from 'genkit';
 
 const MarketingBriefInputSchema = z.object({
@@ -35,6 +37,7 @@ export async function generateMarketingCampaign(input: MarketingBriefInput): Pro
 
 const prompt = ai.definePrompt({
   name: 'generateMarketingCampaignPrompt',
+  model: googleAI.model('gemini-1.5-flash-latest'),
   input: { schema: MarketingBriefInputSchema },
   output: { schema: CampaignIdeaOutputSchema },
   prompt: `You are an expert marketing strategist specializing in the logistics and transportation sector.
