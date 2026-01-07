@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -8,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { formatDistanceToNow } from 'date-fns';
-import { handleGetAuditLogs } from './actions'; // Import the new server action
+import { getClientSideAuthToken } from '@/firebase';
 
 const getSubjectInfo = (log: any) => {
     const pathSegments = log.collectionPath.split('/');
@@ -41,14 +40,26 @@ export default function ActivityFeed() {
         setIsLoading(true);
         setError(null);
         try {
-            // The server action now handles authentication and data fetching
-            const result = await handleGetAuditLogs();
+            const token = await getClientSideAuthToken();
+            if (!token) {
+                throw new Error("You must be logged in to view activities.");
+            }
 
-            if (!result.success) {
+            const response = await fetch('/api/admin', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ action: 'getAuditLogs' }),
+            });
+
+            const result = await response.json();
+
+            if (!response.ok || !result.success) {
                 throw new Error(result.error || 'Failed to fetch audit logs.');
             }
             
-            // The data returned is already filtered for the current user's company
             const sortedLogs = result.data.sort((a: any, b: any) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
             setLogs(sortedLogs);
         } catch (e: any) {
