@@ -1,33 +1,26 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, Sparkles, Wand2, Image as ImageIcon } from 'lucide-react';
+import { Loader2, Sparkles, Wand2 } from 'lucide-react';
 import { handleGenerateCampaign } from './actions';
-import type { CampaignIdeaOutput } from '@/ai/flows/marketing-campaign-flow';
+import type { GenerateImageOutput } from '@/ai/flows/image-generation-flow';
 import { useToast } from '@/hooks/use-toast';
 import Image from 'next/image';
 
-const brandBrief = {
-    brandName: "TransConnect",
-    brandDescription: "An interconnected ecosystem for the transport industry, offering funding, a marketplace for parts and services (the Mall), and advanced technology like AI freight matching.",
-    keyFeatures: ["Funding Division", "Mall Division (Supplier, Transporter, etc.)", "Marketplace Division (Resellers)", "Tech Division (AI Tools)"]
-};
-
 export default function MarketingPage() {
     const [isLoading, setIsLoading] = useState(false);
-    const [result, setResult] = useState<CampaignIdeaOutput | null>(null);
+    const [result, setResult] = useState<GenerateImageOutput | null>(null);
     const { toast } = useToast();
 
     const generateContent = async () => {
         setIsLoading(true);
         setResult(null);
-        // The input now needs to be a simple prompt for the image generation flow.
-        const result = await handleGenerateCampaign({ prompt: 'A futuristic logo for a transport logistics company called TransConnect' });
-        if (result.success) {
-            setResult(result.data);
+        // Use a simple prompt for the image generation flow.
+        const response = await handleGenerateCampaign({ prompt: 'A futuristic logo for a transport logistics company called TransConnect' });
+        if (response.success && response.data) {
+            setResult(response.data);
             toast({
               title: "Image Generated",
               description: "The diagnostic test to generate an image was successful."
@@ -36,7 +29,7 @@ export default function MarketingPage() {
             toast({
                 variant: 'destructive',
                 title: 'Generation Failed',
-                description: result.error,
+                description: response.error,
             });
         }
         setIsLoading(false);
@@ -45,6 +38,7 @@ export default function MarketingPage() {
     // Auto-generate on page load
     useEffect(() => {
         generateContent();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     return (
@@ -54,9 +48,9 @@ export default function MarketingPage() {
                     <div className="inline-block bg-primary/10 p-4 rounded-full mb-4 w-fit mx-auto">
                         <Wand2 className="h-10 w-10 text-primary" />
                     </div>
-                    <CardTitle className="text-4xl font-bold font-headline">AI Marketing Strategist</CardTitle>
+                    <CardTitle className="text-4xl font-bold font-headline">AI Marketing Diagnostic</CardTitle>
                     <CardDescription className="text-lg text-muted-foreground mt-2">
-                        Your on-demand marketing assistant. Generate complete campaign ideas for TransConnect with a single click.
+                        This page now serves as a diagnostic tool for AI image generation.
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -67,7 +61,7 @@ export default function MarketingPage() {
                             ) : (
                                 <Sparkles className="mr-2 h-4 w-4" />
                             )}
-                            Generate New Content
+                            Run Diagnostic Again
                         </Button>
                     </div>
 

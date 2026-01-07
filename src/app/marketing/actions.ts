@@ -1,13 +1,13 @@
 'use server';
 
-import { generateMarketingCampaign, type MarketingBriefInput } from "@/ai/flows/marketing-campaign-flow";
+import { generateImage, GenerateImageInput, GenerateImageOutput } from "@/ai/flows/image-generation-flow";
 
-export async function handleGenerateCampaign(input: MarketingBriefInput) {
+export async function handleGenerateCampaign(input: GenerateImageInput): Promise<{ success: boolean; data?: GenerateImageOutput; error?: string; }> {
     if (!process.env.GEMINI_API_KEY) {
         return { success: false, error: "GEMINI_API_KEY is not set. Please add it to your .env file." };
     }
     try {
-        const result = await generateMarketingCampaign(input);
+        const result = await generateImage(input);
         return { success: true, data: result };
     } catch (error) {
         console.error("Error in handleGenerateCampaign:", error);
