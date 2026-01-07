@@ -35,6 +35,7 @@ import {
   Wand2,
   Video,
   Search,
+  Activity,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -56,6 +57,7 @@ import { cn } from '@/lib/utils';
 import { doc } from 'firebase/firestore';
 import Link from 'next/link';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import ActivityFeed from './activity-feed';
 
 function DocumentsContent() {
     return (
@@ -275,6 +277,8 @@ function AccountPageContent() {
         return <RewardsContent />;
       case 'documents':
         return <DocumentsContent />;
+      case 'activity-feed':
+        return <ActivityFeed />;
       case 'settings':
         return <SettingsContent />;
       case 'dashboard':
@@ -358,6 +362,12 @@ function AccountPageContent() {
                 <SidebarMenuButton tooltip="Documents" isActive={activeView === 'documents'} onClick={() => router.push('/account?view=documents', { scroll: false })}>
                   <FileText />
                   <span>Documents</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton tooltip="Activity Feed" isActive={activeView === 'activity-feed'} onClick={() => router.push('/account?view=activity-feed', { scroll: false })}>
+                  <Activity />
+                  <span>Activity Feed</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
