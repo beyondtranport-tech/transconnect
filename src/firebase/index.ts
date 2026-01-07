@@ -19,7 +19,9 @@ export function initializeFirebase() {
 }
 
 export async function getClientSideAuthToken(): Promise<string | null> {
-    const auth = getAuth(initializeFirebase());
+    // CORRECTED: Use getApp() to get the already initialized app instance.
+    // DO NOT call initializeFirebase() here.
+    const auth = getAuth(getApp());
     if (auth.currentUser) {
         try {
             return await getIdToken(auth.currentUser, false);
