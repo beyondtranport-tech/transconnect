@@ -80,9 +80,6 @@ function AdminAccountPageContent() {
       case 'tasks': return <PlatformTasks />;
       // Add placeholders for new views
       case 'business': return <div><h1>Business</h1></div>;
-      case 'marketing':
-        router.push('/marketing');
-        return null;
       case 'forecasting': return <div><h1>Forecasting</h1></div>;
       case 'budgets': return <div><h1>Budgets</h1></div>;
       default: return <DashboardContent />;
@@ -146,12 +143,6 @@ function AdminAccountPageContent() {
                 <SidebarMenuButton tooltip="Staff" isActive={activeView === 'staff'} onClick={() => router.push('/adminaccount?view=staff', { scroll: false })}>
                   <Users />
                   <span>Staff</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Marketing" isActive={activeView === 'marketing'} onClick={() => router.push('/marketing', { scroll: false })}>
-                  <TrendingUp />
-                  <span>Marketing</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
