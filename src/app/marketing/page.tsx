@@ -1,13 +1,14 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, Sparkles, Wand2, Users, MessageSquare, Megaphone } from 'lucide-react';
+import { Loader2, Sparkles, Wand2, Image as ImageIcon } from 'lucide-react';
 import { handleGenerateCampaign } from './actions';
 import type { CampaignIdeaOutput } from '@/ai/flows/marketing-campaign-flow';
 import { useToast } from '@/hooks/use-toast';
-import { Badge } from '@/components/ui/badge';
+import Image from 'next/image';
 
 const brandBrief = {
     brandName: "TransConnect",
@@ -17,15 +18,20 @@ const brandBrief = {
 
 export default function MarketingPage() {
     const [isLoading, setIsLoading] = useState(false);
-    const [campaigns, setCampaigns] = useState<CampaignIdeaOutput | null>(null);
+    const [result, setResult] = useState<CampaignIdeaOutput | null>(null);
     const { toast } = useToast();
 
-    const generateCampaigns = async () => {
+    const generateContent = async () => {
         setIsLoading(true);
-        setCampaigns(null);
-        const result = await handleGenerateCampaign(brandBrief);
+        setResult(null);
+        // The input now needs to be a simple prompt for the image generation flow.
+        const result = await handleGenerateCampaign({ prompt: 'A futuristic logo for a transport logistics company called TransConnect' });
         if (result.success) {
-            setCampaigns(result.data);
+            setResult(result.data);
+            toast({
+              title: "Image Generated",
+              description: "The diagnostic test to generate an image was successful."
+            })
         } else {
             toast({
                 variant: 'destructive',
@@ -38,7 +44,7 @@ export default function MarketingPage() {
 
     // Auto-generate on page load
     useEffect(() => {
-        generateCampaigns();
+        generateContent();
     }, []);
 
     return (
@@ -55,50 +61,34 @@ export default function MarketingPage() {
                 </CardHeader>
                 <CardContent>
                     <div className="text-center mb-10">
-                        <Button onClick={generateCampaigns} disabled={isLoading}>
+                        <Button onClick={generateContent} disabled={isLoading}>
                             {isLoading ? (
                                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                             ) : (
                                 <Sparkles className="mr-2 h-4 w-4" />
                             )}
-                            Generate New Campaign Ideas
+                            Generate New Content
                         </Button>
                     </div>
 
                      {isLoading && (
                         <div className="text-center py-10">
                             <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto" />
-                            <p className="mt-4 text-muted-foreground">Generating creative marketing campaigns...</p>
+                            <p className="mt-4 text-muted-foreground">Generating diagnostic content...</p>
                         </div>
                     )}
                     
-                    {campaigns && (
-                        <div className="space-y-8">
-                            {campaigns.campaigns.map((campaign, index) => (
-                                <Card key={index} className="bg-background">
-                                    <CardHeader>
-                                        <CardTitle className="text-2xl text-primary">{campaign.title}</CardTitle>
-                                    </CardHeader>
-                                    <CardContent className="space-y-4">
-                                        <div>
-                                            <h4 className="font-semibold flex items-center gap-2"><Users className="h-5 w-5 text-muted-foreground" />Target Audience</h4>
-                                            <p className="text-muted-foreground pl-7">{campaign.targetAudience}</p>
-                                        </div>
-                                         <div>
-                                            <h4 className="font-semibold flex items-center gap-2"><MessageSquare className="h-5 w-5 text-muted-foreground" />Key Messaging</h4>
-                                            <p className="text-muted-foreground pl-7">{campaign.keyMessaging}</p>
-                                        </div>
-                                         <div>
-                                            <h4 className="font-semibold flex items-center gap-2"><Megaphone className="h-5 w-5 text-muted-foreground" />Suggested Channels</h4>
-                                            <div className="flex flex-wrap gap-2 pl-7 mt-1">
-                                                {campaign.channels.map(channel => (
-                                                    <Badge key={channel} variant="secondary">{channel}</Badge>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    </CardContent>
-                                </Card>
-                            ))}
+                    {result && result.imageDataUri && (
+                        <div className="space-y-4">
+                           <p className="text-center text-green-600 font-semibold">Diagnostic Test Successful: Image generation is working.</p>
+                           <Card className="bg-background">
+                             <CardHeader>
+                               <CardTitle className="text-2xl text-primary">Generated Image</CardTitle>
+                             </CardHeader>
+                             <CardContent className="flex justify-center">
+                                <Image src={result.imageDataUri} alt="Generated Diagnostic Image" width={512} height={512} className="rounded-lg shadow-md"/>
+                             </CardContent>
+                           </Card>
                         </div>
                     )}
 
