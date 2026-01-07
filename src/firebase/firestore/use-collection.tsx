@@ -1,10 +1,9 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   Query,
   DocumentData,
-  FirestoreError,
   CollectionReference,
   onSnapshot,
 } from 'firebase/firestore';

@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 import * as React from "react";
-import { useUser, useAuth } from "@/firebase";
+import { useUser, useAuth } from "@/firebase/provider";
 import { signOut } from "firebase/auth";
 import {
   DropdownMenu,
