@@ -8,13 +8,13 @@ import FreightMatcher from './freight-matcher';
 import TechCard from './tech-card';
 
 const aiTools = [
-    { id: 'pomelli', toolId: 'other', name: 'AI Marketing Strategist', description: 'Your on-demand strategist for generating complete marketing campaigns.', icon: Wand2, priceKey: 'seoBooster', per: 'use' },
-    { id: 'nano-banana', toolId: 'other', name: 'AI Image Enhancer', description: 'Instantly edit and enhance your product photos using simple text commands.', icon: Edit, priceKey: 'imageEnhancer', per: 'image' },
-    { id: 'anti-gravity', toolId: 'video-generator', name: 'AI Video Ads', description: 'Create stunning, dynamic video advertisements for your products from a text prompt.', icon: Video, priceKey: 'aiVideoGenerator', per: 'video' },
-    { id: 'veo', toolId: 'video-generator', name: 'AI Cinematic Shorts', description: 'Generate high-quality, cinematic video clips for social media or your website.', icon: Video, priceKey: 'aiVideoGenerator', per: 'video' },
-    { id: 'jules', toolId: 'other', name: 'AI Freight Matcher', description: 'The core logistics tool to find the most profitable loads and reduce empty miles.', icon: Truck, priceKey: 'aiFreightMatcher' },
-    { id: 'mixboard', toolId: 'image-generator', name: 'AI Designer', description: 'Your creative partner for generating logos, banners, and marketing images instantly.', icon: Sparkles, priceKey: 'aiImageGenerator', per: 'image' },
-    { id: 'canvas', toolId: 'other', name: 'AI SEO Booster', description: 'Automatically generate optimized titles, descriptions, and tags to boost your shop\'s visibility.', icon: Search, priceKey: 'seoBooster', per: 'use' },
+    { id: 'pomelli', toolId: 'other', name: 'AI Marketing Strategist', description: 'Your on-demand strategist for generating complete marketing campaigns.', icon: Wand2, priceKey: 'seoBooster', per: 'use', brand: 'Gemini' },
+    { id: 'nano-banana', toolId: 'other', name: 'AI Image Enhancer', description: 'Instantly edit and enhance your product photos using simple text commands.', icon: Edit, priceKey: 'imageEnhancer', per: 'image', brand: 'Gemini 2.5 Flash' },
+    { id: 'anti-gravity', toolId: 'video-generator', name: 'AI Video Ads', description: 'Create stunning, dynamic video advertisements for your products from a text prompt.', icon: Video, priceKey: 'aiVideoGenerator', per: 'video', brand: 'Veo 3' },
+    { id: 'veo', toolId: 'video-generator', name: 'AI Cinematic Shorts', description: 'Generate high-quality, cinematic video clips for social media or your website.', icon: Video, priceKey: 'aiVideoGenerator', per: 'video', brand: 'Veo 3' },
+    { id: 'jules', toolId: 'other', name: 'AI Freight Matcher', description: 'The core logistics tool to find the most profitable loads and reduce empty miles.', icon: Truck, priceKey: 'aiFreightMatcher', brand: 'Gemini' },
+    { id: 'mixboard', toolId: 'image-generator', name: 'AI Designer', description: 'Your creative partner for generating logos, banners, and marketing images instantly.', icon: Sparkles, priceKey: 'aiImageGenerator', per: 'image', brand: 'Imagen 4' },
+    { id: 'canvas', toolId: 'other', name: 'AI SEO Booster', description: 'Automatically generate optimized titles, descriptions, and tags to boost your shop\'s visibility.', icon: Search, priceKey: 'seoBooster', per: 'use', brand: 'Gemini' },
 ];
 
 

@@ -14,12 +14,14 @@ import { useState } from 'react';
 import { getClientSideAuthToken, useUser } from '@/firebase';
 import { Loader2, Sparkles } from 'lucide-react';
 import Image from 'next/image';
+import { Badge } from '@/components/ui/badge';
 
 interface TechCardProps {
     name: string;
     description: string;
     price?: number;
     icon: LucideIcon;
+    brand?: string;
     isPercentage?: boolean;
     per?: string;
     priceKey?: string; 
@@ -134,42 +136,14 @@ function GenerationDialog({ toolId, toolName, price, per, onOpenChange }: { tool
     );
 }
 
-export default function TechCard({ name, description, price, icon: Icon, isPercentage, per, toolId }: TechCardProps) {
+export default function TechCard({ name, description, price, icon: Icon, brand, isPercentage, per, toolId }: TechCardProps) {
     const [isOpen, setIsOpen] = useState(false);
 
-    // Only render a dialog for generator tools
-    if (toolId === 'image-generator' || toolId === 'video-generator') {
-        return (
-            <Dialog open={isOpen} onOpenChange={setIsOpen}>
-                <Card className="flex flex-col">
-                    <CardHeader>
-                        <div className="bg-primary/10 p-3 rounded-full w-fit mb-4">
-                            <Icon className="h-6 w-6 text-primary" />
-                        </div>
-                        <CardTitle className="text-xl">{name}</CardTitle>
-                    </CardHeader>
-                    <CardContent className="flex-grow">
-                        <CardDescription>{description}</CardDescription>
-                    </CardContent>
-                    <CardFooter className="flex-col items-start pt-4 border-t">
-                        <p className="text-2xl font-bold text-primary mb-4">
-                            {formatPrice(price, isPercentage, per)}
-                        </p>
-                        <DialogTrigger asChild>
-                            <Button className="w-full">Generate</Button>
-                        </DialogTrigger>
-                    </CardFooter>
-                </Card>
-                <GenerationDialog toolId={toolId} toolName={name} price={price} per={per} onOpenChange={setIsOpen} />
-            </Dialog>
-        )
-    }
-
-    // Default card for other tools
-    return (
-        <Card className="flex flex-col">
+    const cardContent = (
+        <>
             <CardHeader>
-                 <div className="bg-primary/10 p-3 rounded-full w-fit mb-4">
+                {brand && <Badge variant="secondary" className="w-fit mb-2">Powered by {brand}</Badge>}
+                <div className="bg-primary/10 p-3 rounded-full w-fit mb-4">
                     <Icon className="h-6 w-6 text-primary" />
                 </div>
                 <CardTitle className="text-xl">{name}</CardTitle>
@@ -178,13 +152,37 @@ export default function TechCard({ name, description, price, icon: Icon, isPerce
                 <CardDescription>{description}</CardDescription>
             </CardContent>
             <CardFooter className="flex-col items-start pt-4 border-t">
-                 <p className="text-2xl font-bold text-primary mb-4">
+                <p className="text-2xl font-bold text-primary mb-4">
                     {formatPrice(price, isPercentage, per)}
                 </p>
-                <Button asChild className="w-full">
+            </CardFooter>
+        </>
+    );
+
+    if (toolId === 'image-generator' || toolId === 'video-generator') {
+        return (
+            <Dialog open={isOpen} onOpenChange={setIsOpen}>
+                <Card className="flex flex-col">
+                    {cardContent}
+                    <div className="p-6 pt-0">
+                         <DialogTrigger asChild>
+                            <Button className="w-full">Generate</Button>
+                        </DialogTrigger>
+                    </div>
+                </Card>
+                <GenerationDialog toolId={toolId} toolName={name} price={price} per={per} onOpenChange={setIsOpen} />
+            </Dialog>
+        )
+    }
+
+    return (
+        <Card className="flex flex-col">
+            {cardContent}
+            <div className="p-6 pt-0">
+                 <Button asChild className="w-full">
                     <Link href="/account">Activate</Link>
                 </Button>
-            </CardFooter>
+            </div>
         </Card>
     )
 }
