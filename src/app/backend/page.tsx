@@ -4,7 +4,7 @@
 import { Suspense, useEffect } from 'react';
 import { Loader2 } from 'lucide-react';
 import BackendPageContent from './backend-page-content';
-import { useUser } from '@/firebase';
+import { useUser } from '@/firebase/hooks';
 import { useRouter } from 'next/navigation';
 import React from 'react';
 
@@ -13,12 +13,10 @@ function AdminAuthGuard({ children }: { children: React.ReactNode }) {
     const router = useRouter();
 
     useEffect(() => {
-        // Don't redirect until loading is complete
         if (isUserLoading) {
-            return; 
+            return; // Wait until user state is resolved
         }
 
-        // If loading is done, then we can check for user and role
         if (!user) {
             router.replace('/signin?redirect=/backend');
         } else if (user.email !== 'beyondtransport@gmail.com') {
@@ -26,8 +24,7 @@ function AdminAuthGuard({ children }: { children: React.ReactNode }) {
         }
     }, [user, isUserLoading, router]);
 
-    // While loading, show a spinner. This is the crucial part that prevents
-    // children from rendering before Firebase is ready.
+    // This is the key: show a loading state until Firebase has confirmed the user's status.
     if (isUserLoading || !user || user.email !== 'beyondtransport@gmail.com') {
         return (
             <div className="flex flex-col justify-center items-center min-h-[calc(100vh-8rem)]">
@@ -37,7 +34,6 @@ function AdminAuthGuard({ children }: { children: React.ReactNode }) {
         );
     }
     
-    // If loading is complete and user is the admin, render the requested content
     return <>{children}</>;
 }
 
