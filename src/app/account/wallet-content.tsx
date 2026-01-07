@@ -1,7 +1,7 @@
-
 'use client';
 
-import { useUser, useFirestore, useCollection, useDoc, getClientSideAuthToken, useMemoFirebase } from '@/firebase';
+import { useUser, useFirestore, useCollection, useDoc, getClientSideAuthToken } from '@/firebase/provider';
+import { useMemoFirebase } from '@/hooks/use-config';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
 import { Loader2, DollarSign, Wallet, Clock, Info, Gem } from 'lucide-react';
@@ -159,7 +159,7 @@ export default function WalletContent() {
                             )}
                         </div>
                         {companyData && (
-                            <PayServicesDialog company={companyData} onPaymentSuccess={forceRefreshCompany} />
+                            <PayServicesDialog member={companyData} onPaymentSuccess={forceRefreshCompany} />
                         )}
                     </div>
                 </div>

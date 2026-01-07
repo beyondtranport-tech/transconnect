@@ -1,7 +1,8 @@
-
 'use client';
 
-import { useUser, useFirestore, useMemoFirebase, useCollection, useDoc } from '@/firebase';
+import { useUser, useFirestore, useDoc } from '@/firebase/provider';
+import { useCollection } from '@/firebase/firestore/use-collection';
+import { useMemoFirebase } from '@/hooks/use-config';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Loader2, FileText, MoreVertical, Trash2 } from 'lucide-react';

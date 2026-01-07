@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useCallback } from 'react';
@@ -25,7 +26,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { useUser, useFirestore, getClientSideAuthToken, useDoc } from '@/firebase/provider';
+import { useUser, useFirestore, getClientSideAuthToken, useDoc } from '@/firebase';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { collection, doc } from 'firebase/firestore';
 import { Loader2, PlusCircle, UserPlus, Users } from 'lucide-react';

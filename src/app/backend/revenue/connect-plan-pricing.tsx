@@ -60,11 +60,16 @@ export default function ConnectPlanPricing() {
         const token = await getClientSideAuthToken();
         if (!token) throw new Error("Authentication failed.");
 
-        await fetch('/api/updateConfigDoc', {
+        const response = await fetch('/api/updateConfigDoc', {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
             body: JSON.stringify({ path: configRef.path, data: { ...values, updatedAt: { _methodName: 'serverTimestamp' } } }),
         });
+
+        if (!response.ok) {
+            const result = await response.json();
+            throw new Error(result.error || 'Failed to save plan prices.');
+        }
 
       toast({ title: 'Connect Plan Prices Updated!', description: 'The new prices have been saved.' });
       forceRefresh();

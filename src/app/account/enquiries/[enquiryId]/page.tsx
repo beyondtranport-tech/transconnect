@@ -1,8 +1,9 @@
+
 'use client';
 
 import { Suspense } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { useDoc, useFirestore, useUser } from '@/firebase/provider';
+import { useDoc, useFirestore, useUser } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import { Loader2, Landmark, FileText, User, Calendar, CircleHelp, HandCoins, Truck, Building, ArrowLeft } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';

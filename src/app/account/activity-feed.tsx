@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -8,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { formatDistanceToNow } from 'date-fns';
-import { useUser, getClientSideAuthToken } from '@/firebase';
+import { useUser, getClientSideAuthToken } from '@/firebase/provider';
 
 const getSubjectInfo = (log: any) => {
     const pathSegments = log.collectionPath.split('/');

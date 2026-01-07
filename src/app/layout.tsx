@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import './globals.css';
-import { FirebaseClientProvider } from '@/firebase/client-provider';
+import { AppProvider } from '@/app/app-provider';
 import { Toaster } from '@/components/ui/toaster';
 import { Header } from '@/components/layout/header';
 import { Footer } from '@/components/layout/footer';
@@ -19,7 +19,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-       <head>
+      <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
@@ -28,16 +28,16 @@ export default function RootLayout({
         />
       </head>
       <body>
-        <FirebaseClientProvider>
-            <Analytics />
-            <VisitorTracker />
-            <div className="relative flex min-h-dvh flex-col bg-background">
-                <Header />
-                <main className="flex-1">{children}</main>
-                <Footer />
-            </div>
-            <Toaster />
-        </FirebaseClientProvider>
+        <AppProvider>
+          <Analytics />
+          <VisitorTracker />
+          <div className="relative flex min-h-dvh flex-col bg-background">
+            <Header />
+            <main className="flex-1">{children}</main>
+            <Footer />
+          </div>
+          <Toaster />
+        </AppProvider>
       </body>
     </html>
   );

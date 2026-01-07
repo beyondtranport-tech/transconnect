@@ -1,8 +1,9 @@
+
 'use client';
 
 import React, { useMemo, type ReactNode } from 'react';
 import { FirebaseProvider } from '@/firebase/provider';
-import { initializeFirebase } from '@/firebase/index';
+import { initializeFirebase } from '@/firebase';
 import { TooltipProvider } from '@/components/ui/tooltip';
 
 interface FirebaseClientProviderProps {
@@ -22,9 +23,9 @@ export function FirebaseClientProvider({ children }: FirebaseClientProviderProps
       firestore={firebaseServices.firestore}
       storage={firebaseServices.storage}
     >
-        <TooltipProvider>
-            {children}
-        </TooltipProvider>
+      <TooltipProvider>
+        {children}
+      </TooltipProvider>
     </FirebaseProvider>
   );
 }
