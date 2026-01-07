@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -485,12 +484,6 @@ export default function BackendPageContent() {
                 <SidebarMenuButton tooltip="Dashboard" isActive={activeView === 'dashboard'} onClick={() => router.push('/backend?view=dashboard', { scroll: false })}>
                   <LayoutDashboard />
                   <span>Dashboard</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Marketing" isActive={activeView === 'marketing'} onClick={() => router.push('/marketing', { scroll: false })}>
-                  <TrendingUp />
-                  <span>Marketing</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>

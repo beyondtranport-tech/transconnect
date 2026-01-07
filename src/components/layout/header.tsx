@@ -1,4 +1,3 @@
-
 "use client";
 
 import Link from "next/link";
@@ -228,14 +227,6 @@ export function Header() {
                       </Link>
                      ))}
                    </div>
-                    {isAdmin && (
-                        <Link href="/marketing" onClick={() => setIsSheetOpen(false)} className={cn(
-                            "text-lg transition-colors hover:text-primary",
-                            pathname === "/marketing" ? "text-primary" : "text-muted-foreground"
-                        )}>
-                            Marketing
-                        </Link>
-                    )}
                 </nav>
                  <div className="mt-auto border-t pt-4">
                     {isUserLoading ? (
