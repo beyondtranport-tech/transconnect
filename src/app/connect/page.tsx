@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Check, Gift, Heart, Zap, ArrowRight, Loader2 } from "lucide-react";
@@ -304,5 +304,7 @@ export default function ConnectPage() {
         </div>
     );
 }
+
+    
 
     
