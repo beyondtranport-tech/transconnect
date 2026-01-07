@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import './globals.css';
-import { AppProvider } from './app-provider';
+import { FirebaseClientProvider } from '@/firebase/client-provider';
 import { Toaster } from '@/components/ui/toaster';
 import { Header } from '@/components/layout/header';
 import { Footer } from '@/components/layout/footer';
@@ -28,7 +28,7 @@ export default function RootLayout({
         />
       </head>
       <body>
-        <AppProvider>
+        <FirebaseClientProvider>
             <Analytics />
             <VisitorTracker />
             <div className="relative flex min-h-dvh flex-col bg-background">
@@ -37,7 +37,7 @@ export default function RootLayout({
                 <Footer />
             </div>
             <Toaster />
-        </AppProvider>
+        </FirebaseClientProvider>
       </body>
     </html>
   );
