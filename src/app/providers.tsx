@@ -1,7 +1,6 @@
 
 'use client';
 
-import { FirebaseClientProvider } from '@/firebase';
 import { TooltipProvider } from '@/components/ui/tooltip';
 
 export function AppProviders({
@@ -10,8 +9,6 @@ export function AppProviders({
   children: React.ReactNode;
 }) {
   return (
-      <FirebaseClientProvider>
-          <TooltipProvider>{children}</TooltipProvider>
-      </FirebaseClientProvider>
+      <TooltipProvider>{children}</TooltipProvider>
   );
 }

@@ -13,13 +13,18 @@ function AdminAuthGuard({ children }: { children: React.ReactNode }) {
     const router = useRouter();
 
     useEffect(() => {
-        if (!isUserLoading && !user) {
+        if (isUserLoading) {
+            return; // Wait until user status is resolved
+        }
+
+        if (!user) {
             router.replace('/signin?redirect=/backend');
-        } else if (!isUserLoading && user && user.email !== 'beyondtransport@gmail.com') {
+        } else if (user.email !== 'beyondtransport@gmail.com') {
             router.replace('/account');
         }
     }, [user, isUserLoading, router]);
 
+    // Render a loading state while checking auth, or if redirecting
     if (isUserLoading || !user || user.email !== 'beyondtransport@gmail.com') {
         return (
             <div className="flex flex-col justify-center items-center min-h-[calc(100vh-8rem)]">
@@ -29,6 +34,7 @@ function AdminAuthGuard({ children }: { children: React.ReactNode }) {
         );
     }
     
+    // If user is authenticated and is an admin, render the children
     return <>{children}</>;
 }
 
