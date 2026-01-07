@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -39,8 +40,8 @@ export default function ActivityFeed() {
     const auth = useAuth(); // Use the hook to get the auth instance
 
     const loadLogs = useCallback(async () => {
-        if (!auth) {
-            // Firebase Auth is not ready yet.
+        // Wait until the auth object and its currentUser property are available.
+        if (!auth?.currentUser) {
             setIsLoading(true);
             return;
         }
@@ -48,11 +49,8 @@ export default function ActivityFeed() {
         setIsLoading(true);
         setError(null);
         try {
-            if (!auth.currentUser) {
-                throw new Error("You must be logged in to view activities.");
-            }
-            
             const token = await getIdToken(auth.currentUser);
+            
             if (!token) {
                 throw new Error("Authentication token could not be retrieved.");
             }
@@ -74,7 +72,7 @@ export default function ActivityFeed() {
             
             const sortedLogs = result.data.sort((a: any, b: any) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
             setLogs(sortedLogs);
-        } catch (e: any) {
+        } catch (e: any) => {
             setError(e.message);
         } finally {
             setIsLoading(false);
@@ -82,6 +80,8 @@ export default function ActivityFeed() {
     }, [auth]); // Depend on the auth instance
 
     useEffect(() => {
+        // This effect will re-run whenever `auth` changes,
+        // including when the user logs in and `auth.currentUser` becomes available.
         loadLogs();
     }, [loadLogs]);
     

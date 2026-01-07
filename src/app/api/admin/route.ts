@@ -91,7 +91,7 @@ export async function POST(req: NextRequest) {
                     if (data.userId) userIds.add(data.userId);
                 });
                 
-                const userDocs = await db.collection('users').where(FieldPath.documentId(), 'in', Array.from(userIds)).get();
+                const userDocs = await db.collection('users').where(FieldValue.documentId(), 'in', Array.from(userIds)).get();
                 const userMap = new Map(userDocs.docs.map(doc => [doc.id, doc.data()]));
                 
                 const companyIds = new Set<string>();
@@ -102,7 +102,7 @@ export async function POST(req: NextRequest) {
 
                 let companyMap = new Map();
                 if (companyIds.size > 0) {
-                    const companiesSnap = await db.collection('companies').where(FieldPath.documentId(), 'in', Array.from(companyIds)).get();
+                    const companiesSnap = await db.collection('companies').where(FieldValue.documentId(), 'in', Array.from(companyIds)).get();
                     companyMap = new Map(companiesSnap.docs.map(doc => [doc.id, doc.data()]));
                 }
 
