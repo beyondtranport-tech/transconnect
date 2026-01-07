@@ -74,6 +74,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: 'Forbidden: You can only delete your own data.' }, { status: 403 });
     }
     
+    const userDoc = await db.collection('users').doc(uid).get();
+    const userCompanyId = userDoc.data()?.companyId;
+
     // Use a transaction to delete and log atomically
     await db.runTransaction(async (transaction) => {
         const docSnap = await transaction.get(docRef);
@@ -89,6 +92,7 @@ export async function POST(req: NextRequest) {
             collectionPath: pathSegments.slice(0, -1).join('/'),
             documentId: pathSegments[pathSegments.length - 1],
             userId: uid,
+            companyId: userCompanyId, // Add companyId for filtering
             action: 'delete',
             timestamp: FieldValue.serverTimestamp(),
             before: serializeTimestamps(beforeData),

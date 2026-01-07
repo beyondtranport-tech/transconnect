@@ -1,10 +1,9 @@
-
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2, Activity, User, Building, FileText, ShoppingCart, Users } from 'lucide-react';
-import { getClientSideAuthToken, useUser } from '@/firebase';
+import { getClientSideAuthToken } from '@/firebase';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
@@ -56,43 +55,23 @@ export default function ActivityFeed() {
     const [logs, setLogs] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const { user } = useUser();
 
     const loadLogs = useCallback(async () => {
-        if (!user) return;
         setIsLoading(true);
         setError(null);
         try {
-            // First, get the current user's companyId
-            const userRes = await fetchFromAdminAPI('getUserDoc', { uid: user.uid });
-            const userCompanyId = userRes.data?.companyId;
-
-            if (!userCompanyId) {
-                throw new Error("Could not determine your company ID.");
-            }
-
+            // The API now handles filtering based on the user's token
             const result = await fetchFromAdminAPI('getAuditLogs');
             
-            // Filter logs to only include those matching the user's companyId
-            const filteredLogs = result.data.filter((log: any) => {
-                 const pathSegments = log.collectionPath.split('/');
-                 if (pathSegments[0] === 'companies' && pathSegments[1] === userCompanyId) {
-                     return true;
-                 }
-                  if (pathSegments[0] === 'users' && log.documentId === user.uid) {
-                    return true;
-                 }
-                 return false;
-            });
-
-            const sortedLogs = filteredLogs.sort((a: any, b: any) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+            // The data returned is already filtered for the current user's company
+            const sortedLogs = result.data.sort((a: any, b: any) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
             setLogs(sortedLogs);
         } catch (e: any) {
             setError(e.message);
         } finally {
             setIsLoading(false);
         }
-    }, [user]);
+    }, []);
 
     useEffect(() => {
         loadLogs();

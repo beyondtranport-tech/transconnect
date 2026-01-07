@@ -1,4 +1,3 @@
-
 import { NextRequest, NextResponse } from 'next/server';
 import { getFirestore, Timestamp, FieldValue } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
@@ -67,8 +66,49 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, data: serializeTimestamps(userDoc.data()) });
             }
             case 'getAuditLogs': {
-                // Admin can see all logs. Regular users will have logs filtered on the client.
-                const logsSnap = await db.collection('auditLogs').orderBy('timestamp', 'desc').limit(200).get();
+                let logsQuery = db.collection('auditLogs').orderBy('timestamp', 'desc').limit(200);
+
+                if (!isAdmin) {
+                    const userDoc = await db.collection('users').doc(adminUid).get();
+                    const companyId = userDoc.data()?.companyId;
+                    if (!companyId) {
+                        return NextResponse.json({ success: true, data: [] });
+                    }
+                    // Filter logs to the user's company and their own user actions
+                    // This is a simplified approach. For more complex queries, you'd need composite indexes.
+                    const companyLogsQuery = db.collection('auditLogs').where('companyId', '==', companyId).orderBy('timestamp', 'desc').limit(100);
+                    const userLogsQuery = db.collection('auditLogs').where('userId', '==', adminUid).orderBy('timestamp', 'desc').limit(100);
+                    
+                    const [companyLogsSnap, userLogsSnap] = await Promise.all([companyLogsQuery.get(), userLogsQuery.get()]);
+
+                    const combinedLogs = new Map();
+                    companyLogsSnap.forEach(doc => combinedLogs.set(doc.id, doc.data()));
+                    userLogsSnap.forEach(doc => combinedLogs.set(doc.id, doc.data()));
+                    
+                    const logsData = Array.from(combinedLogs.values());
+                    const userIds = new Set<string>(logsData.map(log => log.userId).filter(Boolean));
+                    
+                    const userPromises = Array.from(userIds).map(uid => db.doc(`users/${uid}`).get());
+                    const userDocs = await Promise.all(userPromises);
+                    const userMap = new Map(userDocs.map(doc => [doc.id, doc.data()]));
+                    
+                    const enrichedLogs = logsData.map((logData, index) => {
+                        const user = userMap.get(logData.userId);
+                        return {
+                            id: Array.from(combinedLogs.keys())[index],
+                            ...serializeTimestamps(logData),
+                            userName: user ? `${user.firstName} ${user.lastName}` : 'Unknown User',
+                        };
+                    });
+                    
+                    enrichedLogs.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+
+                    return NextResponse.json({ success: true, data: enrichedLogs });
+
+                }
+
+                // If admin, proceed with fetching all logs
+                const logsSnap = await logsQuery.get();
                 const userIds = new Set<string>();
                 
                 logsSnap.docs.forEach(doc => {

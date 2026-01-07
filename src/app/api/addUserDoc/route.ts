@@ -91,6 +91,7 @@ export async function POST(req: NextRequest) {
       collectionPath,
       documentId: newDocRef.id,
       userId: uid,
+      companyId: pathSegments[1], // Assuming companyId is the second segment
       action: 'create',
       timestamp: FieldValue.serverTimestamp(),
       before: null,

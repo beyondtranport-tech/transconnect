@@ -82,16 +82,15 @@ export async function POST(req: NextRequest) {
         if (pathSegments[0] === 'users' && pathSegments[1] === uid) {
             isAuthorized = true;
         }
-        // User can update documents within their own /members/{uid} subcollections
+        // User can update documents within their own member document (deprecated)
         else if (pathSegments[0] === 'members' && pathSegments[1] === uid) {
             isAuthorized = true;
         }
-        // User can update their own company doc
+        // User can update their own company doc or its subcollections
         else {
             const userDoc = await db.collection('users').doc(uid).get();
             const userCompanyId = userDoc.data()?.companyId;
 
-            // Path is /companies/{companyId} or a subcollection
             if (userCompanyId && pathSegments[0] === 'companies' && pathSegments[1] === userCompanyId) {
                 isAuthorized = true;
             }
@@ -104,6 +103,8 @@ export async function POST(req: NextRequest) {
     // --- End Authorization ---
 
     const deserializedData = deserializeData(data);
+    const userDoc = await db.collection('users').doc(uid).get();
+    const userCompanyId = userDoc.data()?.companyId;
 
     // Use a transaction to update the document and create an audit log entry atomically
     await db.runTransaction(async (transaction) => {
@@ -111,15 +112,7 @@ export async function POST(req: NextRequest) {
         const beforeData = docSnap.exists ? docSnap.data() : null;
 
         if (!docSnap.exists) {
-            // If the document doesn't exist, we can't update it.
-            // This is a valid case for "set with merge" but we will treat it as an error for updates.
-            // For creating new docs, a different endpoint should be used.
-            // Let's allow creation if data is being set, not just updated
-            if (Object.keys(deserializedData).length > 0) {
-                 transaction.set(docRef, deserializedData, { merge: true });
-            } else {
-                throw new Error("Document to update does not exist.");
-            }
+             transaction.set(docRef, deserializedData, { merge: true });
         } else {
              transaction.update(docRef, deserializedData);
         }
@@ -129,6 +122,7 @@ export async function POST(req: NextRequest) {
             collectionPath: pathSegments.slice(0, -1).join('/'),
             documentId: pathSegments[pathSegments.length - 1],
             userId: uid,
+            companyId: userCompanyId, // Add companyId for filtering
             action: 'update',
             timestamp: FieldValue.serverTimestamp(),
             before: serializeTimestamps(beforeData),
