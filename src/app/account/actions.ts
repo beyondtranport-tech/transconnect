@@ -1,13 +1,11 @@
 
 'use server';
 
-import { getClientSideAuthToken } from "@/firebase";
 import { cookies } from "next/headers";
 import { getAdminApp } from "@/lib/firebase-admin";
-import { getAuth } from "firebase-admin/auth";
 
 // This is a helper function to call the admin API from a server action.
-// It securely forwards the user's authentication token.
+// It securely forwards the user's authentication token from the cookie.
 async function callAdminAPI(action: string, payload?: any) {
   const { app } = getAdminApp();
   if (!app) {
@@ -17,12 +15,10 @@ async function callAdminAPI(action: string, payload?: any) {
   const cookieStore = cookies();
   const tokenCookie = cookieStore.get('decodedToken');
 
-  if (!tokenCookie) {
+  if (!tokenCookie?.value) {
     return { success: false, error: 'Authentication token not found in cookies.' };
   }
   
-  // This is a placeholder for a real token fetching mechanism in a real app.
-  // In a production app, you would likely use a more secure session management strategy.
   const idToken = tokenCookie.value;
 
   // We need to resolve the base URL for fetch requests on the server.
@@ -38,6 +34,11 @@ async function callAdminAPI(action: string, payload?: any) {
       },
       body: JSON.stringify({ action, payload }),
     });
+
+    if (!response.ok) {
+        const errorData = await response.json();
+        return { success: false, error: errorData.error || 'API call failed.' };
+    }
 
     return await response.json();
   } catch (error: any) {

@@ -99,7 +99,7 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
                  headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ idToken: '' }), // Send empty token to clear
+                body: JSON.stringify({ idToken: null }), // Send empty/null token to clear
             });
         }
       },

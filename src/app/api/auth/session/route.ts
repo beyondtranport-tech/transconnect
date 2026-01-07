@@ -12,7 +12,18 @@ export async function POST(req: NextRequest) {
   const { idToken } = await req.json();
 
   if (!idToken) {
-    return NextResponse.json({ success: false, error: "ID token is required" }, { status: 400 });
+    // If no token, clear the cookie
+    const response = NextResponse.json({ success: true, message: "Session cookie cleared" });
+    response.cookies.set({
+        name: 'decodedToken',
+        value: '',
+        httpOnly: true,
+        secure: process.env.NODE_ENV !== 'development',
+        path: '/',
+        sameSite: 'lax',
+        maxAge: -1, // Expire immediately
+    });
+    return response;
   }
 
   try {
@@ -23,8 +34,6 @@ export async function POST(req: NextRequest) {
     const response = NextResponse.json({ success: true, message: "Session token set" });
     
     // Set the token in a secure, HttpOnly cookie.
-    // NOTE: This is a simplified example. In a real production app, you'd want to manage
-    // session expiration more robustly.
     response.cookies.set({
       name: 'decodedToken',
       value: idToken,
