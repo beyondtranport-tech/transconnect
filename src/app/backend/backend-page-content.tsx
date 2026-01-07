@@ -488,6 +488,12 @@ export default function BackendPageContent() {
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
+                <SidebarMenuButton tooltip="Marketing" isActive={activeView === 'marketing'} onClick={() => router.push('/marketing', { scroll: false })}>
+                  <TrendingUp />
+                  <span>Marketing</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
                  <a href="https://analytics.google.com" target="_blank" rel="noopener noreferrer" className="w-full">
                     <SidebarMenuButton tooltip="Analytics">
                         <LineChart />
