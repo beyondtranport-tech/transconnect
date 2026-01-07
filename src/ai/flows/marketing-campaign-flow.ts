@@ -25,11 +25,10 @@ export type MarketingCampaignOutput = z.infer<
 export async function generateMarketingCampaign(
   input: MarketingCampaignInput
 ): Promise<MarketingCampaignOutput> {
-  // Direct generation call, bypassing defineFlow and definePrompt
   const prompt = `Generate a short, catchy tagline for the following product: ${input.productName}`;
 
   const { output } = await ai.generate({
-    model: googleAI.model('gemini-pro'),
+    model: 'googleai/gemini-2.5-flash-image-preview',
     prompt: prompt,
     output: {
       schema: MarketingCampaignOutputSchema,
