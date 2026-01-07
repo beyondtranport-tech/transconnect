@@ -8,7 +8,6 @@ import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import BillingRun from './billing-run';
 import { getClientSideAuthToken } from '@/firebase';
 import { useState, useEffect, useCallback } from 'react';
 
@@ -184,8 +183,6 @@ export default function DashboardContent() {
                 </Link>
             </div>
 
-            <BillingRun />
-            
             <Card>
                 <CardHeader>
                     <CardTitle>Member Growth</CardTitle>
@@ -229,7 +226,7 @@ export default function DashboardContent() {
                                 {pendingApplications.length > 0 ? pendingApplications.map(app => (
                                     <TableRow key={app.id}>
                                         <TableCell>
-                                            <div className="font-medium capitalize">{app.fundingType?.replace(/-/g, ' ')}</div>
+                                            <div className="font-medium capitalize">{app.fundingType?.replace(/_/g, ' ')}</div>
                                             <div className="text-sm text-muted-foreground">{formatDate(app.createdAt)}</div>
                                         </TableCell>
                                         <TableCell>{formatPrice(app.amountRequested)}</TableCell>
