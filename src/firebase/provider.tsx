@@ -64,8 +64,8 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
   storage,
 }) => {
   const [userAuthState, setUserAuthState] = useState<UserAuthState>({
-    user: null,
-    isUserLoading: true,
+    user: auth.currentUser, // Initialize with current user if available
+    isUserLoading: true, // Start in loading state
     userError: null,
   });
 
@@ -84,13 +84,17 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
         const idToken = firebaseUser ? await firebaseUser.getIdToken() : null;
         
         // This fetch call sets or clears the server-side session cookie.
-        await fetch('/api/auth/session', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ idToken }),
-        });
+        try {
+            await fetch('/api/auth/session', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ idToken }),
+            });
+        } catch (error) {
+            console.error("FirebaseProvider: Failed to set session cookie:", error);
+        }
       },
       (error) => {
         console.error("FirebaseProvider: onIdTokenChanged error:", error);
