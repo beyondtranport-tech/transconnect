@@ -68,7 +68,7 @@ export default function MarketingPage() {
                      {isLoading && (
                         <div className="text-center py-10">
                             <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto" />
-                            <p className="mt-4 text-muted-foreground">Pomelli is thinking...</p>
+                            <p className="mt-4 text-muted-foreground">Generating creative marketing campaigns...</p>
                         </div>
                     )}
                     

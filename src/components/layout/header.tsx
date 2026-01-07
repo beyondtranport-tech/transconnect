@@ -108,6 +108,12 @@ export function Header() {
                 ))}
               </DropdownMenuContent>
             </DropdownMenu>
+
+            {isAdmin && (
+              <Link href="/marketing" className={cn("transition-colors hover:text-primary px-3 py-2 rounded-md", pathname === "/marketing" ? "text-primary font-semibold" : "text-muted-foreground")}>
+                  Marketing
+              </Link>
+            )}
         </nav>
 
         <div className="flex items-center gap-4">
@@ -227,6 +233,14 @@ export function Header() {
                       </Link>
                      ))}
                    </div>
+                    {isAdmin && (
+                        <Link href="/marketing" onClick={() => setIsSheetOpen(false)} className={cn(
+                            "text-lg transition-colors hover:text-primary",
+                            pathname === "/marketing" ? "text-primary" : "text-muted-foreground"
+                        )}>
+                            Marketing
+                        </Link>
+                    )}
                 </nav>
                  <div className="mt-auto border-t pt-4">
                     {isUserLoading ? (
