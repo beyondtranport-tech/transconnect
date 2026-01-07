@@ -1,6 +1,11 @@
 import type { Metadata } from 'next';
 import './globals.css';
-import { FirebaseClientProvider } from '@/firebase/client-provider';
+import { AppProvider } from './app-provider'; // Import the new provider
+import { Toaster } from '@/components/ui/toaster';
+import { Footer } from '@/components/layout/footer';
+import { Header } from '@/components/layout/header';
+import Analytics from '@/components/Analytics';
+import { VisitorTracker } from '@/components/VisitorTracker';
 
 export const metadata: Metadata = {
   title: 'TransConnect',
@@ -23,7 +28,17 @@ export default function RootLayout({
         />
       </head>
       <body>
-        <FirebaseClientProvider>{children}</FirebaseClientProvider>
+        {/* Wrap the entire body content with the AppProvider */}
+        <AppProvider>
+            <Analytics />
+            <VisitorTracker />
+            <div className="relative flex min-h-dvh flex-col bg-background">
+                <Header />
+                <main className="flex-1">{children}</main>
+                <Footer />
+            </div>
+            <Toaster />
+        </AppProvider>
       </body>
     </html>
   );

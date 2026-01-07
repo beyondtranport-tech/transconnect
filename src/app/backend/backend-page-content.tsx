@@ -57,18 +57,14 @@ import { Button } from '@/components/ui/button';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useState, useEffect, Suspense, useMemo, useCallback } from 'react';
 import Link from 'next/link';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 
 import { useUser, useAuth } from '@/firebase';
-import { getClientSideAuthToken } from '@/firebase';
 import { signOut } from 'firebase/auth';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
 
 // Using next/dynamic to lazy-load components
 import dynamic from 'next/dynamic';
-import MemberWallet from './wallet/[memberId]/member-wallet';
 
+const MemberWallet = dynamic(() => import('./wallet/[memberId]/member-wallet'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const DashboardContent = dynamic(() => import('./dashboard-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const MembersList = dynamic(() => import('./members-list'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const StaffList = dynamic(() => import('./staff-list'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
@@ -90,291 +86,12 @@ const PermissionsContent = dynamic(() => import('./permissions-content'), { load
 const ActivityFeed = dynamic(() => import('./activity-feed'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const PlatformTasksContent = dynamic(() => import('./platform-tasks'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 
-
-// --- START: Division Specific Dashboards ---
-
-const formatPrice = (price: number) => {
-    if (typeof price !== 'number') return 'N/A';
-    return new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(price);
-};
-
-const formatDate = (isoString: string | undefined) => {
-    if (!isoString) return 'N/A';
-    try {
-        return new Date(isoString).toLocaleDateString('en-ZA', { month: 'short', day: 'numeric', year: 'numeric' });
-    } catch (e) {
-        return 'Invalid Date';
-    }
-};
-
-const statusColors: { [key: string]: 'default' | 'secondary' | 'destructive' | 'outline' } = {
-  pending: 'secondary',
-  under_review: 'outline',
-  matched: 'default',
-  rejected: 'destructive',
-  funded: 'default',
-  membership_payment: 'default',
-  draft: 'secondary',
-  pending_review: 'outline',
-  approved: 'default',
-};
-
-// Stable helper function
-async function fetchFromAdminAPI(action: string, payload?: any) {
-    const token = await getClientSideAuthToken();
-    if (!token) throw new Error("Authentication failed.");
-    
-    const response = await fetch('/api/admin', {
-        method: 'POST',
-        headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ action, payload }),
-    });
-
-    const result = await response.json();
-    if (!response.ok || !result.success) {
-        throw new Error(result.error || `API Error for action: ${action}`);
-    }
-    return result;
-}
-
-
-function FundingDivisionContent() {
-    const [stats, setStats] = useState({ applications: 0, totalRequested: 0, totalFunded: 0 });
-    const [applications, setApplications] = useState<any[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
-
-    const loadData = useCallback(async () => {
-        setIsLoading(true);
-        setError(null);
-        try {
-            const result = await fetchFromAdminAPI('getFinanceApplications');
-            if (result.data) {
-                const apps = result.data;
-                const totalFunded = apps.filter((app: any) => app.status === 'funded').reduce((sum: number, app: any) => sum + (app.amountRequested || 0), 0);
-                const totalRequested = apps.reduce((sum: number, app: any) => sum + (app.amountRequested || 0), 0);
-                setStats({ applications: apps.length, totalRequested, totalFunded });
-                setApplications(apps);
-            } else {
-                setError("Failed to load funding data.");
-            }
-        } catch (e: any) {
-            setError(e.message);
-        } finally {
-            setIsLoading(false);
-        }
-    }, []);
-
-    useEffect(() => {
-        loadData();
-    }, [loadData]);
-
-
-    if (isLoading) {
-        return <div className="flex justify-center items-center py-20"><Loader2 className="h-12 w-12 animate-spin text-primary" /></div>;
-    }
-    if (error) {
-        return <div className="text-destructive-foreground bg-destructive/90 p-4 rounded-md"><h4 className="font-semibold">Error</h4><p>{error}</p></div>;
-    }
-
-    return (
-        <div className="space-y-8">
-            <h1 className="text-2xl font-bold">Funding Division Dashboard</h1>
-            <div className="grid gap-4 md:grid-cols-3">
-                <Card><CardHeader><CardTitle>Total Applications</CardTitle></CardHeader><CardContent><div className="text-2xl font-bold">{stats.applications}</div></CardContent></Card>
-                <Card><CardHeader><CardTitle>Total Value Requested</CardTitle></CardHeader><CardContent><div className="text-2xl font-bold">{formatPrice(stats.totalRequested)}</div></CardContent></Card>
-                <Card><CardHeader><CardTitle>Total Value Funded</CardTitle></CardHeader><CardContent><div className="text-2xl font-bold">{formatPrice(stats.totalFunded)}</div></CardContent></Card>
-            </div>
-             <Card>
-                <CardHeader>
-                    <CardTitle>All Funding Records (Quotes & Enquiries)</CardTitle>
-                    <CardDescription>A list of all quotes and formal enquiries generated by members across the platform.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <div className="overflow-x-auto">
-                        <Table>
-                            <TableHeader><TableRow><TableCell>Date</TableCell><TableCell>Member</TableCell><TableCell>Record Type</TableCell><TableCell>Funding Type</TableCell><TableCell>Amount</TableCell><TableCell>Status</TableCell><TableCell>Action</TableCell></TableRow></TableHeader>
-                            <TableBody>
-                                {applications.length > 0 ? applications.map(app => (
-                                    <TableRow key={app.id}>
-                                        <TableCell className="text-xs">{formatDate(app.createdAt)}</TableCell>
-                                        <TableCell className="font-mono text-xs max-w-[150px] truncate">
-                                            <Link href={`/backend?view=wallet&memberId=${app.applicantId}`} className="hover:underline text-primary">{app.applicantId}</Link>
-                                        </TableCell>
-                                        <TableCell>
-                                            <Badge variant={app.recordType === 'Quote' ? 'outline' : 'default'} className="capitalize">
-                                                {app.recordType}
-                                            </Badge>
-                                        </TableCell>
-                                        <TableCell className="capitalize">{app.fundingType?.replace(/_/g, ' ')}</TableCell>
-                                        <TableCell>{formatPrice(app.amountRequested)}</TableCell>
-                                        <TableCell><Badge variant={statusColors[app.status] || 'secondary'} className="capitalize">{app.status?.replace(/_/g, ' ')}</Badge></TableCell>
-                                        <TableCell>
-                                            <Button asChild variant="outline" size="sm">
-                                                <Link href={`/backend?view=wallet&memberId=${app.applicantId}`}>View Member</Link>
-                                            </Button>
-                                        </TableCell>
-                                    </TableRow>
-                                )) : (
-                                    <TableRow>
-                                        <TableCell colSpan={7} className="text-center h-24 text-muted-foreground">No funding records found.</TableCell>
-                                    </TableRow>
-                                )}
-                            </TableBody>
-                        </Table>
-                    </div>
-                </CardContent>
-            </Card>
-        </div>
-    )
-}
-function MallDivisionContent() {
-    const [stats, setStats] = useState({ total: 0, pending: 0, approved: 0 });
-    const [shops, setShops] = useState<any[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
-
-    const loadData = useCallback(async () => {
-        setIsLoading(true);
-        setError(null);
-        try {
-            const result = await fetchFromAdminAPI('getShops');
-            if (result.data) {
-                const allShops = result.data;
-                setStats({
-                    total: allShops.length,
-                    pending: allShops.filter((s:any) => s.status === 'pending_review').length,
-                    approved: allShops.filter((s:any) => s.status === 'approved').length,
-                });
-                setShops(allShops);
-            } else {
-                setError("Failed to load shop data.");
-            }
-        } catch(e: any) {
-            setError(e.message)
-        } finally {
-            setIsLoading(false);
-        }
-    }, []);
-
-    useEffect(() => {
-        loadData();
-    }, [loadData]);
-
-    if (isLoading) {
-        return <div className="flex justify-center items-center py-20"><Loader2 className="h-12 w-12 animate-spin text-primary" /></div>;
-    }
-     if (error) {
-        return <div className="text-destructive-foreground bg-destructive/90 p-4 rounded-md"><h4 className="font-semibold">Error</h4><p>{error}</p></div>;
-    }
-
-    return (
-        <div className="space-y-8">
-            <h1 className="text-2xl font-bold">Mall Division Dashboard</h1>
-            <div className="grid gap-4 md:grid-cols-3">
-                <Card><CardHeader><CardTitle>Total Shops</CardTitle></CardHeader><CardContent><div className="text-2xl font-bold">{stats.total}</div></CardContent></Card>
-                <Card><CardHeader><CardTitle>Pending Approval</CardTitle></CardHeader><CardContent><div className="text-2xl font-bold">{stats.pending}</div></CardContent></Card>
-                <Card><CardHeader><CardTitle>Approved & Live</CardTitle></CardHeader><CardContent><div className="text-2xl font-bold">{stats.approved}</div></CardContent></Card>
-            </div>
-             <Card>
-                <CardHeader><CardTitle>Recently Created/Updated Shops</CardTitle></CardHeader>
-                <CardContent>
-                     <Table>
-                        <TableHeader><TableRow><TableCell>Shop Name</TableCell><TableCell>Owner ID</TableCell><TableCell>Category</TableCell><TableCell>Status</TableCell></TableRow></TableHeader>
-                        <TableBody>
-                            {shops.slice(0, 5).map(shop => (
-                                <TableRow key={shop.id}>
-                                    <TableCell className="font-medium">{shop.shopName}</TableCell>
-                                    <TableCell className="font-mono text-xs">{shop.ownerId}</TableCell>
-                                    <TableCell>{shop.category}</TableCell>
-                                    <TableCell><Badge variant={statusColors[shop.status] || 'secondary'} className="capitalize">{shop.status?.replace(/_/g, ' ')}</Badge></TableCell>
-                                </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
-                </CardContent>
-            </Card>
-        </div>
-    )
-}
-
-function MarketplaceDivisionContent() {
-    return (
-        <div className="space-y-8">
-            <h1 className="text-2xl font-bold">Marketplace Division Dashboard</h1>
-            <Card>
-                <CardHeader>
-                    <CardTitle>Future Metrics</CardTitle>
-                    <CardDescription>This dashboard will provide insights into the partner reseller network.</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                    <p className="text-muted-foreground">Key performance indicators will include:</p>
-                    <ul className="list-disc list-inside text-muted-foreground space-y-2">
-                        <li>Total number of active reseller partners.</li>
-                        <li>Sales performance per partner service category (e.g., Digital Marketing, Data Services).</li>
-                        <li>Commission revenue generated through the marketplace.</li>
-                        <li>Most popular partner services.</li>
-                    </ul>
-                </CardContent>
-            </Card>
-        </div>
-    )
-}
-function TechDivisionContent() {
-    return (
-         <div className="space-y-8">
-            <h1 className="text-2xl font-bold">Tech Division Dashboard</h1>
-            <Card>
-                <CardHeader>
-                    <CardTitle>Future Metrics</CardTitle>
-                    <CardDescription>This dashboard will track the usage and performance of the technology suite.</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                    <p className="text-muted-foreground">Key performance indicators will include:</p>
-                    <ul className="list-disc list-inside text-muted-foreground space-y-2">
-                        <li>AI Freight Matcher: Number of searches per day, successful matches, and popular routes.</li>
-                        <li>Adoption rate of new tech features.</li>
-                        <li>API usage statistics for third-party developers.</li>
-                        <li>Performance metrics for real-time analytics dashboards.</li>
-                    </ul>
-                </CardContent>
-            </Card>
-        </div>
-    )
-}
-
-// --- END: Division Specific Dashboards ---
-
-function PlatformSettingsContent() {
-    return (
-        <div className="space-y-8">
-             <div>
-                <h1 className="text-2xl font-bold">Platform Settings</h1>
-                <p className="mt-2 text-muted-foreground">Manage central configurations for the TransConnect platform.</p>
-            </div>
-            <BankDetailsSettings />
-            <ChartOfAccountsSettings />
-        </div>
-    )
-}
-
-function DivisionsContent() {
-    return (
-        <div>
-            <h1 className="text-2xl font-bold">Divisions Management</h1>
-            <p className="mt-2 text-muted-foreground">Select a division from the sidebar to manage its settings, tasks, and logs.</p>
-        </div>
-    )
-}
-
-function ContributionsContent() {
-    return (
-        <ContributionsList />
-    )
-}
+const FundingDivisionContent = dynamic(() => import('./funding-division-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const MallDivisionContent = dynamic(() => import('./mall-division-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const MarketplaceDivisionContent = dynamic(() => import('./marketplace-division-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const TechDivisionContent = dynamic(() => import('./tech-division-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const PlatformSettingsContent = dynamic(() => import('./platform-settings'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const DivisionsContent = dynamic(() => import('./divisions-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 
 
 export default function BackendPageContent() {
@@ -448,7 +165,7 @@ export default function BackendPageContent() {
       case 'divisions-tech':
         return <TechDivisionContent />;
       case 'contributions':
-        return <ContributionsContent />;
+        return <ContributionsList />;
       case 'wallet-reconciliation':
         return <ReconciliationPage />;
       default:
