@@ -49,7 +49,9 @@ export async function POST(req: NextRequest) {
             }
         }
         
-        await batch.commit();
+        if (promotions > 0) {
+            await batch.commit();
+        }
         
         return NextResponse.json({ 
             success: true, 
