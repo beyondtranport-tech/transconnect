@@ -11,10 +11,10 @@ import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { getClientSideAuthToken, useUser } from '@/firebase';
 import { useState, useEffect, useCallback } from 'react';
 
-// Moved helper function outside the component to ensure it's stable
+// Centralized helper function for making authenticated API calls
 async function fetchFromAdminAPI(action: string, payload?: any) {
     const token = await getClientSideAuthToken();
-    if (!token) throw new Error("Authentication failed.");
+    if (!token) throw new Error("Authentication failed: User token not found.");
     
     const response = await fetch('/api/admin', {
         method: 'POST',
@@ -94,13 +94,15 @@ export default function DashboardContent() {
     }, []); 
 
     useEffect(() => {
+        // THIS IS THE CRITICAL FIX:
+        // Only attempt to load data AFTER firebase auth state has been resolved AND we have a logged-in user.
         if (!isUserLoading && user) {
             loadDashboardData();
         } else if (!isUserLoading && !user) {
-            // Handle case where user is not logged in if necessary
-            setError("You must be logged in to view the dashboard.");
+            setError("You must be logged in as an admin to view the dashboard.");
             setIsLoading(false);
         }
+        // This effect depends on the user's loading status and the user object itself.
     }, [isUserLoading, user, loadDashboardData]);
 
     const formatPrice = (price: number) => {
