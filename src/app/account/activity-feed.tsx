@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -7,8 +8,7 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { formatDistanceToNow } from 'date-fns';
-import { useUser } from '@/firebase';
-import { getAuditLogsForMember } from './actions';
+import { useUser, getClientSideAuthToken } from '@/firebase';
 
 const getSubjectInfo = (log: any) => {
     const pathSegments = log.collectionPath.split('/');
@@ -41,13 +41,28 @@ export default function ActivityFeed() {
         setIsLoading(true);
         setError(null);
         try {
-            const result = await getAuditLogsForMember();
-            if (result.success && result.data) {
-                const sortedLogs = result.data.sort((a: any, b: any) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
-                setLogs(sortedLogs);
-            } else {
+            const token = await getClientSideAuthToken();
+            if (!token) {
+                throw new Error("Authentication token is not available. Please sign in again.");
+            }
+
+            const response = await fetch('/api/admin', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ action: 'getAuditLogs' }),
+                cache: 'no-store',
+            });
+
+            const result = await response.json();
+            if (!response.ok || !result.success) {
                 throw new Error(result.error || 'Failed to fetch audit logs.');
             }
+            
+            const sortedLogs = result.data.sort((a: any, b: any) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+            setLogs(sortedLogs);
         } catch (e: any) {
             setError(e.message);
         } finally {
@@ -56,9 +71,13 @@ export default function ActivityFeed() {
     }, []);
 
     useEffect(() => {
+        // This is the crucial check. Only attempt to load logs if:
+        // 1. The initial user loading process is complete.
+        // 2. A user object actually exists (meaning they are logged in).
         if (!isUserLoading && user) {
             loadLogs();
         } else if (!isUserLoading && !user) {
+            // If loading is done and there's no user, show an appropriate message.
             setError("You must be logged in to view the activity feed.");
             setIsLoading(false);
         }
