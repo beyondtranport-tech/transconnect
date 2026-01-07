@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -40,7 +41,7 @@ export default function ActivityFeed() {
 
     const loadLogs = useCallback(async () => {
         // Wait until the auth object and its currentUser property are available.
-        if (!auth?.currentUser) {
+        if (!auth || !auth.currentUser) {
             // If the auth object isn't ready, we don't set loading to false,
             // we just wait for the useEffect dependency to change.
             setIsLoading(true);
@@ -83,8 +84,10 @@ export default function ActivityFeed() {
     useEffect(() => {
         // This effect will re-run whenever `auth` changes,
         // including when the user logs in and `auth.currentUser` becomes available.
-        loadLogs();
-    }, [loadLogs]);
+        if (auth) {
+            loadLogs();
+        }
+    }, [auth, loadLogs]);
     
     const formatDate = (isoString?: string) => {
         if (!isoString) return 'N/A';
