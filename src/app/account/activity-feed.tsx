@@ -40,11 +40,9 @@ export default function ActivityFeed() {
     const auth = useAuth(); // Use the hook to get the auth instance
 
     const loadLogs = useCallback(async () => {
-        // Wait until the auth object and its currentUser property are available.
+        // This is the critical check: ensure auth and currentUser are ready.
         if (!auth || !auth.currentUser) {
-            // If the auth object isn't ready, we don't set loading to false,
-            // we just wait for the useEffect dependency to change.
-            setIsLoading(true);
+            setIsLoading(true); // Keep showing loading state until auth is ready
             return;
         }
 
@@ -79,14 +77,12 @@ export default function ActivityFeed() {
         } finally {
             setIsLoading(false);
         }
-    }, [auth]);
+    }, [auth]); // Dependency on auth ensures this function is stable and has the auth instance.
 
     useEffect(() => {
-        // This effect will re-run whenever `auth` changes,
-        // including when the user logs in and `auth.currentUser` becomes available.
-        if (auth) {
-            loadLogs();
-        }
+        // This effect will re-run whenever `auth` changes.
+        // Once auth is initialized and currentUser is available, loadLogs will execute.
+        loadLogs();
     }, [auth, loadLogs]);
     
     const formatDate = (isoString?: string) => {
