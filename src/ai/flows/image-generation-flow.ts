@@ -1,6 +1,7 @@
+
 'use server';
 /**
- * @fileOverview An AI-powered image generation tool using Google's Imagen model.
+ * @fileOverview An AI-powered image generation tool using Google's Gemini model.
  * This file contains the server-side Genkit flow logic.
  */
 
@@ -21,9 +22,14 @@ const imageGenerationFlow = ai.defineFlow(
   },
   async ({ prompt }) => {
     
+    // Use gemini-2.5-flash-image-preview for text-to-image generation
     const { media } = await ai.generate({
-        model: 'googleai/imagen-4.0-fast-generate-001',
-        prompt: `Generate an image based on the following prompt: ${prompt}`,
+        model: 'googleai/gemini-2.5-flash-image-preview',
+        prompt: prompt, // This model can accept a simple string prompt for generation
+        config: {
+            // It's good practice to specify you expect an IMAGE response
+            responseModalities: ['IMAGE'], 
+        },
     });
 
     if (!media?.url) {
