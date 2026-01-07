@@ -88,7 +88,7 @@ const ConnectPlanPricing = dynamic(() => import('./revenue/connect-plan-pricing'
 const TechPricing = dynamic(() => import('./revenue/tech-pricing'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const PermissionsContent = dynamic(() => import('./permissions-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const ActivityFeed = dynamic(() => import('./activity-feed'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const BillingRun = dynamic(() => import('./billing-run'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const PlatformTasksContent = dynamic(() => import('./platform-tasks'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 
 
 // --- START: Division Specific Dashboards ---
@@ -357,18 +357,6 @@ function PlatformSettingsContent() {
             </div>
             <BankDetailsSettings />
             <ChartOfAccountsSettings />
-        </div>
-    )
-}
-
-function PlatformTasksContent() {
-     return (
-        <div className="space-y-8">
-             <div>
-                <h1 className="text-2xl font-bold">Platform Tasks</h1>
-                <p className="mt-2 text-muted-foreground">Run manual background jobs and scheduled processes.</p>
-            </div>
-            <BillingRun />
         </div>
     )
 }
