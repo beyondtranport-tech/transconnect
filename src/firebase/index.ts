@@ -30,6 +30,7 @@ export function initializeFirebase() {
   return { firebaseApp, auth, firestore, storage };
 }
 
+
 export async function getClientSideAuthToken(): Promise<string | null> {
     const auth = getAuth();
     if (auth.currentUser) {
