@@ -37,7 +37,7 @@ export async function generateMarketingCampaign(input: MarketingBriefInput): Pro
 
 const prompt = ai.definePrompt({
   name: 'generateMarketingCampaignPrompt',
-  model: googleAI.model('gemini-1.5-flash-latest'),
+  model: googleAI.model('gemini-1.5-flash'),
   input: { schema: MarketingBriefInputSchema },
   output: { schema: CampaignIdeaOutputSchema },
   prompt: `You are an expert marketing strategist specializing in the logistics and transportation sector.
