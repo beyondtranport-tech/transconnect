@@ -26,6 +26,8 @@ import {
   TrendingUp,
   LineChart,
   Book,
+  Activity,
+  ListTodo
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -41,6 +43,8 @@ const DashboardContent = dynamic(() => import('@/app/adminaccount/dashboard'), {
 const BankDetailsSettings = dynamic(() => import('@/app/backend/bank-details-settings'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const PlatformTransactions = dynamic(() => import('@/app/adminaccount/platform-transactions'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const StaffContent = dynamic(() => import('@/app/adminaccount/staff-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const ActivityFeed = dynamic(() => import('@/app/adminaccount/activity-feed'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const PlatformTasks = dynamic(() => import('@/app/adminaccount/platform-tasks'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 
 
 function AdminAccountPageContent() {
@@ -72,6 +76,8 @@ function AdminAccountPageContent() {
       case 'bank-settings': return <BankDetailsSettings />;
       case 'platform-transactions': return <PlatformTransactions />;
       case 'staff': return <StaffContent />;
+      case 'activity-feed': return <ActivityFeed />;
+      case 'tasks': return <PlatformTasks />;
       // Add placeholders for new views
       case 'business': return <div><h1>Business</h1></div>;
       case 'marketing':
@@ -160,6 +166,18 @@ function AdminAccountPageContent() {
                   <span>Budgets</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
+               <SidebarMenuItem>
+                <SidebarMenuButton tooltip="Activity Feed" isActive={activeView === 'activity-feed'} onClick={() => router.push('/adminaccount?view=activity-feed', { scroll: false })}>
+                  <Activity />
+                  <span>Activity Feed</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+               <SidebarMenuItem>
+                <SidebarMenuButton tooltip="Tasks" isActive={activeView === 'tasks'} onClick={() => router.push('/adminaccount?view=tasks', { scroll: false })}>
+                  <ListTodo />
+                  <span>Tasks</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
           </SidebarGroup>
         </SidebarContent>
         <SidebarFooter>
@@ -203,5 +221,3 @@ export default function AdminAccountPage() {
     </Suspense>
   );
 }
-
-    

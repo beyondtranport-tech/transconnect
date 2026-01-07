@@ -51,6 +51,17 @@ export async function POST(req: NextRequest) {
         const { action, payload } = await req.json();
 
         switch (action) {
+            case 'getUserDoc': {
+                const { uid } = payload;
+                if (!uid) {
+                    throw new Error("Missing uid for getUserDoc.");
+                }
+                const userDoc = await db.collection('users').doc(uid).get();
+                if (!userDoc.exists) {
+                    return NextResponse.json({ success: true, data: null });
+                }
+                return NextResponse.json({ success: true, data: serializeTimestamps(userDoc.data()) });
+            }
             case 'getAuditLogs': {
                 const logsSnap = await db.collection('auditLogs').orderBy('timestamp', 'desc').limit(50).get();
                 const userIds = new Set<string>();
