@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { getClientSideAuthToken } from '@/firebase';
+import { getClientSideAuthToken, useUser } from '@/firebase';
 import { useState, useEffect, useCallback } from 'react';
 
 // Moved helper function outside the component to ensure it's stable
@@ -34,6 +34,7 @@ async function fetchFromAdminAPI(action: string, payload?: any) {
 
 
 export default function DashboardContent() {
+    const { user, isUserLoading } = useUser();
     const [stats, setStats] = useState({ members: 0, applications: 0, contributions: 0, totalFunded: 0 });
     const [recentMembers, setRecentMembers] = useState<any[]>([]);
     const [pendingApplications, setPendingApplications] = useState<any[]>([]);
@@ -41,7 +42,6 @@ export default function DashboardContent() {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    // Wrapped loadDashboardData in useCallback with an empty dependency array
     const loadDashboardData = useCallback(async () => {
         setIsLoading(true);
         setError(null);
@@ -93,10 +93,15 @@ export default function DashboardContent() {
         }
     }, []); 
 
-    // useEffect now correctly calls the memoized function once
     useEffect(() => {
-        loadDashboardData();
-    }, [loadDashboardData]);
+        if (!isUserLoading && user) {
+            loadDashboardData();
+        } else if (!isUserLoading && !user) {
+            // Handle case where user is not logged in if necessary
+            setError("You must be logged in to view the dashboard.");
+            setIsLoading(false);
+        }
+    }, [isUserLoading, user, loadDashboardData]);
 
     const formatPrice = (price: number) => {
         if (typeof price !== 'number') return 'N/A';
@@ -113,7 +118,7 @@ export default function DashboardContent() {
     };
 
 
-    if (isLoading) {
+    if (isLoading || isUserLoading) {
         return <div className="flex justify-center items-center py-20"><Loader2 className="h-12 w-12 animate-spin text-primary" /></div>;
     }
 
