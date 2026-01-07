@@ -9,7 +9,6 @@
  */
 
 import { ai } from '@/ai/genkit';
-import { googleAI } from '@genkit-ai/google-genai';
 import { z } from 'genkit';
 
 const MarketingBriefInputSchema = z.object({
@@ -67,10 +66,8 @@ const generateMarketingCampaignFlow = ai.defineFlow(
     outputSchema: CampaignIdeaOutputSchema,
   },
   async (input) => {
-    const { output } = await prompt({
-        input,
-        model: googleAI.model('gemini-pro'),
-    });
+    // This is the corrected call, passing the input directly.
+    const { output } = await prompt(input);
     return output!;
   }
 );
