@@ -67,7 +67,10 @@ const generateMarketingCampaignFlow = ai.defineFlow(
     outputSchema: CampaignIdeaOutputSchema,
   },
   async (input) => {
-    const { output } = await prompt(input);
+    const { output } = await prompt({
+        input,
+        model: googleAI.model('gemini-pro'),
+    });
     return output!;
   }
 );
