@@ -82,26 +82,16 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
       async (firebaseUser) => {
         setUserAuthState({ user: firebaseUser, isUserLoading: false, userError: null });
 
-        if (firebaseUser) {
-            const idToken = await firebaseUser.getIdToken();
-            // Send the token to a server-side endpoint to be set as a cookie
-            await fetch('/api/auth/session', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ idToken }),
-            });
-        } else {
-            // User signed out, so clear the cookie
-             await fetch('/api/auth/session', {
-                method: 'POST',
-                 headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ idToken: null }), // Send empty/null token to clear
-            });
-        }
+        // Get the token and set it as a cookie
+        const idToken = firebaseUser ? await firebaseUser.getIdToken() : null;
+        
+        await fetch('/api/auth/session', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ idToken }),
+        });
       },
       (error) => {
         console.error("FirebaseProvider: onIdTokenChanged error:", error);
