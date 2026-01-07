@@ -52,9 +52,48 @@ export async function POST(req: NextRequest) {
 
         switch (action) {
             case 'getAuditLogs': {
-                const snapshot = await db.collection('auditLogs').orderBy('timestamp', 'desc').limit(100).get();
-                const data = snapshot.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
-                return NextResponse.json({ success: true, data });
+                const logsSnap = await db.collection('auditLogs').orderBy('timestamp', 'desc').limit(50).get();
+                const userIds = new Set<string>();
+                const companyIds = new Set<string>();
+
+                logsSnap.docs.forEach(doc => {
+                    const data = doc.data();
+                    if (data.userId) userIds.add(data.userId);
+                    const pathSegments = data.collectionPath.split('/');
+                    if (pathSegments[0] === 'companies' && pathSegments[1]) {
+                        companyIds.add(pathSegments[1]);
+                    }
+                });
+
+                const userPromises = Array.from(userIds).map(uid => db.doc(`users/${uid}`).get());
+                const companyPromises = Array.from(companyIds).map(cid => db.doc(`companies/${cid}`).get());
+
+                const [userDocs, companyDocs] = await Promise.all([
+                    Promise.all(userPromises),
+                    Promise.all(companyPromises),
+                ]);
+
+                const userMap = new Map(userDocs.map(doc => [doc.id, doc.data()]));
+                const companyMap = new Map(companyDocs.map(doc => [doc.id, doc.data()]));
+
+                const enrichedLogs = logsSnap.docs.map(doc => {
+                    const logData = doc.data();
+                    const user = userMap.get(logData.userId);
+                    
+                    const pathSegments = logData.collectionPath.split('/');
+                    const companyId = pathSegments[0] === 'companies' && pathSegments[1] ? pathSegments[1] : null;
+                    const company = companyId ? companyMap.get(companyId) : null;
+
+                    return {
+                        id: doc.id,
+                        ...serializeTimestamps(logData),
+                        userName: user ? `${user.firstName} ${user.lastName}` : 'Unknown User',
+                        companyName: company ? company.companyName : 'N/A',
+                        companyId: companyId,
+                    };
+                });
+
+                return NextResponse.json({ success: true, data: enrichedLogs });
             }
             case 'getMembers': {
                 const companiesSnap = await db.collection('companies').get();
