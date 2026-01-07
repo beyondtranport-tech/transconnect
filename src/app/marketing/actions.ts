@@ -10,7 +10,6 @@ export async function handleGenerateCampaign(input: GenerateImageInput): Promise
     try {
         const result = await generateImageFlow(input);
         
-        // The flow now directly returns the output object which matches GenerateImageOutput
         return { success: true, data: result };
 
     } catch (error) {
