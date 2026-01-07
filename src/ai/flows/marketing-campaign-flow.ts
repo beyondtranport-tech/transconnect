@@ -9,6 +9,7 @@
  */
 
 import { ai } from '@/ai/genkit';
+import { googleAI } from '@genkit-ai/google-genai';
 import { z } from 'genkit';
 
 const MarketingBriefInputSchema = z.object({
@@ -38,6 +39,7 @@ const prompt = ai.definePrompt({
   name: 'generateMarketingCampaignPrompt',
   input: { schema: MarketingBriefInputSchema },
   output: { schema: CampaignIdeaOutputSchema },
+  model: 'googleai/gemini-1.5-flash-latest',
   prompt: `You are an expert marketing strategist specializing in the logistics and transportation sector.
   
   Your task is to develop three distinct, creative, and actionable marketing campaign ideas for the following brand:
@@ -66,7 +68,6 @@ const generateMarketingCampaignFlow = ai.defineFlow(
     outputSchema: CampaignIdeaOutputSchema,
   },
   async (input) => {
-    // This is the corrected call, passing the input directly.
     const { output } = await prompt(input);
     return output!;
   }
