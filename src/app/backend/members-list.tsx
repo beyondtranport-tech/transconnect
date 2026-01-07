@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { getClientSideAuthToken } from '@/firebase';
 import { cn } from '@/lib/utils';
 import MemberActionMenu from './member-action-menu';
+import { Button } from '@/components/ui/button';
 
 interface Member {
     id: string;
