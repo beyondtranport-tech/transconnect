@@ -50,6 +50,7 @@ import {
   DollarSign,
   FileText,
   Lock,
+  Activity,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -86,6 +87,7 @@ const MarketplaceFees = dynamic(() => import('./revenue/marketplace-fees'), { lo
 const ConnectPlanPricing = dynamic(() => import('./revenue/connect-plan-pricing'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const TechPricing = dynamic(() => import('./revenue/tech-pricing'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const PermissionsContent = dynamic(() => import('./permissions-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const ActivityFeed = dynamic(() => import('./activity-feed'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 
 
 // --- START: Division Specific Dashboards ---
@@ -358,91 +360,6 @@ function PlatformSettingsContent() {
     )
 }
 
-function PlatformLogsContent() {
-    const [logs, setLogs] = useState<any[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
-
-    const loadLogs = useCallback(async () => {
-        setIsLoading(true);
-        setError(null);
-        try {
-            const result = await fetchFromAdminAPI('getAuditLogs');
-            if (result.data) {
-                // Ensure logs are sorted by timestamp, most recent first
-                const sortedLogs = result.data.sort((a: any, b: any) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
-                setLogs(sortedLogs);
-            } else {
-                setError("Failed to load audit logs.");
-            }
-        } catch (e: any) {
-            setError(e.message);
-        } finally {
-            setIsLoading(false);
-        }
-    }, []);
-
-    useEffect(() => {
-        loadLogs();
-    }, [loadLogs]);
-    
-    const formatDate = (isoString?: string) => {
-        if (!isoString) return 'N/A';
-        try {
-            return new Date(isoString).toLocaleString('en-ZA', { dateStyle: 'medium', timeStyle: 'short' });
-        } catch {
-            return 'Invalid Date';
-        }
-    };
-    
-    const actionColors: { [key: string]: 'default' | 'secondary' | 'destructive' | 'outline' } = {
-        create: 'default',
-        update: 'secondary',
-        delete: 'destructive'
-    };
-
-    return (
-        <Card>
-            <CardHeader>
-                <CardTitle>Platform Audit Logs</CardTitle>
-                <CardDescription>A chronological record of all significant actions performed on the platform.</CardDescription>
-            </CardHeader>
-            <CardContent>
-                 {isLoading ? (
-                    <div className="flex justify-center items-center py-20"><Loader2 className="h-10 w-10 animate-spin text-primary" /></div>
-                 ) : error ? (
-                    <div className="text-destructive-foreground bg-destructive/90 p-4 rounded-md"><p>{error}</p></div>
-                 ) : logs.length > 0 ? (
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Timestamp</TableHead>
-                                <TableHead>User ID</TableHead>
-                                <TableHead>Action</TableHead>
-                                <TableHead>Document Path</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {logs.map(log => (
-                                <TableRow key={log.id}>
-                                    <TableCell className="font-mono text-xs">{formatDate(log.timestamp)}</TableCell>
-                                    <TableCell className="font-mono text-xs">{log.userId}</TableCell>
-                                    <TableCell>
-                                        <Badge variant={actionColors[log.action] || 'outline'} className="capitalize">{log.action}</Badge>
-                                    </TableCell>
-                                    <TableCell className="font-mono text-xs">{log.collectionPath}/{log.documentId}</TableCell>
-                                </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
-                 ) : (
-                    <div className="text-center text-muted-foreground py-10">No audit logs found.</div>
-                 )}
-            </CardContent>
-        </Card>
-    );
-}
-
 function PlatformTasksContent() {
     return (
         <div>
@@ -501,8 +418,8 @@ export default function BackendPageContent() {
             return <MemberWallet memberId={memberId} />;
         }
         return <WalletTransactionsList />; // Fallback if no memberId
-      case 'platform-logs':
-        return <PlatformLogsContent />;
+      case 'activity-feed':
+        return <ActivityFeed />;
       case 'platform-tasks':
         return <PlatformTasksContent />;
       case 'platform-settings':
@@ -690,9 +607,9 @@ export default function BackendPageContent() {
                             <Settings />
                             <span>Settings</span>
                         </SidebarMenuSubButton>
-                        <SidebarMenuSubButton isActive={activeView === 'platform-logs'} onClick={() => router.push('/backend?view=platform-logs', { scroll: false })}>
-                            <FileText />
-                            <span>Logs</span>
+                        <SidebarMenuSubButton isActive={activeView === 'activity-feed'} onClick={() => router.push('/backend?view=activity-feed', { scroll: false })}>
+                            <Activity />
+                            <span>Activity Feed</span>
                         </SidebarMenuSubButton>
                         <SidebarMenuSubButton isActive={activeView === 'platform-tasks'} onClick={() => router.push('/backend?view=platform-tasks', { scroll: false })}>
                             <ListTodo />
