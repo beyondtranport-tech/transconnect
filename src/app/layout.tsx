@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import './globals.css';
+import { FirebaseClientProvider } from '@/firebase/client-provider';
 
 export const metadata: Metadata = {
   title: 'TransConnect',
@@ -22,7 +23,7 @@ export default function RootLayout({
         />
       </head>
       <body>
-          {children}
+        <FirebaseClientProvider>{children}</FirebaseClientProvider>
       </body>
     </html>
   );
