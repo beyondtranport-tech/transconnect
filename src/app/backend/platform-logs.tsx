@@ -33,6 +33,7 @@ async function fetchFromAdminAPI(action: string, payload?: any) {
 
 const getSubjectInfo = (log: any) => {
     const pathSegments = log.collectionPath.split('/');
+    // Check for sub-collections first
     if (pathSegments.includes('staff')) {
         return { name: 'Staff Member', href: `/backend?view=staff` };
     }
@@ -40,15 +41,19 @@ const getSubjectInfo = (log: any) => {
         return { name: 'Shop', href: `/backend?view=shops` };
     }
     if (pathSegments.includes('products')) {
-        return { name: 'Product', href: `/backend?view=shops` };
+        return { name: 'Product', href: `/backend?view=shops` }; // Link to parent shop view
     }
-    if (log.collectionPath.startsWith('companies')) {
-        return { name: 'Company Profile', href: `/backend?view=wallet&memberId=${log.companyId}` };
-    }
-    if (log.collectionPath.startsWith('users')) {
+     if (log.collectionPath.startsWith('users')) {
+        // Since we don't have a specific user detail page in the admin backend,
+        // we can link to the member (company) page if a companyId exists.
         return { name: 'User Profile', href: `/backend?view=members` };
     }
-    return { name: 'System', href: '#' };
+    // Check for top-level collections
+    if (log.collectionPath.startsWith('companies')) {
+        return { name: 'Company Profile', href: `/backend?view=wallet&memberId=${log.documentId}` };
+    }
+    
+    return { name: 'System Record', href: '#' };
 };
 
 
@@ -121,18 +126,20 @@ export default function PlatformLogsContent() {
                                 <TableRow key={log.id}>
                                     <TableCell className="font-mono text-xs">{formatDate(log.timestamp)}</TableCell>
                                     <TableCell>
-                                        <Button variant="link" asChild className="p-0 h-auto font-normal">
+                                         <Button variant="link" asChild className="p-0 h-auto font-normal text-xs">
                                             <Link href={`/backend?view=wallet&memberId=${log.companyId}`}>{log.userName}</Link>
                                         </Button>
                                     </TableCell>
                                      <TableCell>
-                                        {log.companyName}
+                                        <Button variant="link" asChild className="p-0 h-auto font-normal text-xs">
+                                            <Link href={`/backend?view=wallet&memberId=${log.companyId}`}>{log.companyName}</Link>
+                                        </Button>
                                     </TableCell>
                                     <TableCell>
                                         <Badge variant={actionColors[log.action] || 'outline'} className="capitalize">{log.action}</Badge>
                                     </TableCell>
                                      <TableCell>
-                                         <Button variant="link" asChild className="p-0 h-auto font-normal">
+                                         <Button variant="link" asChild className="p-0 h-auto font-normal text-xs">
                                             <Link href={subject.href}>{subject.name}</Link>
                                         </Button>
                                     </TableCell>
