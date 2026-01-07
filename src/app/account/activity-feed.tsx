@@ -7,7 +7,8 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { formatDistanceToNow } from 'date-fns';
-import { getClientSideAuthToken } from '@/firebase';
+import { useAuth } from '@/firebase';
+import { getIdToken } from 'firebase/auth';
 
 const getSubjectInfo = (log: any) => {
     const pathSegments = log.collectionPath.split('/');
@@ -35,14 +36,25 @@ export default function ActivityFeed() {
     const [logs, setLogs] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const auth = useAuth(); // Use the hook to get the auth instance
 
     const loadLogs = useCallback(async () => {
+        if (!auth) {
+            // Firebase Auth is not ready yet.
+            setIsLoading(true);
+            return;
+        }
+
         setIsLoading(true);
         setError(null);
         try {
-            const token = await getClientSideAuthToken();
-            if (!token) {
+            if (!auth.currentUser) {
                 throw new Error("You must be logged in to view activities.");
+            }
+            
+            const token = await getIdToken(auth.currentUser);
+            if (!token) {
+                throw new Error("Authentication token could not be retrieved.");
             }
 
             const response = await fetch('/api/admin', {
@@ -67,7 +79,7 @@ export default function ActivityFeed() {
         } finally {
             setIsLoading(false);
         }
-    }, []);
+    }, [auth]); // Depend on the auth instance
 
     useEffect(() => {
         loadLogs();

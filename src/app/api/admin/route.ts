@@ -90,13 +90,22 @@ export async function POST(req: NextRequest) {
                     const data = doc.data();
                     if (data.userId) userIds.add(data.userId);
                 });
-
-                const userPromises = Array.from(userIds).map(uid => db.doc(`users/${uid}`).get());
-                const userDocs = await Promise.all(userPromises);
-                const userMap = new Map(userDocs.map(doc => [doc.id, doc.data()]));
                 
-                const companiesSnap = await db.collection('companies').get();
-                const companyMap = new Map(companiesSnap.docs.map(doc => [doc.id, doc.data()]));
+                const userDocs = await db.collection('users').where(FieldPath.documentId(), 'in', Array.from(userIds)).get();
+                const userMap = new Map(userDocs.docs.map(doc => [doc.id, doc.data()]));
+                
+                const companyIds = new Set<string>();
+                 logsSnap.docs.forEach(doc => {
+                    const data = doc.data();
+                    if (data.companyId) companyIds.add(data.companyId);
+                });
+
+                let companyMap = new Map();
+                if (companyIds.size > 0) {
+                    const companiesSnap = await db.collection('companies').where(FieldPath.documentId(), 'in', Array.from(companyIds)).get();
+                    companyMap = new Map(companiesSnap.docs.map(doc => [doc.id, doc.data()]));
+                }
+
 
                 const enrichedLogs = logsSnap.docs.map(doc => {
                     const logData = doc.data();
