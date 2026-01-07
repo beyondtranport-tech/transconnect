@@ -1,20 +1,35 @@
 'use server';
 
-import { generateImageFlow } from "@/ai/flows/image-generation-flow";
-import type { GenerateImageInput, GenerateImageOutput } from "@/ai/flows/schemas";
+import { generateMarketingCampaign } from '@/ai/flows/marketing-campaign-flow';
+import type {
+  MarketingCampaignInput,
+  MarketingCampaignOutput,
+} from '@/ai/flows/marketing-campaign-flow';
 
-export async function handleGenerateCampaign(input: GenerateImageInput): Promise<{ success: boolean; data?: GenerateImageOutput; error?: string; }> {
-    if (!process.env.GEMINI_API_KEY) {
-        return { success: false, error: "GEMINI_API_KEY is not set. Please add it to your .env file." };
-    }
-    try {
-        const result = await generateImageFlow(input);
-        
-        return { success: true, data: result };
+export async function handleGenerateCampaign(
+  input: MarketingCampaignInput
+): Promise<{
+  success: boolean;
+  data?: MarketingCampaignOutput;
+  error?: string;
+}> {
+  if (!process.env.GEMINI_API_KEY) {
+    return {
+      success: false,
+      error: 'GEMINI_API_KEY is not set. Please add it to your .env file.',
+    };
+  }
+  try {
+    const result = await generateMarketingCampaign(input);
 
-    } catch (error) {
-        console.error("Error in handleGenerateCampaign:", error);
-        const errorMessage = error instanceof Error ? error.message : "An unknown error occurred.";
-        return { success: false, error: `Failed to generate campaign: ${errorMessage}` };
-    }
+    return { success: true, data: result };
+  } catch (error) {
+    console.error('Error in handleGenerateCampaign:', error);
+    const errorMessage =
+      error instanceof Error ? error.message : 'An unknown error occurred.';
+    return {
+      success: false,
+      error: `Failed to generate campaign: ${errorMessage}`,
+    };
+  }
 }
