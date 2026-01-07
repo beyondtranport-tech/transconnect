@@ -1,8 +1,9 @@
-
 'use client';
 
 import { doc } from 'firebase/firestore';
-import { useDoc, useFirestore, useMemoFirebase } from '@/firebase';
+import { useDoc } from '@/firebase/firestore/use-doc'; // Corrected import
+import { useFirestore } from '@/firebase/provider'; // Corrected import
+import { useMemoFirebase } from '@/firebase'; // Corrected import for useMemoFirebase if you have it in index
 
 /**
  * A specialized hook to fetch a specific configuration document from Firestore.

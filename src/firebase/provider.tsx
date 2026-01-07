@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { createContext, useContext, ReactNode, useMemo, useState, useEffect } from 'react';
@@ -80,10 +79,8 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
       async (firebaseUser) => {
         setUserAuthState({ user: firebaseUser, isUserLoading: false, userError: null });
 
-        // Get the token and post it to our session API to set the cookie
         const idToken = firebaseUser ? await firebaseUser.getIdToken() : null;
         
-        // This fetch call sets or clears the server-side session cookie.
         try {
             await fetch('/api/auth/session', {
                 method: 'POST',
@@ -124,4 +121,36 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
       {children}
     </FirebaseContext.Provider>
   );
+};
+
+
+// --- HOOKS ---
+
+export const useFirebase = (): FirebaseServicesAndUser => {
+  const context = useContext(FirebaseContext);
+  if (context === undefined) {
+    throw new Error('useFirebase must be used within a FirebaseProvider.');
+  }
+  if (!context.areServicesAvailable || !context.firebaseApp || !context.firestore || !context.auth || !context.storage) {
+    // This error is more specific and helps debugging.
+    throw new Error('Firebase core services not available. Check FirebaseProvider props and initialization.');
+  }
+  return {
+    firebaseApp: context.firebaseApp,
+    firestore: context.firestore,
+    auth: context.auth,
+    storage: context.storage,
+    user: context.user,
+    isUserLoading: context.isUserLoading,
+    userError: context.userError,
+  };
+};
+
+export const useAuth = () => useFirebase().auth;
+export const useFirestore = () => useFirebase().firestore;
+export const useFirebaseApp = () => useFirebase().firebaseApp;
+export const useStorage = () => useFirebase().storage;
+export const useUser = (): UserHookResult => {
+    const { user, isUserLoading, userError } = useFirebase();
+    return { user, isUserLoading, userError };
 };

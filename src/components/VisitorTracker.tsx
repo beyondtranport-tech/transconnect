@@ -1,8 +1,7 @@
-
 'use client';
 
 import { useEffect } from 'react';
-import { useFirestore } from '@/firebase';
+import { useFirestore } from '@/firebase/provider';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 
 const VISITOR_ID_KEY = 'transconnect_visitor_id';

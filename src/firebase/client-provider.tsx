@@ -4,9 +4,6 @@
 import React, { useMemo, type ReactNode } from 'react';
 import { FirebaseProvider } from '@/firebase/provider';
 import { initializeFirebase } from '@/firebase/index';
-import { getAuth } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
-import { getStorage } from 'firebase/storage';
 import { Header } from '@/components/layout/header';
 import { Footer } from '@/components/layout/footer';
 import { Toaster } from "@/components/ui/toaster";
@@ -21,16 +18,13 @@ interface FirebaseClientProviderProps {
 export function FirebaseClientProvider({ children }: FirebaseClientProviderProps) {
   // This memo ensures Firebase is initialized only once per client session.
   const firebaseServices = useMemo(() => {
-    const app = initializeFirebase();
-    const auth = getAuth(app);
-    const firestore = getFirestore(app);
-    const storage = getStorage(app);
-    return { app, auth, firestore, storage };
+    // Directly use the initialized services from the function.
+    return initializeFirebase();
   }, []);
 
   return (
     <FirebaseProvider
-      firebaseApp={firebaseServices.app}
+      firebaseApp={firebaseServices.firebaseApp}
       auth={firebaseServices.auth}
       firestore={firebaseServices.firestore}
       storage={firebaseServices.storage}

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -20,6 +19,7 @@ export function useDataTable<TData>(data: TData[], columns: ColumnDef<TData>[]) 
   const [globalFilter, setGlobalFilter] = useState('');
 
   const getNestedValue = (obj: any, path: string): any => {
+    if (obj === null || obj === undefined) return undefined;
     return path.split('.').reduce((acc, part) => acc && acc[part], obj);
   };
 
@@ -44,6 +44,9 @@ export function useDataTable<TData>(data: TData[], columns: ColumnDef<TData>[]) 
         processedData.sort((a, b) => {
             const valueA = getNestedValue(a, sortKey);
             const valueB = getNestedValue(b, sortKey);
+            
+            if (valueA === null || valueA === undefined) return 1;
+            if (valueB === null || valueB === undefined) return -1;
 
             if (valueA < valueB) return sortDesc ? 1 : -1;
             if (valueA > valueB) return sortDesc ? -1 : 1;
