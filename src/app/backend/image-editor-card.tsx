@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -24,6 +23,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Sparkles, Wand2 } from 'lucide-react';
 import Image from 'next/image';
+import { getClientSideAuthToken } from '@/firebase';
 
 export default function ImageEditorCard() {
   const [isOpen, setIsOpen] = useState(false);
@@ -44,6 +44,14 @@ export default function ImageEditorCard() {
     };
     reader.readAsDataURL(file);
   };
+  
+  const clearOriginalImage = () => {
+    setOriginalImage(null);
+    const fileInput = document.getElementById('image-upload') as HTMLInputElement;
+    if (fileInput) {
+      fileInput.value = '';
+    }
+  }
 
   const handleEdit = async () => {
     if (!originalImage || !prompt) {
@@ -59,9 +67,13 @@ export default function ImageEditorCard() {
     setEditedImage(null);
 
     try {
+      const token = await getClientSideAuthToken();
+      if (!token) throw new Error("Authentication failed. Please sign in again.");
+
       const response = await fetch('/api/editImage', {
         method: 'POST',
         headers: {
+          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
@@ -121,6 +133,7 @@ export default function ImageEditorCard() {
                 {originalImage && (
                     <div className="relative aspect-square w-full">
                         <Image src={originalImage} alt="Original" fill className="rounded-md object-contain" />
+                        <Button variant="destructive" size="sm" onClick={clearOriginalImage} className="absolute top-2 right-2">Change</Button>
                     </div>
                 )}
                  <div className="space-y-2">
