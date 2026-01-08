@@ -97,7 +97,12 @@ service cloud.firestore {
     match /platformTransactions/{transactionId} { allow read, write: if isAdmin(); }
     match /auditLogs/{logId} { allow read, write: if isAdmin(); }
     match /permissions/{path=**} { allow read, write: if isAdmin(); }
-    match /visitors/{visitorId} { allow read, write: if isAdmin(); }
+    match /visitors/{visitorId} {
+      // Any client (anonymous or authenticated) can create/update their own visitor doc.
+      allow write: if true;
+      // Only admins can read the visitor data.
+      allow read: if isAdmin();
+    }
     match /rewards/{rewardId} { allow read, write: if isAdmin(); }
   }
 }
