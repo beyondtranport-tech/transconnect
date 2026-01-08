@@ -52,10 +52,7 @@ const staffFormSchema = z.object({
 type StaffFormValues = z.infer<typeof staffFormSchema>;
 
 // Helper function to fetch admin data
-async function fetchAdminData(action: string) {
-    const token = await getClientSideAuthToken();
-    if (!token) throw new Error("Authentication failed.");
-    
+async function fetchAdminData(token: string, action: string) {
     const response = await fetch('/api/admin', {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
@@ -196,9 +193,12 @@ export default function StaffContent() {
         setIsLoadingData(true);
         setError(null);
         try {
+            const token = await getClientSideAuthToken();
+            if (!token) throw new Error("Authentication failed.");
+            
             const [staffData, companiesData] = await Promise.all([
-                fetchAdminData('getStaff'),
-                fetchAdminData('getMembers') // Re-using getMembers to get company names
+                fetchAdminData(token, 'getStaff'),
+                fetchAdminData(token, 'getMembers')
             ]);
             setStaff(staffData || []);
             setCompanies(companiesData || []);

@@ -9,10 +9,7 @@ import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { formatDistanceToNow } from 'date-fns';
 
-async function fetchFromAdminAPI(action: string, payload?: any) {
-    const token = await getClientSideAuthToken();
-    if (!token) throw new Error("Authentication failed.");
-    
+async function fetchFromAdminAPI(token: string, action: string, payload?: any) {
     const response = await fetch('/api/admin', {
         method: 'POST',
         headers: {
@@ -62,15 +59,18 @@ export default function ActivityFeed() {
         setIsLoading(true);
         setError(null);
         try {
+            const token = await getClientSideAuthToken();
+            if (!token) throw new Error("Authentication failed.");
+
             // First, get the admin user's companyId
-            const userRes = await fetchFromAdminAPI('getUserDoc', { uid: user.uid });
+            const userRes = await fetchFromAdminAPI(token, 'getUserDoc', { uid: user.uid });
             const adminCompanyId = userRes.data?.companyId;
 
             if (!adminCompanyId) {
                 throw new Error("Could not determine the admin's company ID.");
             }
 
-            const result = await fetchFromAdminAPI('getAuditLogs');
+            const result = await fetchFromAdminAPI(token, 'getAuditLogs');
             const filteredLogs = result.data.filter((log: any) => log.companyId === adminCompanyId);
             const sortedLogs = filteredLogs.sort((a: any, b: any) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
             setLogs(sortedLogs);
