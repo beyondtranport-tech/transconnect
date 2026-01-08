@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -52,6 +51,7 @@ import {
   Lock,
   Activity,
   Sparkles,
+  Map,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -94,6 +94,7 @@ const TechDivisionContent = dynamic(() => import('./tech-division-content'), { l
 const PlatformSettingsContent = dynamic(() => import('./platform-settings'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const DivisionsContent = dynamic(() => import('./divisions-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const CampaignContent = dynamic(() => import('./campaign-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const SalesRoadmap = dynamic(() => import('./sales-roadmap'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 
 
 export default function BackendPageContent() {
@@ -172,6 +173,8 @@ export default function BackendPageContent() {
         return <ReconciliationPage />;
       case 'campaigns':
         return <CampaignContent />;
+      case 'sales-roadmap':
+        return <SalesRoadmap />;
       default:
         return <DashboardContent />;
     }
@@ -210,10 +213,20 @@ export default function BackendPageContent() {
                 </a>
             </SidebarMenuItem>
             <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Campaigns" isActive={activeView === 'campaigns'} onClick={() => router.push('/backend?view=campaigns', { scroll: false })}>
+                <SidebarMenuButton tooltip="Campaigns" isActive={activeView === 'campaigns' || activeView === 'sales-roadmap'}>
                   <Sparkles />
                   <span>Campaigns</span>
                 </SidebarMenuButton>
+                 <SidebarMenuSub>
+                    <SidebarMenuSubButton isActive={activeView === 'campaigns'} onClick={() => router.push('/backend?view=campaigns', { scroll: false })}>
+                        <Sparkles />
+                        <span>AI Tools</span>
+                    </SidebarMenuSubButton>
+                    <SidebarMenuSubButton isActive={activeView === 'sales-roadmap'} onClick={() => router.push('/backend?view=sales-roadmap', { scroll: false })}>
+                        <Map />
+                        <span>Sales Roadmap</span>
+                    </SidebarMenuSubButton>
+                </SidebarMenuSub>
             </SidebarMenuItem>
             <SidebarMenuItem>
                 <SidebarMenuButton tooltip="Members" isActive={activeView === 'members'} onClick={() => router.push('/backend?view=members', { scroll: false })}>
