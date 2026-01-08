@@ -10,7 +10,7 @@ import { Loader2, Users, PlusCircle, UserPlus } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
-import { getClientSideAuthToken, useUser } from '@/firebase/provider';
+import { getClientSideAuthToken, useUser } from '@/firebase';
 import StaffActionMenu from '../backend/staff-action-menu';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -215,8 +215,10 @@ export default function StaffContent() {
     }, [authToken]);
 
     useEffect(() => {
-        fetchData();
-    }, [fetchData]);
+        if (authToken) {
+            fetchData();
+        }
+    }, [authToken, fetchData]);
 
     const enrichedStaff = useMemo(() => {
         const companyMap = new Map(companies.map(c => [c.id, c.companyName]));

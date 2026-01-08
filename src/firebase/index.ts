@@ -30,22 +30,17 @@ export function initializeFirebase() {
   return { firebaseApp, auth, firestore, storage };
 }
 
-
+// This function is safe to be called from client-side effects and callbacks
+// as it does not use any React hooks internally.
 export async function getClientSideAuthToken(): Promise<string | null> {
     const auth = getAuth();
-    if (auth.currentUser) {
+    const user = auth.currentUser;
+    if (user) {
         try {
-            // The `false` means it will return the cached token unless it's expired.
-            // This is safer for avoiding quota issues.
-            return await getIdToken(auth.currentUser, false);
+            return await getIdToken(user);
         } catch (error) {
-            // If getting the token fails, try to force a refresh as a fallback.
-            try {
-                return await getIdToken(auth.currentUser, true);
-            } catch (refreshError) {
-                console.error("Error getting auth token after forced refresh:", refreshError);
-                return null;
-            }
+            console.error("Error getting auth token:", error);
+            return null;
         }
     }
     return null;
