@@ -21,7 +21,7 @@ function serializeTimestamps(docData: any): any {
     return newDocData;
 }
 
-export async function verifyAdmin(request: NextRequest): Promise<{ db: FirebaseFirestore.Firestore, adminUid: string }> {
+export async function verifyAdmin(request: NextRequest): Promise<{ db: FirebaseFirestore.Firestore, adminUid: string, isAdmin: boolean }> {
     const { app, error: initError } = getAdminApp();
     if (initError || !app) {
         throw new Error(`Admin SDK not initialized: ${initError}`);
@@ -36,26 +36,20 @@ export async function verifyAdmin(request: NextRequest): Promise<{ db: FirebaseF
     const adminAuth = getAuth(app);
     const decodedToken = await adminAuth.verifyIdToken(token);
     
-    // This allows any authenticated user to call this endpoint, authorization is checked per-action.
-    // if (decodedToken.email !== 'beyondtransport@gmail.com') {
-    //     throw new Error('Forbidden: Admin access required.');
-    // }
+    const isAdmin = decodedToken.email === 'beyondtransport@gmail.com';
 
-    return { db: getFirestore(app), adminUid: decodedToken.uid };
+    return { db: getFirestore(app), adminUid: decodedToken.uid, isAdmin };
 }
 
 
 export async function POST(req: NextRequest) {
     try {
-        const { db, adminUid } = await verifyAdmin(req);
+        const { db, adminUid, isAdmin } = await verifyAdmin(req);
         const { action, payload } = await req.json();
-        
-        const adminAuth = getAuth();
-        const userRecord = await adminAuth.getUser(adminUid);
-        const isAdmin = userRecord.email === 'beyondtransport@gmail.com';
 
         switch (action) {
             case 'getUserDoc': {
+                if (!isAdmin) throw new Error("Forbidden: Admin access required.");
                 const { uid } = payload;
                 if (!uid) {
                     throw new Error("Missing uid for getUserDoc.");
@@ -343,16 +337,6 @@ export async function POST(req: NextRequest) {
                 });
                 return NextResponse.json({ success: true, message: "Member deleted and action audited." });
             }
-            case 'updateStaffStatus': {
-                if (!isAdmin) throw new Error("Forbidden: Admin access required.");
-                const { companyId, staffId, status } = payload;
-                if (!companyId || !staffId || !status) {
-                    throw new Error("Missing companyId, staffId, or status.");
-                }
-                const staffRef = db.doc(`companies/${companyId}/staff/${staffId}`);
-                await staffRef.update({ status, updatedAt: FieldValue.serverTimestamp() });
-                return NextResponse.json({ success: true, message: "Staff status updated." });
-            }
             case 'updateStaffMember': {
                 if (!isAdmin) throw new Error("Forbidden: Admin access required.");
                 const { companyId, staffId, data } = payload;
@@ -409,6 +393,24 @@ export async function POST(req: NextRequest) {
                 await batch.commit();
 
                 return NextResponse.json({ success: true, message: 'Shop approved and published.' });
+            }
+            case 'updateStaffStatus': {
+                const { companyId, staffId, status } = payload;
+                if (!companyId || !staffId || !status) {
+                    throw new Error("Missing companyId, staffId, or status.");
+                }
+                
+                const userDoc = await db.collection('users').doc(adminUid).get();
+                const userCompanyId = userDoc.data()?.companyId;
+
+                // Authorization: Only allow if the admin is the owner of the company, or is a platform admin
+                if (!isAdmin && userCompanyId !== companyId) {
+                    throw new Error("Forbidden: You can only update staff for your own company.");
+                }
+
+                const staffRef = db.doc(`companies/${companyId}/staff/${staffId}`);
+                await staffRef.update({ status, updatedAt: FieldValue.serverTimestamp() });
+                return NextResponse.json({ success: true, message: "Staff status updated." });
             }
             default:
                 return NextResponse.json({ success: false, error: 'Invalid action' }, { status: 400 });

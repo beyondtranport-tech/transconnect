@@ -17,16 +17,17 @@ service cloud.firestore {
     // --- User Profiles ---
     // A user can read/update their own profile. Admins can read/list all profiles.
     match /users/{userId} {
-      allow read, update: if isOwner(userId) || isAdmin();
+      allow read, update: if isOwner(userId);
       allow create: if request.auth != null; // Onboarding via API
-      allow list: if isAdmin();
+      allow list, get: if isAdmin();
     }
     
     // --- Company Profiles ---
     // A user can read or update their own company document. Admins have full access.
     match /companies/{companyId} {
       allow create: if request.auth != null; // Controlled by backend function for user creation
-      allow get, list, update: if isAdmin() || get(/databases/$(database)/documents/companies/$(companyId)).data.ownerId == request.auth.uid;
+      allow get, update: if isAdmin() || get(/databases/$(database)/documents/companies/$(companyId)).data.ownerId == request.auth.uid;
+      allow list: if isAdmin();
 
       // --- Company Subcollections (Direct Access) ---
       // The company owner and admins have full access to all subcollections (staff, wallet, etc.).
@@ -40,19 +41,19 @@ service cloud.firestore {
       allow get, list: if isAdmin();
     }
     match /{path=**}/walletPayments/{paymentId} {
-      allow list: if isAdmin();
+      allow get, list: if isAdmin();
     }
     match /{path=**}/transactions/{transactionId} {
-      allow list: if isAdmin();
+      allow get, list: if isAdmin();
     }
     match /{path=**}/quotes/{quoteId} {
-      allow list: if isAdmin();
+      allow get, list: if isAdmin();
     }
     match /{path=**}/enquiries/{enquiryId} {
-      allow list: if isAdmin();
+      allow get, list: if isAdmin();
     }
     match /{path=**}/shops/{shopId} {
-      allow list: if isAdmin();
+      allow get, list: if isAdmin();
     }
 
     // --- Public & Global Collections ---

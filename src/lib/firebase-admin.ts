@@ -10,7 +10,6 @@ export function getAdminApp(): { app: App | null; error: string | null } {
     return { app: existingApp, error: null };
   }
 
-  // Decode the Base64 service account from the environment variable
   const encodedServiceAccount = process.env.FIREBASE_ADMIN_SDK_CONFIG_B64;
 
   if (!encodedServiceAccount) {
@@ -23,7 +22,6 @@ export function getAdminApp(): { app: App | null; error: string | null } {
     const serviceAccountJson = Buffer.from(encodedServiceAccount, 'base64').toString('utf8');
     const serviceAccount = JSON.parse(serviceAccountJson) as ServiceAccount;
 
-    // Validate essential properties after parsing
     if (!serviceAccount.project_id || !serviceAccount.client_email || !serviceAccount.private_key) {
         throw new Error('Parsed service account is missing essential properties (project_id, client_email, private_key).');
     }
