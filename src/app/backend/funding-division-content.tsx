@@ -1,13 +1,15 @@
-
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Loader2, FileText, Badge } from 'lucide-react';
+import { Loader2, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { getClientSideAuthToken } from '@/firebase';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { collectionGroup, query } from 'firebase/firestore';
+import { Badge } from '@/components/ui/badge';
+
 
 const statusColors: { [key: string]: 'default' | 'secondary' | 'destructive' | 'outline' } = {
   pending: 'secondary',
@@ -17,27 +19,6 @@ const statusColors: { [key: string]: 'default' | 'secondary' | 'destructive' | '
   funded: 'default',
   quote: 'outline',
 };
-
-// Stable helper function
-async function fetchFromAdminAPI(action: string, payload?: any) {
-    const token = await getClientSideAuthToken();
-    if (!token) throw new Error("Authentication failed.");
-    
-    const response = await fetch('/api/admin', {
-        method: 'POST',
-        headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ action, payload }),
-    });
-
-    const result = await response.json();
-    if (!response.ok || !result.success) {
-        throw new Error(result.error || `API Error for action: ${action}`);
-    }
-    return result;
-}
 
 const formatPrice = (price: number) => {
     if (typeof price !== 'number') return 'N/A';
@@ -54,42 +35,43 @@ const formatDate = (isoString: string | undefined) => {
 };
 
 export default function FundingDivisionContent() {
-    const [stats, setStats] = useState({ applications: 0, totalRequested: 0, totalFunded: 0 });
-    const [applications, setApplications] = useState<any[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
+    const firestore = useFirestore();
 
-    const loadData = useCallback(async () => {
-        setIsLoading(true);
-        setError(null);
-        try {
-            const result = await fetchFromAdminAPI('getFinanceApplications');
-            if (result.data) {
-                const apps = result.data;
-                const totalFunded = apps.filter((app: any) => app.status === 'funded').reduce((sum: number, app: any) => sum + (app.amountRequested || 0), 0);
-                const totalRequested = apps.reduce((sum: number, app: any) => sum + (app.amountRequested || 0), 0);
-                setStats({ applications: apps.length, totalRequested, totalFunded });
-                setApplications(apps);
-            } else {
-                setError("Failed to load funding data.");
-            }
-        } catch (e: any) {
-            setError(e.message);
-        } finally {
-            setIsLoading(false);
-        }
-    }, []);
+    const quotesQuery = useMemoFirebase(() => firestore ? query(collectionGroup(firestore, 'quotes')) : null, [firestore]);
+    const enquiriesQuery = useMemoFirebase(() => firestore ? query(collectionGroup(firestore, 'enquiries')) : null, [firestore]);
+    
+    const { data: quotes, isLoading: isLoadingQuotes, error: quotesError } = useCollection(quotesQuery);
+    const { data: enquiries, isLoading: isLoadingEnquiries, error: enquiriesError } = useCollection(enquiriesQuery);
 
-    useEffect(() => {
-        loadData();
-    }, [loadData]);
+    const isLoading = isLoadingQuotes || isLoadingEnquiries;
+    const error = quotesError || enquiriesError;
+
+    const applications = useMemo(() => {
+        if (!quotes && !enquiries) return [];
+        const combined = [
+            ...(quotes || []).map((q: any) => ({ ...q, recordType: 'Quote' })),
+            ...(enquiries || []).map((e: any) => ({ ...e, recordType: 'Enquiry' })),
+        ];
+        return combined.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    }, [quotes, enquiries]);
+
+    const stats = useMemo(() => {
+        if (!applications) return { applications: 0, totalRequested: 0, totalFunded: 0 };
+        const totalFunded = applications.filter((app: any) => app.status === 'funded').reduce((sum: number, app: any) => sum + (app.amountRequested || 0), 0);
+        const totalRequested = applications.reduce((sum: number, app: any) => sum + (app.amountRequested || 0), 0);
+        return {
+            applications: applications.length,
+            totalRequested,
+            totalFunded,
+        };
+    }, [applications]);
 
 
     if (isLoading) {
         return <div className="flex justify-center items-center py-20"><Loader2 className="h-12 w-12 animate-spin text-primary" /></div>;
     }
     if (error) {
-        return <div className="text-destructive-foreground bg-destructive/90 p-4 rounded-md"><h4 className="font-semibold">Error</h4><p>{error}</p></div>;
+        return <div className="text-destructive-foreground bg-destructive/90 p-4 rounded-md"><h4 className="font-semibold">Error</h4><p>{error.message}</p></div>;
     }
 
     return (
@@ -111,10 +93,10 @@ export default function FundingDivisionContent() {
                             <TableHeader><TableRow><TableCell>Date</TableCell><TableCell>Member</TableCell><TableCell>Record Type</TableCell><TableCell>Funding Type</TableCell><TableCell>Amount</TableCell><TableCell>Status</TableCell><TableCell>Action</TableCell></TableRow></TableHeader>
                             <TableBody>
                                 {applications.length > 0 ? applications.map(app => (
-                                    <TableRow key={app.id}>
+                                    <TableRow key={`${app.recordType}-${app.id}`}>
                                         <TableCell className="text-xs">{formatDate(app.createdAt)}</TableCell>
                                         <TableCell className="font-mono text-xs max-w-[150px] truncate">
-                                            <Link href={`/backend?view=wallet&memberId=${app.applicantId}`} className="hover:underline text-primary">{app.applicantId}</Link>
+                                            <Link href={`/backend?view=wallet&memberId=${app.companyId}`} className="hover:underline text-primary">{app.companyId}</Link>
                                         </TableCell>
                                         <TableCell>
                                             <Badge variant={app.recordType === 'Quote' ? 'outline' : 'default'} className="capitalize">
@@ -126,7 +108,7 @@ export default function FundingDivisionContent() {
                                         <TableCell><Badge variant={statusColors[app.status] || 'secondary'} className="capitalize">{app.status?.replace(/_/g, ' ')}</Badge></TableCell>
                                         <TableCell>
                                             <Button asChild variant="outline" size="sm">
-                                                <Link href={`/backend?view=wallet&memberId=${app.applicantId}`}>View Member</Link>
+                                                <Link href={`/backend?view=wallet&memberId=${app.companyId}`}>View Member</Link>
                                             </Button>
                                         </TableCell>
                                     </TableRow>

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
@@ -7,8 +6,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFoo
 import { Loader2, DollarSign, Clock, ArrowRight, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { getClientSideAuthToken } from '@/firebase';
-import { useToast } from '@/hooks/use-toast';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { collection, query, collectionGroup } from 'firebase/firestore';
 
 interface Company {
     id: string;
@@ -37,27 +36,6 @@ interface Transaction {
     memberName?: string;
 }
 
-async function fetchFromAdminAPI(action: string, payload?: any) {
-    const token = await getClientSideAuthToken();
-    if (!token) throw new Error("Authentication failed.");
-    
-    const response = await fetch('/api/admin', {
-        method: 'POST',
-        headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ action, payload }),
-    });
-
-    const result = await response.json();
-    if (!response.ok || !result.success) {
-        throw new Error(result.error || `API Error for action: ${action}`);
-    }
-    return result;
-}
-
-
 const formatCurrency = (amount: number) => {
     if (typeof amount !== 'number') return 'N/A';
     return new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(amount);
@@ -80,66 +58,48 @@ const formatDate = (dateValue: any) => {
 
 
 export default function WalletTransactionsList() {
-    const [companyMap, setCompanyMap] = useState<Map<string, Company>>(new Map());
-    const [pendingPayments, setPendingPayments] = useState<Payment[]>([]);
-    const [allocatedTransactions, setAllocatedTransactions] = useState<Transaction[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
-    const { toast } = useToast();
+    const firestore = useFirestore();
 
-    const fetchAllWalletData = useCallback(async () => {
-        setIsLoading(true);
-        setError(null);
-        try {
-            const companiesResult = await fetchFromAdminAPI('getMembers');
-            const newCompanyMap = new Map(companiesResult.data.map((c: Company) => [c.id, c]));
-            setCompanyMap(newCompanyMap);
+    const companiesQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'companies')) : null, [firestore]);
+    const paymentsQuery = useMemoFirebase(() => firestore ? query(collectionGroup(firestore, 'walletPayments')) : null, [firestore]);
+    const transactionsQuery = useMemoFirebase(() => firestore ? query(collectionGroup(firestore, 'transactions')) : null, [firestore]);
 
-            const [paymentsData, transactionsData] = await Promise.all([
-                fetchFromAdminAPI('getWalletPayments'),
-                fetchFromAdminAPI('getWalletTransactions')
-            ]);
-            
-            if (paymentsData.data) {
-                const enhancedPayments = paymentsData.data
-                    .filter((p: any) => p.status === 'pending')
-                    .map((p: any) => {
-                        const company = newCompanyMap.get(p.companyId);
-                        const memberName = company ? `${company.firstName || ''} ${company.lastName || ''}`.trim() : 'Unknown Member';
-                        return {
-                            ...p,
-                            memberName: memberName,
-                        };
-                    });
-                enhancedPayments.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-                setPendingPayments(enhancedPayments);
-            }
+    const { data: companies, isLoading: isLoadingCompanies } = useCollection<Company>(companiesQuery);
+    const { data: pendingPayments, isLoading: isLoadingPayments } = useCollection<Payment>(paymentsQuery);
+    const { data: allocatedTransactions, isLoading: isLoadingTransactions } = useCollection<Transaction>(transactionsQuery);
 
-            if (transactionsData.data) {
-                 const enhancedTransactions = transactionsData.data.map((tx: any) => {
-                    const company = newCompanyMap.get(tx.companyId);
-                    const memberName = company ? `${company.firstName || ''} ${company.lastName || ''}`.trim() : 'Unknown Member';
-                    return {
-                        ...tx,
-                        memberName: memberName
-                    };
-                });
-                enhancedTransactions.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-                setAllocatedTransactions(enhancedTransactions);
-            }
+    const isLoading = isLoadingCompanies || isLoadingPayments || isLoadingTransactions;
 
-        } catch (e: any) {
-            setError(e.message || 'An unexpected error occurred.');
-        } finally {
-            setIsLoading(false);
-        }
-    }, []);
+    const companyMap = useMemo(() => {
+        if (!companies) return new Map();
+        return new Map(companies.map((c: Company) => [c.id, c]));
+    }, [companies]);
 
-    useEffect(() => {
-        fetchAllWalletData();
-    }, [fetchAllWalletData]);
+    const enhancedPayments = useMemo(() => {
+        if (!pendingPayments || !companyMap) return [];
+        return pendingPayments
+            .filter(p => p.status === 'pending')
+            .map(p => {
+                const company = companyMap.get(p.companyId);
+                const memberName = company ? `${company.firstName || ''} ${company.lastName || ''}`.trim() : 'Unknown Member';
+                return { ...p, memberName };
+            })
+            .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    }, [pendingPayments, companyMap]);
 
-    const unallocatedTotal = pendingPayments?.reduce((sum, p) => sum + p.amount, 0) || 0;
+    const enhancedTransactions = useMemo(() => {
+        if (!allocatedTransactions || !companyMap) return [];
+        return allocatedTransactions
+            .map(tx => {
+                const company = companyMap.get(tx.companyId);
+                const memberName = company ? `${company.firstName || ''} ${company.lastName || ''}`.trim() : 'Unknown Member';
+                return { ...tx, memberName };
+            })
+            .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    }, [allocatedTransactions, companyMap]);
+
+
+    const unallocatedTotal = enhancedPayments?.reduce((sum, p) => sum + p.amount, 0) || 0;
 
     return (
         <div className="space-y-8">
@@ -151,9 +111,7 @@ export default function WalletTransactionsList() {
                 <CardContent>
                     {isLoading ? (
                         <div className="flex justify-center items-center py-10"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
-                    ) : error ? (
-                         <div className="text-destructive-foreground bg-destructive/90 p-4 rounded-md"><p>{error}</p></div>
-                    ) : pendingPayments && pendingPayments.length > 0 ? (
+                    ) : enhancedPayments && enhancedPayments.length > 0 ? (
                         <Table>
                             <TableHeader>
                                 <TableRow>
@@ -166,7 +124,7 @@ export default function WalletTransactionsList() {
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {pendingPayments.map(p => (
+                                {enhancedPayments.map(p => (
                                     <TableRow key={p.id} className="bg-amber-50 dark:bg-amber-900/20">
                                         <TableCell>{formatDate(p.createdAt)}</TableCell>
                                         <TableCell className="font-medium">{p.memberName}</TableCell>
@@ -205,9 +163,7 @@ export default function WalletTransactionsList() {
                 <CardContent>
                     {isLoading ? (
                          <div className="flex justify-center items-center py-10"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
-                    ) : error ? (
-                        <div className="text-destructive-foreground bg-destructive/90 p-4 rounded-md"><p>{error}</p></div>
-                    ) : allocatedTransactions && allocatedTransactions.length > 0 ? (
+                    ) : enhancedTransactions && enhancedTransactions.length > 0 ? (
                         <Table>
                             <TableHeader>
                                 <TableRow>
@@ -219,7 +175,7 @@ export default function WalletTransactionsList() {
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {allocatedTransactions.slice(0, 20).map(tx => ( // Show latest 20
+                                {enhancedTransactions.slice(0, 20).map(tx => ( // Show latest 20
                                     <TableRow key={tx.id}>
                                         <TableCell>{formatDate(tx.date)}</TableCell>
                                         <TableCell className="font-medium">{tx.memberName}</TableCell>

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
@@ -7,10 +6,10 @@ import { Loader2, Users } from 'lucide-react';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
 import { Badge } from '@/components/ui/badge';
-import { getClientSideAuthToken } from '@/firebase';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { cn } from '@/lib/utils';
 import MemberActionMenu from './member-action-menu';
-import { Button } from '@/components/ui/button';
+import { collection, query } from 'firebase/firestore';
 
 interface Member {
     id: string;
@@ -36,53 +35,11 @@ const statusColors: { [key: string]: 'default' | 'secondary' | 'destructive' | '
   suspended: 'destructive',
 };
 
-// Moved helper function outside the component to make it stable
-async function fetchFromAdminAPI(action: string, payload?: any) {
-    const token = await getClientSideAuthToken();
-    if (!token) throw new Error("Authentication failed.");
-    
-    const response = await fetch('/api/admin', {
-        method: 'POST',
-        headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ action, payload }),
-    });
-
-    const result = await response.json();
-    if (!response.ok || !result.success) {
-        throw new Error(result.error || `API Error for action: ${action}`);
-    }
-    return result.data;
-}
-
 export default function MembersList() {
-    const [members, setMembers] = useState<Member[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
+    const firestore = useFirestore();
+    const companiesQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'companies')) : null, [firestore]);
+    const { data: members, isLoading, forceRefresh, error } = useCollection<Member>(companiesQuery);
 
-    // Wrapped fetchMembers in useCallback with an empty dependency array
-    const fetchMembers = useCallback(async () => {
-        setIsLoading(true);
-        setError(null);
-        try {
-            const data = await fetchFromAdminAPI('getMembers');
-            // Sort data by creation date descending
-            data.sort((a: Member, b: Member) => new Date(b.createdAt!).getTime() - new Date(a.createdAt!).getTime());
-            setMembers(data);
-        } catch (e: any) {
-            setError(e.message || 'An unexpected error occurred.');
-        } finally {
-            setIsLoading(false);
-        }
-    }, []);
-
-    // useEffect now correctly calls the memoized function once
-    useEffect(() => {
-        fetchMembers();
-    }, [fetchMembers]);
-    
     const columns: ColumnDef<Member>[] = useMemo(() => [
         {
           accessorKey: 'owner',
@@ -133,11 +90,11 @@ export default function MembersList() {
             header: () => <div className="text-right">Actions</div>,
             cell: ({ row }) => (
                 <div className="text-right">
-                    <MemberActionMenu member={row.original} onUpdate={fetchMembers} />
+                    <MemberActionMenu member={row.original} onUpdate={forceRefresh} />
                 </div>
             )
         }
-    ], [fetchMembers]);
+    ], [forceRefresh]);
 
 
     return (
@@ -156,11 +113,10 @@ export default function MembersList() {
                  ) : error ? (
                     <div className="text-center py-20 text-destructive bg-destructive/10 rounded-md">
                         <h3 className="font-semibold">Error loading members</h3>
-                        <p className="text-sm">{error}</p>
-                        <Button variant="destructive" onClick={fetchMembers} className="mt-4">Try Again</Button>
+                        <p className="text-sm">{error.message}</p>
                     </div>
                  ) : (
-                    <DataTable columns={columns} data={members} />
+                    <DataTable columns={columns} data={members || []} />
                  )}
             </CardContent>
         </Card>

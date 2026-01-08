@@ -1,7 +1,6 @@
-
 'use client';
 
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Loader2, Store, CheckCircle, Eye } from 'lucide-react';
@@ -10,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useCollection, useFirestore, useMemoFirebase, getClientSideAuthToken } from '@/firebase';
-import { collection, doc, query } from 'firebase/firestore';
+import { collection, doc, query, collectionGroup } from 'firebase/firestore';
 import { ShopPreview } from '@/components/shop-preview';
 
 interface Shop {
@@ -24,28 +23,6 @@ interface Shop {
     [key: string]: any; // Allow other properties
 }
 
-// Moved helper function outside the component to make it stable
-async function fetchFromAdminAPI(action: string, payload?: any) {
-    const token = await getClientSideAuthToken();
-    if (!token) throw new Error("Authentication failed.");
-    
-    const response = await fetch('/api/admin', {
-        method: 'POST',
-        headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ action, payload }),
-    });
-
-    const result = await response.json();
-    if (!response.ok || !result.success) {
-        throw new Error(result.error || `API Error for action: ${action}`);
-    }
-    return result;
-}
-
-
 const statusColors: { [key: string]: 'default' | 'secondary' | 'destructive' | 'outline' } = {
   draft: 'secondary',
   pending_review: 'outline',
@@ -58,7 +35,6 @@ function ShopPreviewDialog({ shop }: { shop: Shop }) {
     
     const productsCollection = useMemoFirebase(() => {
         if (!firestore) return null;
-        // Query the company's private shop subcollection for the most up-to-date data
         return query(collection(firestore, `companies/${shop.companyId}/shops/${shop.id}/products`));
     }, [firestore, shop.companyId, shop.id]);
 
@@ -87,47 +63,40 @@ function ShopPreviewDialog({ shop }: { shop: Shop }) {
 }
 
 export default function ShopsList() {
-    const [shops, setShops] = useState<Shop[] | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
-    const [isApproving, setIsApproving] = useState<string | null>(null);
-    const [error, setError] = useState<string | null>(null);
     const { toast } = useToast();
+    const firestore = useFirestore();
+    const [isApproving, setIsApproving] = useState<string | null>(null);
 
-    const fetchShops = useCallback(async () => {
-        setIsLoading(true);
-        setError(null);
-        try {
-            const result = await fetchFromAdminAPI('getShops');
-            if (result.data) {
-                // De-duplicate the shops array using a Map
-                const uniqueShops = new Map<string, Shop>();
-                result.data.forEach((shop: Shop) => {
-                    uniqueShops.set(shop.id, shop);
-                });
-                setShops(Array.from(uniqueShops.values()));
-            }
-        } catch (e: any) {
-            setError(e.message || 'Failed to fetch shops.');
-        } finally {
-             setIsLoading(false);
-        }
-    }, []);
+    const shopsQuery = useMemoFirebase(() => {
+        if (!firestore) return null;
+        return query(collectionGroup(firestore, 'shops'));
+    }, [firestore]);
 
-    useEffect(() => {
-        fetchShops();
-    }, [fetchShops]);
+    const { data: shops, isLoading, error, forceRefresh } = useCollection<Shop>(shopsQuery);
 
     const handleApprove = async (shop: Shop) => {
         setIsApproving(shop.id);
         try {
-            // Re-using the admin API helper
-            await fetchFromAdminAPI('approveShop', { shopId: shop.id, companyId: shop.companyId });
+            const token = await getClientSideAuthToken();
+            if (!token) throw new Error('Authentication failed.');
+
+            await fetch('/api/admin', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    action: 'approveShop',
+                    payload: { shopId: shop.id, companyId: shop.companyId }
+                })
+            });
             
             toast({
                 title: 'Shop Approved!',
                 description: 'The shop is now public and live on the platform.',
             });
-            fetchShops(); // Refresh the list after approval
+            forceRefresh();
         } catch (e: any) {
              toast({
                 variant: 'destructive',
@@ -162,7 +131,7 @@ export default function ShopsList() {
                 {error && (
                      <div className="text-destructive-foreground bg-destructive/90 p-4 rounded-md">
                         <h4 className="font-semibold">Error loading shops</h4>
-                        <p className="text-sm">{error}</p>
+                        <p className="text-sm">{error.message}</p>
                     </div>
                 )}
                 {shops && !isLoading && (

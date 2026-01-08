@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -6,7 +5,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Loader2, Truck, Warehouse, Building } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { getClientSideAuthToken } from '@/firebase';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { collection, query } from 'firebase/firestore';
 
 interface Contribution {
     id: string;
@@ -16,26 +16,6 @@ interface Contribution {
     data: any;
 }
 
-async function fetchFromAdminAPI(action: string, payload?: any) {
-    const token = await getClientSideAuthToken();
-    if (!token) throw new Error("Authentication failed.");
-    
-    const response = await fetch('/api/admin', {
-        method: 'POST',
-        headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ action, payload }),
-    });
-
-    const result = await response.json();
-    if (!response.ok || !result.success) {
-        throw new Error(result.error || `API Error for action: ${action}`);
-    }
-    return result;
-}
-
 const typeConfig = {
     truck: { icon: Truck, color: 'default' as const, label: 'Truck' },
     trailer: { icon: Warehouse, color: 'secondary' as const, label: 'Trailer' },
@@ -43,27 +23,14 @@ const typeConfig = {
 }
 
 export default function ContributionsList() {
-    const [contributions, setContributions] = useState<Contribution[] | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
+    const firestore = useFirestore();
+    const contributionsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'contributions')) : null, [firestore]);
+    const { data: contributions, isLoading, error } = useCollection<Contribution>(contributionsQuery);
 
-    const fetchContributions = useCallback(async () => {
-        setIsLoading(true);
-        setError(null);
-        try {
-            const result = await fetchFromAdminAPI('getContributions');
-            const sortedData = (result.data as Contribution[]).sort((a,b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-            setContributions(sortedData);
-        } catch (e: any) {
-            setError(e.message || 'An unexpected error occurred.');
-        } finally {
-            setIsLoading(false);
-        }
-    }, []);
-
-    useEffect(() => {
-        fetchContributions();
-    }, [fetchContributions]);
+    const sortedContributions = useMemo(() => {
+        if (!contributions) return [];
+        return [...contributions].sort((a,b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    }, [contributions]);
 
     const formatDate = (isoString: string | undefined) => {
         if (!isoString) return 'N/A';
@@ -97,10 +64,10 @@ export default function ContributionsList() {
                 {error && (
                      <div className="text-destructive-foreground bg-destructive/90 p-4 rounded-md">
                         <h4 className="font-semibold">Error loading contributions</h4>
-                        <p className="text-sm">{error}</p>
+                        <p className="text-sm">{error.message}</p>
                     </div>
                 )}
-                {contributions && !isLoading && (
+                {sortedContributions && !isLoading && (
                     <div className="overflow-x-auto">
                         <Table>
                             <TableHeader>
@@ -109,19 +76,16 @@ export default function ContributionsList() {
                                     <TableHead>Type</TableHead>
                                     <TableHead>Member ID</TableHead>
                                     
-                                    {/* Truck/Trailer/Supplier */}
                                     <TableHead>Make / Supplier Name</TableHead>
                                     <TableHead>Model / Contact Person</TableHead>
                                     <TableHead>VIN / Items Purchased</TableHead>
                                     
-                                    {/* RC1 Fields */}
                                     <TableHead>Register #</TableHead>
                                     <TableHead>Titleholder</TableHead>
                                     <TableHead>Owner</TableHead>
                                     <TableHead>1st Reg. Date</TableHead>
                                     <TableHead>Classification</TableHead>
 
-                                    {/* Supplier Fields */}
                                     <TableHead>Supplier Phone</TableHead>
                                     <TableHead>Supplier Email</TableHead>
                                     <TableHead>Payment Terms</TableHead>
@@ -130,7 +94,7 @@ export default function ContributionsList() {
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {contributions.map(item => (
+                                {sortedContributions.map(item => (
                                     <TableRow key={item.id}>
                                         <TableCell>{formatDate(item.createdAt)}</TableCell>
                                         <TableCell>
@@ -140,7 +104,6 @@ export default function ContributionsList() {
                                         </TableCell>
                                         <TableCell className="font-mono text-xs max-w-[100px] truncate">{item.userId}</TableCell>
                                         
-                                        {/* Polymorphic cells */}
                                         <TableCell>
                                             {item.type === 'truck' || item.type === 'trailer' ? renderCell(item, 'make') : ''}
                                             {item.type === 'supplier' ? renderCell(item, 'supplierName') : ''}
@@ -159,7 +122,6 @@ export default function ContributionsList() {
                                         <TableCell>{renderCell(item, 'firstRegistrationDate')}</TableCell>
                                         <TableCell>{renderCell(item, 'classification')}</TableCell>
 
-                                        {/* Supplier specific */}
                                         <TableCell>{renderCell(item, 'phone')}</TableCell>
                                         <TableCell>{renderCell(item, 'email')}</TableCell>
                                         <TableCell>{renderCell(item, 'paymentTerms')}</TableCell>
@@ -172,7 +134,7 @@ export default function ContributionsList() {
                         </Table>
                     </div>
                 )}
-                 {contributions && contributions.length === 0 && !isLoading && (
+                 {sortedContributions && sortedContributions.length === 0 && !isLoading && (
                     <p className="text-center text-muted-foreground py-10">No contributions have been submitted yet.</p>
                 )}
             </CardContent>
