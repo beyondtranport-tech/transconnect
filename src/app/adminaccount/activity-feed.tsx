@@ -4,7 +4,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2, Activity, User, Building, FileText, ShoppingCart, Users } from 'lucide-react';
-import { getClientSideAuthToken, useUser } from '@/firebase/provider';
+import { getClientSideAuthToken, useUser } from '@/firebase';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
