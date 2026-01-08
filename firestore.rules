@@ -37,7 +37,7 @@ service cloud.firestore {
     
     // --- Collection Group Queries for Admin Backend ---
     match /{path=**}/staff/{staffId} {
-      allow list: if isAdmin();
+      allow get, list: if isAdmin();
     }
     match /{path=**}/walletPayments/{paymentId} {
       allow list: if isAdmin();
