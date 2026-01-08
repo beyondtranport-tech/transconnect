@@ -1,8 +1,10 @@
 
+'use server';
+
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuth } from 'firebase-admin/auth';
 import { getAdminApp } from '@/lib/firebase-admin';
-import { imageEditFlow } from '@/ai/flows/image-edit-flow';
+import { editImage } from '@/ai/flows/image-edit-flow';
 
 export async function POST(req: NextRequest) {
     const { app, error: initError } = getAdminApp();
@@ -30,10 +32,8 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ success: false, error: 'Missing photoDataUri or prompt in request body.' }, { status: 400 });
         }
         
-        // CORRECTED: Properly await the asynchronous flow
-        const result = await imageEditFlow({ photoDataUri, prompt });
+        const result = await editImage({ photoDataUri, prompt });
 
-        // The flow already returns the object in the correct shape.
         return NextResponse.json(result);
 
     } catch (error: any) {
