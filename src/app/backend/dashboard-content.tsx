@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
@@ -12,10 +11,7 @@ import { getClientSideAuthToken, useUser } from '@/firebase';
 import { useState, useEffect, useCallback } from 'react';
 
 // Centralized helper function for making authenticated API calls
-async function fetchFromAdminAPI(action: string, payload?: any) {
-    const token = await getClientSideAuthToken();
-    if (!token) throw new Error("Authentication failed: User token not found.");
-    
+async function fetchFromAdminAPI(token: string, action: string, payload?: any) {
     const response = await fetch('/api/admin', {
         method: 'POST',
         headers: {
@@ -46,10 +42,13 @@ export default function DashboardContent() {
         setIsLoading(true);
         setError(null);
         try {
+            const token = await getClientSideAuthToken();
+            if (!token) throw new Error("Authentication failed: User token not found.");
+            
             const [membersRes, financeRes, contributionsRes] = await Promise.all([
-                fetchFromAdminAPI('getMembers').catch(e => ({ error: e, data: [] })),
-                fetchFromAdminAPI('getFinanceApplications').catch(e => ({ error: e, data: [] })),
-                fetchFromAdminAPI('getContributions').catch(e => ({ error: e, data: [] })),
+                fetchFromAdminAPI(token, 'getMembers').catch(e => ({ error: e, data: [] })),
+                fetchFromAdminAPI(token, 'getFinanceApplications').catch(e => ({ error: e, data: [] })),
+                fetchFromAdminAPI(token, 'getContributions').catch(e => ({ error: e, data: [] })),
             ]);
             
             if (membersRes.error || financeRes.error || contributionsRes.error) {
@@ -94,15 +93,12 @@ export default function DashboardContent() {
     }, []); 
 
     useEffect(() => {
-        // THIS IS THE CRITICAL FIX:
-        // Only attempt to load data AFTER firebase auth state has been resolved AND we have a logged-in user.
         if (!isUserLoading && user) {
             loadDashboardData();
         } else if (!isUserLoading && !user) {
             setError("You must be logged in as an admin to view the dashboard.");
             setIsLoading(false);
         }
-        // This effect depends on the user's loading status and the user object itself.
     }, [isUserLoading, user, loadDashboardData]);
 
     const formatPrice = (price: number) => {

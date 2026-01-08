@@ -52,10 +52,9 @@ export default function ActivityFeed() {
     const [logs, setLogs] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const { user } = useUser();
+    const { user, isUserLoading } = useUser();
 
     const loadLogs = useCallback(async () => {
-        if (!user) return;
         setIsLoading(true);
         setError(null);
         try {
@@ -70,11 +69,13 @@ export default function ActivityFeed() {
         } finally {
             setIsLoading(false);
         }
-    }, [user]);
+    }, []);
 
     useEffect(() => {
-        loadLogs();
-    }, [loadLogs]);
+        if (!isUserLoading && user) {
+            loadLogs();
+        }
+    }, [isUserLoading, user, loadLogs]);
     
     const formatDate = (isoString?: string) => {
         if (!isoString) return 'N/A';
@@ -91,7 +92,7 @@ export default function ActivityFeed() {
         delete: { color: 'destructive', text: 'deleted a' }
     };
 
-    if (isLoading) {
+    if (isLoading || isUserLoading) {
         return (
             <div className="flex justify-center items-center py-20">
                 <Loader2 className="h-12 w-12 animate-spin text-primary" />

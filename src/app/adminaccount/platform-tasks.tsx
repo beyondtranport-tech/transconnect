@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -26,15 +25,12 @@ function BillingRun() {
     const { toast } = useToast();
     const [authToken, setAuthToken] = useState<string | null>(null);
 
-    useEffect(() => {
-        getClientSideAuthToken().then(setAuthToken);
-    }, []);
-
     const handleRunBilling = async () => {
         setIsLoading(true);
         setResult(null);
 
-        if (!authToken) {
+        const token = await getClientSideAuthToken();
+        if (!token) {
             toast({ variant: 'destructive', title: 'Authentication Error', description: 'Could not get auth token.' });
             setIsLoading(false);
             return;
@@ -44,7 +40,7 @@ function BillingRun() {
             const response = await fetch('/api/run-billing', {
                 method: 'POST',
                 headers: {
-                    'Authorization': `Bearer ${authToken}`,
+                    'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json',
                 },
             });
@@ -126,17 +122,13 @@ function LoyaltyTierUpdate() {
     const [isLoading, setIsLoading] = useState(false);
     const [result, setResult] = useState<LoyaltyResult | null>(null);
     const { toast } = useToast();
-    const [authToken, setAuthToken] = useState<string | null>(null);
-
-    useEffect(() => {
-        getClientSideAuthToken().then(setAuthToken);
-    }, []);
 
     const handleRunUpdate = async () => {
         setIsLoading(true);
         setResult(null);
 
-        if (!authToken) {
+        const token = await getClientSideAuthToken();
+        if (!token) {
             toast({ variant: 'destructive', title: 'Authentication Error', description: 'Could not get auth token.' });
             setIsLoading(false);
             return;
@@ -146,7 +138,7 @@ function LoyaltyTierUpdate() {
             const response = await fetch('/api/run-loyalty-update', {
                 method: 'POST',
                 headers: {
-                    'Authorization': `Bearer ${authToken}`,
+                    'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json',
                 },
             });
