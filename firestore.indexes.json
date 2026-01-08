@@ -16,16 +16,6 @@
       ]
     },
     {
-      "collectionGroup": "platformTransactions",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
-          "fieldPath": "reconciliationId",
-          "order": "ASCENDING"
-        }
-      ]
-    },
-    {
       "collectionGroup": "shops",
       "queryScope": "COLLECTION_GROUP",
       "fields": [
