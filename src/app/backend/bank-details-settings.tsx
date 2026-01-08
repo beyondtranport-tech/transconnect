@@ -18,9 +18,9 @@ import { useToast } from '@/hooks/use-toast';
 import { useState, useEffect } from 'react';
 import { Loader2, Banknote, Save } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useFirestore, useDoc, useMemoFirebase } from '@/firebase';
+import { useFirestore, useDoc } from '@/firebase/provider';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
-import { useConfig } from '@/hooks/use-config';
+import { useConfig, useMemoFirebase } from '@/hooks/use-config';
 
 const formSchema = z.object({
   bankName: z.string().min(1, 'Bank name is required'),
