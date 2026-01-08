@@ -8,7 +8,7 @@ import { type ColumnDef } from '@/hooks/use-data-table';
 import { Badge } from '@/components/ui/badge';
 import StaffActionMenu from './staff-action-menu';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, query } from 'firebase/firestore';
+import { collection, query, collectionGroup } from 'firebase/firestore';
 
 interface StaffMember {
     id: string;
@@ -30,11 +30,11 @@ interface Company {
 export default function StaffList() {
     const firestore = useFirestore();
 
-    const staffQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'companies')) : null, [firestore]);
-    const { data: staff, isLoading: isStaffLoading, forceRefresh } = useCollection(staffQuery);
+    const staffQuery = useMemoFirebase(() => firestore ? query(collectionGroup(firestore, 'staff')) : null, [firestore]);
+    const { data: staff, isLoading: isStaffLoading, forceRefresh } = useCollection<StaffMember>(staffQuery);
 
     const companiesQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'companies')) : null, [firestore]);
-    const { data: companies, isLoading: areCompaniesLoading } = useCollection(companiesQuery);
+    const { data: companies, isLoading: areCompaniesLoading } = useCollection<Company>(companiesQuery);
     
     const isLoading = isStaffLoading || areCompaniesLoading;
 
@@ -42,14 +42,11 @@ export default function StaffList() {
         if (!staff || !companies) return [];
         const companyMap = new Map(companies.map(c => [c.id, c.companyName]));
         
-        return staff.flatMap((member: any) => 
-            (member.staff || []).map((s: any) => ({
-                ...s,
-                id: `${member.id}-${s.id}`, // Create a truly unique key for the table
-                companyName: companyMap.get(member.id) || 'Unknown Company',
-                companyId: member.id,
-            }))
-        );
+        return staff.map(s => ({
+            ...s,
+            id: `${s.companyId}-${s.id}`, // Create a truly unique key for the table
+            companyName: companyMap.get(s.companyId) || 'Unknown Company',
+        }));
     }, [staff, companies]);
 
     const columns: ColumnDef<StaffMember>[] = useMemo(() => [
