@@ -36,17 +36,23 @@ service cloud.firestore {
     }
     
     // --- Collection Group Queries for Admin Backend ---
+    match /{path=**}/staff/{staffId} {
+      allow get, list: if isAdmin();
+    }
     match /{path=**}/walletPayments/{paymentId} {
-      allow list: if isAdmin();
+      allow get, list: if isAdmin();
     }
     match /{path=**}/transactions/{transactionId} {
-      allow list: if isAdmin();
+      allow get, list: if isAdmin();
     }
     match /{path=**}/quotes/{quoteId} {
-      allow list: if isAdmin();
+      allow get, list: if isAdmin();
     }
     match /{path=**}/enquiries/{enquiryId} {
-      allow list: if isAdmin();
+      allow get, list: if isAdmin();
+    }
+    match /{path=**}/shops/{shopId} {
+      allow get, list: if isAdmin();
     }
 
     // --- Public & Global Collections ---
@@ -94,6 +100,11 @@ service cloud.firestore {
     
     // Admin-only collection for audit trails.
     match /auditLogs/{logId} {
+        allow read, write: if isAdmin();
+    }
+
+    // Admin-only collection for managing platform permissions.
+    match /permissions/{path=**} {
         allow read, write: if isAdmin();
     }
   }
