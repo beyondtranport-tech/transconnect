@@ -52,6 +52,7 @@ import {
   Activity,
   Sparkles,
   Map,
+  Sheet,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -95,6 +96,7 @@ const PlatformSettingsContent = dynamic(() => import('./platform-settings'), { l
 const DivisionsContent = dynamic(() => import('./divisions-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const CampaignContent = dynamic(() => import('./campaign-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const SalesRoadmap = dynamic(() => import('./sales-roadmap'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const BudgetPage = dynamic(() => import('./budget/page'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 
 
 export default function BackendPageContent() {
@@ -175,6 +177,8 @@ export default function BackendPageContent() {
         return <CampaignContent />;
       case 'sales-roadmap':
         return <SalesRoadmap />;
+      case 'budget':
+        return <BudgetPage />;
       default:
         return <DashboardContent />;
     }
@@ -227,6 +231,12 @@ export default function BackendPageContent() {
                         <span>Sales Roadmap</span>
                     </SidebarMenuSubButton>
                 </SidebarMenuSub>
+            </SidebarMenuItem>
+             <SidebarMenuItem>
+                <SidebarMenuButton tooltip="Budget" isActive={activeView === 'budget'} onClick={() => router.push('/backend?view=budget', { scroll: false })}>
+                <Sheet />
+                <span>Budget</span>
+                </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
                 <SidebarMenuButton tooltip="Members" isActive={activeView === 'members'} onClick={() => router.push('/backend?view=members', { scroll: false })}>
