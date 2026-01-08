@@ -60,8 +60,9 @@ service cloud.firestore {
     match /{path=**}/enquiries/{enquiryId} {
       allow get, list: if isAdmin();
     }
+    // This is the new, correct rule for querying shops across all companies.
     match /{path=**}/shops/{shopId} {
-      allow get, list: if isAdmin();
+      allow read: if isAdmin();
     }
 
     // --- Public & Global Collections ---
