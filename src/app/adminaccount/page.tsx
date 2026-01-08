@@ -27,7 +27,8 @@ import {
   LineChart,
   Book,
   Activity,
-  ListTodo
+  ListTodo,
+  Sparkles,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -45,6 +46,7 @@ const PlatformTransactions = dynamic(() => import('@/app/adminaccount/platform-t
 const StaffContent = dynamic(() => import('@/app/adminaccount/staff-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const ActivityFeed = dynamic(() => import('@/app/adminaccount/activity-feed'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const PlatformTasks = dynamic(() => import('@/app/adminaccount/platform-tasks'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const CampaignContent = dynamic(() => import('@/app/adminaccount/campaign-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 
 
 function AdminAccountPageContent() {
@@ -78,6 +80,7 @@ function AdminAccountPageContent() {
       case 'staff': return <StaffContent />;
       case 'activity-feed': return <ActivityFeed />;
       case 'tasks': return <PlatformTasks />;
+      case 'campaigns': return <CampaignContent />;
       // Add placeholders for new views
       case 'business': return <div><h1>Business</h1></div>;
       case 'forecasting': return <div><h1>Forecasting</h1></div>;
@@ -111,6 +114,12 @@ function AdminAccountPageContent() {
                 <SidebarMenuButton tooltip="Dashboard" isActive={activeView === 'dashboard'} onClick={() => router.push('/adminaccount?view=dashboard', { scroll: false })}>
                   <LayoutDashboard />
                   <span>Dashboard</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton tooltip="Campaigns" isActive={activeView === 'campaigns'} onClick={() => router.push('/adminaccount?view=campaigns', { scroll: false })}>
+                  <Sparkles />
+                  <span>Campaigns</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
