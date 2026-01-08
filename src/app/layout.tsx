@@ -1,3 +1,4 @@
+
 import type { Metadata } from 'next';
 import './globals.css';
 import { FirebaseClientProvider } from '@/firebase/client-provider';
@@ -29,14 +30,14 @@ export default function RootLayout({
       </head>
       <body>
         <FirebaseClientProvider>
-          <Analytics />
-          <VisitorTracker />
-          <div className="relative flex min-h-dvh flex-col bg-background">
-            <Header />
-            <main className="flex-1">{children}</main>
-            <Footer />
-          </div>
-          <Toaster />
+            <Analytics />
+            <VisitorTracker />
+            <div className="relative flex min-h-dvh flex-col bg-background">
+              <Header />
+              <main className="flex-1">{children}</main>
+              <Footer />
+            </div>
+            <Toaster />
         </FirebaseClientProvider>
       </body>
     </html>

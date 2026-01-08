@@ -6,11 +6,6 @@ import { FirebaseApp } from 'firebase/app';
 import { Firestore } from 'firebase/firestore';
 import { Auth, User, onIdTokenChanged, getIdToken } from 'firebase/auth';
 import { FirebaseStorage } from 'firebase/storage';
-import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
-import { errorEmitter } from './error-emitter';
-import { FirestorePermissionError } from './errors';
-import { useDoc } from './firestore/use-doc';
-import { useCollection } from './firestore/use-collection';
 
 interface FirebaseProviderProps {
   children: ReactNode;
@@ -85,7 +80,6 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
 
   return (
     <FirebaseContext.Provider value={contextValue}>
-      <FirebaseErrorListener />
       {children}
     </FirebaseContext.Provider>
   );
