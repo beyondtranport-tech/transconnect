@@ -28,32 +28,26 @@ export const ImageEditOutputSchema = z.object({
 });
 export type ImageEditOutput = z.infer<typeof ImageEditOutputSchema>;
 
+
 export async function editImage(input: ImageEditInput): Promise<ImageEditOutput> {
-  return imageEditFlow(input);
+  const { media } = await ai.generate({
+    model: 'googleai/gemini-2.5-flash-image-preview',
+    prompt: [
+      { media: { url: input.photoDataUri } },
+      { text: input.prompt },
+    ],
+    config: {
+      responseModalities: ['TEXT', 'IMAGE'],
+    },
+  });
+
+  if (!media?.url) {
+    throw new Error('Image generation failed to return an image.');
+  }
+  
+  return { enhancedImageDataUri: media.url };
 }
 
-const imageEditFlow = ai.defineFlow(
-  {
-    name: 'imageEditFlow',
-    inputSchema: ImageEditInputSchema,
-    outputSchema: ImageEditOutputSchema,
-  },
-  async (input) => {
-    const { media } = await ai.generate({
-      model: 'googleai/gemini-2.5-flash-image-preview',
-      prompt: [
-        { media: { url: input.photoDataUri } },
-        { text: input.prompt },
-      ],
-      config: {
-        responseModalities: ['TEXT', 'IMAGE'],
-      },
-    });
-
-    if (!media?.url) {
-      throw new Error('Image generation failed to return an image.');
-    }
-    
-    return { enhancedImageDataUri: media.url };
-  }
-);
+// Note: A flow is not strictly necessary if the logic is simple.
+// We are exporting the async function directly. For more complex scenarios,
+// wrapping this in an ai.defineFlow() would be appropriate.
