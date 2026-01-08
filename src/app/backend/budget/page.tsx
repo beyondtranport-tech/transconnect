@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -6,8 +5,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import { Sheet, DollarSign, Users, ShoppingCart, Percent } from 'lucide-react';
+import { Sheet, DollarSign, Users, ShoppingCart, Percent, Building, Handshake, Code } from 'lucide-react';
 import { useForm, useFieldArray } from 'react-hook-form';
+import { Separator } from '@/components/ui/separator';
 
 const revenueItems = [
     { id: 'membershipFees', name: 'Avg. Membership Fee per Member', default: 250 },
@@ -33,10 +33,18 @@ const opexRoles = [
 ];
 
 const opexOtherItems = [
-    { id: 'marketingSpend', name: 'Monthly Marketing Spend', default: 50000 },
-    { id: 'platformCosts', name: 'Monthly Platform & Infra Costs', default: 20000 },
-    { id: 'officeRental', name: 'Office Rental & Utilities', default: 35000 },
-    { id: 'otherGAndA', name: 'Other General & Admin', default: 15000 },
+    { category: 'Sales & Marketing', id: 'digitalAdvertising', name: 'Digital Advertising', default: 30000 },
+    { category: 'Sales & Marketing', id: 'contentCreation', name: 'Content Creation & SEO', default: 15000 },
+    { category: 'Sales & Marketing', id: 'eventsAndSponsorships', name: 'Events & Sponsorships', default: 10000 },
+    { category: 'General & Administrative', id: 'officeRental', name: 'Office Rental', default: 35000 },
+    { category: 'General & Administrative', id: 'utilities', name: 'Utilities (Elec, Water, Internet)', default: 15000 },
+    { category: 'General & Administrative', id: 'insurance', name: 'Insurance', default: 5000 },
+    { category: 'General & Administrative', id: 'legalAndProfessional', name: 'Legal & Professional Fees', default: 10000 },
+    { category: 'General & Administrative', id: 'bankCharges', name: 'Bank Charges', default: 2000 },
+    { category: 'General & Administrative', id: 'telephone', name: 'Telephone & Communications', default: 8000 },
+    { category: 'General & Administrative', id: 'travelAndEntertainment', name: 'Travel & Entertainment', default: 5000 },
+    { category: 'Technology & R&D', id: 'platformCosts', name: 'Cloud Hosting & Infrastructure', default: 20000 },
+    { category: 'Technology & R&D', id: 'softwareLicenses', name: 'Software Licenses (CRM, etc)', default: 10000 },
 ];
 
 export default function BudgetPage() {
@@ -54,6 +62,11 @@ export default function BudgetPage() {
         control,
         name: "opexSalaries"
     });
+
+    const groupedOpex = opexOtherItems.reduce((acc, item) => {
+        (acc[item.category] = acc[item.category] || []).push(item);
+        return acc;
+    }, {} as Record<string, typeof opexOtherItems>);
     
     const onSubmit = (data: any) => {
         console.log(data);
@@ -99,9 +112,9 @@ export default function BudgetPage() {
                 {/* OPEX Section */}
                 <Card>
                     <CardHeader><CardTitle className="flex items-center gap-2"><Users /> Operating Expenses (OPEX)</CardTitle></CardHeader>
-                    <CardContent className="space-y-6">
+                    <CardContent className="space-y-8">
                         <div>
-                            <h3 className="font-semibold mb-2">Salaries</h3>
+                            <h3 className="font-semibold mb-4 text-lg">Salaries</h3>
                             <div className="space-y-4">
                                 {fields.map((item, index) => (
                                     <div key={item.id} className="grid grid-cols-3 gap-4 items-center">
@@ -112,16 +125,24 @@ export default function BudgetPage() {
                                 ))}
                             </div>
                         </div>
+                        <Separator />
                          <div>
-                            <h3 className="font-semibold mb-2">Other Monthly Expenses</h3>
-                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                                {opexOtherItems.map(item => (
-                                    <div key={item.id} className="space-y-2">
-                                        <Label htmlFor={item.id}>{item.name}</Label>
-                                        <Input id={item.id} type="number" {...register(`opexOther.${item.id}` as const)} />
+                            <h3 className="font-semibold mb-4 text-lg">Other Monthly Expenses</h3>
+                             <div className="space-y-6">
+                                {Object.entries(groupedOpex).map(([category, items]) => (
+                                    <div key={category}>
+                                        <h4 className="font-medium text-muted-foreground mb-3">{category}</h4>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                                            {items.map(item => (
+                                                <div key={item.id} className="space-y-2">
+                                                    <Label htmlFor={item.id}>{item.name}</Label>
+                                                    <Input id={item.id} type="number" {...register(`opexOther.${item.id}` as const)} />
+                                                </div>
+                                            ))}
+                                        </div>
                                     </div>
                                 ))}
-                            </div>
+                             </div>
                         </div>
                     </CardContent>
                 </Card>
