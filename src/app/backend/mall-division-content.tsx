@@ -48,12 +48,16 @@ export default function MallDivisionContent() {
             const result = await fetchFromAdminAPI(token, 'getShops');
             if (result.data) {
                 const allShops = result.data;
+
+                // De-duplicate the shops based on their ID
+                const uniqueShops = Array.from(new Map(allShops.map((shop: any) => [shop.id, shop])).values());
+
                 setStats({
-                    total: allShops.length,
-                    pending: allShops.filter((s:any) => s.status === 'pending_review').length,
-                    approved: allShops.filter((s:any) => s.status === 'approved').length,
+                    total: uniqueShops.length,
+                    pending: uniqueShops.filter((s:any) => s.status === 'pending_review').length,
+                    approved: uniqueShops.filter((s:any) => s.status === 'approved').length,
                 });
-                setShops(allShops);
+                setShops(uniqueShops);
             } else {
                 setError("Failed to load shop data.");
             }
