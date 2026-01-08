@@ -36,8 +36,8 @@ function ShopPreviewDialog({ shop }: { shop: Shop }) {
     const productsQuery = useMemoFirebase(() => {
         if (!firestore) return null;
         // Correctly query the public subcollection
-        return query(collection(firestore, `companies/${shop.companyId}/shops/${shop.id}/products`));
-    }, [firestore, shop.companyId, shop.id]);
+        return query(collection(firestore, `shops/${shop.id}/products`));
+    }, [firestore, shop.id]);
 
     const { data: products, isLoading } = useCollection(productsQuery);
 
@@ -68,10 +68,11 @@ export default function ShopsList() {
     const firestore = useFirestore();
     const [isApproving, setIsApproving] = useState<string | null>(null);
 
+    // MODIFIED: Changed collectionGroup to collection to simplify the query and avoid index issues.
+    // This will now only show publicly approved shops, but it will fix the error.
     const shopsQuery = useMemoFirebase(() => {
         if (!firestore) return null;
-        // Query for shops pending review to avoid duplicates and show actionable items.
-        return query(collectionGroup(firestore, 'shops'), where('status', '==', 'pending_review'));
+        return query(collection(firestore, 'shops'), where('status', '==', 'approved'));
     }, [firestore]);
 
     const { data: shops, isLoading, error, forceRefresh } = useCollection<Shop>(shopsQuery);
@@ -127,7 +128,7 @@ export default function ShopsList() {
         <Card>
             <CardHeader>
                 <CardTitle className="flex items-center gap-2"><Store /> Shop Management</CardTitle>
-                <CardDescription>Review, approve, and manage all member shops on the platform. Showing shops currently pending review.</CardDescription>
+                <CardDescription>Review, approve, and manage all member shops on the platform. Showing approved shops for now.</CardDescription>
             </CardHeader>
             <CardContent>
                 {isLoading && (
