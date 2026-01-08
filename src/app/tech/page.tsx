@@ -2,8 +2,9 @@
 
 import { useConfig } from '@/hooks/use-config';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, Cpu, Truck } from 'lucide-react';
+import { Loader2, Cpu, Truck, Sparkles } from 'lucide-react';
 import FreightMatcher from './freight-matcher';
+import ImageEditor from './image-editor';
 
 export default function TechPage() {
     const { data: pricing, isLoading } = useConfig<any>('techPricing');
@@ -35,6 +36,17 @@ export default function TechPage() {
                                 </CardHeader>
                                 <CardContent>
                                     <FreightMatcher />
+                                </CardContent>
+                            </Card>
+                        </div>
+                        <div className="max-w-4xl mx-auto">
+                             <Card>
+                                <CardHeader>
+                                    <CardTitle className="flex items-center gap-2"><Sparkles className="h-6 w-6 text-yellow-500"/>Nano Banana Image Editor</CardTitle>
+                                    <CardDescription>Upload an image and use AI to edit it with a text prompt. Perfect for creating marketing assets.</CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    <ImageEditor />
                                 </CardContent>
                             </Card>
                         </div>
