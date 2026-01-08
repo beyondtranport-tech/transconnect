@@ -1,3 +1,4 @@
+'use client';
 
 import Link from 'next/link';
 import Image from 'next/image';
@@ -6,6 +7,8 @@ import { ArrowRight, Cpu, DollarSign, Heart, Shield, CheckCircle, Info, Handshak
 import data from '@/lib/placeholder-images.json';
 import * as React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
+
 
 const { placeholderImages } = data;
 
@@ -46,6 +49,27 @@ export default function Home() {
             <h2 className="text-3xl md:text-4xl font-bold font-headline">About Us</h2>
             <p className="mt-4 text-lg text-muted-foreground">
               Running a transport company is challenging. Having financed transporters for the past 30 years, we understand your challenges. Most importantly we understand how difficult it is to access the capital you need to grow your business. This is why we have developed a unique approach to unlock your business.
+                <Dialog>
+                    <DialogTrigger asChild>
+                        <Button variant="link" className="text-lg p-1">Read More...</Button>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-xl">
+                        <DialogHeader>
+                        <DialogTitle>Our Story</DialogTitle>
+                        <DialogDescription>
+                            Our journey and commitment to the transport industry.
+                        </DialogDescription>
+                        </DialogHeader>
+                        <div className="py-4 space-y-4 text-sm text-muted-foreground text-left">
+                            <p>Our origins began in 1998 as a lending to transporters. We witnessed first-hand funding gap and difficulties transporters face in trying to build their business. That is why we have developed a unique lending methodology focused on industry process and cashflow.</p>
+                            <p>After 25 years’ experience in lending, we are transforming ourselves into a focused supplier of services to the logistics sector and in particular the transport industry.</p>
+                            <p>Our aim is to use our knowledge, technology and skills to transform and improve your business. We focus on you the customer. The 1 thing that we have earned during this time is that you deserve more than just funding. You deserve recognition for the hard work. You deserve to be rewarded.</p>
+                        </div>
+                        <DialogFooter>
+                            <DialogTrigger asChild><Button>Close</Button></DialogTrigger>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
             </p>
           </div>
           <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
