@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -23,20 +24,16 @@ function BillingRun() {
     const [isLoading, setIsLoading] = useState(false);
     const [result, setResult] = useState<BillingResult | null>(null);
     const { toast } = useToast();
-    const [authToken, setAuthToken] = useState<string | null>(null);
 
     const handleRunBilling = async () => {
         setIsLoading(true);
         setResult(null);
 
-        const token = await getClientSideAuthToken();
-        if (!token) {
-            toast({ variant: 'destructive', title: 'Authentication Error', description: 'Could not get auth token.' });
-            setIsLoading(false);
-            return;
-        }
-
         try {
+            const token = await getClientSideAuthToken();
+            if (!token) {
+                throw new Error('Authentication Error: Could not get auth token.');
+            }
             const response = await fetch('/api/run-billing', {
                 method: 'POST',
                 headers: {
@@ -127,14 +124,10 @@ function LoyaltyTierUpdate() {
         setIsLoading(true);
         setResult(null);
 
-        const token = await getClientSideAuthToken();
-        if (!token) {
-            toast({ variant: 'destructive', title: 'Authentication Error', description: 'Could not get auth token.' });
-            setIsLoading(false);
-            return;
-        }
-
         try {
+            const token = await getClientSideAuthToken();
+            if (!token) throw new Error("Authentication token not found.");
+            
             const response = await fetch('/api/run-loyalty-update', {
                 method: 'POST',
                 headers: {

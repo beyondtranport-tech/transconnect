@@ -18,7 +18,7 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Save, Cpu } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { getClientSideAuthToken } from '@/firebase';
+import { getClientSideAuthToken, useDoc, useFirestore } from '@/firebase';
 
 const formSchema = z.object({
   // Shop Enhancements
@@ -36,10 +36,7 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
-async function fetchConfig(configId: string) {
-    const token = await getClientSideAuthToken();
-    if (!token) throw new Error("Authentication failed.");
-
+async function fetchConfig(token: string, configId: string) {
     const response = await fetch('/api/getUserSubcollection', {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
@@ -73,7 +70,9 @@ export default function TechPricing() {
   const loadConfig = useCallback(async () => {
     setIsConfigLoading(true);
     try {
-        const configData = await fetchConfig('techPricing');
+        const token = await getClientSideAuthToken();
+        if (!token) throw new Error("Authentication token not found.");
+        const configData = await fetchConfig(token, 'techPricing');
         if (configData) {
             form.reset(configData);
         }

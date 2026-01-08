@@ -8,11 +8,7 @@ import { Loader2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { getClientSideAuthToken } from '@/firebase';
 
-// Stable helper function
-async function fetchFromAdminAPI(action: string, payload?: any) {
-    const token = await getClientSideAuthToken();
-    if (!token) throw new Error("Authentication failed.");
-    
+async function fetchFromAdminAPI(token: string, action: string, payload?: any) {
     const response = await fetch('/api/admin', {
         method: 'POST',
         headers: {
@@ -46,7 +42,10 @@ export default function MallDivisionContent() {
         setIsLoading(true);
         setError(null);
         try {
-            const result = await fetchFromAdminAPI('getShops');
+            const token = await getClientSideAuthToken();
+            if (!token) throw new Error("Authentication failed.");
+            
+            const result = await fetchFromAdminAPI(token, 'getShops');
             if (result.data) {
                 const allShops = result.data;
                 setStats({

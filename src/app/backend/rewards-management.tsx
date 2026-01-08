@@ -28,10 +28,7 @@ interface Membership {
     discountShare?: number;
 }
 
-async function fetchAdminData(action: string) {
-    const token = await getClientSideAuthToken();
-    if (!token) throw new Error("Authentication failed.");
-    
+async function fetchAdminData(token: string, action: string) {
     const response = await fetch('/api/admin', {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
@@ -56,9 +53,12 @@ export default function RewardsManagement() {
         setIsLoading(true);
         setError(null);
         try {
+            const token = await getClientSideAuthToken();
+            if (!token) throw new Error("Authentication failed.");
+            
             const [companiesData, membershipsData] = await Promise.all([
-                fetchAdminData('getMembers'),
-                fetchAdminData('getMemberships')
+                fetchAdminData(token, 'getMembers'),
+                fetchAdminData(token, 'getMemberships')
             ]);
             setCompanies(companiesData || []);
             setMemberships(membershipsData || []);

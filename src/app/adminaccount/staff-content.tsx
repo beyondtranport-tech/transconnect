@@ -50,7 +50,6 @@ const staffFormSchema = z.object({
 
 type StaffFormValues = z.infer<typeof staffFormSchema>;
 
-// Helper function to fetch admin data, now accepts a token
 async function fetchAdminData(token: string, action: string) {
     const response = await fetch('/api/admin', {
         method: 'POST',
@@ -71,7 +70,6 @@ function AddStaffDialog({ companies, onStaffAdded }: { companies: Company[], onS
   const { toast } = useToast();
   const [authToken, setAuthToken] = useState<string | null>(null);
 
-  // Get token when dialog opens
   useEffect(() => {
     if (isOpen) {
         getClientSideAuthToken().then(setAuthToken);

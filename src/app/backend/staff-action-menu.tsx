@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -24,10 +25,7 @@ import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken } from '@/firebase';
 import { EditStaffDialog } from '@/app/backend/EditStaffDialog';
 
-async function performStaffAction(action: string, payload: any) {
-    const token = await getClientSideAuthToken();
-    if (!token) throw new Error("Authentication failed.");
-    
+async function performStaffAction(token: string, action: string, payload: any) {
     const response = await fetch('/api/admin', {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
@@ -55,6 +53,9 @@ export default function StaffActionMenu({ staffMember, onUpdate }: { staffMember
     setIsAlertOpen(false);
 
     try {
+        const token = await getClientSideAuthToken();
+        if (!token) throw new Error("Authentication failed.");
+        
         let apiAction: string;
         let payload: any = { companyId: staffMember.companyId, staffId: staffMember.id };
         let successMessage = '';
@@ -68,7 +69,7 @@ export default function StaffActionMenu({ staffMember, onUpdate }: { staffMember
             successMessage = `${staffMember.firstName}'s status updated to ${payload.status}.`;
         }
         
-        await performStaffAction(apiAction, payload);
+        await performStaffAction(token, apiAction, payload);
         toast({ title: 'Success', description: successMessage });
         onUpdate();
 

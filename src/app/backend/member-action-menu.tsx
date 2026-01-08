@@ -26,10 +26,7 @@ import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken } from '@/firebase';
 import Link from 'next/link';
 
-async function performAdminAction(action: string, payload: any) {
-    const token = await getClientSideAuthToken();
-    if (!token) throw new Error("Authentication failed.");
-    
+async function performAdminAction(token: string, action: string, payload: any) {
     const response = await fetch('/api/admin', {
         method: 'POST',
         headers: {
@@ -60,6 +57,9 @@ export default function MemberActionMenu({ member, onUpdate }: { member: any; on
     setIsAlertOpen(false);
 
     try {
+        const token = await getClientSideAuthToken();
+        if (!token) throw new Error("Authentication failed.");
+        
         let apiAction = '';
         let payload: any = { companyId: member.id };
         let successMessage = '';
@@ -73,7 +73,7 @@ export default function MemberActionMenu({ member, onUpdate }: { member: any; on
             successMessage = `Member status updated to ${payload.status}.`;
         }
         
-        await performAdminAction(apiAction, payload);
+        await performAdminAction(token, apiAction, payload);
         toast({ title: 'Success', description: successMessage });
         onUpdate();
 
