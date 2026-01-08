@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Map, Users, Building, Handshake } from 'lucide-react';
+import { Map, Users, Building, Handshake, Bot } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import React from 'react';
 
@@ -20,15 +20,24 @@ export default function SalesRoadmap() {
     const [startYear, setStartYear] = useState(new Date().getFullYear());
     const [forecastMonths, setForecastMonths] = useState(36);
     
+    // Initial Databases
     const [initialTransporters, setInitialTransporters] = useState(1000);
     const [initialSuppliers, setInitialSuppliers] = useState(500);
 
+    // Power Partners
     const [numberOfPowerPartners, setNumberOfPowerPartners] = useState(5);
     const [opportunitiesPerPartner, setOpportunitiesPerPartner] = useState(2000);
+    
+    // ISA Inputs
+    const [numberOfIsas, setNumberOfIsas] = useState(10);
+    const [referralsPerIsa, setReferralsPerIsa] = useState(50);
+    const [isaConversionRate, setIsaConversionRate] = useState(10); // in percent
 
+    // Campaign Conversion
     const [campaignConversionRate, setCampaignConversionRate] = useState(5); // in percent
     const [campaignDuration, setCampaignDuration] = useState(6); // in months
 
+    // Network Effect
     const [avgCustomersPerMember, setAvgCustomersPerMember] = useState(10);
     const [customerConversionRate, setCustomerConversionRate] = useState(2); // in percent
     const [customerConversionLag, setCustomerConversionLag] = useState(3); // in months
@@ -49,9 +58,8 @@ export default function SalesRoadmap() {
             const year = date.getFullYear();
             
             // 1. New members from initial database campaigns
-            // Apply the higher conversion rate only during the active campaign period
-            const currentConversionRate = i < campaignDuration ? campaignConversionRate / 100 : 0; // After campaign, conversion from this channel is 0
-            const campaignNewMembers = Math.floor(monthlyProspectsReached * currentConversionRate);
+            const currentCampaignConversionRate = i < campaignDuration ? campaignConversionRate / 100 : 0; // After campaign, conversion from this channel is 0
+            const campaignNewMembers = Math.floor(monthlyProspectsReached * currentCampaignConversionRate);
 
             // 2. New members from network effect (customers of existing members)
             let networkNewMembers = 0;
@@ -61,7 +69,10 @@ export default function SalesRoadmap() {
                 networkNewMembers = Math.floor(potentialNetworkPool * (customerConversionRate / 100) / 12); // monthly conversion
             }
             
-            const totalNewMembers = campaignNewMembers + networkNewMembers;
+            // 3. New members from ISA channel
+            const isaNewMembers = Math.floor(numberOfIsas * referralsPerIsa * (isaConversionRate / 100));
+
+            const totalNewMembers = campaignNewMembers + networkNewMembers + isaNewMembers;
             cumulativeMembers += totalNewMembers;
 
             data.push({
@@ -69,6 +80,7 @@ export default function SalesRoadmap() {
                 year,
                 campaignNewMembers,
                 networkNewMembers,
+                isaNewMembers,
                 totalNewMembers,
                 cumulativeMembers,
             });
@@ -78,17 +90,19 @@ export default function SalesRoadmap() {
         startMonth, startYear, forecastMonths, initialTransporters, initialSuppliers,
         numberOfPowerPartners, opportunitiesPerPartner,
         campaignConversionRate, campaignDuration, avgCustomersPerMember,
-        customerConversionRate, customerConversionLag
+        customerConversionRate, customerConversionLag,
+        numberOfIsas, referralsPerIsa, isaConversionRate
     ]);
     
     const yearlyTotals = useMemo(() => {
-        const totals: { [year: number]: { campaign: number, network: number, total: number } } = {};
+        const totals: { [year: number]: { campaign: number, network: number, isa: number, total: number } } = {};
         roadmapData.forEach(row => {
             if (!totals[row.year]) {
-                totals[row.year] = { campaign: 0, network: 0, total: 0 };
+                totals[row.year] = { campaign: 0, network: 0, isa: 0, total: 0 };
             }
             totals[row.year].campaign += row.campaignNewMembers;
             totals[row.year].network += row.networkNewMembers;
+            totals[row.year].isa += row.isaNewMembers;
             totals[row.year].total += row.totalNewMembers;
         });
         return totals;
@@ -132,8 +146,25 @@ export default function SalesRoadmap() {
                             </div>
                         </CardContent>
                     </Card>
+                     <Card>
+                        <CardHeader><CardTitle className="flex items-center gap-2"><Bot /> 3. Independent Sales Agents (ISAs)</CardTitle></CardHeader>
+                        <CardContent className="space-y-4">
+                             <div className="space-y-2">
+                                <Label># of ISA Agents</Label>
+                                <Input type="number" value={numberOfIsas} onChange={e => setNumberOfIsas(Number(e.target.value))} />
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Referrals per ISA per Month ({referralsPerIsa})</Label>
+                                <Slider value={[referralsPerIsa]} onValueChange={v => setReferralsPerIsa(v[0])} max={200} step={5} />
+                            </div>
+                            <div className="space-y-2">
+                                <Label>ISA Conversion Rate ({isaConversionRate}%)</Label>
+                                <Slider value={[isaConversionRate]} onValueChange={v => setIsaConversionRate(v[0])} max={50} step={1} />
+                            </div>
+                        </CardContent>
+                    </Card>
                     <Card>
-                        <CardHeader><CardTitle>3. Campaign Conversion</CardTitle></CardHeader>
+                        <CardHeader><CardTitle>4. Campaign Conversion</CardTitle></CardHeader>
                         <CardContent className="space-y-4">
                             <div className="space-y-2">
                                 <Label>Campaign Conversion Rate ({campaignConversionRate}%)</Label>
@@ -146,7 +177,7 @@ export default function SalesRoadmap() {
                         </CardContent>
                     </Card>
                      <Card>
-                        <CardHeader><CardTitle>4. Network Effect</CardTitle></CardHeader>
+                        <CardHeader><CardTitle>5. Network Effect</CardTitle></CardHeader>
                         <CardContent className="space-y-4">
                             <div className="space-y-2">
                                 <Label>Avg. Customers per Member</Label>
@@ -163,7 +194,7 @@ export default function SalesRoadmap() {
                         </CardContent>
                     </Card>
                      <Card>
-                        <CardHeader><CardTitle>5. Forecast Period</CardTitle></CardHeader>
+                        <CardHeader><CardTitle>6. Forecast Period</CardTitle></CardHeader>
                         <CardContent className="space-y-4">
                              <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
@@ -193,19 +224,20 @@ export default function SalesRoadmap() {
                             <CardDescription>Month-by-month forecast of new and cumulative members.</CardDescription>
                         </CardHeader>
                         <CardContent>
-                            <div className="border rounded-lg max-h-[1600px] overflow-y-auto">
+                            <div className="border rounded-lg max-h-[2200px] overflow-y-auto">
                                 <Table>
                                     <TableHeader className="sticky top-0 bg-muted">
                                         <TableRow>
                                             <TableHead className="w-[120px]">Month</TableHead>
                                             <TableHead className="text-right">Database Signups</TableHead>
+                                            <TableHead className="text-right">ISA Signups</TableHead>
                                             <TableHead className="text-right">Network Signups</TableHead>
                                             <TableHead className="text-right">Total New</TableHead>
                                             <TableHead className="text-right">Cumulative Members</TableHead>
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
-                                        {roadmapData.map((row, index) => {
+                                        {roadmapData.map((row) => {
                                             const showYearTotal = roadmapData.findIndex(r => r.year === row.year) === roadmapData.findLastIndex(r => r.year === row.year);
                                             const totalRow = yearlyTotals[row.year];
                                             return (
@@ -213,6 +245,7 @@ export default function SalesRoadmap() {
                                                     <TableRow>
                                                         <TableCell>{row.month}</TableCell>
                                                         <TableCell className="text-right">{row.campaignNewMembers.toLocaleString()}</TableCell>
+                                                        <TableCell className="text-right">{row.isaNewMembers.toLocaleString()}</TableCell>
                                                         <TableCell className="text-right">{row.networkNewMembers.toLocaleString()}</TableCell>
                                                         <TableCell className="text-right font-semibold">{row.totalNewMembers.toLocaleString()}</TableCell>
                                                         <TableCell className="text-right font-bold text-primary">{row.cumulativeMembers.toLocaleString()}</TableCell>
@@ -221,6 +254,7 @@ export default function SalesRoadmap() {
                                                         <TableRow className="bg-primary/10 font-bold">
                                                             <TableCell>Total {row.year}</TableCell>
                                                             <TableCell className="text-right">{totalRow.campaign.toLocaleString()}</TableCell>
+                                                            <TableCell className="text-right">{totalRow.isa.toLocaleString()}</TableCell>
                                                             <TableCell className="text-right">{totalRow.network.toLocaleString()}</TableCell>
                                                             <TableCell className="text-right">{totalRow.total.toLocaleString()}</TableCell>
                                                             <TableCell className="text-right">{row.cumulativeMembers.toLocaleString()}</TableCell>
