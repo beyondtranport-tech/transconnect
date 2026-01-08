@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { createContext, useContext, ReactNode, useMemo, useState, useEffect } from 'react';
@@ -6,6 +5,7 @@ import { FirebaseApp } from 'firebase/app';
 import { Firestore } from 'firebase/firestore';
 import { Auth, User, onIdTokenChanged, getIdToken } from 'firebase/auth';
 import { FirebaseStorage } from 'firebase/storage';
+import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
 
 interface FirebaseProviderProps {
   children: ReactNode;
@@ -51,15 +51,19 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
       auth,
       async (firebaseUser) => {
         setUserAuthState({ user: firebaseUser, isUserLoading: false, userError: null });
-        const idToken = firebaseUser ? await firebaseUser.getIdToken() : null;
-        try {
-            await fetch('/api/auth/session', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ idToken }),
-            });
-        } catch (error) {
-            console.error("FirebaseProvider: Failed to set session cookie:", error);
+        
+        // This is the critical fix: Ensure this code only runs on the client.
+        if (typeof window !== 'undefined') {
+            const idToken = firebaseUser ? await firebaseUser.getIdToken() : null;
+            try {
+                await fetch('/api/auth/session', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ idToken }),
+                });
+            } catch (error) {
+                console.error("FirebaseProvider: Failed to set session cookie:", error);
+            }
         }
       },
       (error) => {
@@ -80,6 +84,7 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
 
   return (
     <FirebaseContext.Provider value={contextValue}>
+      <FirebaseErrorListener />
       {children}
     </FirebaseContext.Provider>
   );
@@ -102,3 +107,20 @@ export const useUser = (): UserAuthState => {
     const { user, isUserLoading, userError } = useFirebase();
     return { user, isUserLoading, userError };
 };
+
+// This function is safe to be called from client-side effects and callbacks
+// as it does not use any React hooks internally.
+export async function getClientSideAuthToken(): Promise<string | null> {
+    const auth = useAuth();
+    if (!auth) return null;
+    const user = auth.currentUser;
+    if (user) {
+        try {
+            return await getIdToken(user);
+        } catch (error) {
+            console.error("Error getting auth token:", error);
+            return null;
+        }
+    }
+    return null;
+}
