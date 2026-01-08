@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
@@ -63,17 +64,10 @@ async function fetchAdminData(token: string, action: string) {
     return result.data;
 }
 
-function AddStaffDialog({ companies, onStaffAdded }: { companies: Company[], onStaffAdded: () => void }) {
+function AddStaffDialog({ companies, onStaffAdded, authToken }: { companies: Company[], onStaffAdded: () => void, authToken: string | null }) {
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
-  const [authToken, setAuthToken] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (isOpen) {
-        getClientSideAuthToken().then(setAuthToken);
-    }
-  }, [isOpen]);
 
   const form = useForm<StaffFormValues>({
     resolver: zodResolver(staffFormSchema),
@@ -194,17 +188,22 @@ export default function StaffContent() {
     const [staff, setStaff] = useState<StaffMember[]>([]);
     const [isLoadingData, setIsLoadingData] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [authToken, setAuthToken] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (!isUserLoading && user) {
+            getClientSideAuthToken().then(setAuthToken);
+        }
+    }, [isUserLoading, user]);
 
     const fetchData = useCallback(async () => {
+        if (!authToken) return;
         setIsLoadingData(true);
         setError(null);
         try {
-            const token = await getClientSideAuthToken();
-            if (!token) throw new Error("Authentication failed.");
-            
             const [staffData, companiesData] = await Promise.all([
-                fetchAdminData(token, 'getStaff'),
-                fetchAdminData(token, 'getMembers')
+                fetchAdminData(authToken, 'getStaff'),
+                fetchAdminData(authToken, 'getMembers')
             ]);
             setStaff(staffData || []);
             setCompanies(companiesData || []);
@@ -213,13 +212,11 @@ export default function StaffContent() {
         } finally {
             setIsLoadingData(false);
         }
-    }, []);
+    }, [authToken]);
 
     useEffect(() => {
-        if (!isUserLoading && user) {
-            fetchData();
-        }
-    }, [isUserLoading, user, fetchData]);
+        fetchData();
+    }, [fetchData]);
 
     const enrichedStaff = useMemo(() => {
         const companyMap = new Map(companies.map(c => [c.id, c.companyName]));
@@ -266,7 +263,7 @@ export default function StaffContent() {
                     </CardTitle>
                     <CardDescription>A consolidated view of all staff across all member companies.</CardDescription>
                 </div>
-                {!isLoading && companies.length > 0 && <AddStaffDialog companies={companies} onStaffAdded={fetchData} />}
+                {!isLoading && companies.length > 0 && <AddStaffDialog companies={companies} onStaffAdded={fetchData} authToken={authToken} />}
             </CardHeader>
             <CardContent>
                 {isLoading ? (
