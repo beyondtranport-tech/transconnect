@@ -38,10 +38,10 @@ const getSubjectInfo = (log: any) => {
         return { name: 'Product', href: `/backend?view=shops`, icon: ShoppingCart };
     }
     if (log.collectionPath.startsWith('users')) {
-        return { name: 'User Profile', href: `/backend?view=wallet&memberId=${log.companyId}`, icon: User };
+        return { name: 'User Profile', href: `/account?view=profile`, icon: User };
     }
     if (log.collectionPath.startsWith('companies')) {
-        return { name: 'Company Profile', href: `/backend?view=wallet&memberId=${log.documentId}`, icon: Building };
+        return { name: 'Company Profile', href: `/account?view=company`, icon: Building };
     }
     
     return { name: 'System Record', href: '#', icon: FileText };
@@ -62,17 +62,8 @@ export default function ActivityFeed() {
             const token = await getClientSideAuthToken();
             if (!token) throw new Error("Authentication failed.");
 
-            // First, get the admin user's companyId
-            const userRes = await fetchFromAdminAPI(token, 'getUserDoc', { uid: user.uid });
-            const adminCompanyId = userRes.data?.companyId;
-
-            if (!adminCompanyId) {
-                throw new Error("Could not determine the admin's company ID.");
-            }
-
             const result = await fetchFromAdminAPI(token, 'getAuditLogs');
-            const filteredLogs = result.data.filter((log: any) => log.companyId === adminCompanyId);
-            const sortedLogs = filteredLogs.sort((a: any, b: any) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+            const sortedLogs = result.data.sort((a: any, b: any) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
             setLogs(sortedLogs);
         } catch (e: any) {
             setError(e.message);

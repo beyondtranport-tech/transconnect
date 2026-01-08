@@ -9,7 +9,7 @@ import { Loader2, Users, PlusCircle, UserPlus } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
-import { getClientSideAuthToken, useDoc, useUser } from '@/firebase/provider';
+import { getClientSideAuthToken, useUser } from '@/firebase/provider';
 import StaffActionMenu from '../backend/staff-action-menu';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -18,8 +18,6 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { useMemoFirebase } from '@/hooks/use-config';
-import { doc } from 'firebase/firestore';
 
 interface StaffMember {
     id: string;
