@@ -102,21 +102,3 @@ export const useUser = (): UserAuthState => {
     const { user, isUserLoading, userError } = useFirebase();
     return { user, isUserLoading, userError };
 };
-
-export async function getClientSideAuthToken(): Promise<string | null> {
-    const auth = useAuth();
-    if (!auth) return null;
-    if (auth.currentUser) {
-        try {
-            return await getIdToken(auth.currentUser, false);
-        } catch (error) {
-            try {
-                return await getIdToken(auth.currentUser, true);
-            } catch (refreshError) {
-                console.error("Error getting auth token after forced refresh:", refreshError);
-                return null;
-            }
-        }
-    }
-    return null;
-}
