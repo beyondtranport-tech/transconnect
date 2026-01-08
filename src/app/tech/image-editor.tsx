@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useRef } from 'react';
@@ -15,8 +16,9 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Sparkles, Wand2, UploadCloud, Image as ImageIcon } from 'lucide-react';
+import { Loader2, Wand2, UploadCloud, Image as ImageIcon } from 'lucide-react';
 import Image from 'next/image';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 const formSchema = z.object({
   prompt: z.string().min(1, 'A prompt is required.'),
@@ -114,6 +116,8 @@ export default function ImageEditor() {
                          )}
                     </CardContent>
                 </Card>
+            </div>
+            <div className="space-y-4">
                 <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                          <Card>
@@ -142,31 +146,32 @@ export default function ImageEditor() {
                     </form>
                 </Form>
             </div>
-            
-            <Card>
-                <CardHeader>
-                    <CardTitle className="text-base">3. Generated Image</CardTitle>
-                </CardHeader>
-                 <CardContent>
-                    {isLoading && (
-                        <div className="flex flex-col items-center justify-center h-64 border-2 border-dashed rounded-lg">
-                            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                            <p className="mt-2 text-muted-foreground">AI is creating your image...</p>
-                        </div>
-                    )}
-                    {!isLoading && generatedImage && (
-                        <div className="relative aspect-square w-full rounded-md border overflow-hidden">
-                            <Image src={generatedImage} alt="Generated image" fill className="object-contain" />
-                        </div>
-                    )}
-                     {!isLoading && !generatedImage && (
-                         <div className="flex flex-col items-center justify-center h-64 border-2 border-dashed rounded-lg">
-                            <ImageIcon className="h-8 w-8 text-muted-foreground" />
-                            <p className="mt-2 text-muted-foreground">Your new image will appear here.</p>
-                        </div>
-                    )}
-                 </CardContent>
-            </Card>
         </div>
+
+        <Card>
+            <CardHeader>
+                <CardTitle className="text-base">3. Generated Image</CardTitle>
+            </CardHeader>
+             <CardContent>
+                {isLoading && (
+                    <div className="flex flex-col items-center justify-center h-64 border-2 border-dashed rounded-lg">
+                        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                        <p className="mt-2 text-muted-foreground">AI is creating your image...</p>
+                    </div>
+                )}
+                {!isLoading && generatedImage && (
+                    <div className="relative aspect-square w-full rounded-md border overflow-hidden">
+                        <Image src={generatedImage} alt="Generated image" fill className="object-contain" />
+                    </div>
+                )}
+                 {!isLoading && !generatedImage && (
+                     <div className="flex flex-col items-center justify-center h-64 border-2 border-dashed rounded-lg">
+                        <ImageIcon className="h-8 w-8 text-muted-foreground" />
+                        <p className="mt-2 text-muted-foreground">Your new image will appear here.</p>
+                    </div>
+                )}
+             </CardContent>
+        </Card>
+    </div>
   );
 }
