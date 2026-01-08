@@ -37,7 +37,7 @@ const imageEditFlow = ai.defineFlow(
     inputSchema: ImageEditInputSchema,
     outputSchema: ImageEditOutputSchema,
   },
-  async input => {
+  async (input) => {
     const { media } = await ai.generate({
       model: 'googleai/gemini-2.5-flash-image-preview',
       prompt: [
