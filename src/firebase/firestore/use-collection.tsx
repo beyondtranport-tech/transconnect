@@ -73,11 +73,7 @@ export function useCollection<T = any>(
       },
       (err) => {
         console.error("useCollection onSnapshot error:", err);
-        const permissionError = new FirestorePermissionError({
-            path: (memoizedTargetRefOrQuery as any).path || 'unknown',
-            operation: 'list',
-        });
-        errorEmitter.emit('permission-error', permissionError);
+        // Do not create a new error. Pass the original error from Firestore.
         setError(err);
         setIsLoading(false);
         setData(null);

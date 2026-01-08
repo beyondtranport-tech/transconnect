@@ -1,8 +1,6 @@
 'use client';
 
-import { useUser, useFirestore, useDoc } from '@/firebase/provider';
-import { useCollection } from '@/firebase/firestore/use-collection';
-import { useMemoFirebase } from '@/hooks/use-config';
+import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase } from '@/firebase';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Loader2, FileText, MoreVertical, Trash2, Edit, Eye } from 'lucide-react';
@@ -97,7 +95,7 @@ export default function EnquiriesCard() {
         if (!firestore || !user) return null;
         return doc(firestore, 'users', user.uid);
     }, [firestore, user]);
-    const { data: userData } = useDoc<{ companyId: string }>(userDocRef);
+    const { data: userData, isLoading: isUserDocLoading } = useDoc<{ companyId: string }>(userDocRef);
 
     const enquiriesQuery = useMemoFirebase(() => {
         if (!firestore || !userData?.companyId) return null;
@@ -108,7 +106,7 @@ export default function EnquiriesCard() {
         );
     }, [firestore, userData]);
 
-    const { data: enquiries, isLoading, error, forceRefresh } = useCollection(enquiriesQuery);
+    const { data: enquiries, isLoading: isEnquiriesLoading, error, forceRefresh } = useCollection(enquiriesQuery);
 
     const handleDelete = async (enquiryId: string) => {
         if (!firestore || !userData?.companyId) return;
@@ -127,6 +125,8 @@ export default function EnquiriesCard() {
     if (user && user.email === 'beyondtransport@gmail.com') {
         return null;
     }
+    
+    const isLoading = isUserDocLoading || isEnquiriesLoading;
 
     return (
         <Card>
@@ -143,7 +143,7 @@ export default function EnquiriesCard() {
                         <Link href="/funding/apply">Start New Enquiry</Link>
                     </Button>
                 </div>
-                {isLoading && !enquiries && (
+                {isLoading && (
                     <div className="flex justify-center items-center py-10">
                         <Loader2 className="h-8 w-8 animate-spin text-primary" />
                     </div>
@@ -155,7 +155,7 @@ export default function EnquiriesCard() {
                     </div>
                 )}
 
-                {!isLoading && (
+                {!isLoading && !error && (
                     enquiries && enquiries.length > 0 ? (
                         <div className="overflow-x-auto">
                             <Table>

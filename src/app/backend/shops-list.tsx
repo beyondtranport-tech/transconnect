@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -34,13 +33,13 @@ const statusColors: { [key: string]: 'default' | 'secondary' | 'destructive' | '
 function ShopPreviewDialog({ shop }: { shop: Shop }) {
     const firestore = useFirestore();
     
-    const productsCollection = useMemoFirebase(() => {
+    const productsQuery = useMemoFirebase(() => {
         if (!firestore) return null;
         // Correctly query the public subcollection
         return query(collection(firestore, `companies/${shop.companyId}/shops/${shop.id}/products`));
     }, [firestore, shop.companyId, shop.id]);
 
-    const { data: products, isLoading } = useCollection(productsCollection);
+    const { data: products, isLoading } = useCollection(productsQuery);
 
     return (
         <Dialog>
@@ -116,7 +115,9 @@ export default function ShopsList() {
     const formatDate = (isoString: string | undefined) => {
         if (!isoString) return 'N/A';
         try {
-            return new Date(isoString).toLocaleString('en-ZA', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit'});
+            const date = typeof isoString === 'string' ? new Date(isoString) : (isoString as any).toDate();
+            if (isNaN(date.getTime())) return 'Invalid Date';
+            return date.toLocaleString('en-ZA', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit'});
         } catch (e) {
             return 'Invalid Date';
         }
@@ -140,7 +141,7 @@ export default function ShopsList() {
                         <p className="text-sm">{error.message}</p>
                     </div>
                 )}
-                {shops && !isLoading && (
+                {!isLoading && !error && shops && (
                     <div className="overflow-x-auto">
                         <Table>
                             <TableHeader>
@@ -189,7 +190,7 @@ export default function ShopsList() {
                         </Table>
                     </div>
                 )}
-                 {shops && shops.length === 0 && !isLoading && (
+                 {!isLoading && !error && shops && shops.length === 0 && (
                     <div className="text-center py-20 border-2 border-dashed rounded-lg">
                         <CheckCircle className="mx-auto h-12 w-12 text-green-500" />
                         <h3 className="mt-4 text-xl font-semibold">All Clear!</h3>

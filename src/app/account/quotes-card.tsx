@@ -1,8 +1,6 @@
 'use client';
 
-import { useUser, useFirestore, useDoc } from '@/firebase/provider';
-import { useCollection } from '@/firebase/firestore/use-collection';
-import { useMemoFirebase } from '@/hooks/use-config';
+import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase } from '@/firebase';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Loader2, FileText, MoreVertical, Trash2 } from 'lucide-react';
@@ -53,7 +51,7 @@ export default function QuotesCard() {
         if (!firestore || !user) return null;
         return doc(firestore, 'users', user.uid);
     }, [firestore, user]);
-    const { data: userData } = useDoc<{ companyId: string }>(userDocRef);
+    const { data: userData, isLoading: isUserDocLoading } = useDoc<{ companyId: string }>(userDocRef);
 
     const quotesQuery = useMemoFirebase(() => {
         if (!firestore || !userData?.companyId) return null;
@@ -64,7 +62,7 @@ export default function QuotesCard() {
         );
     }, [firestore, userData]);
 
-    const { data: quotes, isLoading, error, forceRefresh } = useCollection(quotesQuery);
+    const { data: quotes, isLoading: isQuotesLoading, error, forceRefresh } = useCollection(quotesQuery);
     
     const handleDelete = async (quoteId: string) => {
         if (!firestore || !userData?.companyId) return;
@@ -84,6 +82,8 @@ export default function QuotesCard() {
     if (user && user.email === 'beyondtransport@gmail.com') {
         return null;
     }
+    
+    const isLoading = isUserDocLoading || isQuotesLoading;
 
     return (
         <Card>
@@ -112,8 +112,8 @@ export default function QuotesCard() {
                     </div>
                 )}
 
-                {!isLoading && quotes && (
-                    quotes.length > 0 ? (
+                {!isLoading && !error && (
+                    quotes && quotes.length > 0 ? (
                         <Table>
                             <TableHeader>
                                 <TableRow>
@@ -187,5 +187,3 @@ export default function QuotesCard() {
         </Card>
     );
 }
-
-    
