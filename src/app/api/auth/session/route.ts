@@ -1,9 +1,11 @@
+
 import { NextResponse, type NextRequest } from 'next/server';
 import { cookies } from 'next/headers';
 
 export async function POST(request: NextRequest) {
   try {
-    const { idToken } = await request.json();
+    const body = await request.json();
+    const idToken = body.idToken;
     const cookieStore = cookies();
 
     if (idToken) {
@@ -13,6 +15,7 @@ export async function POST(request: NextRequest) {
         secure: process.env.NODE_ENV === 'production',
         path: '/',
         maxAge: 60 * 60 * 24, // 24 hours
+        sameSite: 'lax',
       });
       return NextResponse.json({ success: true, message: 'Session cookie set.' });
     } else {
