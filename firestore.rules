@@ -51,6 +51,9 @@ service cloud.firestore {
     match /{path=**}/enquiries/{enquiryId} {
       allow list: if isAdmin();
     }
+    match /{path=**}/shops/{shopId} {
+      allow list: if isAdmin();
+    }
 
     // --- Public & Global Collections ---
 
