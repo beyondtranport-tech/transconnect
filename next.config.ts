@@ -34,8 +34,6 @@ const nextConfig = {
       bodySizeLimit: '10mb',
     },
     serverMinification: false,
-    // Increase the timeout for server actions to allow for longer-running AI tasks.
-    serverActionsTimeout: 120000, // 2 minutes
   },
 };
 
