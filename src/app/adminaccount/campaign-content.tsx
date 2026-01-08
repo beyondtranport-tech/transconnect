@@ -1,8 +1,8 @@
-
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import NanoBananaCard from './nano-banana-card';
+import AIImageGeneratorCard from './image-generator-card';
 
 export default function CampaignContent() {
     return (
@@ -15,6 +15,7 @@ export default function CampaignContent() {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <NanoBananaCard />
+                <AIImageGeneratorCard />
                 {/* Other campaign tool cards will go here */}
             </div>
         </div>
