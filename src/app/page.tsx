@@ -2,22 +2,15 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, Cpu, DollarSign, ShoppingBasket, Store } from 'lucide-react';
+import { ArrowRight, Cpu, DollarSign, Heart, Shield, CheckCircle, Info, Handshake } from 'lucide-react';
 import data from '@/lib/placeholder-images.json';
 import * as React from 'react';
-import { divisions as divisionData } from '@/lib/data';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 const { placeholderImages } = data;
 
 const heroImage = placeholderImages.find(p => p.id === "hero-home");
 const techImage = placeholderImages.find(p => p.id === "tech-home");
-
-const iconComponents: { [key: string]: React.ElementType } = {
-    DollarSign,
-    ShoppingBasket,
-    Store,
-    Cpu,
-};
 
 export default function Home() {
   return (
@@ -47,49 +40,57 @@ export default function Home() {
         </div>
       </section>
 
-      <section id="divisions" className="py-16 md:py-24 bg-background">
+      <section id="about" className="py-16 md:py-24 bg-background">
         <div className="container mx-auto px-4">
           <div className="text-center max-w-3xl mx-auto mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold font-headline">Our Divisions</h2>
+            <h2 className="text-3xl md:text-4xl font-bold font-headline">About Us</h2>
             <p className="mt-4 text-lg text-muted-foreground">
-              A complete ecosystem designed to support every aspect of your transport business.
+              Running a transport company is challenging. Having financed transporters for the past 30 years, we understand your challenges. Most importantly we understand how difficult it is to access the capital you need to grow your business. This is why we have developed a unique approach to unlock your business.
             </p>
           </div>
-          <div className="space-y-16">
-             {divisionData.map((division, index) => {
-                const IconComponent = iconComponents[division.icon];
-                const href = ['marketplace', 'tech', 'funding', 'mall'].includes(division.id) ? `/${division.id}` : `/divisions#${division.id}`;
-                return (
-                    <div key={division.id} className="grid md:grid-cols-2 gap-8 md:gap-12 items-center">
-                        <div className={`relative aspect-video rounded-lg overflow-hidden shadow-lg ${index % 2 === 1 ? 'md:order-2' : ''}`}>
-                             {division.image && (
-                                <Image
-                                    src={division.image.imageUrl}
-                                    alt={division.image.description}
-                                    fill
-                                    className="object-cover"
-                                    data-ai-hint={division.image.imageHint}
-                                />
-                             )}
-                        </div>
-                        <div className={index % 2 === 1 ? 'md:order-1' : ''}>
-                           <div className="flex items-center gap-4">
-                                {IconComponent && <IconComponent className="h-10 w-10 text-primary" />}
-                                <h3 className="text-3xl font-bold font-headline">{division.title.split(' ')[1]}</h3>
-                            </div>
-                            <p className="mt-4 text-lg text-muted-foreground">
-                                {division.description}
-                            </p>
-                            <Button asChild className="mt-6">
-                                <Link href={href}>
-                                    Learn More <ArrowRight className="ml-2 h-4 w-4" />
-                                </Link>
-                            </Button>
-                        </div>
-                    </div>
-                )
-            })}
+          <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-3">
+                  <Heart className="h-8 w-8 text-primary"/>
+                  Our Mission
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3 text-muted-foreground">
+                  <p>Our mission is to Reward Borrowers to engage with our ecosystem by:</p>
+                  <ul className="list-disc list-inside space-y-2 pl-2">
+                    <li>Empowering borrowers to obtain funding from Simplyfi Flow and our Funding partners.</li>
+                    <li>Developing our own data source which will reduce lender risk.</li>
+                    <li>Streamlining interactions to remove anxiety and create value for all role-players.</li>
+                  </ul>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-3">
+                  <Shield className="h-8 w-8 text-primary"/>
+                  Our Vision
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3 text-muted-foreground">
+                 <p>Our vision is to simplify credit by collaborating, rewarding, and working with clients and partners. We want to build a better future for our customers and decrease their credit risk.</p>
+                 <p>Central to our vision is to use digital platforms to drive efficiencies, data to enhance decisioning and collaboration to drive leverage.</p>
+              </CardContent>
+            </Card>
           </div>
+          <Card className="max-w-5xl mx-auto mt-8 bg-card">
+             <CardHeader>
+                <CardTitle className="flex items-center gap-3">
+                    <Handshake className="h-8 w-8 text-primary"/>
+                    Our Member Value Guarantee
+                </CardTitle>
+             </CardHeader>
+             <CardContent>
+                <p className="text-muted-foreground">
+                    Our Member Value guarantee is valid for 12 months from date of signing on as a member. We will refund you, the Member, the difference between (Total membership fee + Subscription fee) - (Incentive + Cash back Rewards).
+                </p>
+             </CardContent>
+          </Card>
         </div>
       </section>
 
