@@ -38,18 +38,20 @@ export default function SalesRoadmap() {
         const data = [];
         let cumulativeMembers = 0;
         const totalPowerPartnerProspects = numberOfPowerPartners * opportunitiesPerPartner;
-        let remainingProspects = initialTransporters + initialSuppliers + totalPowerPartnerProspects;
+        const totalInitialProspects = initialTransporters + initialSuppliers + totalPowerPartnerProspects;
 
-        const campaignMonthlyConversion = Math.floor(remainingProspects / campaignDuration);
+        // Corrected Logic: Spread the total prospect pool over the entire forecast duration
+        const monthlyProspectsReached = Math.floor(totalInitialProspects / forecastMonths);
 
         for (let i = 0; i < forecastMonths; i++) {
             const date = new Date(startYear, startMonth + i, 1);
             const month = monthNames[date.getMonth()];
             const year = date.getFullYear();
             
-            // 1. New members from initial database campaigns (including power partners)
-            const campaignNewMembers = i < campaignDuration ? Math.floor(campaignMonthlyConversion * (campaignConversionRate / 100)) : 0;
-            remainingProspects -= i < campaignDuration ? campaignMonthlyConversion : 0;
+            // 1. New members from initial database campaigns
+            // Apply the higher conversion rate only during the active campaign period
+            const currentConversionRate = i < campaignDuration ? campaignConversionRate / 100 : 0; // After campaign, conversion from this channel is 0
+            const campaignNewMembers = Math.floor(monthlyProspectsReached * currentConversionRate);
 
             // 2. New members from network effect (customers of existing members)
             let networkNewMembers = 0;
@@ -203,7 +205,7 @@ export default function SalesRoadmap() {
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
-                                        {roadmapData.map((row) => {
+                                        {roadmapData.map((row, index) => {
                                             const showYearTotal = roadmapData.findIndex(r => r.year === row.year) === roadmapData.findLastIndex(r => r.year === row.year);
                                             const totalRow = yearlyTotals[row.year];
                                             return (
