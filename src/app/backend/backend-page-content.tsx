@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -92,7 +93,7 @@ const MarketplaceDivisionContent = dynamic(() => import('./marketplace-division-
 const TechDivisionContent = dynamic(() => import('./tech-division-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const PlatformSettingsContent = dynamic(() => import('./platform-settings'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const DivisionsContent = dynamic(() => import('./divisions-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const CampaignContent = dynamic(() => import('../adminaccount/campaign-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const CampaignContent = dynamic(() => import('./campaign-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 
 
 export default function BackendPageContent() {
