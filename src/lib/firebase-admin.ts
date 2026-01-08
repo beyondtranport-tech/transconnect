@@ -9,8 +9,8 @@ const ADMIN_APP_NAME = 'firebase-admin-app-transconnect-studio';
 
 export function getAdminApp(): { app: App | null; error: string | null } {
   // Check if the required service account details are present.
-  if (!serviceAccount.project_id || !serviceAccount.client_email || !serviceAccount.private_key) {
-    const errorMessage = `Firebase Admin SDK initialization failed: Missing service account details.`;
+  if (!serviceAccount || !serviceAccount.project_id || !serviceAccount.client_email || !serviceAccount.private_key) {
+    const errorMessage = `Firebase Admin SDK initialization failed: Service account details are missing or incomplete.`;
     console.error(errorMessage);
     return { app: null, error: errorMessage };
   }
