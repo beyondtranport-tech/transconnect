@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -45,17 +45,26 @@ export default function StaffActionMenu({ staffMember, onUpdate }: { staffMember
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [actionToConfirm, setActionToConfirm] = useState<'delete' | 'confirm' | 'unconfirm' | null>(null);
   const { toast } = useToast();
+  const [authToken, setAuthToken] = useState<string | null>(null);
+
+  // Fetch token whenever a dialog is about to open that might need it
+  useEffect(() => {
+    if (isAlertOpen || isEditOpen) {
+      getClientSideAuthToken().then(setAuthToken);
+    }
+  }, [isAlertOpen, isEditOpen]);
+
 
   const handleAction = async () => {
-    if (!actionToConfirm) return;
+    if (!actionToConfirm || !authToken) {
+        toast({ variant: 'destructive', title: "Action Failed", description: "Authentication token not available." });
+        return;
+    }
 
     setIsProcessing(true);
     setIsAlertOpen(false);
 
     try {
-        const token = await getClientSideAuthToken();
-        if (!token) throw new Error("Authentication failed.");
-        
         let apiAction: string;
         let payload: any = { companyId: staffMember.companyId, staffId: staffMember.id };
         let successMessage = '';
@@ -69,7 +78,7 @@ export default function StaffActionMenu({ staffMember, onUpdate }: { staffMember
             successMessage = `${staffMember.firstName}'s status updated to ${payload.status}.`;
         }
         
-        await performStaffAction(token, apiAction, payload);
+        await performStaffAction(authToken, apiAction, payload);
         toast({ title: 'Success', description: successMessage });
         onUpdate();
 
