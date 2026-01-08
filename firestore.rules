@@ -10,33 +10,41 @@ service cloud.firestore {
     }
 
     function isAdmin() {
-      // In a real app, this would check a custom claim.
+      // In a real app, this would check a custom claim set via a backend process.
+      // For this context, we identify the admin by a specific email address.
       return request.auth != null && request.auth.token.email == 'beyondtransport@gmail.com';
+    }
+    
+    function isCompanyOwner(companyId) {
+        return request.auth != null && get(/databases/$(database)/documents/companies/$(companyId)).data.ownerId == request.auth.uid;
     }
 
     // --- User Profiles ---
-    // A user can read/update their own profile. Admins can read/list all profiles.
+    // Users can read and write their own profile. Admins can read any profile.
     match /users/{userId} {
-      allow read, update: if isOwner(userId);
-      allow create: if request.auth != null; // Onboarding via API
-      allow list, get: if isAdmin();
+      allow read, update: if isOwner(userId) || isAdmin();
+      // Allow any authenticated user to be created via the backend API.
+      allow create: if request.auth != null; 
     }
     
-    // --- Company Profiles ---
-    // A user can read or update their own company document. Admins have full access.
+    // --- Company Profiles & Subcollections ---
     match /companies/{companyId} {
-      allow create: if request.auth != null; // Controlled by backend function for user creation
-      allow get, update: if isAdmin() || get(/databases/$(database)/documents/companies/$(companyId)).data.ownerId == request.auth.uid;
+      // Allow read/update by the owner or an admin.
+      allow get, update: if isCompanyOwner(companyId) || isAdmin();
+      // Allow admins to list all companies. This is crucial for the /backend/members-list page.
       allow list: if isAdmin();
-
-      // --- Company Subcollections (Direct Access) ---
-      // The company owner and admins have full access to all subcollections (staff, wallet, etc.).
+      // Allow creation by any authenticated user via the backend API.
+      allow create: if request.auth != null; 
+      
+      // --- Company Subcollections (staff, quotes, etc.) ---
+      // The company owner or an admin can read and write any document in any subcollection.
       match /{subcollection}/{docId=**} {
-        allow read, write: if isAdmin() || get(/databases/$(database)/documents/companies/$(companyId)).data.ownerId == request.auth.uid;
+        allow read, write: if isCompanyOwner(companyId) || isAdmin();
       }
     }
     
     // --- Collection Group Queries for Admin Backend ---
+    // These rules are essential for the admin backend to query across all companies.
     match /{path=**}/staff/{staffId} {
       allow get, list: if isAdmin();
     }
@@ -59,54 +67,36 @@ service cloud.firestore {
     // --- Public & Global Collections ---
 
     // Publicly readable collection for approved shops and their products.
-    // Writes are handled by admin-only backend functions.
+    // Only admins can write to this public collection.
     match /shops/{shopId}/{path=**} {
       allow get, list: if true;
       allow write: if isAdmin();
     }
-    
-    // Anyone can create (to log their visit), but only admins can read.
-    match /visitors/{visitorId} {
-      allow create: if true;
-      allow read: if isAdmin();
-    }
 
-    // Publicly readable collection for membership plans.
-    // Only the admin can create, update, or delete plans.
+    // Publicly readable collection for membership plans. Admin-only writes.
     match /memberships/{membershipId} {
       allow get, list: if true;
       allow write: if isAdmin();
     }
     
-    // Publicly readable collection for platform-wide settings like bank details.
+    // Publicly readable collection for platform-wide settings. Admin-only writes.
     match /configuration/{configId} {
       allow get, list: if true;
       allow write: if isAdmin();
     }
 
-    // Any authenticated user can create a contribution. Read access is for admins.
+    // Any authenticated user can create a contribution. Admins can read them.
     match /contributions/{contributionId} {
       allow create: if request.auth != null;
       allow read: if isAdmin();
     }
-
-    // Admin-only collections for financial records
-    match /reconciliations/{reconciliationId} {
-        allow read, write: if isAdmin();
-    }
-
-    match /platformTransactions/{transactionId} {
-        allow read, write: if isAdmin();
-    }
     
-    // Admin-only collection for audit trails.
-    match /auditLogs/{logId} {
-        allow read, write: if isAdmin();
-    }
-
-    // Admin-only collection for managing platform permissions.
-    match /permissions/{path=**} {
-        allow read, write: if isAdmin();
-    }
+    // Admin-only collections for financial records, audit trails, and permissions.
+    match /reconciliations/{reconciliationId} { allow read, write: if isAdmin(); }
+    match /platformTransactions/{transactionId} { allow read, write: if isAdmin(); }
+    match /auditLogs/{logId} { allow read, write: if isAdmin(); }
+    match /permissions/{path=**} { allow read, write: if isAdmin(); }
+    match /visitors/{visitorId} { allow read, write: if isAdmin(); }
+    match /rewards/{rewardId} { allow read, write: if isAdmin(); }
   }
 }
