@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -9,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useCollection, useFirestore, useMemoFirebase, getClientSideAuthToken } from '@/firebase';
-import { collection, doc, query, collectionGroup } from 'firebase/firestore';
+import { collection, doc, query, collectionGroup, where } from 'firebase/firestore';
 import { ShopPreview } from '@/components/shop-preview';
 
 interface Shop {
@@ -35,6 +36,7 @@ function ShopPreviewDialog({ shop }: { shop: Shop }) {
     
     const productsCollection = useMemoFirebase(() => {
         if (!firestore) return null;
+        // Correctly query the public subcollection
         return query(collection(firestore, `companies/${shop.companyId}/shops/${shop.id}/products`));
     }, [firestore, shop.companyId, shop.id]);
 
@@ -69,7 +71,8 @@ export default function ShopsList() {
 
     const shopsQuery = useMemoFirebase(() => {
         if (!firestore) return null;
-        return query(collectionGroup(firestore, 'shops'));
+        // Query for shops pending review to avoid duplicates and show actionable items.
+        return query(collectionGroup(firestore, 'shops'), where('status', '==', 'pending_review'));
     }, [firestore]);
 
     const { data: shops, isLoading, error, forceRefresh } = useCollection<Shop>(shopsQuery);
@@ -80,7 +83,7 @@ export default function ShopsList() {
             const token = await getClientSideAuthToken();
             if (!token) throw new Error('Authentication failed.');
 
-            await fetch('/api/admin', {
+            const response = await fetch('/api/admin', {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${token}`,
@@ -91,6 +94,9 @@ export default function ShopsList() {
                     payload: { shopId: shop.id, companyId: shop.companyId }
                 })
             });
+
+             const result = await response.json();
+             if (!response.ok) throw new Error(result.error || 'Failed to approve shop.');
             
             toast({
                 title: 'Shop Approved!',
@@ -120,7 +126,7 @@ export default function ShopsList() {
         <Card>
             <CardHeader>
                 <CardTitle className="flex items-center gap-2"><Store /> Shop Management</CardTitle>
-                <CardDescription>Review, approve, and manage all member shops on the platform.</CardDescription>
+                <CardDescription>Review, approve, and manage all member shops on the platform. Showing shops currently pending review.</CardDescription>
             </CardHeader>
             <CardContent>
                 {isLoading && (
@@ -149,7 +155,7 @@ export default function ShopsList() {
                             </TableHeader>
                             <TableBody>
                                 {shops.map(shop => (
-                                    <TableRow key={shop.id}>
+                                    <TableRow key={`${shop.companyId}-${shop.id}`}>
                                         <TableCell>{formatDate(shop.createdAt)}</TableCell>
                                         <TableCell className="font-medium">{shop.shopName}</TableCell>
                                         <TableCell>{shop.category}</TableCell>
@@ -184,7 +190,11 @@ export default function ShopsList() {
                     </div>
                 )}
                  {shops && shops.length === 0 && !isLoading && (
-                    <p className="text-center text-muted-foreground py-10">No shops found.</p>
+                    <div className="text-center py-20 border-2 border-dashed rounded-lg">
+                        <CheckCircle className="mx-auto h-12 w-12 text-green-500" />
+                        <h3 className="mt-4 text-xl font-semibold">All Clear!</h3>
+                        <p className="mt-2 text-muted-foreground">There are no shops currently awaiting review.</p>
+                    </div>
                 )}
             </CardContent>
         </Card>
