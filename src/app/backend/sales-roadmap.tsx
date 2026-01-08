@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Map, Users, Building } from 'lucide-react';
+import { Map, Users, Building, Handshake } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import React from 'react';
 
@@ -23,6 +23,9 @@ export default function SalesRoadmap() {
     const [initialTransporters, setInitialTransporters] = useState(1000);
     const [initialSuppliers, setInitialSuppliers] = useState(500);
 
+    const [numberOfPowerPartners, setNumberOfPowerPartners] = useState(5);
+    const [opportunitiesPerPartner, setOpportunitiesPerPartner] = useState(2000);
+
     const [campaignConversionRate, setCampaignConversionRate] = useState(5); // in percent
     const [campaignDuration, setCampaignDuration] = useState(6); // in months
 
@@ -34,7 +37,8 @@ export default function SalesRoadmap() {
     const roadmapData = useMemo(() => {
         const data = [];
         let cumulativeMembers = 0;
-        let remainingProspects = initialTransporters + initialSuppliers;
+        const totalPowerPartnerProspects = numberOfPowerPartners * opportunitiesPerPartner;
+        let remainingProspects = initialTransporters + initialSuppliers + totalPowerPartnerProspects;
 
         const campaignMonthlyConversion = Math.floor(remainingProspects / campaignDuration);
 
@@ -43,7 +47,7 @@ export default function SalesRoadmap() {
             const month = monthNames[date.getMonth()];
             const year = date.getFullYear();
             
-            // 1. New members from initial database campaigns
+            // 1. New members from initial database campaigns (including power partners)
             const campaignNewMembers = i < campaignDuration ? Math.floor(campaignMonthlyConversion * (campaignConversionRate / 100)) : 0;
             remainingProspects -= i < campaignDuration ? campaignMonthlyConversion : 0;
 
@@ -70,6 +74,7 @@ export default function SalesRoadmap() {
         return data;
     }, [
         startMonth, startYear, forecastMonths, initialTransporters, initialSuppliers,
+        numberOfPowerPartners, opportunitiesPerPartner,
         campaignConversionRate, campaignDuration, avgCustomersPerMember,
         customerConversionRate, customerConversionLag
     ]);
@@ -100,7 +105,7 @@ export default function SalesRoadmap() {
                 {/* --- INPUTS COLUMN --- */}
                 <div className="lg:col-span-1 space-y-6">
                     <Card>
-                        <CardHeader><CardTitle>1. Initial Databases</CardTitle></CardHeader>
+                        <CardHeader><CardTitle className="flex items-center gap-2"><Building /> 1. Initial Databases</CardTitle></CardHeader>
                         <CardContent className="space-y-4">
                             <div className="space-y-2">
                                 <Label># of Transport Companies</Label>
@@ -112,8 +117,21 @@ export default function SalesRoadmap() {
                             </div>
                         </CardContent>
                     </Card>
+                     <Card>
+                        <CardHeader><CardTitle className="flex items-center gap-2"><Handshake /> 2. Power Partners</CardTitle></CardHeader>
+                        <CardContent className="space-y-4">
+                             <div className="space-y-2">
+                                <Label># of Power Partners</Label>
+                                <Input type="number" value={numberOfPowerPartners} onChange={e => setNumberOfPowerPartners(Number(e.target.value))} />
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Opportunities per Partner ({opportunitiesPerPartner.toLocaleString()})</Label>
+                                <Slider value={[opportunitiesPerPartner]} onValueChange={v => setOpportunitiesPerPartner(v[0])} max={10000} step={250} min={2000} />
+                            </div>
+                        </CardContent>
+                    </Card>
                     <Card>
-                        <CardHeader><CardTitle>2. Campaign Conversion</CardTitle></CardHeader>
+                        <CardHeader><CardTitle>3. Campaign Conversion</CardTitle></CardHeader>
                         <CardContent className="space-y-4">
                             <div className="space-y-2">
                                 <Label>Campaign Conversion Rate ({campaignConversionRate}%)</Label>
@@ -126,7 +144,7 @@ export default function SalesRoadmap() {
                         </CardContent>
                     </Card>
                      <Card>
-                        <CardHeader><CardTitle>3. Network Effect</CardTitle></CardHeader>
+                        <CardHeader><CardTitle>4. Network Effect</CardTitle></CardHeader>
                         <CardContent className="space-y-4">
                             <div className="space-y-2">
                                 <Label>Avg. Customers per Member</Label>
@@ -143,7 +161,7 @@ export default function SalesRoadmap() {
                         </CardContent>
                     </Card>
                      <Card>
-                        <CardHeader><CardTitle>4. Forecast Period</CardTitle></CardHeader>
+                        <CardHeader><CardTitle>5. Forecast Period</CardTitle></CardHeader>
                         <CardContent className="space-y-4">
                              <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
@@ -173,20 +191,20 @@ export default function SalesRoadmap() {
                             <CardDescription>Month-by-month forecast of new and cumulative members.</CardDescription>
                         </CardHeader>
                         <CardContent>
-                            <div className="border rounded-lg max-h-[1200px] overflow-y-auto">
+                            <div className="border rounded-lg max-h-[1600px] overflow-y-auto">
                                 <Table>
                                     <TableHeader className="sticky top-0 bg-muted">
                                         <TableRow>
                                             <TableHead className="w-[120px]">Month</TableHead>
-                                            <TableHead className="text-right">Campaign Signups</TableHead>
+                                            <TableHead className="text-right">Database Signups</TableHead>
                                             <TableHead className="text-right">Network Signups</TableHead>
                                             <TableHead className="text-right">Total New</TableHead>
                                             <TableHead className="text-right">Cumulative Members</TableHead>
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
-                                        {roadmapData.map((row, index) => {
-                                            const showYearTotal = index === roadmapData.length - 1 || roadmapData[index + 1].year !== row.year;
+                                        {roadmapData.map((row) => {
+                                            const showYearTotal = roadmapData.findIndex(r => r.year === row.year) === roadmapData.findLastIndex(r => r.year === row.year);
                                             const totalRow = yearlyTotals[row.year];
                                             return (
                                                 <React.Fragment key={row.month}>
