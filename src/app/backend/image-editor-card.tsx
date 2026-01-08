@@ -23,7 +23,6 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Sparkles, Wand2 } from 'lucide-react';
 import Image from 'next/image';
-import { getClientSideAuthToken } from '@/firebase';
 
 export default function ImageEditorCard() {
   const [isOpen, setIsOpen] = useState(false);
@@ -67,13 +66,10 @@ export default function ImageEditorCard() {
     setEditedImage(null);
 
     try {
-      const token = await getClientSideAuthToken();
-      if (!token) throw new Error("Authentication failed. Please sign in again.");
-
-      const response = await fetch('/api/editImage', {
+      // Correctly call the Genkit flow endpoint
+      const response = await fetch('/api/editImage/imageEditFlow', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
@@ -84,7 +80,7 @@ export default function ImageEditorCard() {
 
       const result = await response.json();
       if (!response.ok) {
-        throw new Error(result.error || 'Failed to edit image.');
+        throw new Error(result.error || result.message || 'Failed to edit image.');
       }
       setEditedImage(result.enhancedImageDataUri);
       toast({
