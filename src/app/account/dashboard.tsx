@@ -23,7 +23,7 @@ export default function AccountDashboard() {
         if (isAdmin || !firestore || !user) return null;
         return doc(firestore, 'users', user.uid);
     }, [firestore, user, isAdmin]);
-    const { data: userData } = useDoc<{ companyId: string }>(userDocRef);
+    const { data: userData } = useDoc<{ companyId: string, firstName: string }>(userDocRef);
 
     const companyDocRef = useMemoFirebase(() => {
         if (isAdmin || !firestore || !userData?.companyId) return null;
@@ -40,6 +40,11 @@ export default function AccountDashboard() {
         silver: 'bg-slate-200 text-slate-800',
         gold: 'bg-yellow-200 text-yellow-800',
     }
+
+    const formatCurrency = (amount: number) => {
+        if (typeof amount !== 'number') return 'N/A';
+        return new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(amount);
+    };
     
     // Admin View
     if (isAdmin) {
@@ -161,6 +166,18 @@ export default function AccountDashboard() {
                 </Card>
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between pb-2">
+                        <CardTitle className="text-sm font-medium">Wallet Balance</CardTitle>
+                         <Wallet className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold">{formatCurrency(companyData?.walletBalance || 0)}</div>
+                         <Button asChild variant="link" size="sm" className="p-0 h-auto">
+                            <Link href="/account?view=wallet">Manage Wallet</Link>
+                        </Button>
+                    </CardContent>
+                </Card>
+                 <Card>
+                    <CardHeader className="flex flex-row items-center justify-between pb-2">
                         <CardTitle className="text-sm font-medium">Loyalty Status</CardTitle>
                         <div className="flex items-center gap-1">
                              <Award className="h-4 w-4 text-muted-foreground" />
@@ -175,19 +192,21 @@ export default function AccountDashboard() {
                         <p className="text-xs text-muted-foreground">Earn points for community actions.</p>
                     </CardContent>
                 </Card>
-                 <Card>
-                    <CardHeader className="flex flex-row items-center justify-between pb-2">
-                        <CardTitle className="text-sm font-medium">Community Contribution</CardTitle>
-                        <HeartHandshake className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                        <p className="text-sm text-muted-foreground mb-4">Help the community and unlock greater savings by sharing anonymous data. Each contribution earns you 10 points.</p>
-                         <Button asChild>
-                            <Link href="/contribute">Contribute Data</Link>
-                        </Button>
-                    </CardContent>
-                </Card>
             </div>
+
+            <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2"><HeartHandshake /> Help the Community & Earn Rewards</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <p className="text-muted-foreground mb-4">Help the community by sharing anonymous data about your fleet and suppliers. Each contribution earns you reward points and helps us negotiate better group discounts for everyone.</p>
+                </CardContent>
+                <CardFooter>
+                    <Button asChild>
+                        <Link href="/contribute">Contribute Data <ArrowRight className="ml-2 h-4 w-4" /></Link>
+                    </Button>
+                </CardFooter>
+            </Card>
             
             <div className="space-y-8">
                 <QuotesCard />
