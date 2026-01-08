@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -9,6 +10,7 @@ import { Slider } from '@/components/ui/slider';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Map, Users, Building } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import React from 'react';
 
 const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
@@ -187,8 +189,8 @@ export default function SalesRoadmap() {
                                             const showYearTotal = index === roadmapData.length - 1 || roadmapData[index + 1].year !== row.year;
                                             const totalRow = yearlyTotals[row.year];
                                             return (
-                                                <>
-                                                    <TableRow key={index}>
+                                                <React.Fragment key={row.month}>
+                                                    <TableRow>
                                                         <TableCell>{row.month}</TableCell>
                                                         <TableCell className="text-right">{row.campaignNewMembers.toLocaleString()}</TableCell>
                                                         <TableCell className="text-right">{row.networkNewMembers.toLocaleString()}</TableCell>
@@ -204,7 +206,7 @@ export default function SalesRoadmap() {
                                                             <TableCell className="text-right">{row.cumulativeMembers.toLocaleString()}</TableCell>
                                                         </TableRow>
                                                     )}
-                                                </>
+                                                </React.Fragment>
                                             )
                                         })}
                                     </TableBody>
