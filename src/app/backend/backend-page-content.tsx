@@ -97,6 +97,7 @@ const DivisionsContent = dynamic(() => import('./divisions-content'), { loading:
 const CampaignContent = dynamic(() => import('./campaign-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const SalesRoadmap = dynamic(() => import('./sales-roadmap'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const BudgetPage = dynamic(() => import('./budget/page'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const ForecastPage = dynamic(() => import('./forecast/page'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 
 
 export default function BackendPageContent() {
@@ -179,6 +180,8 @@ export default function BackendPageContent() {
         return <SalesRoadmap />;
       case 'budget':
         return <BudgetPage />;
+      case 'forecast':
+        return <ForecastPage />;
       default:
         return <DashboardContent />;
     }
@@ -236,6 +239,12 @@ export default function BackendPageContent() {
                 <SidebarMenuButton tooltip="Budget" isActive={activeView === 'budget'} onClick={() => router.push('/backend?view=budget', { scroll: false })}>
                 <Sheet />
                 <span>Budget</span>
+                </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+                <SidebarMenuButton tooltip="Forecast" isActive={activeView === 'forecast'} onClick={() => router.push('/backend?view=forecast', { scroll: false })}>
+                <TrendingUp />
+                <span>Forecast</span>
                 </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
