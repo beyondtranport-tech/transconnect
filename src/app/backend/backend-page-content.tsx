@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -51,6 +50,7 @@ import {
   FileText,
   Lock,
   Activity,
+  Sparkles,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -92,6 +92,7 @@ const MarketplaceDivisionContent = dynamic(() => import('./marketplace-division-
 const TechDivisionContent = dynamic(() => import('./tech-division-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const PlatformSettingsContent = dynamic(() => import('./platform-settings'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const DivisionsContent = dynamic(() => import('./divisions-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const CampaignContent = dynamic(() => import('../adminaccount/campaign-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 
 
 export default function BackendPageContent() {
@@ -168,6 +169,8 @@ export default function BackendPageContent() {
         return <ContributionsList />;
       case 'wallet-reconciliation':
         return <ReconciliationPage />;
+      case 'campaigns':
+        return <CampaignContent />;
       default:
         return <DashboardContent />;
     }
@@ -204,6 +207,12 @@ export default function BackendPageContent() {
                         <span>Analytics</span>
                     </SidebarMenuButton>
                 </a>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+                <SidebarMenuButton tooltip="Campaigns" isActive={activeView === 'campaigns'} onClick={() => router.push('/backend?view=campaigns', { scroll: false })}>
+                  <Sparkles />
+                  <span>Campaigns</span>
+                </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
                 <SidebarMenuButton tooltip="Members" isActive={activeView === 'members'} onClick={() => router.push('/backend?view=members', { scroll: false })}>

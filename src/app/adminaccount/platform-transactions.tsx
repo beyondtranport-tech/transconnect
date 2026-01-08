@@ -1,246 +1,397 @@
-
 'use client';
 
-import { useState, useMemo } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Loader2, Banknote, PlusCircle, Trash2 } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
-import { useFirestore, useUser, useCollection, useMemoFirebase } from "@/firebase";
-import { collection, query, orderBy, addDoc, serverTimestamp, deleteDoc, doc } from 'firebase/firestore';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { format } from 'date-fns';
+import {
+  SidebarProvider,
+  Sidebar,
+  SidebarHeader,
+  SidebarContent,
+  SidebarGroup,
+  SidebarMenuItem,
+  SidebarMenuButton,
+  SidebarFooter,
+  SidebarInset,
+  SidebarMenuSub,
+  SidebarMenuSubButton,
+} from '@/components/ui/sidebar';
+import {
+  Users,
+  Settings,
+  LogOut,
+  LayoutDashboard,
+  Banknote,
+  Combine,
+  Truck,
+  Building,
+  TrendingUp,
+  LineChart,
+  Book,
+  Loader2,
+  ShieldAlert,
+  Store,
+  Wrench,
+  CheckCircle,
+  XCircle,
+  ShoppingBasket,
+  Cpu,
+  Landmark,
+  ArrowRight,
+  Key,
+  HandCoins,
+  TicketPercent,
+  Star,
+  Gift,
+  Award,
+  HeartHandshake,
+  Boxes,
+  Server,
+  ListTodo,
+  Wallet,
+  DollarSign,
+  FileText,
+  Lock,
+  Activity,
+  Sparkles,
+} from 'lucide-react';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useState, useEffect, Suspense, useMemo, useCallback } from 'react';
+import Link from 'next/link';
 
-const transactionSchema = z.object({
-  date: z.string().min(1, "Date is required."),
-  description: z.string().min(1, "Description is required."),
-  chartOfAccountsCode: z.string().min(1, "Account code is required."),
-  amount: z.coerce.number().positive("Amount must be a positive number."),
-  type: z.enum(['credit', 'debit']),
-});
+import { useUser, useAuth } from '@/firebase';
+import { signOut } from 'firebase/auth';
 
-type TransactionFormValues = z.infer<typeof transactionSchema>;
+// Using next/dynamic to lazy-load components
+import dynamic from 'next/dynamic';
 
-const chartOfAccounts = {
-    revenue: [
-        { code: '4010', name: 'Membership Fees' },
-        { code: '4210', name: 'Finance Mall Commission' },
-        { code: '4410', name: 'Wallet Transaction Fees' },
-    ],
-    expenses: [
-        { code: '7010', name: 'Bank Charges' },
-        { code: '7020', name: 'Software & Subscriptions' },
-        { code: '7030', name: 'Consulting & Professional Fees' },
-        { code: '7040', name: 'Marketing & Advertising' },
-        { code: '7050', name: 'General & Administrative' },
-        { code: '8010', name: 'Wallet Adjustment (Manual)' },
-        { code: '8020', name: 'Transaction Reversal' },
-    ]
-};
+const MemberWallet = dynamic(() => import('./wallet/[memberId]/member-wallet'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const DashboardContent = dynamic(() => import('./dashboard-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const MembersList = dynamic(() => import('./members-list'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const StaffList = dynamic(() => import('./staff-list'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const ShopsList = dynamic(() => import('./shops-list'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const ContributionsList = dynamic(() => import('./contributions-list'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const WalletTransactionsList = dynamic(() => import('./wallet-transactions-list'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const ReconciliationPage = dynamic(() => import('./reconciliation/page'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const BankDetailsSettings = dynamic(() => import('./bank-details-settings'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const ChartOfAccountsSettings = dynamic(() => import('./chart-of-accounts-settings'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const LoyaltySettings = dynamic(() => import('./loyalty-settings'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const RewardsManagement = dynamic(() => import('./rewards-management'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const RewardStatus = dynamic(() => import('./reward-status'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const PricingManagement = dynamic(() => import('./revenue/pricing-management'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const MallCommissions = dynamic(() => import('./revenue/mall-commissions'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const MarketplaceFees = dynamic(() => import('./revenue/marketplace-fees'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const ConnectPlanPricing = dynamic(() => import('./revenue/connect-plan-pricing'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const TechPricing = dynamic(() => import('./revenue/tech-pricing'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const PermissionsContent = dynamic(() => import('./permissions-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const ActivityFeed = dynamic(() => import('./activity-feed'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const PlatformTasksContent = dynamic(() => import('./platform-tasks'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 
-const formatCurrency = (amount: number) => {
-    if (typeof amount !== 'number') return 'N/A';
-    return new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(amount);
-};
-
-const formatDate = (date: Date | string) => {
-    if (!date) return 'N/A';
-    const d = typeof date === 'string' ? new Date(date) : date;
-    if (isNaN(d.getTime())) return 'Invalid Date';
-    return format(d, 'yyyy-MM-dd');
-};
-
-const formatDisplayDate = (date: any) => {
-    if (!date) return 'N/A';
-    const d = date.toDate ? date.toDate() : new Date(date);
-     if (isNaN(d.getTime())) return 'Invalid Date';
-    return format(d, 'dd MMM yyyy');
-}
+const FundingDivisionContent = dynamic(() => import('./funding-division-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const MallDivisionContent = dynamic(() => import('./mall-division-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const MarketplaceDivisionContent = dynamic(() => import('./marketplace-division-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const TechDivisionContent = dynamic(() => import('./tech-division-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const PlatformSettingsContent = dynamic(() => import('./platform-settings'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const DivisionsContent = dynamic(() => import('./divisions-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const CampaignContent = dynamic(() => import('../adminaccount/campaign-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 
 
-function AddTransactionForm({ onTransactionAdded }: { onTransactionAdded: () => void }) {
-    const { toast } = useToast();
-    const [isLoading, setIsLoading] = useState(false);
-    const firestore = useFirestore();
-    const { user } = useUser();
+export default function BackendPageContent() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const initialView = searchParams.get('view') || 'dashboard';
+  const memberId = searchParams.get('memberId');
+  const [activeView, setActiveView] = useState(initialView);
+  const { user, isUserLoading } = useUser();
+  const auth = useAuth();
+  
+  useEffect(() => {
+    setActiveView(initialView);
+  }, [initialView]);
 
-    const form = useForm<TransactionFormValues>({
-        resolver: zodResolver(transactionSchema),
-        defaultValues: {
-            date: formatDate(new Date()),
-            description: '',
-            chartOfAccountsCode: '',
-            amount: '' as any,
-            type: 'debit',
-        },
-    });
+  const onLogout = async () => {
+    if (!auth) return;
+    await signOut(auth);
+    router.push('/');
+  };
 
-    const onSubmit = async (values: TransactionFormValues) => {
-        setIsLoading(true);
-        if (!firestore || !user) {
-            toast({ variant: 'destructive', title: 'Error', description: 'Database not available or not authenticated.' });
-            setIsLoading(false);
-            return;
+  const renderContent = () => {
+    switch (activeView) {
+      case 'dashboard':
+        return <DashboardContent />;
+      case 'members':
+        return <MembersList />;
+      case 'staff':
+        return <StaffList />;
+      case 'shops':
+        return <ShopsList />;
+      case 'wallet':
+        if (memberId) {
+            return <MemberWallet memberId={memberId} />;
         }
-        
-        try {
-            const collectionRef = collection(firestore, 'platformTransactions');
-            const data = {
-                ...values,
-                date: new Date(values.date),
-                postedBy: user.uid,
-                postedAt: serverTimestamp(),
-                status: 'allocated'
-            };
-            await addDoc(collectionRef, data);
+        return <WalletTransactionsList />; // Fallback if no memberId
+      case 'activity-feed':
+        return <ActivityFeed />;
+      case 'platform-tasks':
+        return <PlatformTasksContent />;
+      case 'platform-settings':
+        return <PlatformSettingsContent />;
+      case 'permissions':
+        return <PermissionsContent />;
+      case 'loyalty-settings':
+        return <LoyaltySettings />;
+      case 'rewards':
+        return <RewardsManagement />;
+      case 'reward-status':
+        return <RewardStatus />;
+      case 'revenue-membership':
+        return <PricingManagement />;
+      case 'revenue-mall-commissions':
+        return <MallCommissions />;
+      case 'revenue-marketplace-fees':
+        return <MarketplaceFees />;
+      case 'revenue-connect-plans':
+        return <ConnectPlanPricing />;
+      case 'revenue-tech-pricing':
+        return <TechPricing />;
+      case 'wallet-transactions':
+        return <WalletTransactionsList />;
+      case 'divisions':
+        return <DivisionsContent />;
+      case 'divisions-funding':
+        return <FundingDivisionContent />;
+      case 'divisions-mall':
+        return <MallDivisionContent />;
+      case 'divisions-marketplace':
+        return <MarketplaceDivisionContent />;
+      case 'divisions-tech':
+        return <TechDivisionContent />;
+      case 'contributions':
+        return <ContributionsList />;
+      case 'wallet-reconciliation':
+        return <ReconciliationPage />;
+      case 'campaigns':
+        return <CampaignContent />;
+      default:
+        return <DashboardContent />;
+    }
+  }
+  
+  const getInitials = (name: string | null | undefined) => {
+    if (!name) return "AD";
+    return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+  };
 
-            toast({ title: 'Transaction Added', description: 'The transaction has been recorded in the platform ledger.' });
-            form.reset({ date: formatDate(new Date()), description: '', chartOfAccountsCode: '', amount: '' as any, type: 'debit' });
-            onTransactionAdded();
-        } catch (e: any) {
-            toast({ variant: 'destructive', title: 'Error', description: e.message });
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    return (
-        <form onSubmit={form.handleSubmit(onSubmit)} className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-6 gap-4 items-end">
-            <div className="space-y-1">
-                <Label htmlFor="date">Date</Label>
-                <Input id="date" type="date" {...form.register('date')} />
-                {form.formState.errors.date && <p className="text-xs text-destructive">{form.formState.errors.date.message}</p>}
-            </div>
-            <div className="space-y-1 md:col-span-2">
-                <Label htmlFor="description">Description</Label>
-                <Input id="description" {...form.register('description')} placeholder="e.g., Monthly Software Subscription"/>
-                {form.formState.errors.description && <p className="text-xs text-destructive">{form.formState.errors.description.message}</p>}
-            </div>
-            <div className="space-y-1">
-                <Label htmlFor="chartOfAccountsCode">Account</Label>
-                 <Select onValueChange={(value) => form.setValue('chartOfAccountsCode', value)} value={form.watch('chartOfAccountsCode')}>
-                    <SelectTrigger><SelectValue placeholder="Select account..." /></SelectTrigger>
-                    <SelectContent>
-                        <Label className="px-2 text-xs font-semibold text-muted-foreground">Revenue</Label>
-                        {chartOfAccounts.revenue.map(acc => (
-                            <SelectItem key={acc.code} value={acc.code}>{acc.code} - {acc.name}</SelectItem>
-                        ))}
-                         <Label className="px-2 text-xs font-semibold text-muted-foreground mt-2">Expenses</Label>
-                        {chartOfAccounts.expenses.map(acc => (
-                            <SelectItem key={acc.code} value={acc.code}>{acc.code} - {acc.name}</SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
-                 {form.formState.errors.chartOfAccountsCode && <p className="text-xs text-destructive">{form.formState.errors.chartOfAccountsCode.message}</p>}
-            </div>
-             <div className="space-y-1">
-                <Label htmlFor="type">Type</Label>
-                <Select onValueChange={(value: 'credit' | 'debit') => form.setValue('type', value)} value={form.watch('type')}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="debit">Debit (Expense)</SelectItem>
-                        <SelectItem value="credit">Credit (Income)</SelectItem>
-                    </SelectContent>
-                </Select>
-            </div>
-            <div className="space-y-1">
-                <Label htmlFor="amount">Amount (R)</Label>
-                <Input id="amount" type="number" {...form.register('amount')} placeholder="150.00" />
-                {form.formState.errors.amount && <p className="text-xs text-destructive">{form.formState.errors.amount.message}</p>}
-            </div>
-            <Button type="submit" disabled={isLoading} className="w-full sm:w-auto">
-                {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <PlusCircle className="h-4 w-4" />}
-            </Button>
-        </form>
-    );
-}
-
-
-export default function PlatformTransactions() {
-    const firestore = useFirestore();
-    const { toast } = useToast();
-
-    const transactionsQuery = useMemoFirebase(() => {
-        if (!firestore) return null;
-        return query(collection(firestore, 'platformTransactions'), orderBy('date', 'desc'));
-    }, [firestore]);
-
-    const { data: transactions, isLoading, forceRefresh } = useCollection(transactionsQuery);
-
-    const handleDelete = async (id: string) => {
-        if (!firestore) return;
-        try {
-            await deleteDoc(doc(firestore, 'platformTransactions', id));
-            toast({ title: "Transaction Deleted" });
-            forceRefresh();
-        } catch (e: any) {
-            toast({ variant: 'destructive', title: "Delete Failed", description: e.message });
-        }
-    };
-
-    return (
-        <div className="space-y-8">
-            <Card>
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2"><Banknote /> Platform Ledger</CardTitle>
-                    <CardDescription>
-                       Record and manage transactions for the Business Operating Account, such as platform expenses, revenue, or payments to external creditors.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
-                   <AddTransactionForm onTransactionAdded={forceRefresh} />
-                </CardContent>
-            </Card>
-
-            <Card>
-                <CardHeader>
-                    <CardTitle>Recent Platform Transactions</CardTitle>
-                </CardHeader>
-                 <CardContent>
-                    {isLoading ? (
-                        <div className="flex justify-center items-center py-10">
-                            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                        </div>
-                    ) : transactions && transactions.length > 0 ? (
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Date</TableHead>
-                                    <TableHead>Description</TableHead>
-                                    <TableHead>Account Code</TableHead>
-                                    <TableHead className="text-right">Amount</TableHead>
-                                    <TableHead className="text-right">Actions</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {transactions.map(tx => (
-                                    <TableRow key={tx.id}>
-                                        <TableCell>{formatDisplayDate(tx.date)}</TableCell>
-                                        <TableCell>{tx.description}</TableCell>
-                                        <TableCell className="font-mono">{tx.chartOfAccountsCode}</TableCell>
-                                        <TableCell className={`text-right font-mono font-semibold ${tx.type === 'credit' ? 'text-green-600' : 'text-destructive'}`}>
-                                            {tx.type === 'credit' ? '+' : '-'} {formatCurrency(tx.amount)}
-                                        </TableCell>
-                                        <TableCell className="text-right">
-                                            <Button variant="ghost" size="icon" onClick={() => handleDelete(tx.id)}><Trash2 className="h-4 w-4 text-destructive"/></Button>
-                                        </TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    ) : (
-                         <div className="text-center py-10 border-2 border-dashed rounded-lg">
-                            <p className="text-muted-foreground">No platform transactions recorded yet.</p>
-                        </div>
-                    )}
-                </CardContent>
-            </Card>
+  return (
+    <SidebarProvider>
+    <Sidebar>
+        <SidebarHeader>
+        <div className="flex items-center gap-2">
+            <Truck className="h-6 w-6 text-primary" />
+            <h2 className="text-lg font-semibold text-sidebar-foreground">
+            Admin Backend
+            </h2>
         </div>
-    )
+        </SidebarHeader>
+        <SidebarContent>
+        <SidebarGroup>
+            <SidebarMenuItem>
+                <SidebarMenuButton tooltip="Dashboard" isActive={activeView === 'dashboard'} onClick={() => router.push('/backend?view=dashboard', { scroll: false })}>
+                <LayoutDashboard />
+                <span>Dashboard</span>
+                </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+                <a href="https://analytics.google.com" target="_blank" rel="noopener noreferrer" className="w-full">
+                    <SidebarMenuButton tooltip="Analytics">
+                        <LineChart />
+                        <span>Analytics</span>
+                    </SidebarMenuButton>
+                </a>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+                <SidebarMenuButton tooltip="Campaigns" isActive={activeView === 'campaigns'} onClick={() => router.push('/backend?view=campaigns', { scroll: false })}>
+                  <Sparkles />
+                  <span>Campaigns</span>
+                </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+                <SidebarMenuButton tooltip="Members" isActive={activeView === 'members'} onClick={() => router.push('/backend?view=members', { scroll: false })}>
+                <Users />
+                <span>Members</span>
+                </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+                <SidebarMenuButton tooltip="Staff" isActive={activeView === 'staff'} onClick={() => router.push('/backend?view=staff', { scroll: false })}>
+                <Users />
+                <span>Staff</span>
+                </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+                <SidebarMenuButton tooltip="Shops" isActive={activeView === 'shops'} onClick={() => router.push('/backend?view=shops', { scroll: false })}>
+                <Store />
+                <span>Shops</span>
+                </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+                <SidebarMenuButton tooltip="Contributions" isActive={activeView === 'contributions'} onClick={() => router.push('/backend?view=contributions', { scroll: false })}>
+                <HeartHandshake />
+                <span>Contributions</span>
+                </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+                <SidebarMenuButton tooltip="Permissions" isActive={activeView === 'permissions'} onClick={() => router.push('/backend?view=permissions', { scroll: false })}>
+                    <Lock />
+                    <span>Permissions</span>
+                </SidebarMenuButton>
+            </SidebarMenuItem>
+            
+            <SidebarMenuItem>
+                    <SidebarMenuButton tooltip="Wallet">
+                        <Wallet />
+                        <span>Wallet</span>
+                    </SidebarMenuButton>
+                    <SidebarMenuSub>
+                        <SidebarMenuSubButton isActive={activeView === 'wallet-transactions'} onClick={() => router.push('/backend?view=wallet-transactions', { scroll: false })}>
+                            <DollarSign />
+                            <span>Member Wallet Ledger</span>
+                        </SidebarMenuSubButton>
+                        <SidebarMenuSubButton isActive={activeView === 'wallet-reconciliation'} onClick={() => router.push('/backend?view=wallet-reconciliation', { scroll: false })}>
+                            <Combine />
+                            <span>Reconciliation</span>
+                        </SidebarMenuSubButton>
+                    </SidebarMenuSub>
+                </SidebarMenuItem>
+                
+                <SidebarMenuItem>
+                    <SidebarMenuButton tooltip="Divisions" isActive={activeView.startsWith('divisions')}>
+                        <Boxes />
+                        <span>Divisions</span>
+                    </SidebarMenuButton>
+                    <SidebarMenuSub>
+                        <SidebarMenuSubButton isActive={activeView === 'divisions-funding'} onClick={() => router.push('/backend?view=divisions-funding', { scroll: false })}>
+                            <Landmark />
+                            <span>Funding</span>
+                        </SidebarMenuSubButton>
+                        <SidebarMenuSubButton isActive={activeView === 'divisions-mall'} onClick={() => router.push('/backend?view=divisions-mall', { scroll: false })}>
+                            <ShoppingBasket />
+                            <span>Mall</span>
+                        </SidebarMenuSubButton>
+                        <SidebarMenuSubButton isActive={activeView === 'divisions-marketplace'} onClick={() => router.push('/backend?view=divisions-marketplace', { scroll: false })}>
+                            <Store />
+                            <span>Marketplace</span>
+                        </SidebarMenuSubButton>
+                        <SidebarMenuSubButton isActive={activeView === 'divisions-tech'} onClick={() => router.push('/backend?view=divisions-tech', { scroll: false })}>
+                            <Cpu />
+                            <span>Tech</span>
+                        </SidebarMenuSubButton>
+                    </SidebarMenuSub>
+                </SidebarMenuItem>
+
+                <SidebarMenuItem>
+                    <SidebarMenuButton tooltip="Rewards and Loyalty" isActive={activeView.includes('loyalty') || activeView.includes('reward')}>
+                        <Star />
+                        <span>Rewards and Loyalty</span>
+                    </SidebarMenuButton>
+                    <SidebarMenuSub>
+                        <SidebarMenuSubButton isActive={activeView === 'loyalty-settings'} onClick={() => router.push('/backend?view=loyalty-settings', { scroll: false })}>
+                            <Settings />
+                            <span>Tier & Point Settings</span>
+                        </SidebarMenuSubButton>
+                        <SidebarMenuSubButton isActive={activeView === 'reward-status'} onClick={() => router.push('/backend?view=reward-status', { scroll: false })}>
+                            <Award />
+                            <span>Reward Status</span>
+                        </SidebarMenuSubButton>
+                        <SidebarMenuSubButton isActive={activeView === 'rewards'} onClick={() => router.push('/backend?view=rewards', { scroll: false })}>
+                            <Gift />
+                            <span>Redeemable Rewards</span>
+                        </SidebarMenuSubButton>
+                    </SidebarMenuSub>
+                </SidebarMenuItem>
+
+                <SidebarMenuItem>
+                    <SidebarMenuButton tooltip="Platform">
+                        <Server />
+                        <span>Platform</span>
+                    </SidebarMenuButton>
+                    <SidebarMenuSub>
+                        <SidebarMenuSubButton isActive={activeView === 'platform-settings'} onClick={() => router.push('/backend?view=platform-settings', { scroll: false })}>
+                            <Settings />
+                            <span>Settings</span>
+                        </SidebarMenuSubButton>
+                        <SidebarMenuSubButton isActive={activeView === 'activity-feed'} onClick={() => router.push('/backend?view=activity-feed', { scroll: false })}>
+                            <Activity />
+                            <span>Activity Feed</span>
+                        </SidebarMenuSubButton>
+                        <SidebarMenuSubButton isActive={activeView === 'platform-tasks'} onClick={() => router.push('/backend?view=platform-tasks', { scroll: false })}>
+                            <ListTodo />
+                            <span>Tasks</span>
+                        </SidebarMenuSubButton>
+                    </SidebarMenuSub>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                    <SidebarMenuButton tooltip="Revenue" isActive={activeView.startsWith('revenue')}>
+                        <DollarSign />
+                        <span>Revenue</span>
+                    </SidebarMenuButton>
+                    <SidebarMenuSub>
+                        <SidebarMenuSubButton tooltip="Membership Plans" isActive={activeView === 'revenue-membership'} onClick={() => router.push('/backend?view=revenue-membership', { scroll: false })}>
+                            <TrendingUp />
+                            <span>Membership</span>
+                        </SidebarMenuSubButton>
+                        <SidebarMenuSubButton tooltip="Mall Commissions" isActive={activeView === 'revenue-mall-commissions'} onClick={() => router.push('/backend?view=revenue-mall-commissions', { scroll: false })}>
+                            <ShoppingBasket />
+                            <span>Mall Commissions</span>
+                        </SidebarMenuSubButton>
+                        <SidebarMenuSubButton tooltip="Marketplace Fees" isActive={activeView === 'revenue-marketplace-fees'} onClick={() => router.push('/backend?view=revenue-marketplace-fees', { scroll: false })}>
+                            <Store />
+                            <span>Marketplace Fees</span>
+                        </SidebarMenuSubButton>
+                        <SidebarMenuSubButton tooltip="Connect Plan Pricing" isActive={activeView === 'revenue-connect-plans'} onClick={() => router.push('/backend?view=revenue-connect-plans', { scroll: false })}>
+                            <HandCoins />
+                            <span>Connect Plans</span>
+                        </SidebarMenuSubButton>
+                        <SidebarMenuSubButton tooltip="Tech Component Pricing" isActive={activeView === 'revenue-tech-pricing'} onClick={() => router.push('/backend?view=revenue-tech-pricing', { scroll: false })}>
+                            <Cpu />
+                            <span>Tech Pricing</span>
+                        </SidebarMenuSubButton>
+                    </SidebarMenuSub>
+                </SidebarMenuItem>
+        </SidebarGroup>
+        </SidebarContent>
+        <SidebarFooter>
+        {user && (
+            <div className="flex items-center gap-3 p-2 rounded-md bg-sidebar-accent">
+            <Avatar className="h-10 w-10">
+                <AvatarFallback>{getInitials(user.displayName)}</AvatarFallback>
+            </Avatar>
+            <div className="flex flex-col truncate">
+                <span className="text-sm font-medium text-sidebar-foreground truncate">
+                {user.displayName || 'Super Admin'}
+                </span>
+                <span className="text-xs text-sidebar-foreground/70 truncate">
+                {user.email}
+                </span>
+            </div>
+            <Button
+                variant="ghost"
+                size="icon"
+                className="ml-auto"
+                onClick={onLogout}
+                title="Sign Out of Backend"
+            >
+                <LogOut className="h-5 w-5" />
+            </Button>
+            </div>
+        )}
+        </SidebarFooter>
+    </Sidebar>
+    <SidebarInset>
+        <div className="p-6">
+            <Suspense fallback={<Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" />}>
+            {renderContent()}
+            </Suspense>
+        </div>
+    </SidebarInset>
+    </SidebarProvider>
+  );
 }

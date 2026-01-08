@@ -1,286 +1,397 @@
-
 'use client';
 
-import { useState, useEffect, useMemo, useCallback } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, Users, PlusCircle, UserPlus } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
-import { DataTable } from '@/components/ui/data-table';
-import { type ColumnDef } from '@/hooks/use-data-table';
-import { getClientSideAuthToken, useUser } from '@/firebase';
-import StaffActionMenu from '../backend/staff-action-menu';
+import {
+  SidebarProvider,
+  Sidebar,
+  SidebarHeader,
+  SidebarContent,
+  SidebarGroup,
+  SidebarMenuItem,
+  SidebarMenuButton,
+  SidebarFooter,
+  SidebarInset,
+  SidebarMenuSub,
+  SidebarMenuSubButton,
+} from '@/components/ui/sidebar';
+import {
+  Users,
+  Settings,
+  LogOut,
+  LayoutDashboard,
+  Banknote,
+  Combine,
+  Truck,
+  Building,
+  TrendingUp,
+  LineChart,
+  Book,
+  Loader2,
+  ShieldAlert,
+  Store,
+  Wrench,
+  CheckCircle,
+  XCircle,
+  ShoppingBasket,
+  Cpu,
+  Landmark,
+  ArrowRight,
+  Key,
+  HandCoins,
+  TicketPercent,
+  Star,
+  Gift,
+  Award,
+  HeartHandshake,
+  Boxes,
+  Server,
+  ListTodo,
+  Wallet,
+  DollarSign,
+  FileText,
+  Lock,
+  Activity,
+  Sparkles,
+} from 'lucide-react';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
-import { useToast } from '@/hooks/use-toast';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useState, useEffect, Suspense, useMemo, useCallback } from 'react';
+import Link from 'next/link';
 
-interface StaffMember {
-    id: string;
-    firstName: string;
-    lastName: string;
-    email: string;
-    companyId: string;
-    companyName?: string;
-    title: string;
-    role: string;
-    status: 'confirmed' | 'unconfirmed';
-}
+import { useUser, useAuth } from '@/firebase';
+import { signOut } from 'firebase/auth';
 
-interface Company {
-    id: string;
-    companyName: string;
-}
+// Using next/dynamic to lazy-load components
+import dynamic from 'next/dynamic';
 
-const staffFormSchema = z.object({
-  companyId: z.string().min(1, 'Company is required'),
-  firstName: z.string().min(1, 'First name is required'),
-  lastName: z.string().min(1, 'Last name is required'),
-  email: z.string().email('Invalid email address'),
-  title: z.string().min(1, 'Title is required'),
-  role: z.string().min(1, 'Role is required'),
-  function: z.string().min(1, 'Function is required'),
-  jobDescription: z.string().optional(),
-});
+const MemberWallet = dynamic(() => import('./wallet/[memberId]/member-wallet'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const DashboardContent = dynamic(() => import('./dashboard-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const MembersList = dynamic(() => import('./members-list'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const StaffList = dynamic(() => import('./staff-list'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const ShopsList = dynamic(() => import('./shops-list'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const ContributionsList = dynamic(() => import('./contributions-list'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const WalletTransactionsList = dynamic(() => import('./wallet-transactions-list'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const ReconciliationPage = dynamic(() => import('./reconciliation/page'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const BankDetailsSettings = dynamic(() => import('./bank-details-settings'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const ChartOfAccountsSettings = dynamic(() => import('./chart-of-accounts-settings'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const LoyaltySettings = dynamic(() => import('./loyalty-settings'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const RewardsManagement = dynamic(() => import('./rewards-management'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const RewardStatus = dynamic(() => import('./reward-status'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const PricingManagement = dynamic(() => import('./revenue/pricing-management'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const MallCommissions = dynamic(() => import('./revenue/mall-commissions'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const MarketplaceFees = dynamic(() => import('./revenue/marketplace-fees'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const ConnectPlanPricing = dynamic(() => import('./revenue/connect-plan-pricing'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const TechPricing = dynamic(() => import('./revenue/tech-pricing'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const PermissionsContent = dynamic(() => import('./permissions-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const ActivityFeed = dynamic(() => import('./activity-feed'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const PlatformTasksContent = dynamic(() => import('./platform-tasks'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 
-type StaffFormValues = z.infer<typeof staffFormSchema>;
+const FundingDivisionContent = dynamic(() => import('./funding-division-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const MallDivisionContent = dynamic(() => import('./mall-division-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const MarketplaceDivisionContent = dynamic(() => import('./marketplace-division-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const TechDivisionContent = dynamic(() => import('./tech-division-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const PlatformSettingsContent = dynamic(() => import('./platform-settings'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const DivisionsContent = dynamic(() => import('./divisions-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const CampaignContent = dynamic(() => import('../adminaccount/campaign-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 
-async function fetchAdminData(token: string, action: string) {
-    const response = await fetch('/api/admin', {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action }),
-    });
 
-    const result = await response.json();
-    if (!response.ok || !result.success) {
-        throw new Error(result.error || `API Error for action: ${action}`);
+export default function BackendPageContent() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const initialView = searchParams.get('view') || 'dashboard';
+  const memberId = searchParams.get('memberId');
+  const [activeView, setActiveView] = useState(initialView);
+  const { user, isUserLoading } = useUser();
+  const auth = useAuth();
+  
+  useEffect(() => {
+    setActiveView(initialView);
+  }, [initialView]);
+
+  const onLogout = async () => {
+    if (!auth) return;
+    await signOut(auth);
+    router.push('/');
+  };
+
+  const renderContent = () => {
+    switch (activeView) {
+      case 'dashboard':
+        return <DashboardContent />;
+      case 'members':
+        return <MembersList />;
+      case 'staff':
+        return <StaffList />;
+      case 'shops':
+        return <ShopsList />;
+      case 'wallet':
+        if (memberId) {
+            return <MemberWallet memberId={memberId} />;
+        }
+        return <WalletTransactionsList />; // Fallback if no memberId
+      case 'activity-feed':
+        return <ActivityFeed />;
+      case 'platform-tasks':
+        return <PlatformTasksContent />;
+      case 'platform-settings':
+        return <PlatformSettingsContent />;
+      case 'permissions':
+        return <PermissionsContent />;
+      case 'loyalty-settings':
+        return <LoyaltySettings />;
+      case 'rewards':
+        return <RewardsManagement />;
+      case 'reward-status':
+        return <RewardStatus />;
+      case 'revenue-membership':
+        return <PricingManagement />;
+      case 'revenue-mall-commissions':
+        return <MallCommissions />;
+      case 'revenue-marketplace-fees':
+        return <MarketplaceFees />;
+      case 'revenue-connect-plans':
+        return <ConnectPlanPricing />;
+      case 'revenue-tech-pricing':
+        return <TechPricing />;
+      case 'wallet-transactions':
+        return <WalletTransactionsList />;
+      case 'divisions':
+        return <DivisionsContent />;
+      case 'divisions-funding':
+        return <FundingDivisionContent />;
+      case 'divisions-mall':
+        return <MallDivisionContent />;
+      case 'divisions-marketplace':
+        return <MarketplaceDivisionContent />;
+      case 'divisions-tech':
+        return <TechDivisionContent />;
+      case 'contributions':
+        return <ContributionsList />;
+      case 'wallet-reconciliation':
+        return <ReconciliationPage />;
+      case 'campaigns':
+        return <CampaignContent />;
+      default:
+        return <DashboardContent />;
     }
-    return result.data;
-}
-
-function AddStaffDialog({ companies, onStaffAdded, authToken }: { companies: Company[], onStaffAdded: () => void, authToken: string | null }) {
-  const [isOpen, setIsOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const { toast } = useToast();
-
-  const form = useForm<StaffFormValues>({
-    resolver: zodResolver(staffFormSchema),
-    defaultValues: {
-      companyId: '',
-      firstName: '',
-      lastName: '',
-      email: '',
-      title: '',
-      role: '',
-      function: '',
-      jobDescription: '',
-    },
-  });
-
-  const onSubmit = async (values: StaffFormValues) => {
-    setIsLoading(true);
-    
-    if (!authToken) {
-        toast({ variant: 'destructive', title: "Authentication Error", description: "Could not get authentication token."});
-        setIsLoading(false);
-        return;
-    }
-    
-    try {
-      const staffData = {
-        ...values,
-        status: 'unconfirmed',
-        createdAt: { _methodName: 'serverTimestamp' },
-      };
-      
-      const response = await fetch('/api/admin', {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${authToken}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            action: 'addStaffMember',
-            payload: {
-                companyId: values.companyId,
-                data: staffData
-            }
-        }),
-      });
-      
-      const result = await response.json();
-      if (!response.ok) {
-        throw new Error(result.error || 'Failed to add staff member.');
-      }
-
-      toast({
-        title: 'Staff Added',
-        description: `${values.firstName} ${values.lastName} has been added.`,
-      });
-
-      form.reset();
-      setIsOpen(false);
-      onStaffAdded();
-    } catch (error: any) {
-      toast({
-        variant: 'destructive',
-        title: 'Submission Failed',
-        description: error.message,
-      });
-    } finally {
-      setIsLoading(false);
-    }
+  }
+  
+  const getInitials = (name: string | null | undefined) => {
+    if (!name) return "AD";
+    return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>
-        <Button>
-          <PlusCircle className="mr-2 h-4 w-4" /> Add Staff
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-[625px]">
-        <DialogHeader>
-          <DialogTitle>Add New Staff Member</DialogTitle>
-          <DialogDescription>
-            Enter the details for the new staff member and assign them to a company.
-          </DialogDescription>
-        </DialogHeader>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
-            <FormField control={form.control} name="companyId" render={({ field }) => (
-                <FormItem><FormLabel>Company</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl><SelectTrigger><SelectValue placeholder="Select a company" /></SelectTrigger></FormControl>
-                        <SelectContent>
-                            {companies.map(c => <SelectItem key={c.id} value={c.id}>{c.companyName}</SelectItem>)}
-                        </SelectContent>
-                    </Select>
-                <FormMessage /></FormItem>
-            )} />
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <FormField control={form.control} name="firstName" render={({ field }) => (<FormItem><FormLabel>First Name</FormLabel><FormControl><Input placeholder="John" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                <FormField control={form.control} name="lastName" render={({ field }) => (<FormItem><FormLabel>Last Name</FormLabel><FormControl><Input placeholder="Doe" {...field} /></FormControl><FormMessage /></FormItem>)} />
+    <SidebarProvider>
+    <Sidebar>
+        <SidebarHeader>
+        <div className="flex items-center gap-2">
+            <Truck className="h-6 w-6 text-primary" />
+            <h2 className="text-lg font-semibold text-sidebar-foreground">
+            Admin Backend
+            </h2>
+        </div>
+        </SidebarHeader>
+        <SidebarContent>
+        <SidebarGroup>
+            <SidebarMenuItem>
+                <SidebarMenuButton tooltip="Dashboard" isActive={activeView === 'dashboard'} onClick={() => router.push('/backend?view=dashboard', { scroll: false })}>
+                <LayoutDashboard />
+                <span>Dashboard</span>
+                </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+                <a href="https://analytics.google.com" target="_blank" rel="noopener noreferrer" className="w-full">
+                    <SidebarMenuButton tooltip="Analytics">
+                        <LineChart />
+                        <span>Analytics</span>
+                    </SidebarMenuButton>
+                </a>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+                <SidebarMenuButton tooltip="Campaigns" isActive={activeView === 'campaigns'} onClick={() => router.push('/backend?view=campaigns', { scroll: false })}>
+                  <Sparkles />
+                  <span>Campaigns</span>
+                </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+                <SidebarMenuButton tooltip="Members" isActive={activeView === 'members'} onClick={() => router.push('/backend?view=members', { scroll: false })}>
+                <Users />
+                <span>Members</span>
+                </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+                <SidebarMenuButton tooltip="Staff" isActive={activeView === 'staff'} onClick={() => router.push('/backend?view=staff', { scroll: false })}>
+                <Users />
+                <span>Staff</span>
+                </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+                <SidebarMenuButton tooltip="Shops" isActive={activeView === 'shops'} onClick={() => router.push('/backend?view=shops', { scroll: false })}>
+                <Store />
+                <span>Shops</span>
+                </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+                <SidebarMenuButton tooltip="Contributions" isActive={activeView === 'contributions'} onClick={() => router.push('/backend?view=contributions', { scroll: false })}>
+                <HeartHandshake />
+                <span>Contributions</span>
+                </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+                <SidebarMenuButton tooltip="Permissions" isActive={activeView === 'permissions'} onClick={() => router.push('/backend?view=permissions', { scroll: false })}>
+                    <Lock />
+                    <span>Permissions</span>
+                </SidebarMenuButton>
+            </SidebarMenuItem>
+            
+            <SidebarMenuItem>
+                    <SidebarMenuButton tooltip="Wallet">
+                        <Wallet />
+                        <span>Wallet</span>
+                    </SidebarMenuButton>
+                    <SidebarMenuSub>
+                        <SidebarMenuSubButton isActive={activeView === 'wallet-transactions'} onClick={() => router.push('/backend?view=wallet-transactions', { scroll: false })}>
+                            <DollarSign />
+                            <span>Member Wallet Ledger</span>
+                        </SidebarMenuSubButton>
+                        <SidebarMenuSubButton isActive={activeView === 'wallet-reconciliation'} onClick={() => router.push('/backend?view=wallet-reconciliation', { scroll: false })}>
+                            <Combine />
+                            <span>Reconciliation</span>
+                        </SidebarMenuSubButton>
+                    </SidebarMenuSub>
+                </SidebarMenuItem>
+                
+                <SidebarMenuItem>
+                    <SidebarMenuButton tooltip="Divisions" isActive={activeView.startsWith('divisions')}>
+                        <Boxes />
+                        <span>Divisions</span>
+                    </SidebarMenuButton>
+                    <SidebarMenuSub>
+                        <SidebarMenuSubButton isActive={activeView === 'divisions-funding'} onClick={() => router.push('/backend?view=divisions-funding', { scroll: false })}>
+                            <Landmark />
+                            <span>Funding</span>
+                        </SidebarMenuSubButton>
+                        <SidebarMenuSubButton isActive={activeView === 'divisions-mall'} onClick={() => router.push('/backend?view=divisions-mall', { scroll: false })}>
+                            <ShoppingBasket />
+                            <span>Mall</span>
+                        </SidebarMenuSubButton>
+                        <SidebarMenuSubButton isActive={activeView === 'divisions-marketplace'} onClick={() => router.push('/backend?view=divisions-marketplace', { scroll: false })}>
+                            <Store />
+                            <span>Marketplace</span>
+                        </SidebarMenuSubButton>
+                        <SidebarMenuSubButton isActive={activeView === 'divisions-tech'} onClick={() => router.push('/backend?view=divisions-tech', { scroll: false })}>
+                            <Cpu />
+                            <span>Tech</span>
+                        </SidebarMenuSubButton>
+                    </SidebarMenuSub>
+                </SidebarMenuItem>
+
+                <SidebarMenuItem>
+                    <SidebarMenuButton tooltip="Rewards and Loyalty" isActive={activeView.includes('loyalty') || activeView.includes('reward')}>
+                        <Star />
+                        <span>Rewards and Loyalty</span>
+                    </SidebarMenuButton>
+                    <SidebarMenuSub>
+                        <SidebarMenuSubButton isActive={activeView === 'loyalty-settings'} onClick={() => router.push('/backend?view=loyalty-settings', { scroll: false })}>
+                            <Settings />
+                            <span>Tier & Point Settings</span>
+                        </SidebarMenuSubButton>
+                        <SidebarMenuSubButton isActive={activeView === 'reward-status'} onClick={() => router.push('/backend?view=reward-status', { scroll: false })}>
+                            <Award />
+                            <span>Reward Status</span>
+                        </SidebarMenuSubButton>
+                        <SidebarMenuSubButton isActive={activeView === 'rewards'} onClick={() => router.push('/backend?view=rewards', { scroll: false })}>
+                            <Gift />
+                            <span>Redeemable Rewards</span>
+                        </SidebarMenuSubButton>
+                    </SidebarMenuSub>
+                </SidebarMenuItem>
+
+                <SidebarMenuItem>
+                    <SidebarMenuButton tooltip="Platform">
+                        <Server />
+                        <span>Platform</span>
+                    </SidebarMenuButton>
+                    <SidebarMenuSub>
+                        <SidebarMenuSubButton isActive={activeView === 'platform-settings'} onClick={() => router.push('/backend?view=platform-settings', { scroll: false })}>
+                            <Settings />
+                            <span>Settings</span>
+                        </SidebarMenuSubButton>
+                        <SidebarMenuSubButton isActive={activeView === 'activity-feed'} onClick={() => router.push('/backend?view=activity-feed', { scroll: false })}>
+                            <Activity />
+                            <span>Activity Feed</span>
+                        </SidebarMenuSubButton>
+                        <SidebarMenuSubButton isActive={activeView === 'platform-tasks'} onClick={() => router.push('/backend?view=platform-tasks', { scroll: false })}>
+                            <ListTodo />
+                            <span>Tasks</span>
+                        </SidebarMenuSubButton>
+                    </SidebarMenuSub>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                    <SidebarMenuButton tooltip="Revenue" isActive={activeView.startsWith('revenue')}>
+                        <DollarSign />
+                        <span>Revenue</span>
+                    </SidebarMenuButton>
+                    <SidebarMenuSub>
+                        <SidebarMenuSubButton tooltip="Membership Plans" isActive={activeView === 'revenue-membership'} onClick={() => router.push('/backend?view=revenue-membership', { scroll: false })}>
+                            <TrendingUp />
+                            <span>Membership</span>
+                        </SidebarMenuSubButton>
+                        <SidebarMenuSubButton tooltip="Mall Commissions" isActive={activeView === 'revenue-mall-commissions'} onClick={() => router.push('/backend?view=revenue-mall-commissions', { scroll: false })}>
+                            <ShoppingBasket />
+                            <span>Mall Commissions</span>
+                        </SidebarMenuSubButton>
+                        <SidebarMenuSubButton tooltip="Marketplace Fees" isActive={activeView === 'revenue-marketplace-fees'} onClick={() => router.push('/backend?view=revenue-marketplace-fees', { scroll: false })}>
+                            <Store />
+                            <span>Marketplace Fees</span>
+                        </SidebarMenuSubButton>
+                        <SidebarMenuSubButton tooltip="Connect Plan Pricing" isActive={activeView === 'revenue-connect-plans'} onClick={() => router.push('/backend?view=revenue-connect-plans', { scroll: false })}>
+                            <HandCoins />
+                            <span>Connect Plans</span>
+                        </SidebarMenuSubButton>
+                        <SidebarMenuSubButton tooltip="Tech Component Pricing" isActive={activeView === 'revenue-tech-pricing'} onClick={() => router.push('/backend?view=revenue-tech-pricing', { scroll: false })}>
+                            <Cpu />
+                            <span>Tech Pricing</span>
+                        </SidebarMenuSubButton>
+                    </SidebarMenuSub>
+                </SidebarMenuItem>
+        </SidebarGroup>
+        </SidebarContent>
+        <SidebarFooter>
+        {user && (
+            <div className="flex items-center gap-3 p-2 rounded-md bg-sidebar-accent">
+            <Avatar className="h-10 w-10">
+                <AvatarFallback>{getInitials(user.displayName)}</AvatarFallback>
+            </Avatar>
+            <div className="flex flex-col truncate">
+                <span className="text-sm font-medium text-sidebar-foreground truncate">
+                {user.displayName || 'Super Admin'}
+                </span>
+                <span className="text-xs text-sidebar-foreground/70 truncate">
+                {user.email}
+                </span>
             </div>
-            <FormField control={form.control} name="email" render={({ field }) => (<FormItem><FormLabel>Email</FormLabel><FormControl><Input placeholder="john.doe@example.com" {...field} /></FormControl><FormMessage /></FormItem>)} />
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-               <FormField control={form.control} name="title" render={({ field }) => (<FormItem><FormLabel>Title</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select a title" /></SelectTrigger></FormControl><SelectContent><SelectItem value="Executive Director">Executive Director</SelectItem><SelectItem value="Non-Executive Director">Non-Executive Director</SelectItem><SelectItem value="Manager">Manager</SelectItem><SelectItem value="Admin">Admin</SelectItem></SelectContent></Select><FormMessage /></FormItem>)}/>
-               <FormField control={form.control} name="role" render={({ field }) => (<FormItem><FormLabel>Role</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select a role" /></SelectTrigger></FormControl><SelectContent><SelectItem value="operations">Operations</SelectItem><SelectItem value="marketing">Marketing</SelectItem><SelectItem value="IT">IT</SelectItem><SelectItem value="logistics">Logistics</SelectItem><SelectItem value="store">Store</SelectItem><SelectItem value="sales">Sales</SelectItem></SelectContent></Select><FormMessage /></FormItem>)}/>
-               <FormField control={form.control} name="function" render={({ field }) => (<FormItem><FormLabel>Function</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select a function" /></SelectTrigger></FormControl><SelectContent><SelectItem value="Set Policy">Set Policy</SelectItem><SelectItem value="Manage Staff">Manage Staff</SelectItem><SelectItem value="Set Budgets">Set Budgets</SelectItem><SelectItem value="Ensure Implementation">Ensure Implementation</SelectItem><SelectItem value="Monitor Deliverables">Monitor Deliverables</SelectItem><SelectItem value="Ensure Compliance">Ensure Compliance</SelectItem></SelectContent></Select><FormMessage /></FormItem>)}/>
+            <Button
+                variant="ghost"
+                size="icon"
+                className="ml-auto"
+                onClick={onLogout}
+                title="Sign Out of Backend"
+            >
+                <LogOut className="h-5 w-5" />
+            </Button>
             </div>
-            <FormField control={form.control} name="jobDescription" render={({ field }) => (<FormItem><FormLabel>Job Description (Optional)</FormLabel><FormControl><Textarea placeholder="Describe responsibilities..." {...field} /></FormControl><FormMessage /></FormItem>)} />
-            <DialogFooter>
-              <Button type="submit" disabled={isLoading}><UserPlus className="mr-2 h-4 w-4" />Add Staff Member</Button>
-            </DialogFooter>
-          </form>
-        </Form>
-      </DialogContent>
-    </Dialog>
+        )}
+        </SidebarFooter>
+    </Sidebar>
+    <SidebarInset>
+        <div className="p-6">
+            <Suspense fallback={<Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" />}>
+            {renderContent()}
+            </Suspense>
+        </div>
+    </SidebarInset>
+    </SidebarProvider>
   );
-}
-
-export default function StaffContent() {
-    const { user, isUserLoading } = useUser();
-    const [companies, setCompanies] = useState<Company[]>([]);
-    const [staff, setStaff] = useState<StaffMember[]>([]);
-    const [isLoadingData, setIsLoadingData] = useState(true);
-    const [error, setError] = useState<string | null>(null);
-    const [authToken, setAuthToken] = useState<string | null>(null);
-
-    useEffect(() => {
-        if (!isUserLoading && user) {
-            getClientSideAuthToken().then(setAuthToken);
-        }
-    }, [isUserLoading, user]);
-
-    const fetchData = useCallback(async () => {
-        if (!authToken) return;
-        setIsLoadingData(true);
-        setError(null);
-        try {
-            const [staffData, companiesData] = await Promise.all([
-                fetchAdminData(authToken, 'getStaff'),
-                fetchAdminData(authToken, 'getMembers')
-            ]);
-            setStaff(staffData || []);
-            setCompanies(companiesData || []);
-        } catch (e: any) {
-            setError(e.message);
-        } finally {
-            setIsLoadingData(false);
-        }
-    }, [authToken]);
-
-    useEffect(() => {
-        if (authToken) {
-            fetchData();
-        }
-    }, [authToken, fetchData]);
-
-    const enrichedStaff = useMemo(() => {
-        const companyMap = new Map(companies.map(c => [c.id, c.companyName]));
-        return staff.map(s => ({
-            ...s,
-            companyName: companyMap.get(s.companyId) || 'Unknown Company'
-        }));
-    }, [staff, companies]);
-
-    const columns: ColumnDef<StaffMember>[] = useMemo(() => [
-        { accessorKey: 'firstName', header: 'First Name', cell: ({ row }) => <div>{row.original.firstName}</div> },
-        { accessorKey: 'lastName', header: 'Last Name', cell: ({ row }) => <div>{row.original.lastName}</div> },
-        { accessorKey: 'companyName', header: 'Company', cell: ({ row }) => <div>{row.original.companyName}</div> },
-        { accessorKey: 'email', header: 'Email', cell: ({ row }) => <div>{row.original.email}</div> },
-        { accessorKey: 'title', header: 'Title', cell: ({ row }) => <div>{row.original.title}</div> },
-        {
-            accessorKey: 'status',
-            header: 'Status',
-            cell: ({ row }) => (
-                <Badge variant={row.original.status === 'confirmed' ? 'default' : 'secondary'} className="capitalize">
-                    {row.original.status || 'unconfirmed'}
-                </Badge>
-            ),
-        },
-        {
-            id: 'actions',
-            header: () => <div className="text-right">Actions</div>,
-            cell: ({ row }) => (
-                <div className="text-right">
-                    <StaffActionMenu staffMember={row.original} onUpdate={fetchData} />
-                </div>
-            ),
-        }
-    ], [fetchData]);
-
-    const isLoading = isUserLoading || isLoadingData;
-
-    return (
-        <Card>
-            <CardHeader className="flex-row items-center justify-between">
-                <div>
-                    <CardTitle className="text-2xl font-bold flex items-center gap-2">
-                        <Users /> All Staff Members
-                    </CardTitle>
-                    <CardDescription>A consolidated view of all staff across all member companies.</CardDescription>
-                </div>
-                {!isLoading && companies.length > 0 && <AddStaffDialog companies={companies} onStaffAdded={fetchData} authToken={authToken} />}
-            </CardHeader>
-            <CardContent>
-                {isLoading ? (
-                    <div className="flex justify-center items-center py-10">
-                        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                    </div>
-                ) : error ? (
-                    <div className="text-destructive-foreground bg-destructive/90 p-4 rounded-md">
-                        <h4 className="font-semibold">Error loading staff</h4>
-                        <p className="text-sm">{error}</p>
-                    </div>
-                ) : (
-                    <DataTable columns={columns} data={enrichedStaff} />
-                )}
-            </CardContent>
-        </Card>
-    );
 }
