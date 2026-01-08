@@ -229,11 +229,11 @@ export default function StaffContent() {
     }, [staff, companies]);
 
     const columns: ColumnDef<StaffMember>[] = useMemo(() => [
-        { accessorKey: 'firstName', header: 'First Name' },
-        { accessorKey: 'lastName', header: 'Last Name' },
-        { accessorKey: 'companyName', header: 'Company' },
-        { accessorKey: 'email', header: 'Email' },
-        { accessorKey: 'title', header: 'Title' },
+        { accessorKey: 'firstName', header: 'First Name', cell: ({ row }) => <div>{row.original.firstName}</div> },
+        { accessorKey: 'lastName', header: 'Last Name', cell: ({ row }) => <div>{row.original.lastName}</div> },
+        { accessorKey: 'companyName', header: 'Company', cell: ({ row }) => <div>{row.original.companyName}</div> },
+        { accessorKey: 'email', header: 'Email', cell: ({ row }) => <div>{row.original.email}</div> },
+        { accessorKey: 'title', header: 'Title', cell: ({ row }) => <div>{row.original.title}</div> },
         {
             accessorKey: 'status',
             header: 'Status',
