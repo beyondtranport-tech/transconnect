@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ success: false, error: 'Missing photoDataUri or prompt in request body.' }, { status: 400 });
         }
         
-        // Correctly call the flow and await its result
+        // CORRECTED: Properly await the asynchronous flow
         const result = await imageEditFlow({ photoDataUri, prompt });
 
         // The flow already returns the object in the correct shape.
