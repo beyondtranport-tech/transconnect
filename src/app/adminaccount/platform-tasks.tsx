@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
 import { Loader2, Star, PlayCircle } from 'lucide-react';
@@ -24,19 +24,27 @@ function BillingRun() {
     const [isLoading, setIsLoading] = useState(false);
     const [result, setResult] = useState<BillingResult | null>(null);
     const { toast } = useToast();
+    const [authToken, setAuthToken] = useState<string | null>(null);
+
+    useEffect(() => {
+        getClientSideAuthToken().then(setAuthToken);
+    }, []);
 
     const handleRunBilling = async () => {
         setIsLoading(true);
         setResult(null);
 
+        if (!authToken) {
+            toast({ variant: 'destructive', title: 'Authentication Error', description: 'Could not get auth token.' });
+            setIsLoading(false);
+            return;
+        }
+
         try {
-            const token = await getClientSideAuthToken();
-            if (!token) throw new Error("Authentication token not found.");
-            
             const response = await fetch('/api/run-billing', {
                 method: 'POST',
                 headers: {
-                    'Authorization': `Bearer ${token}`,
+                    'Authorization': `Bearer ${authToken}`,
                     'Content-Type': 'application/json',
                 },
             });
@@ -118,19 +126,27 @@ function LoyaltyTierUpdate() {
     const [isLoading, setIsLoading] = useState(false);
     const [result, setResult] = useState<LoyaltyResult | null>(null);
     const { toast } = useToast();
+    const [authToken, setAuthToken] = useState<string | null>(null);
+
+    useEffect(() => {
+        getClientSideAuthToken().then(setAuthToken);
+    }, []);
 
     const handleRunUpdate = async () => {
         setIsLoading(true);
         setResult(null);
 
+        if (!authToken) {
+            toast({ variant: 'destructive', title: 'Authentication Error', description: 'Could not get auth token.' });
+            setIsLoading(false);
+            return;
+        }
+
         try {
-            const token = await getClientSideAuthToken();
-            if (!token) throw new Error("Authentication token not found.");
-            
             const response = await fetch('/api/run-loyalty-update', {
                 method: 'POST',
                 headers: {
-                    'Authorization': `Bearer ${token}`,
+                    'Authorization': `Bearer ${authToken}`,
                     'Content-Type': 'application/json',
                 },
             });

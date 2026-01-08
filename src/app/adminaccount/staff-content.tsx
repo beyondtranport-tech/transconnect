@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
@@ -68,6 +69,13 @@ function AddStaffDialog({ companies, onStaffAdded }: { companies: Company[], onS
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  const [authToken, setAuthToken] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (isOpen) {
+        getClientSideAuthToken().then(setAuthToken);
+    }
+  }, [isOpen]);
 
   const form = useForm<StaffFormValues>({
     resolver: zodResolver(staffFormSchema),
@@ -86,20 +94,22 @@ function AddStaffDialog({ companies, onStaffAdded }: { companies: Company[], onS
   const onSubmit = async (values: StaffFormValues) => {
     setIsLoading(true);
     
+    if (!authToken) {
+        toast({ variant: 'destructive', title: "Authentication Error", description: "Could not get authentication token."});
+        setIsLoading(false);
+        return;
+    }
+    
     try {
-      const token = await getClientSideAuthToken();
-      if (!token) throw new Error("Authentication token not found.");
-      
       const staffData = {
         ...values,
         status: 'unconfirmed',
         createdAt: { _methodName: 'serverTimestamp' },
       };
       
-      // Admin API for adding staff to ANY company
       const response = await fetch('/api/admin', {
         method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        headers: { 'Authorization': `Bearer ${authToken}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({
             action: 'addStaffMember',
             payload: {
