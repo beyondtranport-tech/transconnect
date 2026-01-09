@@ -138,19 +138,20 @@ export function Header() {
                     </div>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem asChild>
-                    <Link href="/account">
-                        My Account
-                    </Link>
-                  </DropdownMenuItem>
-                  {isAdmin && (
-                       <DropdownMenuItem asChild>
-                            <Link href="/backend">
-                                <ShieldCheck className="mr-2 h-4 w-4" />
-                                Platform Admin
-                            </Link>
-                      </DropdownMenuItem>
-                  )}
+                    {isAdmin ? (
+                        <>
+                            <DropdownMenuItem asChild>
+                                <Link href="/backend">Backend</Link>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem asChild>
+                                <Link href="/adminaccount">Admin Account</Link>
+                            </DropdownMenuItem>
+                        </>
+                    ) : (
+                        <DropdownMenuItem asChild>
+                            <Link href="/account">My Account</Link>
+                        </DropdownMenuItem>
+                    )}
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={handleSignOut}>
                     Sign out
