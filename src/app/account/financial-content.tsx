@@ -72,7 +72,6 @@ export default function FinancialContent() {
                 </CardHeader>
             </Card>
 
-            {/* A dedicated container for all the input cards */}
             <div className="space-y-8">
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                     <Card className="lg:col-span-1">
@@ -182,7 +181,6 @@ export default function FinancialContent() {
                 </Card>
             </div>
 
-            {/* A separate container for the wide table */}
             <div>
                 <Card>
                     <CardHeader>
@@ -205,43 +203,43 @@ export default function FinancialContent() {
                             <TableBody>
                                 {/* Revenue Section */}
                                 <TableRow className="font-bold bg-muted/50"><TableCell className="sticky left-0 bg-muted/50">Revenue</TableCell><TableCell colSpan={forecastMonths + yearlyTotalsColumns.length + 1}></TableCell></TableRow>
-                                <TableRow><TableCell className="sticky left-0 bg-card pl-8">Membership Fees</TableCell>{renderTableRows(forecastMonths + yearlyTotalsColumns.length + 1)}</TableCell></TableRow>
-                                <TableRow><TableCell className="sticky left-0 bg-card pl-8">Mall Commission Revenue</TableCell>{renderTableRows(forecastMonths + yearlyTotalsColumns.length + 1)}</TableCell></TableRow>
-                                <TableRow><TableCell className="sticky left-0 bg-card pl-8">Marketplace Fees</TableCell>{renderTableRows(forecastMonths + yearlyTotalsColumns.length + 1)}</TableCell></TableRow>
-                                <TableRow><TableCell className="sticky left-0 bg-card pl-8">Connect Plan Revenue</TableCell>{renderTableRows(forecastMonths + yearlyTotalsColumns.length + 1)}</TableCell></TableRow>
-                                <TableRow><TableCell className="sticky left-0 bg-card pl-8">Tech Services Revenue</TableCell>{renderTableRows(forecastMonths + yearlyTotalsColumns.length + 1)}</TableCell></TableRow>
-                                <TableRow className="font-semibold border-t-2 border-foreground"><TableCell className="sticky left-0 bg-card">Total Revenue</TableCell>{renderTableRows(forecastMonths + yearlyTotalsColumns.length + 1)}</TableCell></TableRow>
+                                <TableRow><TableCell className="sticky left-0 bg-card pl-8">Membership Fees</TableCell>{renderTableRows(forecastMonths + yearlyTotalsColumns.length + 1)}</TableRow>
+                                <TableRow><TableCell className="sticky left-0 bg-card pl-8">Mall Commission Revenue</TableCell>{renderTableRows(forecastMonths + yearlyTotalsColumns.length + 1)}</TableRow>
+                                <TableRow><TableCell className="sticky left-0 bg-card pl-8">Marketplace Fees</TableCell>{renderTableRows(forecastMonths + yearlyTotalsColumns.length + 1)}</TableRow>
+                                <TableRow><TableCell className="sticky left-0 bg-card pl-8">Connect Plan Revenue</TableCell>{renderTableRows(forecastMonths + yearlyTotalsColumns.length + 1)}</TableRow>
+                                <TableRow><TableCell className="sticky left-0 bg-card pl-8">Tech Services Revenue</TableCell>{renderTableRows(forecastMonths + yearlyTotalsColumns.length + 1)}</TableRow>
+                                <TableRow className="font-semibold border-t-2 border-foreground"><TableCell className="sticky left-0 bg-card">Total Revenue</TableCell>{renderTableRows(forecastMonths + yearlyTotalsColumns.length + 1)}</TableRow>
 
                                 {/* Cost of Revenue Section */}
                                 <TableRow className="font-bold bg-muted/50"><TableCell className="sticky left-0 bg-muted/50">Cost of Revenue</TableCell><TableCell colSpan={forecastMonths + yearlyTotalsColumns.length + 1}></TableCell></TableRow>
-                                <TableRow><TableCell className="sticky left-0 bg-card pl-8">Member Commission Share</TableCell>{renderTableRows(forecastMonths + yearlyTotalsColumns.length + 1)}</TableCell></TableRow>
-                                <TableRow><TableCell className="sticky left-0 bg-card pl-8">ISA Commission</TableCell>{renderTableRows(forecastMonths + yearlyTotalsColumns.length + 1)}</TableCell></TableRow>
-                                <TableRow className="font-semibold"><TableCell className="sticky left-0 bg-card">Total Cost of Revenue</TableCell>{renderTableRows(forecastMonths + yearlyTotalsColumns.length + 1)}</TableCell></TableRow>
+                                <TableRow><TableCell className="sticky left-0 bg-card pl-8">Member Commission Share</TableCell>{renderTableRows(forecastMonths + yearlyTotalsColumns.length + 1)}</TableRow>
+                                <TableRow><TableCell className="sticky left-0 bg-card pl-8">ISA Commission</TableCell>{renderTableRows(forecastMonths + yearlyTotalsColumns.length + 1)}</TableRow>
+                                <TableRow className="font-semibold"><TableCell className="sticky left-0 bg-card">Total Cost of Revenue</TableCell>{renderTableRows(forecastMonths + yearlyTotalsColumns.length + 1)}</TableRow>
 
                                 {/* Gross Profit */}
-                                <TableRow className="font-bold text-lg border-y-2 border-foreground bg-primary/10"><TableCell className="sticky left-0 bg-primary/10">Gross Profit</TableCell>{renderTableRows(forecastMonths + yearlyTotalsColumns.length + 1)}</TableCell></TableRow>
+                                <TableRow className="font-bold text-lg border-y-2 border-foreground bg-primary/10"><TableCell className="sticky left-0 bg-primary/10">Gross Profit</TableCell>{renderTableRows(forecastMonths + yearlyTotalsColumns.length + 1)}</TableRow>
                                 
                                 {/* Operating Expenses Section */}
                                 <TableRow className="font-bold bg-muted/50"><TableCell className="sticky left-0 bg-muted/50">Operating Expenses (OPEX)</TableCell><TableCell colSpan={forecastMonths + yearlyTotalsColumns.length + 1}></TableCell></TableRow>
-                                <TableRow><TableCell className="sticky left-0 bg-card pl-8 font-semibold">Salaries & Wages</TableCell>{renderTableRows(forecastMonths + yearlyTotalsColumns.length + 1)}</TableCell></TableRow>
-                                <TableRow><TableCell className="sticky left-0 bg-card pl-12">Sales & Marketing</TableCell>{renderTableRows(forecastMonths + yearlyTotalsColumns.length + 1)}</TableCell></TableRow>
-                                <TableRow><TableCell className="sticky left-0 bg-card pl-8 font-semibold">General & Administrative</TableCell>{renderTableRows(forecastMonths + yearlyTotalsColumns.length + 1)}</TableCell></TableRow>
-                                <TableRow><TableCell className="sticky left-0 bg-card pl-12">Rent</TableCell>{renderTableRows(forecastMonths + yearlyTotalsColumns.length + 1)}</TableCell></TableRow>
-                                <TableRow><TableCell className="sticky left-0 bg-card pl-12">Utilities</TableCell>{renderTableRows(forecastMonths + yearlyTotalsColumns.length + 1)}</TableCell></TableRow>
-                                <TableRow><TableCell className="sticky left-0 bg-card pl-12">Insurance</TableCell>{renderTableRows(forecastMonths + yearlyTotalsColumns.length + 1)}</TableCell></TableRow>
-                                <TableRow><TableCell className="sticky left-0 bg-card pl-8 font-semibold">Technology & R&D</TableCell>{renderTableRows(forecastMonths + yearlyTotalsColumns.length + 1)}</TableCell></TableRow>
-                                 <TableRow className="font-semibold"><TableCell className="sticky left-0 bg-card">Total Operating Expenses</TableCell>{renderTableRows(forecastMonths + yearlyTotalsColumns.length + 1)}</TableCell></TableRow>
+                                <TableRow><TableCell className="sticky left-0 bg-card pl-8 font-semibold">Salaries & Wages</TableCell>{renderTableRows(forecastMonths + yearlyTotalsColumns.length + 1)}</TableRow>
+                                <TableRow><TableCell className="sticky left-0 bg-card pl-12">Sales & Marketing</TableCell>{renderTableRows(forecastMonths + yearlyTotalsColumns.length + 1)}</TableRow>
+                                <TableRow><TableCell className="sticky left-0 bg-card pl-8 font-semibold">General & Administrative</TableCell>{renderTableRows(forecastMonths + yearlyTotalsColumns.length + 1)}</TableRow>
+                                <TableRow><TableCell className="sticky left-0 bg-card pl-12">Rent</TableCell>{renderTableRows(forecastMonths + yearlyTotalsColumns.length + 1)}</TableRow>
+                                <TableRow><TableCell className="sticky left-0 bg-card pl-12">Utilities</TableCell>{renderTableRows(forecastMonths + yearlyTotalsColumns.length + 1)}</TableRow>
+                                <TableRow><TableCell className="sticky left-0 bg-card pl-12">Insurance</TableCell>{renderTableRows(forecastMonths + yearlyTotalsColumns.length + 1)}</TableRow>
+                                <TableRow><TableCell className="sticky left-0 bg-card pl-8 font-semibold">Technology & R&D</TableCell>{renderTableRows(forecastMonths + yearlyTotalsColumns.length + 1)}</TableRow>
+                                 <TableRow className="font-semibold"><TableCell className="sticky left-0 bg-card">Total Operating Expenses</TableCell>{renderTableRows(forecastMonths + yearlyTotalsColumns.length + 1)}</TableRow>
                                 
                                 {/* EBIT */}
-                                <TableRow className="font-bold border-t-2 border-foreground"><TableCell className="sticky left-0 bg-card">Operating Income (EBITDA)</TableCell>{renderTableRows(forecastMonths + yearlyTotalsColumns.length + 1)}</TableCell></TableRow>
-                                <TableRow><TableCell className="sticky left-0 bg-card pl-8">Depreciation & Amortization</TableCell>{renderTableRows(forecastMonths + yearlyTotalsColumns.length + 1)}</TableCell></TableRow>
-                                <TableRow className="font-semibold"><TableCell className="sticky left-0 bg-card">Earnings Before Interest & Tax (EBIT)</TableCell>{renderTableRows(forecastMonths + yearlyTotalsColumns.length + 1)}</TableCell></TableRow>
+                                <TableRow className="font-bold border-t-2 border-foreground"><TableCell className="sticky left-0 bg-card">Operating Income (EBITDA)</TableCell>{renderTableRows(forecastMonths + yearlyTotalsColumns.length + 1)}</TableRow>
+                                <TableRow><TableCell className="sticky left-0 bg-card pl-8">Depreciation & Amortization</TableCell>{renderTableRows(forecastMonths + yearlyTotalsColumns.length + 1)}</TableRow>
+                                <TableRow className="font-semibold"><TableCell className="sticky left-0 bg-card">Earnings Before Interest & Tax (EBIT)</TableCell>{renderTableRows(forecastMonths + yearlyTotalsColumns.length + 1)}</TableRow>
                                 
                                 {/* Net Income */}
-                                 <TableRow><TableCell className="sticky left-0 bg-card pl-8">Interest Expense</TableCell>{renderTableRows(forecastMonths + yearlyTotalsColumns.length + 1)}</TableCell></TableRow>
-                                <TableRow className="font-semibold"><TableCell className="sticky left-0 bg-card">Earnings Before Tax (EBT)</TableCell>{renderTableRows(forecastMonths + yearlyTotalsColumns.length + 1)}</TableCell></TableRow>
-                                 <TableRow><TableCell className="sticky left-0 bg-card pl-8">Income Tax Expense</TableCell>{renderTableRows(forecastMonths + yearlyTotalsColumns.length + 1)}</TableCell></TableRow>
-                                <TableRow className="font-bold text-lg border-y-2 border-foreground bg-primary/10"><TableCell className="sticky left-0 bg-primary/10">Net Income</TableCell>{renderTableRows(forecastMonths + yearlyTotalsColumns.length + 1)}</TableCell></TableRow>
+                                 <TableRow><TableCell className="sticky left-0 bg-card pl-8">Interest Expense</TableCell>{renderTableRows(forecastMonths + yearlyTotalsColumns.length + 1)}</TableRow>
+                                <TableRow className="font-semibold"><TableCell className="sticky left-0 bg-card">Earnings Before Tax (EBT)</TableCell>{renderTableRows(forecastMonths + yearlyTotalsColumns.length + 1)}</TableRow>
+                                 <TableRow><TableCell className="sticky left-0 bg-card pl-8">Income Tax Expense</TableCell>{renderTableRows(forecastMonths + yearlyTotalsColumns.length + 1)}</TableRow>
+                                <TableRow className="font-bold text-lg border-y-2 border-foreground bg-primary/10"><TableCell className="sticky left-0 bg-primary/10">Net Income</TableCell>{renderTableRows(forecastMonths + yearlyTotalsColumns.length + 1)}</TableRow>
 
                             </TableBody>
                         </Table>
