@@ -34,6 +34,18 @@ export interface FirebaseContextState {
 
 const FirebaseContext = createContext<FirebaseContextState | undefined>(undefined);
 
+// A non-async function to handle setting the session cookie.
+const setSessionCookie = (idToken: string | null) => {
+    fetch('/api/auth/session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ idToken }),
+    }).catch(error => {
+        console.error("FirebaseProvider: Failed to set session cookie:", error);
+    });
+};
+
+
 export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
   children,
   firebaseApp,
@@ -53,18 +65,10 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
       async (firebaseUser) => {
         setUserAuthState({ user: firebaseUser, isUserLoading: false, userError: null });
         
-        // This is the critical fix: Ensure this code only runs on the client.
         if (typeof window !== 'undefined') {
             const idToken = firebaseUser ? await firebaseUser.getIdToken() : null;
-            try {
-                await fetch('/api/auth/session', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ idToken }),
-                });
-            } catch (error) {
-                console.error("FirebaseProvider: Failed to set session cookie:", error);
-            }
+            // Call the non-async function without awaiting it.
+            setSessionCookie(idToken);
         }
       },
       (error) => {
