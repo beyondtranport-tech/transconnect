@@ -95,32 +95,35 @@ export default function ForecastPage() {
     const roadmapData = useMemo(() => salesRoadmapLogic(salesInputs), [salesInputs]);
     const forecastData = useMemo(() => budgetLogic(roadmapData, budgetInputs), [roadmapData, budgetInputs]);
 
-    const yearlyTotals = useMemo(() => {
-        const totals: Record<string, any> = {};
-        if (!forecastData || forecastData.length === 0) return totals;
-        
-        forecastData.forEach(row => {
-            if (!totals[row.year]) {
-                 totals[row.year] = { ...row, month: `Total ${row.year}` };
-                 // Don't sum the first month of the year, just initialize
-            } else {
-                 Object.keys(row).forEach(key => {
-                    if (key !== 'month' && key !== 'year' && typeof row[key as keyof typeof row] === 'number') {
-                         totals[row.year][key] += row[key];
+    const financialYears = useMemo(() => {
+        const years = [];
+        for (let i = 0; i < forecastData.length; i += 12) {
+            const yearData = forecastData.slice(i, i + 12);
+            if (yearData.length === 0) continue;
+            
+            const total = yearData.reduce((acc, month) => {
+                Object.keys(month).forEach(key => {
+                    if (key !== 'month' && key !== 'year' && key !== 'members') {
+                        acc[key] = (acc[key] || 0) + month[key as keyof typeof month];
                     }
                 });
-            }
-            totals[row.year].members = row.members; // Always take the last member count for the year
-        });
-        return totals;
+                return acc;
+            }, {} as any);
+            total.members = yearData[yearData.length - 1].members;
+
+            years.push({
+                yearLabel: `Year ${Math.floor(i / 12) + 1}`,
+                months: yearData,
+                total: total
+            });
+        }
+        return years;
     }, [forecastData]);
-    
-    const years = Object.keys(yearlyTotals);
 
     const grandTotal = useMemo(() => {
         if (!forecastData || forecastData.length === 0) return null;
         
-        return forecastData.reduce((acc, row) => {
+        const total = forecastData.reduce((acc, row) => {
             for (const key in row) {
                 if (key !== 'month' && key !== 'year') {
                     if (key !== 'members') {
@@ -132,6 +135,8 @@ export default function ForecastPage() {
             }
             return acc;
         }, {} as any);
+
+        return total;
 
     }, [forecastData]);
 
@@ -146,15 +151,15 @@ export default function ForecastPage() {
                 <TableHeader>
                     <TableRow>
                         <TableHead className="sticky left-0 bg-card z-10 w-[250px]">Line Item</TableHead>
-                        {/* Yearly and Grand Total Headers First */}
-                        {years.map(year => (
-                            <TableHead key={`total-header-${year}`} className="text-right bg-primary/10 font-bold">Total {year}</TableHead>
+                        {financialYears.map((fy) => (
+                           <React.Fragment key={fy.yearLabel}>
+                               <TableHead className="text-right bg-primary/10 font-bold">{fy.yearLabel} Total</TableHead>
+                               {fy.months.map(col => (
+                                   <TableHead key={col.month} className="text-right">{col.month}</TableHead>
+                               ))}
+                           </React.Fragment> 
                         ))}
                         <TableHead className="text-right bg-primary/20 font-extrabold">Grand Total</TableHead>
-                        {/* Monthly Headers */}
-                        {forecastData.map((col) => (
-                           <TableHead key={col.month} className="text-right">{col.month}</TableHead>
-                        ))}
                     </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -164,25 +169,27 @@ export default function ForecastPage() {
                             <TableCell className={`sticky left-0 bg-card z-10 ${item.isBold ? 'font-semibold' : ''} ${item.isPrimary ? 'text-primary' : ''} ${item.indent ? `pl-${item.indent * 4}` : ''}`}>
                                 {item.label}
                             </TableCell>
-                            
-                            {/* Yearly Total Columns */}
-                            {years.map(year => (
-                                <TableCell key={`total-cell-${item.key}-${year}`} className={`text-right bg-primary/10 font-bold font-mono text-sm ${item.isProfit && yearlyTotals[year]?.[item.key] < 0 ? 'text-destructive' : ''}`}>
-                                     {item.format && yearlyTotals[year] ? item.format(yearlyTotals[year][item.key]) : ''}
-                                </TableCell>
-                            ))}
 
-                            {/* Grand Total Column */}
+                            {financialYears.map((fy) => (
+                                <React.Fragment key={`${fy.yearLabel}-${item.key}`}>
+                                    {/* Year Total Column */}
+                                    <TableCell className={`text-right bg-primary/10 font-bold font-mono text-sm ${item.isProfit && fy.total[item.key] < 0 ? 'text-destructive' : ''}`}>
+                                         {item.format ? item.format(fy.total[item.key]) : ''}
+                                    </TableCell>
+                                    {/* Monthly Columns for that year */}
+                                    {fy.months.map(col => (
+                                        <TableCell key={`monthly-cell-${item.key}-${col.month}`} className={`text-right font-mono text-xs ${item.isProfit && col[item.key as keyof typeof col] < 0 ? 'text-destructive' : ''}`}>
+                                            {item.format ? item.format(col[item.key as keyof typeof col]) : ''}
+                                        </TableCell>
+                                    ))}
+                                </React.Fragment>
+                            ))}
+                            
+                             {/* Grand Total Column */}
                              <TableCell className={`text-right bg-primary/20 font-extrabold font-mono text-base ${item.isProfit && grandTotal?.[item.key] < 0 ? 'text-destructive' : ''}`}>
                                  {item.format && grandTotal ? item.format(grandTotal[item.key]) : ''}
                             </TableCell>
 
-                            {/* Monthly Columns */}
-                            {forecastData.map(col => (
-                                <TableCell key={`monthly-cell-${item.key}-${col.month}`} className={`text-right font-mono text-xs ${item.isProfit && col[item.key as keyof typeof col] < 0 ? 'text-destructive' : ''}`}>
-                                    {item.format ? item.format(col[item.key as keyof typeof col]) : ''}
-                                </TableCell>
-                            ))}
                         </TableRow>
                     ))}
                 </TableBody>
