@@ -94,8 +94,7 @@ export default function FinancialContent() {
                         </div>
                     </CardContent>
                 </Card>
-
-                 <Card className="lg:col-span-3">
+                 <Card className="lg:col-span-2">
                      <CardHeader>
                         <CardTitle>Staff Assumptions</CardTitle>
                      </CardHeader>
@@ -136,8 +135,7 @@ export default function FinancialContent() {
                          </div>
                      </CardContent>
                 </Card>
-
-                <Card className="lg:col-span-2">
+                <Card className="lg:col-span-3">
                      <CardHeader>
                         <CardTitle>Membership Assumptions</CardTitle>
                      </CardHeader>
