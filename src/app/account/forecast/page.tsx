@@ -10,6 +10,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 
 const formatCurrency = (value: number) => {
+    if (typeof value !== 'number' || isNaN(value)) return 'R 0';
     return new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR', notation: 'compact', maximumFractionDigits: 0 }).format(value);
 };
 
@@ -28,31 +29,21 @@ function ForecastComponent() {
         }
     }, [dataString]);
     
-    if (!salesInputs || !budgetInputs) {
-        return (
-            <Card className="w-full max-w-2xl mx-auto">
-                <CardHeader className="text-center">
-                    <AlertTriangle className="mx-auto h-12 w-12 text-destructive" />
-                    <CardTitle>No Forecast Data</CardTitle>
-                    <CardDescription>
-                        It looks like you haven't generated a forecast yet. Please go to the budget page to enter your assumptions first.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent className="text-center">
-                    <Button asChild>
-                        <Link href="/account?view=budget">Go to Budget Page</Link>
-                    </Button>
-                </CardContent>
-            </Card>
-        )
-    }
+    // All hooks are now called unconditionally at the top level.
+    const roadmapData = useMemo(() => {
+        if (!salesInputs) return [];
+        return salesRoadmapLogic(salesInputs);
+    }, [salesInputs]);
 
-    const roadmapData = useMemo(() => salesRoadmapLogic(salesInputs), [salesInputs]);
-    const forecastData = useMemo(() => budgetLogic(roadmapData, budgetInputs), [roadmapData, budgetInputs]);
-    
+    const forecastData = useMemo(() => {
+        if (roadmapData.length === 0 || !budgetInputs) return [];
+        return budgetLogic(roadmapData, budgetInputs);
+    }, [roadmapData, budgetInputs]);
+
     const yearlyTotals = useMemo(() => {
         const totals: Record<string, any> = {};
-        if (!forecastData) return totals;
+        if (!forecastData || forecastData.length === 0) return totals;
+        
         forecastData.forEach(row => {
             if (!totals[row.year]) {
                 totals[row.year] = {
@@ -68,6 +59,26 @@ function ForecastComponent() {
         });
         return totals;
     }, [forecastData]);
+
+    // This conditional check happens *after* all hooks have been called.
+    if (!salesInputs || !budgetInputs || forecastData.length === 0) {
+        return (
+            <Card className="w-full max-w-2xl mx-auto">
+                <CardHeader className="text-center">
+                    <AlertTriangle className="mx-auto h-12 w-12 text-destructive" />
+                    <CardTitle>No Forecast Data</CardTitle>
+                    <CardDescription>
+                        It looks like you haven't generated a forecast yet. Please go to the budget page to enter your assumptions first.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent className="text-center">
+                    <Button asChild>
+                        <Link href="/account?view=budget">Go to Budget Page</Link>
+                    </Button>
+                </CardContent>
+            </Card>
+        );
+    }
 
     return (
         <Card>
@@ -90,7 +101,7 @@ function ForecastComponent() {
                 </TableHeader>
                 <TableBody>
                     {forecastData.map((row, index) => {
-                        const showYearTotal = roadmapData.findIndex(r => r.year === row.year) === roadmapData.findLastIndex(r => r.year === row.year);
+                        const isLastOfMonthInYear = row.month.startsWith('Dec');
                         const totalRow = yearlyTotals[row.year];
                         
                         return (
@@ -106,7 +117,7 @@ function ForecastComponent() {
                                         {formatCurrency(row.netProfit)}
                                     </TableCell>
                                 </TableRow>
-                                {showYearTotal && totalRow && (
+                                {isLastOfMonthInYear && totalRow && (
                                     <TableRow className="bg-primary/10 font-bold">
                                         <TableCell className="sticky left-0 bg-primary/10">Total {row.year}</TableCell>
                                         <TableCell className="text-right font-mono text-xs">{totalRow.members.toLocaleString()}</TableCell>
@@ -120,7 +131,7 @@ function ForecastComponent() {
                                     </TableRow>
                                 )}
                             </React.Fragment>
-                        )
+                        );
                     })}
                 </TableBody>
             </Table>
@@ -134,5 +145,5 @@ export default function ForecastPage() {
         <Suspense fallback={<div>Loading...</div>}>
             <ForecastComponent />
         </Suspense>
-    )
+    );
 }
