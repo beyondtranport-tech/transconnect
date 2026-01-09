@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -204,7 +205,7 @@ export default function FinancialContent() {
                             <TableBody>
                                 {/* Revenue Section */}
                                 <TableRow className="font-bold bg-muted/50"><TableCell className="sticky left-0 bg-muted/50">Revenue</TableCell><TableCell colSpan={forecastMonths + yearlyTotalsColumns.length + 1}></TableCell></TableRow>
-                                <TableRow><TableCell className="sticky left-0 bg-card pl-8">Membership Fees</TableCell>{forecastPeriod.map((_, i) => <TableCell key={i} className="text-right">{(membershipFees.basic * membershipsSold.basic + membershipFees.standard * membershipsSold.standard + membershipFees.premium * membershipsSold.premium).toFixed(2)}</TableCell>)}{renderTableRows(yearlyTotalsColumns.length + 1)}</TableRow>
+                                <TableRow><TableCell className="sticky left-0 bg-card pl-8">Membership Fees</TableCell>{renderTableRows(forecastMonths + yearlyTotalsColumns.length + 1)}</TableRow>
                                 <TableRow><TableCell className="sticky left-0 bg-card pl-8">Mall Commission Revenue</TableCell>{renderTableRows(forecastMonths + yearlyTotalsColumns.length + 1)}</TableRow>
                                 <TableRow><TableCell className="sticky left-0 bg-card pl-8">Marketplace Fees</TableCell>{renderTableRows(forecastMonths + yearlyTotalsColumns.length + 1)}</TableRow>
                                 <TableRow><TableCell className="sticky left-0 bg-card pl-8">Connect Plan Revenue</TableCell>{renderTableRows(forecastMonths + yearlyTotalsColumns.length + 1)}</TableRow>
