@@ -6,19 +6,17 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import { Sheet, DollarSign, Users, ShoppingCart, Percent, Building, Handshake, Code } from 'lucide-react';
+import { Sheet, DollarSign, Users, Percent, Map, TrendingUp } from 'lucide-react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { TrendingUp } from 'lucide-react';
-import { Map } from 'lucide-react';
 
 const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
-export default function BudgetPage() {
+function BudgetPageContent() {
     const router = useRouter();
     const { toast } = useToast();
 
@@ -209,7 +207,6 @@ export default function BudgetPage() {
                             </div>
                         </CardContent>
                     </Card>
-
                 </div>
                 
                 <div className="mt-8 flex justify-end">
@@ -223,4 +220,6 @@ export default function BudgetPage() {
     );
 }
 
-    
+export default function BudgetPage() {
+    return <BudgetPageContent />;
+}
