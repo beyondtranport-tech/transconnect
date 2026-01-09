@@ -20,11 +20,12 @@ function AdminAuthGuard({ children }: { children: React.ReactNode }) {
         if (!user) {
             router.replace('/signin?redirect=/backend');
         } else if (user.email !== 'beyondtransport@gmail.com') {
-            router.replace('/account');
+            router.replace('/account'); // Redirect non-admins to their account page
         }
     }, [user, isUserLoading, router]);
 
     // This is the key: show a loading state until Firebase has confirmed the user's status.
+    // If loading is finished and the user is not the admin, they will be redirected by the useEffect.
     if (isUserLoading || !user || user.email !== 'beyondtransport@gmail.com') {
         return (
             <div className="flex flex-col justify-center items-center min-h-[calc(100vh-8rem)]">
@@ -34,6 +35,7 @@ function AdminAuthGuard({ children }: { children: React.ReactNode }) {
         );
     }
     
+    // Only render the children (the backend page) if the user is a loaded admin
     return <>{children}</>;
 }
 
