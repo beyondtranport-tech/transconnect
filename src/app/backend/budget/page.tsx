@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Sheet, DollarSign, Users, ShoppingCart, Percent, Building, Handshake, Code } from 'lucide-react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { Separator } from '@/components/ui/separator';
+import { useToast } from '@/hooks/use-toast';
 
 const revenueItems = [
     { id: 'membershipFees', name: 'Avg. Membership Fee per Member', default: 250 },
@@ -48,6 +49,7 @@ const opexOtherItems = [
 ];
 
 export default function BudgetPage() {
+    const { toast } = useToast();
     
     const { register, control, handleSubmit } = useForm({
         defaultValues: {
@@ -71,6 +73,10 @@ export default function BudgetPage() {
     const onSubmit = (data: any) => {
         console.log(data);
         // This is where you would save the budget data
+        toast({
+            title: "Budget Saved",
+            description: "Your financial assumptions have been saved.",
+        });
     };
 
     return (
