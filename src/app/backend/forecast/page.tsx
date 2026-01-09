@@ -95,59 +95,55 @@ export default function ForecastPage() {
     const roadmapData = useMemo(() => salesRoadmapLogic(salesInputs), [salesInputs]);
     const forecastData = useMemo(() => budgetLogic(roadmapData, budgetInputs), [roadmapData, budgetInputs]);
 
-    const yearlyTotals = useMemo(() => {
-        const totals: Record<string, any> = {};
-        if (!forecastData || forecastData.length === 0) return totals;
-        
-        forecastData.forEach(row => {
-            if (!totals[row.year]) {
-                 totals[row.year] = {
-                    members: 0,
-                    membershipRevenue: 0, connectPlanRevenue: 0, mallRevenue: 0, techRevenue: 0, totalRevenue: 0,
-                    memberCommission: 0, isaCommission: 0, totalCogs: 0,
-                    grossProfit: 0,
-                    opexSalaries: 0, digitalAdvertising: 0, contentCreation: 0, eventsAndSponsorships: 0,
-                    officeRental: 0, utilities: 0, insurance: 0, legalAndProfessional: 0, bankCharges: 0,
-                    telephone: 0, travelAndEntertainment: 0, platformCosts: 0, softwareLicenses: 0, totalOpex: 0,
-                    netProfit: 0
-                };
+    const financialYears = useMemo(() => {
+        const yearGroups: { [key: string]: any[] } = {};
+        forecastData.forEach((row, index) => {
+            const financialYear = Math.floor(index / 12) + 1;
+            const yearKey = `Year ${financialYear}`;
+            if (!yearGroups[yearKey]) {
+                yearGroups[yearKey] = [];
             }
-            Object.keys(row).forEach(key => {
-                if (key !== 'month' && key !== 'year' && key !== 'members') {
-                     totals[row.year][key] += row[key];
-                }
-            });
-            totals[row.year].members = row.members; 
+            yearGroups[yearKey].push(row);
         });
-        return totals;
+        return yearGroups;
     }, [forecastData]);
+
+    const financialYearTotals = useMemo(() => {
+        const totals: Record<string, any> = {};
+        for (const yearKey in financialYears) {
+            totals[yearKey] = financialYears[yearKey].reduce((acc, row) => {
+                for (const key in row) {
+                    if (key !== 'month' && key !== 'year') {
+                        if (key !== 'members') {
+                            acc[key] = (acc[key] || 0) + row[key];
+                        } else {
+                            acc[key] = row[key]; // Keep last member count, don't sum
+                        }
+                    }
+                }
+                return acc;
+            }, {});
+        }
+        return totals;
+    }, [financialYears]);
 
     const grandTotal = useMemo(() => {
         if (!forecastData || forecastData.length === 0) return null;
         
-        const total: any = {
-            members: 0,
-            membershipRevenue: 0, connectPlanRevenue: 0, mallRevenue: 0, techRevenue: 0, totalRevenue: 0,
-            memberCommission: 0, isaCommission: 0, totalCogs: 0,
-            grossProfit: 0,
-            opexSalaries: 0, digitalAdvertising: 0, contentCreation: 0, eventsAndSponsorships: 0,
-            officeRental: 0, utilities: 0, insurance: 0, legalAndProfessional: 0, bankCharges: 0,
-            telephone: 0, travelAndEntertainment: 0, platformCosts: 0, softwareLicenses: 0, totalOpex: 0,
-            netProfit: 0
-        };
-
-        forecastData.forEach(row => {
-            Object.keys(row).forEach(key => {
-                if (key !== 'month' && key !== 'year' && key !== 'members') {
-                     total[key] += row[key];
+        return forecastData.reduce((acc, row) => {
+            for (const key in row) {
+                if (key !== 'month' && key !== 'year') {
+                    if (key !== 'members') {
+                         acc[key] = (acc[key] || 0) + row[key];
+                    } else {
+                        acc[key] = row[key]; // Keep last member count
+                    }
                 }
-            });
-        });
-        total.members = forecastData[forecastData.length - 1].members;
-        return total;
+            }
+            return acc;
+        }, {} as any);
+
     }, [forecastData]);
-    
-    const years = [...new Set(forecastData.map(d => d.year))];
 
     return (
         <Card>
@@ -163,8 +159,8 @@ export default function ForecastPage() {
                         {forecastData.map((col) => (
                            <TableHead key={col.month} className="text-right">{col.month}</TableHead>
                         ))}
-                        {years.map(year => (
-                            <TableHead key={`total-${year}`} className="text-right bg-primary/10 font-bold">Total {year}</TableHead>
+                        {Object.keys(financialYearTotals).map(yearKey => (
+                            <TableHead key={yearKey} className="text-right bg-primary/10 font-bold">{yearKey} Total</TableHead>
                         ))}
                         <TableHead className="text-right bg-primary/20 font-extrabold">Grand Total</TableHead>
                     </TableRow>
@@ -181,10 +177,10 @@ export default function ForecastPage() {
                                     {item.format ? item.format(col[item.key as keyof typeof col]) : ''}
                                 </TableCell>
                             ))}
-                            {/* Yearly total columns */}
-                            {years.map(year => (
-                                <TableCell key={`total-${item.key}-${year}`} className={`text-right bg-primary/10 font-bold font-mono text-sm ${item.isProfit && yearlyTotals[year]?.[item.key] < 0 ? 'text-destructive' : ''}`}>
-                                     {item.format && yearlyTotals[year] ? item.format(yearlyTotals[year][item.key]) : ''}
+                            {/* Financial Year total columns */}
+                            {Object.keys(financialYearTotals).map(yearKey => (
+                                <TableCell key={`total-${item.key}-${yearKey}`} className={`text-right bg-primary/10 font-bold font-mono text-sm ${item.isProfit && financialYearTotals[yearKey]?.[item.key] < 0 ? 'text-destructive' : ''}`}>
+                                     {item.format && financialYearTotals[yearKey] ? item.format(financialYearTotals[yearKey][item.key]) : ''}
                                 </TableCell>
                             ))}
                             {/* Grand total column */}
