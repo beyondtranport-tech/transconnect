@@ -95,42 +95,6 @@ export default function FinancialContent() {
                     </CardContent>
                 </Card>
 
-                <Card className="lg:col-span-2">
-                     <CardHeader>
-                        <CardTitle>Membership Assumptions</CardTitle>
-                     </CardHeader>
-                     <CardContent className="space-y-4">
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                             <div>
-                                <Label>Basic Plan Monthly Fee (R)</Label>
-                                <Input type="number" value={membershipFees.basic} onChange={e => handleMembershipFeeChange('basic', e.target.value)} />
-                            </div>
-                            <div>
-                                <Label>Standard Plan Monthly Fee (R)</Label>
-                                <Input type="number" value={membershipFees.standard} onChange={e => handleMembershipFeeChange('standard', e.target.value)} />
-                            </div>
-                            <div>
-                                <Label>Premium Plan Monthly Fee (R)</Label>
-                                <Input type="number" value={membershipFees.premium} onChange={e => handleMembershipFeeChange('premium', e.target.value)} />
-                            </div>
-                        </div>
-                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div>
-                                <Label>New Basic Memberships / Month</Label>
-                                <Input type="number" value={membershipsSold.basic} onChange={e => handleMembershipsSoldChange('basic', e.target.value)} />
-                            </div>
-                             <div>
-                                <Label>New Standard Memberships / Month</Label>
-                                <Input type="number" value={membershipsSold.standard} onChange={e => handleMembershipsSoldChange('standard', e.target.value)} />
-                            </div>
-                             <div>
-                                <Label>New Premium Memberships / Month</Label>
-                                <Input type="number" value={membershipsSold.premium} onChange={e => handleMembershipsSoldChange('premium', e.target.value)} />
-                            </div>
-                        </div>
-                     </CardContent>
-                </Card>
-                
                  <Card className="lg:col-span-3">
                      <CardHeader>
                         <CardTitle>Staff Assumptions</CardTitle>
@@ -170,6 +134,42 @@ export default function FinancialContent() {
                                 <Input type="number" value={staffAssumptions.admin.salary} onChange={e => handleStaffChange('admin', 'salary', e.target.value)} />
                             </div>
                          </div>
+                     </CardContent>
+                </Card>
+
+                <Card className="lg:col-span-2">
+                     <CardHeader>
+                        <CardTitle>Membership Assumptions</CardTitle>
+                     </CardHeader>
+                     <CardContent className="space-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                             <div>
+                                <Label>Basic Plan Monthly Fee (R)</Label>
+                                <Input type="number" value={membershipFees.basic} onChange={e => handleMembershipFeeChange('basic', e.target.value)} />
+                            </div>
+                            <div>
+                                <Label>Standard Plan Monthly Fee (R)</Label>
+                                <Input type="number" value={membershipFees.standard} onChange={e => handleMembershipFeeChange('standard', e.target.value)} />
+                            </div>
+                            <div>
+                                <Label>Premium Plan Monthly Fee (R)</Label>
+                                <Input type="number" value={membershipFees.premium} onChange={e => handleMembershipFeeChange('premium', e.target.value)} />
+                            </div>
+                        </div>
+                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                                <Label>New Basic Memberships / Month</Label>
+                                <Input type="number" value={membershipsSold.basic} onChange={e => handleMembershipsSoldChange('basic', e.target.value)} />
+                            </div>
+                             <div>
+                                <Label>New Standard Memberships / Month</Label>
+                                <Input type="number" value={membershipsSold.standard} onChange={e => handleMembershipsSoldChange('standard', e.target.value)} />
+                            </div>
+                             <div>
+                                <Label>New Premium Memberships / Month</Label>
+                                <Input type="number" value={membershipsSold.premium} onChange={e => handleMembershipsSoldChange('premium', e.target.value)} />
+                            </div>
+                        </div>
                      </CardContent>
                 </Card>
             </div>
