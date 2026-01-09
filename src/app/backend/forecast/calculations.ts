@@ -1,3 +1,4 @@
+
 'use client';
 
 const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -37,9 +38,7 @@ export function budgetLogic(roadmapData: any[], budgetInputs: any) {
     const forecastData = [];
 
     const monthlyOpexSalaries = budgetInputs.opexSalaries.reduce((sum: number, role: any) => sum + (role.count * role.salary), 0);
-    const monthlyOpexOther = Object.values(budgetInputs.opexOther).reduce((sum: number, value: any) => sum + value, 0);
-    const totalMonthlyOpex = monthlyOpexSalaries + monthlyOpexOther;
-
+    
     for (const row of roadmapData) {
         const members = row.cumulativeMembers;
 
@@ -52,21 +51,43 @@ export function budgetLogic(roadmapData: any[], budgetInputs: any) {
 
         // COGS Calculation
         const memberCommission = mallRevenue * (budgetInputs.cogs.memberCommissionShare / 100);
-        const isaCommission = totalRevenue * (budgetInputs.cogs.isaCommissionRate / 100); // Assuming ISA commission is on all revenue
+        const isaCommission = totalRevenue * (budgetInputs.cogs.isaCommissionRate / 100);
         const totalCogs = memberCommission + isaCommission;
 
         const grossProfit = totalRevenue - totalCogs;
-        const netProfit = grossProfit - totalMonthlyOpex;
+        
+        // OPEX Calculation
+        const opexSalaries = monthlyOpexSalaries;
+        const opexOther = budgetInputs.opexOther;
+        const totalOpex = opexSalaries + Object.values(opexOther).reduce((sum: number, value: any) => sum + Number(value), 0);
+        
+        const netProfit = grossProfit - totalOpex;
 
         forecastData.push({
             month: row.month,
             year: row.year,
             members: members,
-            revenue: totalRevenue,
-            cogs: totalCogs,
-            grossProfit: grossProfit,
-            opex: totalMonthlyOpex,
-            netProfit: netProfit,
+            
+            // Revenue Breakdown
+            membershipRevenue,
+            connectPlanRevenue,
+            mallRevenue,
+            techRevenue,
+            totalRevenue,
+
+            // COGS Breakdown
+            memberCommission,
+            isaCommission,
+            totalCogs,
+
+            grossProfit,
+
+            // OPEX Breakdown
+            opexSalaries,
+            ...opexOther,
+            totalOpex,
+
+            netProfit,
         });
     }
 
