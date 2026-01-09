@@ -95,37 +95,27 @@ export default function ForecastPage() {
     const roadmapData = useMemo(() => salesRoadmapLogic(salesInputs), [salesInputs]);
     const forecastData = useMemo(() => budgetLogic(roadmapData, budgetInputs), [roadmapData, budgetInputs]);
 
-    const financialYears = useMemo(() => {
-        const yearGroups: { [key: string]: any[] } = {};
-        forecastData.forEach((row, index) => {
-            const financialYear = Math.floor(index / 12) + 1;
-            const yearKey = `Year ${financialYear}`;
-            if (!yearGroups[yearKey]) {
-                yearGroups[yearKey] = [];
-            }
-            yearGroups[yearKey].push(row);
-        });
-        return yearGroups;
-    }, [forecastData]);
-
-    const financialYearTotals = useMemo(() => {
+    const yearlyTotals = useMemo(() => {
         const totals: Record<string, any> = {};
-        for (const yearKey in financialYears) {
-            totals[yearKey] = financialYears[yearKey].reduce((acc, row) => {
-                for (const key in row) {
-                    if (key !== 'month' && key !== 'year') {
-                        if (key !== 'members') {
-                            acc[key] = (acc[key] || 0) + row[key];
-                        } else {
-                            acc[key] = row[key]; // Keep last member count, don't sum
-                        }
+        if (!forecastData || forecastData.length === 0) return totals;
+        
+        forecastData.forEach(row => {
+            if (!totals[row.year]) {
+                 totals[row.year] = { ...row, month: `Total ${row.year}` };
+                 // Don't sum the first month of the year, just initialize
+            } else {
+                 Object.keys(row).forEach(key => {
+                    if (key !== 'month' && key !== 'year' && typeof row[key as keyof typeof row] === 'number') {
+                         totals[row.year][key] += row[key];
                     }
-                }
-                return acc;
-            }, {});
-        }
+                });
+            }
+            totals[row.year].members = row.members; // Always take the last member count for the year
+        });
         return totals;
-    }, [financialYears]);
+    }, [forecastData]);
+    
+    const years = Object.keys(yearlyTotals);
 
     const grandTotal = useMemo(() => {
         if (!forecastData || forecastData.length === 0) return null;
@@ -134,9 +124,9 @@ export default function ForecastPage() {
             for (const key in row) {
                 if (key !== 'month' && key !== 'year') {
                     if (key !== 'members') {
-                         acc[key] = (acc[key] || 0) + row[key];
+                         (acc as any)[key] = ((acc as any)[key] || 0) + (row as any)[key];
                     } else {
-                        acc[key] = row[key]; // Keep last member count
+                        (acc as any)[key] = (row as any)[key]; // Keep last member count
                     }
                 }
             }
@@ -156,37 +146,43 @@ export default function ForecastPage() {
                 <TableHeader>
                     <TableRow>
                         <TableHead className="sticky left-0 bg-card z-10 w-[250px]">Line Item</TableHead>
+                        {/* Yearly and Grand Total Headers First */}
+                        {years.map(year => (
+                            <TableHead key={`total-header-${year}`} className="text-right bg-primary/10 font-bold">Total {year}</TableHead>
+                        ))}
+                        <TableHead className="text-right bg-primary/20 font-extrabold">Grand Total</TableHead>
+                        {/* Monthly Headers */}
                         {forecastData.map((col) => (
                            <TableHead key={col.month} className="text-right">{col.month}</TableHead>
                         ))}
-                        {Object.keys(financialYearTotals).map(yearKey => (
-                            <TableHead key={yearKey} className="text-right bg-primary/10 font-bold">{yearKey} Total</TableHead>
-                        ))}
-                        <TableHead className="text-right bg-primary/20 font-extrabold">Grand Total</TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
                     {lineItems.map(item => (
                         <TableRow key={item.key} className={item.isHeader ? 'bg-muted/50' : ''}>
+                            {/* Line Item Label */}
                             <TableCell className={`sticky left-0 bg-card z-10 ${item.isBold ? 'font-semibold' : ''} ${item.isPrimary ? 'text-primary' : ''} ${item.indent ? `pl-${item.indent * 4}` : ''}`}>
                                 {item.label}
                             </TableCell>
-                            {/* Monthly columns */}
-                            {forecastData.map(col => (
-                                <TableCell key={`${item.key}-${col.month}`} className={`text-right font-mono text-xs ${item.isProfit && col[item.key as keyof typeof col] < 0 ? 'text-destructive' : ''}`}>
-                                    {item.format ? item.format(col[item.key as keyof typeof col]) : ''}
+                            
+                            {/* Yearly Total Columns */}
+                            {years.map(year => (
+                                <TableCell key={`total-cell-${item.key}-${year}`} className={`text-right bg-primary/10 font-bold font-mono text-sm ${item.isProfit && yearlyTotals[year]?.[item.key] < 0 ? 'text-destructive' : ''}`}>
+                                     {item.format && yearlyTotals[year] ? item.format(yearlyTotals[year][item.key]) : ''}
                                 </TableCell>
                             ))}
-                            {/* Financial Year total columns */}
-                            {Object.keys(financialYearTotals).map(yearKey => (
-                                <TableCell key={`total-${item.key}-${yearKey}`} className={`text-right bg-primary/10 font-bold font-mono text-sm ${item.isProfit && financialYearTotals[yearKey]?.[item.key] < 0 ? 'text-destructive' : ''}`}>
-                                     {item.format && financialYearTotals[yearKey] ? item.format(financialYearTotals[yearKey][item.key]) : ''}
-                                </TableCell>
-                            ))}
-                            {/* Grand total column */}
+
+                            {/* Grand Total Column */}
                              <TableCell className={`text-right bg-primary/20 font-extrabold font-mono text-base ${item.isProfit && grandTotal?.[item.key] < 0 ? 'text-destructive' : ''}`}>
                                  {item.format && grandTotal ? item.format(grandTotal[item.key]) : ''}
                             </TableCell>
+
+                            {/* Monthly Columns */}
+                            {forecastData.map(col => (
+                                <TableCell key={`monthly-cell-${item.key}-${col.month}`} className={`text-right font-mono text-xs ${item.isProfit && col[item.key as keyof typeof col] < 0 ? 'text-destructive' : ''}`}>
+                                    {item.format ? item.format(col[item.key as keyof typeof col]) : ''}
+                                </TableCell>
+                            ))}
                         </TableRow>
                     ))}
                 </TableBody>
