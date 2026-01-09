@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -10,11 +9,18 @@ import { Button } from '@/components/ui/button';
 import { Save, TrendingUp } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
+import { salesRoadmapLogic, budgetLogic } from './calculations';
 
 const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
+const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR', notation: 'compact', maximumFractionDigits: 0 }).format(value);
+};
+
 export default function ForecastPage() {
     const { toast } = useToast();
+    
+    // --- STATE FOR INPUTS ---
     const [startMonth, setStartMonth] = useState(new Date().getMonth());
     const [startYear, setStartYear] = useState(new Date().getFullYear());
     const [forecastMonths, setForecastMonths] = useState(36);
@@ -29,23 +35,6 @@ export default function ForecastPage() {
         admin: { count: 4, salary: 35000 },
     });
 
-    const forecastPeriod = useMemo(() => {
-        const period = [];
-        for (let i = 0; i < forecastMonths; i++) {
-            const date = new Date(startYear, startMonth + i, 1);
-            period.push({
-                month: monthNames[date.getMonth()],
-                year: date.getFullYear(),
-            });
-        }
-        return period;
-    }, [startMonth, startYear, forecastMonths]);
-
-    const yearlyTotalsColumns = useMemo(() => {
-        const years = [...new Set(forecastPeriod.map(p => p.year))];
-        return years;
-    }, [forecastPeriod]);
-    
     const handleMembershipFeeChange = (plan: 'basic' | 'standard' | 'premium', value: string) => {
         setMembershipFees(prev => ({ ...prev, [plan]: Number(value) || 0 }));
     };
@@ -68,9 +57,83 @@ export default function ForecastPage() {
         });
     }
 
-    const renderTableRows = (count: number) => {
-        return Array(count).fill(0).map((_, i) => <TableCell key={i} className="text-right">0.00</TableCell>);
-    }
+    // --- DYNAMIC INPUTS FOR CALCULATIONS ---
+    const salesInputs = {
+        startMonth,
+        startYear,
+        forecastMonths,
+        // Hardcoded values from the previous version, can be replaced with state if needed
+        initialTransporters: 1000,
+        initialSuppliers: 500,
+        numberOfPowerPartners: 5,
+        opportunitiesPerPartner: 2000,
+        campaignConversionRate: 5,
+        campaignDuration: 6,
+        avgCustomersPerMember: 10,
+        customerConversionRate: 2,
+        customerConversionLag: 3,
+        numberOfIsas: 10,
+        referralsPerIsa: 50,
+        isaConversionRate: 10,
+    };
+    
+    const budgetInputs = {
+        revenue: {
+            membershipFees: 250, // This is an average, can be made dynamic
+            connectPlanAdoptionRate: 15, 
+            avgConnectPlanFee: 50,
+            mallCommissionRate: 2.5, 
+            avgMallSpendPerMember: 1000, 
+            techServicesAdoptionRate: 10,
+            avgTechSpendPerMember: 150
+        },
+        cogs: { memberCommissionShare: 50, isaCommissionRate: 20 },
+        opexSalaries: Object.values(staffAssumptions),
+        opexOther: {
+            digitalAdvertising: 30000, contentCreation: 15000, eventsAndSponsorships: 10000,
+            officeRental: 35000, utilities: 15000, insurance: 5000,
+            legalAndProfessional: 10000, bankCharges: 2000, telephone: 8000,
+            travelAndEntertainment: 5000, platformCosts: 20000, softwareLicenses: 10000
+        }
+    };
+    
+    // --- CALCULATIONS ---
+    const roadmapData = useMemo(() => salesRoadmapLogic(salesInputs), [salesInputs]);
+    const forecastData = useMemo(() => budgetLogic(roadmapData, budgetInputs), [roadmapData, budgetInputs]);
+    
+    const yearlyTotals = useMemo(() => {
+        const totals: Record<string, any> = {};
+        forecastData.forEach(row => {
+            if (!totals[row.year]) {
+                totals[row.year] = {
+                    revenue: 0, cogs: 0, grossProfit: 0, opex: 0, netProfit: 0
+                };
+            }
+            totals[row.year].revenue += row.revenue;
+            totals[row.year].cogs += row.cogs;
+            totals[row.year].grossProfit += row.grossProfit;
+            totals[row.year].opex += row.opex;
+            totals[row.year].netProfit += row.netProfit;
+        });
+        return totals;
+    }, [forecastData]);
+    
+    const forecastPeriod = useMemo(() => {
+        const period = [];
+        for (let i = 0; i < forecastMonths; i++) {
+            const date = new Date(startYear, startMonth + i, 1);
+            period.push({
+                month: monthNames[date.getMonth()],
+                year: date.getFullYear(),
+            });
+        }
+        return period;
+    }, [startMonth, startYear, forecastMonths]);
+
+    const yearlyTotalsColumns = useMemo(() => {
+        const years = [...new Set(forecastPeriod.map(p => p.year))];
+        return years;
+    }, [forecastPeriod]);
 
     return (
     <>
@@ -165,44 +228,52 @@ export default function ForecastPage() {
           </CardHeader>
           <CardContent className="overflow-x-auto">
             <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="sticky left-0 bg-card w-[250px] min-w-[250px]">Description</TableHead>
-                  {forecastPeriod.map((p, i) => <TableHead key={i} className="text-center min-w-[120px]">{p.month} {p.year}</TableHead>)}
-                  {yearlyTotalsColumns.map(year => <TableHead key={`total-${year}`} className="text-right font-bold min-w-[150px]">Total {year}</TableHead>)}
-                  <TableHead className="text-right font-bold min-w-[150px]">Total</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                <TableRow className="font-bold bg-muted/50"><TableCell className="sticky left-0 bg-muted/50">Revenue</TableCell><TableCell colSpan={forecastMonths + yearlyTotalsColumns.length + 1}></TableCell></TableRow>
-                <TableRow><TableCell className="sticky left-0 bg-card pl-8">Membership Fees</TableCell>{renderTableRows(forecastMonths + yearlyTotalsColumns.length + 1)}</TableRow>
-                <TableRow><TableCell className="sticky left-0 bg-card pl-8">Mall Commission Revenue</TableCell>{renderTableRows(forecastMonths + yearlyTotalsColumns.length + 1)}</TableRow>
-                <TableRow><TableCell className="sticky left-0 bg-card pl-8">Marketplace Fees</TableCell>{renderTableRows(forecastMonths + yearlyTotalsColumns.length + 1)}</TableRow>
-                <TableRow><TableCell className="sticky left-0 bg-card pl-8">Connect Plan Revenue</TableCell>{renderTableRows(forecastMonths + yearlyTotalsColumns.length + 1)}</TableRow>
-                <TableRow><TableCell className="sticky left-0 bg-card pl-8">Tech Services Revenue</TableCell>{renderTableRows(forecastMonths + yearlyTotalsColumns.length + 1)}</TableRow>
-                <TableRow className="font-semibold border-t-2 border-foreground"><TableCell className="sticky left-0 bg-card">Total Revenue</TableCell>{renderTableRows(forecastMonths + yearlyTotalsColumns.length + 1)}</TableRow>
-                <TableRow className="font-bold bg-muted/50"><TableCell className="sticky left-0 bg-muted/50">Cost of Revenue</TableCell><TableCell colSpan={forecastMonths + yearlyTotalsColumns.length + 1}></TableCell></TableRow>
-                <TableRow><TableCell className="sticky left-0 bg-card pl-8">Member Commission Share</TableCell>{renderTableRows(forecastMonths + yearlyTotalsColumns.length + 1)}</TableRow>
-                <TableRow><TableCell className="sticky left-0 bg-card pl-8">ISA Commission</TableCell>{renderTableRows(forecastMonths + yearlyTotalsColumns.length + 1)}</TableRow>
-                <TableRow className="font-semibold"><TableCell className="sticky left-0 bg-card">Total Cost of Revenue</TableCell>{renderTableRows(forecastMonths + yearlyTotalsColumns.length + 1)}</TableRow>
-                <TableRow className="font-bold text-lg border-y-2 border-foreground bg-primary/10"><TableCell className="sticky left-0 bg-primary/10">Gross Profit</TableCell>{renderTableRows(forecastMonths + yearlyTotalsColumns.length + 1)}</TableRow>
-                <TableRow className="font-bold bg-muted/50"><TableCell className="sticky left-0 bg-muted/50">Operating Expenses (OPEX)</TableCell><TableCell colSpan={forecastMonths + yearlyTotalsColumns.length + 1}></TableCell></TableRow>
-                <TableRow><TableCell className="sticky left-0 bg-card pl-8 font-semibold">Salaries & Wages</TableCell>{renderTableRows(forecastMonths + yearlyTotalsColumns.length + 1)}</TableRow>
-                <TableRow><TableCell className="sticky left-0 bg-card pl-12">Sales & Marketing</TableCell>{renderTableRows(forecastMonths + yearlyTotalsColumns.length + 1)}</TableRow>
-                <TableRow><TableCell className="sticky left-0 bg-card pl-8 font-semibold">General & Administrative</TableCell>{renderTableRows(forecastMonths + yearlyTotalsColumns.length + 1)}</TableRow>
-                <TableRow><TableCell className="sticky left-0 bg-card pl-12">Rent</TableCell>{renderTableRows(forecastMonths + yearlyTotalsColumns.length + 1)}</TableRow>
-                <TableRow><TableCell className="sticky left-0 bg-card pl-12">Utilities</TableCell>{renderTableRows(forecastMonths + yearlyTotalsColumns.length + 1)}</TableRow>
-                <TableRow><TableCell className="sticky left-0 bg-card pl-12">Insurance</TableCell>{renderTableRows(forecastMonths + yearlyTotalsColumns.length + 1)}</TableRow>
-                <TableRow><TableCell className="sticky left-0 bg-card pl-8 font-semibold">Technology & R&D</TableCell>{renderTableRows(forecastMonths + yearlyTotalsColumns.length + 1)}</TableRow>
-                <TableRow className="font-semibold"><TableCell className="sticky left-0 bg-card">Total Operating Expenses</TableCell>{renderTableRows(forecastMonths + yearlyTotalsColumns.length + 1)}</TableRow>
-                <TableRow className="font-bold border-t-2 border-foreground"><TableCell className="sticky left-0 bg-card">Operating Income (EBITDA)</TableCell>{renderTableRows(forecastMonths + yearlyTotalsColumns.length + 1)}</TableRow>
-                <TableRow><TableCell className="sticky left-0 bg-card pl-8">Depreciation & Amortization</TableCell>{renderTableRows(forecastMonths + yearlyTotalsColumns.length + 1)}</TableRow>
-                <TableRow className="font-semibold"><TableCell className="sticky left-0 bg-card">Earnings Before Interest & Tax (EBIT)</TableCell>{renderTableRows(forecastMonths + yearlyTotalsColumns.length + 1)}</TableRow>
-                <TableRow><TableCell className="sticky left-0 bg-card pl-8">Interest Expense</TableCell>{renderTableRows(forecastMonths + yearlyTotalsColumns.length + 1)}</TableRow>
-                <TableRow className="font-semibold"><TableCell className="sticky left-0 bg-card">Earnings Before Tax (EBT)</TableCell>{renderTableRows(forecastMonths + yearlyTotalsColumns.length + 1)}</TableRow>
-                <TableRow><TableCell className="sticky left-0 bg-card pl-8">Income Tax Expense</TableCell>{renderTableRows(forecastMonths + yearlyTotalsColumns.length + 1)}</TableRow>
-                <TableRow className="font-bold text-lg border-y-2 border-foreground bg-primary/10"><TableCell className="sticky left-0 bg-primary/10">Net Income</TableCell>{renderTableRows(forecastMonths + yearlyTotalsColumns.length + 1)}</TableRow>
-              </TableBody>
+                <TableHeader>
+                    <TableRow>
+                        <TableHead className="sticky left-0 bg-card w-[100px]">Month</TableHead>
+                        <TableHead className="text-right">Members</TableHead>
+                        <TableHead className="text-right">Revenue</TableHead>
+                        <TableHead className="text-right">COGS</TableHead>
+                        <TableHead className="text-right text-primary font-semibold">Gross Profit</TableHead>
+                        <TableHead className="text-right">OPEX</TableHead>
+                        <TableHead className="text-right text-primary font-bold">Net Profit</TableHead>
+                    </TableRow>
+                </TableHeader>
+                <TableBody>
+                    {forecastData.map((row, index) => {
+                        const showYearTotal = roadmapData.findIndex(r => r.year === row.year) === roadmapData.findLastIndex(r => r.year === row.year);
+                        const totalRow = yearlyTotals[row.year];
+                        
+                        return (
+                            <React.Fragment key={index}>
+                                <TableRow>
+                                    <TableCell className="sticky left-0 bg-card">{row.month}</TableCell>
+                                    <TableCell className="text-right font-mono text-xs">{row.members.toLocaleString()}</TableCell>
+                                    <TableCell className="text-right">{formatCurrency(row.revenue)}</TableCell>
+                                    <TableCell className="text-right">{formatCurrency(row.cogs)}</TableCell>
+                                    <TableCell className="text-right font-semibold">{formatCurrency(row.grossProfit)}</TableCell>
+                                    <TableCell className="text-right">{formatCurrency(row.opex)}</TableCell>
+                                    <TableCell className={`text-right font-bold ${row.netProfit < 0 ? 'text-destructive' : 'text-green-600'}`}>
+                                        {formatCurrency(row.netProfit)}
+                                    </TableCell>
+                                </TableRow>
+                                {showYearTotal && (
+                                    <TableRow className="bg-primary/10 font-bold">
+                                        <TableCell className="sticky left-0 bg-primary/10">Total {row.year}</TableCell>
+                                        <TableCell className="text-right font-mono text-xs">{row.members.toLocaleString()}</TableCell>
+                                        <TableCell className="text-right">{formatCurrency(totalRow.revenue)}</TableCell>
+                                        <TableCell className="text-right">{formatCurrency(totalRow.cogs)}</TableCell>
+                                        <TableCell className="text-right">{formatCurrency(totalRow.grossProfit)}</TableCell>
+                                        <TableCell className="text-right">{formatCurrency(totalRow.opex)}</TableCell>
+                                        <TableCell className={`text-right ${totalRow.netProfit < 0 ? 'text-destructive' : 'text-green-700'}`}>
+                                            {formatCurrency(totalRow.netProfit)}
+                                        </TableCell>
+                                    </TableRow>
+                                )}
+                            </React.Fragment>
+                        )
+                    })}
+                </TableBody>
             </Table>
           </CardContent>
         </Card>
