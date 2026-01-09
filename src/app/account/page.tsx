@@ -43,7 +43,6 @@ import BillingContent from './billing-content';
 import WalletContent from './wallet-content';
 import RewardsContent from './rewards';
 import ActivityFeed from './activity-feed';
-import BudgetPage from './budget/page';
 import ForecastPage from './forecast/page';
 
 
@@ -109,8 +108,6 @@ function AccountPageContent() {
         return <WalletContent />;
       case 'billing':
         return <BillingContent />;
-      case 'budget':
-        return <BudgetPage />;
       case 'forecast':
         return <ForecastPage />;
       case 'rewards':
@@ -196,12 +193,6 @@ function AccountPageContent() {
                 <SidebarMenuButton tooltip="Billing" isActive={activeView === 'billing'} onClick={() => router.push('/account?view=billing', { scroll: false })}>
                   <CreditCard />
                   <span>Billing</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Budget" isActive={activeView === 'budget'} onClick={() => router.push('/account?view=budget', { scroll: false })}>
-                  <Sheet />
-                  <span>Budget</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
