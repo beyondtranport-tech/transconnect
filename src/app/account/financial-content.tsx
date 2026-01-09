@@ -64,7 +64,7 @@ export default function FinancialContent() {
     }
 
     return (
-        <>
+        <div>
             {/* Independent container for all input cards */}
             <div className="space-y-8">
                 <Card>
@@ -248,6 +248,6 @@ export default function FinancialContent() {
                     </CardContent>
                 </Card>
             </div>
-        </>
+        </div>
     );
 }
