@@ -151,6 +151,7 @@ export default function ForecastPage() {
                 <TableHeader>
                     <TableRow>
                         <TableHead className="sticky left-0 bg-card z-10 w-[250px]">Line Item</TableHead>
+                        <TableHead className="text-right bg-primary/20 font-extrabold">Grand Total</TableHead>
                         {financialYears.map((fy) => (
                            <React.Fragment key={fy.yearLabel}>
                                <TableHead className="text-right bg-primary/10 font-bold">{fy.yearLabel} Total</TableHead>
@@ -159,7 +160,6 @@ export default function ForecastPage() {
                                ))}
                            </React.Fragment> 
                         ))}
-                        <TableHead className="text-right bg-primary/20 font-extrabold">Grand Total</TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -168,6 +168,11 @@ export default function ForecastPage() {
                             {/* Line Item Label */}
                             <TableCell className={`sticky left-0 bg-card z-10 ${item.isBold ? 'font-semibold' : ''} ${item.isPrimary ? 'text-primary' : ''} ${item.indent ? `pl-${item.indent * 4}` : ''}`}>
                                 {item.label}
+                            </TableCell>
+
+                            {/* Grand Total Column */}
+                             <TableCell className={`text-right bg-primary/20 font-extrabold font-mono text-base ${item.isProfit && grandTotal?.[item.key] < 0 ? 'text-destructive' : ''}`}>
+                                 {item.format && grandTotal ? item.format(grandTotal[item.key]) : ''}
                             </TableCell>
 
                             {financialYears.map((fy) => (
@@ -184,12 +189,6 @@ export default function ForecastPage() {
                                     ))}
                                 </React.Fragment>
                             ))}
-                            
-                             {/* Grand Total Column */}
-                             <TableCell className={`text-right bg-primary/20 font-extrabold font-mono text-base ${item.isProfit && grandTotal?.[item.key] < 0 ? 'text-destructive' : ''}`}>
-                                 {item.format && grandTotal ? item.format(grandTotal[item.key]) : ''}
-                            </TableCell>
-
                         </TableRow>
                     ))}
                 </TableBody>
