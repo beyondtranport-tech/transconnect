@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
@@ -26,7 +26,6 @@ export default function ForecastPage() {
     const [forecastMonths, setForecastMonths] = useState(36);
 
     const [membershipFees, setMembershipFees] = useState({ basic: 100, standard: 250, premium: 500 });
-    const [membershipsSold, setMembershipsSold] = useState({ basic: 10, standard: 5, premium: 2 });
     
     const [staffAssumptions, setStaffAssumptions] = useState({
         execDirector: { count: 1, salary: 150000 },
@@ -37,10 +36,6 @@ export default function ForecastPage() {
 
     const handleMembershipFeeChange = (plan: 'basic' | 'standard' | 'premium', value: string) => {
         setMembershipFees(prev => ({ ...prev, [plan]: Number(value) || 0 }));
-    };
-
-    const handleMembershipsSoldChange = (plan: 'basic' | 'standard' | 'premium', value: string) => {
-        setMembershipsSold(prev => ({ ...prev, [plan]: Number(value) || 0 }));
     };
     
     const handleStaffChange = (role: keyof typeof staffAssumptions, field: 'count' | 'salary', value: string) => {
@@ -58,7 +53,7 @@ export default function ForecastPage() {
     }
 
     // --- DYNAMIC INPUTS FOR CALCULATIONS ---
-    const salesInputs = {
+    const salesInputs = useMemo(() => ({
         startMonth,
         startYear,
         forecastMonths,
@@ -75,11 +70,11 @@ export default function ForecastPage() {
         numberOfIsas: 10,
         referralsPerIsa: 50,
         isaConversionRate: 10,
-    };
+    }), [startMonth, startYear, forecastMonths]);
     
-    const budgetInputs = {
+    const budgetInputs = useMemo(() => ({
         revenue: {
-            membershipFees: 250, // This is an average, can be made dynamic
+            membershipFees: (membershipFees.basic + membershipFees.standard + membershipFees.premium) / 3, // Average fee
             connectPlanAdoptionRate: 15, 
             avgConnectPlanFee: 50,
             mallCommissionRate: 2.5, 
@@ -95,7 +90,7 @@ export default function ForecastPage() {
             legalAndProfessional: 10000, bankCharges: 2000, telephone: 8000,
             travelAndEntertainment: 5000, platformCosts: 20000, softwareLicenses: 10000
         }
-    };
+    }), [staffAssumptions, membershipFees]);
     
     // --- CALCULATIONS ---
     const roadmapData = useMemo(() => salesRoadmapLogic(salesInputs), [salesInputs]);
@@ -106,7 +101,7 @@ export default function ForecastPage() {
         forecastData.forEach(row => {
             if (!totals[row.year]) {
                 totals[row.year] = {
-                    revenue: 0, cogs: 0, grossProfit: 0, opex: 0, netProfit: 0
+                    revenue: 0, cogs: 0, grossProfit: 0, opex: 0, netProfit: 0, members: 0
                 };
             }
             totals[row.year].revenue += row.revenue;
@@ -114,10 +109,11 @@ export default function ForecastPage() {
             totals[row.year].grossProfit += row.grossProfit;
             totals[row.year].opex += row.opex;
             totals[row.year].netProfit += row.netProfit;
+            totals[row.year].members = row.members; // Store last member count for the year
         });
         return totals;
     }, [forecastData]);
-    
+
     const forecastPeriod = useMemo(() => {
         const period = [];
         for (let i = 0; i < forecastMonths; i++) {
@@ -129,11 +125,6 @@ export default function ForecastPage() {
         }
         return period;
     }, [startMonth, startYear, forecastMonths]);
-
-    const yearlyTotalsColumns = useMemo(() => {
-        const years = [...new Set(forecastPeriod.map(p => p.year))];
-        return years;
-    }, [forecastPeriod]);
 
     return (
     <>
@@ -203,14 +194,6 @@ export default function ForecastPage() {
                 <div className="flex items-center justify-between gap-4"><Label>Premium Plan (R)</Label><Input type="number" value={membershipFees.premium} onChange={e => handleMembershipFeeChange('premium', e.target.value)} className="w-[180px]" /></div>
               </div>
             </div>
-            <div className="space-y-4 border-t pt-6">
-              <h3 className="font-medium text-muted-foreground">New Memberships Sold per Month</h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="flex items-center justify-between gap-4"><Label># of Basic Plans</Label><Input type="number" value={membershipsSold.basic} onChange={e => handleMembershipsSoldChange('basic', e.target.value)} className="w-[180px]" /></div>
-                <div className="flex items-center justify-between gap-4"><Label># of Standard Plans</Label><Input type="number" value={membershipsSold.standard} onChange={e => handleMembershipsSoldChange('standard', e.target.value)} className="w-[180px]" /></div>
-                <div className="flex items-center justify-between gap-4"><Label># of Premium Plans</Label><Input type="number" value={membershipsSold.premium} onChange={e => handleMembershipsSoldChange('premium', e.target.value)} className="w-[180px]" /></div>
-              </div>
-            </div>
           </CardContent>
            <CardFooter>
                 <Button onClick={() => handleSave('Membership')}>
@@ -257,10 +240,10 @@ export default function ForecastPage() {
                                         {formatCurrency(row.netProfit)}
                                     </TableCell>
                                 </TableRow>
-                                {showYearTotal && (
+                                {showYearTotal && totalRow && (
                                     <TableRow className="bg-primary/10 font-bold">
                                         <TableCell className="sticky left-0 bg-primary/10">Total {row.year}</TableCell>
-                                        <TableCell className="text-right font-mono text-xs">{row.members.toLocaleString()}</TableCell>
+                                        <TableCell className="text-right font-mono text-xs">{totalRow.members.toLocaleString()}</TableCell>
                                         <TableCell className="text-right">{formatCurrency(totalRow.revenue)}</TableCell>
                                         <TableCell className="text-right">{formatCurrency(totalRow.cogs)}</TableCell>
                                         <TableCell className="text-right">{formatCurrency(totalRow.grossProfit)}</TableCell>
