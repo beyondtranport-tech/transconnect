@@ -15,7 +15,7 @@ export default function FinancialContent() {
     const [startYear, setStartYear] = useState(new Date().getFullYear());
     const [forecastMonths, setForecastMonths] = useState(36);
 
-    // Membership Inputs
+    // Membership Inputs - Will be replaced by a more dynamic structure if needed
     const [basicPlanFee, setBasicPlanFee] = useState(150);
     const [standardPlanFee, setStandardPlanFee] = useState(300);
     const [premiumPlanFee, setPremiumPlanFee] = useState(500);
@@ -35,17 +35,11 @@ export default function FinancialContent() {
             const year = date.getFullYear();
             headers.push({ type: 'month', label: `${month} ${year}` });
 
-            if ((i + 1) % 12 === 0 && i < forecastMonths - 1) {
-                headers.push({ type: 'year-total', label: `Total ${year}` });
-                yearTotals.add(year);
+            if ((date.getMonth() === 11 || i === forecastMonths - 1) && !yearTotals.has(year)) {
+                 headers.push({ type: 'year-total', label: `Total ${year}` });
+                 yearTotals.add(year);
             }
         }
-        
-        const lastYear = new Date(startYear, startMonth + forecastMonths - 1).getFullYear();
-        if (!yearTotals.has(lastYear)) {
-            headers.push({ type: 'year-total', label: `Total ${lastYear}` });
-        }
-
         return headers;
     }, [startMonth, startYear, forecastMonths]);
 
@@ -77,62 +71,20 @@ export default function FinancialContent() {
                 <CardDescription>Adjust variables in real-time to see your financial forecast update instantly.</CardDescription>
             </CardHeader>
             <CardContent>
-                <div className="max-w-4xl mx-auto">
-                    <div className="p-4 border rounded-lg bg-muted/50 mb-8 space-y-6">
-                        <div>
-                            <h3 className="font-semibold mb-2">Forecast Settings</h3>
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                <div className="space-y-2">
-                                    <Label htmlFor="start-month">Start Month</Label>
-                                    <Input id="start-month" type="number" value={startMonth + 1} onChange={e => setStartMonth(Number(e.target.value) - 1)} min="1" max="12" />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="start-year">Start Year</Label>
-                                    <Input id="start-year" type="number" value={startYear} onChange={e => setStartYear(Number(e.target.value))} />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="forecast-months"># of Months</Label>
-                                    <Input id="forecast-months" type="number" value={forecastMonths} onChange={e => setForecastMonths(Number(e.target.value))} />
-                                </div>
-                            </div>
+                <div className="p-4 border rounded-lg bg-muted/50 mb-8">
+                    <h3 className="font-semibold mb-2">Forecast Settings</h3>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="start-month">Start Month</Label>
+                            <Input id="start-month" type="number" value={startMonth + 1} onChange={e => setStartMonth(Number(e.target.value) - 1)} min="1" max="12" />
                         </div>
-                        <div>
-                            <h3 className="font-semibold mb-2">Membership Assumptions</h3>
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                <div className="p-4 border rounded-md bg-background space-y-4">
-                                    <h4 className="font-medium text-center">Basic Plan</h4>
-                                    <div className="space-y-2">
-                                        <Label>Monthly Fee (R)</Label>
-                                        <Input type="number" value={basicPlanFee} onChange={e => setBasicPlanFee(Number(e.target.value))} />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label>New Memberships Sold / Month</Label>
-                                        <Input type="number" value={basicPlanSales} onChange={e => setBasicPlanSales(Number(e.target.value))} />
-                                    </div>
-                                </div>
-                                <div className="p-4 border rounded-md bg-background space-y-4">
-                                    <h4 className="font-medium text-center">Standard Plan</h4>
-                                    <div className="space-y-2">
-                                        <Label>Monthly Fee (R)</Label>
-                                        <Input type="number" value={standardPlanFee} onChange={e => setStandardPlanFee(Number(e.target.value))} />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label>New Memberships Sold / Month</Label>
-                                        <Input type="number" value={standardPlanSales} onChange={e => setStandardPlanSales(Number(e.target.value))} />
-                                    </div>
-                                </div>
-                                <div className="p-4 border rounded-md bg-background space-y-4">
-                                    <h4 className="font-medium text-center">Premium Plan</h4>
-                                    <div className="space-y-2">
-                                        <Label>Monthly Fee (R)</Label>
-                                        <Input type="number" value={premiumPlanFee} onChange={e => setPremiumPlanFee(Number(e.target.value))} />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label>New Memberships Sold / Month</Label>
-                                        <Input type="number" value={premiumPlanSales} onChange={e => setPremiumPlanSales(Number(e.target.value))} />
-                                    </div>
-                                </div>
-                            </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="start-year">Start Year</Label>
+                            <Input id="start-year" type="number" value={startYear} onChange={e => setStartYear(Number(e.target.value))} />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="forecast-months"># of Months</Label>
+                            <Input id="forecast-months" type="number" value={forecastMonths} onChange={e => setForecastMonths(Number(e.target.value))} />
                         </div>
                     </div>
                 </div>
@@ -144,13 +96,82 @@ export default function FinancialContent() {
                                 <TableHead className="w-[300px] sticky left-0 bg-background/95 z-10">Description</TableHead>
                                 <TableHead className="w-[150px] text-right">Period Total</TableHead>
                                 {dateHeaders.map((header, index) => (
-                                    <TableHead key={index} className={`w-[120px] text-right ${header.type === 'year-total' ? 'font-bold bg-muted/80' : ''}`}>
+                                    <TableHead key={index} className={`min-w-[120px] text-right ${header.type === 'year-total' ? 'font-bold bg-muted/80' : ''}`}>
                                         {header.label}
                                     </TableHead>
                                 ))}
                             </TableRow>
                         </TableHeader>
                         <TableBody>
+                            {/* --- ASSUMPTIONS --- */}
+                            <TableRow className="bg-muted/50 font-bold">
+                                <TableCell colSpan={dateHeaders.length + 2} className="sticky left-0 bg-muted/95 z-10">
+                                    Assumptions
+                                </TableCell>
+                            </TableRow>
+                             <TableRow>
+                                <TableCell className="sticky left-0 bg-background z-10 pl-6 font-semibold">Membership Assumptions</TableCell>
+                                <TableCell colSpan={dateHeaders.length + 1}></TableCell>
+                            </TableRow>
+                            {/* Basic Plan */}
+                            <TableRow>
+                                <TableCell className="sticky left-0 bg-background z-10 pl-12">Basic Plan Monthly Fee (R)</TableCell>
+                                <TableCell className="text-right font-mono"></TableCell>
+                                {dateHeaders.map((header, index) => (
+                                    <TableCell key={index} className={`text-right font-mono p-1 ${header.type === 'year-total' ? 'bg-muted/80' : ''}`}>
+                                        {header.type === 'month' && <Input type="number" defaultValue={basicPlanFee} className="h-8 text-right" />}
+                                    </TableCell>
+                                ))}
+                            </TableRow>
+                             <TableRow>
+                                <TableCell className="sticky left-0 bg-background z-10 pl-12">Basic Plan New Members / Month</TableCell>
+                                <TableCell className="text-right font-mono"></TableCell>
+                                {dateHeaders.map((header, index) => (
+                                    <TableCell key={index} className={`text-right font-mono p-1 ${header.type === 'year-total' ? 'bg-muted/80' : ''}`}>
+                                        {header.type === 'month' && <Input type="number" defaultValue={basicPlanSales} className="h-8 text-right" />}
+                                    </TableCell>
+                                ))}
+                            </TableRow>
+                            {/* Standard Plan */}
+                            <TableRow>
+                                <TableCell className="sticky left-0 bg-background z-10 pl-12">Standard Plan Monthly Fee (R)</TableCell>
+                                <TableCell className="text-right font-mono"></TableCell>
+                                {dateHeaders.map((header, index) => (
+                                    <TableCell key={index} className={`text-right font-mono p-1 ${header.type === 'year-total' ? 'bg-muted/80' : ''}`}>
+                                        {header.type === 'month' && <Input type="number" defaultValue={standardPlanFee} className="h-8 text-right" />}
+                                    </TableCell>
+                                ))}
+                            </TableRow>
+                             <TableRow>
+                                <TableCell className="sticky left-0 bg-background z-10 pl-12">Standard Plan New Members / Month</TableCell>
+                                <TableCell className="text-right font-mono"></TableCell>
+                                {dateHeaders.map((header, index) => (
+                                    <TableCell key={index} className={`text-right font-mono p-1 ${header.type === 'year-total' ? 'bg-muted/80' : ''}`}>
+                                        {header.type === 'month' && <Input type="number" defaultValue={standardPlanSales} className="h-8 text-right" />}
+                                    </TableCell>
+                                ))}
+                            </TableRow>
+                             {/* Premium Plan */}
+                            <TableRow>
+                                <TableCell className="sticky left-0 bg-background z-10 pl-12">Premium Plan Monthly Fee (R)</TableCell>
+                                <TableCell className="text-right font-mono"></TableCell>
+                                {dateHeaders.map((header, index) => (
+                                    <TableCell key={index} className={`text-right font-mono p-1 ${header.type === 'year-total' ? 'bg-muted/80' : ''}`}>
+                                        {header.type === 'month' && <Input type="number" defaultValue={premiumPlanFee} className="h-8 text-right" />}
+                                    </TableCell>
+                                ))}
+                            </TableRow>
+                             <TableRow>
+                                <TableCell className="sticky left-0 bg-background z-10 pl-12">Premium Plan New Members / Month</TableCell>
+                                <TableCell className="text-right font-mono"></TableCell>
+                                {dateHeaders.map((header, index) => (
+                                    <TableCell key={index} className={`text-right font-mono p-1 ${header.type === 'year-total' ? 'bg-muted/80' : ''}`}>
+                                        {header.type === 'month' && <Input type="number" defaultValue={premiumPlanSales} className="h-8 text-right" />}
+                                    </TableCell>
+                                ))}
+                            </TableRow>
+
+
                             {/* --- INCOME STATEMENT --- */}
                             <TableRow className="bg-muted/50 font-bold">
                                 <TableCell colSpan={dateHeaders.length + 2} className="sticky left-0 bg-muted/95 z-10">
@@ -165,11 +186,19 @@ export default function FinancialContent() {
                             <TableRow>
                                 <TableCell className="sticky left-0 bg-background z-10 pl-12">Membership Revenue</TableCell>
                                 <TableCell className="text-right font-mono">{formatCurrency(membershipRevenue.total * forecastMonths)}</TableCell>
-                                {dateHeaders.map((header, index) => (
-                                    <TableCell key={index} className={`text-right font-mono ${header.type === 'year-total' ? 'font-bold' : ''}`}>
-                                        {header.type === 'month' ? formatCurrency(membershipRevenue.total) : formatCurrency(membershipRevenue.total * 12)}
-                                    </TableCell>
-                                ))}
+                                {dateHeaders.map((header, index) => {
+                                    let yearTotal = 0;
+                                    const year = parseInt(header.label.split(' ')[1]);
+                                    if(header.type === 'year-total') {
+                                        const monthsInYear = dateHeaders.filter(h => h.type === 'month' && h.label.endsWith(String(year))).length;
+                                        yearTotal = membershipRevenue.total * monthsInYear;
+                                    }
+                                    return (
+                                        <TableCell key={index} className={`text-right font-mono ${header.type === 'year-total' ? 'font-bold' : ''}`}>
+                                            {header.type === 'month' ? formatCurrency(membershipRevenue.total) : formatCurrency(yearTotal)}
+                                        </TableCell>
+                                    )
+                                })}
                             </TableRow>
                              {/* Placeholder for future output rows */}
                             <TableRow>
