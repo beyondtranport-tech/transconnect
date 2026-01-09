@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { createContext, useContext, ReactNode, useMemo, useState, useEffect } from 'react';
@@ -91,7 +92,7 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
 };
 
 // --- HOOKS ---
-export const useFirebase = (): FirebaseContextState => {
+const useFirebase = (): FirebaseContextState => {
   const context = useContext(FirebaseContext);
   if (context === undefined) {
     throw new Error('useFirebase must be used within a FirebaseProvider.');
@@ -111,7 +112,7 @@ export const useUser = (): UserAuthState => {
 // This function is safe to be called from client-side effects and callbacks
 // as it does not use any React hooks internally.
 export async function getClientSideAuthToken(): Promise<string | null> {
-    const auth = useAuth();
+    const auth = getAuth();
     if (!auth) return null;
     const user = auth.currentUser;
     if (user) {

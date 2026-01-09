@@ -195,12 +195,6 @@ function AccountPageContent() {
                   <span>Billing</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
-               <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Financial" isActive={activeView === 'financial'} onClick={() => router.push('/account?view=financial', { scroll: false })}>
-                  <Sheet />
-                  <span>Financial</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
               <SidebarMenuItem>
                 <SidebarMenuButton tooltip="Documents" isActive={activeView === 'documents'} onClick={() => router.push('/account?view=documents', { scroll: false })}>
                   <FileText />

@@ -138,21 +138,17 @@ export function Header() {
                     </div>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                  {isAdmin ? (
-                    <>
-                      <DropdownMenuItem asChild>
-                        <Link href="/adminaccount">
-                            <ShieldCheck className="mr-2 h-4 w-4" />
-                            Business Account
-                        </Link>
-                      </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/account">
+                        My Account
+                    </Link>
+                  </DropdownMenuItem>
+                  {isAdmin && (
                        <DropdownMenuItem asChild>
-                            <Link href="/backend">Platform Admin</Link>
-                      </DropdownMenuItem>
-                    </>
-                  ) : (
-                      <DropdownMenuItem asChild>
-                        <Link href="/account">My Account</Link>
+                            <Link href="/backend">
+                                <ShieldCheck className="mr-2 h-4 w-4" />
+                                Platform Admin
+                            </Link>
                       </DropdownMenuItem>
                   )}
                   <DropdownMenuSeparator />
@@ -234,9 +230,9 @@ export function Header() {
                        <div className="h-10 w-full rounded-md bg-muted/50 animate-pulse" />
                     ) : user ? (
                       <Button asChild className="w-full justify-start" >
-                        <Link href={isAdmin ? "/adminaccount" : "/account"} onClick={() => setIsSheetOpen(false)}>
+                        <Link href={"/account"} onClick={() => setIsSheetOpen(false)}>
                             <User className="mr-2 h-5 w-5" />
-                            {isAdmin ? 'Business Account' : 'My Account'}
+                            My Account
                         </Link>
                       </Button>
                     ) : (
