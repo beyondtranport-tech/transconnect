@@ -77,62 +77,64 @@ export default function FinancialContent() {
                 <CardDescription>Adjust variables in real-time to see your financial forecast update instantly.</CardDescription>
             </CardHeader>
             <CardContent>
-                <div className="p-4 border rounded-lg bg-muted/50 mb-8 space-y-6">
-                     <div>
-                        <h3 className="font-semibold mb-2">Forecast Settings</h3>
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="start-month">Start Month</Label>
-                                <Input id="start-month" type="number" value={startMonth + 1} onChange={e => setStartMonth(Number(e.target.value) - 1)} min="1" max="12" />
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="start-year">Start Year</Label>
-                                <Input id="start-year" type="number" value={startYear} onChange={e => setStartYear(Number(e.target.value))} />
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="forecast-months"># of Months</Label>
-                                <Input id="forecast-months" type="number" value={forecastMonths} onChange={e => setForecastMonths(Number(e.target.value))} />
-                            </div>
-                        </div>
-                     </div>
-                     <div>
-                        <h3 className="font-semibold mb-2">Membership Assumptions</h3>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            <div className="p-4 border rounded-md bg-background space-y-4">
-                                <h4 className="font-medium text-center">Basic Plan</h4>
+                <div className="max-w-4xl mx-auto">
+                    <div className="p-4 border rounded-lg bg-muted/50 mb-8 space-y-6">
+                        <div>
+                            <h3 className="font-semibold mb-2">Forecast Settings</h3>
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                                 <div className="space-y-2">
-                                    <Label>Monthly Fee (R)</Label>
-                                    <Input type="number" value={basicPlanFee} onChange={e => setBasicPlanFee(Number(e.target.value))} />
+                                    <Label htmlFor="start-month">Start Month</Label>
+                                    <Input id="start-month" type="number" value={startMonth + 1} onChange={e => setStartMonth(Number(e.target.value) - 1)} min="1" max="12" />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label>New Memberships Sold / Month</Label>
-                                    <Input type="number" value={basicPlanSales} onChange={e => setBasicPlanSales(Number(e.target.value))} />
-                                </div>
-                            </div>
-                             <div className="p-4 border rounded-md bg-background space-y-4">
-                                <h4 className="font-medium text-center">Standard Plan</h4>
-                                <div className="space-y-2">
-                                    <Label>Monthly Fee (R)</Label>
-                                    <Input type="number" value={standardPlanFee} onChange={e => setStandardPlanFee(Number(e.target.value))} />
+                                    <Label htmlFor="start-year">Start Year</Label>
+                                    <Input id="start-year" type="number" value={startYear} onChange={e => setStartYear(Number(e.target.value))} />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label>New Memberships Sold / Month</Label>
-                                    <Input type="number" value={standardPlanSales} onChange={e => setStandardPlanSales(Number(e.target.value))} />
-                                </div>
-                            </div>
-                             <div className="p-4 border rounded-md bg-background space-y-4">
-                                <h4 className="font-medium text-center">Premium Plan</h4>
-                                <div className="space-y-2">
-                                    <Label>Monthly Fee (R)</Label>
-                                    <Input type="number" value={premiumPlanFee} onChange={e => setPremiumPlanFee(Number(e.target.value))} />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label>New Memberships Sold / Month</Label>
-                                    <Input type="number" value={premiumPlanSales} onChange={e => setPremiumPlanSales(Number(e.target.value))} />
+                                    <Label htmlFor="forecast-months"># of Months</Label>
+                                    <Input id="forecast-months" type="number" value={forecastMonths} onChange={e => setForecastMonths(Number(e.target.value))} />
                                 </div>
                             </div>
                         </div>
-                     </div>
+                        <div>
+                            <h3 className="font-semibold mb-2">Membership Assumptions</h3>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                <div className="p-4 border rounded-md bg-background space-y-4">
+                                    <h4 className="font-medium text-center">Basic Plan</h4>
+                                    <div className="space-y-2">
+                                        <Label>Monthly Fee (R)</Label>
+                                        <Input type="number" value={basicPlanFee} onChange={e => setBasicPlanFee(Number(e.target.value))} />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label>New Memberships Sold / Month</Label>
+                                        <Input type="number" value={basicPlanSales} onChange={e => setBasicPlanSales(Number(e.target.value))} />
+                                    </div>
+                                </div>
+                                <div className="p-4 border rounded-md bg-background space-y-4">
+                                    <h4 className="font-medium text-center">Standard Plan</h4>
+                                    <div className="space-y-2">
+                                        <Label>Monthly Fee (R)</Label>
+                                        <Input type="number" value={standardPlanFee} onChange={e => setStandardPlanFee(Number(e.target.value))} />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label>New Memberships Sold / Month</Label>
+                                        <Input type="number" value={standardPlanSales} onChange={e => setStandardPlanSales(Number(e.target.value))} />
+                                    </div>
+                                </div>
+                                <div className="p-4 border rounded-md bg-background space-y-4">
+                                    <h4 className="font-medium text-center">Premium Plan</h4>
+                                    <div className="space-y-2">
+                                        <Label>Monthly Fee (R)</Label>
+                                        <Input type="number" value={premiumPlanFee} onChange={e => setPremiumPlanFee(Number(e.target.value))} />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label>New Memberships Sold / Month</Label>
+                                        <Input type="number" value={premiumPlanSales} onChange={e => setPremiumPlanSales(Number(e.target.value))} />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <div className="overflow-x-auto">
