@@ -19,6 +19,13 @@ export default function FinancialContent() {
     const [membershipFees, setMembershipFees] = useState({ basic: 100, standard: 250, premium: 500 });
     const [membershipsSold, setMembershipsSold] = useState({ basic: 10, standard: 5, premium: 2 });
     
+    const [staffAssumptions, setStaffAssumptions] = useState({
+        execDirector: { count: 1, salary: 150000 },
+        nonExecDirector: { count: 2, salary: 25000 },
+        manager: { count: 3, salary: 75000 },
+        admin: { count: 4, salary: 35000 },
+    });
+    
     const forecastPeriod = useMemo(() => {
         const period = [];
         for (let i = 0; i < forecastMonths; i++) {
@@ -42,6 +49,13 @@ export default function FinancialContent() {
 
     const handleMembershipsSoldChange = (plan: 'basic' | 'standard' | 'premium', value: string) => {
         setMembershipsSold(prev => ({ ...prev, [plan]: Number(value) || 0 }));
+    };
+    
+    const handleStaffChange = (role: keyof typeof staffAssumptions, field: 'count' | 'salary', value: string) => {
+        setStaffAssumptions(prev => ({
+            ...prev,
+            [role]: { ...prev[role], [field]: Number(value) || 0 }
+        }));
     };
     
     const renderTableRows = (count: number) => {
@@ -114,6 +128,48 @@ export default function FinancialContent() {
                                 <Input type="number" value={membershipsSold.premium} onChange={e => handleMembershipsSoldChange('premium', e.target.value)} />
                             </div>
                         </div>
+                     </CardContent>
+                </Card>
+                
+                 <Card className="lg:col-span-3">
+                     <CardHeader>
+                        <CardTitle>Staff Assumptions</CardTitle>
+                     </CardHeader>
+                     <CardContent className="space-y-4">
+                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-x-8 gap-y-4">
+                             <div>
+                                <Label>Executive Director Count</Label>
+                                <Input type="number" value={staffAssumptions.execDirector.count} onChange={e => handleStaffChange('execDirector', 'count', e.target.value)} />
+                            </div>
+                             <div>
+                                <Label>Executive Director Salary (R)</Label>
+                                <Input type="number" value={staffAssumptions.execDirector.salary} onChange={e => handleStaffChange('execDirector', 'salary', e.target.value)} />
+                            </div>
+                             <div>
+                                <Label>Non-Executive Director Count</Label>
+                                <Input type="number" value={staffAssumptions.nonExecDirector.count} onChange={e => handleStaffChange('nonExecDirector', 'count', e.target.value)} />
+                            </div>
+                             <div>
+                                <Label>Non-Executive Director Salary (R)</Label>
+                                <Input type="number" value={staffAssumptions.nonExecDirector.salary} onChange={e => handleStaffChange('nonExecDirector', 'salary', e.target.value)} />
+                            </div>
+                            <div>
+                                <Label>Manager Count</Label>
+                                <Input type="number" value={staffAssumptions.manager.count} onChange={e => handleStaffChange('manager', 'count', e.target.value)} />
+                            </div>
+                            <div>
+                                <Label>Manager Salary (R)</Label>
+                                <Input type="number" value={staffAssumptions.manager.salary} onChange={e => handleStaffChange('manager', 'salary', e.target.value)} />
+                            </div>
+                            <div>
+                                <Label>Admin Count</Label>
+                                <Input type="number" value={staffAssumptions.admin.count} onChange={e => handleStaffChange('admin', 'count', e.target.value)} />
+                            </div>
+                            <div>
+                                <Label>Admin Salary (R)</Label>
+                                <Input type="number" value={staffAssumptions.admin.salary} onChange={e => handleStaffChange('admin', 'salary', e.target.value)} />
+                            </div>
+                         </div>
                      </CardContent>
                 </Card>
             </div>
