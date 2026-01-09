@@ -18,42 +18,28 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Save, Cpu } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { getClientSideAuthToken, useDoc, useFirestore } from '@/firebase';
+import { getClientSideAuthToken, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
+import { doc } from 'firebase/firestore';
 
 const formSchema = z.object({
-  // Shop Enhancements
   seoBooster: z.coerce.number().min(0, 'Must be non-negative.'),
-  
-  // Generative AI
   aiImageGenerator: z.coerce.number().min(0, 'Must be non-negative.'),
   imageEnhancer: z.coerce.number().min(0, 'Must be non-negative.'),
   aiVideoGenerator: z.coerce.number().min(0, 'Must be non-negative.'),
-
-  // API & Data Services
   aiFreightMatcher: z.coerce.number().min(0, 'Must be non-negative.'),
   apiAccessPerCall: z.coerce.number().min(0, 'Must be non-negative.'),
+  eftTopUpFee: z.coerce.number().min(0, 'Must be non-negative.'),
 });
 
 type FormValues = z.infer<typeof formSchema>;
 
-async function fetchConfig(token: string, configId: string) {
-    const response = await fetch('/api/getUserSubcollection', {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ path: `configuration/${configId}`, type: 'document' }),
-    });
-
-    const result = await response.json();
-    if (!result.success) {
-        throw new Error(result.error || `Failed to fetch config: ${configId}`);
-    }
-    return result.data;
-}
-
 export default function TechPricing() {
   const { toast } = useToast();
   const [isSaving, setIsSaving] = useState(false);
-  const [isConfigLoading, setIsConfigLoading] = useState(true);
+  const firestore = useFirestore();
+
+  const configRef = useMemoFirebase(() => firestore ? doc(firestore, 'configuration', 'techPricing') : null, [firestore]);
+  const { data: techPricing, isLoading: isConfigLoading, forceRefresh } = useDoc<FormValues>(configRef);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -64,28 +50,15 @@ export default function TechPricing() {
       aiVideoGenerator: 0,
       aiFreightMatcher: 0,
       apiAccessPerCall: 0,
+      eftTopUpFee: 0,
     },
   });
 
-  const loadConfig = useCallback(async () => {
-    setIsConfigLoading(true);
-    try {
-        const token = await getClientSideAuthToken();
-        if (!token) throw new Error("Authentication token not found.");
-        const configData = await fetchConfig(token, 'techPricing');
-        if (configData) {
-            form.reset(configData);
-        }
-    } catch (e: any) {
-        toast({ variant: 'destructive', title: 'Error Loading Config', description: e.message });
-    } finally {
-        setIsConfigLoading(false);
-    }
-  }, [form, toast]);
-
   useEffect(() => {
-    loadConfig();
-  }, [loadConfig]);
+    if (techPricing) {
+      form.reset(techPricing);
+    }
+  }, [techPricing, form]);
 
   const onSubmit = async (values: FormValues) => {
     setIsSaving(true);
@@ -105,7 +78,7 @@ export default function TechPricing() {
         }
 
       toast({ title: 'Tech Pricing Updated!', description: 'The new SaaS prices have been saved.' });
-      loadConfig();
+      forceRefresh();
     } catch (e: any) {
       toast({ variant: 'destructive', title: 'Update Failed', description: e.message });
     } finally {
@@ -136,6 +109,15 @@ export default function TechPricing() {
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {/* EFT Fee */}
+                        <FormField control={form.control} name="eftTopUpFee" render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>EFT Top-Up Fee (R)</FormLabel>
+                                <FormControl><Input type="number" {...field} step="0.01" /></FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )} />
+
                         {/* SEO */}
                         <FormField control={form.control} name="seoBooster" render={({ field }) => (
                             <FormItem>
