@@ -1,10 +1,14 @@
+
 'use client';
 
-import React, { useMemo } from 'react';
+import React, { useMemo, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { TrendingUp } from 'lucide-react';
+import { TrendingUp, AlertTriangle, Loader2 } from 'lucide-react';
 import { salesRoadmapLogic, budgetLogic } from './calculations';
+import Link from 'next/link';
+import { Button } from '@/components/ui/button';
 
 const formatCurrency = (value: number) => {
     if (typeof value !== 'number' || isNaN(value)) return 'R 0';
@@ -16,85 +20,86 @@ const formatNumber = (value: number) => {
     return value.toLocaleString();
 };
 
-const lineItems = [
-    { key: 'members', label: 'Members', format: formatNumber, isHeader: true, isBold: true },
-    // Revenue
-    { key: 'revenue', label: 'Revenue', isHeader: true },
-    { key: 'membershipRevenue', label: 'Membership Revenue', format: formatCurrency, indent: 1 },
-    { key: 'connectPlanRevenue', label: 'Connect Plan Revenue', format: formatCurrency, indent: 1 },
-    { key: 'mallRevenue', label: 'Mall Commission Revenue', format: formatCurrency, indent: 1 },
-    { key: 'techRevenue', label: 'Tech Services Revenue', format: formatCurrency, indent: 1 },
-    { key: 'totalRevenue', label: 'Total Revenue', format: formatCurrency, isBold: true, isPrimary: true },
-    // COGS
-    { key: 'cogs', label: 'Cost of Goods Sold (COGS)', isHeader: true },
-    { key: 'memberCommission', label: 'Member Commission Share', format: formatCurrency, indent: 1 },
-    { key: 'isaCommission', label: 'ISA Commission', format: formatCurrency, indent: 1 },
-    { key: 'totalCogs', label: 'Total COGS', format: formatCurrency, isBold: true },
-    // Gross Profit
-    { key: 'grossProfit', label: 'Gross Profit', format: formatCurrency, isBold: true, isPrimary: true },
-    // OPEX
-    { key: 'opex', label: 'Operating Expenses (OPEX)', isHeader: true },
-    { key: 'opexSalaries', label: 'Salaries & Wages', format: formatCurrency, indent: 1 },
-    { key: 'digitalAdvertising', label: 'Digital Advertising', format: formatCurrency, indent: 1 },
-    { key: 'contentCreation', label: 'Content Creation & SEO', format: formatCurrency, indent: 1 },
-    { key: 'eventsAndSponsorships', label: 'Events & Sponsorships', format: formatCurrency, indent: 1 },
-    { key: 'officeRental', label: 'Office Rental', format: formatCurrency, indent: 1 },
-    { key: 'utilities', label: 'Utilities', format: formatCurrency, indent: 1 },
-    { key: 'insurance', label: 'Insurance', format: formatCurrency, indent: 1 },
-    { key: 'legalAndProfessional', label: 'Legal & Professional Fees', format: formatCurrency, indent: 1 },
-    { key: 'bankCharges', label: 'Bank Charges', format: formatCurrency, indent: 1 },
-    { key: 'telephone', label: 'Telephone & Communications', format: formatCurrency, indent: 1 },
-    { key: 'travelAndEntertainment', label: 'Travel & Entertainment', format: formatCurrency, indent: 1 },
-    { key: 'platformCosts', label: 'Cloud Hosting & Infrastructure', format: formatCurrency, indent: 1 },
-    { key: 'softwareLicenses', label: 'Software Licenses', format: formatCurrency, indent: 1 },
-    { key: 'totalOpex', label: 'Total OPEX', format: formatCurrency, isBold: true },
-    // Net Profit
-    { key: 'netProfit', label: 'Net Profit', format: formatCurrency, isBold: true, isPrimary: true, isProfit: true },
-];
+function ForecastComponent() {
+    const searchParams = useSearchParams();
+    const dataString = searchParams.get('data');
 
-export default function ForecastPage() {
-    const salesInputs = {
-        startMonth: new Date().getMonth(),
-        startYear: new Date().getFullYear(),
-        forecastMonths: 36,
-        initialTransporters: 1000,
-        initialSuppliers: 500,
-        numberOfPowerPartners: 5,
-        opportunitiesPerPartner: 2000,
-        campaignConversionRate: 5,
-        campaignDuration: 6,
-        avgCustomersPerMember: 10,
-        customerConversionRate: 2,
-        customerConversionLag: 3,
-        numberOfIsas: 10,
-        referralsPerIsa: 50,
-        isaConversionRate: 10,
-    };
-
-    const budgetInputs = {
-        revenue: {
-            membershipFees: 250, connectPlanAdoptionRate: 15, avgConnectPlanFee: 50,
-            mallCommissionRate: 2.5, avgMallSpendPerMember: 1000, techServicesAdoptionRate: 10,
-            avgTechSpendPerMember: 150
-        },
-        cogs: { memberCommissionShare: 50, isaCommissionRate: 20 },
-        opexSalaries: [
-            { role: 'Executive Director', count: 1, salary: 150000 },
-            { role: 'Non-Executive Director', count: 2, salary: 25000 },
-            { role: 'Manager', count: 3, salary: 75000 },
-            { role: 'Admin', count: 4, salary: 35000 },
-        ],
-        opexOther: {
-            digitalAdvertising: 30000, contentCreation: 15000, eventsAndSponsorships: 10000,
-            officeRental: 35000, utilities: 15000, insurance: 5000,
-            legalAndProfessional: 10000, bankCharges: 2000, telephone: 8000,
-            travelAndEntertainment: 5000, platformCosts: 20000, softwareLicenses: 10000
+    const { salesInputs, budgetInputs } = useMemo(() => {
+        if (!dataString) return { salesInputs: null, budgetInputs: null };
+        try {
+            const decoded = decodeURIComponent(dataString);
+            return JSON.parse(decoded);
+        } catch (e) {
+            console.error("Failed to parse forecast data:", e);
+            return { salesInputs: null, budgetInputs: null };
         }
-    };
+    }, [dataString]);
     
-    const roadmapData = useMemo(() => salesRoadmapLogic(salesInputs), [salesInputs]);
-    const forecastData = useMemo(() => budgetLogic(roadmapData, budgetInputs), [roadmapData, budgetInputs]);
+    const roadmapData = useMemo(() => {
+        if (!salesInputs) return [];
+        return salesRoadmapLogic(salesInputs);
+    }, [salesInputs]);
 
+    const forecastData = useMemo(() => {
+        if (roadmapData.length === 0 || !budgetInputs) return [];
+        return budgetLogic(roadmapData, budgetInputs);
+    }, [roadmapData, budgetInputs]);
+
+    const lineItems = [
+        { key: 'members', label: 'Members', format: formatNumber, isHeader: true, isBold: true },
+        // Revenue
+        { key: 'revenue', label: 'Revenue', isHeader: true },
+        { key: 'membershipRevenue', label: 'Membership Revenue', format: formatCurrency, indent: 1 },
+        { key: 'connectPlanRevenue', label: 'Connect Plan Revenue', format: formatCurrency, indent: 1 },
+        { key: 'mallRevenue', label: 'Mall Commission Revenue', format: formatCurrency, indent: 1 },
+        { key: 'techRevenue', label: 'Tech Services Revenue', format: formatCurrency, indent: 1 },
+        { key: 'totalRevenue', label: 'Total Revenue', format: formatCurrency, isBold: true, isPrimary: true },
+        // COGS
+        { key: 'cogs', label: 'Cost of Goods Sold (COGS)', isHeader: true },
+        { key: 'memberCommission', label: 'Member Commission Share', format: formatCurrency, indent: 1 },
+        { key: 'isaCommission', label: 'ISA Commission', format: formatCurrency, indent: 1 },
+        { key: 'totalCogs', label: 'Total COGS', format: formatCurrency, isBold: true },
+        // Gross Profit
+        { key: 'grossProfit', label: 'Gross Profit', format: formatCurrency, isBold: true, isPrimary: true },
+        // OPEX
+        { key: 'opex', label: 'Operating Expenses (OPEX)', isHeader: true },
+        { key: 'opexSalaries', label: 'Salaries & Wages', format: formatCurrency, indent: 1 },
+        { key: 'digitalAdvertising', label: 'Digital Advertising', format: formatCurrency, indent: 1 },
+        { key: 'contentCreation', label: 'Content Creation & SEO', format: formatCurrency, indent: 1 },
+        { key: 'eventsAndSponsorships', label: 'Events & Sponsorships', format: formatCurrency, indent: 1 },
+        { key: 'officeRental', label: 'Office Rental', format: formatCurrency, indent: 1 },
+        { key: 'utilities', label: 'Utilities', format: formatCurrency, indent: 1 },
+        { key: 'insurance', label: 'Insurance', format: formatCurrency, indent: 1 },
+        { key: 'legalAndProfessional', label: 'Legal & Professional Fees', format: formatCurrency, indent: 1 },
+        { key: 'bankCharges', label: 'Bank Charges', format: formatCurrency, indent: 1 },
+        { key: 'telephone', label: 'Telephone & Communications', format: formatCurrency, indent: 1 },
+        { key: 'travelAndEntertainment', label: 'Travel & Entertainment', format: formatCurrency, indent: 1 },
+        { key: 'platformCosts', label: 'Cloud Hosting & Infrastructure', format: formatCurrency, indent: 1 },
+        { key: 'softwareLicenses', label: 'Software Licenses', format: formatCurrency, indent: 1 },
+        { key: 'totalOpex', label: 'Total OPEX', format: formatCurrency, isBold: true },
+        // Net Profit
+        { key: 'netProfit', label: 'Net Profit', format: formatCurrency, isBold: true, isPrimary: true, isProfit: true },
+    ];
+
+    if (!salesInputs || !budgetInputs || forecastData.length === 0) {
+        return (
+            <Card className="w-full max-w-2xl mx-auto">
+                <CardHeader className="text-center">
+                    <AlertTriangle className="mx-auto h-12 w-12 text-destructive" />
+                    <CardTitle>No Forecast Data</CardTitle>
+                    <CardDescription>
+                        It looks like you haven't generated a forecast yet. Please go to the budget page to enter your assumptions first.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent className="text-center">
+                    <Button asChild>
+                        <Link href="/backend?view=budget">Go to Budget Page</Link>
+                    </Button>
+                </CardContent>
+            </Card>
+        );
+    }
+    
     const financialYears = useMemo(() => {
         const years = [];
         for (let i = 0; i < forecastData.length; i += 12) {
@@ -139,7 +144,7 @@ export default function ForecastPage() {
         return total;
 
     }, [forecastData]);
-
+    
     return (
         <Card>
           <CardHeader>
@@ -151,7 +156,6 @@ export default function ForecastPage() {
                 <TableHeader>
                     <TableRow>
                         <TableHead className="sticky left-0 bg-card z-10 w-[250px]">Line Item</TableHead>
-                        <TableHead className="text-right bg-primary/20 font-extrabold">Grand Total</TableHead>
                         {financialYears.map((fy) => (
                            <React.Fragment key={fy.yearLabel}>
                                <TableHead className="text-right bg-primary/10 font-bold">{fy.yearLabel} Total</TableHead>
@@ -160,6 +164,7 @@ export default function ForecastPage() {
                                ))}
                            </React.Fragment> 
                         ))}
+                         <TableHead className="text-right bg-primary/20 font-extrabold">Grand Total</TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -168,11 +173,6 @@ export default function ForecastPage() {
                             {/* Line Item Label */}
                             <TableCell className={`sticky left-0 bg-card z-10 ${item.isBold ? 'font-semibold' : ''} ${item.isPrimary ? 'text-primary' : ''} ${item.indent ? `pl-${item.indent * 4}` : ''}`}>
                                 {item.label}
-                            </TableCell>
-
-                            {/* Grand Total Column */}
-                             <TableCell className={`text-right bg-primary/20 font-extrabold font-mono text-base ${item.isProfit && grandTotal?.[item.key] < 0 ? 'text-destructive' : ''}`}>
-                                 {item.format && grandTotal ? item.format(grandTotal[item.key]) : ''}
                             </TableCell>
 
                             {financialYears.map((fy) => (
@@ -189,6 +189,11 @@ export default function ForecastPage() {
                                     ))}
                                 </React.Fragment>
                             ))}
+                            
+                             {/* Grand Total Column */}
+                             <TableCell className={`text-right bg-primary/20 font-extrabold font-mono text-base ${item.isProfit && grandTotal?.[item.key] < 0 ? 'text-destructive' : ''}`}>
+                                 {item.format && grandTotal ? item.format(grandTotal[item.key]) : ''}
+                            </TableCell>
                         </TableRow>
                     ))}
                 </TableBody>
@@ -197,3 +202,13 @@ export default function ForecastPage() {
         </Card>
     );
 }
+
+export default function ForecastPage() {
+    return (
+        <Suspense fallback={<div className="flex justify-center items-center min-h-[calc(100vh-8rem)]"><Loader2 className="h-16 w-16 animate-spin text-primary" /></div>}>
+            <ForecastComponent />
+        </Suspense>
+    );
+}
+
+    
