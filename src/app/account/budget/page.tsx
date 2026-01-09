@@ -11,6 +11,8 @@ import { Sheet, TrendingUp, DollarSign, Users, Percent, Handshake, Map } from 'l
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { Separator } from '@/components/ui/separator';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+
 
 const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
@@ -18,7 +20,7 @@ export default function BudgetPage() {
     const router = useRouter();
     const { toast } = useToast();
 
-    const { register, control, handleSubmit, watch } = useForm({
+    const form = useForm({
         defaultValues: {
             startMonth: new Date().getMonth(),
             startYear: new Date().getFullYear(),
@@ -64,6 +66,8 @@ export default function BudgetPage() {
         }
     });
 
+    const { control, register, handleSubmit, watch } = form;
+
     const { fields: staffFields } = useFieldArray({
         control,
         name: "budgetInputs.opexSalaries"
@@ -91,126 +95,128 @@ export default function BudgetPage() {
     };
 
     return (
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
-            <Card>
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2"><Sheet /> Budget & Forecast Assumptions</CardTitle>
-                    <CardDescription>Enter your financial assumptions here. Click the button at the bottom to generate the income statement forecast.</CardDescription>
-                </CardHeader>
-            </Card>
-
-            <div className="space-y-8">
-                {/* Forecast Settings */}
+        <Form {...form}>
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
                 <Card>
-                    <CardHeader><CardTitle>Forecast Settings</CardTitle></CardHeader>
-                    <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <div>
-                            <Label htmlFor="start-month">Start Month</Label>
-                            <Select defaultValue={String(watch('startMonth'))} onValueChange={v => control.register('startMonth').onChange({ target: { value: Number(v) } })}>
-                                <SelectTrigger id="start-month"><SelectValue /></SelectTrigger>
-                                <SelectContent>{monthNames.map((m, i) => <SelectItem key={i} value={String(i)}>{m}</SelectItem>)}</SelectContent>
-                            </Select>
-                        </div>
-                        <div>
-                            <Label htmlFor="start-year">Start Year</Label>
-                            <Input id="start-year" type="number" {...register('startYear')} />
-                        </div>
-                        <div>
-                            <Label htmlFor="forecast-months">Months to Forecast</Label>
-                            <Input id="forecast-months" type="number" {...register('forecastMonths')} />
-                        </div>
-                    </CardContent>
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2"><Sheet /> Budget & Forecast Assumptions</CardTitle>
+                        <CardDescription>Enter your financial assumptions here. Click the button at the bottom to generate the income statement forecast.</CardDescription>
+                    </CardHeader>
                 </Card>
 
-                {/* Sales Roadmap */}
-                <Card>
-                    <CardHeader><CardTitle className="flex items-center gap-2"><Map />Sales Roadmap Assumptions</CardTitle></CardHeader>
-                    <CardContent className="space-y-6">
-                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            <FormField name="salesInputs.initialTransporters" control={control} render={({field}) => <FormItem><FormLabel>Initial Transporters</FormLabel><FormControl><Input type="number" {...field}/></FormControl></FormItem>} />
-                            <FormField name="salesInputs.initialSuppliers" control={control} render={({field}) => <FormItem><FormLabel>Initial Suppliers</FormLabel><FormControl><Input type="number" {...field}/></FormControl></FormItem>} />
-                            <FormField name="salesInputs.numberOfPowerPartners" control={control} render={({field}) => <FormItem><FormLabel># Power Partners</FormLabel><FormControl><Input type="number" {...field}/></FormControl></FormItem>} />
-                            <FormField name="salesInputs.opportunitiesPerPartner" control={control} render={({field}) => <FormItem><FormLabel>Opps per Partner</FormLabel><FormControl><Input type="number" {...field}/></FormControl></FormItem>} />
-                            <FormField name="salesInputs.campaignConversionRate" control={control} render={({field}) => <FormItem><FormLabel>Campaign Conversion (%)</FormLabel><FormControl><Input type="number" {...field}/></FormControl></FormItem>} />
-                            <FormField name="salesInputs.campaignDuration" control={control} render={({field}) => <FormItem><FormLabel>Campaign Duration (mths)</FormLabel><FormControl><Input type="number" {...field}/></FormControl></FormItem>} />
-                            <FormField name="salesInputs.avgCustomersPerMember" control={control} render={({field}) => <FormItem><FormLabel>Avg Customers / Member</FormLabel><FormControl><Input type="number" {...field}/></FormControl></FormItem>} />
-                            <FormField name="salesInputs.customerConversionRate" control={control} render={({field}) => <FormItem><FormLabel>Customer Conversion (%)</FormLabel><FormControl><Input type="number" {...field}/></FormControl></FormItem>} />
-                            <FormField name="salesInputs.customerConversionLag" control={control} render={({field}) => <FormItem><FormLabel>Conversion Lag (mths)</FormLabel><FormControl><Input type="number" {...field}/></FormControl></FormItem>} />
-                            <FormField name="salesInputs.numberOfIsas" control={control} render={({field}) => <FormItem><FormLabel># of ISAs</FormLabel><FormControl><Input type="number" {...field}/></FormControl></FormItem>} />
-                            <FormField name="salesInputs.referralsPerIsa" control={control} render={({field}) => <FormItem><FormLabel>Referrals per ISA</FormLabel><FormControl><Input type="number" {...field}/></FormControl></FormItem>} />
-                            <FormField name="salesInputs.isaConversionRate" control={control} render={({field}) => <FormItem><FormLabel>ISA Conversion (%)</FormLabel><FormControl><Input type="number" {...field}/></FormControl></FormItem>} />
-                        </div>
-                    </CardContent>
-                </Card>
+                <div className="space-y-8">
+                    {/* Forecast Settings */}
+                    <Card>
+                        <CardHeader><CardTitle>Forecast Settings</CardTitle></CardHeader>
+                        <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div>
+                                <Label htmlFor="start-month">Start Month</Label>
+                                <Select defaultValue={String(watch('startMonth'))} onValueChange={v => control.register('startMonth').onChange({ target: { value: Number(v) } })}>
+                                    <SelectTrigger id="start-month"><SelectValue /></SelectTrigger>
+                                    <SelectContent>{monthNames.map((m, i) => <SelectItem key={i} value={String(i)}>{m}</SelectItem>)}</SelectContent>
+                                </Select>
+                            </div>
+                            <div>
+                                <Label htmlFor="start-year">Start Year</Label>
+                                <Input id="start-year" type="number" {...register('startYear')} />
+                            </div>
+                            <div>
+                                <Label htmlFor="forecast-months">Months to Forecast</Label>
+                                <Input id="forecast-months" type="number" {...register('forecastMonths')} />
+                            </div>
+                        </CardContent>
+                    </Card>
 
-                {/* Revenue */}
-                <Card>
-                    <CardHeader><CardTitle className="flex items-center gap-2"><DollarSign />Revenue Assumptions</CardTitle></CardHeader>
-                    <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                        <FormField name="budgetInputs.revenue.membershipFees" control={control} render={({field}) => <FormItem><FormLabel>Avg. Membership Fee</FormLabel><FormControl><Input type="number" {...field}/></FormControl></FormItem>} />
-                        <FormField name="budgetInputs.revenue.connectPlanAdoptionRate" control={control} render={({field}) => <FormItem><FormLabel>Connect Plan Adoption (%)</FormLabel><FormControl><Input type="number" {...field}/></FormControl></FormItem>} />
-                        <FormField name="budgetInputs.revenue.avgConnectPlanFee" control={control} render={({field}) => <FormItem><FormLabel>Avg. Connect Plan Fee</FormLabel><FormControl><Input type="number" {...field}/></FormControl></FormItem>} />
-                        <FormField name="budgetInputs.revenue.mallCommissionRate" control={control} render={({field}) => <FormItem><FormLabel>Mall Commission (%)</FormLabel><FormControl><Input type="number" {...field}/></FormControl></FormItem>} />
-                        <FormField name="budgetInputs.revenue.avgMallSpendPerMember" control={control} render={({field}) => <FormItem><FormLabel>Avg. Mall Spend / Member</FormLabel><FormControl><Input type="number" {...field}/></FormControl></FormItem>} />
-                        <FormField name="budgetInputs.revenue.techServicesAdoptionRate" control={control} render={({field}) => <FormItem><FormLabel>Tech Services Adoption (%)</FormLabel><FormControl><Input type="number" {...field}/></FormControl></FormItem>} />
-                        <FormField name="budgetInputs.revenue.avgTechSpendPerMember" control={control} render={({field}) => <FormItem><FormLabel>Avg. Tech Spend / Member</FormLabel><FormControl><Input type="number" {...field}/></FormControl></FormItem>} />
-                    </CardContent>
-                </Card>
+                    {/* Sales Roadmap */}
+                    <Card>
+                        <CardHeader><CardTitle className="flex items-center gap-2"><Map />Sales Roadmap Assumptions</CardTitle></CardHeader>
+                        <CardContent className="space-y-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                <FormField name="salesInputs.initialTransporters" control={control} render={({field}) => <FormItem><FormLabel>Initial Transporters</FormLabel><FormControl><Input type="number" {...field}/></FormControl></FormItem>} />
+                                <FormField name="salesInputs.initialSuppliers" control={control} render={({field}) => <FormItem><FormLabel>Initial Suppliers</FormLabel><FormControl><Input type="number" {...field}/></FormControl></FormItem>} />
+                                <FormField name="salesInputs.numberOfPowerPartners" control={control} render={({field}) => <FormItem><FormLabel># Power Partners</FormLabel><FormControl><Input type="number" {...field}/></FormControl></FormItem>} />
+                                <FormField name="salesInputs.opportunitiesPerPartner" control={control} render={({field}) => <FormItem><FormLabel>Opps per Partner</FormLabel><FormControl><Input type="number" {...field}/></FormControl></FormItem>} />
+                                <FormField name="salesInputs.campaignConversionRate" control={control} render={({field}) => <FormItem><FormLabel>Campaign Conversion (%)</FormLabel><FormControl><Input type="number" {...field}/></FormControl></FormItem>} />
+                                <FormField name="salesInputs.campaignDuration" control={control} render={({field}) => <FormItem><FormLabel>Campaign Duration (mths)</FormLabel><FormControl><Input type="number" {...field}/></FormControl></FormItem>} />
+                                <FormField name="salesInputs.avgCustomersPerMember" control={control} render={({field}) => <FormItem><FormLabel>Avg Customers / Member</FormLabel><FormControl><Input type="number" {...field}/></FormControl></FormItem>} />
+                                <FormField name="salesInputs.customerConversionRate" control={control} render={({field}) => <FormItem><FormLabel>Customer Conversion (%)</FormLabel><FormControl><Input type="number" {...field}/></FormControl></FormItem>} />
+                                <FormField name="salesInputs.customerConversionLag" control={control} render={({field}) => <FormItem><FormLabel>Conversion Lag (mths)</FormLabel><FormControl><Input type="number" {...field}/></FormControl></FormItem>} />
+                                <FormField name="salesInputs.numberOfIsas" control={control} render={({field}) => <FormItem><FormLabel># of ISAs</FormLabel><FormControl><Input type="number" {...field}/></FormControl></FormItem>} />
+                                <FormField name="salesInputs.referralsPerIsa" control={control} render={({field}) => <FormItem><FormLabel>Referrals per ISA</FormLabel><FormControl><Input type="number" {...field}/></FormControl></FormItem>} />
+                                <FormField name="salesInputs.isaConversionRate" control={control} render={({field}) => <FormItem><FormLabel>ISA Conversion (%)</FormLabel><FormControl><Input type="number" {...field}/></FormControl></FormItem>} />
+                            </div>
+                        </CardContent>
+                    </Card>
 
-                {/* COGS */}
-                 <Card>
-                    <CardHeader><CardTitle className="flex items-center gap-2"><Percent />Cost of Goods Sold (COGS)</CardTitle></CardHeader>
-                    <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                         <FormField name="budgetInputs.cogs.memberCommissionShare" control={control} render={({field}) => <FormItem><FormLabel>Member Commission Share (%)</FormLabel><FormControl><Input type="number" {...field}/></FormControl></FormItem>} />
-                         <FormField name="budgetInputs.cogs.isaCommissionRate" control={control} render={({field}) => <FormItem><FormLabel>ISA Commission Rate (%)</FormLabel><FormControl><Input type="number" {...field}/></FormControl></FormItem>} />
-                    </CardContent>
-                </Card>
+                    {/* Revenue */}
+                    <Card>
+                        <CardHeader><CardTitle className="flex items-center gap-2"><DollarSign />Revenue Assumptions</CardTitle></CardHeader>
+                        <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                            <FormField name="budgetInputs.revenue.membershipFees" control={control} render={({field}) => <FormItem><FormLabel>Avg. Membership Fee</FormLabel><FormControl><Input type="number" {...field}/></FormControl></FormItem>} />
+                            <FormField name="budgetInputs.revenue.connectPlanAdoptionRate" control={control} render={({field}) => <FormItem><FormLabel>Connect Plan Adoption (%)</FormLabel><FormControl><Input type="number" {...field}/></FormControl></FormItem>} />
+                            <FormField name="budgetInputs.revenue.avgConnectPlanFee" control={control} render={({field}) => <FormItem><FormLabel>Avg. Connect Plan Fee</FormLabel><FormControl><Input type="number" {...field}/></FormControl></FormItem>} />
+                            <FormField name="budgetInputs.revenue.mallCommissionRate" control={control} render={({field}) => <FormItem><FormLabel>Mall Commission (%)</FormLabel><FormControl><Input type="number" {...field}/></FormControl></FormItem>} />
+                            <FormField name="budgetInputs.revenue.avgMallSpendPerMember" control={control} render={({field}) => <FormItem><FormLabel>Avg. Mall Spend / Member</FormLabel><FormControl><Input type="number" {...field}/></FormControl></FormItem>} />
+                            <FormField name="budgetInputs.revenue.techServicesAdoptionRate" control={control} render={({field}) => <FormItem><FormLabel>Tech Services Adoption (%)</FormLabel><FormControl><Input type="number" {...field}/></FormControl></FormItem>} />
+                            <FormField name="budgetInputs.revenue.avgTechSpendPerMember" control={control} render={({field}) => <FormItem><FormLabel>Avg. Tech Spend / Member</FormLabel><FormControl><Input type="number" {...field}/></FormControl></FormItem>} />
+                        </CardContent>
+                    </Card>
+
+                    {/* COGS */}
+                    <Card>
+                        <CardHeader><CardTitle className="flex items-center gap-2"><Percent />Cost of Goods Sold (COGS)</CardTitle></CardHeader>
+                        <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <FormField name="budgetInputs.cogs.memberCommissionShare" control={control} render={({field}) => <FormItem><FormLabel>Member Commission Share (%)</FormLabel><FormControl><Input type="number" {...field}/></FormControl></FormItem>} />
+                            <FormField name="budgetInputs.cogs.isaCommissionRate" control={control} render={({field}) => <FormItem><FormLabel>ISA Commission Rate (%)</FormLabel><FormControl><Input type="number" {...field}/></FormControl></FormItem>} />
+                        </CardContent>
+                    </Card>
+                    
+                    {/* OPEX */}
+                    <Card>
+                        <CardHeader><CardTitle className="flex items-center gap-2"><Users />Operating Expenses (OPEX)</CardTitle></CardHeader>
+                        <CardContent className="space-y-6">
+                            <div>
+                                <h3 className="font-semibold text-lg">Salaries (Monthly)</h3>
+                                <div className="mt-4 space-y-2">
+                                    {staffFields.map((item, index) => (
+                                        <div key={item.id} className="grid grid-cols-3 gap-4">
+                                            <Input value={item.role} disabled />
+                                            <FormField name={`budgetInputs.opexSalaries.${index}.count`} control={control} render={({field}) => <FormItem><FormControl><Input type="number" {...field}/></FormControl></FormItem>} />
+                                            <FormField name={`budgetInputs.opexSalaries.${index}.salary`} control={control} render={({field}) => <FormItem><FormControl><Input type="number" {...field}/></FormControl></FormItem>} />
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                            <Separator />
+                            <div>
+                                <h3 className="font-semibold text-lg">Other Expenses (Monthly)</h3>
+                                <div className="mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                                    <FormField name="budgetInputs.opexOther.digitalAdvertising" control={control} render={({field}) => <FormItem><FormLabel>Digital Advertising</FormLabel><FormControl><Input type="number" {...field}/></FormControl></FormItem>} />
+                                    <FormField name="budgetInputs.opexOther.contentCreation" control={control} render={({field}) => <FormItem><FormLabel>Content & SEO</FormLabel><FormControl><Input type="number" {...field}/></FormControl></FormItem>} />
+                                    <FormField name="budgetInputs.opexOther.eventsAndSponsorships" control={control} render={({field}) => <FormItem><FormLabel>Events</FormLabel><FormControl><Input type="number" {...field}/></FormControl></FormItem>} />
+                                    <FormField name="budgetInputs.opexOther.officeRental" control={control} render={({field}) => <FormItem><FormLabel>Office Rental</FormLabel><FormControl><Input type="number" {...field}/></FormControl></FormItem>} />
+                                    <FormField name="budgetInputs.opexOther.utilities" control={control} render={({field}) => <FormItem><FormLabel>Utilities</FormLabel><FormControl><Input type="number" {...field}/></FormControl></FormItem>} />
+                                    <FormField name="budgetInputs.opexOther.insurance" control={control} render={({field}) => <FormItem><FormLabel>Insurance</FormLabel><FormControl><Input type="number" {...field}/></FormControl></FormItem>} />
+                                    <FormField name="budgetInputs.opexOther.legalAndProfessional" control={control} render={({field}) => <FormItem><FormLabel>Legal & Pro Fees</FormLabel><FormControl><Input type="number" {...field}/></FormControl></FormItem>} />
+                                    <FormField name="budgetInputs.opexOther.bankCharges" control={control} render={({field}) => <FormItem><FormLabel>Bank Charges</FormLabel><FormControl><Input type="number" {...field}/></FormControl></FormItem>} />
+                                    <FormField name="budgetInputs.opexOther.telephone" control={control} render={({field}) => <FormItem><FormLabel>Telephone</FormLabel><FormControl><Input type="number" {...field}/></FormControl></FormItem>} />
+                                    <FormField name="budgetInputs.opexOther.travelAndEntertainment" control={control} render={({field}) => <FormItem><FormLabel>Travel</FormLabel><FormControl><Input type="number" {...field}/></FormControl></FormItem>} />
+                                    <FormField name="budgetInputs.opexOther.platformCosts" control={control} render={({field}) => <FormItem><FormLabel>Platform Hosting</FormLabel><FormControl><Input type="number" {...field}/></FormControl></FormItem>} />
+                                    <FormField name="budgetInputs.opexOther.softwareLicenses" control={control} render={({field}) => <FormItem><FormLabel>Software Licenses</FormLabel><FormControl><Input type="number" {...field}/></FormControl></FormItem>} />
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                </div>
                 
-                {/* OPEX */}
-                <Card>
-                    <CardHeader><CardTitle className="flex items-center gap-2"><Users />Operating Expenses (OPEX)</CardTitle></CardHeader>
-                    <CardContent className="space-y-6">
-                        <div>
-                            <h3 className="font-semibold text-lg">Salaries (Monthly)</h3>
-                            <div className="mt-4 space-y-2">
-                                {staffFields.map((item, index) => (
-                                    <div key={item.id} className="grid grid-cols-3 gap-4">
-                                        <Input value={item.role} disabled />
-                                        <FormField name={`budgetInputs.opexSalaries.${index}.count`} control={control} render={({field}) => <FormItem><FormControl><Input type="number" {...field}/></FormControl></FormItem>} />
-                                        <FormField name={`budgetInputs.opexSalaries.${index}.salary`} control={control} render={({field}) => <FormItem><FormControl><Input type="number" {...field}/></FormControl></FormItem>} />
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                        <Separator />
-                         <div>
-                            <h3 className="font-semibold text-lg">Other Expenses (Monthly)</h3>
-                            <div className="mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                                <FormField name="budgetInputs.opexOther.digitalAdvertising" control={control} render={({field}) => <FormItem><FormLabel>Digital Advertising</FormLabel><FormControl><Input type="number" {...field}/></FormControl></FormItem>} />
-                                <FormField name="budgetInputs.opexOther.contentCreation" control={control} render={({field}) => <FormItem><FormLabel>Content & SEO</FormLabel><FormControl><Input type="number" {...field}/></FormControl></FormItem>} />
-                                <FormField name="budgetInputs.opexOther.eventsAndSponsorships" control={control} render={({field}) => <FormItem><FormLabel>Events</FormLabel><FormControl><Input type="number" {...field}/></FormControl></FormItem>} />
-                                <FormField name="budgetInputs.opexOther.officeRental" control={control} render={({field}) => <FormItem><FormLabel>Office Rental</FormLabel><FormControl><Input type="number" {...field}/></FormControl></FormItem>} />
-                                <FormField name="budgetInputs.opexOther.utilities" control={control} render={({field}) => <FormItem><FormLabel>Utilities</FormLabel><FormControl><Input type="number" {...field}/></FormControl></FormItem>} />
-                                <FormField name="budgetInputs.opexOther.insurance" control={control} render={({field}) => <FormItem><FormLabel>Insurance</FormLabel><FormControl><Input type="number" {...field}/></FormControl></FormItem>} />
-                                <FormField name="budgetInputs.opexOther.legalAndProfessional" control={control} render={({field}) => <FormItem><FormLabel>Legal & Pro Fees</FormLabel><FormControl><Input type="number" {...field}/></FormControl></FormItem>} />
-                                <FormField name="budgetInputs.opexOther.bankCharges" control={control} render={({field}) => <FormItem><FormLabel>Bank Charges</FormLabel><FormControl><Input type="number" {...field}/></FormControl></FormItem>} />
-                                <FormField name="budgetInputs.opexOther.telephone" control={control} render={({field}) => <FormItem><FormLabel>Telephone</FormLabel><FormControl><Input type="number" {...field}/></FormControl></FormItem>} />
-                                <FormField name="budgetInputs.opexOther.travelAndEntertainment" control={control} render={({field}) => <FormItem><FormLabel>Travel</FormLabel><FormControl><Input type="number" {...field}/></FormControl></FormItem>} />
-                                <FormField name="budgetInputs.opexOther.platformCosts" control={control} render={({field}) => <FormItem><FormLabel>Platform Hosting</FormLabel><FormControl><Input type="number" {...field}/></FormControl></FormItem>} />
-                                <FormField name="budgetInputs.opexOther.softwareLicenses" control={control} render={({field}) => <FormItem><FormLabel>Software Licenses</FormLabel><FormControl><Input type="number" {...field}/></FormControl></FormItem>} />
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
-
-            </div>
-            
-             <div className="mt-8 flex justify-end">
-                <Button type="submit">
-                    <TrendingUp className="mr-2 h-4 w-4"/>
-                    Generate Income Statement
-                </Button>
-            </div>
-        </form>
+                <div className="mt-8 flex justify-end">
+                    <Button type="submit">
+                        <TrendingUp className="mr-2 h-4 w-4"/>
+                        Generate Income Statement
+                    </Button>
+                </div>
+            </form>
+        </Form>
     );
 }
