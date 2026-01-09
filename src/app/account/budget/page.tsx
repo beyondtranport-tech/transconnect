@@ -1,17 +1,19 @@
 'use client';
 
-import { useState, useMemo } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { useState } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import { Sheet, DollarSign, Users, ShoppingCart, Percent } from 'lucide-react';
+import { Sheet, Save } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useToast } from '@/hooks/use-toast';
+
 
 const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
 export default function BudgetPage() {
+    const { toast } = useToast();
     const [startMonth, setStartMonth] = useState(new Date().getMonth());
     const [startYear, setStartYear] = useState(new Date().getFullYear());
     const [forecastMonths, setForecastMonths] = useState(36);
@@ -40,6 +42,13 @@ export default function BudgetPage() {
             [role]: { ...prev[role], [field]: Number(value) || 0 }
         }));
     };
+
+    const handleSave = (section: string) => {
+        toast({
+            title: `Assumptions Saved`,
+            description: `Your ${section} assumptions have been saved.`,
+        });
+    }
 
     return (
         <div className="space-y-8">
@@ -72,6 +81,11 @@ export default function BudgetPage() {
                             <Input id="forecast-months" type="number" value={forecastMonths} onChange={e => setForecastMonths(Number(e.target.value))} className="w-[180px]" />
                         </div>
                     </CardContent>
+                    <CardFooter>
+                        <Button onClick={() => handleSave('Forecast Settings')}>
+                            <Save className="mr-2 h-4 w-4" /> Save Settings
+                        </Button>
+                    </CardFooter>
                 </Card>
                  <Card className="lg:col-span-2">
                      <CardHeader>
@@ -113,6 +127,11 @@ export default function BudgetPage() {
                             </div>
                          </div>
                      </CardContent>
+                      <CardFooter>
+                        <Button onClick={() => handleSave('Staff')}>
+                            <Save className="mr-2 h-4 w-4" /> Save Staff Assumptions
+                        </Button>
+                    </CardFooter>
                 </Card>
             </div>
              <Card>
@@ -155,6 +174,11 @@ export default function BudgetPage() {
                         </div>
                     </div>
                  </CardContent>
+                 <CardFooter>
+                    <Button onClick={() => handleSave('Membership')}>
+                        <Save className="mr-2 h-4 w-4" /> Save Membership Assumptions
+                    </Button>
+                </CardFooter>
             </Card>
         </div>
     );
