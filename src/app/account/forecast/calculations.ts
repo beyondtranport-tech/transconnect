@@ -56,17 +56,39 @@ export function budgetLogic(roadmapData: any[], budgetInputs: any) {
         const totalCogs = memberCommission + isaCommission;
 
         const grossProfit = totalRevenue - totalCogs;
-        const netProfit = grossProfit - totalMonthlyOpex;
+        
+        // OPEX Calculation
+        const opexSalaries = monthlyOpexSalaries;
+        const opexOther = budgetInputs.opexOther; // This is already an object of monthly costs
+        const totalOpex = opexSalaries + Object.values(opexOther).reduce((sum: number, value: any) => sum + Number(value), 0);
+        
+        const netProfit = grossProfit - totalOpex;
 
         forecastData.push({
             month: row.month,
             year: row.year,
             members: members,
-            revenue: totalRevenue,
-            cogs: totalCogs,
-            grossProfit: grossProfit,
-            opex: totalMonthlyOpex,
-            netProfit: netProfit,
+            
+            // Revenue Breakdown
+            membershipRevenue,
+            connectPlanRevenue,
+            mallRevenue,
+            techRevenue,
+            totalRevenue,
+
+            // COGS Breakdown
+            memberCommission,
+            isaCommission,
+            totalCogs,
+
+            grossProfit,
+
+            // OPEX Breakdown
+            opexSalaries,
+            ...opexOther, // Spread the individual other opex items
+            totalOpex,
+
+            netProfit,
         });
     }
 
