@@ -25,6 +25,7 @@ import {
   Wallet,
   Gift,
   Activity,
+  Sheet,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -192,6 +193,12 @@ function AccountPageContent() {
                 <SidebarMenuButton tooltip="Billing" isActive={activeView === 'billing'} onClick={() => router.push('/account?view=billing', { scroll: false })}>
                   <CreditCard />
                   <span>Billing</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton tooltip="Financial" isActive={activeView === 'financial'} onClick={() => router.push('/account?view=financial', { scroll: false })}>
+                  <Sheet />
+                  <span>Financial</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
