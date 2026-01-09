@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -11,6 +10,8 @@ import {
   SidebarMenuButton,
   SidebarFooter,
   SidebarInset,
+  SidebarMenuSub,
+  SidebarMenuSubButton,
 } from '@/components/ui/sidebar';
 import {
   Users,
@@ -43,7 +44,8 @@ import BillingContent from './billing-content';
 import WalletContent from './wallet-content';
 import RewardsContent from './rewards';
 import ActivityFeed from './activity-feed';
-import FinancialContent from './financial-content';
+import BudgetPage from './budget/page';
+import ForecastPage from './forecast/page';
 
 
 function DocumentsContent() {
@@ -108,8 +110,10 @@ function AccountPageContent() {
         return <WalletContent />;
       case 'billing':
         return <BillingContent />;
-      case 'financial':
-        return <FinancialContent />;
+      case 'budget':
+        return <BudgetPage />;
+      case 'forecast':
+        return <ForecastPage />;
       case 'rewards':
         return <RewardsContent />;
       case 'documents':
@@ -196,10 +200,18 @@ function AccountPageContent() {
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Financial" isActive={activeView === 'financial'} onClick={() => router.push('/account?view=financial', { scroll: false })}>
+                <SidebarMenuButton tooltip="Financial" isActive={activeView.startsWith('budget') || activeView.startsWith('forecast')}>
                   <Sheet />
                   <span>Financial</span>
                 </SidebarMenuButton>
+                <SidebarMenuSub>
+                    <SidebarMenuSubButton isActive={activeView === 'budget'} onClick={() => router.push('/account?view=budget', { scroll: false })}>
+                      Budget
+                    </SidebarMenuSubButton>
+                    <SidebarMenuSubButton isActive={activeView === 'forecast'} onClick={() => router.push('/account?view=forecast', { scroll: false })}>
+                      Forecast
+                    </SidebarMenuSubButton>
+                </SidebarMenuSub>
               </SidebarMenuItem>
               <SidebarMenuItem>
                 <SidebarMenuButton tooltip="Documents" isActive={activeView === 'documents'} onClick={() => router.push('/account?view=documents', { scroll: false })}>
