@@ -14,6 +14,11 @@ const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR', notation: 'compact', maximumFractionDigits: 0 }).format(value);
 };
 
+const formatNumber = (value: number) => {
+    if (typeof value !== 'number' || isNaN(value)) return '0';
+    return value.toLocaleString();
+};
+
 function ForecastComponent() {
     const searchParams = useSearchParams();
     const dataString = searchParams.get('data');
@@ -29,7 +34,6 @@ function ForecastComponent() {
         }
     }, [dataString]);
     
-    // All hooks are now called unconditionally at the top level.
     const roadmapData = useMemo(() => {
         if (!salesInputs) return [];
         return salesRoadmapLogic(salesInputs);
@@ -46,9 +50,7 @@ function ForecastComponent() {
         
         forecastData.forEach(row => {
             if (!totals[row.year]) {
-                totals[row.year] = {
-                    revenue: 0, cogs: 0, grossProfit: 0, opex: 0, netProfit: 0, members: 0
-                };
+                totals[row.year] = { revenue: 0, cogs: 0, grossProfit: 0, opex: 0, netProfit: 0, members: 0 };
             }
             totals[row.year].revenue += row.revenue;
             totals[row.year].cogs += row.cogs;
@@ -60,7 +62,15 @@ function ForecastComponent() {
         return totals;
     }, [forecastData]);
 
-    // This conditional check happens *after* all hooks have been called.
+    const lineItems = [
+        { key: 'members', label: 'Members', format: formatNumber },
+        { key: 'revenue', label: 'Revenue', format: formatCurrency },
+        { key: 'cogs', label: 'COGS', format: formatCurrency },
+        { key: 'grossProfit', label: 'Gross Profit', format: formatCurrency, isBold: true, isPrimary: true },
+        { key: 'opex', label: 'OPEX', format: formatCurrency },
+        { key: 'netProfit', label: 'Net Profit', format: formatCurrency, isBold: true, isPrimary: true, isProfit: true },
+    ];
+
     if (!salesInputs || !budgetInputs || forecastData.length === 0) {
         return (
             <Card className="w-full max-w-2xl mx-auto">
@@ -79,60 +89,47 @@ function ForecastComponent() {
             </Card>
         );
     }
+    
+    // Get unique years for column grouping
+    const years = [...new Set(forecastData.map(d => d.year))];
 
     return (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2"><TrendingUp /> Income Statement Forecast</CardTitle>
-            <CardDescription>This is a forecast based on the assumptions from the budget page.</CardDescription>
+            <CardDescription>This is a forecast based on the assumptions from the budget page. All figures in ZAR.</CardDescription>
           </CardHeader>
           <CardContent className="overflow-x-auto">
             <Table>
                 <TableHeader>
                     <TableRow>
-                        <TableHead className="sticky left-0 bg-card w-[100px]">Month</TableHead>
-                        <TableHead className="text-right">Members</TableHead>
-                        <TableHead className="text-right">Revenue</TableHead>
-                        <TableHead className="text-right">COGS</TableHead>
-                        <TableHead className="text-right text-primary font-semibold">Gross Profit</TableHead>
-                        <TableHead className="text-right">OPEX</TableHead>
-                        <TableHead className="text-right text-primary font-bold">Net Profit</TableHead>
+                        <TableHead className="sticky left-0 bg-card z-10 w-[150px]">Line Item</TableHead>
+                        {forecastData.map((col) => (
+                           <TableHead key={col.month} className="text-right">{col.month}</TableHead>
+                        ))}
+                        {years.map(year => (
+                            <TableHead key={`total-${year}`} className="text-right bg-primary/10 font-bold">Total {year}</TableHead>
+                        ))}
                     </TableRow>
                 </TableHeader>
                 <TableBody>
-                    {forecastData.map((row, index) => {
-                        const isLastOfMonthInYear = row.month.startsWith('Dec');
-                        const totalRow = yearlyTotals[row.year];
-                        
-                        return (
-                            <React.Fragment key={index}>
-                                <TableRow>
-                                    <TableCell className="sticky left-0 bg-card">{row.month}</TableCell>
-                                    <TableCell className="text-right font-mono text-xs">{row.members.toLocaleString()}</TableCell>
-                                    <TableCell className="text-right">{formatCurrency(row.revenue)}</TableCell>
-                                    <TableCell className="text-right">{formatCurrency(row.cogs)}</TableCell>
-                                    <TableCell className="text-right font-semibold">{formatCurrency(row.grossProfit)}</TableCell>
-                                    <TableCell className="text-right">{formatCurrency(row.opex)}</TableCell>
-                                    <TableCell className={`text-right font-bold ${row.netProfit < 0 ? 'text-destructive' : 'text-green-600'}`}>
-                                        {formatCurrency(row.netProfit)}
-                                    </TableCell>
-                                </TableRow>
-                                {isLastOfMonthInYear && totalRow && (
-                                    <TableRow className="bg-primary/10 font-bold">
-                                        <TableCell className="sticky left-0 bg-primary/10">Total {row.year}</TableCell>
-                                        <TableCell className="text-right font-mono text-xs">{totalRow.members.toLocaleString()}</TableCell>
-                                        <TableCell className="text-right">{formatCurrency(totalRow.revenue)}</TableCell>
-                                        <TableCell className="text-right">{formatCurrency(totalRow.cogs)}</TableCell>
-                                        <TableCell className="text-right">{formatCurrency(totalRow.grossProfit)}</TableCell>
-                                        <TableCell className="text-right">{formatCurrency(totalRow.opex)}</TableCell>
-                                        <TableCell className={`text-right ${totalRow.netProfit < 0 ? 'text-destructive' : 'text-green-700'}`}>
-                                            {formatCurrency(totalRow.netProfit)}
-                                        </TableCell>
-                                    </TableRow>
-                                )}
-                            </React.Fragment>
-                        );
-                    })}
+                    {lineItems.map(item => (
+                        <TableRow key={item.key}>
+                            <TableCell className={`sticky left-0 bg-card z-10 ${item.isBold ? 'font-semibold' : ''} ${item.isPrimary ? 'text-primary' : ''}`}>
+                                {item.label}
+                            </TableCell>
+                            {forecastData.map(col => (
+                                <TableCell key={`${item.key}-${col.month}`} className={`text-right font-mono text-xs ${item.isProfit && col[item.key as keyof typeof col] < 0 ? 'text-destructive' : ''}`}>
+                                    {item.format(col[item.key as keyof typeof col])}
+                                </TableCell>
+                            ))}
+                            {years.map(year => (
+                                <TableCell key={`total-${item.key}-${year}`} className={`text-right bg-primary/10 font-bold font-mono text-sm ${item.isProfit && yearlyTotals[year][item.key] < 0 ? 'text-destructive' : ''}`}>
+                                     {item.format(yearlyTotals[year][item.key])}
+                                </TableCell>
+                            ))}
+                        </TableRow>
+                    ))}
                 </TableBody>
             </Table>
           </CardContent>
@@ -142,7 +139,7 @@ function ForecastComponent() {
 
 export default function ForecastPage() {
     return (
-        <Suspense fallback={<div>Loading...</div>}>
+        <Suspense fallback={<div className="flex justify-center items-center min-h-[calc(100vh-8rem)]"><Loader2 className="h-16 w-16 animate-spin text-primary" /></div>}>
             <ForecastComponent />
         </Suspense>
     );
