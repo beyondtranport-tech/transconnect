@@ -176,16 +176,19 @@ export default function ForecastPage() {
                             <TableCell className={`sticky left-0 bg-card z-10 ${item.isBold ? 'font-semibold' : ''} ${item.isPrimary ? 'text-primary' : ''} ${item.indent ? `pl-${item.indent * 4}` : ''}`}>
                                 {item.label}
                             </TableCell>
+                            {/* Monthly columns */}
                             {forecastData.map(col => (
                                 <TableCell key={`${item.key}-${col.month}`} className={`text-right font-mono text-xs ${item.isProfit && col[item.key as keyof typeof col] < 0 ? 'text-destructive' : ''}`}>
                                     {item.format ? item.format(col[item.key as keyof typeof col]) : ''}
                                 </TableCell>
                             ))}
+                            {/* Yearly total columns */}
                             {years.map(year => (
                                 <TableCell key={`total-${item.key}-${year}`} className={`text-right bg-primary/10 font-bold font-mono text-sm ${item.isProfit && yearlyTotals[year]?.[item.key] < 0 ? 'text-destructive' : ''}`}>
                                      {item.format && yearlyTotals[year] ? item.format(yearlyTotals[year][item.key]) : ''}
                                 </TableCell>
                             ))}
+                            {/* Grand total column */}
                              <TableCell className={`text-right bg-primary/20 font-extrabold font-mono text-base ${item.isProfit && grandTotal?.[item.key] < 0 ? 'text-destructive' : ''}`}>
                                  {item.format && grandTotal ? item.format(grandTotal[item.key]) : ''}
                             </TableCell>
