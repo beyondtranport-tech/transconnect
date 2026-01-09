@@ -122,6 +122,31 @@ export default function ForecastPage() {
         });
         return totals;
     }, [forecastData]);
+
+    const grandTotal = useMemo(() => {
+        if (!forecastData || forecastData.length === 0) return null;
+        
+        const total: any = {
+            members: 0,
+            membershipRevenue: 0, connectPlanRevenue: 0, mallRevenue: 0, techRevenue: 0, totalRevenue: 0,
+            memberCommission: 0, isaCommission: 0, totalCogs: 0,
+            grossProfit: 0,
+            opexSalaries: 0, digitalAdvertising: 0, contentCreation: 0, eventsAndSponsorships: 0,
+            officeRental: 0, utilities: 0, insurance: 0, legalAndProfessional: 0, bankCharges: 0,
+            telephone: 0, travelAndEntertainment: 0, platformCosts: 0, softwareLicenses: 0, totalOpex: 0,
+            netProfit: 0
+        };
+
+        forecastData.forEach(row => {
+            Object.keys(row).forEach(key => {
+                if (key !== 'month' && key !== 'year' && key !== 'members') {
+                     total[key] += row[key];
+                }
+            });
+        });
+        total.members = forecastData[forecastData.length - 1].members;
+        return total;
+    }, [forecastData]);
     
     const years = [...new Set(forecastData.map(d => d.year))];
 
@@ -142,6 +167,7 @@ export default function ForecastPage() {
                         {years.map(year => (
                             <TableHead key={`total-${year}`} className="text-right bg-primary/10 font-bold">Total {year}</TableHead>
                         ))}
+                        <TableHead className="text-right bg-primary/20 font-extrabold">Grand Total</TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -160,6 +186,9 @@ export default function ForecastPage() {
                                      {item.format && yearlyTotals[year] ? item.format(yearlyTotals[year][item.key]) : ''}
                                 </TableCell>
                             ))}
+                             <TableCell className={`text-right bg-primary/20 font-extrabold font-mono text-base ${item.isProfit && grandTotal?.[item.key] < 0 ? 'text-destructive' : ''}`}>
+                                 {item.format && grandTotal ? item.format(grandTotal[item.key]) : ''}
+                            </TableCell>
                         </TableRow>
                     ))}
                 </TableBody>
