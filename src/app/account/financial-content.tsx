@@ -59,58 +59,22 @@ export default function FinancialContent() {
                         <CardTitle>Forecast Settings</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                        <div className="space-y-2">
-                            <Label>Start Month</Label>
+                        <div className="flex items-center justify-between">
+                            <Label htmlFor="start-month">Start Month</Label>
                             <Select value={String(startMonth)} onValueChange={v => setStartMonth(Number(v))}>
-                                <SelectTrigger><SelectValue /></SelectTrigger>
+                                <SelectTrigger className="w-[180px]" id="start-month"><SelectValue /></SelectTrigger>
                                 <SelectContent>{monthNames.map((m, i) => <SelectItem key={i} value={String(i)}>{m}</SelectItem>)}</SelectContent>
                             </Select>
                         </div>
-                        <div className="space-y-2">
-                            <Label>Start Year</Label>
-                            <Input type="number" value={startYear} onChange={e => setStartYear(Number(e.target.value))} />
+                        <div className="flex items-center justify-between">
+                            <Label htmlFor="start-year">Start Year</Label>
+                            <Input id="start-year" type="number" value={startYear} onChange={e => setStartYear(Number(e.target.value))} className="w-[180px]" />
                         </div>
-                        <div className="space-y-2">
-                            <Label>Months to Forecast</Label>
-                            <Input type="number" value={forecastMonths} onChange={e => setForecastMonths(Number(e.target.value))} />
+                        <div className="flex items-center justify-between">
+                            <Label htmlFor="forecast-months">Months to Forecast</Label>
+                            <Input id="forecast-months" type="number" value={forecastMonths} onChange={e => setForecastMonths(Number(e.target.value))} className="w-[180px]" />
                         </div>
                     </CardContent>
-                </Card>
-
-                <Card className="lg:col-span-2">
-                     <CardHeader>
-                        <CardTitle>Membership Assumptions</CardTitle>
-                     </CardHeader>
-                     <CardContent className="space-y-4">
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                             <div>
-                                <Label>Basic Plan Monthly Fee (R)</Label>
-                                <Input type="number" value={membershipFees.basic} onChange={e => handleMembershipFeeChange('basic', e.target.value)} />
-                            </div>
-                            <div>
-                                <Label>Standard Plan Monthly Fee (R)</Label>
-                                <Input type="number" value={membershipFees.standard} onChange={e => handleMembershipFeeChange('standard', e.target.value)} />
-                            </div>
-                            <div>
-                                <Label>Premium Plan Monthly Fee (R)</Label>
-                                <Input type="number" value={membershipFees.premium} onChange={e => handleMembershipFeeChange('premium', e.target.value)} />
-                            </div>
-                        </div>
-                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div>
-                                <Label>New Basic Memberships / Month</Label>
-                                <Input type="number" value={membershipsSold.basic} onChange={e => handleMembershipsSoldChange('basic', e.target.value)} />
-                            </div>
-                             <div>
-                                <Label>New Standard Memberships / Month</Label>
-                                <Input type="number" value={membershipsSold.standard} onChange={e => handleMembershipsSoldChange('standard', e.target.value)} />
-                            </div>
-                             <div>
-                                <Label>New Premium Memberships / Month</Label>
-                                <Input type="number" value={membershipsSold.premium} onChange={e => handleMembershipsSoldChange('premium', e.target.value)} />
-                            </div>
-                        </div>
-                     </CardContent>
                 </Card>
             </div>
 
@@ -134,22 +98,7 @@ export default function FinancialContent() {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            <TableRow className="font-bold bg-muted/50">
-                                <TableCell className="sticky left-0 bg-muted/50">Revenue</TableCell>
-                                <TableCell colSpan={forecastMonths + yearlyTotalsColumns.length + 1}></TableCell>
-                            </TableRow>
-                             <TableRow>
-                                <TableCell className="sticky left-0 bg-card pl-8">Membership Fees</TableCell>
-                                {forecastPeriod.map((p, i) => {
-                                    const revenue = (membershipFees.basic * membershipsSold.basic) +
-                                                    (membershipFees.standard * membershipsSold.standard) +
-                                                    (membershipFees.premium * membershipsSold.premium);
-                                    return <TableCell key={i} className="text-right">{revenue.toFixed(2)}</TableCell>
-                                })}
-                                {/* Placeholder for totals */}
-                                {yearlyTotalsColumns.map(year => <TableCell key={`total-rev-${year}`} className="text-right font-bold">0.00</TableCell>)}
-                                <TableCell className="text-right font-bold">0.00</TableCell>
-                            </TableRow>
+                            {/* This is where the assumption and revenue rows will go */}
                         </TableBody>
                     </Table>
                 </CardContent>
