@@ -135,48 +135,48 @@ export default function FinancialContent() {
                          </div>
                      </CardContent>
                 </Card>
-                <Card className="lg:col-span-3">
-                     <CardHeader>
-                        <CardTitle>Membership Assumptions</CardTitle>
-                     </CardHeader>
-                     <CardContent className="space-y-6">
-                        <div className="space-y-4">
-                            <h3 className="font-medium text-muted-foreground">Monthly Fees</h3>
-                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                <div className="flex items-center justify-between gap-4">
-                                    <Label>Basic Plan (R)</Label>
-                                    <Input type="number" value={membershipFees.basic} onChange={e => handleMembershipFeeChange('basic', e.target.value)} className="w-[180px]" />
-                                </div>
-                                <div className="flex items-center justify-between gap-4">
-                                    <Label>Standard Plan (R)</Label>
-                                    <Input type="number" value={membershipFees.standard} onChange={e => handleMembershipFeeChange('standard', e.target.value)} className="w-[180px]" />
-                                </div>
-                                <div className="flex items-center justify-between gap-4">
-                                    <Label>Premium Plan (R)</Label>
-                                    <Input type="number" value={membershipFees.premium} onChange={e => handleMembershipFeeChange('premium', e.target.value)} className="w-[180px]" />
-                                </div>
-                            </div>
-                        </div>
-                         <div className="space-y-4 border-t pt-6">
-                            <h3 className="font-medium text-muted-foreground">New Memberships Sold per Month</h3>
-                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                <div className="flex items-center justify-between gap-4">
-                                    <Label># of Basic Plans</Label>
-                                    <Input type="number" value={membershipsSold.basic} onChange={e => handleMembershipsSoldChange('basic', e.target.value)} className="w-[180px]" />
-                                </div>
-                                 <div className="flex items-center justify-between gap-4">
-                                    <Label># of Standard Plans</Label>
-                                    <Input type="number" value={membershipsSold.standard} onChange={e => handleMembershipsSoldChange('standard', e.target.value)} className="w-[180px]" />
-                                </div>
-                                 <div className="flex items-center justify-between gap-4">
-                                    <Label># of Premium Plans</Label>
-                                    <Input type="number" value={membershipsSold.premium} onChange={e => handleMembershipsSoldChange('premium', e.target.value)} className="w-[180px]" />
-                                </div>
-                            </div>
-                        </div>
-                     </CardContent>
-                </Card>
             </div>
+             <Card>
+                 <CardHeader>
+                    <CardTitle>Membership Assumptions</CardTitle>
+                 </CardHeader>
+                 <CardContent className="space-y-6">
+                    <div className="space-y-4">
+                        <h3 className="font-medium text-muted-foreground">Monthly Fees</h3>
+                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div className="flex items-center justify-between gap-4">
+                                <Label>Basic Plan (R)</Label>
+                                <Input type="number" value={membershipFees.basic} onChange={e => handleMembershipFeeChange('basic', e.target.value)} className="w-[180px]" />
+                            </div>
+                            <div className="flex items-center justify-between gap-4">
+                                <Label>Standard Plan (R)</Label>
+                                <Input type="number" value={membershipFees.standard} onChange={e => handleMembershipFeeChange('standard', e.target.value)} className="w-[180px]" />
+                            </div>
+                            <div className="flex items-center justify-between gap-4">
+                                <Label>Premium Plan (R)</Label>
+                                <Input type="number" value={membershipFees.premium} onChange={e => handleMembershipFeeChange('premium', e.target.value)} className="w-[180px]" />
+                            </div>
+                        </div>
+                    </div>
+                     <div className="space-y-4 border-t pt-6">
+                        <h3 className="font-medium text-muted-foreground">New Memberships Sold per Month</h3>
+                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div className="flex items-center justify-between gap-4">
+                                <Label># of Basic Plans</Label>
+                                <Input type="number" value={membershipsSold.basic} onChange={e => handleMembershipsSoldChange('basic', e.target.value)} className="w-[180px]" />
+                            </div>
+                             <div className="flex items-center justify-between gap-4">
+                                <Label># of Standard Plans</Label>
+                                <Input type="number" value={membershipsSold.standard} onChange={e => handleMembershipsSoldChange('standard', e.target.value)} className="w-[180px]" />
+                            </div>
+                             <div className="flex items-center justify-between gap-4">
+                                <Label># of Premium Plans</Label>
+                                <Input type="number" value={membershipsSold.premium} onChange={e => handleMembershipsSoldChange('premium', e.target.value)} className="w-[180px]" />
+                            </div>
+                        </div>
+                    </div>
+                 </CardContent>
+            </Card>
 
 
             <Card>
