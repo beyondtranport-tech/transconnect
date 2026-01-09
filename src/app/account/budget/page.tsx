@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 
 const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
-export default function FinancialContent() {
+export default function BudgetPage() {
     const [startMonth, setStartMonth] = useState(new Date().getMonth());
     const [startYear, setStartYear] = useState(new Date().getFullYear());
     const [forecastMonths, setForecastMonths] = useState(36);
@@ -19,22 +19,12 @@ export default function FinancialContent() {
     const [membershipFees, setMembershipFees] = useState({ basic: 100, standard: 250, premium: 500 });
     const [membershipsSold, setMembershipsSold] = useState({ basic: 10, standard: 5, premium: 2 });
     
-    const forecastPeriod = useMemo(() => {
-        const period = [];
-        for (let i = 0; i < forecastMonths; i++) {
-            const date = new Date(startYear, startMonth + i, 1);
-            period.push({
-                month: monthNames[date.getMonth()],
-                year: date.getFullYear(),
-            });
-        }
-        return period;
-    }, [startMonth, startYear, forecastMonths]);
-
-    const yearlyTotalsColumns = useMemo(() => {
-        const years = [...new Set(forecastPeriod.map(p => p.year))];
-        return years;
-    }, [forecastPeriod]);
+    const [staffAssumptions, setStaffAssumptions] = useState({
+        execDirector: { count: 1, salary: 150000 },
+        nonExecDirector: { count: 2, salary: 25000 },
+        manager: { count: 3, salary: 75000 },
+        admin: { count: 4, salary: 35000 },
+    });
 
     const handleMembershipFeeChange = (plan: 'basic' | 'standard' | 'premium', value: string) => {
         setMembershipFees(prev => ({ ...prev, [plan]: Number(value) || 0 }));
@@ -43,116 +33,128 @@ export default function FinancialContent() {
     const handleMembershipsSoldChange = (plan: 'basic' | 'standard' | 'premium', value: string) => {
         setMembershipsSold(prev => ({ ...prev, [plan]: Number(value) || 0 }));
     };
+    
+    const handleStaffChange = (role: keyof typeof staffAssumptions, field: 'count' | 'salary', value: string) => {
+        setStaffAssumptions(prev => ({
+            ...prev,
+            [role]: { ...prev[role], [field]: Number(value) || 0 }
+        }));
+    };
 
     return (
         <div className="space-y-8">
             <Card>
                 <CardHeader>
-                    <CardTitle className="flex items-center gap-2"><Sheet /> Financial Modeling</CardTitle>
-                    <CardDescription>A dynamic tool for forecasting your business's financial future. Adjust assumptions to see real-time impacts on your income statement.</CardDescription>
+                    <CardTitle className="flex items-center gap-2"><Sheet /> Budget Assumptions</CardTitle>
+                    <CardDescription>A dynamic tool for setting the assumptions for your financial forecast.</CardDescription>
                 </CardHeader>
             </Card>
-
+            
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 <Card className="lg:col-span-1">
                     <CardHeader>
                         <CardTitle>Forecast Settings</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                        <div className="space-y-2">
-                            <Label>Start Month</Label>
+                        <div className="flex items-center justify-between">
+                            <Label htmlFor="start-month">Start Month</Label>
                             <Select value={String(startMonth)} onValueChange={v => setStartMonth(Number(v))}>
-                                <SelectTrigger><SelectValue /></SelectTrigger>
+                                <SelectTrigger className="w-[180px]" id="start-month"><SelectValue /></SelectTrigger>
                                 <SelectContent>{monthNames.map((m, i) => <SelectItem key={i} value={String(i)}>{m}</SelectItem>)}</SelectContent>
                             </Select>
                         </div>
-                        <div className="space-y-2">
-                            <Label>Start Year</Label>
-                            <Input type="number" value={startYear} onChange={e => setStartYear(Number(e.target.value))} />
+                        <div className="flex items-center justify-between">
+                            <Label htmlFor="start-year">Start Year</Label>
+                            <Input id="start-year" type="number" value={startYear} onChange={e => setStartYear(Number(e.target.value))} className="w-[180px]" />
                         </div>
-                        <div className="space-y-2">
-                            <Label>Months to Forecast</Label>
-                            <Input type="number" value={forecastMonths} onChange={e => setForecastMonths(Number(e.target.value))} />
+                        <div className="flex items-center justify-between">
+                            <Label htmlFor="forecast-months">Months to Forecast</Label>
+                            <Input id="forecast-months" type="number" value={forecastMonths} onChange={e => setForecastMonths(Number(e.target.value))} className="w-[180px]" />
                         </div>
                     </CardContent>
                 </Card>
-
-                <Card className="lg:col-span-2">
+                 <Card className="lg:col-span-2">
                      <CardHeader>
-                        <CardTitle>Membership Assumptions</CardTitle>
+                        <CardTitle>Staff Assumptions</CardTitle>
                      </CardHeader>
                      <CardContent className="space-y-4">
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-x-8 gap-y-4">
                              <div>
-                                <Label>Basic Plan Monthly Fee (R)</Label>
-                                <Input type="number" value={membershipFees.basic} onChange={e => handleMembershipFeeChange('basic', e.target.value)} />
-                            </div>
-                            <div>
-                                <Label>Standard Plan Monthly Fee (R)</Label>
-                                <Input type="number" value={membershipFees.standard} onChange={e => handleMembershipFeeChange('standard', e.target.value)} />
-                            </div>
-                            <div>
-                                <Label>Premium Plan Monthly Fee (R)</Label>
-                                <Input type="number" value={membershipFees.premium} onChange={e => handleMembershipFeeChange('premium', e.target.value)} />
-                            </div>
-                        </div>
-                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div>
-                                <Label>New Basic Memberships / Month</Label>
-                                <Input type="number" value={membershipsSold.basic} onChange={e => handleMembershipsSoldChange('basic', e.target.value)} />
+                                <Label>Executive Director Count</Label>
+                                <Input type="number" value={staffAssumptions.execDirector.count} onChange={e => handleStaffChange('execDirector', 'count', e.target.value)} />
                             </div>
                              <div>
-                                <Label>New Standard Memberships / Month</Label>
-                                <Input type="number" value={membershipsSold.standard} onChange={e => handleMembershipsSoldChange('standard', e.target.value)} />
+                                <Label>Executive Director Salary (R)</Label>
+                                <Input type="number" value={staffAssumptions.execDirector.salary} onChange={e => handleStaffChange('execDirector', 'salary', e.target.value)} />
                             </div>
                              <div>
-                                <Label>New Premium Memberships / Month</Label>
-                                <Input type="number" value={membershipsSold.premium} onChange={e => handleMembershipsSoldChange('premium', e.target.value)} />
+                                <Label>Non-Executive Director Count</Label>
+                                <Input type="number" value={staffAssumptions.nonExecDirector.count} onChange={e => handleStaffChange('nonExecDirector', 'count', e.target.value)} />
                             </div>
-                        </div>
+                             <div>
+                                <Label>Non-Executive Director Salary (R)</Label>
+                                <Input type="number" value={staffAssumptions.nonExecDirector.salary} onChange={e => handleStaffChange('nonExecDirector', 'salary', e.target.value)} />
+                            </div>
+                            <div>
+                                <Label>Manager Count</Label>
+                                <Input type="number" value={staffAssumptions.manager.count} onChange={e => handleStaffChange('manager', 'count', e.target.value)} />
+                            </div>
+                            <div>
+                                <Label>Manager Salary (R)</Label>
+                                <Input type="number" value={staffAssumptions.manager.salary} onChange={e => handleStaffChange('manager', 'salary', e.target.value)} />
+                            </div>
+                            <div>
+                                <Label>Admin Count</Label>
+                                <Input type="number" value={staffAssumptions.admin.count} onChange={e => handleStaffChange('admin', 'count', e.target.value)} />
+                            </div>
+                            <div>
+                                <Label>Admin Salary (R)</Label>
+                                <Input type="number" value={staffAssumptions.admin.salary} onChange={e => handleStaffChange('admin', 'salary', e.target.value)} />
+                            </div>
+                         </div>
                      </CardContent>
                 </Card>
             </div>
-
-
-            <Card>
-                <CardHeader>
-                    <CardTitle>Income Statement</CardTitle>
-                </CardHeader>
-                <CardContent className="overflow-x-auto">
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead className="sticky left-0 bg-card w-[250px]">Description</TableHead>
-                                {forecastPeriod.map((p, i) => (
-                                    <TableHead key={i} className="text-center">{p.month} {p.year}</TableHead>
-                                ))}
-                                {yearlyTotalsColumns.map(year => (
-                                    <TableHead key={`total-${year}`} className="text-right font-bold">Total {year}</TableHead>
-                                ))}
-                                <TableHead className="text-right font-bold">Total</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            <TableRow className="font-bold bg-muted/50">
-                                <TableCell className="sticky left-0 bg-muted/50">Revenue</TableCell>
-                                <TableCell colSpan={forecastMonths + yearlyTotalsColumns.length + 1}></TableCell>
-                            </TableRow>
-                             <TableRow>
-                                <TableCell className="sticky left-0 bg-card pl-8">Membership Fees</TableCell>
-                                {forecastPeriod.map((p, i) => {
-                                    const revenue = (membershipFees.basic * membershipsSold.basic) +
-                                                    (membershipFees.standard * membershipsSold.standard) +
-                                                    (membershipFees.premium * membershipsSold.premium);
-                                    return <TableCell key={i} className="text-right">{revenue.toFixed(2)}</TableCell>
-                                })}
-                                {/* Placeholder for totals */}
-                                {yearlyTotalsColumns.map(year => <TableCell key={`total-rev-${year}`} className="text-right font-bold">0.00</TableCell>)}
-                                <TableCell className="text-right font-bold">0.00</TableCell>
-                            </TableRow>
-                        </TableBody>
-                    </Table>
-                </CardContent>
+             <Card>
+                 <CardHeader>
+                    <CardTitle>Membership Assumptions</CardTitle>
+                 </CardHeader>
+                 <CardContent className="space-y-6">
+                    <div className="space-y-4">
+                        <h3 className="font-medium text-muted-foreground">Monthly Fees</h3>
+                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div className="flex items-center justify-between gap-4">
+                                <Label>Basic Plan (R)</Label>
+                                <Input type="number" value={membershipFees.basic} onChange={e => handleMembershipFeeChange('basic', e.target.value)} className="w-[180px]" />
+                            </div>
+                            <div className="flex items-center justify-between gap-4">
+                                <Label>Standard Plan (R)</Label>
+                                <Input type="number" value={membershipFees.standard} onChange={e => handleMembershipFeeChange('standard', e.target.value)} className="w-[180px]" />
+                            </div>
+                            <div className="flex items-center justify-between gap-4">
+                                <Label>Premium Plan (R)</Label>
+                                <Input type="number" value={membershipFees.premium} onChange={e => handleMembershipFeeChange('premium', e.target.value)} className="w-[180px]" />
+                            </div>
+                        </div>
+                    </div>
+                     <div className="space-y-4 border-t pt-6">
+                        <h3 className="font-medium text-muted-foreground">New Memberships Sold per Month</h3>
+                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div className="flex items-center justify-between gap-4">
+                                <Label># of Basic Plans</Label>
+                                <Input type="number" value={membershipsSold.basic} onChange={e => handleMembershipsSoldChange('basic', e.target.value)} className="w-[180px]" />
+                            </div>
+                             <div className="flex items-center justify-between gap-4">
+                                <Label># of Standard Plans</Label>
+                                <Input type="number" value={membershipsSold.standard} onChange={e => handleMembershipsSoldChange('standard', e.target.value)} className="w-[180px]" />
+                            </div>
+                             <div className="flex items-center justify-between gap-4">
+                                <Label># of Premium Plans</Label>
+                                <Input type="number" value={membershipsSold.premium} onChange={e => handleMembershipsSoldChange('premium', e.target.value)} className="w-[180px]" />
+                            </div>
+                        </div>
+                    </div>
+                 </CardContent>
             </Card>
         </div>
     );

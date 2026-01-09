@@ -25,6 +25,7 @@ import {
   Gift,
   Activity,
   Sheet,
+  TrendingUp,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -42,7 +43,8 @@ import BillingContent from './billing-content';
 import WalletContent from './wallet-content';
 import RewardsContent from './rewards';
 import ActivityFeed from './activity-feed';
-import FinancialContent from './financial-content';
+import BudgetPage from './budget/page';
+import ForecastPage from './forecast/page';
 
 
 function DocumentsContent() {
@@ -107,8 +109,10 @@ function AccountPageContent() {
         return <WalletContent />;
       case 'billing':
         return <BillingContent />;
-      case 'financial':
-        return <FinancialContent />;
+      case 'budget':
+        return <BudgetPage />;
+      case 'forecast':
+        return <ForecastPage />;
       case 'rewards':
         return <RewardsContent />;
       case 'documents':
@@ -195,9 +199,15 @@ function AccountPageContent() {
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Financial" isActive={activeView === 'financial'} onClick={() => router.push('/account?view=financial', { scroll: false })}>
+                <SidebarMenuButton tooltip="Budget" isActive={activeView === 'budget'} onClick={() => router.push('/account?view=budget', { scroll: false })}>
                   <Sheet />
-                  <span>Financial</span>
+                  <span>Budget</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton tooltip="Forecast" isActive={activeView === 'forecast'} onClick={() => router.push('/account?view=forecast', { scroll: false })}>
+                  <TrendingUp />
+                  <span>Forecast</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
