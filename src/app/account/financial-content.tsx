@@ -71,7 +71,8 @@ export default function FinancialContent() {
                     <CardDescription>A dynamic tool for forecasting your business's financial future. Adjust assumptions to see real-time impacts on your income statement.</CardDescription>
                 </CardHeader>
             </Card>
-
+            
+            {/* Independent container for all input cards */}
             <div className="space-y-8">
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                     <Card className="lg:col-span-1">
@@ -181,6 +182,7 @@ export default function FinancialContent() {
                 </Card>
             </div>
 
+            {/* Independent container for the output table */}
             <div>
                 <Card>
                     <CardHeader>
@@ -200,7 +202,7 @@ export default function FinancialContent() {
                                     <TableHead className="text-right font-bold min-w-[150px]">Total</TableHead>
                                 </TableRow>
                             </TableHeader>
-                            <TableBody>
+                             <TableBody>
                                 {/* Revenue Section */}
                                 <TableRow className="font-bold bg-muted/50"><TableCell className="sticky left-0 bg-muted/50">Revenue</TableCell><TableCell colSpan={forecastMonths + yearlyTotalsColumns.length + 1}></TableCell></TableRow>
                                 <TableRow><TableCell className="sticky left-0 bg-card pl-8">Membership Fees</TableCell>{renderTableRows(forecastMonths + yearlyTotalsColumns.length + 1)}</TableRow>
