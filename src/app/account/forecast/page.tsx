@@ -1,10 +1,11 @@
+
 'use client';
 
 import React, { useMemo, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { TrendingUp, AlertTriangle } from 'lucide-react';
+import { TrendingUp, AlertTriangle, Loader2 } from 'lucide-react';
 import { salesRoadmapLogic, budgetLogic } from './calculations';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
