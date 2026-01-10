@@ -223,7 +223,7 @@ export default function BackendPageContent() {
                 </a>
             </SidebarMenuItem>
             <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Campaigns" isActive={activeView === 'campaigns' || activeView === 'sales-roadmap'}>
+                <SidebarMenuButton tooltip="Campaigns" isActive={activeView === 'campaigns'}>
                   <Sparkles />
                   <span>Campaigns</span>
                 </SidebarMenuButton>
@@ -232,29 +232,31 @@ export default function BackendPageContent() {
                         <Sparkles />
                         <span>AI Tools</span>
                     </SidebarMenuSubButton>
+                </SidebarMenuSub>
+            </SidebarMenuItem>
+             <SidebarMenuItem>
+                <SidebarMenuButton tooltip="Projection" isActive={['sales-roadmap', 'budget', 'salary-forecast', 'forecast'].includes(activeView)}>
+                    <TrendingUp />
+                    <span>Projection</span>
+                </SidebarMenuButton>
+                 <SidebarMenuSub>
                     <SidebarMenuSubButton isActive={activeView === 'sales-roadmap'} onClick={() => router.push('/backend?view=sales-roadmap', { scroll: false })}>
                         <Map />
                         <span>Sales Roadmap</span>
                     </SidebarMenuSubButton>
+                    <SidebarMenuSubButton isActive={activeView === 'budget'} onClick={() => router.push('/backend?view=budget', { scroll: false })}>
+                        <Sheet />
+                        <span>Budget</span>
+                    </SidebarMenuSubButton>
+                    <SidebarMenuSubButton isActive={activeView === 'salary-forecast'} onClick={() => router.push('/backend?view=salary-forecast', { scroll: false })}>
+                        <Users />
+                        <span>Salary Forecast</span>
+                    </SidebarMenuSubButton>
+                    <SidebarMenuSubButton isActive={activeView === 'forecast'} onClick={() => router.push('/backend?view=forecast', { scroll: false })}>
+                        <TrendingUp />
+                        <span>Forecast</span>
+                    </SidebarMenuSubButton>
                 </SidebarMenuSub>
-            </SidebarMenuItem>
-             <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Budget" isActive={activeView === 'budget'} onClick={() => router.push('/backend?view=budget', { scroll: false })}>
-                <Sheet />
-                <span>Budget</span>
-                </SidebarMenuButton>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Salary Forecast" isActive={activeView === 'salary-forecast'} onClick={() => router.push('/backend?view=salary-forecast', { scroll: false })}>
-                <Users />
-                <span>Salary Forecast</span>
-                </SidebarMenuButton>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Forecast" isActive={activeView === 'forecast'} onClick={() => router.push('/backend?view=forecast', { scroll: false })}>
-                <TrendingUp />
-                <span>Forecast</span>
-                </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
                 <SidebarMenuButton tooltip="Members" isActive={activeView === 'members'} onClick={() => router.push('/backend?view=members', { scroll: false })}>
@@ -437,3 +439,5 @@ export default function BackendPageContent() {
     </SidebarProvider>
   );
 }
+
+    
