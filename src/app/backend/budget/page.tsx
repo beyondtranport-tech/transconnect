@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useCallback, Suspense } from 'react';
@@ -7,31 +6,15 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Sheet, DollarSign, Users, Percent, Map, TrendingUp, RotateCcw } from 'lucide-react';
-import { useForm, useFieldArray, Controller } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Loader2 } from 'lucide-react';
 
 const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-const LOCAL_STORAGE_KEY = 'backendBudgetAssumptions_v2';
-
-const generateDefaultSalaries = (forecastMonths: number) => {
-    const roles = [
-        { role: 'Executive Director', count: 1, salary: 150000 },
-        { role: 'Non-Executive Director', count: 2, salary: 25000 },
-        { role: 'Manager', count: 3, salary: 75000 },
-        { role: 'Admin', count: 4, salary: 35000 },
-    ];
-    return roles.map(roleData => ({
-        ...roleData,
-        monthlyHeadcount: Array(forecastMonths).fill(roleData.count),
-        monthlySalary: Array(forecastMonths).fill(roleData.salary)
-    }));
-};
+const BUDGET_ASSUMPTIONS_KEY = 'backendBudgetAssumptions_v3';
 
 const defaultValues = {
     startMonth: new Date().getMonth(),
@@ -62,7 +45,6 @@ const defaultValues = {
             avgTechSpendPerMember: 150
         },
         cogs: { memberCommissionShare: 50, isaCommissionRate: 20 },
-        opexSalaries: generateDefaultSalaries(36),
         opexOther: {
             digitalAdvertising: 30000, contentCreation: 15000, eventsAndSponsorships: 10000,
             officeRental: 35000, utilities: 15000, insurance: 5000,
@@ -82,19 +64,8 @@ function BudgetPageContent() {
                 return defaultValues;
             }
             try {
-                const savedData = localStorage.getItem(LOCAL_STORAGE_KEY);
-                if (savedData) {
-                    const parsed = JSON.parse(savedData);
-                    const forecastMonths = parsed.forecastMonths || 36;
-                    if (parsed.budgetInputs?.opexSalaries) {
-                        parsed.budgetInputs.opexSalaries = parsed.budgetInputs.opexSalaries.map((role: any) => ({
-                            ...role,
-                            monthlyHeadcount: (role.monthlyHeadcount || Array(forecastMonths).fill(role.count || 0)).slice(0, forecastMonths),
-                            monthlySalary: (role.monthlySalary || Array(forecastMonths).fill(role.salary || 0)).slice(0, forecastMonths),
-                        }));
-                    }
-                    return parsed;
-                }
+                const savedData = localStorage.getItem(BUDGET_ASSUMPTIONS_KEY);
+                return savedData ? JSON.parse(savedData) : defaultValues;
             } catch (e) {
                 console.error("Failed to parse saved budget data, using defaults.", e);
             }
@@ -102,69 +73,22 @@ function BudgetPageContent() {
         }, [])()
     });
 
-    const { control, register, handleSubmit, watch, reset, getValues } = form;
+    const { control, register, handleSubmit, watch, reset } = form;
 
-    const { fields: staffFields } = useFieldArray({
-        control,
-        name: "budgetInputs.opexSalaries"
-    });
-
-    const forecastMonths = watch('forecastMonths');
-    const startMonth = watch('startMonth');
-    const startYear = watch('startYear');
-
-    const monthHeaders = Array.from({ length: forecastMonths }, (_, i) => {
-        const date = new Date(startYear, startMonth + i);
-        return `${monthNames[date.getMonth()]} ${date.getFullYear()}`;
-    });
-
-    useEffect(() => {
-        const subscription = watch((value, { name, type }) => {
-            if (name === 'forecastMonths') {
-                const newMonths = value.forecastMonths || 36;
-                const currentSalaries = getValues('budgetInputs.opexSalaries') || [];
-                const updatedSalaries = currentSalaries.map(role => {
-                    const newHeadcount = [...(role.monthlyHeadcount || [])];
-                    const newSalaries = [...(role.monthlySalary || [])];
-
-                    while(newHeadcount.length < newMonths) newHeadcount.push(role.count || 0);
-                    while(newSalaries.length < newMonths) newSalaries.push(role.salary || 0);
-
-                    return { 
-                        ...role, 
-                        monthlyHeadcount: newHeadcount.slice(0, newMonths),
-                        monthlySalary: newSalaries.slice(0, newMonths)
-                    };
-                });
-                form.setValue('budgetInputs.opexSalaries', updatedSalaries);
-            }
-        });
-        return () => subscription.unsubscribe();
-    }, [watch, form, getValues]);
-    
     const onSubmit = (data: any) => {
-        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(data));
-        const { startMonth, startYear, forecastMonths, salesInputs, budgetInputs } = data;
-        const fullSalesInputs = {
-            ...salesInputs,
-            startMonth,
-            startYear,
-            forecastMonths,
-        };
-        const fullData = { salesInputs: fullSalesInputs, budgetInputs };
-        const dataString = encodeURIComponent(JSON.stringify(fullData));
+        localStorage.setItem(BUDGET_ASSUMPTIONS_KEY, JSON.stringify(data));
         
         toast({
-            title: "Budget Saved & Forecast Generating...",
-            description: "Your assumptions have been saved locally. You will be redirected to the income statement.",
+            title: "Budget Assumptions Saved!",
+            description: "Your assumptions have been saved locally. Navigate to the Forecast page to see the results.",
         });
 
-        router.push(`/backend?view=forecast&data=${dataString}`);
+        router.push(`/backend?view=forecast`);
     };
     
     const handleReset = () => {
         if (typeof window !== 'undefined') {
-            localStorage.removeItem(LOCAL_STORAGE_KEY);
+            localStorage.removeItem(BUDGET_ASSUMPTIONS_KEY);
         }
         reset(defaultValues);
         toast({
@@ -206,7 +130,7 @@ function BudgetPageContent() {
                     </CardContent>
                 </Card>
 
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
                     <div className="lg:col-span-1 space-y-8">
                         <Card>
                             <CardHeader><CardTitle className="flex items-center gap-2"><Map />Sales Roadmap Assumptions</CardTitle></CardHeader>
@@ -227,7 +151,7 @@ function BudgetPageContent() {
                         </Card>
                     </div>
 
-                    <div className="lg:col-span-1 space-y-8">
+                     <div className="lg:col-span-1 space-y-8">
                         <Card>
                             <CardHeader><CardTitle className="flex items-center gap-2"><DollarSign />Revenue Assumptions</CardTitle></CardHeader>
                             <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -273,67 +197,10 @@ function BudgetPageContent() {
                     </div>
                 </div>
                 
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Monthly Headcount & Salary Forecast</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <ScrollArea className="w-full whitespace-nowrap rounded-md border mt-4">
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead className="w-[200px] sticky left-0 bg-background z-10">Role</TableHead>
-                                    {monthHeaders.map(header => <TableHead key={header} className="text-center w-40">{header}</TableHead>)}
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {staffFields.map((item, index) => (
-                                    <React.Fragment key={item.id}>
-                                        <TableRow>
-                                            <TableCell className="font-medium sticky left-0 bg-background z-10 align-top pt-5">
-                                                {item.role}<br/><span className="text-xs text-muted-foreground font-normal">Headcount</span>
-                                            </TableCell>
-                                            {monthHeaders.map((_, monthIndex) => (
-                                                <TableCell key={`${item.id}-headcount-${monthIndex}`}>
-                                                    <Controller
-                                                        name={`budgetInputs.opexSalaries.${index}.monthlyHeadcount.${monthIndex}`}
-                                                        control={control}
-                                                        render={({ field }) => (
-                                                            <Input type="number" className="h-8 w-24 text-center" {...field} onChange={e => field.onChange(parseInt(e.target.value, 10) || 0)} />
-                                                        )}
-                                                    />
-                                                </TableCell>
-                                            ))}
-                                        </TableRow>
-                                         <TableRow className="border-b-0">
-                                            <TableCell className="font-medium sticky left-0 bg-background z-10 align-top pt-5">
-                                                <span className="text-xs text-muted-foreground font-normal">Monthly Salary (ZAR)</span>
-                                            </TableCell>
-                                            {monthHeaders.map((_, monthIndex) => (
-                                                <TableCell key={`${item.id}-salary-${monthIndex}`}>
-                                                    <Controller
-                                                        name={`budgetInputs.opexSalaries.${index}.monthlySalary.${monthIndex}`}
-                                                        control={control}
-                                                        render={({ field }) => (
-                                                            <Input type="number" className="h-8 w-24 text-center" {...field} onChange={e => field.onChange(parseInt(e.target.value, 10) || 0)} />
-                                                        )}
-                                                    />
-                                                </TableCell>
-                                            ))}
-                                        </TableRow>
-                                    </React.Fragment>
-                                ))}
-                            </TableBody>
-                        </Table>
-                        <ScrollBar orientation="horizontal" />
-                        </ScrollArea>
-                    </CardContent>
-                </Card>
-                
                 <div className="mt-8 flex justify-end">
                     <Button type="submit">
                         <TrendingUp className="mr-2 h-4 w-4"/>
-                        Save Budget & Generate Forecast
+                        Save Budget & View Forecast
                     </Button>
                 </div>
             </form>

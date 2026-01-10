@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useMemo, Suspense } from 'react';
@@ -21,19 +20,27 @@ const formatNumber = (value: number) => {
 };
 
 function ForecastContent() {
-    const searchParams = useSearchParams();
-    const dataString = searchParams.get('data');
-
     const { salesInputs, budgetInputs } = useMemo(() => {
-        if (!dataString) return { salesInputs: null, budgetInputs: null };
+        if (typeof window === 'undefined') {
+            return { salesInputs: null, budgetInputs: null };
+        }
         try {
-            const decoded = decodeURIComponent(dataString);
-            return JSON.parse(decoded);
+            const budgetDataString = localStorage.getItem('backendBudgetAssumptions_v3');
+            const salaryDataString = localStorage.getItem('backendSalaryAssumptions_v1');
+            
+            const budgetData = budgetDataString ? JSON.parse(budgetDataString) : {};
+            const salaryData = salaryDataString ? JSON.parse(salaryDataString) : {};
+
+            return {
+                salesInputs: budgetData.salesInputs,
+                budgetInputs: { ...budgetData.budgetInputs, opexSalaries: salaryData.opexSalaries },
+            };
+
         } catch (e) {
             console.error("Failed to parse forecast data:", e);
             return { salesInputs: null, budgetInputs: null };
         }
-    }, [dataString]);
+    }, []);
     
     const roadmapData = useMemo(() => {
         if (!salesInputs) return [];
@@ -129,19 +136,22 @@ function ForecastContent() {
         { key: 'netProfit', label: 'Net Profit', format: formatCurrency, isBold: true, isPrimary: true, isProfit: true },
     ];
 
-    if (!salesInputs || !budgetInputs || forecastData.length === 0) {
+    if (!salesInputs || !budgetInputs || !budgetInputs.opexSalaries || forecastData.length === 0) {
         return (
             <Card className="w-full max-w-2xl mx-auto">
                 <CardHeader className="text-center">
                     <AlertTriangle className="mx-auto h-12 w-12 text-destructive" />
-                    <CardTitle>No Forecast Data</CardTitle>
+                    <CardTitle>Incomplete Forecast Data</CardTitle>
                     <CardDescription>
-                        It looks like you haven't generated a forecast yet. Please go to the budget page to enter your assumptions first.
+                        It looks like you haven't entered all your budget assumptions yet. Please go to both the budget and salary forecast pages to enter your data first.
                     </CardDescription>
                 </CardHeader>
-                <CardContent className="text-center">
+                <CardContent className="text-center space-y-2">
                     <Button asChild>
                         <Link href="/backend?view=budget">Go to Budget Page</Link>
+                    </Button>
+                     <Button asChild variant="outline">
+                        <Link href="/backend?view=salary-forecast">Go to Salary Forecast Page</Link>
                     </Button>
                 </CardContent>
             </Card>
