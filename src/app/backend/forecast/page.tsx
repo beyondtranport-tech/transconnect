@@ -20,7 +20,7 @@ const formatNumber = (value: number) => {
     return value.toLocaleString();
 };
 
-function ForecastComponent() {
+function ForecastContent() {
     const searchParams = useSearchParams();
     const dataString = searchParams.get('data');
 
@@ -44,6 +44,54 @@ function ForecastComponent() {
         if (roadmapData.length === 0 || !budgetInputs) return [];
         return budgetLogic(roadmapData, budgetInputs);
     }, [roadmapData, budgetInputs]);
+    
+    const financialYears = useMemo(() => {
+        const years = [];
+        if (!forecastData || forecastData.length === 0) return years;
+
+        for (let i = 0; i < forecastData.length; i += 12) {
+            const yearData = forecastData.slice(i, i + 12);
+            if (yearData.length === 0) continue;
+            
+            const total = yearData.reduce((acc, month) => {
+                Object.keys(month).forEach(key => {
+                    if (key !== 'month' && key !== 'year' && key !== 'members') {
+                        (acc as any)[key] = ((acc as any)[key] || 0) + (month as any)[key];
+                    }
+                });
+                return acc;
+            }, {} as any);
+            total.members = yearData[yearData.length - 1].members;
+
+            years.push({
+                yearLabel: `Year ${Math.floor(i / 12) + 1}`,
+                months: yearData,
+                total: total
+            });
+        }
+        return years;
+    }, [forecastData]);
+
+    const grandTotal = useMemo(() => {
+        if (!forecastData || forecastData.length === 0) return null;
+        
+        const total = forecastData.reduce((acc, row) => {
+            for (const key in row) {
+                if (key !== 'month' && key !== 'year') {
+                    if (key !== 'members') {
+                         (acc as any)[key] = ((acc as any)[key] || 0) + (row as any)[key];
+                    } else {
+                        (acc as any)[key] = (row as any)[key]; // Keep last member count
+                    }
+                }
+            }
+            return acc;
+        }, {} as any);
+
+        return total;
+
+    }, [forecastData]);
+
 
     const lineItems = [
         { key: 'members', label: 'Members', format: formatNumber, isHeader: true, isBold: true },
@@ -100,51 +148,6 @@ function ForecastComponent() {
         );
     }
     
-    const financialYears = useMemo(() => {
-        const years = [];
-        for (let i = 0; i < forecastData.length; i += 12) {
-            const yearData = forecastData.slice(i, i + 12);
-            if (yearData.length === 0) continue;
-            
-            const total = yearData.reduce((acc, month) => {
-                Object.keys(month).forEach(key => {
-                    if (key !== 'month' && key !== 'year' && key !== 'members') {
-                        acc[key] = (acc[key] || 0) + month[key as keyof typeof month];
-                    }
-                });
-                return acc;
-            }, {} as any);
-            total.members = yearData[yearData.length - 1].members;
-
-            years.push({
-                yearLabel: `Year ${Math.floor(i / 12) + 1}`,
-                months: yearData,
-                total: total
-            });
-        }
-        return years;
-    }, [forecastData]);
-
-    const grandTotal = useMemo(() => {
-        if (!forecastData || forecastData.length === 0) return null;
-        
-        const total = forecastData.reduce((acc, row) => {
-            for (const key in row) {
-                if (key !== 'month' && key !== 'year') {
-                    if (key !== 'members') {
-                         (acc as any)[key] = ((acc as any)[key] || 0) + (row as any)[key];
-                    } else {
-                        (acc as any)[key] = (row as any)[key]; // Keep last member count
-                    }
-                }
-            }
-            return acc;
-        }, {} as any);
-
-        return total;
-
-    }, [forecastData]);
-    
     return (
         <Card>
           <CardHeader>
@@ -156,6 +159,9 @@ function ForecastComponent() {
                 <TableHeader>
                     <TableRow>
                         <TableHead className="sticky left-0 bg-card z-10 w-[250px]">Line Item</TableHead>
+                        {/* Grand Total First */}
+                        <TableHead className="text-right bg-primary/20 font-extrabold">Grand Total</TableHead>
+                        {/* Then each financial year and its months */}
                         {financialYears.map((fy) => (
                            <React.Fragment key={fy.yearLabel}>
                                <TableHead className="text-right bg-primary/10 font-bold">{fy.yearLabel} Total</TableHead>
@@ -164,7 +170,6 @@ function ForecastComponent() {
                                ))}
                            </React.Fragment> 
                         ))}
-                         <TableHead className="text-right bg-primary/20 font-extrabold">Grand Total</TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -175,6 +180,12 @@ function ForecastComponent() {
                                 {item.label}
                             </TableCell>
 
+                            {/* Grand Total Column */}
+                             <TableCell className={`text-right bg-primary/20 font-extrabold font-mono text-base ${item.isProfit && grandTotal?.[item.key] < 0 ? 'text-destructive' : ''}`}>
+                                 {item.format && grandTotal ? item.format(grandTotal[item.key]) : ''}
+                            </TableCell>
+
+                            {/* Yearly and Monthly columns */}
                             {financialYears.map((fy) => (
                                 <React.Fragment key={`${fy.yearLabel}-${item.key}`}>
                                     {/* Year Total Column */}
@@ -189,11 +200,6 @@ function ForecastComponent() {
                                     ))}
                                 </React.Fragment>
                             ))}
-                            
-                             {/* Grand Total Column */}
-                             <TableCell className={`text-right bg-primary/20 font-extrabold font-mono text-base ${item.isProfit && grandTotal?.[item.key] < 0 ? 'text-destructive' : ''}`}>
-                                 {item.format && grandTotal ? item.format(grandTotal[item.key]) : ''}
-                            </TableCell>
                         </TableRow>
                     ))}
                 </TableBody>
@@ -206,9 +212,7 @@ function ForecastComponent() {
 export default function ForecastPage() {
     return (
         <Suspense fallback={<div className="flex justify-center items-center min-h-[calc(100vh-8rem)]"><Loader2 className="h-16 w-16 animate-spin text-primary" /></div>}>
-            <ForecastComponent />
+            <ForecastContent />
         </Suspense>
     );
 }
-
-    
