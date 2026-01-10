@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button';
 
 const formatCurrency = (value: number) => {
     if (typeof value !== 'number' || isNaN(value)) return 'R 0';
-    return new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR', notation: 'compact', maximumFractionDigits: 0 }).format(value);
+    return new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR', maximumFractionDigits: 0 }).format(value);
 };
 
 const formatNumber = (value: number) => {
@@ -159,9 +159,7 @@ function ForecastContent() {
                 <TableHeader>
                     <TableRow>
                         <TableHead className="sticky left-0 bg-card z-10 w-[250px]">Line Item</TableHead>
-                        {/* Grand Total First */}
                         <TableHead className="text-right bg-primary/20 font-extrabold">Grand Total</TableHead>
-                        {/* Then each financial year and its months */}
                         {financialYears.map((fy) => (
                            <React.Fragment key={fy.yearLabel}>
                                <TableHead className="text-right bg-primary/10 font-bold">{fy.yearLabel} Total</TableHead>
@@ -181,7 +179,7 @@ function ForecastContent() {
                             </TableCell>
 
                             {/* Grand Total Column */}
-                             <TableCell className={`text-right bg-primary/20 font-extrabold font-mono text-base ${item.isProfit && grandTotal?.[item.key] < 0 ? 'text-destructive' : ''}`}>
+                             <TableCell className={`text-right bg-primary/20 font-extrabold font-mono text-base whitespace-nowrap ${item.isProfit && grandTotal?.[item.key] < 0 ? 'text-destructive' : ''}`}>
                                  {item.format && grandTotal ? item.format(grandTotal[item.key]) : ''}
                             </TableCell>
 
@@ -189,12 +187,12 @@ function ForecastContent() {
                             {financialYears.map((fy) => (
                                 <React.Fragment key={`${fy.yearLabel}-${item.key}`}>
                                     {/* Year Total Column */}
-                                    <TableCell className={`text-right bg-primary/10 font-bold font-mono text-sm ${item.isProfit && fy.total[item.key] < 0 ? 'text-destructive' : ''}`}>
+                                    <TableCell className={`text-right bg-primary/10 font-bold font-mono text-sm whitespace-nowrap ${item.isProfit && fy.total[item.key] < 0 ? 'text-destructive' : ''}`}>
                                          {item.format ? item.format(fy.total[item.key]) : ''}
                                     </TableCell>
                                     {/* Monthly Columns for that year */}
                                     {fy.months.map(col => (
-                                        <TableCell key={`monthly-cell-${item.key}-${col.month}`} className={`text-right font-mono text-xs ${item.isProfit && col[item.key as keyof typeof col] < 0 ? 'text-destructive' : ''}`}>
+                                        <TableCell key={`monthly-cell-${item.key}-${col.month}`} className={`text-right font-mono text-xs whitespace-nowrap ${item.isProfit && col[item.key as keyof typeof col] < 0 ? 'text-destructive' : ''}`}>
                                             {item.format ? item.format(col[item.key as keyof typeof col]) : ''}
                                         </TableCell>
                                     ))}
