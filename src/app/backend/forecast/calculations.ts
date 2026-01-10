@@ -58,7 +58,8 @@ export function budgetLogic(roadmapData: any[], budgetInputs: any) {
         // OPEX Calculation
         const opexSalaries = budgetInputs.opexSalaries.reduce((sum: number, role: any) => {
             const countForMonth = role.monthlyHeadcount?.[i] || 0;
-            return sum + (countForMonth * role.salary);
+            const salaryForMonth = role.monthlySalary?.[i] || 0;
+            return sum + (countForMonth * salaryForMonth);
         }, 0);
         
         const opexOther = budgetInputs.opexOther;

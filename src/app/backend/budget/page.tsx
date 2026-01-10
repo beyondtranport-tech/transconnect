@@ -17,7 +17,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 
 const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-const LOCAL_STORAGE_KEY = 'backendBudgetAssumptions';
+const LOCAL_STORAGE_KEY = 'backendBudgetAssumptions_v2';
 
 const generateDefaultSalaries = (forecastMonths: number) => {
     const roles = [
@@ -28,7 +28,8 @@ const generateDefaultSalaries = (forecastMonths: number) => {
     ];
     return roles.map(roleData => ({
         ...roleData,
-        monthlyHeadcount: Array(forecastMonths).fill(roleData.count)
+        monthlyHeadcount: Array(forecastMonths).fill(roleData.count),
+        monthlySalary: Array(forecastMonths).fill(roleData.salary)
     }));
 };
 
@@ -83,11 +84,13 @@ function BudgetPageContent() {
             const savedData = localStorage.getItem(LOCAL_STORAGE_KEY);
             if (savedData) {
                 const parsed = JSON.parse(savedData);
-                // Ensure opexSalaries has the monthlyHeadcount array
+                const forecastMonths = parsed.forecastMonths || 36;
+                // Ensure salary/headcount arrays match forecast months
                 if (parsed.budgetInputs?.opexSalaries) {
                     parsed.budgetInputs.opexSalaries = parsed.budgetInputs.opexSalaries.map((role: any) => ({
                         ...role,
-                        monthlyHeadcount: role.monthlyHeadcount || Array(parsed.forecastMonths || 36).fill(role.count)
+                        monthlyHeadcount: (role.monthlyHeadcount || Array(forecastMonths).fill(role.count || 0)).slice(0, forecastMonths),
+                        monthlySalary: (role.monthlySalary || Array(forecastMonths).fill(role.salary || 0)).slice(0, forecastMonths),
                     }));
                 }
                 return parsed;
@@ -96,7 +99,7 @@ function BudgetPageContent() {
         })()
     });
 
-    const { control, register, handleSubmit, watch, reset } = form;
+    const { control, register, handleSubmit, watch, reset, getValues } = form;
 
     const { fields: staffFields } = useFieldArray({
         control,
@@ -116,16 +119,25 @@ function BudgetPageContent() {
         const subscription = watch((value, { name, type }) => {
             if (name === 'forecastMonths') {
                 const newMonths = value.forecastMonths || 36;
-                const currentSalaries = value.budgetInputs?.opexSalaries || [];
+                const currentSalaries = getValues('budgetInputs.opexSalaries') || [];
                 const updatedSalaries = currentSalaries.map(role => {
-                    const newHeadcount = Array(newMonths).fill(role.count);
-                    return { ...role, monthlyHeadcount: newHeadcount };
+                    const newHeadcount = [...(role.monthlyHeadcount || [])];
+                    const newSalaries = [...(role.monthlySalary || [])];
+
+                    while(newHeadcount.length < newMonths) newHeadcount.push(role.count || 0);
+                    while(newSalaries.length < newMonths) newSalaries.push(role.salary || 0);
+
+                    return { 
+                        ...role, 
+                        monthlyHeadcount: newHeadcount.slice(0, newMonths),
+                        monthlySalary: newSalaries.slice(0, newMonths)
+                    };
                 });
                 form.setValue('budgetInputs.opexSalaries', updatedSalaries);
             }
         });
         return () => subscription.unsubscribe();
-    }, [watch, form]);
+    }, [watch, form, getValues]);
     
     const onSubmit = (data: any) => {
         localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(data));
@@ -252,29 +264,45 @@ function BudgetPageContent() {
                                     <TableHeader>
                                         <TableRow>
                                             <TableHead className="w-[200px] sticky left-0 bg-background z-10">Role</TableHead>
-                                            <TableHead className="w-[150px] sticky left-[200px] bg-background z-10">Base Salary (ZAR)</TableHead>
-                                            {monthHeaders.map(header => <TableHead key={header} className="text-center">{header}</TableHead>)}
+                                            {monthHeaders.map(header => <TableHead key={header} className="text-center w-40">{header}</TableHead>)}
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
                                         {staffFields.map((item, index) => (
-                                            <TableRow key={item.id}>
-                                                <TableCell className="font-medium sticky left-0 bg-background z-10">{item.role}</TableCell>
-                                                <TableCell className="sticky left-[200px] bg-background z-10">
-                                                    <FormField name={`budgetInputs.opexSalaries.${index}.salary`} control={control} render={({field}) => <FormItem><FormControl><Input type="number" className="h-8" {...field}/></FormControl></FormItem>} />
-                                                </TableCell>
-                                                {monthHeaders.map((_, monthIndex) => (
-                                                    <TableCell key={`${item.id}-${monthIndex}`}>
-                                                         <Controller
-                                                            name={`budgetInputs.opexSalaries.${index}.monthlyHeadcount.${monthIndex}`}
-                                                            control={control}
-                                                            render={({ field }) => (
-                                                                <Input type="number" className="h-8 w-20 text-center" {...field} onChange={e => field.onChange(parseInt(e.target.value, 10) || 0)} />
-                                                            )}
-                                                        />
+                                            <React.Fragment key={item.id}>
+                                                <TableRow>
+                                                    <TableCell className="font-medium sticky left-0 bg-background z-10 align-top pt-5">
+                                                        {item.role}<br/><span className="text-xs text-muted-foreground font-normal">Headcount</span>
                                                     </TableCell>
-                                                ))}
-                                            </TableRow>
+                                                    {monthHeaders.map((_, monthIndex) => (
+                                                        <TableCell key={`${item.id}-headcount-${monthIndex}`}>
+                                                            <Controller
+                                                                name={`budgetInputs.opexSalaries.${index}.monthlyHeadcount.${monthIndex}`}
+                                                                control={control}
+                                                                render={({ field }) => (
+                                                                    <Input type="number" className="h-8 w-24 text-center" {...field} onChange={e => field.onChange(parseInt(e.target.value, 10) || 0)} />
+                                                                )}
+                                                            />
+                                                        </TableCell>
+                                                    ))}
+                                                </TableRow>
+                                                 <TableRow>
+                                                    <TableCell className="font-medium sticky left-0 bg-background z-10 align-top pt-5 border-b">
+                                                        <span className="text-xs text-muted-foreground font-normal">Monthly Salary (ZAR)</span>
+                                                    </TableCell>
+                                                    {monthHeaders.map((_, monthIndex) => (
+                                                        <TableCell key={`${item.id}-salary-${monthIndex}`} className="border-b">
+                                                            <Controller
+                                                                name={`budgetInputs.opexSalaries.${index}.monthlySalary.${monthIndex}`}
+                                                                control={control}
+                                                                render={({ field }) => (
+                                                                    <Input type="number" className="h-8 w-24 text-center" {...field} onChange={e => field.onChange(parseInt(e.target.value, 10) || 0)} />
+                                                                )}
+                                                            />
+                                                        </TableCell>
+                                                    ))}
+                                                </TableRow>
+                                            </React.Fragment>
                                         ))}
                                     </TableBody>
                                 </Table>
