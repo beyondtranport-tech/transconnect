@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
@@ -7,7 +8,6 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Sheet, DollarSign, Users, Percent, Map, TrendingUp, RotateCcw } from 'lucide-react';
 import { useForm, useFieldArray, Controller } from 'react-hook-form';
-import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -205,8 +205,8 @@ function BudgetPageContent() {
                     </CardContent>
                 </Card>
 
-                <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 items-start">
-                    <div className="space-y-8">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+                    <div className="lg:col-span-1 space-y-8">
                         <Card>
                             <CardHeader><CardTitle className="flex items-center gap-2"><Map />Sales Roadmap Assumptions</CardTitle></CardHeader>
                             <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -224,6 +224,9 @@ function BudgetPageContent() {
                                 <FormField name="salesInputs.isaConversionRate" control={control} render={({field}) => <FormItem><FormLabel>ISA Conversion (%)</FormLabel><FormControl><Input type="number" {...field}/></FormControl></FormItem>} />
                             </CardContent>
                         </Card>
+                    </div>
+
+                    <div className="lg:col-span-1 space-y-8">
                         <Card>
                             <CardHeader><CardTitle className="flex items-center gap-2"><DollarSign />Revenue Assumptions</CardTitle></CardHeader>
                             <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -245,26 +248,24 @@ function BudgetPageContent() {
                         </Card>
                     </div>
 
-                    <div className="space-y-8">
+                    <div className="lg:col-span-1 space-y-8">
                          <Card>
                             <CardHeader><CardTitle className="flex items-center gap-2"><Users />Operating Expenses (OPEX)</CardTitle></CardHeader>
-                            <CardContent className="space-y-6">
-                                <div>
-                                    <h3 className="font-semibold text-lg">Other Expenses (Monthly)</h3>
-                                    <div className="mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                        <FormField name="budgetInputs.opexOther.digitalAdvertising" control={control} render={({field}) => <FormItem><FormLabel>Digital Advertising</FormLabel><FormControl><Input type="number" {...field}/></FormControl></FormItem>} />
-                                        <FormField name="budgetInputs.opexOther.contentCreation" control={control} render={({field}) => <FormItem><FormLabel>Content & SEO</FormLabel><FormControl><Input type="number" {...field}/></FormControl></FormItem>} />
-                                        <FormField name="budgetInputs.opexOther.eventsAndSponsorships" control={control} render={({field}) => <FormItem><FormLabel>Events</FormLabel><FormControl><Input type="number" {...field}/></FormControl></FormItem>} />
-                                        <FormField name="budgetInputs.opexOther.officeRental" control={control} render={({field}) => <FormItem><FormLabel>Office Rental</FormLabel><FormControl><Input type="number" {...field}/></FormControl></FormItem>} />
-                                        <FormField name="budgetInputs.opexOther.utilities" control={control} render={({field}) => <FormItem><FormLabel>Utilities</FormLabel><FormControl><Input type="number" {...field}/></FormControl></FormItem>} />
-                                        <FormField name="budgetInputs.opexOther.insurance" control={control} render={({field}) => <FormItem><FormLabel>Insurance</FormLabel><FormControl><Input type="number" {...field}/></FormControl></FormItem>} />
-                                        <FormField name="budgetInputs.opexOther.legalAndProfessional" control={control} render={({field}) => <FormItem><FormLabel>Legal & Pro Fees</FormLabel><FormControl><Input type="number" {...field}/></FormControl></FormItem>} />
-                                        <FormField name="budgetInputs.opexOther.bankCharges" control={control} render={({field}) => <FormItem><FormLabel>Bank Charges</FormLabel><FormControl><Input type="number" {...field}/></FormControl></FormItem>} />
-                                        <FormField name="budgetInputs.opexOther.telephone" control={control} render={({field}) => <FormItem><FormLabel>Telephone</FormLabel><FormControl><Input type="number" {...field}/></FormControl></FormItem>} />
-                                        <FormField name="budgetInputs.opexOther.travelAndEntertainment" control={control} render={({field}) => <FormItem><FormLabel>Travel</FormLabel><FormControl><Input type="number" {...field}/></FormControl></FormItem>} />
-                                        <FormField name="budgetInputs.opexOther.platformCosts" control={control} render={({field}) => <FormItem><FormLabel>Platform Hosting</FormLabel><FormControl><Input type="number" {...field}/></FormControl></FormItem>} />
-                                        <FormField name="budgetInputs.opexOther.softwareLicenses" control={control} render={({field}) => <FormItem><FormLabel>Software Licenses</FormLabel><FormControl><Input type="number" {...field}/></FormControl></FormItem>} />
-                                    </div>
+                            <CardContent>
+                                <h3 className="font-semibold text-lg">Other Expenses (Monthly)</h3>
+                                <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <FormField name="budgetInputs.opexOther.digitalAdvertising" control={control} render={({field}) => <FormItem><FormLabel>Digital Advertising</FormLabel><FormControl><Input type="number" {...field}/></FormControl></FormItem>} />
+                                    <FormField name="budgetInputs.opexOther.contentCreation" control={control} render={({field}) => <FormItem><FormLabel>Content & SEO</FormLabel><FormControl><Input type="number" {...field}/></FormControl></FormItem>} />
+                                    <FormField name="budgetInputs.opexOther.eventsAndSponsorships" control={control} render={({field}) => <FormItem><FormLabel>Events</FormLabel><FormControl><Input type="number" {...field}/></FormControl></FormItem>} />
+                                    <FormField name="budgetInputs.opexOther.officeRental" control={control} render={({field}) => <FormItem><FormLabel>Office Rental</FormLabel><FormControl><Input type="number" {...field}/></FormControl></FormItem>} />
+                                    <FormField name="budgetInputs.opexOther.utilities" control={control} render={({field}) => <FormItem><FormLabel>Utilities</FormLabel><FormControl><Input type="number" {...field}/></FormControl></FormItem>} />
+                                    <FormField name="budgetInputs.opexOther.insurance" control={control} render={({field}) => <FormItem><FormLabel>Insurance</FormLabel><FormControl><Input type="number" {...field}/></FormControl></FormItem>} />
+                                    <FormField name="budgetInputs.opexOther.legalAndProfessional" control={control} render={({field}) => <FormItem><FormLabel>Legal & Pro Fees</FormLabel><FormControl><Input type="number" {...field}/></FormControl></FormItem>} />
+                                    <FormField name="budgetInputs.opexOther.bankCharges" control={control} render={({field}) => <FormItem><FormLabel>Bank Charges</FormLabel><FormControl><Input type="number" {...field}/></FormControl></FormItem>} />
+                                    <FormField name="budgetInputs.opexOther.telephone" control={control} render={({field}) => <FormItem><FormLabel>Telephone</FormLabel><FormControl><Input type="number" {...field}/></FormControl></FormItem>} />
+                                    <FormField name="budgetInputs.opexOther.travelAndEntertainment" control={control} render={({field}) => <FormItem><FormLabel>Travel</FormLabel><FormControl><Input type="number" {...field}/></FormControl></FormItem>} />
+                                    <FormField name="budgetInputs.opexOther.platformCosts" control={control} render={({field}) => <FormItem><FormLabel>Platform Hosting</FormLabel><FormControl><Input type="number" {...field}/></FormControl></FormItem>} />
+                                    <FormField name="budgetInputs.opexOther.softwareLicenses" control={control} render={({field}) => <FormItem><FormLabel>Software Licenses</FormLabel><FormControl><Input type="number" {...field}/></FormControl></FormItem>} />
                                 </div>
                             </CardContent>
                         </Card>
@@ -340,5 +341,9 @@ function BudgetPageContent() {
 }
 
 export default function BudgetPage() {
-    return <BudgetPageContent />;
+    return (
+        <Suspense fallback={<div className="flex justify-center items-center min-h-[calc(100vh-8rem)]"><Loader2 className="h-16 w-16 animate-spin" /></div>}>
+            <BudgetPageContent />
+        </Suspense>
+    );
 }
