@@ -214,7 +214,7 @@ function BudgetPageContent() {
                     </Card>
                 </div>
                 
-                {/* --- Sales and Revenue --- */}
+                {/* --- Sales and Revenue in a grid --- */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                     <div className="space-y-8">
                         <Card>
