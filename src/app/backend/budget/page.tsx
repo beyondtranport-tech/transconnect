@@ -1,12 +1,12 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import { Sheet, DollarSign, Users, Percent, Map, TrendingUp } from 'lucide-react';
+import { Sheet, DollarSign, Users, Percent, Map, TrendingUp, RotateCcw } from 'lucide-react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
@@ -15,58 +15,68 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const LOCAL_STORAGE_KEY = 'backendBudgetAssumptions';
+
+const defaultValues = {
+    startMonth: new Date().getMonth(),
+    startYear: new Date().getFullYear(),
+    forecastMonths: 36,
+    salesInputs: {
+        initialTransporters: 1000,
+        initialSuppliers: 500,
+        numberOfPowerPartners: 5,
+        opportunitiesPerPartner: 2000,
+        campaignConversionRate: 5,
+        campaignDuration: 6,
+        avgCustomersPerMember: 10,
+        customerConversionRate: 2,
+        customerConversionLag: 3,
+        numberOfIsas: 10,
+        referralsPerIsa: 50,
+        isaConversionRate: 10,
+    },
+    budgetInputs: {
+        revenue: {
+            membershipFees: 250,
+            connectPlanAdoptionRate: 15,
+            avgConnectPlanFee: 50,
+            mallCommissionRate: 2.5,
+            avgMallSpendPerMember: 1000,
+            techServicesAdoptionRate: 10,
+            avgTechSpendPerMember: 150
+        },
+        cogs: { memberCommissionShare: 50, isaCommissionRate: 20 },
+        opexSalaries: [
+            { role: 'Executive Director', count: 1, salary: 150000 },
+            { role: 'Non-Executive Director', count: 2, salary: 25000 },
+            { role: 'Manager', count: 3, salary: 75000 },
+            { role: 'Admin', count: 4, salary: 35000 },
+        ],
+        opexOther: {
+            digitalAdvertising: 30000, contentCreation: 15000, eventsAndSponsorships: 10000,
+            officeRental: 35000, utilities: 15000, insurance: 5000,
+            legalAndProfessional: 10000, bankCharges: 2000, telephone: 8000,
+            travelAndEntertainment: 5000, platformCosts: 20000, softwareLicenses: 10000
+        }
+    }
+};
 
 function BudgetPageContent() {
     const router = useRouter();
     const { toast } = useToast();
 
     const form = useForm({
-        defaultValues: {
-            startMonth: new Date().getMonth(),
-            startYear: new Date().getFullYear(),
-            forecastMonths: 36,
-            salesInputs: {
-                initialTransporters: 1000,
-                initialSuppliers: 500,
-                numberOfPowerPartners: 5,
-                opportunitiesPerPartner: 2000,
-                campaignConversionRate: 5,
-                campaignDuration: 6,
-                avgCustomersPerMember: 10,
-                customerConversionRate: 2,
-                customerConversionLag: 3,
-                numberOfIsas: 10,
-                referralsPerIsa: 50,
-                isaConversionRate: 10,
-            },
-            budgetInputs: {
-                revenue: {
-                    membershipFees: 250,
-                    connectPlanAdoptionRate: 15, 
-                    avgConnectPlanFee: 50,
-                    mallCommissionRate: 2.5, 
-                    avgMallSpendPerMember: 1000, 
-                    techServicesAdoptionRate: 10,
-                    avgTechSpendPerMember: 150
-                },
-                cogs: { memberCommissionShare: 50, isaCommissionRate: 20 },
-                opexSalaries: [
-                    { role: 'Executive Director', count: 1, salary: 150000 },
-                    { role: 'Non-Executive Director', count: 2, salary: 25000 },
-                    { role: 'Manager', count: 3, salary: 75000 },
-                    { role: 'Admin', count: 4, salary: 35000 },
-                ],
-                opexOther: {
-                    digitalAdvertising: 30000, contentCreation: 15000, eventsAndSponsorships: 10000,
-                    officeRental: 35000, utilities: 15000, insurance: 5000,
-                    legalAndProfessional: 10000, bankCharges: 2000, telephone: 8000,
-                    travelAndEntertainment: 5000, platformCosts: 20000, softwareLicenses: 10000
-                }
+        // Load from localStorage or use defaults
+        defaultValues: (() => {
+            if (typeof window === 'undefined') {
+                return defaultValues;
             }
-        }
+            const savedData = localStorage.getItem(LOCAL_STORAGE_KEY);
+            return savedData ? JSON.parse(savedData) : defaultValues;
+        })()
     });
 
-    const { control, register, handleSubmit, watch } = form;
+    const { control, register, handleSubmit, watch, reset } = form;
 
     const { fields: staffFields } = useFieldArray({
         control,
@@ -74,33 +84,53 @@ function BudgetPageContent() {
     });
     
     const onSubmit = (data: any) => {
-        const { startMonth, startYear, forecastMonths, salesInputs, budgetInputs } = data;
+        // 1. Save data to localStorage
+        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(data));
 
+        // 2. Prepare data for forecast page
+        const { startMonth, startYear, forecastMonths, salesInputs, budgetInputs } = data;
         const fullSalesInputs = {
             ...salesInputs,
             startMonth,
             startYear,
             forecastMonths,
         };
-        
         const fullData = { salesInputs: fullSalesInputs, budgetInputs };
         const dataString = encodeURIComponent(JSON.stringify(fullData));
         
+        // 3. Show toast and redirect
         toast({
-            title: "Generating Forecast...",
-            description: "You will be redirected to the income statement.",
+            title: "Budget Saved & Forecast Generating...",
+            description: "Your assumptions have been saved locally. You will be redirected to the income statement.",
         });
 
         router.push(`/backend?view=forecast&data=${dataString}`);
     };
+    
+    const handleReset = () => {
+        if (typeof window !== 'undefined') {
+            localStorage.removeItem(LOCAL_STORAGE_KEY);
+        }
+        reset(defaultValues);
+        toast({
+            title: 'Budget Reset',
+            description: 'Assumptions have been reset to their default values.',
+        });
+    }
 
     return (
         <Form {...form}>
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
                 <Card>
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2"><Sheet /> Budget & Forecast Assumptions</CardTitle>
-                        <CardDescription>Enter your financial assumptions here. Click the button at the bottom to generate the income statement forecast.</CardDescription>
+                    <CardHeader className="flex flex-row justify-between items-start">
+                        <div>
+                            <CardTitle className="flex items-center gap-2"><Sheet /> Budget & Forecast Assumptions</CardTitle>
+                            <CardDescription>Enter your financial assumptions here. Your data is saved locally in your browser.</CardDescription>
+                        </div>
+                        <Button type="button" variant="outline" onClick={handleReset}>
+                            <RotateCcw className="mr-2 h-4 w-4" />
+                            Reset to Defaults
+                        </Button>
                     </CardHeader>
                 </Card>
 
@@ -212,7 +242,7 @@ function BudgetPageContent() {
                 <div className="mt-8 flex justify-end">
                     <Button type="submit">
                         <TrendingUp className="mr-2 h-4 w-4"/>
-                        Generate Income Statement
+                        Save Budget & Generate Forecast
                     </Button>
                 </div>
             </form>
