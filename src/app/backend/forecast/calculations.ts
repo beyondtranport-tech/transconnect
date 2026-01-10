@@ -29,7 +29,7 @@ export function salesRoadmapLogic(inputs: any) {
         const totalNewMembers = campaignNewMembers + networkNewMembers + isaNewMembers;
         cumulativeMembers += totalNewMembers;
 
-        data.push({ month: `${month} ${year}`, year, totalNewMembers, cumulativeMembers });
+        data.push({ month: `${month} ${year}`, year, campaignNewMembers, isaNewMembers, networkNewMembers, totalNewMembers, cumulativeMembers });
     }
     return data;
 }
@@ -43,7 +43,7 @@ export function budgetLogic(roadmapData: any[], budgetInputs: any) {
         const members = row.cumulativeMembers;
 
         // Revenue Calculation
-        const membershipRevenue = members * budgetInputs.revenue.membershipFees;
+        const membershipRevenue = row.totalNewMembers * budgetInputs.revenue.membershipFees;
         const connectPlanRevenue = members * (budgetInputs.revenue.connectPlanAdoptionRate / 100) * budgetInputs.revenue.avgConnectPlanFee;
         const mallRevenue = members * budgetInputs.revenue.avgMallSpendPerMember * (budgetInputs.revenue.mallCommissionRate / 100);
         const techRevenue = members * (budgetInputs.revenue.techServicesAdoptionRate / 100) * budgetInputs.revenue.avgTechSpendPerMember;
