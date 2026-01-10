@@ -37,9 +37,8 @@ export function salesRoadmapLogic(inputs: any) {
 export function budgetLogic(roadmapData: any[], budgetInputs: any) {
     const forecastData = [];
 
-    const monthlyOpexSalaries = budgetInputs.opexSalaries.reduce((sum: number, role: any) => sum + (role.count * role.salary), 0);
-    
-    for (const row of roadmapData) {
+    for (let i = 0; i < roadmapData.length; i++) {
+        const row = roadmapData[i];
         const members = row.cumulativeMembers;
 
         // Revenue Calculation
@@ -57,7 +56,11 @@ export function budgetLogic(roadmapData: any[], budgetInputs: any) {
         const grossProfit = totalRevenue - totalCogs;
         
         // OPEX Calculation
-        const opexSalaries = monthlyOpexSalaries;
+        const opexSalaries = budgetInputs.opexSalaries.reduce((sum: number, role: any) => {
+            const countForMonth = role.monthlyHeadcount?.[i] || 0;
+            return sum + (countForMonth * role.salary);
+        }, 0);
+        
         const opexOther = budgetInputs.opexOther;
         const totalOpex = opexSalaries + Object.values(opexOther).reduce((sum: number, value: any) => sum + Number(value), 0);
         

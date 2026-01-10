@@ -7,15 +7,30 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Sheet, DollarSign, Users, Percent, Map, TrendingUp, RotateCcw } from 'lucide-react';
-import { useForm, useFieldArray } from 'react-hook-form';
+import { useForm, useFieldArray, Controller } from 'react-hook-form';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 
 const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const LOCAL_STORAGE_KEY = 'backendBudgetAssumptions';
+
+const generateDefaultSalaries = (forecastMonths: number) => {
+    const roles = [
+        { role: 'Executive Director', count: 1, salary: 150000 },
+        { role: 'Non-Executive Director', count: 2, salary: 25000 },
+        { role: 'Manager', count: 3, salary: 75000 },
+        { role: 'Admin', count: 4, salary: 35000 },
+    ];
+    return roles.map(roleData => ({
+        ...roleData,
+        monthlyHeadcount: Array(forecastMonths).fill(roleData.count)
+    }));
+};
 
 const defaultValues = {
     startMonth: new Date().getMonth(),
@@ -46,12 +61,7 @@ const defaultValues = {
             avgTechSpendPerMember: 150
         },
         cogs: { memberCommissionShare: 50, isaCommissionRate: 20 },
-        opexSalaries: [
-            { role: 'Executive Director', count: 1, salary: 150000 },
-            { role: 'Non-Executive Director', count: 2, salary: 25000 },
-            { role: 'Manager', count: 3, salary: 75000 },
-            { role: 'Admin', count: 4, salary: 35000 },
-        ],
+        opexSalaries: generateDefaultSalaries(36),
         opexOther: {
             digitalAdvertising: 30000, contentCreation: 15000, eventsAndSponsorships: 10000,
             officeRental: 35000, utilities: 15000, insurance: 5000,
@@ -66,13 +76,23 @@ function BudgetPageContent() {
     const { toast } = useToast();
 
     const form = useForm({
-        // Load from localStorage or use defaults
         defaultValues: (() => {
             if (typeof window === 'undefined') {
                 return defaultValues;
             }
             const savedData = localStorage.getItem(LOCAL_STORAGE_KEY);
-            return savedData ? JSON.parse(savedData) : defaultValues;
+            if (savedData) {
+                const parsed = JSON.parse(savedData);
+                // Ensure opexSalaries has the monthlyHeadcount array
+                if (parsed.budgetInputs?.opexSalaries) {
+                    parsed.budgetInputs.opexSalaries = parsed.budgetInputs.opexSalaries.map((role: any) => ({
+                        ...role,
+                        monthlyHeadcount: role.monthlyHeadcount || Array(parsed.forecastMonths || 36).fill(role.count)
+                    }));
+                }
+                return parsed;
+            }
+            return defaultValues;
         })()
     });
 
@@ -82,12 +102,33 @@ function BudgetPageContent() {
         control,
         name: "budgetInputs.opexSalaries"
     });
+
+    const forecastMonths = watch('forecastMonths');
+    const startMonth = watch('startMonth');
+    const startYear = watch('startYear');
+
+    const monthHeaders = Array.from({ length: forecastMonths }, (_, i) => {
+        const date = new Date(startYear, startMonth + i);
+        return `${monthNames[date.getMonth()]} ${date.getFullYear()}`;
+    });
+
+    useEffect(() => {
+        const subscription = watch((value, { name, type }) => {
+            if (name === 'forecastMonths') {
+                const newMonths = value.forecastMonths || 36;
+                const currentSalaries = value.budgetInputs?.opexSalaries || [];
+                const updatedSalaries = currentSalaries.map(role => {
+                    const newHeadcount = Array(newMonths).fill(role.count);
+                    return { ...role, monthlyHeadcount: newHeadcount };
+                });
+                form.setValue('budgetInputs.opexSalaries', updatedSalaries);
+            }
+        });
+        return () => subscription.unsubscribe();
+    }, [watch, form]);
     
     const onSubmit = (data: any) => {
-        // 1. Save data to localStorage
         localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(data));
-
-        // 2. Prepare data for forecast page
         const { startMonth, startYear, forecastMonths, salesInputs, budgetInputs } = data;
         const fullSalesInputs = {
             ...salesInputs,
@@ -98,7 +139,6 @@ function BudgetPageContent() {
         const fullData = { salesInputs: fullSalesInputs, budgetInputs };
         const dataString = encodeURIComponent(JSON.stringify(fullData));
         
-        // 3. Show toast and redirect
         toast({
             title: "Budget Saved & Forecast Generating...",
             description: "Your assumptions have been saved locally. You will be redirected to the income statement.",
@@ -205,17 +245,41 @@ function BudgetPageContent() {
                     <Card>
                         <CardHeader><CardTitle className="flex items-center gap-2"><Users />Operating Expenses (OPEX)</CardTitle></CardHeader>
                         <CardContent className="space-y-6">
-                            <div>
-                                <h3 className="font-semibold text-lg">Salaries (Monthly)</h3>
-                                <div className="mt-4 space-y-2">
-                                    {staffFields.map((item, index) => (
-                                        <div key={item.id} className="grid grid-cols-3 gap-4">
-                                            <Input value={item.role} disabled />
-                                            <FormField name={`budgetInputs.opexSalaries.${index}.count`} control={control} render={({field}) => <FormItem><FormControl><Input type="number" {...field}/></FormControl></FormItem>} />
-                                            <FormField name={`budgetInputs.opexSalaries.${index}.salary`} control={control} render={({field}) => <FormItem><FormControl><Input type="number" {...field}/></FormControl></FormItem>} />
-                                        </div>
-                                    ))}
-                                </div>
+                             <div>
+                                <h3 className="font-semibold text-lg">Monthly Headcount & Salary Forecast</h3>
+                                <ScrollArea className="w-full whitespace-nowrap rounded-md border mt-4">
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow>
+                                            <TableHead className="w-[200px] sticky left-0 bg-background z-10">Role</TableHead>
+                                            <TableHead className="w-[150px] sticky left-[200px] bg-background z-10">Base Salary (ZAR)</TableHead>
+                                            {monthHeaders.map(header => <TableHead key={header} className="text-center">{header}</TableHead>)}
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {staffFields.map((item, index) => (
+                                            <TableRow key={item.id}>
+                                                <TableCell className="font-medium sticky left-0 bg-background z-10">{item.role}</TableCell>
+                                                <TableCell className="sticky left-[200px] bg-background z-10">
+                                                    <FormField name={`budgetInputs.opexSalaries.${index}.salary`} control={control} render={({field}) => <FormItem><FormControl><Input type="number" className="h-8" {...field}/></FormControl></FormItem>} />
+                                                </TableCell>
+                                                {monthHeaders.map((_, monthIndex) => (
+                                                    <TableCell key={`${item.id}-${monthIndex}`}>
+                                                         <Controller
+                                                            name={`budgetInputs.opexSalaries.${index}.monthlyHeadcount.${monthIndex}`}
+                                                            control={control}
+                                                            render={({ field }) => (
+                                                                <Input type="number" className="h-8 w-20 text-center" {...field} onChange={e => field.onChange(parseInt(e.target.value, 10) || 0)} />
+                                                            )}
+                                                        />
+                                                    </TableCell>
+                                                ))}
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
+                                <ScrollBar orientation="horizontal" />
+                                </ScrollArea>
                             </div>
                             <Separator />
                             <div>
