@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -77,26 +77,30 @@ function BudgetPageContent() {
     const { toast } = useToast();
 
     const form = useForm({
-        defaultValues: (() => {
+        defaultValues: useCallback(() => {
             if (typeof window === 'undefined') {
                 return defaultValues;
             }
-            const savedData = localStorage.getItem(LOCAL_STORAGE_KEY);
-            if (savedData) {
-                const parsed = JSON.parse(savedData);
-                const forecastMonths = parsed.forecastMonths || 36;
-                // Ensure salary/headcount arrays match forecast months
-                if (parsed.budgetInputs?.opexSalaries) {
-                    parsed.budgetInputs.opexSalaries = parsed.budgetInputs.opexSalaries.map((role: any) => ({
-                        ...role,
-                        monthlyHeadcount: (role.monthlyHeadcount || Array(forecastMonths).fill(role.count || 0)).slice(0, forecastMonths),
-                        monthlySalary: (role.monthlySalary || Array(forecastMonths).fill(role.salary || 0)).slice(0, forecastMonths),
-                    }));
+            try {
+                const savedData = localStorage.getItem(LOCAL_STORAGE_KEY);
+                if (savedData) {
+                    const parsed = JSON.parse(savedData);
+                    const forecastMonths = parsed.forecastMonths || 36;
+                    // Ensure salary/headcount arrays match forecast months
+                    if (parsed.budgetInputs?.opexSalaries) {
+                        parsed.budgetInputs.opexSalaries = parsed.budgetInputs.opexSalaries.map((role: any) => ({
+                            ...role,
+                            monthlyHeadcount: (role.monthlyHeadcount || Array(forecastMonths).fill(role.count || 0)).slice(0, forecastMonths),
+                            monthlySalary: (role.monthlySalary || Array(forecastMonths).fill(role.salary || 0)).slice(0, forecastMonths),
+                        }));
+                    }
+                    return parsed;
                 }
-                return parsed;
+            } catch (e) {
+                console.error("Failed to parse saved budget data, using defaults.", e);
             }
             return defaultValues;
-        })()
+        }, [])()
     });
 
     const { control, register, handleSubmit, watch, reset, getValues } = form;
@@ -270,7 +274,7 @@ function BudgetPageContent() {
                                     <TableBody>
                                         {staffFields.map((item, index) => (
                                             <React.Fragment key={item.id}>
-                                                <TableRow>
+                                                <TableRow className="border-b-0">
                                                     <TableCell className="font-medium sticky left-0 bg-background z-10 align-top pt-5">
                                                         {item.role}<br/><span className="text-xs text-muted-foreground font-normal">Headcount</span>
                                                     </TableCell>
@@ -287,11 +291,11 @@ function BudgetPageContent() {
                                                     ))}
                                                 </TableRow>
                                                  <TableRow>
-                                                    <TableCell className="font-medium sticky left-0 bg-background z-10 align-top pt-5 border-b">
+                                                    <TableCell className="font-medium sticky left-0 bg-background z-10 align-top pt-5">
                                                         <span className="text-xs text-muted-foreground font-normal">Monthly Salary (ZAR)</span>
                                                     </TableCell>
                                                     {monthHeaders.map((_, monthIndex) => (
-                                                        <TableCell key={`${item.id}-salary-${monthIndex}`} className="border-b">
+                                                        <TableCell key={`${item.id}-salary-${monthIndex}`}>
                                                             <Controller
                                                                 name={`budgetInputs.opexSalaries.${index}.monthlySalary.${monthIndex}`}
                                                                 control={control}
@@ -343,5 +347,7 @@ function BudgetPageContent() {
 }
 
 export default function BudgetPage() {
+    // This component is now just a wrapper.
+    // The actual content and hooks are in BudgetPageContent.
     return <BudgetPageContent />;
 }
