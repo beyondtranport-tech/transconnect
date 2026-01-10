@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, Suspense } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -14,6 +14,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
+import { Loader2 } from 'lucide-react';
 
 const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const LOCAL_STORAGE_KEY = 'backendBudgetAssumptions_v2';
@@ -205,7 +206,7 @@ function BudgetPageContent() {
                     </CardContent>
                 </Card>
 
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                     <div className="lg:col-span-1 space-y-8">
                         <Card>
                             <CardHeader><CardTitle className="flex items-center gap-2"><Map />Sales Roadmap Assumptions</CardTitle></CardHeader>
@@ -271,7 +272,7 @@ function BudgetPageContent() {
                         </Card>
                     </div>
                 </div>
-
+                
                 <Card>
                     <CardHeader>
                         <CardTitle>Monthly Headcount & Salary Forecast</CardTitle>
