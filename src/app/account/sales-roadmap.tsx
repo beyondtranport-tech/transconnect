@@ -2,7 +2,7 @@
 'use client';
 
 import React, { Suspense, useCallback, useEffect, useState } from 'react';
-import { useForm, useFieldArray, Controller } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -15,25 +15,49 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 
 const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const SETUP_KEY = 'accountFinancialSetup_v1';
-const SALES_ROADMAP_KEY = 'accountSalesRoadmap_v2'; // Changed version
+const SALES_ROADMAP_KEY = 'accountSalesRoadmap_v3'; // Incremented version for new structure
 
-const salesAssumptions = [
-    { id: 'referralsVendors', label: '# of Referrals (Vendors)', defaultValue: 10 },
-    { id: 'referralsBuyers', label: '# of Referrals (Buyers)', defaultValue: 10 },
-    { id: 'referralsPartners', label: '# of Referrals (Partners)', defaultValue: 1 },
-    { id: 'referralsAssociates', label: '# of Referrals (Associates)', defaultValue: 10 },
-    { id: 'referralsIsaAgents', label: '# of Referrals (ISA Agents)', defaultValue: 5 },
-    { id: 'referralsDrivers', label: '# of Referrals (Drivers)', defaultValue: 10 },
-    { id: 'referralsDevelopers', label: '# of Referrals (Developers)', defaultValue: 10 },
+const salesRoleGroups = [
+    {
+        role: 'Vendors',
+        assumptions: [{ id: 'referralsVendors', label: '# of Referrals', defaultValue: 10 }]
+    },
+    {
+        role: 'Buyers',
+        assumptions: [{ id: 'referralsBuyers', label: '# of Referrals', defaultValue: 10 }]
+    },
+    {
+        role: 'Partners',
+        assumptions: [{ id: 'referralsPartners', label: '# of Referrals', defaultValue: 1 }]
+    },
+    {
+        role: 'Associates',
+        assumptions: [{ id: 'referralsAssociates', label: '# of Referrals', defaultValue: 10 }]
+    },
+    {
+        role: 'ISA Agents',
+        assumptions: [{ id: 'referralsIsaAgents', label: '# of Referrals', defaultValue: 5 }]
+    },
+    {
+        role: 'Drivers',
+        assumptions: [{ id: 'referralsDrivers', label: '# of Referrals', defaultValue: 10 }]
+    },
+    {
+        role: 'Developers',
+        assumptions: [{ id: 'referralsDevelopers', label: '# of Referrals', defaultValue: 10 }]
+    },
 ];
 
 const generateDefaultValues = (months: number) => {
     const defaults: { [key: string]: number[] } = {};
-    salesAssumptions.forEach(assumption => {
-        defaults[assumption.id] = Array(months).fill(assumption.defaultValue);
+    salesRoleGroups.forEach(group => {
+        group.assumptions.forEach(assumption => {
+            defaults[assumption.id] = Array(months).fill(assumption.defaultValue);
+        });
     });
     return { monthlyAssumptions: defaults };
 };
+
 
 function SalesRoadmapComponent() {
     const router = useRouter();
@@ -70,8 +94,9 @@ function SalesRoadmapComponent() {
                 const savedData = localStorage.getItem(SALES_ROADMAP_KEY);
                 if (savedData) {
                     const parsed = JSON.parse(savedData);
-                    // Check if the number of months matches
-                    const savedMonths = parsed.monthlyAssumptions[salesAssumptions[0].id]?.length || 0;
+                    // Check if the number of months matches for the first assumption
+                    const firstAssumptionId = salesRoleGroups[0].assumptions[0].id;
+                    const savedMonths = parsed.monthlyAssumptions[firstAssumptionId]?.length || 0;
                     if (savedMonths === forecastMonths) {
                         return parsed;
                     }
@@ -96,8 +121,6 @@ function SalesRoadmapComponent() {
             title: "Referral Targets Saved!",
             description: "Your monthly referral targets have been saved locally.",
         });
-        // You might want to navigate to another page to see the effect of these targets.
-        // For now, we'll just save.
     };
 
     const handleReset = () => {
@@ -122,50 +145,60 @@ function SalesRoadmapComponent() {
                             <CardTitle className="flex items-center gap-2"><Map /> Referral Targets</CardTitle>
                             <CardDescription>Set your monthly referral targets for each member role. This data is saved locally.</CardDescription>
                         </div>
-                        <Button type="button" variant="outline" onClick={handleReset}>
+                         <Button type="button" variant="outline" onClick={handleReset}>
                             <RotateCcw className="mr-2 h-4 w-4" />
                             Reset to Defaults
                         </Button>
                     </CardHeader>
-                    <CardContent>
-                        <ScrollArea className="w-full whitespace-nowrap rounded-md border">
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead className="w-[250px] sticky left-0 bg-background z-10">Target Metric</TableHead>
-                                        {monthHeaders.map(header => (
-                                            <TableHead key={header} className="w-[120px] text-center">{header}</TableHead>
-                                        ))}
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {salesAssumptions.map((assumption) => (
-                                        <TableRow key={assumption.id} className="border-b-0">
-                                            <TableCell className="font-medium sticky left-0 bg-background z-10">{assumption.label}</TableCell>
-                                            {monthHeaders.map((_, monthIndex) => (
-                                                <TableCell key={`${assumption.id}-${monthIndex}`}>
-                                                    <Controller
-                                                        name={`monthlyAssumptions.${assumption.id}.${monthIndex}`}
-                                                        control={control}
-                                                        render={({ field }) => (
-                                                            <Input
-                                                                type="number"
-                                                                className="h-8 w-24 text-center"
-                                                                {...field}
-                                                                onChange={e => field.onChange(Number(e.target.value))}
-                                                            />
-                                                        )}
-                                                    />
-                                                </TableCell>
-                                            ))}
-                                        </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
-                            <ScrollBar orientation="horizontal" />
-                        </ScrollArea>
-                    </CardContent>
                 </Card>
+
+                <div className="space-y-6">
+                    {salesRoleGroups.map(group => (
+                        <Card key={group.role}>
+                            <CardHeader>
+                                <CardTitle className="text-xl">{group.role}</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <ScrollArea className="w-full whitespace-nowrap rounded-md border">
+                                    <Table>
+                                        <TableHeader>
+                                            <TableRow>
+                                                <TableHead className="w-[250px] sticky left-0 bg-background z-10">Target Metric</TableHead>
+                                                {monthHeaders.map(header => (
+                                                    <TableHead key={header} className="w-[120px] text-center">{header}</TableHead>
+                                                ))}
+                                            </TableRow>
+                                        </TableHeader>
+                                        <TableBody>
+                                            {group.assumptions.map((assumption) => (
+                                                <TableRow key={assumption.id} className="border-b-0">
+                                                    <TableCell className="font-medium sticky left-0 bg-background z-10">{assumption.label}</TableCell>
+                                                    {monthHeaders.map((_, monthIndex) => (
+                                                        <TableCell key={`${assumption.id}-${monthIndex}`}>
+                                                            <Controller
+                                                                name={`monthlyAssumptions.${assumption.id}.${monthIndex}`}
+                                                                control={control}
+                                                                render={({ field }) => (
+                                                                    <Input
+                                                                        type="number"
+                                                                        className="h-8 w-24 text-center"
+                                                                        {...field}
+                                                                        onChange={e => field.onChange(Number(e.target.value))}
+                                                                    />
+                                                                )}
+                                                            />
+                                                        </TableCell>
+                                                    ))}
+                                                </TableRow>
+                                            ))}
+                                        </TableBody>
+                                    </Table>
+                                    <ScrollBar orientation="horizontal" />
+                                </ScrollArea>
+                            </CardContent>
+                        </Card>
+                    ))}
+                </div>
 
                 <div className="mt-8 flex justify-end">
                     <Button type="submit">
@@ -186,3 +219,4 @@ export default function SalesRoadmap() {
         </Suspense>
     );
 }
+
