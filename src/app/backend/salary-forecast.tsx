@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useCallback, Suspense } from 'react';
@@ -135,7 +136,7 @@ function SalaryForecastContent() {
                             <TableBody>
                                 {staffFields.map((item, index) => (
                                     <React.Fragment key={item.id}>
-                                        <TableRow>
+                                        <TableRow className="border-b-0">
                                             <TableCell className="font-medium sticky left-0 bg-background z-10 align-top pt-5">
                                                 {item.role}<br/><span className="text-xs text-muted-foreground font-normal">Headcount</span>
                                             </TableCell>
@@ -151,7 +152,7 @@ function SalaryForecastContent() {
                                                 </TableCell>
                                             ))}
                                         </TableRow>
-                                         <TableRow className="border-b-0">
+                                         <TableRow>
                                             <TableCell className="font-medium sticky left-0 bg-background z-10 align-top pt-5">
                                                 <span className="text-xs text-muted-foreground font-normal">Monthly Salary (ZAR)</span>
                                             </TableCell>
