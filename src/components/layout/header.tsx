@@ -44,12 +44,7 @@ export function Header() {
   const [isSheetOpen, setIsSheetOpen] = React.useState(false);
   const { user, isUserLoading } = useUser();
   const auth = useAuth();
-  const [isClient, setIsClient] = React.useState(false);
 
-  React.useEffect(() => {
-    setIsClient(true);
-  }, []);
-  
   function deleteCookie(name: string) {
     document.cookie = name + '=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
   }
@@ -113,7 +108,7 @@ export function Header() {
 
         <div className="flex items-center gap-4">
           <div className="hidden md:flex items-center gap-2">
-            {!isClient || isUserLoading ? (
+            {isUserLoading ? (
                <div className="flex items-center gap-2">
                  <div className="h-9 w-20 rounded-md bg-muted/50 animate-pulse" />
                  <div className="h-9 w-24 rounded-md bg-muted/50 animate-pulse" />
