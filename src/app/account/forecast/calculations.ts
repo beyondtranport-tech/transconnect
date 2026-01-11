@@ -55,9 +55,6 @@ export function budgetLogic(roadmapData: any[], budgetData: any, targets: any) {
     const { budgetInputs } = budgetData;
     const forecastData = [];
 
-    // Static salary cost per month
-    const totalMonthlyOpexSalaries = budgetInputs.opexSalaries.reduce((sum: number, role: any) => sum + (role.count * role.salary), 0);
-
     // Simplified Loyalty Tier Commission Shares
     const loyaltyTierShares = { bronze: 0.10, silver: 0.15, gold: 0.20 };
 
@@ -106,7 +103,12 @@ export function budgetLogic(roadmapData: any[], budgetData: any, targets: any) {
         const grossProfit = totalRevenue - totalCogs;
         
         // OPEX Calculation
-        const opexSalaries = totalMonthlyOpexSalaries;
+        const opexSalaries = budgetInputs.opexSalaries.reduce((sum: number, role: any) => {
+            const countForMonth = role.monthlyHeadcount?.[i] || 0;
+            const salaryForMonth = role.monthlySalary?.[i] || 0;
+            return sum + (countForMonth * salaryForMonth);
+        }, 0);
+        
         const opexOtherThisMonth: {[key: string]: number} = {};
         Object.keys(budgetInputs.opexOther).forEach(key => {
             opexOtherThisMonth[key] = budgetInputs.opexOther[key][i];

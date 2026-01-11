@@ -55,12 +55,17 @@ const generateDefaultValues = (months: number) => {
             defaults.budgetInputs[key][assumption.id] = Array(months).fill(assumption.defaultValue);
         });
     });
-     defaults.opexSalaries = [
+     const roles = [
         { role: 'Executive Director', count: 1, salary: 150000 },
         { role: 'Non-Executive Director', count: 2, salary: 25000 },
         { role: 'Manager', count: 3, salary: 75000 },
         { role: 'Admin', count: 4, salary: 35000 },
     ];
+    defaults.opexSalaries = roles.map(roleData => ({
+        ...roleData,
+        monthlyHeadcount: Array(months).fill(roleData.count),
+        monthlySalary: Array(months).fill(roleData.salary)
+    }));
     return defaults;
 };
 
@@ -100,6 +105,7 @@ function BudgetPageComponent() {
                 const savedData = localStorage.getItem(BUDGET_KEY);
                 if (savedData) {
                     const parsed = JSON.parse(savedData);
+                    // Check if month count matches between saved data and current settings
                     const firstAssumption = assumptionGroups.revenue[0].id;
                     const savedMonths = parsed.budgetInputs.revenue[firstAssumption]?.length || 0;
                     if (savedMonths === forecastMonths) {
@@ -211,20 +217,57 @@ function BudgetPageComponent() {
                 </Card>
 
                  <Card>
-                    <CardHeader><CardTitle className="flex items-center gap-2"><Users />Salaries (Static)</CardTitle><CardDescription>Enter the static monthly salary and headcount for each role. These values will be used for all months.</CardDescription></CardHeader>
-                    <CardContent className="space-y-6">
-                        <div className="grid grid-cols-3 gap-4 font-semibold text-sm px-2">
-                            <h3>Role</h3><h3>Headcount</h3><h3>Monthly Salary (ZAR)</h3>
-                        </div>
-                        <div className="space-y-2">
-                            {staffFields.map((item, index) => (
-                                <div key={item.id} className="grid grid-cols-3 gap-4">
-                                    <Input value={item.role} disabled />
-                                    <FormField name={`opexSalaries.${index}.count`} control={control} render={({field}) => <FormItem><FormControl><Input type="number" {...field} /></FormControl></FormItem>} />
-                                    <FormField name={`opexSalaries.${index}.salary`} control={control} render={({field}) => <FormItem><FormControl><Input type="number" {...field} /></FormControl></FormItem>} />
-                                </div>
-                            ))}
-                        </div>
+                    <CardHeader><CardTitle className="flex items-center gap-2"><Users />Salaries (Monthly Forecast)</CardTitle><CardDescription>Enter the planned headcount and average monthly salary for each role per month.</CardDescription></CardHeader>
+                    <CardContent>
+                         <ScrollArea className="w-full whitespace-nowrap rounded-md border mt-4">
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead className="w-[200px] sticky left-0 bg-background z-10">Role</TableHead>
+                                    {monthHeaders.map(header => <TableHead key={header} className="text-center w-40">{header}</TableHead>)}
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {staffFields.map((item, index) => (
+                                    <React.Fragment key={item.id}>
+                                        <TableRow className="border-b-0">
+                                            <TableCell className="font-medium sticky left-0 bg-background z-10 align-top pt-5">
+                                                {item.role}<br/><span className="text-xs text-muted-foreground font-normal">Headcount</span>
+                                            </TableCell>
+                                            {monthHeaders.map((_, monthIndex) => (
+                                                <TableCell key={`${item.id}-headcount-${monthIndex}`}>
+                                                    <Controller
+                                                        name={`opexSalaries.${index}.monthlyHeadcount.${monthIndex}`}
+                                                        control={control}
+                                                        render={({ field }) => (
+                                                            <Input type="number" className="h-8 w-24 text-center" {...field} onChange={e => field.onChange(parseInt(e.target.value, 10) || 0)} />
+                                                        )}
+                                                    />
+                                                </TableCell>
+                                            ))}
+                                        </TableRow>
+                                         <TableRow>
+                                            <TableCell className="font-medium sticky left-0 bg-background z-10 align-top pt-5">
+                                                <span className="text-xs text-muted-foreground font-normal">Monthly Salary (ZAR)</span>
+                                            </TableCell>
+                                            {monthHeaders.map((_, monthIndex) => (
+                                                <TableCell key={`${item.id}-salary-${monthIndex}`}>
+                                                    <Controller
+                                                        name={`opexSalaries.${index}.monthlySalary.${monthIndex}`}
+                                                        control={control}
+                                                        render={({ field }) => (
+                                                            <Input type="number" className="h-8 w-24 text-center" {...field} onChange={e => field.onChange(parseInt(e.target.value, 10) || 0)} />
+                                                        )}
+                                                    />
+                                                </TableCell>
+                                            ))}
+                                        </TableRow>
+                                    </React.Fragment>
+                                ))}
+                            </TableBody>
+                        </Table>
+                        <ScrollBar orientation="horizontal" />
+                        </ScrollArea>
                     </CardContent>
                 </Card>
                 
