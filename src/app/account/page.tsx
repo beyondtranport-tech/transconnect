@@ -31,6 +31,7 @@ import {
   TrendingUp,
   DollarSign,
   Map,
+  Target,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -52,6 +53,7 @@ import ForecastPage from './forecast/page';
 import BudgetPage from './budget/page';
 import FinancialSetup from './financial-setup';
 import SalesRoadmap from './sales-roadmap';
+import Targets from './targets';
 
 
 function DocumentsContent() {
@@ -118,6 +120,8 @@ function AccountPageContent() {
         return <BillingContent />;
       case 'financial-setup':
         return <FinancialSetup />;
+      case 'targets':
+        return <Targets />;
       case 'sales-roadmap':
         return <SalesRoadmap />;
       case 'budget':
@@ -210,7 +214,7 @@ function AccountPageContent() {
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Financials" isActive={['financial-setup', 'sales-roadmap', 'budget', 'forecast'].includes(activeView)}>
+                <SidebarMenuButton tooltip="Financials" isActive={['financial-setup', 'targets', 'sales-roadmap', 'budget', 'forecast'].includes(activeView)}>
                   <DollarSign />
                   <span>Financial</span>
                 </SidebarMenuButton>
@@ -218,6 +222,10 @@ function AccountPageContent() {
                    <SidebarMenuSubButton isActive={activeView === 'financial-setup'} onClick={() => router.push('/account?view=financial-setup', { scroll: false })}>
                     <Settings />
                     <span>Set Up</span>
+                  </SidebarMenuSubButton>
+                  <SidebarMenuSubButton isActive={activeView === 'targets'} onClick={() => router.push('/account?view=targets', { scroll: false })}>
+                    <Target />
+                    <span>Targets</span>
                   </SidebarMenuSubButton>
                   <SidebarMenuSubButton isActive={activeView === 'sales-roadmap'} onClick={() => router.push('/account?view=sales-roadmap', { scroll: false })}>
                     <Map />
