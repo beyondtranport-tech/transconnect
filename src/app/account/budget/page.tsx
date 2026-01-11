@@ -57,15 +57,22 @@ const generateDefaultValues = (months: number) => {
     });
      const roles = [
         { role: 'Executive Director', count: 1, salary: 150000 },
-        { role: 'Non-Executive Director', count: 2, salary: 25000 },
-        { role: 'Manager', count: 3, salary: 75000 },
-        { role: 'Admin', count: 4, salary: 35000 },
+        { role: 'Non-Executive Director', count: 0, salary: 25000 },
+        { role: 'Manager', count: 0, salary: 75000 },
+        { role: 'Admin', count: 0, salary: 35000 }, // Initial count is 0
     ];
-    defaults.opexSalaries = roles.map(roleData => ({
-        ...roleData,
-        monthlyHeadcount: Array(months).fill(roleData.count),
-        monthlySalary: Array(months).fill(roleData.salary)
-    }));
+    defaults.opexSalaries = roles.map(roleData => {
+        let monthlyHeadcount = Array(months).fill(roleData.count);
+        // Special case for Admin
+        if (roleData.role === 'Admin') {
+            monthlyHeadcount = Array(months).fill(0).map((_, i) => (i >= 5 ? 1 : 0)); // 0 for months 1-5, 1 from month 6
+        }
+        return {
+            ...roleData,
+            monthlyHeadcount,
+            monthlySalary: Array(months).fill(roleData.salary)
+        }
+    });
     return defaults;
 };
 
