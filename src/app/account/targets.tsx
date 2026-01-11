@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { Suspense, useCallback, useEffect, useState } from 'react';
@@ -18,11 +19,11 @@ const TARGETS_KEY = 'accountFinancialTargets_v1';
 
 const targetAssumptions = [
     { id: 'visitors', label: '# of Visitors', defaultValue: 1000 },
-    { id: 'registrationConversion', label: 'Conversion % to Registrations', defaultValue: 2 },
+    { id: 'registrationConversion', label: 'Conversion % to Registrations', defaultValue: 50 },
     { id: 'memberConversion', label: 'Conversion to Members', defaultValue: 20 },
     { id: 'rewardsPlans', label: 'Rewards Plan Adoption %', defaultValue: 15 },
-    { id: 'loyaltyPlans', label: 'Loyalty Plan Adoption %', defaultValue: 25 },
-    { id: 'actionPlans', label: 'Action Plans Adoption %', defaultValue: 10 },
+    { id: 'loyaltyPlans', label: 'Loyalty Plan Adoption %', defaultValue: 20 },
+    { id: 'actionPlans', label: 'Action Plans Adoption %', defaultValue: 30 },
     { id: 'productsPerMember', label: '# Products Sold per Member', defaultValue: 1.5 },
 ];
 
