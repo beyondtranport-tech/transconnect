@@ -49,23 +49,29 @@ export function salesRoadmapLogic(settings: any, salesInputs: any) {
     return data;
 }
 
-export function budgetLogic(roadmapData: any[], budgetData: any, targets: any) {
-    if (!budgetData || !budgetData.budgetInputs) return [];
+export function budgetLogic(budgetData: any, targets: any) {
+    if (!budgetData || !budgetData.budgetInputs || !targets || !targets.monthlyTargets) return [];
     
     const { budgetInputs } = budgetData;
+    const { monthlyTargets } = targets;
     const forecastData = [];
 
     // Simplified Loyalty Tier Commission Shares
     const loyaltyTierShares = { bronze: 0.10, silver: 0.15, gold: 0.20 };
+    
+    const forecastMonths = monthlyTargets.membersVendors?.length || 0;
 
-    for (let i = 0; i < roadmapData.length; i++) {
-        const row = roadmapData[i];
-        const members = row.cumulativeMembers;
+    for (let i = 0; i < forecastMonths; i++) {
+        const date = new Date(budgetData.startYear, budgetData.startMonth + i, 1);
+        const month = monthNames[date.getMonth()];
+        const year = date.getFullYear();
 
-        // Get adoption rates for the current month
-        const rewardsAdoption = (targets?.monthlyTargets?.rewardsPlans?.[i] || 0) / 100;
-        const loyaltyAdoption = (targets?.monthlyTargets?.loyaltyPlans?.[i] || 0) / 100;
-        const actionsAdoption = (targets?.monthlyTargets?.actionPlans?.[i] || 0) / 100;
+        const members = (monthlyTargets.membersVendors?.[i] || 0) + (monthlyTargets.membersBuyers?.[i] || 0) + (monthlyTargets.membersPartners?.[i] || 0);
+
+        // Get adoption counts directly from targets
+        const rewardsAdoptionCount = monthlyTargets.rewardsPlans?.[i] || 0;
+        const loyaltyAdoptionCount = monthlyTargets.loyaltyPlans?.[i] || 0;
+        const actionsAdoptionCount = monthlyTargets.actionPlans?.[i] || 0;
 
         // Get monthly plan prices and other revenue inputs
         const rewardsPrice = budgetInputs.revenue.avgConnectPlanFee[i];
@@ -78,9 +84,9 @@ export function budgetLogic(roadmapData: any[], budgetData: any, targets: any) {
         const techSpend = budgetInputs.revenue.avgTechSpendPerMember[i];
         
         // Calculate revenue from each Connect Plan
-        const rewardsRevenue = members * rewardsAdoption * rewardsPrice;
-        const loyaltyRevenue = members * loyaltyAdoption * loyaltyPrice;
-        const actionsRevenue = members * actionsAdoption * actionsPrice;
+        const rewardsRevenue = rewardsAdoptionCount * rewardsPrice;
+        const loyaltyRevenue = loyaltyAdoptionCount * loyaltyPrice;
+        const actionsRevenue = actionsAdoptionCount * actionsPrice;
         const connectPlanRevenue = rewardsRevenue + loyaltyRevenue + actionsRevenue;
         
         // Total Revenue Calculation
@@ -119,9 +125,9 @@ export function budgetLogic(roadmapData: any[], budgetData: any, targets: any) {
         const netProfit = grossProfit - totalOpex;
 
         forecastData.push({
-            month: row.month,
-            year: row.year,
-            members: members,
+            month: `${month} ${year}`,
+            year,
+            members,
             
             membershipRevenue,
             connectPlanRevenue,
