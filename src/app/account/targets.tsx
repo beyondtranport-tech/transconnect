@@ -20,7 +20,7 @@ const TARGETS_KEY = 'accountFinancialTargets_v1';
 const targetAssumptions = [
     { id: 'visitors', label: '# of Visitors', defaultValue: 1000 },
     { id: 'registrationConversion', label: 'Conversion % to Registrations', defaultValue: 50 },
-    { id: 'memberConversion', label: 'Conversion to Members', defaultValue: 20 },
+    { id: 'memberConversion', label: 'Conversion to Members %', defaultValue: 20 },
     { id: 'rewardsPlans', label: 'Rewards Plan Adoption %', defaultValue: 15 },
     { id: 'loyaltyPlans', label: 'Loyalty Plan Adoption %', defaultValue: 20 },
     { id: 'actionPlans', label: 'Action Plans Adoption %', defaultValue: 30 },
