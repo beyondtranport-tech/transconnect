@@ -1,8 +1,7 @@
 
 'use client';
 
-import React, { useMemo, Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
+import React, { useMemo, Suspense, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { TrendingUp, AlertTriangle, Loader2 } from 'lucide-react';
@@ -21,19 +20,27 @@ const formatNumber = (value: number) => {
 };
 
 function ForecastComponent() {
-    const searchParams = useSearchParams();
-    const dataString = searchParams.get('data');
-
-    const { salesInputs, budgetInputs } = useMemo(() => {
-        if (!dataString) return { salesInputs: null, budgetInputs: null };
+    const { salesInputs, budgetInputs, settings } = useMemo(() => {
+        if (typeof window === 'undefined') return { salesInputs: null, budgetInputs: null, settings: null };
         try {
-            const decoded = decodeURIComponent(dataString);
-            return JSON.parse(decoded);
+            const settingsString = localStorage.getItem('accountFinancialSetup_v1');
+            const assumptionsString = localStorage.getItem('accountBudgetAssumptions_v1');
+            
+            const settings = settingsString ? JSON.parse(settingsString) : null;
+            const assumptions = assumptionsString ? JSON.parse(assumptionsString) : null;
+
+            if (!settings || !assumptions) return { salesInputs: null, budgetInputs: null, settings: null };
+
+            return { 
+                salesInputs: { ...assumptions.salesInputs, ...settings }, 
+                budgetInputs: assumptions.budgetInputs, 
+                settings 
+            };
         } catch (e) {
             console.error("Failed to parse forecast data:", e);
-            return { salesInputs: null, budgetInputs: null };
+            return { salesInputs: null, budgetInputs: null, settings: null };
         }
-    }, [dataString]);
+    }, []);
     
     const roadmapData = useMemo(() => {
         if (!salesInputs) return [];
@@ -111,18 +118,21 @@ function ForecastComponent() {
         { key: 'netProfit', label: 'Net Profit', format: formatCurrency, isBold: true, isPrimary: true, isProfit: true },
     ];
 
-    if (!salesInputs || !budgetInputs || forecastData.length === 0) {
+    if (!settings || !salesInputs || !budgetInputs || forecastData.length === 0) {
         return (
             <Card className="w-full max-w-2xl mx-auto">
                 <CardHeader className="text-center">
                     <AlertTriangle className="mx-auto h-12 w-12 text-destructive" />
-                    <CardTitle>No Forecast Data</CardTitle>
+                    <CardTitle>Incomplete Forecast Data</CardTitle>
                     <CardDescription>
-                        It looks like you haven't generated a forecast yet. Please go to the budget page to enter your assumptions first.
+                        It looks like you haven't entered all your forecast assumptions yet. Please complete the setup and budget pages first.
                     </CardDescription>
                 </CardHeader>
-                <CardContent className="text-center">
+                <CardContent className="text-center space-y-2">
                     <Button asChild>
+                        <Link href="/account?view=financial-setup">Go to Set Up</Link>
+                    </Button>
+                     <Button asChild variant="outline">
                         <Link href="/account?view=budget">Go to Budget Page</Link>
                     </Button>
                 </CardContent>

@@ -1,72 +1,73 @@
+
 'use client';
 
-import React from 'react';
+import React, { Suspense, useCallback } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import { Sheet, TrendingUp, DollarSign, Users, Percent, Handshake, Map } from 'lucide-react';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { TrendingUp, DollarSign, Users, Percent, Handshake, Map, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Separator } from '@/components/ui/separator';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 
+const defaultValues = {
+    salesInputs: {
+        initialTransporters: 1000,
+        initialSuppliers: 500,
+        numberOfPowerPartners: 5,
+        opportunitiesPerPartner: 2000,
+        campaignConversionRate: 5,
+        campaignDuration: 6,
+        avgCustomersPerMember: 10,
+        customerConversionRate: 2,
+        customerConversionLag: 3,
+        numberOfIsas: 10,
+        referralsPerIsa: 50,
+        isaConversionRate: 10,
+    },
+    budgetInputs: {
+        revenue: {
+            membershipFees: 250,
+            connectPlanAdoptionRate: 15, 
+            avgConnectPlanFee: 50,
+            mallCommissionRate: 2.5, 
+            avgMallSpendPerMember: 1000, 
+            techServicesAdoptionRate: 10,
+            avgTechSpendPerMember: 150
+        },
+        cogs: { memberCommissionShare: 50, isaCommissionRate: 20 },
+        opexSalaries: [
+            { role: 'Executive Director', count: 1, salary: 150000 },
+            { role: 'Non-Executive Director', count: 2, salary: 25000 },
+            { role: 'Manager', count: 3, salary: 75000 },
+            { role: 'Admin', count: 4, salary: 35000 },
+        ],
+        opexOther: {
+            digitalAdvertising: 30000, contentCreation: 15000, eventsAndSponsorships: 10000,
+            officeRental: 35000, utilities: 15000, insurance: 5000,
+            legalAndProfessional: 10000, bankCharges: 2000, telephone: 8000,
+            travelAndEntertainment: 5000, platformCosts: 20000, softwareLicenses: 10000
+        }
+    }
+};
 
-const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-
-export default function BudgetPage() {
+function BudgetPageComponent() {
     const router = useRouter();
     const { toast } = useToast();
 
     const form = useForm({
-        defaultValues: {
-            startMonth: new Date().getMonth(),
-            startYear: new Date().getFullYear(),
-            forecastMonths: 36,
-            salesInputs: {
-                initialTransporters: 1000,
-                initialSuppliers: 500,
-                numberOfPowerPartners: 5,
-                opportunitiesPerPartner: 2000,
-                campaignConversionRate: 5,
-                campaignDuration: 6,
-                avgCustomersPerMember: 10,
-                customerConversionRate: 2,
-                customerConversionLag: 3,
-                numberOfIsas: 10,
-                referralsPerIsa: 50,
-                isaConversionRate: 10,
-            },
-            budgetInputs: {
-                revenue: {
-                    membershipFees: 250,
-                    connectPlanAdoptionRate: 15, 
-                    avgConnectPlanFee: 50,
-                    mallCommissionRate: 2.5, 
-                    avgMallSpendPerMember: 1000, 
-                    techServicesAdoptionRate: 10,
-                    avgTechSpendPerMember: 150
-                },
-                cogs: { memberCommissionShare: 50, isaCommissionRate: 20 },
-                opexSalaries: [
-                    { role: 'Executive Director', count: 1, salary: 150000 },
-                    { role: 'Non-Executive Director', count: 2, salary: 25000 },
-                    { role: 'Manager', count: 3, salary: 75000 },
-                    { role: 'Admin', count: 4, salary: 35000 },
-                ],
-                opexOther: {
-                    digitalAdvertising: 30000, contentCreation: 15000, eventsAndSponsorships: 10000,
-                    officeRental: 35000, utilities: 15000, insurance: 5000,
-                    legalAndProfessional: 10000, bankCharges: 2000, telephone: 8000,
-                    travelAndEntertainment: 5000, platformCosts: 20000, softwareLicenses: 10000
-                }
+        defaultValues: useCallback(() => {
+            if (typeof window !== 'undefined') {
+                const saved = localStorage.getItem('accountBudgetAssumptions_v1');
+                if (saved) return JSON.parse(saved);
             }
-        }
+            return defaultValues;
+        }, [])()
     });
 
-    const { control, register, handleSubmit, watch } = form;
+    const { control, handleSubmit } = form;
 
     const { fields: staffFields } = useFieldArray({
         control,
@@ -74,59 +75,20 @@ export default function BudgetPage() {
     });
     
     const onSubmit = (data: any) => {
-        const { startMonth, startYear, forecastMonths, salesInputs, budgetInputs } = data;
-
-        const fullSalesInputs = {
-            ...salesInputs,
-            startMonth,
-            startYear,
-            forecastMonths,
-        };
-        
-        const fullData = { salesInputs: fullSalesInputs, budgetInputs };
-        const dataString = encodeURIComponent(JSON.stringify(fullData));
+        localStorage.setItem('accountBudgetAssumptions_v1', JSON.stringify(data));
         
         toast({
             title: "Generating Forecast...",
-            description: "You will be redirected to the income statement.",
+            description: "Your assumptions have been saved. Redirecting to the forecast.",
         });
 
-        router.push(`/account?view=forecast&data=${dataString}`);
+        router.push(`/account?view=forecast`);
     };
 
     return (
         <Form {...form}>
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2"><Sheet /> Budget & Forecast Assumptions</CardTitle>
-                        <CardDescription>Enter your financial assumptions here. Click the button at the bottom to generate the income statement forecast.</CardDescription>
-                    </CardHeader>
-                </Card>
-
-                <div className="space-y-8">
-                    {/* Forecast Settings */}
-                    <Card>
-                        <CardHeader><CardTitle>Forecast Settings</CardTitle></CardHeader>
-                        <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            <div>
-                                <Label htmlFor="start-month">Start Month</Label>
-                                <Select defaultValue={String(watch('startMonth'))} onValueChange={v => control.register('startMonth').onChange({ target: { value: Number(v) } })}>
-                                    <SelectTrigger id="start-month"><SelectValue /></SelectTrigger>
-                                    <SelectContent>{monthNames.map((m, i) => <SelectItem key={i} value={String(i)}>{m}</SelectItem>)}</SelectContent>
-                                </Select>
-                            </div>
-                            <div>
-                                <Label htmlFor="start-year">Start Year</Label>
-                                <Input id="start-year" type="number" {...register('startYear')} />
-                            </div>
-                            <div>
-                                <Label htmlFor="forecast-months">Months to Forecast</Label>
-                                <Input id="forecast-months" type="number" {...register('forecastMonths')} />
-                            </div>
-                        </CardContent>
-                    </Card>
-
+                 <div className="space-y-8">
                     {/* Sales Roadmap */}
                     <Card>
                         <CardHeader><CardTitle className="flex items-center gap-2"><Map />Sales Roadmap Assumptions</CardTitle></CardHeader>
@@ -218,5 +180,13 @@ export default function BudgetPage() {
                 </div>
             </form>
         </Form>
+    );
+}
+
+export default function BudgetPage() {
+    return (
+        <Suspense fallback={<div className="flex justify-center items-center min-h-[calc(100vh-8rem)]"><Loader2 className="h-16 w-16 animate-spin" /></div>}>
+            <BudgetPageComponent />
+        </Suspense>
     );
 }

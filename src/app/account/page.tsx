@@ -49,6 +49,7 @@ import RewardsContent from './rewards';
 import ActivityFeed from './activity-feed';
 import ForecastPage from './forecast/page';
 import BudgetPage from './budget/page';
+import FinancialSetup from './financial-setup';
 
 
 function DocumentsContent() {
@@ -113,6 +114,8 @@ function AccountPageContent() {
         return <WalletContent />;
       case 'billing':
         return <BillingContent />;
+      case 'financial-setup':
+        return <FinancialSetup />;
       case 'budget':
         return <BudgetPage />;
       case 'forecast':
@@ -203,11 +206,15 @@ function AccountPageContent() {
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Financials" isActive={['budget', 'forecast'].includes(activeView)}>
+                <SidebarMenuButton tooltip="Financials" isActive={['financial-setup', 'budget', 'forecast'].includes(activeView)}>
                   <DollarSign />
                   <span>Financial</span>
                 </SidebarMenuButton>
                 <SidebarMenuSub>
+                   <SidebarMenuSubButton isActive={activeView === 'financial-setup'} onClick={() => router.push('/account?view=financial-setup', { scroll: false })}>
+                    <Settings />
+                    <span>Set Up</span>
+                  </SidebarMenuSubButton>
                   <SidebarMenuSubButton isActive={activeView === 'budget'} onClick={() => router.push('/account?view=budget', { scroll: false })}>
                     <Sheet />
                     <span>Budget</span>
