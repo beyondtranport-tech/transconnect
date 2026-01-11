@@ -23,7 +23,7 @@ const defaultValues = {
             techServicesAdoptionRate: 10,
             avgTechSpendPerMember: 150
         },
-        cogs: { memberCommissionShare: 50, isaCommissionRate: 20 },
+        cogs: { isaCommissionRate: 20 },
         opexSalaries: [
             { role: 'Executive Director', count: 1, salary: 150000 },
             { role: 'Non-Executive Director', count: 2, salary: 25000 },
@@ -93,7 +93,6 @@ function BudgetPageComponent() {
                     <Card>
                         <CardHeader><CardTitle className="flex items-center gap-2"><Percent />Cost of Goods Sold (COGS)</CardTitle></CardHeader>
                         <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <FormField name="budgetInputs.cogs.memberCommissionShare" control={control} render={({field}) => <FormItem><FormLabel>Member Commission Share (%)</FormLabel><FormControl><Input type="number" {...field}/></FormControl></FormItem>} />
                             <FormField name="budgetInputs.cogs.isaCommissionRate" control={control} render={({field}) => <FormItem><FormLabel>ISA Commission Rate (%)</FormLabel><FormControl><Input type="number" {...field}/></FormControl></FormItem>} />
                         </CardContent>
                     </Card>

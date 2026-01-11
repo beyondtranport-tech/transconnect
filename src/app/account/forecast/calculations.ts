@@ -57,6 +57,13 @@ export function budgetLogic(roadmapData: any[], budgetInputs: any, targets: any)
     const monthlyOpexOther = Object.values(budgetInputs.opexOther).reduce((sum: number, value: any) => sum + Number(value), 0);
     const totalMonthlyOpex = monthlyOpexSalaries + monthlyOpexOther;
 
+    // Simplified Loyalty Tier Commission Shares - these would ideally be fetched from Firestore
+    const loyaltyTierShares = {
+        bronze: 0.10, // 10%
+        silver: 0.15, // 15%
+        gold: 0.20,   // 20%
+    };
+
     for (let i = 0; i < roadmapData.length; i++) {
         const row = roadmapData[i];
         const members = row.cumulativeMembers;
@@ -83,8 +90,21 @@ export function budgetLogic(roadmapData: any[], budgetInputs: any, targets: any)
         const techRevenue = members * (budgetInputs.revenue.techServicesAdoptionRate / 100) * budgetInputs.revenue.avgTechSpendPerMember;
         const totalRevenue = membershipRevenue + connectPlanRevenue + mallRevenue + techRevenue;
 
-        // COGS Calculation
-        const memberCommission = mallRevenue * (budgetInputs.cogs.memberCommissionShare / 100);
+        // --- COGS Calculation with Loyalty Tiers ---
+        // Simplified assumption: 60% Bronze, 30% Silver, 10% Gold
+        const memberDistribution = {
+            bronze: members * 0.6,
+            silver: members * 0.3,
+            gold: members * 0.1,
+        };
+
+        const weightedCommissionShare = 
+            (memberDistribution.bronze * loyaltyTierShares.bronze) +
+            (memberDistribution.silver * loyaltyTierShares.silver) +
+            (memberDistribution.gold * loyaltyTierShares.gold);
+            
+        const memberCommission = mallRevenue * (weightedCommissionShare / members);
+
         const isaCommission = totalRevenue * (budgetInputs.cogs.isaCommissionRate / 100); // Assuming ISA commission is on all revenue
         const totalCogs = memberCommission + isaCommission;
 
