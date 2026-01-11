@@ -56,7 +56,7 @@ const generateDefaultValues = (months: number) => {
         });
     });
      const roles = [
-        { role: 'Executive Director', count: 1, salary: 150000 },
+        { role: 'Executive Director', count: 1, salary: 50000 },
         { role: 'Non-Executive Director', count: 0, salary: 25000 },
         { role: 'Manager', count: 0, salary: 75000 },
         { role: 'Admin', count: 0, salary: 35000 }, // Initial count is 0
