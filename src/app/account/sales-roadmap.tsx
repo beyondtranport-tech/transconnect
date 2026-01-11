@@ -144,7 +144,7 @@ function SalesRoadmapComponent() {
                                 </TableHeader>
                                 <TableBody>
                                     {salesAssumptions.map((assumption) => (
-                                        <TableRow key={assumption.id}>
+                                        <TableRow key={assumption.id} className="border-b-0">
                                             <TableCell className="font-medium sticky left-0 bg-background z-10">{assumption.label}</TableCell>
                                             {monthHeaders.map((_, monthIndex) => (
                                                 <TableCell key={`${assumption.id}-${monthIndex}`}>
@@ -190,4 +190,3 @@ export default function SalesRoadmap() {
         </Suspense>
     );
 }
-
