@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { Suspense, useCallback, useEffect, useState } from 'react';
@@ -48,12 +47,14 @@ const assumptionGroups = {
 };
 
 const generateDefaultValues = (months: number) => {
-    const defaults: any = { budgetInputs: {}, opexSalaries: [] };
+    const defaults: any = { budgetInputs: {}, opexSalaries: [], baseRates: {} };
     Object.keys(assumptionGroups).forEach(groupKey => {
         const key = groupKey as keyof typeof assumptionGroups;
         defaults.budgetInputs[key] = {};
+        defaults.baseRates[key] = {};
         assumptionGroups[key].forEach(assumption => {
             defaults.budgetInputs[key][assumption.id] = Array(months).fill(assumption.defaultValue);
+            defaults.baseRates[key][assumption.id] = assumption.defaultValue;
         });
     });
      defaults.opexSalaries = [
@@ -114,7 +115,7 @@ function BudgetPageComponent() {
         }, [forecastMonths])()
     });
 
-    const { control, handleSubmit, reset } = form;
+    const { control, handleSubmit, reset, setValue } = form;
 
     const { fields: staffFields } = useFieldArray({
         control,
@@ -145,6 +146,11 @@ function BudgetPageComponent() {
             description: 'Assumptions have been reset to their default values.',
         });
     };
+    
+    const handleBaseRateChange = (groupKey: string, assumptionId: string, value: number) => {
+        const newMonthlyValues = Array(forecastMonths).fill(value);
+        setValue(`budgetInputs.${groupKey}.${assumptionId}` as any, newMonthlyValues);
+    };
 
     if (isLoading) {
         return <div className="flex justify-center items-center h-64"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
@@ -154,6 +160,24 @@ function BudgetPageComponent() {
         assumptionGroups[groupKey].map((assumption) => (
             <TableRow key={assumption.id}>
                 <TableCell className="font-medium sticky left-0 bg-background z-10">{assumption.label}</TableCell>
+                <TableCell className="sticky left-[250px] bg-background z-10">
+                    <Controller
+                        name={`baseRates.${groupKey}.${assumption.id}` as any}
+                        control={control}
+                        render={({ field }) => (
+                            <Input
+                                type="number"
+                                className="h-8 w-24 text-center"
+                                {...field}
+                                onChange={e => {
+                                    const val = parseFloat(e.target.value) || 0;
+                                    field.onChange(val);
+                                    handleBaseRateChange(groupKey, assumption.id, val);
+                                }}
+                            />
+                        )}
+                    />
+                </TableCell>
                 {monthHeaders.map((_, monthIndex) => (
                     <TableCell key={`${assumption.id}-${monthIndex}`}>
                         <Controller
@@ -181,7 +205,7 @@ function BudgetPageComponent() {
                     <CardHeader className="flex flex-row justify-between items-start">
                         <div>
                             <CardTitle>Budget Assumptions</CardTitle>
-                            <CardDescription>Enter your monthly assumptions for Revenue, COGS, and Operating Expenses.</CardDescription>
+                            <CardDescription>Enter a base rate to populate all months, or edit months individually.</CardDescription>
                         </div>
                         <Button type="button" variant="outline" onClick={handleReset}>
                             <RotateCcw className="mr-2 h-4 w-4" />
@@ -194,15 +218,16 @@ function BudgetPageComponent() {
                                 <TableHeader>
                                     <TableRow>
                                         <TableHead className="w-[250px] sticky left-0 bg-background z-10">Assumption</TableHead>
+                                        <TableHead className="w-[120px] sticky left-[250px] bg-background z-10 text-center">Base Rate</TableHead>
                                         {monthHeaders.map(header => <TableHead key={header} className="w-[120px] text-center">{header}</TableHead>)}
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    <TableRow className="bg-muted/50 font-semibold"><TableCell colSpan={forecastMonths + 1}><DollarSign className="inline h-4 w-4 mr-2"/>Revenue</TableCell></TableRow>
+                                    <TableRow className="bg-muted/50 font-semibold"><TableCell colSpan={forecastMonths + 2}><DollarSign className="inline h-4 w-4 mr-2"/>Revenue</TableCell></TableRow>
                                     {renderAssumptionRows('revenue')}
-                                    <TableRow className="bg-muted/50 font-semibold"><TableCell colSpan={forecastMonths + 1}><Percent className="inline h-4 w-4 mr-2"/>COGS</TableCell></TableRow>
+                                    <TableRow className="bg-muted/50 font-semibold"><TableCell colSpan={forecastMonths + 2}><Percent className="inline h-4 w-4 mr-2"/>COGS</TableCell></TableRow>
                                     {renderAssumptionRows('cogs')}
-                                    <TableRow className="bg-muted/50 font-semibold"><TableCell colSpan={forecastMonths + 1}><Users className="inline h-4 w-4 mr-2"/>Other Operating Expenses</TableCell></TableRow>
+                                    <TableRow className="bg-muted/50 font-semibold"><TableCell colSpan={forecastMonths + 2}><Users className="inline h-4 w-4 mr-2"/>Other Operating Expenses</TableCell></TableRow>
                                     {renderAssumptionRows('opexOther')}
                                 </TableBody>
                             </Table>
