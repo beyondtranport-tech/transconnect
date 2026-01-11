@@ -25,14 +25,16 @@ function ForecastComponent() {
         try {
             const settingsString = localStorage.getItem('accountFinancialSetup_v1');
             const assumptionsString = localStorage.getItem('accountBudgetAssumptions_v1');
+            const salesRoadmapString = localStorage.getItem('accountSalesRoadmap_v1');
             
             const settings = settingsString ? JSON.parse(settingsString) : null;
             const assumptions = assumptionsString ? JSON.parse(assumptionsString) : null;
+            const salesRoadmap = salesRoadmapString ? JSON.parse(salesRoadmapString) : null;
 
-            if (!settings || !assumptions) return { salesInputs: null, budgetInputs: null, settings: null };
+            if (!settings || !assumptions || !salesRoadmap) return { salesInputs: null, budgetInputs: null, settings: null };
 
             return { 
-                salesInputs: { ...assumptions.salesInputs, ...settings }, 
+                salesInputs: salesRoadmap.monthlyAssumptions, 
                 budgetInputs: assumptions.budgetInputs, 
                 settings 
             };
@@ -43,9 +45,9 @@ function ForecastComponent() {
     }, []);
     
     const roadmapData = useMemo(() => {
-        if (!salesInputs) return [];
-        return salesRoadmapLogic(salesInputs);
-    }, [salesInputs]);
+        if (!salesInputs || !settings) return [];
+        return salesRoadmapLogic(settings, salesInputs);
+    }, [salesInputs, settings]);
 
     const forecastData = useMemo(() => {
         if (roadmapData.length === 0 || !budgetInputs) return [];
@@ -125,12 +127,15 @@ function ForecastComponent() {
                     <AlertTriangle className="mx-auto h-12 w-12 text-destructive" />
                     <CardTitle>Incomplete Forecast Data</CardTitle>
                     <CardDescription>
-                        It looks like you haven't entered all your forecast assumptions yet. Please complete the setup and budget pages first.
+                        It looks like you haven't entered all your forecast assumptions yet. Please complete the setup, sales roadmap, and budget pages first.
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="text-center space-y-2">
                     <Button asChild>
                         <Link href="/account?view=financial-setup">Go to Set Up</Link>
+                    </Button>
+                    <Button asChild variant="outline">
+                        <Link href="/account?view=sales-roadmap">Go to Sales Roadmap</Link>
                     </Button>
                      <Button asChild variant="outline">
                         <Link href="/account?view=budget">Go to Budget Page</Link>

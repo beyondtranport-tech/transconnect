@@ -30,6 +30,7 @@ import {
   Sheet,
   TrendingUp,
   DollarSign,
+  Map,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -50,6 +51,7 @@ import ActivityFeed from './activity-feed';
 import ForecastPage from './forecast/page';
 import BudgetPage from './budget/page';
 import FinancialSetup from './financial-setup';
+import SalesRoadmap from './sales-roadmap';
 
 
 function DocumentsContent() {
@@ -116,6 +118,8 @@ function AccountPageContent() {
         return <BillingContent />;
       case 'financial-setup':
         return <FinancialSetup />;
+      case 'sales-roadmap':
+        return <SalesRoadmap />;
       case 'budget':
         return <BudgetPage />;
       case 'forecast':
@@ -206,7 +210,7 @@ function AccountPageContent() {
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Financials" isActive={['financial-setup', 'budget', 'forecast'].includes(activeView)}>
+                <SidebarMenuButton tooltip="Financials" isActive={['financial-setup', 'sales-roadmap', 'budget', 'forecast'].includes(activeView)}>
                   <DollarSign />
                   <span>Financial</span>
                 </SidebarMenuButton>
@@ -214,6 +218,10 @@ function AccountPageContent() {
                    <SidebarMenuSubButton isActive={activeView === 'financial-setup'} onClick={() => router.push('/account?view=financial-setup', { scroll: false })}>
                     <Settings />
                     <span>Set Up</span>
+                  </SidebarMenuSubButton>
+                  <SidebarMenuSubButton isActive={activeView === 'sales-roadmap'} onClick={() => router.push('/account?view=sales-roadmap', { scroll: false })}>
+                    <Map />
+                    <span>Sales Roadmap</span>
                   </SidebarMenuSubButton>
                   <SidebarMenuSubButton isActive={activeView === 'budget'} onClick={() => router.push('/account?view=budget', { scroll: false })}>
                     <Sheet />

@@ -1,30 +1,47 @@
+
 'use client';
 
 const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
-export function salesRoadmapLogic(inputs: any) {
+export function salesRoadmapLogic(settings: any, salesInputs: any) {
+    if (!settings || !salesInputs) return [];
+    
     const data = [];
     let cumulativeMembers = 0;
-    const totalPowerPartnerProspects = inputs.numberOfPowerPartners * inputs.opportunitiesPerPartner;
-    const totalInitialProspects = inputs.initialTransporters + inputs.initialSuppliers + totalPowerPartnerProspects;
-    const monthlyProspectsReached = Math.floor(totalInitialProspects / inputs.forecastMonths);
 
-    for (let i = 0; i < inputs.forecastMonths; i++) {
-        const date = new Date(inputs.startYear, inputs.startMonth + i, 1);
+    for (let i = 0; i < settings.forecastMonths; i++) {
+        const date = new Date(settings.startYear, settings.startMonth + i, 1);
         const month = monthNames[date.getMonth()];
         const year = date.getFullYear();
 
-        const currentCampaignConversionRate = i < inputs.campaignDuration ? inputs.campaignConversionRate / 100 : 0;
-        const campaignNewMembers = Math.floor(monthlyProspectsReached * currentCampaignConversionRate);
+        const monthlyInitialTransporters = salesInputs.initialTransporters?.[i] || 0;
+        const monthlyInitialSuppliers = salesInputs.initialSuppliers?.[i] || 0;
+        const monthlyPowerPartners = salesInputs.numberOfPowerPartners?.[i] || 0;
+        const monthlyOppsPerPartner = salesInputs.opportunitiesPerPartner?.[i] || 0;
+        const monthlyCampaignConversion = (salesInputs.campaignConversionRate?.[i] || 0) / 100;
+        const monthlyCampaignDuration = salesInputs.campaignDuration?.[i] || 0;
+
+        const totalPowerPartnerProspects = monthlyPowerPartners * monthlyOppsPerPartner;
+        const totalInitialProspects = monthlyInitialTransporters + monthlyInitialSuppliers + totalPowerPartnerProspects;
+        
+        const currentCampaignConversionRate = i < monthlyCampaignDuration ? monthlyCampaignConversion : 0;
+        const campaignNewMembers = Math.floor(totalInitialProspects * currentCampaignConversionRate);
 
         let networkNewMembers = 0;
-        if (i >= inputs.customerConversionLag) {
-            const membersAtLag = data[i - inputs.customerConversionLag]?.cumulativeMembers || 0;
-            const potentialNetworkPool = membersAtLag * inputs.avgCustomersPerMember;
-            networkNewMembers = Math.floor(potentialNetworkPool * (inputs.customerConversionRate / 100) / 12);
+        const lag = salesInputs.customerConversionLag?.[i] || 3;
+        if (i >= lag) {
+            const membersAtLag = data[i - lag]?.cumulativeMembers || 0;
+            const avgCustomers = salesInputs.avgCustomersPerMember?.[i] || 0;
+            const potentialNetworkPool = membersAtLag * avgCustomers;
+            const customerConversion = (salesInputs.customerConversionRate?.[i] || 0) / 100;
+            networkNewMembers = Math.floor(potentialNetworkPool * customerConversion / 12);
         }
 
-        const isaNewMembers = Math.floor(inputs.numberOfIsas * inputs.referralsPerIsa * (inputs.isaConversionRate / 100));
+        const monthlyIsas = salesInputs.numberOfIsas?.[i] || 0;
+        const monthlyReferralsPerIsa = salesInputs.referralsPerIsa?.[i] || 0;
+        const monthlyIsaConversion = (salesInputs.isaConversionRate?.[i] || 0) / 100;
+        const isaNewMembers = Math.floor(monthlyIsas * monthlyReferralsPerIsa * monthlyIsaConversion);
+        
         const totalNewMembers = campaignNewMembers + networkNewMembers + isaNewMembers;
         cumulativeMembers += totalNewMembers;
 

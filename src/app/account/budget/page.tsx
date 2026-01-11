@@ -13,20 +13,6 @@ import { Separator } from '@/components/ui/separator';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 
 const defaultValues = {
-    salesInputs: {
-        initialTransporters: 1000,
-        initialSuppliers: 500,
-        numberOfPowerPartners: 5,
-        opportunitiesPerPartner: 2000,
-        campaignConversionRate: 5,
-        campaignDuration: 6,
-        avgCustomersPerMember: 10,
-        customerConversionRate: 2,
-        customerConversionLag: 3,
-        numberOfIsas: 10,
-        referralsPerIsa: 50,
-        isaConversionRate: 10,
-    },
     budgetInputs: {
         revenue: {
             membershipFees: 250,
@@ -89,27 +75,6 @@ function BudgetPageComponent() {
         <Form {...form}>
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
                  <div className="space-y-8">
-                    {/* Sales Roadmap */}
-                    <Card>
-                        <CardHeader><CardTitle className="flex items-center gap-2"><Map />Sales Roadmap Assumptions</CardTitle></CardHeader>
-                        <CardContent className="space-y-6">
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                <FormField name="salesInputs.initialTransporters" control={control} render={({field}) => <FormItem><FormLabel>Initial Transporters</FormLabel><FormControl><Input type="number" {...field}/></FormControl></FormItem>} />
-                                <FormField name="salesInputs.initialSuppliers" control={control} render={({field}) => <FormItem><FormLabel>Initial Suppliers</FormLabel><FormControl><Input type="number" {...field}/></FormControl></FormItem>} />
-                                <FormField name="salesInputs.numberOfPowerPartners" control={control} render={({field}) => <FormItem><FormLabel># Power Partners</FormLabel><FormControl><Input type="number" {...field}/></FormControl></FormItem>} />
-                                <FormField name="salesInputs.opportunitiesPerPartner" control={control} render={({field}) => <FormItem><FormLabel>Opps per Partner</FormLabel><FormControl><Input type="number" {...field}/></FormControl></FormItem>} />
-                                <FormField name="salesInputs.campaignConversionRate" control={control} render={({field}) => <FormItem><FormLabel>Campaign Conversion (%)</FormLabel><FormControl><Input type="number" {...field}/></FormControl></FormItem>} />
-                                <FormField name="salesInputs.campaignDuration" control={control} render={({field}) => <FormItem><FormLabel>Campaign Duration (mths)</FormLabel><FormControl><Input type="number" {...field}/></FormControl></FormItem>} />
-                                <FormField name="salesInputs.avgCustomersPerMember" control={control} render={({field}) => <FormItem><FormLabel>Avg Customers / Member</FormLabel><FormControl><Input type="number" {...field}/></FormControl></FormItem>} />
-                                <FormField name="salesInputs.customerConversionRate" control={control} render={({field}) => <FormItem><FormLabel>Customer Conversion (%)</FormLabel><FormControl><Input type="number" {...field}/></FormControl></FormItem>} />
-                                <FormField name="salesInputs.customerConversionLag" control={control} render={({field}) => <FormItem><FormLabel>Conversion Lag (mths)</FormLabel><FormControl><Input type="number" {...field}/></FormControl></FormItem>} />
-                                <FormField name="salesInputs.numberOfIsas" control={control} render={({field}) => <FormItem><FormLabel># of ISAs</FormLabel><FormControl><Input type="number" {...field}/></FormControl></FormItem>} />
-                                <FormField name="salesInputs.referralsPerIsa" control={control} render={({field}) => <FormItem><FormLabel>Referrals per ISA</FormLabel><FormControl><Input type="number" {...field}/></FormControl></FormItem>} />
-                                <FormField name="salesInputs.isaConversionRate" control={control} render={({field}) => <FormItem><FormLabel>ISA Conversion (%)</FormLabel><FormControl><Input type="number" {...field}/></FormControl></FormItem>} />
-                            </div>
-                        </CardContent>
-                    </Card>
-
                     {/* Revenue */}
                     <Card>
                         <CardHeader><CardTitle className="flex items-center gap-2"><DollarSign />Revenue Assumptions</CardTitle></CardHeader>
