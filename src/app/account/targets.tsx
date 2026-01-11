@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { Suspense, useCallback, useEffect, useState } from 'react';
@@ -17,13 +18,13 @@ const SETUP_KEY = 'accountFinancialSetup_v1';
 const TARGETS_KEY = 'accountFinancialTargets_v1';
 
 const targetAssumptions = [
-    { id: 'membersVendors', label: '# of Members (Vendors)', defaultValue: 100 },
-    { id: 'membersBuyers', label: '# of Members (Buyers)', defaultValue: 200 },
+    { id: 'membersVendors', label: '# of Members (Vendors)', defaultValue: 10 },
+    { id: 'membersBuyers', label: '# of Members (Buyers)', defaultValue: 10 },
     { id: 'membersPartners', label: '# of Members (Partners)', defaultValue: 10 },
-    { id: 'membersAssociates', label: '# of Members (Associates)', defaultValue: 5 },
+    { id: 'membersAssociates', label: '# of Members (Associates)', defaultValue: 10 },
     { id: 'membersIsaAgents', label: '# of Members (ISA Agents)', defaultValue: 10 },
-    { id: 'membersDrivers', label: '# of Members (Drivers)', defaultValue: 50 },
-    { id: 'membersDevelopers', label: '# of Members (Developers)', defaultValue: 2 },
+    { id: 'membersDrivers', label: '# of Members (Drivers)', defaultValue: 10 },
+    { id: 'membersDevelopers', label: '# of Members (Developers)', defaultValue: 10 },
     { id: 'rewardsPlans', label: '# of Rewards Plans', defaultValue: 15 },
     { id: 'loyaltyPlans', label: '# of Loyalty Plans', defaultValue: 20 },
     { id: 'actionPlans', label: '# of Action Plans', defaultValue: 30 },
