@@ -15,21 +15,16 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 
 const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const SETUP_KEY = 'accountFinancialSetup_v1';
-const SALES_ROADMAP_KEY = 'accountSalesRoadmap_v1';
+const SALES_ROADMAP_KEY = 'accountSalesRoadmap_v2'; // Changed version
 
 const salesAssumptions = [
-    { id: 'initialTransporters', label: 'Initial Transporters', defaultValue: 1000 },
-    { id: 'initialSuppliers', label: 'Initial Suppliers', defaultValue: 500 },
-    { id: 'numberOfPowerPartners', label: '# Power Partners', defaultValue: 5 },
-    { id: 'opportunitiesPerPartner', label: 'Opps per Partner', defaultValue: 2000 },
-    { id: 'campaignConversionRate', label: 'Campaign Conversion (%)', defaultValue: 5 },
-    { id: 'campaignDuration', label: 'Campaign Duration (mths)', defaultValue: 6 },
-    { id: 'avgCustomersPerMember', label: 'Avg Customers / Member', defaultValue: 10 },
-    { id: 'customerConversionRate', label: 'Customer Conversion (%)', defaultValue: 2 },
-    { id: 'customerConversionLag', label: 'Conversion Lag (mths)', defaultValue: 3 },
-    { id: 'numberOfIsas', label: '# of ISAs', defaultValue: 10 },
-    { id: 'referralsPerIsa', label: 'Referrals per ISA', defaultValue: 50 },
-    { id: 'isaConversionRate', label: 'ISA Conversion (%)', defaultValue: 10 },
+    { id: 'referralsVendors', label: '# of Referrals (Vendors)', defaultValue: 10 },
+    { id: 'referralsBuyers', label: '# of Referrals (Buyers)', defaultValue: 10 },
+    { id: 'referralsPartners', label: '# of Referrals (Partners)', defaultValue: 1 },
+    { id: 'referralsAssociates', label: '# of Referrals (Associates)', defaultValue: 10 },
+    { id: 'referralsIsaAgents', label: '# of Referrals (ISA Agents)', defaultValue: 5 },
+    { id: 'referralsDrivers', label: '# of Referrals (Drivers)', defaultValue: 10 },
+    { id: 'referralsDevelopers', label: '# of Referrals (Developers)', defaultValue: 10 },
 ];
 
 const generateDefaultValues = (months: number) => {
@@ -98,17 +93,18 @@ function SalesRoadmapComponent() {
     const onSubmit = (data: any) => {
         localStorage.setItem(SALES_ROADMAP_KEY, JSON.stringify(data));
         toast({
-            title: "Sales Roadmap Saved!",
-            description: "Your monthly sales assumptions have been saved locally.",
+            title: "Referral Targets Saved!",
+            description: "Your monthly referral targets have been saved locally.",
         });
-        router.push(`/account?view=forecast`);
+        // You might want to navigate to another page to see the effect of these targets.
+        // For now, we'll just save.
     };
 
     const handleReset = () => {
         const defaults = generateDefaultValues(forecastMonths);
         reset(defaults);
         toast({
-            title: 'Sales Roadmap Reset',
+            title: 'Referral Targets Reset',
             description: 'Assumptions have been reset to their default values.',
         });
     };
@@ -123,8 +119,8 @@ function SalesRoadmapComponent() {
                 <Card>
                     <CardHeader className="flex flex-row justify-between items-start">
                         <div>
-                            <CardTitle className="flex items-center gap-2"><Map /> Sales Roadmap Assumptions</CardTitle>
-                            <CardDescription>Enter your sales and growth assumptions for each month of the forecast period. This data is saved locally.</CardDescription>
+                            <CardTitle className="flex items-center gap-2"><Map /> Referral Targets</CardTitle>
+                            <CardDescription>Set your monthly referral targets for each member role. This data is saved locally.</CardDescription>
                         </div>
                         <Button type="button" variant="outline" onClick={handleReset}>
                             <RotateCcw className="mr-2 h-4 w-4" />
@@ -136,7 +132,7 @@ function SalesRoadmapComponent() {
                             <Table>
                                 <TableHeader>
                                     <TableRow>
-                                        <TableHead className="w-[250px] sticky left-0 bg-background z-10">Assumption</TableHead>
+                                        <TableHead className="w-[250px] sticky left-0 bg-background z-10">Target Metric</TableHead>
                                         {monthHeaders.map(header => (
                                             <TableHead key={header} className="w-[120px] text-center">{header}</TableHead>
                                         ))}
@@ -174,7 +170,7 @@ function SalesRoadmapComponent() {
                 <div className="mt-8 flex justify-end">
                     <Button type="submit">
                         <Save className="mr-2 h-4 w-4" />
-                        Save Sales Roadmap
+                        Save Referral Targets
                     </Button>
                 </div>
             </form>
