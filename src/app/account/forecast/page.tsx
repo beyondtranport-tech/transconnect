@@ -23,22 +23,22 @@ function ForecastComponent() {
         if (typeof window === 'undefined') return { salesInputs: null, budgetInputs: null, settings: null, targets: null };
         try {
             const settingsString = localStorage.getItem('accountFinancialSetup_v1');
-            const assumptionsString = localStorage.getItem('accountBudgetAssumptions_v1');
+            const budgetString = localStorage.getItem('accountBudgetAssumptions_v2'); // Updated key
             const salesRoadmapString = localStorage.getItem('accountSalesRoadmap_v1');
             const targetsString = localStorage.getItem('accountFinancialTargets_v1');
             
             const settings = settingsString ? JSON.parse(settingsString) : null;
-            const assumptions = assumptionsString ? JSON.parse(assumptionsString) : null;
+            const budget = budgetString ? JSON.parse(budgetString) : null;
             const salesRoadmap = salesRoadmapString ? JSON.parse(salesRoadmapString) : null;
             const targets = targetsString ? JSON.parse(targetsString) : null;
 
-            if (!settings || !assumptions || !salesRoadmap || !targets) {
+            if (!settings || !budget || !salesRoadmap || !targets) {
                 return { salesInputs: null, budgetInputs: null, settings: null, targets: null };
             }
 
             return { 
                 salesInputs: salesRoadmap.monthlyAssumptions, 
-                budgetInputs: assumptions.budgetInputs, 
+                budgetInputs: budget.budgetInputs, 
                 settings,
                 targets,
             };
@@ -55,6 +55,7 @@ function ForecastComponent() {
 
     const forecastData = useMemo(() => {
         if (roadmapData.length === 0 || !budgetInputs || !targets) return [];
+        // Note: The budgetLogic function will need to be updated to handle monthly budgetInputs
         return budgetLogic(roadmapData, budgetInputs, targets);
     }, [roadmapData, budgetInputs, targets]);
 
