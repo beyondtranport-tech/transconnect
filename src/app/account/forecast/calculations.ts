@@ -66,7 +66,13 @@ export function budgetLogic(budgetData: any, targets: any) {
         const month = monthNames[date.getMonth()];
         const year = date.getFullYear();
 
-        const members = (monthlyTargets.membersVendors?.[i] || 0) + (monthlyTargets.membersBuyers?.[i] || 0) + (monthlyTargets.membersPartners?.[i] || 0);
+        const members = (monthlyTargets.membersVendors?.[i] || 0) + 
+                        (monthlyTargets.membersBuyers?.[i] || 0) + 
+                        (monthlyTargets.membersPartners?.[i] || 0) +
+                        (monthlyTargets.membersAssociates?.[i] || 0) +
+                        (monthlyTargets.membersIsaAgents?.[i] || 0) +
+                        (monthlyTargets.membersDrivers?.[i] || 0) +
+                        (monthlyTargets.membersDevelopers?.[i] || 0);
 
         // Get adoption counts directly from targets
         const rewardsAdoptionCount = monthlyTargets.rewardsPlans?.[i] || 0;
