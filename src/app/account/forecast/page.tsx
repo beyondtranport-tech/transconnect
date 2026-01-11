@@ -19,11 +19,11 @@ const formatNumber = (value: number) => {
 };
 
 function ForecastComponent() {
-    const { salesInputs, budgetInputs, settings, targets } = useMemo(() => {
-        if (typeof window === 'undefined') return { salesInputs: null, budgetInputs: null, settings: null, targets: null };
+    const { salesInputs, budgetData, settings, targets } = useMemo(() => {
+        if (typeof window === 'undefined') return { salesInputs: null, budgetData: null, settings: null, targets: null };
         try {
             const settingsString = localStorage.getItem('accountFinancialSetup_v1');
-            const budgetString = localStorage.getItem('accountBudgetAssumptions_v2'); // Updated key
+            const budgetString = localStorage.getItem('accountBudgetAssumptions_v2');
             const salesRoadmapString = localStorage.getItem('accountSalesRoadmap_v1');
             const targetsString = localStorage.getItem('accountFinancialTargets_v1');
             
@@ -33,18 +33,18 @@ function ForecastComponent() {
             const targets = targetsString ? JSON.parse(targetsString) : null;
 
             if (!settings || !budget || !salesRoadmap || !targets) {
-                return { salesInputs: null, budgetInputs: null, settings: null, targets: null };
+                return { salesInputs: null, budgetData: null, settings: null, targets: null };
             }
 
             return { 
                 salesInputs: salesRoadmap.monthlyAssumptions, 
-                budgetInputs: budget.budgetInputs, 
+                budgetData: budget, 
                 settings,
                 targets,
             };
         } catch (e) {
             console.error("Failed to parse forecast data:", e);
-            return { salesInputs: null, budgetInputs: null, settings: null, targets: null };
+            return { salesInputs: null, budgetData: null, settings: null, targets: null };
         }
     }, []);
     
@@ -54,10 +54,9 @@ function ForecastComponent() {
     }, [salesInputs, settings]);
 
     const forecastData = useMemo(() => {
-        if (roadmapData.length === 0 || !budgetInputs || !targets) return [];
-        // Note: The budgetLogic function will need to be updated to handle monthly budgetInputs
-        return budgetLogic(roadmapData, budgetInputs, targets);
-    }, [roadmapData, budgetInputs, targets]);
+        if (roadmapData.length === 0 || !budgetData || !targets) return [];
+        return budgetLogic(roadmapData, budgetData, targets);
+    }, [roadmapData, budgetData, targets]);
 
     const yearlyTotals = useMemo(() => {
         const totals: Record<string, any> = {};
@@ -125,7 +124,7 @@ function ForecastComponent() {
         { key: 'netProfit', label: 'Net Profit', format: formatCurrency, isBold: true, isPrimary: true, isProfit: true },
     ];
 
-    if (!settings || !salesInputs || !budgetInputs || !targets || forecastData.length === 0) {
+    if (!settings || !salesInputs || !budgetData || !targets || forecastData.length === 0) {
         return (
             <Card className="w-full max-w-2xl mx-auto">
                 <CardHeader className="text-center">

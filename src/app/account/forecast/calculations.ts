@@ -49,7 +49,10 @@ export function salesRoadmapLogic(settings: any, salesInputs: any) {
     return data;
 }
 
-export function budgetLogic(roadmapData: any[], budgetInputs: any, targets: any) {
+export function budgetLogic(roadmapData: any[], budgetData: any, targets: any) {
+    if (!budgetData || !budgetData.budgetInputs) return [];
+    
+    const { budgetInputs } = budgetData;
     const forecastData = [];
 
     // Static salary cost per month
