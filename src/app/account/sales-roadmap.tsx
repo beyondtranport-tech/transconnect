@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { Suspense, useCallback, useEffect, useState } from 'react';
@@ -20,31 +19,59 @@ const SALES_ROADMAP_KEY = 'accountSalesRoadmap_v3'; // Incremented version for n
 const salesRoleGroups = [
     {
         role: 'Vendors',
-        assumptions: [{ id: 'referralsVendors', label: '# of Referrals', defaultValue: 10 }]
+        assumptions: [
+            { id: 'referralsVendors', label: '# of Referrals', defaultValue: 10 },
+            { id: 'conversionToUserVendors', label: '% Conversion to User', defaultValue: 10 },
+            { id: 'conversionToMemberVendors', label: '% Conversion to Member', defaultValue: 5 }
+        ]
     },
     {
         role: 'Buyers',
-        assumptions: [{ id: 'referralsBuyers', label: '# of Referrals', defaultValue: 10 }]
+        assumptions: [
+            { id: 'referralsBuyers', label: '# of Referrals', defaultValue: 10 },
+            { id: 'conversionToUserBuyers', label: '% Conversion to User', defaultValue: 10 },
+            { id: 'conversionToMemberBuyers', label: '% Conversion to Member', defaultValue: 5 }
+        ]
     },
     {
         role: 'Partners',
-        assumptions: [{ id: 'referralsPartners', label: '# of Referrals', defaultValue: 1 }]
+        assumptions: [
+            { id: 'referralsPartners', label: '# of Referrals', defaultValue: 1 },
+            { id: 'conversionToUserPartners', label: '% Conversion to User', defaultValue: 10 },
+            { id: 'conversionToMemberPartners', label: '% Conversion to Member', defaultValue: 5 }
+        ]
     },
     {
         role: 'Associates',
-        assumptions: [{ id: 'referralsAssociates', label: '# of Referrals', defaultValue: 10 }]
+        assumptions: [
+            { id: 'referralsAssociates', label: '# of Referrals', defaultValue: 10 },
+            { id: 'conversionToUserAssociates', label: '% Conversion to User', defaultValue: 10 },
+            { id: 'conversionToMemberAssociates', label: '% Conversion to Member', defaultValue: 5 }
+        ]
     },
     {
         role: 'ISA Agents',
-        assumptions: [{ id: 'referralsIsaAgents', label: '# of Referrals', defaultValue: 5 }]
+        assumptions: [
+            { id: 'referralsIsaAgents', label: '# of Referrals', defaultValue: 5 },
+            { id: 'conversionToUserIsaAgents', label: '% Conversion to User', defaultValue: 10 },
+            { id: 'conversionToMemberIsaAgents', label: '% Conversion to Member', defaultValue: 5 }
+        ]
     },
     {
         role: 'Drivers',
-        assumptions: [{ id: 'referralsDrivers', label: '# of Referrals', defaultValue: 10 }]
+        assumptions: [
+            { id: 'referralsDrivers', label: '# of Referrals', defaultValue: 10 },
+            { id: 'conversionToUserDrivers', label: '% Conversion to User', defaultValue: 10 },
+            { id: 'conversionToMemberDrivers', label: '% Conversion to Member', defaultValue: 5 }
+        ]
     },
     {
         role: 'Developers',
-        assumptions: [{ id: 'referralsDevelopers', label: '# of Referrals', defaultValue: 10 }]
+        assumptions: [
+            { id: 'referralsDevelopers', label: '# of Referrals', defaultValue: 10 },
+            { id: 'conversionToUserDevelopers', label: '% Conversion to User', defaultValue: 10 },
+            { id: 'conversionToMemberDevelopers', label: '% Conversion to Member', defaultValue: 5 }
+        ]
     },
 ];
 
@@ -142,8 +169,8 @@ function SalesRoadmapComponent() {
                 <Card>
                     <CardHeader className="flex flex-row justify-between items-start">
                         <div>
-                            <CardTitle className="flex items-center gap-2"><Map /> Referral Targets</CardTitle>
-                            <CardDescription>Set your monthly referral targets for each member role. This data is saved locally.</CardDescription>
+                            <CardTitle className="flex items-center gap-2"><Map /> Sales Conversion Funnel</CardTitle>
+                            <CardDescription>Set your monthly referral targets and conversion rates for each member role. This data is saved locally.</CardDescription>
                         </div>
                          <Button type="button" variant="outline" onClick={handleReset}>
                             <RotateCcw className="mr-2 h-4 w-4" />
@@ -203,7 +230,7 @@ function SalesRoadmapComponent() {
                 <div className="mt-8 flex justify-end">
                     <Button type="submit">
                         <Save className="mr-2 h-4 w-4" />
-                        Save Referral Targets
+                        Save Sales Roadmap
                     </Button>
                 </div>
             </form>
@@ -219,4 +246,3 @@ export default function SalesRoadmap() {
         </Suspense>
     );
 }
-
