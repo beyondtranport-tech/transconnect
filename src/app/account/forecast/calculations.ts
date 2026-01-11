@@ -1,4 +1,3 @@
-
 'use client';
 
 const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -50,19 +49,35 @@ export function salesRoadmapLogic(settings: any, salesInputs: any) {
     return data;
 }
 
-export function budgetLogic(roadmapData: any[], budgetInputs: any) {
+export function budgetLogic(roadmapData: any[], budgetInputs: any, targets: any) {
     const forecastData = [];
 
     const monthlyOpexSalaries = budgetInputs.opexSalaries.reduce((sum: number, role: any) => sum + (role.count * role.salary), 0);
     const monthlyOpexOther = Object.values(budgetInputs.opexOther).reduce((sum: number, value: any) => sum + Number(value), 0);
     const totalMonthlyOpex = monthlyOpexSalaries + monthlyOpexOther;
 
-    for (const row of roadmapData) {
+    for (let i = 0; i < roadmapData.length; i++) {
+        const row = roadmapData[i];
         const members = row.cumulativeMembers;
 
+        // Get adoption rates for the current month
+        const rewardsAdoption = (targets?.monthlyTargets?.rewardsPlans?.[i] || 0) / 100;
+        const loyaltyAdoption = (targets?.monthlyTargets?.loyaltyPlans?.[i] || 0) / 100;
+        const actionsAdoption = (targets?.monthlyTargets?.actionPlans?.[i] || 0) / 100;
+
+        // Get plan prices from budget inputs
+        const rewardsPrice = budgetInputs.revenue.avgConnectPlanFee; // Assuming this is the price for all plans for now
+        const loyaltyPrice = budgetInputs.revenue.avgConnectPlanFee;
+        const actionsPrice = budgetInputs.revenue.avgConnectPlanFee;
+
+        // Calculate revenue from each Connect Plan
+        const rewardsRevenue = members * rewardsAdoption * rewardsPrice;
+        const loyaltyRevenue = members * loyaltyAdoption * loyaltyPrice;
+        const actionsRevenue = members * actionsAdoption * actionsPrice;
+        const connectPlanRevenue = rewardsRevenue + loyaltyRevenue + actionsRevenue;
+        
         // Revenue Calculation
         const membershipRevenue = members * budgetInputs.revenue.membershipFees;
-        const connectPlanRevenue = members * (budgetInputs.revenue.connectPlanAdoptionRate / 100) * budgetInputs.revenue.avgConnectPlanFee;
         const mallRevenue = members * budgetInputs.revenue.avgMallSpendPerMember * (budgetInputs.revenue.mallCommissionRate / 100);
         const techRevenue = members * (budgetInputs.revenue.techServicesAdoptionRate / 100) * budgetInputs.revenue.avgTechSpendPerMember;
         const totalRevenue = membershipRevenue + connectPlanRevenue + mallRevenue + techRevenue;

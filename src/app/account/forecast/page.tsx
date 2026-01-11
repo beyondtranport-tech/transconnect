@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useMemo, Suspense, useCallback } from 'react';
@@ -20,27 +19,32 @@ const formatNumber = (value: number) => {
 };
 
 function ForecastComponent() {
-    const { salesInputs, budgetInputs, settings } = useMemo(() => {
-        if (typeof window === 'undefined') return { salesInputs: null, budgetInputs: null, settings: null };
+    const { salesInputs, budgetInputs, settings, targets } = useMemo(() => {
+        if (typeof window === 'undefined') return { salesInputs: null, budgetInputs: null, settings: null, targets: null };
         try {
             const settingsString = localStorage.getItem('accountFinancialSetup_v1');
             const assumptionsString = localStorage.getItem('accountBudgetAssumptions_v1');
             const salesRoadmapString = localStorage.getItem('accountSalesRoadmap_v1');
+            const targetsString = localStorage.getItem('accountFinancialTargets_v1');
             
             const settings = settingsString ? JSON.parse(settingsString) : null;
             const assumptions = assumptionsString ? JSON.parse(assumptionsString) : null;
             const salesRoadmap = salesRoadmapString ? JSON.parse(salesRoadmapString) : null;
+            const targets = targetsString ? JSON.parse(targetsString) : null;
 
-            if (!settings || !assumptions || !salesRoadmap) return { salesInputs: null, budgetInputs: null, settings: null };
+            if (!settings || !assumptions || !salesRoadmap || !targets) {
+                return { salesInputs: null, budgetInputs: null, settings: null, targets: null };
+            }
 
             return { 
                 salesInputs: salesRoadmap.monthlyAssumptions, 
                 budgetInputs: assumptions.budgetInputs, 
-                settings 
+                settings,
+                targets,
             };
         } catch (e) {
             console.error("Failed to parse forecast data:", e);
-            return { salesInputs: null, budgetInputs: null, settings: null };
+            return { salesInputs: null, budgetInputs: null, settings: null, targets: null };
         }
     }, []);
     
@@ -50,9 +54,9 @@ function ForecastComponent() {
     }, [salesInputs, settings]);
 
     const forecastData = useMemo(() => {
-        if (roadmapData.length === 0 || !budgetInputs) return [];
-        return budgetLogic(roadmapData, budgetInputs);
-    }, [roadmapData, budgetInputs]);
+        if (roadmapData.length === 0 || !budgetInputs || !targets) return [];
+        return budgetLogic(roadmapData, budgetInputs, targets);
+    }, [roadmapData, budgetInputs, targets]);
 
     const yearlyTotals = useMemo(() => {
         const totals: Record<string, any> = {};
@@ -120,19 +124,22 @@ function ForecastComponent() {
         { key: 'netProfit', label: 'Net Profit', format: formatCurrency, isBold: true, isPrimary: true, isProfit: true },
     ];
 
-    if (!settings || !salesInputs || !budgetInputs || forecastData.length === 0) {
+    if (!settings || !salesInputs || !budgetInputs || !targets || forecastData.length === 0) {
         return (
             <Card className="w-full max-w-2xl mx-auto">
                 <CardHeader className="text-center">
                     <AlertTriangle className="mx-auto h-12 w-12 text-destructive" />
                     <CardTitle>Incomplete Forecast Data</CardTitle>
                     <CardDescription>
-                        It looks like you haven't entered all your forecast assumptions yet. Please complete the setup, sales roadmap, and budget pages first.
+                        It looks like you haven't entered all your forecast assumptions yet. Please complete the setup, targets, sales roadmap, and budget pages first.
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="text-center space-y-2">
                     <Button asChild>
                         <Link href="/account?view=financial-setup">Go to Set Up</Link>
+                    </Button>
+                     <Button asChild variant="outline">
+                        <Link href="/account?view=targets">Go to Targets</Link>
                     </Button>
                     <Button asChild variant="outline">
                         <Link href="/account?view=sales-roadmap">Go to Sales Roadmap</Link>
