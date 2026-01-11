@@ -17,7 +17,7 @@ const SETUP_KEY = 'accountFinancialSetup_v1';
 const TARGETS_KEY = 'accountFinancialTargets_v1';
 
 const targetAssumptions = [
-    { id: 'visitors', label: '# of Visitors', defaultValue: 10000 },
+    { id: 'visitors', label: '# of Visitors', defaultValue: 1000 },
     { id: 'registrationConversion', label: 'Conversion % to Registrations', defaultValue: 2 },
     { id: 'memberConversion', label: 'Conversion to Members', defaultValue: 20 },
     { id: 'rewardsPlans', label: 'Rewards Plan Adoption %', defaultValue: 15 },
