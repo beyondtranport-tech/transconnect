@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Map, Loader2, Save, RotateCcw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { Form, FormControl, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Form } from '@/components/ui/form';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
@@ -205,9 +205,7 @@ function SalesRoadmapComponent() {
                                                     <TableCell className="font-medium sticky left-0 bg-background z-10">{assumption.label}</TableCell>
                                                     {monthHeaders.map((_, monthIndex) => (
                                                         <TableCell key={`${assumption.id}-${monthIndex}`}>
-                                                            {assumption.id.startsWith('initialMembers') && monthIndex > 0 ? (
-                                                                <Input type="number" className="h-8 w-24 text-center bg-muted" disabled />
-                                                            ) : (
+                                                            {assumption.id.startsWith('initialMembers') && monthIndex > 0 ? null : (
                                                                 <Controller
                                                                     name={`monthlyAssumptions.${assumption.id}.${monthIndex}`}
                                                                     control={control}
@@ -215,7 +213,6 @@ function SalesRoadmapComponent() {
                                                                         <Input
                                                                             type="number"
                                                                             className="h-8 w-24 text-center"
-                                                                            {...field}
                                                                             value={field.value ?? ''}
                                                                             onChange={e => field.onChange(parseFloat(e.target.value) || 0)}
                                                                         />
