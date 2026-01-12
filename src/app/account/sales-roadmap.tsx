@@ -15,14 +15,14 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 
 const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const SETUP_KEY = 'accountFinancialSetup_v1';
-const SALES_ROADMAP_KEY = 'accountSalesRoadmap_v4'; // Incremented version for new structure
+const SALES_ROADMAP_KEY = 'accountSalesRoadmap_v4';
 
 const salesRoleGroups = [
     {
         role: 'Vendors',
         assumptions: [
             { id: 'initialMembersVendors', label: 'Initial # of Members', defaultValue: 10 },
-            { id: 'referralsPerMemberVendors', label: '# of Referrals / Member / Month', defaultValue: 2 },
+            { id: 'referralsPerMemberVendors', label: '# of Referrals / Member / Month', defaultValue: 10 },
             { id: 'conversionToMemberVendors', label: '% Conversion to Member', defaultValue: 5 }
         ]
     },
@@ -30,7 +30,7 @@ const salesRoleGroups = [
         role: 'Buyers',
         assumptions: [
             { id: 'initialMembersBuyers', label: 'Initial # of Members', defaultValue: 10 },
-            { id: 'referralsPerMemberBuyers', label: '# of Referrals / Member / Month', defaultValue: 2 },
+            { id: 'referralsPerMemberBuyers', label: '# of Referrals / Member / Month', defaultValue: 10 },
             { id: 'conversionToMemberBuyers', label: '% Conversion to Member', defaultValue: 5 }
         ]
     },
@@ -46,7 +46,7 @@ const salesRoleGroups = [
         role: 'Associates',
         assumptions: [
             { id: 'initialMembersAssociates', label: 'Initial # of Members', defaultValue: 10 },
-            { id: 'referralsPerMemberAssociates', label: '# of Referrals / Member / Month', defaultValue: 1 },
+            { id: 'referralsPerMemberAssociates', label: '# of Referrals / Member / Month', defaultValue: 10 },
             { id: 'conversionToMemberAssociates', label: '% Conversion to Member', defaultValue: 10 }
         ]
     },
@@ -62,7 +62,7 @@ const salesRoleGroups = [
         role: 'Drivers',
         assumptions: [
             { id: 'initialMembersDrivers', label: 'Initial # of Members', defaultValue: 10 },
-            { id: 'referralsPerMemberDrivers', label: '# of Referrals / Member / Month', defaultValue: 1 },
+            { id: 'referralsPerMemberDrivers', label: '# of Referrals / Member / Month', defaultValue: 10 },
             { id: 'conversionToMemberDrivers', label: '% Conversion to Member', defaultValue: 5 }
         ]
     },
@@ -70,7 +70,7 @@ const salesRoleGroups = [
         role: 'Developers',
         assumptions: [
             { id: 'initialMembersDevelopers', label: 'Initial # of Members', defaultValue: 10 },
-            { id: 'referralsPerMemberDevelopers', label: '# of Referrals / Member / Month', defaultValue: 1 },
+            { id: 'referralsPerMemberDevelopers', label: '# of Referrals / Member / Month', defaultValue: 10 },
             { id: 'conversionToMemberDevelopers', label: '% Conversion to Member', defaultValue: 5 }
         ]
     },
@@ -248,5 +248,3 @@ export default function SalesRoadmap() {
         </Suspense>
     );
 }
-
-    
