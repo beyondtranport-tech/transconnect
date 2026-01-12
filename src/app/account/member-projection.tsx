@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useMemo } from 'react';
@@ -42,13 +41,18 @@ const memberProjectionLogic = (roadmapInputs: any, setupInputs: any) => {
         const initialMembers = Number(monthlyAssumptions[`initialMembers${roleKeySanitized}`]) || 0;
         
         let cumulativeForRole = initialMembers;
+        
+        // Correctly access the arrays for each role
+        const referralsArray = monthlyAssumptions[`referralsPerMember${roleKeySanitized}`] || [];
+        const conversionArray = monthlyAssumptions[`conversionToMember${roleKeySanitized}`] || [];
+
         for (let i = 0; i < forecastMonths; i++) {
             const date = new Date(startYear, startMonth + i, 1);
             const month = monthNames[date.getMonth()];
             const year = date.getFullYear();
 
-            const referralsPerMember = Number(monthlyAssumptions[`referralsPerMember${roleKeySanitized}`]?.[i]) || 0;
-            const conversionToMember = (Number(monthlyAssumptions[`conversionToMember${roleKeySanitized}`]?.[i]) || 0) / 100;
+            const referralsPerMember = Number(referralsArray[i]) || 0;
+            const conversionToMember = (Number(conversionArray[i]) || 0) / 100;
             
             const newMembersThisMonth = Math.round(cumulativeForRole * referralsPerMember * conversionToMember);
             cumulativeForRole += newMembersThisMonth;
