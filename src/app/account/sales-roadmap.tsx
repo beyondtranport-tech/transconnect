@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { Suspense, useCallback, useEffect, useState } from 'react';
@@ -29,7 +30,7 @@ const salesRoleGroups = [
     {
         role: 'Vendors',
         assumptions: [
-            { id: 'initialMembersVendors', label: 'Initial # of Members', defaultValue: 10 },
+            { id: 'initialMembersVendors', label: 'Initial # of Members', defaultValue: 5 },
             { id: 'referralsPerMemberVendors', label: '# of Referrals / Member / Month', defaultValue: 10 },
             { id: 'conversionToMemberVendors', label: '% Conversion to Member', defaultValue: 5 }
         ]
@@ -37,7 +38,7 @@ const salesRoleGroups = [
     {
         role: 'Buyers',
         assumptions: [
-            { id: 'initialMembersBuyers', label: 'Initial # of Members', defaultValue: 10 },
+            { id: 'initialMembersBuyers', label: 'Initial # of Members', defaultValue: 5 },
             { id: 'referralsPerMemberBuyers', label: '# of Referrals / Member / Month', defaultValue: 10 },
             { id: 'conversionToMemberBuyers', label: '% Conversion to Member', defaultValue: 5 }
         ]
@@ -61,7 +62,7 @@ const salesRoleGroups = [
     {
         role: 'Drivers',
         assumptions: [
-            { id: 'initialMembersDrivers', label: 'Initial # of Members', defaultValue: 10 },
+            { id: 'initialMembersDrivers', label: 'Initial # of Members', defaultValue: 5 },
             { id: 'referralsPerMemberDrivers', label: '# of Referrals / Member / Month', defaultValue: 10 },
             { id: 'conversionToMemberDrivers', label: '% Conversion to Member', defaultValue: 5 }
         ]
@@ -69,7 +70,7 @@ const salesRoleGroups = [
     {
         role: 'Developers',
         assumptions: [
-            { id: 'initialMembersDevelopers', label: 'Initial # of Members', defaultValue: 10 },
+            { id: 'initialMembersDevelopers', label: 'Initial # of Members', defaultValue: 5 },
             { id: 'referralsPerMemberDevelopers', label: '# of Referrals / Member / Month', defaultValue: 10 },
             { id: 'conversionToMemberDevelopers', label: '% Conversion to Member', defaultValue: 5 }
         ]
