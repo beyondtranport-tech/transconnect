@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useMemo } from 'react';
@@ -9,7 +10,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 
 const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-const SALES_ROADMAP_KEY = 'accountSalesRoadmap_v3';
+const SALES_ROADMAP_KEY = 'accountSalesRoadmap_v4';
 const SETUP_KEY = 'accountFinancialSetup_v1';
 
 const salesRoleGroups = [
@@ -23,38 +24,51 @@ const memberProjectionLogic = (roadmapInputs: any, setupInputs: any) => {
     }
 
     const data = [];
-    let cumulativeUsers = 0;
-    let cumulativeMembers = 0;
+    
+    // Calculate total initial members
+    let cumulativeMembers = salesRoleGroups.reduce((sum, group) => {
+        const roleId = `initialMembers${group.role.replace(/\s/g, '')}`;
+        // Use the value from the first month as the initial member count
+        return sum + (roadmapInputs.monthlyAssumptions[roleId]?.[0] || 0);
+    }, 0);
 
     for (let i = 0; i < setupInputs.forecastMonths; i++) {
         const date = new Date(setupInputs.startYear, setupInputs.startMonth + i, 1);
         const month = monthNames[date.getMonth()];
         const year = date.getFullYear();
 
-        let monthlyNewUsers = 0;
         let monthlyNewMembers = 0;
         
         salesRoleGroups.forEach(group => {
-            const roleId = group.role.charAt(0).toLowerCase() + group.role.slice(1).replace(/\s/g, '');
-            const referrals = roadmapInputs.monthlyAssumptions[`referrals${group.role.replace(/\s/g, '')}`]?.[i] || 0;
-            const userConversion = (roadmapInputs.monthlyAssumptions[`conversionToUser${group.role.replace(/\s/g, '')}`]?.[i] || 0) / 100;
-            const memberConversion = (roadmapInputs.monthlyAssumptions[`conversionToMember${group.role.replace(/\s/g, '')}`]?.[i] || 0) / 100;
+            const roleName = group.role.replace(/\s/g, '');
+            const referralsPerMember = roadmapInputs.monthlyAssumptions[`referralsPerMember${roleName}`]?.[i] || 0;
+            const memberConversion = (roadmapInputs.monthlyAssumptions[`conversionToMember${roleName}`]?.[i] || 0) / 100;
 
-            const newUsersFromRole = Math.round(referrals * userConversion);
-            const newMembersFromRole = Math.round(referrals * memberConversion);
-            
-            monthlyNewUsers += newUsersFromRole;
-            monthlyNewMembers += newMembersFromRole;
+            // This is a simplification. A more complex model might track members per role.
+            // For now, we assume all cumulative members refer at an average rate.
+            // Let's calculate a weighted average referral and conversion rate.
         });
         
-        cumulativeUsers += monthlyNewUsers;
+        // Simplified approach: average referral and conversion rates across all roles
+        let totalReferralsPerMember = 0;
+        let totalConversionRate = 0;
+        salesRoleGroups.forEach(group => {
+            const roleName = group.role.replace(/\s/g, '');
+            totalReferralsPerMember += roadmapInputs.monthlyAssumptions[`referralsPerMember${roleName}`]?.[i] || 0;
+            totalConversionRate += (roadmapInputs.monthlyAssumptions[`conversionToMember${roleName}`]?.[i] || 0);
+        });
+
+        const avgReferralsPerMember = totalReferralsPerMember / salesRoleGroups.length;
+        const avgConversionRate = (totalConversionRate / salesRoleGroups.length) / 100;
+        
+        const newReferrals = cumulativeMembers * avgReferralsPerMember;
+        monthlyNewMembers = Math.round(newReferrals * avgConversionRate);
+
         cumulativeMembers += monthlyNewMembers;
 
         data.push({
             month: `${month} ${year}`,
             year,
-            newUsers: monthlyNewUsers,
-            cumulativeUsers,
             newMembers: monthlyNewMembers,
             cumulativeMembers,
         });
@@ -64,18 +78,14 @@ const memberProjectionLogic = (roadmapInputs: any, setupInputs: any) => {
     const yearlyTotals: any = {};
     data.forEach(row => {
         if (!yearlyTotals[row.year]) {
-            yearlyTotals[row.year] = { newUsers: 0, newMembers: 0, cumulativeUsers: 0, cumulativeMembers: 0 };
+            yearlyTotals[row.year] = { newMembers: 0, cumulativeMembers: 0 };
         }
-        yearlyTotals[row.year].newUsers += row.newUsers;
         yearlyTotals[row.year].newMembers += row.newMembers;
-        yearlyTotals[row.year].cumulativeUsers = row.cumulativeUsers; // Take the last value of the year
         yearlyTotals[row.year].cumulativeMembers = row.cumulativeMembers; // Take the last value of the year
     });
 
     const grandTotal = {
-        newUsers: data.reduce((sum, row) => sum + row.newUsers, 0),
         newMembers: data.reduce((sum, row) => sum + row.newMembers, 0),
-        cumulativeUsers: cumulativeUsers,
         cumulativeMembers: cumulativeMembers,
     };
     
@@ -129,7 +139,7 @@ export default function MemberProjection() {
         <Card>
             <CardHeader>
                 <CardTitle className="flex items-center gap-2"><Users /> Member Growth Projection</CardTitle>
-                <CardDescription>Month-by-month forecast of new users and paying members based on your sales roadmap assumptions.</CardDescription>
+                <CardDescription>Month-by-month forecast of new paying members based on your sales roadmap assumptions.</CardDescription>
             </CardHeader>
             <CardContent>
                 <ScrollArea className="w-full whitespace-nowrap rounded-md border">
@@ -137,8 +147,6 @@ export default function MemberProjection() {
                         <TableHeader>
                             <TableRow>
                                 <TableHead className="w-[120px] sticky left-0 bg-background z-10">Month</TableHead>
-                                <TableHead className="text-right">New Users</TableHead>
-                                <TableHead className="text-right">Cumulative Users</TableHead>
                                 <TableHead className="text-right font-bold text-primary">New Members</TableHead>
                                 <TableHead className="text-right font-bold text-primary">Cumulative Members</TableHead>
                             </TableRow>
@@ -148,8 +156,6 @@ export default function MemberProjection() {
                                 <React.Fragment key={row.month}>
                                     <TableRow>
                                         <TableCell className="sticky left-0 bg-background z-10">{row.month}</TableCell>
-                                        <TableCell className="text-right">{row.newUsers.toLocaleString()}</TableCell>
-                                        <TableCell className="text-right">{row.cumulativeUsers.toLocaleString()}</TableCell>
                                         <TableCell className="text-right font-bold text-primary">{row.newMembers.toLocaleString()}</TableCell>
                                         <TableCell className="text-right font-bold text-primary">{row.cumulativeMembers.toLocaleString()}</TableCell>
                                     </TableRow>
@@ -157,8 +163,6 @@ export default function MemberProjection() {
                             ))}
                              <TableRow className="bg-primary/10 font-extrabold text-base">
                                 <TableCell className="sticky left-0 bg-primary/10 z-10">Grand Total</TableCell>
-                                <TableCell className="text-right">{grandTotal.newUsers.toLocaleString()}</TableCell>
-                                <TableCell className="text-right">{grandTotal.cumulativeUsers.toLocaleString()}</TableCell>
                                 <TableCell className="text-right text-primary">{grandTotal.newMembers.toLocaleString()}</TableCell>
                                 <TableCell className="text-right text-primary">{grandTotal.cumulativeMembers.toLocaleString()}</TableCell>
                             </TableRow>
@@ -170,3 +174,5 @@ export default function MemberProjection() {
         </Card>
     );
 }
+
+    

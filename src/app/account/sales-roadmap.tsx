@@ -15,62 +15,62 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 
 const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const SETUP_KEY = 'accountFinancialSetup_v1';
-const SALES_ROADMAP_KEY = 'accountSalesRoadmap_v3'; // Incremented version for new structure
+const SALES_ROADMAP_KEY = 'accountSalesRoadmap_v4'; // Incremented version for new structure
 
 const salesRoleGroups = [
     {
         role: 'Vendors',
         assumptions: [
-            { id: 'referralsVendors', label: '# of Referrals', defaultValue: 10 },
-            { id: 'conversionToUserVendors', label: '% Conversion to User', defaultValue: 10 },
+            { id: 'initialMembersVendors', label: 'Initial # of Members', defaultValue: 10 },
+            { id: 'referralsPerMemberVendors', label: '# of Referrals / Member / Month', defaultValue: 2 },
             { id: 'conversionToMemberVendors', label: '% Conversion to Member', defaultValue: 5 }
         ]
     },
     {
         role: 'Buyers',
         assumptions: [
-            { id: 'referralsBuyers', label: '# of Referrals', defaultValue: 10 },
-            { id: 'conversionToUserBuyers', label: '% Conversion to User', defaultValue: 10 },
+            { id: 'initialMembersBuyers', label: 'Initial # of Members', defaultValue: 10 },
+            { id: 'referralsPerMemberBuyers', label: '# of Referrals / Member / Month', defaultValue: 2 },
             { id: 'conversionToMemberBuyers', label: '% Conversion to Member', defaultValue: 5 }
         ]
     },
     {
         role: 'Partners',
         assumptions: [
-            { id: 'referralsPartners', label: '# of Referrals', defaultValue: 1 },
-            { id: 'conversionToUserPartners', label: '% Conversion to User', defaultValue: 10 },
-            { id: 'conversionToMemberPartners', label: '% Conversion to Member', defaultValue: 5 }
+            { id: 'initialMembersPartners', label: 'Initial # of Members', defaultValue: 1 },
+            { id: 'referralsPerMemberPartners', label: '# of Referrals / Member / Month', defaultValue: 10 },
+            { id: 'conversionToMemberPartners', label: '% Conversion to Member', defaultValue: 15 }
         ]
     },
     {
         role: 'Associates',
         assumptions: [
-            { id: 'referralsAssociates', label: '# of Referrals', defaultValue: 10 },
-            { id: 'conversionToUserAssociates', label: '% Conversion to User', defaultValue: 10 },
-            { id: 'conversionToMemberAssociates', label: '% Conversion to Member', defaultValue: 5 }
+            { id: 'initialMembersAssociates', label: 'Initial # of Members', defaultValue: 10 },
+            { id: 'referralsPerMemberAssociates', label: '# of Referrals / Member / Month', defaultValue: 1 },
+            { id: 'conversionToMemberAssociates', label: '% Conversion to Member', defaultValue: 10 }
         ]
     },
     {
         role: 'ISA Agents',
         assumptions: [
-            { id: 'referralsIsaAgents', label: '# of Referrals', defaultValue: 20 },
-            { id: 'conversionToUserIsaAgents', label: '% Conversion to User', defaultValue: 50 },
+            { id: 'initialMembersIsaAgents', label: 'Initial # of Members', defaultValue: 5 },
+            { id: 'referralsPerMemberIsaAgents', label: '# of Referrals / Member / Month', defaultValue: 20 },
             { id: 'conversionToMemberIsaAgents', label: '% Conversion to Member', defaultValue: 25 }
         ]
     },
     {
         role: 'Drivers',
         assumptions: [
-            { id: 'referralsDrivers', label: '# of Referrals', defaultValue: 10 },
-            { id: 'conversionToUserDrivers', label: '% Conversion to User', defaultValue: 10 },
+            { id: 'initialMembersDrivers', label: 'Initial # of Members', defaultValue: 10 },
+            { id: 'referralsPerMemberDrivers', label: '# of Referrals / Member / Month', defaultValue: 1 },
             { id: 'conversionToMemberDrivers', label: '% Conversion to Member', defaultValue: 5 }
         ]
     },
     {
         role: 'Developers',
         assumptions: [
-            { id: 'referralsDevelopers', label: '# of Referrals', defaultValue: 10 },
-            { id: 'conversionToUserDevelopers', label: '% Conversion to User', defaultValue: 10 },
+            { id: 'initialMembersDevelopers', label: 'Initial # of Members', defaultValue: 10 },
+            { id: 'referralsPerMemberDevelopers', label: '# of Referrals / Member / Month', defaultValue: 1 },
             { id: 'conversionToMemberDevelopers', label: '% Conversion to Member', defaultValue: 5 }
         ]
     },
@@ -149,6 +149,7 @@ function SalesRoadmapComponent() {
             title: "Referral Targets Saved!",
             description: "Your monthly referral targets have been saved locally.",
         });
+        router.push('/account?view=member-projection');
     };
 
     const handleReset = () => {
@@ -231,7 +232,7 @@ function SalesRoadmapComponent() {
                 <div className="mt-8 flex justify-end">
                     <Button type="submit">
                         <Save className="mr-2 h-4 w-4" />
-                        Save Sales Roadmap
+                        Save Sales Roadmap & View Projection
                     </Button>
                 </div>
             </form>
