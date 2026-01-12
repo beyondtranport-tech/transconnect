@@ -26,6 +26,7 @@ const assumptionGroups = {
         { id: 'avgMallSpendPerMember', label: 'Avg. Mall Spend / Member', defaultValue: 1000 },
         { id: 'techServicesAdoptionRate', label: 'Tech Services Adoption (%)', defaultValue: 10 },
         { id: 'avgTechSpendPerMember', label: 'Avg. Tech Spend / Member', defaultValue: 150 },
+        { id: 'avgWalletFeesPerMember', label: 'Avg. Wallet Fees / Member', defaultValue: 25 },
     ],
     cogs: [
         { id: 'isaCommissionRate', label: 'ISA Commission Rate (%)', defaultValue: 20 },
