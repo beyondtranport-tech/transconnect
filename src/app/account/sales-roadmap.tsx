@@ -15,7 +15,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 
 const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const SETUP_KEY = 'accountFinancialSetup_v1';
-const SALES_ROADMAP_KEY = 'accountSalesRoadmap_v1'; // Reverted key
+const SALES_ROADMAP_KEY = 'accountSalesRoadmap_v1';
 
 const salesRoleGroups = [
     {
@@ -205,19 +205,23 @@ function SalesRoadmapComponent() {
                                                     <TableCell className="font-medium sticky left-0 bg-background z-10">{assumption.label}</TableCell>
                                                     {monthHeaders.map((_, monthIndex) => (
                                                         <TableCell key={`${assumption.id}-${monthIndex}`}>
-                                                            <Controller
-                                                                name={`monthlyAssumptions.${assumption.id}.${monthIndex}`}
-                                                                control={control}
-                                                                render={({ field }) => (
-                                                                    <Input
-                                                                        type="number"
-                                                                        className="h-8 w-24 text-center"
-                                                                        {...field}
-                                                                        value={field.value ?? ''}
-                                                                        onChange={e => field.onChange(parseFloat(e.target.value) || 0)}
-                                                                    />
-                                                                )}
-                                                            />
+                                                            {assumption.id.startsWith('initialMembers') && monthIndex > 0 ? (
+                                                                <Input type="number" className="h-8 w-24 text-center bg-muted" disabled />
+                                                            ) : (
+                                                                <Controller
+                                                                    name={`monthlyAssumptions.${assumption.id}.${monthIndex}`}
+                                                                    control={control}
+                                                                    render={({ field }) => (
+                                                                        <Input
+                                                                            type="number"
+                                                                            className="h-8 w-24 text-center"
+                                                                            {...field}
+                                                                            value={field.value ?? ''}
+                                                                            onChange={e => field.onChange(parseFloat(e.target.value) || 0)}
+                                                                        />
+                                                                    )}
+                                                                />
+                                                            )}
                                                         </TableCell>
                                                     ))}
                                                 </TableRow>
