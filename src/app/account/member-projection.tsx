@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useMemo } from 'react';
@@ -42,7 +41,7 @@ const memberProjectionLogic = (roadmapInputs: any, setupInputs: any) => {
             const memberConversion = (roadmapInputs.monthlyAssumptions[`conversionToMember${group.role.replace(/\s/g, '')}`]?.[i] || 0) / 100;
 
             const newUsersFromRole = Math.round(referrals * userConversion);
-            const newMembersFromRole = Math.round(newUsersFromRole * memberConversion);
+            const newMembersFromRole = Math.round(referrals * memberConversion);
             
             monthlyNewUsers += newUsersFromRole;
             monthlyNewMembers += newMembersFromRole;
