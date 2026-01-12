@@ -89,14 +89,21 @@ const memberProjectionLogic = (roadmapInputs: any, setupInputs: any) => {
                 newMembersFromRoles += projectionForMonth.newMembers;
             }
         });
+        
+        const powerPartnerConversionForMonth = (Number(monthlyAssumptions.powerPartnerConversion?.[i]) || 0) / 100;
+        const powerPartnerNewMembers = Math.round(
+            (Number(monthlyAssumptions.numberOfPowerPartners?.[i]) || 0) *
+            (Number(monthlyAssumptions.opportunitiesPerPartner?.[i]) || 0) *
+            powerPartnerConversionForMonth
+        );
 
-        const totalNewThisMonth = newMembersFromRoles + powerPartnerNewMembersPerMonth;
+        const totalNewThisMonth = newMembersFromRoles + powerPartnerNewMembers;
         cumulativeTotal += totalNewThisMonth;
         
         totalProjection.push({
             month: `${month} ${year}`,
             year,
-            powerPartnerNewMembers: powerPartnerNewMembersPerMonth,
+            powerPartnerNewMembers: powerPartnerNewMembers,
             referralNewMembers: newMembersFromRoles,
             totalNewMembers: totalNewThisMonth,
             cumulativeMembers: cumulativeTotal,
