@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useMemo } from 'react';
@@ -28,27 +29,26 @@ const memberProjectionLogic = (roadmapInputs: any, setupInputs: any) => {
     let byRoleProjections: { [key: string]: any[] } = {};
     let cumulativeTotal = 0;
 
-    // Initialize Power Partner contribution
     const powerPartnerNewMembersPerMonth = Math.round(
-        (monthlyAssumptions.numberOfPowerPartners?.[0] || 0) *
-        (monthlyAssumptions.opportunitiesPerPartner?.[0] || 0) *
-        ((monthlyAssumptions.powerPartnerConversion?.[0] || 0) / 100)
+        (Number(monthlyAssumptions.numberOfPowerPartners?.[0]) || 0) *
+        (Number(monthlyAssumptions.opportunitiesPerPartner?.[0]) || 0) *
+        ((Number(monthlyAssumptions.powerPartnerConversion?.[0]) || 0) / 100)
     );
 
-    // Initialize projections for each role
     memberRoleGroups.forEach(group => {
         const roleKey = group.role;
         byRoleProjections[roleKey] = [];
-        const initialMembers = Number(monthlyAssumptions[`initialMembers${roleKey.replace(/\s/g, '')}`]) || 0;
+        const roleKeySanitized = roleKey.replace(/\s/g, '');
+        const initialMembers = Number(monthlyAssumptions[`initialMembers${roleKeySanitized}`]) || 0;
         
         let cumulativeForRole = initialMembers;
         for (let i = 0; i < forecastMonths; i++) {
-             const date = new Date(startYear, startMonth + i, 1);
+            const date = new Date(startYear, startMonth + i, 1);
             const month = monthNames[date.getMonth()];
             const year = date.getFullYear();
 
-            const referralsPerMember = Number(monthlyAssumptions[`referralsPerMember${roleKey.replace(/\s/g, '')}`]?.[i]) || 0;
-            const conversionToMember = (Number(monthlyAssumptions[`conversionToMember${roleKey.replace(/\s/g, '')}`]?.[i]) || 0) / 100;
+            const referralsPerMember = Number(monthlyAssumptions[`referralsPerMember${roleKeySanitized}`]?.[i]) || 0;
+            const conversionToMember = (Number(monthlyAssumptions[`conversionToMember${roleKeySanitized}`]?.[i]) || 0) / 100;
             
             const newMembersThisMonth = Math.round(cumulativeForRole * referralsPerMember * conversionToMember);
             cumulativeForRole += newMembersThisMonth;
@@ -61,9 +61,8 @@ const memberProjectionLogic = (roadmapInputs: any, setupInputs: any) => {
         }
     });
 
-    // Calculate total projection by summing up roles and adding power partners
     let totalProjection: any[] = [];
-    let initialTotalMembers = memberRoleGroups.reduce((acc, group) => {
+    const initialTotalMembers = memberRoleGroups.reduce((acc, group) => {
         const roleKey = group.role;
         return acc + (Number(monthlyAssumptions[`initialMembers${roleKey.replace(/\s/g, '')}`]) || 0);
     }, 0);
@@ -78,9 +77,10 @@ const memberProjectionLogic = (roadmapInputs: any, setupInputs: any) => {
         let newMembersFromRoles = 0;
         memberRoleGroups.forEach(group => {
             const roleKey = group.role;
-            const referralsPerMember = Number(monthlyAssumptions[`referralsPerMember${roleKey.replace(/\s/g, '')}`]?.[i]) || 0;
-            const conversionToMember = (Number(monthlyAssumptions[`conversionToMember${roleKey.replace(/\s/g, '')}`]?.[i]) || 0) / 100;
-            const cumulativeForRole = i > 0 ? byRoleProjections[roleKey][i - 1].cumulativeMembers : (Number(monthlyAssumptions[`initialMembers${roleKey.replace(/\s/g, '')}`]) || 0);
+            const roleKeySanitized = roleKey.replace(/\s/g, '');
+            const referralsPerMember = Number(monthlyAssumptions[`referralsPerMember${roleKeySanitized}`]?.[i]) || 0;
+            const conversionToMember = (Number(monthlyAssumptions[`conversionToMember${roleKeySanitized}`]?.[i]) || 0) / 100;
+            const cumulativeForRole = i > 0 ? byRoleProjections[roleKey][i - 1].cumulativeMembers : (Number(monthlyAssumptions[`initialMembers${roleKeySanitized}`]) || 0);
             
             newMembersFromRoles += Math.round(cumulativeForRole * referralsPerMember * conversionToMember);
         });
