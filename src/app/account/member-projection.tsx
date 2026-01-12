@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useMemo } from 'react';
@@ -63,7 +64,8 @@ const memberProjectionLogic = (roadmapInputs: any, setupInputs: any) => {
     let totalProjection: any[] = [];
     const initialTotalMembers = memberRoleGroups.reduce((acc, group) => {
         const roleKey = group.role;
-        return acc + (Number(monthlyAssumptions[`initialMembers${roleKey.replace(/\s/g, '')}`]) || 0);
+        const roleKeySanitized = roleKey.replace(/\s/g, '');
+        return acc + (Number(monthlyAssumptions[`initialMembers${roleKeySanitized}`]) || 0);
     }, 0);
     
     cumulativeTotal = initialTotalMembers;
@@ -76,12 +78,10 @@ const memberProjectionLogic = (roadmapInputs: any, setupInputs: any) => {
         let newMembersFromRoles = 0;
         memberRoleGroups.forEach(group => {
             const roleKey = group.role;
-            const roleKeySanitized = roleKey.replace(/\s/g, '');
-            const referralsPerMember = Number(monthlyAssumptions[`referralsPerMember${roleKeySanitized}`]?.[i]) || 0;
-            const conversionToMember = (Number(monthlyAssumptions[`conversionToMember${roleKeySanitized}`]?.[i]) || 0) / 100;
-            const cumulativeForRole = i > 0 ? byRoleProjections[roleKey][i - 1].cumulativeMembers : (Number(monthlyAssumptions[`initialMembers${roleKeySanitized}`]) || 0);
-            
-            newMembersFromRoles += Math.round(cumulativeForRole * referralsPerMember * conversionToMember);
+            const projectionForMonth = byRoleProjections[roleKey][i];
+            if (projectionForMonth) {
+                newMembersFromRoles += projectionForMonth.newMembers;
+            }
         });
 
         const totalNewThisMonth = newMembersFromRoles + powerPartnerNewMembersPerMonth;
@@ -217,7 +217,7 @@ export default function MemberProjection() {
 
             <div className="space-y-8">
                 {Object.entries(byRole).map(([roleName, data]) => (
-                    <ProjectionTable key={roleName} title={`${roleName} Growth Projection`} data={data} />
+                    <ProjectionTable key={roleName} title={`${roleName} Growth Projection`} data={data as any[]} />
                 ))}
             </div>
         </div>
