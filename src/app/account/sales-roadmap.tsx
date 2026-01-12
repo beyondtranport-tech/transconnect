@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { Suspense, useCallback, useEffect, useState } from 'react';
@@ -8,13 +9,13 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Map, Loader2, Save, RotateCcw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { Form } from '@/components/ui/form';
+import { Form, FormControl, FormItem, FormLabel } from '@/components/ui/form';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const SETUP_KEY = 'accountFinancialSetup_v1';
-const SALES_ROADMAP_KEY = 'accountSalesRoadmap_v1';
+const SALES_ROADMAP_KEY = 'accountSalesRoadmap_v2';
 
 const salesRoleGroups = [
     {
@@ -28,6 +29,8 @@ const salesRoleGroups = [
     },
     {
         role: 'Vendors',
+        initialMembersId: 'initialMembersVendors',
+        initialMembersDefault: 5,
         assumptions: [
             { id: 'referralsPerMemberVendors', label: '# of Referrals / Member / Month', defaultValue: 10 },
             { id: 'conversionToMemberVendors', label: '% Conversion to Member', defaultValue: 5 }
@@ -35,6 +38,8 @@ const salesRoleGroups = [
     },
     {
         role: 'Buyers',
+        initialMembersId: 'initialMembersBuyers',
+        initialMembersDefault: 5,
         assumptions: [
             { id: 'referralsPerMemberBuyers', label: '# of Referrals / Member / Month', defaultValue: 10 },
             { id: 'conversionToMemberBuyers', label: '% Conversion to Member', defaultValue: 5 }
@@ -42,6 +47,8 @@ const salesRoleGroups = [
     },
     {
         role: 'Associates',
+        initialMembersId: 'initialMembersAssociates',
+        initialMembersDefault: 10,
         assumptions: [
             { id: 'referralsPerMemberAssociates', label: '# of Referrals / Member / Month', defaultValue: 10 },
             { id: 'conversionToMemberAssociates', label: '% Conversion to Member', defaultValue: 10 }
@@ -49,6 +56,8 @@ const salesRoleGroups = [
     },
     {
         role: 'ISA Agents',
+        initialMembersId: 'initialMembersIsaAgents',
+        initialMembersDefault: 5,
         assumptions: [
             { id: 'referralsPerMemberIsaAgents', label: '# of Referrals / Member / Month', defaultValue: 20 },
             { id: 'conversionToMemberIsaAgents', label: '% Conversion to Member', defaultValue: 25 }
@@ -56,6 +65,8 @@ const salesRoleGroups = [
     },
     {
         role: 'Drivers',
+        initialMembersId: 'initialMembersDrivers',
+        initialMembersDefault: 5,
         assumptions: [
             { id: 'referralsPerMemberDrivers', label: '# of Referrals / Member / Month', defaultValue: 10 },
             { id: 'conversionToMemberDrivers', label: '% Conversion to Member', defaultValue: 5 }
@@ -63,6 +74,8 @@ const salesRoleGroups = [
     },
     {
         role: 'Developers',
+        initialMembersId: 'initialMembersDevelopers',
+        initialMembersDefault: 0,
         assumptions: [
             { id: 'referralsPerMemberDevelopers', label: '# of Referrals / Member / Month', defaultValue: 0 },
             { id: 'conversionToMemberDevelopers', label: '% Conversion to Member', defaultValue: 0 }
@@ -71,20 +84,16 @@ const salesRoleGroups = [
 ];
 
 const generateDefaultValues = (months: number) => {
-    const defaults: { [key: string]: any } = {
-        initialMembersVendors: 5,
-        initialMembersBuyers: 5,
-        initialMembersAssociates: 10,
-        initialMembersIsaAgents: 5,
-        initialMembersDrivers: 5,
-        initialMembersDevelopers: 0,
-    };
+    const monthlyAssumptions: { [key: string]: any } = {};
     salesRoleGroups.forEach(group => {
+        if(group.initialMembersId){
+             monthlyAssumptions[group.initialMembersId] = group.initialMembersDefault;
+        }
         group.assumptions.forEach(assumption => {
-            defaults[assumption.id] = Array(months).fill(assumption.defaultValue);
+            monthlyAssumptions[assumption.id] = Array(months).fill(assumption.defaultValue);
         });
     });
-    return { monthlyAssumptions: defaults };
+    return { monthlyAssumptions };
 };
 
 
@@ -145,16 +154,17 @@ function SalesRoadmapComponent() {
 
     const onSubmit = (data: any) => {
         const processedData = {
-            monthlyAssumptions: {
-                ...data.monthlyAssumptions,
-                initialMembersVendors: Number(data.monthlyAssumptions.initialMembersVendors),
-                initialMembersBuyers: Number(data.monthlyAssumptions.initialMembersBuyers),
-                initialMembersAssociates: Number(data.monthlyAssumptions.initialMembersAssociates),
-                initialMembersIsaAgents: Number(data.monthlyAssumptions.initialMembersIsaAgents),
-                initialMembersDrivers: Number(data.monthlyAssumptions.initialMembersDrivers),
-                initialMembersDevelopers: Number(data.monthlyAssumptions.initialMembersDevelopers)
+          monthlyAssumptions: {
+            ...data.monthlyAssumptions,
+          },
+        };
+        // Ensure all initialMembers fields are numbers before saving
+        salesRoleGroups.forEach(group => {
+            if (group.initialMembersId) {
+                processedData.monthlyAssumptions[group.initialMembersId] = Number(data.monthlyAssumptions[group.initialMembersId]);
             }
-        }
+        });
+
         localStorage.setItem(SALES_ROADMAP_KEY, JSON.stringify(processedData));
         toast({
             title: "Referral Targets Saved!",
@@ -198,10 +208,10 @@ function SalesRoadmapComponent() {
                             <CardHeader>
                                 <CardTitle className="text-xl">{group.role}</CardTitle>
                                 {group.description && <CardDescription>{group.description}</CardDescription>}
-                                {group.role !== 'Power Partners' && (
+                                {group.initialMembersId && (
                                     <div className="pt-4">
                                         <Controller
-                                            name={`monthlyAssumptions.initialMembers${group.role.replace(/\s+/g, '')}`}
+                                            name={`monthlyAssumptions.${group.initialMembersId}`}
                                             control={control}
                                             render={({ field }) => (
                                                 <FormItem className="max-w-xs">
