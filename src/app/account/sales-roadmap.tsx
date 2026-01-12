@@ -11,11 +11,10 @@ import { useToast } from '@/hooks/use-toast';
 import { Form } from '@/components/ui/form';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Label } from '@/components/ui/label';
 
 const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const SETUP_KEY = 'accountFinancialSetup_v1';
-const SALES_ROADMAP_KEY = 'accountSalesRoadmap_v5';
+const SALES_ROADMAP_KEY = 'accountSalesRoadmap_v1';
 
 const salesRoleGroups = [
     {
@@ -29,54 +28,48 @@ const salesRoleGroups = [
     },
     {
         role: 'Vendors',
-        initialMembersId: 'initialMembersVendors',
-        initialMembersDefault: 5,
         assumptions: [
+            { id: 'initialMembersVendors', label: '# of Members', defaultValue: 5 },
             { id: 'referralsPerMemberVendors', label: '# of Referrals / Member / Month', defaultValue: 10 },
             { id: 'conversionToMemberVendors', label: '% Conversion to Member', defaultValue: 5 }
         ]
     },
     {
         role: 'Buyers',
-        initialMembersId: 'initialMembersBuyers',
-        initialMembersDefault: 5,
         assumptions: [
+            { id: 'initialMembersBuyers', label: '# of Members', defaultValue: 5 },
             { id: 'referralsPerMemberBuyers', label: '# of Referrals / Member / Month', defaultValue: 10 },
             { id: 'conversionToMemberBuyers', label: '% Conversion to Member', defaultValue: 5 }
         ]
     },
     {
         role: 'Associates',
-        initialMembersId: 'initialMembersAssociates',
-        initialMembersDefault: 10,
         assumptions: [
+            { id: 'initialMembersAssociates', label: '# of Members', defaultValue: 10 },
             { id: 'referralsPerMemberAssociates', label: '# of Referrals / Member / Month', defaultValue: 10 },
             { id: 'conversionToMemberAssociates', label: '% Conversion to Member', defaultValue: 10 }
         ]
     },
     {
         role: 'ISA Agents',
-        initialMembersId: 'initialMembersIsaAgents',
-        initialMembersDefault: 5,
         assumptions: [
+            { id: 'initialMembersIsaAgents', label: '# of Members', defaultValue: 5 },
             { id: 'referralsPerMemberIsaAgents', label: '# of Referrals / Member / Month', defaultValue: 20 },
             { id: 'conversionToMemberIsaAgents', label: '% Conversion to Member', defaultValue: 25 }
         ]
     },
     {
         role: 'Drivers',
-        initialMembersId: 'initialMembersDrivers',
-        initialMembersDefault: 5,
         assumptions: [
+            { id: 'initialMembersDrivers', label: '# of Members', defaultValue: 5 },
             { id: 'referralsPerMemberDrivers', label: '# of Referrals / Member / Month', defaultValue: 10 },
             { id: 'conversionToMemberDrivers', label: '% Conversion to Member', defaultValue: 5 }
         ]
     },
     {
         role: 'Developers',
-        initialMembersId: 'initialMembersDevelopers',
-        initialMembersDefault: 0,
         assumptions: [
+            { id: 'initialMembersDevelopers', label: '# of Members', defaultValue: 0 },
             { id: 'referralsPerMemberDevelopers', label: '# of Referrals / Member / Month', defaultValue: 0 },
             { id: 'conversionToMemberDevelopers', label: '% Conversion to Member', defaultValue: 0 }
         ]
@@ -86,10 +79,6 @@ const salesRoleGroups = [
 const generateDefaultValues = (months: number) => {
     const defaults: { [key: string]: any } = {};
     salesRoleGroups.forEach(group => {
-        if (group.initialMembersId) {
-            // FIX: Put the initial members value INSIDE the monthlyAssumptions object
-            defaults[group.initialMembersId] = group.initialMembersDefault;
-        }
         group.assumptions.forEach(assumption => {
             defaults[assumption.id] = Array(months).fill(assumption.defaultValue);
         });
@@ -199,25 +188,6 @@ function SalesRoadmapComponent() {
                                 {group.description && <CardDescription>{group.description}</CardDescription>}
                             </CardHeader>
                             <CardContent>
-                                {group.initialMembersId && (
-                                     <div className="mb-4 w-48">
-                                         <Controller
-                                            name={`monthlyAssumptions.${group.initialMembersId}`}
-                                            control={control}
-                                            render={({ field }) => (
-                                                 <div className="space-y-2">
-                                                    <Label>Initial # of Members</Label>
-                                                    <Input
-                                                        type="number"
-                                                        className="h-8"
-                                                        value={field.value}
-                                                        onChange={e => field.onChange(Number(e.target.value))}
-                                                    />
-                                                </div>
-                                            )}
-                                        />
-                                    </div>
-                                )}
                                 <ScrollArea className="w-full whitespace-nowrap rounded-md border">
                                     <Table>
                                         <TableHeader>
@@ -241,8 +211,8 @@ function SalesRoadmapComponent() {
                                                                     <Input
                                                                         type="number"
                                                                         className="h-8 w-24 text-center"
-                                                                        value={field.value}
-                                                                        onChange={e => field.onChange(Number(e.target.value))}
+                                                                        {...field}
+                                                                        onChange={e => field.onChange(parseFloat(e.target.value) || 0)}
                                                                     />
                                                                 )}
                                                             />

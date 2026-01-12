@@ -9,7 +9,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 
 const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-const SALES_ROADMAP_KEY = 'accountSalesRoadmap_v5';
+const SALES_ROADMAP_KEY = 'accountSalesRoadmap_v1';
 const SETUP_KEY = 'accountFinancialSetup_v1';
 
 const memberRoleGroups = [
@@ -42,8 +42,7 @@ const memberProjectionLogic = (roadmapInputs: any, setupInputs: any) => {
         const roleId = group.id;
         byRoleProjections[roleKey] = [];
         
-        // FIX: Correctly read the single initial members value from the consistent structure
-        const initialMembers = Number(monthlyAssumptions[`initialMembers${roleId}`]) || 0;
+        const initialMembers = Number(monthlyAssumptions[`initialMembers${roleId}`]?.[0]) || 0;
         
         let cumulativeForRole = initialMembers;
         
@@ -72,8 +71,7 @@ const memberProjectionLogic = (roadmapInputs: any, setupInputs: any) => {
     let totalProjection: any[] = [];
     const initialTotalMembers = memberRoleGroups.reduce((acc, group) => {
         const roleId = group.id;
-        // FIX: Correctly read the single initial members value for the total
-        return acc + (Number(monthlyAssumptions[`initialMembers${roleId}`]) || 0);
+        return acc + (Number(monthlyAssumptions[`initialMembers${roleId}`]?.[0]) || 0);
     }, 0);
     
     let cumulativeTotal = initialTotalMembers;
