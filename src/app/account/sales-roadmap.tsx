@@ -87,6 +87,7 @@ const generateDefaultValues = (months: number) => {
     const defaults: { [key: string]: any } = {};
     salesRoleGroups.forEach(group => {
         if (group.initialMembersId) {
+            // FIX: Put the initial members value INSIDE the monthlyAssumptions object
             defaults[group.initialMembersId] = group.initialMembersDefault;
         }
         group.assumptions.forEach(assumption => {

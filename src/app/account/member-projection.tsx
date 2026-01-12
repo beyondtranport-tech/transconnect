@@ -13,8 +13,12 @@ const SALES_ROADMAP_KEY = 'accountSalesRoadmap_v5';
 const SETUP_KEY = 'accountFinancialSetup_v1';
 
 const memberRoleGroups = [
-    { role: 'Vendors' }, { role: 'Buyers' }, { role: 'Associates' },
-    { role: 'ISA Agents' }, { role: 'Drivers' }, { role: 'Developers' }
+    { role: 'Vendors', id: 'Vendors' },
+    { role: 'Buyers', id: 'Buyers' },
+    { role: 'Associates', id: 'Associates' },
+    { role: 'ISA Agents', id: 'IsaAgents' },
+    { role: 'Drivers', id: 'Drivers' },
+    { role: 'Developers', id: 'Developers' }
 ];
 
 const memberProjectionLogic = (roadmapInputs: any, setupInputs: any) => {
@@ -35,16 +39,16 @@ const memberProjectionLogic = (roadmapInputs: any, setupInputs: any) => {
 
     memberRoleGroups.forEach(group => {
         const roleKey = group.role;
+        const roleId = group.id;
         byRoleProjections[roleKey] = [];
-        const roleKeySanitized = roleKey.replace(/\s/g, '');
         
-        // --- FIX: Correctly read the single initial members value ---
-        const initialMembers = Number(monthlyAssumptions[`initialMembers${roleKeySanitized}`]) || 0;
+        // FIX: Correctly read the single initial members value from the consistent structure
+        const initialMembers = Number(monthlyAssumptions[`initialMembers${roleId}`]) || 0;
         
         let cumulativeForRole = initialMembers;
         
-        const referralsArray = monthlyAssumptions[`referralsPerMember${roleKeySanitized}`] || [];
-        const conversionArray = monthlyAssumptions[`conversionToMember${roleKeySanitized}`] || [];
+        const referralsArray = monthlyAssumptions[`referralsPerMember${roleId}`] || [];
+        const conversionArray = monthlyAssumptions[`conversionToMember${roleId}`] || [];
 
         for (let i = 0; i < forecastMonths; i++) {
             const date = new Date(startYear, startMonth + i, 1);
@@ -67,10 +71,9 @@ const memberProjectionLogic = (roadmapInputs: any, setupInputs: any) => {
 
     let totalProjection: any[] = [];
     const initialTotalMembers = memberRoleGroups.reduce((acc, group) => {
-        const roleKey = group.role;
-        const roleKeySanitized = roleKey.replace(/\s/g, '');
-        // --- FIX: Correctly read the single initial members value for the total ---
-        return acc + (Number(monthlyAssumptions[`initialMembers${roleKeySanitized}`]) || 0);
+        const roleId = group.id;
+        // FIX: Correctly read the single initial members value for the total
+        return acc + (Number(monthlyAssumptions[`initialMembers${roleId}`]) || 0);
     }, 0);
     
     let cumulativeTotal = initialTotalMembers;
