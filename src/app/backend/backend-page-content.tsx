@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -99,7 +100,6 @@ const SalesRoadmap = dynamic(() => import('./sales-roadmap'), { loading: () => <
 const BudgetPage = dynamic(() => import('./budget/page'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const SalaryForecastPage = dynamic(() => import('./salary-forecast'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const ForecastPage = dynamic(() => import('./forecast/page'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const MemberProjection = dynamic(() => import('./member-projection'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 
 
 export default function BackendPageContent() {
@@ -184,8 +184,6 @@ export default function BackendPageContent() {
         return <BudgetPage />;
       case 'salary-forecast':
         return <SalaryForecastPage />;
-      case 'member-projection':
-        return <MemberProjection />;
       case 'forecast':
         return <ForecastPage />;
       default:
@@ -238,7 +236,7 @@ export default function BackendPageContent() {
                 </SidebarMenuSub>
             </SidebarMenuItem>
              <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Projection" isActive={['sales-roadmap', 'budget', 'salary-forecast', 'forecast', 'member-projection'].includes(activeView)}>
+                <SidebarMenuButton tooltip="Projection" isActive={['sales-roadmap', 'budget', 'salary-forecast', 'forecast'].includes(activeView)}>
                     <TrendingUp />
                     <span>Projection</span>
                 </SidebarMenuButton>
@@ -246,10 +244,6 @@ export default function BackendPageContent() {
                     <SidebarMenuSubButton isActive={activeView === 'sales-roadmap'} onClick={() => router.push('/backend?view=sales-roadmap', { scroll: false })}>
                         <Map />
                         <span>Sales Roadmap</span>
-                    </SidebarMenuSubButton>
-                    <SidebarMenuSubButton isActive={activeView === 'member-projection'} onClick={() => router.push('/backend?view=member-projection', { scroll: false })}>
-                        <Users />
-                        <span>Member Projection</span>
                     </SidebarMenuSubButton>
                     <SidebarMenuSubButton isActive={activeView === 'budget'} onClick={() => router.push('/backend?view=budget', { scroll: false })}>
                         <Sheet />
@@ -446,5 +440,3 @@ export default function BackendPageContent() {
     </SidebarProvider>
   );
 }
-
-    
