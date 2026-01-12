@@ -7,15 +7,17 @@ import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Map, Loader2, Save, RotateCcw } from 'lucide-react';
+import { Map, Loader2, Save, RotateCcw, Trash2, Check, Copy } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Form } from '@/components/ui/form';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
 
 const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const SETUP_KEY = 'accountFinancialSetup_v1';
-const SALES_ROADMAP_KEY = 'accountSalesRoadmap_v1';
+const SALES_ROADMAP_KEY = 'accountSalesRoadmapScenarios_v1'; // New key for scenarios
 
 const salesRoleGroups = [
     {
@@ -96,6 +98,18 @@ function SalesRoadmapComponent() {
     const [startYear, setStartYear] = useState(new Date().getFullYear());
     const [isLoading, setIsLoading] = useState(true);
 
+    // Scenario State
+    const [scenarios, setScenarios] = useState<{[key: string]: any}>({});
+    const [activeScenarioName, setActiveScenarioName] = useState<string>('Default');
+    const [newScenarioName, setNewScenarioName] = useState<string>('');
+
+    const form = useForm({
+        defaultValues: generateDefaultValues(forecastMonths)
+    });
+
+    const { control, handleSubmit, reset } = form;
+
+    // Load settings and scenarios from local storage on mount
     useEffect(() => {
         if (typeof window !== 'undefined') {
             try {
@@ -106,48 +120,80 @@ function SalesRoadmapComponent() {
                     setStartMonth(parsed.startMonth || new Date().getMonth());
                     setStartYear(parsed.startYear || new Date().getFullYear());
                 }
+                
+                const savedScenarios = localStorage.getItem(SALES_ROADMAP_KEY);
+                const parsedScenarios = savedScenarios ? JSON.parse(savedScenarios) : { scenarios: { 'Default': generateDefaultValues(forecastMonths) }, activeScenario: 'Default' };
+                setScenarios(parsedScenarios.scenarios);
+                setActiveScenarioName(parsedScenarios.activeScenario);
+                reset(parsedScenarios.scenarios[parsedScenarios.activeScenario] || generateDefaultValues(forecastMonths));
+
             } catch (e) {
-                console.error("Could not parse financial setup settings.");
+                console.error("Could not parse saved data.");
+                setScenarios({ 'Default': generateDefaultValues(forecastMonths) });
+                reset(generateDefaultValues(forecastMonths));
             } finally {
                 setIsLoading(false);
             }
         }
-    }, []);
+    }, [reset, forecastMonths]);
+    
+    const saveScenariosToLocalStorage = (newScenarios: any, activeName: string) => {
+        const dataToSave = { scenarios: newScenarios, activeScenario: activeName };
+        localStorage.setItem(SALES_ROADMAP_KEY, JSON.stringify(dataToSave));
+        setScenarios(newScenarios);
+        setActiveScenarioName(activeName);
+    };
 
-    const form = useForm({
-        defaultValues: useCallback(() => {
-            if (typeof window === 'undefined') {
-                return generateDefaultValues(forecastMonths);
-            }
-            try {
-                const savedData = localStorage.getItem(SALES_ROADMAP_KEY);
-                if (savedData) {
-                    const parsed = JSON.parse(savedData);
-                    const firstAssumptionId = salesRoleGroups[0].assumptions[0].id;
-                    const savedMonths = parsed.monthlyAssumptions[firstAssumptionId]?.length || 0;
-                    if (savedMonths === forecastMonths) {
-                        return parsed;
-                    }
-                }
-            } catch (e) {
-                console.error("Failed to parse saved sales roadmap data.", e);
-            }
-            return generateDefaultValues(forecastMonths);
-        }, [forecastMonths])()
-    });
+    const handleSaveNewScenario = () => {
+        if (!newScenarioName) {
+            toast({ variant: 'destructive', title: 'Scenario name is required.' });
+            return;
+        }
+        if (scenarios[newScenarioName]) {
+            toast({ variant: 'destructive', title: 'Scenario name already exists.' });
+            return;
+        }
+        const currentValues = form.getValues();
+        const newScenarios = { ...scenarios, [newScenarioName]: currentValues };
+        saveScenariosToLocalStorage(newScenarios, newScenarioName);
+        setNewScenarioName('');
+        toast({ title: 'Scenario Saved', description: `Scenario "${newScenarioName}" has been created.` });
+    };
 
-    const { control, handleSubmit, reset } = form;
-
-    const monthHeaders = Array.from({ length: forecastMonths }, (_, i) => {
-        const date = new Date(startYear, startMonth + i);
-        return `${monthNames[date.getMonth()]} ${date.getFullYear()}`;
-    });
+    const handleUpdateScenario = () => {
+        const currentValues = form.getValues();
+        const updatedScenarios = { ...scenarios, [activeScenarioName]: currentValues };
+        saveScenariosToLocalStorage(updatedScenarios, activeScenarioName);
+        toast({ title: 'Scenario Updated', description: `Scenario "${activeScenarioName}" has been saved.` });
+    };
+    
+    const handleLoadScenario = (scenarioName: string) => {
+        if (scenarios[scenarioName]) {
+            reset(scenarios[scenarioName]);
+            setActiveScenarioName(scenarioName);
+            const dataToSave = { scenarios, activeScenario: scenarioName };
+            localStorage.setItem(SALES_ROADMAP_KEY, JSON.stringify(dataToSave));
+            toast({ title: 'Scenario Loaded', description: `You are now editing "${scenarioName}".` });
+        }
+    };
+    
+    const handleDeleteScenario = () => {
+        if (activeScenarioName === 'Default') {
+            toast({ variant: 'destructive', title: 'Cannot delete default scenario.' });
+            return;
+        }
+        const { [activeScenarioName]: _, ...remainingScenarios } = scenarios;
+        saveScenariosToLocalStorage(remainingScenarios, 'Default');
+        reset(remainingScenarios['Default']);
+        toast({ title: 'Scenario Deleted' });
+    };
 
     const onSubmit = (data: any) => {
-        localStorage.setItem(SALES_ROADMAP_KEY, JSON.stringify(data));
+        const updatedScenarios = { ...scenarios, [activeScenarioName]: data };
+        saveScenariosToLocalStorage(updatedScenarios, activeScenarioName);
         toast({
             title: "Referral Targets Saved!",
-            description: "Your monthly referral targets have been saved locally.",
+            description: `Your assumptions for "${activeScenarioName}" have been saved.`,
         });
         router.push('/account?view=member-projection');
     };
@@ -156,10 +202,15 @@ function SalesRoadmapComponent() {
         const defaults = generateDefaultValues(forecastMonths);
         reset(defaults);
         toast({
-            title: 'Referral Targets Reset',
-            description: 'Assumptions have been reset to their default values.',
+            title: 'Form Reset',
+            description: 'Assumptions have been reset to their default values. Save to update scenario.',
         });
     };
+    
+    const monthHeaders = Array.from({ length: forecastMonths }, (_, i) => {
+        const date = new Date(startYear, startMonth + i);
+        return `${monthNames[date.getMonth()]} ${date.getFullYear()}`;
+    });
     
     if (isLoading) {
         return <div className="flex justify-center items-center h-64"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
@@ -168,17 +219,37 @@ function SalesRoadmapComponent() {
     return (
         <Form {...form}>
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
-                <Card>
-                    <CardHeader className="flex flex-row justify-between items-start">
-                        <div>
-                            <CardTitle className="flex items-center gap-2"><Map /> Sales Conversion Funnel</CardTitle>
-                            <CardDescription>Set your monthly referral targets and conversion rates for each member role. This data is saved locally.</CardDescription>
-                        </div>
-                         <Button type="button" variant="outline" onClick={handleReset}>
-                            <RotateCcw className="mr-2 h-4 w-4" />
-                            Reset to Defaults
-                        </Button>
+                 <Card>
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2"><Map /> Sales Conversion Funnel</CardTitle>
+                        <CardDescription>Set your monthly referral targets and conversion rates for each member role. Your scenarios are saved locally.</CardDescription>
                     </CardHeader>
+                    <CardContent className="space-y-4">
+                        <Label>Scenario Management</Label>
+                        <div className="p-4 border rounded-lg space-y-4">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                     <Label htmlFor="load-scenario">Load Scenario</Label>
+                                     <Select onValueChange={handleLoadScenario} value={activeScenarioName}>
+                                        <SelectTrigger id="load-scenario"><SelectValue /></SelectTrigger>
+                                        <SelectContent>{Object.keys(scenarios).map(name => <SelectItem key={name} value={name}>{name}</SelectItem>)}</SelectContent>
+                                    </Select>
+                                </div>
+                                <div className="flex items-end gap-2">
+                                    <div className="space-y-2 flex-grow">
+                                        <Label htmlFor="new-scenario-name">New Scenario Name</Label>
+                                        <Input id="new-scenario-name" placeholder="e.g., Aggressive Growth" value={newScenarioName} onChange={e => setNewScenarioName(e.target.value)} />
+                                    </div>
+                                    <Button type="button" onClick={handleSaveNewScenario} variant="outline" disabled={!newScenarioName}><Copy className="mr-2"/> Save As New</Button>
+                                </div>
+                            </div>
+                            <div className="flex gap-2">
+                                <Button type="button" onClick={handleUpdateScenario}><Save className="mr-2"/> Update "{activeScenarioName}"</Button>
+                                <Button type="button" onClick={handleDeleteScenario} variant="destructive" disabled={activeScenarioName === 'Default' || Object.keys(scenarios).length <= 1}><Trash2 className="mr-2"/> Delete</Button>
+                                <Button type="button" variant="outline" onClick={handleReset}><RotateCcw className="mr-2"/> Reset Form</Button>
+                            </div>
+                        </div>
+                    </CardContent>
                 </Card>
 
                 <div className="space-y-6">
@@ -205,7 +276,7 @@ function SalesRoadmapComponent() {
                                                     <TableCell className="font-medium sticky left-0 bg-background z-10">{assumption.label}</TableCell>
                                                     {monthHeaders.map((_, monthIndex) => (
                                                         <TableCell key={`${assumption.id}-${monthIndex}`}>
-                                                            {assumption.label === 'Initial # of Members' && monthIndex > 0 ? null : (
+                                                           {assumption.label === 'Initial # of Members' && monthIndex > 0 ? null : (
                                                                 <Controller
                                                                     name={`monthlyAssumptions.${assumption.id}.${monthIndex}`}
                                                                     control={control}
@@ -218,7 +289,7 @@ function SalesRoadmapComponent() {
                                                                         />
                                                                     )}
                                                                 />
-                                                            )}
+                                                           )}
                                                         </TableCell>
                                                     ))}
                                                 </TableRow>
@@ -235,7 +306,7 @@ function SalesRoadmapComponent() {
                 <div className="mt-8 flex justify-end">
                     <Button type="submit">
                         <Save className="mr-2 h-4 w-4" />
-                        Save Sales Roadmap & View Projection
+                        Save & View Projection
                     </Button>
                 </div>
             </form>
