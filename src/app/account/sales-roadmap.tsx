@@ -70,9 +70,9 @@ const salesRoleGroups = [
     {
         role: 'Developers',
         assumptions: [
-            { id: 'initialMembersDevelopers', label: 'Initial # of Members', defaultValue: 5 },
-            { id: 'referralsPerMemberDevelopers', label: '# of Referrals / Member / Month', defaultValue: 10 },
-            { id: 'conversionToMemberDevelopers', label: '% Conversion to Member', defaultValue: 5 }
+            { id: 'initialMembersDevelopers', label: 'Initial # of Members', defaultValue: 0 },
+            { id: 'referralsPerMemberDevelopers', label: '# of Referrals / Member / Month', defaultValue: 0 },
+            { id: 'conversionToMemberDevelopers', label: '% Conversion to Member', defaultValue: 0 }
         ]
     },
 ];
