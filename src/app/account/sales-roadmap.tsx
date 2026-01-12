@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { Suspense, useCallback, useEffect, useState } from 'react';
@@ -15,9 +14,18 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 
 const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const SETUP_KEY = 'accountFinancialSetup_v1';
-const SALES_ROADMAP_KEY = 'accountSalesRoadmap_v4';
+const SALES_ROADMAP_KEY = 'accountSalesRoadmap_v5';
 
 const salesRoleGroups = [
+    {
+        role: 'Power Partners',
+        description: 'Businesses with significant relationship bases (e.g., associations, brokers, depots).',
+        assumptions: [
+            { id: 'numberOfPowerPartners', label: '# of Power Partners', defaultValue: 5 },
+            { id: 'opportunitiesPerPartner', label: 'Opps per Partner / Month', defaultValue: 50 },
+            { id: 'powerPartnerConversion', label: '% Conversion to Member', defaultValue: 25 },
+        ]
+    },
     {
         role: 'Vendors',
         assumptions: [
@@ -32,14 +40,6 @@ const salesRoleGroups = [
             { id: 'initialMembersBuyers', label: 'Initial # of Members', defaultValue: 10 },
             { id: 'referralsPerMemberBuyers', label: '# of Referrals / Member / Month', defaultValue: 10 },
             { id: 'conversionToMemberBuyers', label: '% Conversion to Member', defaultValue: 5 }
-        ]
-    },
-    {
-        role: 'Partners',
-        assumptions: [
-            { id: 'initialMembersPartners', label: 'Initial # of Members', defaultValue: 1 },
-            { id: 'referralsPerMemberPartners', label: '# of Referrals / Member / Month', defaultValue: 10 },
-            { id: 'conversionToMemberPartners', label: '% Conversion to Member', defaultValue: 15 }
         ]
     },
     {
@@ -186,6 +186,7 @@ function SalesRoadmapComponent() {
                         <Card key={group.role}>
                             <CardHeader>
                                 <CardTitle className="text-xl">{group.role}</CardTitle>
+                                {group.description && <CardDescription>{group.description}</CardDescription>}
                             </CardHeader>
                             <CardContent>
                                 <ScrollArea className="w-full whitespace-nowrap rounded-md border">
