@@ -209,7 +209,7 @@ function SalesRoadmapComponent() {
                                                     <Input
                                                         type="number"
                                                         className="h-8"
-                                                        {...field}
+                                                        value={field.value}
                                                         onChange={e => field.onChange(Number(e.target.value))}
                                                     />
                                                 </div>
@@ -240,7 +240,7 @@ function SalesRoadmapComponent() {
                                                                     <Input
                                                                         type="number"
                                                                         className="h-8 w-24 text-center"
-                                                                        {...field}
+                                                                        value={field.value}
                                                                         onChange={e => field.onChange(Number(e.target.value))}
                                                                     />
                                                                 )}
