@@ -20,87 +20,114 @@ const memberRoleGroups = [
 
 const memberProjectionLogic = (roadmapInputs: any, setupInputs: any) => {
     if (!roadmapInputs || !roadmapInputs.monthlyAssumptions || !setupInputs) {
-        return { data: [], yearlyTotals: {}, grandTotal: {} };
+        return { total: [], byRole: {} };
     }
 
-    const data = [];
     const monthlyAssumptions = roadmapInputs.monthlyAssumptions;
-    
-    // Calculate total initial members from roles that have it
-    let cumulativeMembers = memberRoleGroups.reduce((sum, group) => {
-        const roleId = `initialMembers${group.role.replace(/\s/g, '')}`;
-        return sum + (monthlyAssumptions[roleId]?.[0] || 0);
-    }, 0);
+    const { forecastMonths, startYear, startMonth } = setupInputs;
 
-    for (let i = 0; i < setupInputs.forecastMonths; i++) {
-        const date = new Date(setupInputs.startYear, setupInputs.startMonth + i, 1);
+    let byRoleProjections: { [key: string]: any[] } = {};
+    let totalProjection: any[] = [];
+    let cumulativeTotal = 0;
+
+    // Initialize Power Partner contribution
+    const powerPartnerNewMembersPerMonth = Math.round(
+        (monthlyAssumptions.numberOfPowerPartners?.[0] || 0) *
+        (monthlyAssumptions.opportunitiesPerPartner?.[0] || 0) *
+        ((monthlyAssumptions.powerPartnerConversion?.[0] || 0) / 100)
+    );
+
+    // Initialize projections for each role
+    memberRoleGroups.forEach(group => {
+        const roleKey = group.role;
+        byRoleProjections[roleKey] = [];
+        const initialMembers = monthlyAssumptions[`initialMembers${roleKey.replace(/\s/g, '')}`]?.[0] || 0;
+        cumulativeTotal += initialMembers;
+
+        // Set initial state for each role
+        let cumulativeForRole = initialMembers;
+        for (let i = 0; i < forecastMonths; i++) {
+             const date = new Date(startYear, startMonth + i, 1);
+            const month = monthNames[date.getMonth()];
+            const year = date.getFullYear();
+
+            const referralsPerMember = monthlyAssumptions[`referralsPerMember${roleKey.replace(/\s/g, '')}`]?.[i] || 0;
+            const conversionToMember = (monthlyAssumptions[`conversionToMember${roleKey.replace(/\s/g, '')}`]?.[i] || 0) / 100;
+            
+            const newMembersThisMonth = Math.round(cumulativeForRole * referralsPerMember * conversionToMember);
+            cumulativeForRole += newMembersThisMonth;
+
+            byRoleProjections[roleKey].push({
+                month: `${month} ${year}`,
+                newMembers: newMembersThisMonth,
+                cumulativeMembers: cumulativeForRole,
+            });
+        }
+    });
+
+    // Calculate total projection by summing up roles and adding power partners
+    for (let i = 0; i < forecastMonths; i++) {
+        const date = new Date(startYear, startMonth + i, 1);
         const month = monthNames[date.getMonth()];
         const year = date.getFullYear();
 
-        // 1. Calculate new members from Power Partners (linear growth)
-        const powerPartners = monthlyAssumptions.numberOfPowerPartners?.[i] || 0;
-        const oppsPerPartner = monthlyAssumptions.opportunitiesPerPartner?.[i] || 0;
-        const powerPartnerConversion = (monthlyAssumptions.powerPartnerConversion?.[i] || 0) / 100;
-        const powerPartnerNewMembers = Math.round(powerPartners * oppsPerPartner * powerPartnerConversion);
-
-        // 2. Calculate new members from existing member referrals (exponential growth)
-        let totalReferralsPerMember = 0;
-        let totalConversionRate = 0;
-        let activeRoles = 0;
+        let newMembersFromRoles = 0;
         memberRoleGroups.forEach(group => {
-            const roleName = group.role.replace(/\s/g, '');
-            const referrals = monthlyAssumptions[`referralsPerMember${roleName}`]?.[i];
-            const conversion = monthlyAssumptions[`conversionToMember${roleName}`]?.[i];
-
-            if (typeof referrals === 'number' && typeof conversion === 'number') {
-                totalReferralsPerMember += referrals;
-                totalConversionRate += conversion;
-                activeRoles++;
-            }
+            newMembersFromRoles += byRoleProjections[group.role][i].newMembers;
         });
 
-        const avgReferralsPerMember = activeRoles > 0 ? totalReferralsPerMember / activeRoles : 0;
-        const avgConversionRate = activeRoles > 0 ? (totalConversionRate / activeRoles) / 100 : 0;
+        const totalNewThisMonth = newMembersFromRoles + powerPartnerNewMembersPerMonth;
+        cumulativeTotal += totalNewThisMonth;
         
-        const referralNewMembers = Math.round(cumulativeMembers * avgReferralsPerMember * avgConversionRate);
-        
-        // 3. Sum them up
-        const totalNewMembers = powerPartnerNewMembers + referralNewMembers;
-
-        cumulativeMembers += totalNewMembers;
-
-        data.push({
+        totalProjection.push({
             month: `${month} ${year}`,
             year,
-            powerPartnerNewMembers,
-            referralNewMembers,
-            totalNewMembers,
-            cumulativeMembers,
+            powerPartnerNewMembers: powerPartnerNewMembersPerMonth,
+            referralNewMembers: newMembersFromRoles,
+            totalNewMembers: totalNewThisMonth,
+            cumulativeMembers: cumulativeTotal,
         });
     }
 
-    // Calculate Totals
-    const yearlyTotals: any = {};
-    data.forEach(row => {
-        if (!yearlyTotals[row.year]) {
-            yearlyTotals[row.year] = { powerPartnerNewMembers: 0, referralNewMembers: 0, totalNewMembers: 0, cumulativeMembers: 0 };
-        }
-        yearlyTotals[row.year].powerPartnerNewMembers += row.powerPartnerNewMembers;
-        yearlyTotals[row.year].referralNewMembers += row.referralNewMembers;
-        yearlyTotals[row.year].totalNewMembers += row.totalNewMembers;
-        yearlyTotals[row.year].cumulativeMembers = row.cumulativeMembers; // Take the last value of the year
-    });
-
-    const grandTotal = {
-        powerPartnerNewMembers: data.reduce((sum, row) => sum + row.powerPartnerNewMembers, 0),
-        referralNewMembers: data.reduce((sum, row) => sum + row.referralNewMembers, 0),
-        totalNewMembers: data.reduce((sum, row) => sum + row.totalNewMembers, 0),
-        cumulativeMembers: cumulativeMembers,
-    };
-    
-    return { data, yearlyTotals, grandTotal };
+    return { total: totalProjection, byRole: byRoleProjections };
 };
 
+
+function ProjectionTable({ title, data }: { title: string; data: any[] }) {
+    if (!data || data.length === 0) {
+        return null;
+    }
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2"><Users /> {title}</CardTitle>
+            </CardHeader>
+            <CardContent>
+                <ScrollArea className="w-full whitespace-nowrap rounded-md border">
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead className="w-[120px] sticky left-0 bg-background z-10">Month</TableHead>
+                                <TableHead className="text-right">New Members</TableHead>
+                                <TableHead className="text-right font-bold text-primary">Cumulative Members</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {data.map((row) => (
+                                <TableRow key={row.month}>
+                                    <TableCell className="sticky left-0 bg-background z-10">{row.month}</TableCell>
+                                    <TableCell className="text-right">{row.newMembers.toLocaleString()}</TableCell>
+                                    <TableCell className="text-right font-bold text-primary">{row.cumulativeMembers.toLocaleString()}</TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                    <ScrollBar orientation="horizontal" />
+                </ScrollArea>
+            </CardContent>
+        </Card>
+    );
+}
 
 export default function MemberProjection() {
     const { roadmapInputs, setupInputs } = useMemo(() => {
@@ -118,7 +145,7 @@ export default function MemberProjection() {
         }
     }, []);
 
-    const { data, yearlyTotals, grandTotal } = useMemo(() => {
+    const { total, byRole } = useMemo(() => {
         return memberProjectionLogic(roadmapInputs, setupInputs);
     }, [roadmapInputs, setupInputs]);
     
@@ -145,48 +172,46 @@ export default function MemberProjection() {
     }
 
     return (
-        <Card>
-            <CardHeader>
-                <CardTitle className="flex items-center gap-2"><Users /> Member Growth Projection</CardTitle>
-                <CardDescription>Month-by-month forecast of new paying members based on your sales roadmap assumptions.</CardDescription>
-            </CardHeader>
-            <CardContent>
-                <ScrollArea className="w-full whitespace-nowrap rounded-md border">
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead className="w-[120px] sticky left-0 bg-background z-10">Month</TableHead>
-                                <TableHead className="text-right">New Members (Partners)</TableHead>
-                                <TableHead className="text-right">New Members (Referrals)</TableHead>
-                                <TableHead className="text-right font-bold text-primary">Total New Members</TableHead>
-                                <TableHead className="text-right font-bold text-primary">Cumulative Members</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {data.map((row) => (
-                                <React.Fragment key={row.month}>
-                                    <TableRow>
+        <div className="space-y-8">
+            <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2"><Users /> Total Member Growth Projection</CardTitle>
+                    <CardDescription>Month-by-month forecast of new paying members based on your sales roadmap assumptions.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <ScrollArea className="w-full whitespace-nowrap rounded-md border">
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead className="w-[120px] sticky left-0 bg-background z-10">Month</TableHead>
+                                    <TableHead className="text-right">New Members (Partners)</TableHead>
+                                    <TableHead className="text-right">New Members (Referrals)</TableHead>
+                                    <TableHead className="text-right font-bold text-primary">Total New Members</TableHead>
+                                    <TableHead className="text-right font-bold text-primary">Cumulative Members</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {total.map((row) => (
+                                    <TableRow key={row.month}>
                                         <TableCell className="sticky left-0 bg-background z-10">{row.month}</TableCell>
                                         <TableCell className="text-right">{row.powerPartnerNewMembers.toLocaleString()}</TableCell>
                                         <TableCell className="text-right">{row.referralNewMembers.toLocaleString()}</TableCell>
                                         <TableCell className="text-right font-bold text-primary">{row.totalNewMembers.toLocaleString()}</TableCell>
                                         <TableCell className="text-right font-bold text-primary">{row.cumulativeMembers.toLocaleString()}</TableCell>
                                     </TableRow>
-                                </React.Fragment>
-                            ))}
-                             <TableRow className="bg-primary/10 font-extrabold text-base">
-                                <TableCell className="sticky left-0 bg-primary/10 z-10">Grand Total</TableCell>
-                                <TableCell className="text-right text-primary">{grandTotal.powerPartnerNewMembers.toLocaleString()}</TableCell>
-                                <TableCell className="text-right text-primary">{grandTotal.referralNewMembers.toLocaleString()}</TableCell>
-                                <TableCell className="text-right text-primary">{grandTotal.totalNewMembers.toLocaleString()}</TableCell>
-                                <TableCell className="text-right text-primary">{grandTotal.cumulativeMembers.toLocaleString()}</TableCell>
-                            </TableRow>
-                        </TableBody>
-                    </Table>
-                    <ScrollBar orientation="horizontal" />
-                </ScrollArea>
-            </CardContent>
-        </Card>
+                                ))}
+                            </TableBody>
+                        </Table>
+                        <ScrollBar orientation="horizontal" />
+                    </ScrollArea>
+                </CardContent>
+            </Card>
+
+            <div className="space-y-8">
+                {Object.entries(byRole).map(([roleName, data]) => (
+                    <ProjectionTable key={roleName} title={`${roleName} Growth Projection`} data={data} />
+                ))}
+            </div>
+        </div>
     );
 }
-
