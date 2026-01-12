@@ -22,7 +22,7 @@ const salesRoleGroups = [
         role: 'Power Partners',
         description: 'Businesses with significant relationship bases (e.g., associations, brokers, depots).',
         assumptions: [
-            { id: 'numberOfPowerPartners', label: '# of Power Partners', defaultValue: 5 },
+            { id: 'numberOfPowerPartners', label: 'Initial # of Members', defaultValue: 5 },
             { id: 'opportunitiesPerPartner', label: 'Opps per Partner / Month', defaultValue: 50 },
             { id: 'powerPartnerConversion', label: '% Conversion to Member', defaultValue: 25 },
         ]
@@ -205,7 +205,7 @@ function SalesRoadmapComponent() {
                                                     <TableCell className="font-medium sticky left-0 bg-background z-10">{assumption.label}</TableCell>
                                                     {monthHeaders.map((_, monthIndex) => (
                                                         <TableCell key={`${assumption.id}-${monthIndex}`}>
-                                                            {assumption.id.startsWith('initialMembers') && monthIndex > 0 ? null : (
+                                                            {assumption.label === 'Initial # of Members' && monthIndex > 0 ? null : (
                                                                 <Controller
                                                                     name={`monthlyAssumptions.${assumption.id}.${monthIndex}`}
                                                                     control={control}
