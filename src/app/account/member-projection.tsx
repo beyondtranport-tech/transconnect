@@ -26,7 +26,6 @@ const memberProjectionLogic = (roadmapInputs: any, setupInputs: any) => {
     const { forecastMonths, startYear, startMonth } = setupInputs;
 
     let byRoleProjections: { [key: string]: any[] } = {};
-    let cumulativeTotal = 0;
 
     const powerPartnerNewMembersPerMonth = Math.round(
         (Number(monthlyAssumptions.numberOfPowerPartners?.[0]) || 0) *
@@ -38,11 +37,12 @@ const memberProjectionLogic = (roadmapInputs: any, setupInputs: any) => {
         const roleKey = group.role;
         byRoleProjections[roleKey] = [];
         const roleKeySanitized = roleKey.replace(/\s/g, '');
+        
+        // --- FIX: Correctly read the single initial members value ---
         const initialMembers = Number(monthlyAssumptions[`initialMembers${roleKeySanitized}`]) || 0;
         
         let cumulativeForRole = initialMembers;
         
-        // Correctly access the arrays for each role
         const referralsArray = monthlyAssumptions[`referralsPerMember${roleKeySanitized}`] || [];
         const conversionArray = monthlyAssumptions[`conversionToMember${roleKeySanitized}`] || [];
 
@@ -69,10 +69,11 @@ const memberProjectionLogic = (roadmapInputs: any, setupInputs: any) => {
     const initialTotalMembers = memberRoleGroups.reduce((acc, group) => {
         const roleKey = group.role;
         const roleKeySanitized = roleKey.replace(/\s/g, '');
+        // --- FIX: Correctly read the single initial members value for the total ---
         return acc + (Number(monthlyAssumptions[`initialMembers${roleKeySanitized}`]) || 0);
     }, 0);
     
-    cumulativeTotal = initialTotalMembers;
+    let cumulativeTotal = initialTotalMembers;
 
     for (let i = 0; i < forecastMonths; i++) {
         const date = new Date(startYear, startMonth + i, 1);
