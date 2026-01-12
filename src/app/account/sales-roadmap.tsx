@@ -29,7 +29,6 @@ const salesRoleGroups = [
     {
         role: 'Vendors',
         assumptions: [
-            { id: 'initialMembersVendors', label: '# of Members', defaultValue: 5 },
             { id: 'referralsPerMemberVendors', label: '# of Referrals / Member / Month', defaultValue: 10 },
             { id: 'conversionToMemberVendors', label: '% Conversion to Member', defaultValue: 5 }
         ]
@@ -37,7 +36,6 @@ const salesRoleGroups = [
     {
         role: 'Buyers',
         assumptions: [
-            { id: 'initialMembersBuyers', label: '# of Members', defaultValue: 5 },
             { id: 'referralsPerMemberBuyers', label: '# of Referrals / Member / Month', defaultValue: 10 },
             { id: 'conversionToMemberBuyers', label: '% Conversion to Member', defaultValue: 5 }
         ]
@@ -45,7 +43,6 @@ const salesRoleGroups = [
     {
         role: 'Associates',
         assumptions: [
-            { id: 'initialMembersAssociates', label: '# of Members', defaultValue: 10 },
             { id: 'referralsPerMemberAssociates', label: '# of Referrals / Member / Month', defaultValue: 10 },
             { id: 'conversionToMemberAssociates', label: '% Conversion to Member', defaultValue: 10 }
         ]
@@ -53,7 +50,6 @@ const salesRoleGroups = [
     {
         role: 'ISA Agents',
         assumptions: [
-            { id: 'initialMembersIsaAgents', label: '# of Members', defaultValue: 5 },
             { id: 'referralsPerMemberIsaAgents', label: '# of Referrals / Member / Month', defaultValue: 20 },
             { id: 'conversionToMemberIsaAgents', label: '% Conversion to Member', defaultValue: 25 }
         ]
@@ -61,7 +57,6 @@ const salesRoleGroups = [
     {
         role: 'Drivers',
         assumptions: [
-            { id: 'initialMembersDrivers', label: '# of Members', defaultValue: 5 },
             { id: 'referralsPerMemberDrivers', label: '# of Referrals / Member / Month', defaultValue: 10 },
             { id: 'conversionToMemberDrivers', label: '% Conversion to Member', defaultValue: 5 }
         ]
@@ -69,7 +64,6 @@ const salesRoleGroups = [
     {
         role: 'Developers',
         assumptions: [
-            { id: 'initialMembersDevelopers', label: '# of Members', defaultValue: 0 },
             { id: 'referralsPerMemberDevelopers', label: '# of Referrals / Member / Month', defaultValue: 0 },
             { id: 'conversionToMemberDevelopers', label: '% Conversion to Member', defaultValue: 0 }
         ]
@@ -77,7 +71,14 @@ const salesRoleGroups = [
 ];
 
 const generateDefaultValues = (months: number) => {
-    const defaults: { [key: string]: any } = {};
+    const defaults: { [key: string]: any } = {
+        initialMembersVendors: 5,
+        initialMembersBuyers: 5,
+        initialMembersAssociates: 10,
+        initialMembersIsaAgents: 5,
+        initialMembersDrivers: 5,
+        initialMembersDevelopers: 0,
+    };
     salesRoleGroups.forEach(group => {
         group.assumptions.forEach(assumption => {
             defaults[assumption.id] = Array(months).fill(assumption.defaultValue);
@@ -135,7 +136,7 @@ function SalesRoadmapComponent() {
         }, [forecastMonths])()
     });
 
-    const { control, handleSubmit, reset } = form;
+    const { control, handleSubmit, register, reset } = form;
 
     const monthHeaders = Array.from({ length: forecastMonths }, (_, i) => {
         const date = new Date(startYear, startMonth + i);
@@ -143,7 +144,18 @@ function SalesRoadmapComponent() {
     });
 
     const onSubmit = (data: any) => {
-        localStorage.setItem(SALES_ROADMAP_KEY, JSON.stringify(data));
+        const processedData = {
+            monthlyAssumptions: {
+                ...data.monthlyAssumptions,
+                initialMembersVendors: Number(data.monthlyAssumptions.initialMembersVendors),
+                initialMembersBuyers: Number(data.monthlyAssumptions.initialMembersBuyers),
+                initialMembersAssociates: Number(data.monthlyAssumptions.initialMembersAssociates),
+                initialMembersIsaAgents: Number(data.monthlyAssumptions.initialMembersIsaAgents),
+                initialMembersDrivers: Number(data.monthlyAssumptions.initialMembersDrivers),
+                initialMembersDevelopers: Number(data.monthlyAssumptions.initialMembersDevelopers)
+            }
+        }
+        localStorage.setItem(SALES_ROADMAP_KEY, JSON.stringify(processedData));
         toast({
             title: "Referral Targets Saved!",
             description: "Your monthly referral targets have been saved locally.",
@@ -186,6 +198,20 @@ function SalesRoadmapComponent() {
                             <CardHeader>
                                 <CardTitle className="text-xl">{group.role}</CardTitle>
                                 {group.description && <CardDescription>{group.description}</CardDescription>}
+                                {group.role !== 'Power Partners' && (
+                                    <div className="pt-4">
+                                        <Controller
+                                            name={`monthlyAssumptions.initialMembers${group.role.replace(/\s+/g, '')}`}
+                                            control={control}
+                                            render={({ field }) => (
+                                                <FormItem className="max-w-xs">
+                                                    <FormLabel>Initial # of Members</FormLabel>
+                                                    <FormControl><Input type="number" {...field} onChange={e => field.onChange(Number(e.target.value))} /></FormControl>
+                                                </FormItem>
+                                            )}
+                                        />
+                                    </div>
+                                )}
                             </CardHeader>
                             <CardContent>
                                 <ScrollArea className="w-full whitespace-nowrap rounded-md border">
@@ -212,6 +238,7 @@ function SalesRoadmapComponent() {
                                                                         type="number"
                                                                         className="h-8 w-24 text-center"
                                                                         {...field}
+                                                                        value={field.value ?? ''}
                                                                         onChange={e => field.onChange(parseFloat(e.target.value) || 0)}
                                                                     />
                                                                 )}
