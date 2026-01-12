@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { Suspense, useCallback, useEffect, useState } from 'react';
@@ -52,9 +53,9 @@ const salesRoleGroups = [
     {
         role: 'ISA Agents',
         assumptions: [
-            { id: 'referralsIsaAgents', label: '# of Referrals', defaultValue: 5 },
-            { id: 'conversionToUserIsaAgents', label: '% Conversion to User', defaultValue: 10 },
-            { id: 'conversionToMemberIsaAgents', label: '% Conversion to Member', defaultValue: 5 }
+            { id: 'referralsIsaAgents', label: '# of Referrals', defaultValue: 20 },
+            { id: 'conversionToUserIsaAgents', label: '% Conversion to User', defaultValue: 50 },
+            { id: 'conversionToMemberIsaAgents', label: '% Conversion to Member', defaultValue: 25 }
         ]
     },
     {
@@ -246,3 +247,5 @@ export default function SalesRoadmap() {
         </Suspense>
     );
 }
+
+    
