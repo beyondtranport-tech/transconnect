@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useMemo } from 'react';
@@ -27,7 +26,6 @@ const memberProjectionLogic = (roadmapInputs: any, setupInputs: any) => {
     const { forecastMonths, startYear, startMonth } = setupInputs;
 
     let byRoleProjections: { [key: string]: any[] } = {};
-    let totalProjection: any[] = [];
     let cumulativeTotal = 0;
 
     // Initialize Power Partner contribution
@@ -41,10 +39,8 @@ const memberProjectionLogic = (roadmapInputs: any, setupInputs: any) => {
     memberRoleGroups.forEach(group => {
         const roleKey = group.role;
         byRoleProjections[roleKey] = [];
-        const initialMembers = monthlyAssumptions[`initialMembers${roleKey.replace(/\s/g, '')}`]?.[0] || 0;
-        cumulativeTotal += initialMembers;
-
-        // Set initial state for each role
+        const initialMembers = monthlyAssumptions[`initialMembers${roleKey.replace(/\s/g, '')}`] || 0;
+        
         let cumulativeForRole = initialMembers;
         for (let i = 0; i < forecastMonths; i++) {
              const date = new Date(startYear, startMonth + i, 1);
@@ -66,6 +62,14 @@ const memberProjectionLogic = (roadmapInputs: any, setupInputs: any) => {
     });
 
     // Calculate total projection by summing up roles and adding power partners
+    let totalProjection: any[] = [];
+    let initialTotalMembers = memberRoleGroups.reduce((acc, group) => {
+        const roleKey = group.role;
+        return acc + (monthlyAssumptions[`initialMembers${roleKey.replace(/\s/g, '')}`] || 0);
+    }, 0);
+    
+    cumulativeTotal = initialTotalMembers;
+
     for (let i = 0; i < forecastMonths; i++) {
         const date = new Date(startYear, startMonth + i, 1);
         const month = monthNames[date.getMonth()];
@@ -73,7 +77,12 @@ const memberProjectionLogic = (roadmapInputs: any, setupInputs: any) => {
 
         let newMembersFromRoles = 0;
         memberRoleGroups.forEach(group => {
-            newMembersFromRoles += byRoleProjections[group.role][i].newMembers;
+            const roleKey = group.role;
+            const referralsPerMember = monthlyAssumptions[`referralsPerMember${roleKey.replace(/\s/g, '')}`]?.[i] || 0;
+            const conversionToMember = (monthlyAssumptions[`conversionToMember${roleKey.replace(/\s/g, '')}`]?.[i] || 0) / 100;
+            const cumulativeForRole = i > 0 ? byRoleProjections[roleKey][i - 1].cumulativeMembers : (monthlyAssumptions[`initialMembers${roleKey.replace(/\s/g, '')}`] || 0);
+            
+            newMembersFromRoles += Math.round(cumulativeForRole * referralsPerMember * conversionToMember);
         });
 
         const totalNewThisMonth = newMembersFromRoles + powerPartnerNewMembersPerMonth;
