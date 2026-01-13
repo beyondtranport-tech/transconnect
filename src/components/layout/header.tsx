@@ -3,7 +3,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Truck, Menu, User, ChevronDown, ShieldCheck } from "lucide-react";
+import { Truck, Menu, User, ChevronDown, ShieldCheck, Building } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
@@ -138,8 +138,8 @@ export function Header() {
                         <DropdownMenuItem asChild>
                             <Link href="/adminaccount">Admin Account</Link>
                         </DropdownMenuItem>
-                        <DropdownMenuItem asChild>
-                            <Link href="/backend">Backend</Link>
+                         <DropdownMenuItem asChild>
+                            <Link href="/backend">App Backend</Link>
                         </DropdownMenuItem>
                         </>
                     ) : (
@@ -226,9 +226,9 @@ export function Header() {
                        <div className="h-10 w-full rounded-md bg-muted/50 animate-pulse" />
                     ) : user ? (
                       <Button asChild className="w-full justify-start" >
-                        <Link href={"/account"} onClick={() => setIsSheetOpen(false)}>
-                            <User className="mr-2 h-5 w-5" />
-                            My Account
+                        <Link href={isAdmin ? "/adminaccount" : "/account"} onClick={() => setIsSheetOpen(false)}>
+                            {isAdmin ? <Building className="mr-2 h-5 w-5" /> : <User className="mr-2 h-5 w-5" />}
+                            {isAdmin ? "Admin Account" : "My Account"}
                         </Link>
                       </Button>
                     ) : (
@@ -250,3 +250,5 @@ export function Header() {
     </header>
   );
 }
+
+    

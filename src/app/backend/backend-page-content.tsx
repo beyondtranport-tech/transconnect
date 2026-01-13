@@ -62,24 +62,7 @@ import { signOut } from 'firebase/auth';
 // Using next/dynamic to lazy-load components
 import dynamic from 'next/dynamic';
 
-const MemberWallet = dynamic(() => import('./wallet/[memberId]/member-wallet'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const DashboardContent = dynamic(() => import('./dashboard-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const MembersList = dynamic(() => import('./members-list'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const StaffList = dynamic(() => import('./staff-list'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const ShopsList = dynamic(() => import('./shops-list'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const ContributionsList = dynamic(() => import('./contributions-list'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const WalletTransactionsList = dynamic(() => import('./wallet-transactions-list'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const ReconciliationPage = dynamic(() => import('./reconciliation/page'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const BankDetailsSettings = dynamic(() => import('./bank-details-settings'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const ChartOfAccountsSettings = dynamic(() => import('./chart-of-accounts-settings'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const LoyaltySettings = dynamic(() => import('./loyalty-settings'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const RewardsManagement = dynamic(() => import('./rewards-management'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const RewardStatus = dynamic(() => import('./reward-status'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const PricingManagement = dynamic(() => import('./revenue/pricing-management'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const MallCommissions = dynamic(() => import('./revenue/mall-commissions'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const MarketplaceFees = dynamic(() => import('./revenue/marketplace-fees'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const ConnectPlanPricing = dynamic(() => import('./revenue/connect-plan-pricing'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const TechPricing = dynamic(() => import('./revenue/tech-pricing'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const PermissionsContent = dynamic(() => import('./permissions-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const ActivityFeed = dynamic(() => import('./activity-feed'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const PlatformTasksContent = dynamic(() => import('./platform-tasks'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
@@ -92,11 +75,20 @@ const PlatformSettingsContent = dynamic(() => import('./platform-settings'), { l
 const DivisionsContent = dynamic(() => import('./divisions-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const CampaignContent = dynamic(() => import('./campaign-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 
+const LoyaltySettings = dynamic(() => import('./loyalty-settings'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const RewardsManagement = dynamic(() => import('./rewards-management'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const RewardStatus = dynamic(() => import('./reward-status'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const PricingManagement = dynamic(() => import('./revenue/pricing-management'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const MallCommissions = dynamic(() => import('./revenue/mall-commissions'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const MarketplaceFees = dynamic(() => import('./revenue/marketplace-fees'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const ConnectPlanPricing = dynamic(() => import('./revenue/connect-plan-pricing'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const TechPricing = dynamic(() => import('./revenue/tech-pricing'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+
+
 export default function BackendPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const initialView = searchParams.get('view') || 'dashboard';
-  const memberId = searchParams.get('memberId');
+  const initialView = searchParams.get('view') || 'platform-settings';
   const [activeView, setActiveView] = useState(initialView);
   const { user, isUserLoading } = useUser();
   const auth = useAuth();
@@ -113,19 +105,6 @@ export default function BackendPageContent() {
 
   const renderContent = () => {
     switch (activeView) {
-      case 'dashboard':
-        return <DashboardContent />;
-      case 'members':
-        return <MembersList />;
-      case 'staff':
-        return <StaffList />;
-      case 'shops':
-        return <ShopsList />;
-      case 'wallet':
-        if (memberId) {
-            return <MemberWallet memberId={memberId} />;
-        }
-        return <WalletTransactionsList />; // Fallback if no memberId
       case 'activity-feed':
         return <ActivityFeed />;
       case 'platform-tasks':
@@ -150,8 +129,6 @@ export default function BackendPageContent() {
         return <ConnectPlanPricing />;
       case 'revenue-tech-pricing':
         return <TechPricing />;
-      case 'wallet-transactions':
-        return <WalletTransactionsList />;
       case 'divisions':
         return <DivisionsContent />;
       case 'divisions-funding':
@@ -162,14 +139,10 @@ export default function BackendPageContent() {
         return <MarketplaceDivisionContent />;
       case 'divisions-tech':
         return <TechDivisionContent />;
-      case 'contributions':
-        return <ContributionsList />;
-      case 'wallet-reconciliation':
-        return <ReconciliationPage />;
       case 'campaigns':
         return <CampaignContent />;
       default:
-        return <DashboardContent />;
+        return <PlatformSettingsContent />;
     }
   }
   
@@ -183,27 +156,19 @@ export default function BackendPageContent() {
     <Sidebar>
         <SidebarHeader>
         <div className="flex items-center gap-2">
-            <Truck className="h-6 w-6 text-primary" />
+            <Server className="h-6 w-6 text-primary" />
             <h2 className="text-lg font-semibold text-sidebar-foreground">
-            Admin Backend
+              App Backend
             </h2>
         </div>
         </SidebarHeader>
         <SidebarContent>
         <SidebarGroup>
             <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Dashboard" isActive={activeView === 'dashboard'} onClick={() => router.push('/backend?view=dashboard', { scroll: false })}>
-                <LayoutDashboard />
-                <span>Dashboard</span>
+                <SidebarMenuButton tooltip="Go to Admin Account" onClick={() => router.push('/adminaccount')}>
+                    <Building />
+                    <span>Business Hub</span>
                 </SidebarMenuButton>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-                <a href="https://analytics.google.com" target="_blank" rel="noopener noreferrer" className="w-full">
-                    <SidebarMenuButton tooltip="Analytics">
-                        <Combine />
-                        <span>Analytics</span>
-                    </SidebarMenuButton>
-                </a>
             </SidebarMenuItem>
             <SidebarMenuItem>
                 <SidebarMenuButton tooltip="Campaigns" isActive={activeView === 'campaigns'} onClick={() => router.push('/backend?view=campaigns', { scroll: false })}>
@@ -212,53 +177,11 @@ export default function BackendPageContent() {
                 </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Members" isActive={activeView === 'members'} onClick={() => router.push('/backend?view=members', { scroll: false })}>
-                <Users />
-                <span>Members</span>
-                </SidebarMenuButton>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Staff" isActive={activeView === 'staff'} onClick={() => router.push('/backend?view=staff', { scroll: false })}>
-                <Users />
-                <span>Staff</span>
-                </SidebarMenuButton>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Shops" isActive={activeView === 'shops'} onClick={() => router.push('/backend?view=shops', { scroll: false })}>
-                <Store />
-                <span>Shops</span>
-                </SidebarMenuButton>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Contributions" isActive={activeView === 'contributions'} onClick={() => router.push('/backend?view=contributions', { scroll: false })}>
-                <HeartHandshake />
-                <span>Contributions</span>
-                </SidebarMenuButton>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
                 <SidebarMenuButton tooltip="Permissions" isActive={activeView === 'permissions'} onClick={() => router.push('/backend?view=permissions', { scroll: false })}>
                     <Lock />
                     <span>Permissions</span>
                 </SidebarMenuButton>
             </SidebarMenuItem>
-            
-            <SidebarMenuItem>
-                    <SidebarMenuButton tooltip="Wallet">
-                        <Wallet />
-                        <span>Wallet</span>
-                    </SidebarMenuButton>
-                    <SidebarMenuSub>
-                        <SidebarMenuSubButton isActive={activeView === 'wallet-transactions'} onClick={() => router.push('/backend?view=wallet-transactions', { scroll: false })}>
-                            <DollarSign />
-                            <span>Member Wallet Ledger</span>
-                        </SidebarMenuSubButton>
-                        <SidebarMenuSubButton isActive={activeView === 'wallet-reconciliation'} onClick={() => router.push('/backend?view=wallet-reconciliation', { scroll: false })}>
-                            <Combine />
-                            <span>Reconciliation</span>
-                        </SidebarMenuSubButton>
-                    </SidebarMenuSub>
-                </SidebarMenuItem>
-                
                 <SidebarMenuItem>
                     <SidebarMenuButton tooltip="Divisions" isActive={activeView.startsWith('divisions')}>
                         <Boxes />
@@ -392,3 +315,5 @@ export default function BackendPageContent() {
     </SidebarProvider>
   );
 }
+
+    

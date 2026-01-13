@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -24,11 +23,42 @@ import {
   User,
   Settings,
   Users,
+  Banknote,
+  Combine,
+  Truck,
+  Building,
+  ShieldAlert,
+  Store,
+  Wrench,
+  CheckCircle,
+  XCircle,
+  ShoppingBasket,
+  Cpu,
+  Landmark,
+  ArrowRight,
+  Key,
+  HandCoins,
+  TicketPercent,
+  Star,
+  Gift,
+  Award,
+  HeartHandshake,
+  Boxes,
+  Server,
+  ListTodo,
+  Wallet,
+  DollarSign,
+  FileText,
+  Lock,
+  Activity,
+  Sparkles,
+  LayoutDashboard,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useState, useEffect, Suspense, useCallback } from 'react';
+import Link from 'next/link';
 
 import { useUser, useAuth } from '@/firebase';
 import { signOut } from 'firebase/auth';
@@ -36,13 +66,25 @@ import { signOut } from 'firebase/auth';
 import dynamic from 'next/dynamic';
 import React from 'react';
 
+// --- Business Strategy Components ---
 const SalesRoadmap = dynamic(() => import('./sales-roadmap'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const BudgetPage = dynamic(() => import('./budget/page'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const BudgetPage = dynamic(() => import('../account/budget/page'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const ForecastPage = dynamic(() => import('./forecast/page'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const PitchContent = dynamic(() => import('./pitch-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const FinancialSetup = dynamic(() => import('../account/financial-setup'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const MemberProjection = dynamic(() => import('../account/member-projection'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const Targets = dynamic(() => import('../account/targets'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+
+// --- Business Operations Components (from /backend) ---
+const MemberWallet = dynamic(() => import('../backend/wallet/[memberId]/member-wallet'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const DashboardContent = dynamic(() => import('../backend/dashboard-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const MembersList = dynamic(() => import('../backend/members-list'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const StaffList = dynamic(() => import('../backend/staff-list'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const ShopsList = dynamic(() => import('../backend/shops-list'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const ContributionsList = dynamic(() => import('../backend/contributions-list'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const WalletTransactionsList = dynamic(() => import('../backend/wallet-transactions-list'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const ReconciliationPage = dynamic(() => import('../backend/reconciliation/page'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+
 
 function AdminAuthGuard({ children }: { children: React.ReactNode }) {
     const { user, isUserLoading } = useUser();
@@ -72,11 +114,11 @@ function AdminAuthGuard({ children }: { children: React.ReactNode }) {
     return <>{children}</>;
 }
 
-
 function AdminAccountContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const initialView = searchParams.get('view') || 'pitch';
+  const memberId = searchParams.get('memberId');
   const [activeView, setActiveView] = useState(initialView);
   const { user, isUserLoading } = useUser();
   const auth = useAuth();
@@ -93,24 +135,33 @@ function AdminAccountContent() {
 
   const renderContent = useCallback(() => {
     switch (activeView) {
-      case 'pitch':
-        return <PitchContent />;
-      case 'financial-setup':
-        return <FinancialSetup />;
-      case 'sales-roadmap':
-        return <SalesRoadmap />;
-      case 'targets':
-        return <Targets />;
-      case 'member-projection':
-        return <MemberProjection />;
-      case 'budget':
-        return <BudgetPage />;
-      case 'forecast':
-        return <ForecastPage />;
+      // Business Strategy
+      case 'pitch': return <PitchContent />;
+      case 'financial-setup': return <FinancialSetup />;
+      case 'sales-roadmap': return <SalesRoadmap />;
+      case 'targets': return <Targets />;
+      case 'member-projection': return <MemberProjection />;
+      case 'budget': return <BudgetPage />;
+      case 'forecast': return <ForecastPage />;
+      
+      // Business Operations
+      case 'dashboard': return <DashboardContent />;
+      case 'members': return <MembersList />;
+      case 'staff': return <StaffList />;
+      case 'shops': return <ShopsList />;
+      case 'contributions': return <ContributionsList />;
+      case 'wallet-transactions': return <WalletTransactionsList />;
+      case 'wallet-reconciliation': return <ReconciliationPage />;
+       case 'wallet':
+        if (memberId) {
+            return <MemberWallet memberId={memberId} />;
+        }
+        return <WalletTransactionsList />; // Fallback
+
       default:
         return <PitchContent />;
     }
-  }, [activeView]);
+  }, [activeView, memberId]);
   
   const getInitials = (name: string | null | undefined) => {
     if (!name) return "AD";
@@ -130,19 +181,53 @@ function AdminAccountContent() {
       <Sidebar>
         <SidebarHeader>
           <div className="flex items-center gap-2">
-            <Presentation className="h-6 w-6 text-primary" />
+            <Building className="h-6 w-6 text-primary" />
             <h2 className="text-lg font-semibold text-sidebar-foreground">
-              Business Hub
+              Admin Account
             </h2>
           </div>
         </SidebarHeader>
         <SidebarContent>
           <SidebarGroup>
             <SidebarMenuItem>
+              <SidebarMenuButton tooltip="Dashboard" isActive={activeView === 'dashboard'} onClick={() => router.push('/adminaccount?view=dashboard', { scroll: false })}>
+                <LayoutDashboard />
+                <span>Dashboard</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
               <SidebarMenuButton tooltip="ISA Pitch" isActive={activeView === 'pitch'} onClick={() => router.push('/adminaccount?view=pitch', { scroll: false })}>
                 <Presentation />
                 <span>ISA Pitch</span>
               </SidebarMenuButton>
+            </SidebarMenuItem>
+             <SidebarMenuItem>
+                <SidebarMenuButton tooltip="Members" isActive={activeView === 'members'} onClick={() => router.push('/adminaccount?view=members', { scroll: false })}>
+                <Users />
+                <span>Members</span>
+                </SidebarMenuButton>
+            </SidebarMenuItem>
+             <SidebarMenuItem>
+                <SidebarMenuButton tooltip="Staff" isActive={activeView === 'staff'} onClick={() => router.push('/adminaccount?view=staff', { scroll: false })}>
+                <Users />
+                <span>Staff</span>
+                </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+                <SidebarMenuButton tooltip="Wallet">
+                    <Wallet />
+                    <span>Wallet</span>
+                </SidebarMenuButton>
+                <SidebarMenuSub>
+                    <SidebarMenuSubButton isActive={activeView === 'wallet-transactions'} onClick={() => router.push('/adminaccount?view=wallet-transactions', { scroll: false })}>
+                        <DollarSign />
+                        <span>Member Wallet Ledger</span>
+                    </SidebarMenuSubButton>
+                    <SidebarMenuSubButton isActive={activeView === 'wallet-reconciliation'} onClick={() => router.push('/adminaccount?view=wallet-reconciliation', { scroll: false })}>
+                        <Combine />
+                        <span>Reconciliation</span>
+                    </SidebarMenuSubButton>
+                </SidebarMenuSub>
             </SidebarMenuItem>
             <SidebarMenuItem>
                 <SidebarMenuButton tooltip="Projection" isActive={['financial-setup', 'sales-roadmap', 'targets', 'member-projection', 'budget', 'forecast'].includes(activeView)}>
@@ -175,6 +260,12 @@ function AdminAccountContent() {
                         <span>Forecast</span>
                     </SidebarMenuSubButton>
                 </SidebarMenuSub>
+            </SidebarMenuItem>
+             <SidebarMenuItem>
+                <SidebarMenuButton tooltip="Backend" onClick={() => router.push('/backend', { scroll: false })}>
+                    <Server />
+                    <span>App Backend</span>
+                </SidebarMenuButton>
             </SidebarMenuItem>
           </SidebarGroup>
         </SidebarContent>
@@ -226,3 +317,5 @@ export default function AdminAccountPage() {
     </Suspense>
   );
 }
+
+    
