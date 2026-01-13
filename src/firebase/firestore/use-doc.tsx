@@ -5,8 +5,7 @@ import {
   DocumentReference,
   DocumentData,
 } from 'firebase/firestore';
-import { getClientSideAuthToken } from '@/firebase';
-import { useUser } from '@/firebase/provider';
+import { getClientSideAuthToken } from '@/firebase/index';
 
 /** Utility type to add an 'id' field to a given type T. */
 type WithId<T> = T & { id: string };
@@ -40,7 +39,6 @@ export function useDoc<T = any>(
 ): UseDocResult<T> {
   type StateDataType = WithId<T> | null;
   
-  const { user, isUserLoading } = useUser();
   const [data, setData] = useState<StateDataType>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<Error | null>(null);
@@ -66,25 +64,22 @@ export function useDoc<T = any>(
       return;
     }
 
-    // Wait for user auth state to be resolved before fetching private data
-    if (!isPublicPath && isUserLoading) {
-        setIsLoading(true);
-        return;
-    }
-
     const fetchData = async () => {
         setIsLoading(true);
         setError(null);
 
         try {
             let token: string | null = null;
+            // Only fetch a token if the path is not public.
             if (!isPublicPath) {
                 token = await getClientSideAuthToken();
-                // After loading is done, if it's a private path and we still have no token, it's an error.
-                if (!token && !isUserLoading) {
-                    throw new Error("Authentication is required to access this resource.");
+                // If it's a private path and we still have no token, it's an error.
+                if (!token) {
+                    // This could happen if the user logs out while a fetch is pending.
+                    // We don't throw an error, but we stop the fetch.
+                    setIsLoading(false);
+                    return;
                 }
-                 if (!token) return; // Don't fetch if token isn't available yet
             }
             
             const response = await fetch('/api/getUserSubcollection', {
@@ -114,7 +109,7 @@ export function useDoc<T = any>(
 
     fetchData();
 
-  }, [path, isPublicPath, refreshKey, user, isUserLoading]);
+  }, [path, isPublicPath, refreshKey]);
 
   return { data, isLoading, error, forceRefresh };
 }
