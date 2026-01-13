@@ -5,7 +5,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Handshake, MoreVertical, Edit, Trash2, CheckCircle, XCircle, PlusCircle, Loader2 } from 'lucide-react';
+import { Handshake, MoreVertical, Edit, Trash2, CheckCircle, XCircle, PlusCircle, Loader2, MessageSquare } from 'lucide-react';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
 import { Badge } from '@/components/ui/badge';
@@ -29,6 +29,7 @@ import {
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
+import { useUser } from '@/firebase';
 
 
 // Mock data for referred network members
@@ -57,7 +58,7 @@ const statusColors: { [key: string]: 'default' | 'secondary' | 'outline' } = {
 };
 
 // A small action menu component for the table rows
-function NetworkActionMenu({ member }: { member: NetworkMember }) {
+function NetworkActionMenu({ member, onInvite }: { member: NetworkMember; onInvite: (member: NetworkMember) => void; }) {
   // Placeholder actions
   const handleEdit = () => console.log('Edit:', member.id);
   const handleConfirm = () => console.log('Confirm:', member.id);
@@ -75,6 +76,10 @@ function NetworkActionMenu({ member }: { member: NetworkMember }) {
         <DropdownMenuItem onClick={handleEdit}>
           <Edit className="mr-2 h-4 w-4" /> View / Edit
         </DropdownMenuItem>
+         <DropdownMenuItem onClick={() => onInvite(member)} disabled={member.status !== 'Prospect'}>
+          <MessageSquare className="mr-2 h-4 w-4" /> Invite via WhatsApp
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleConfirm}>
           <CheckCircle className="mr-2 h-4 w-4" /> Confirm Link
         </DropdownMenuItem>
@@ -165,9 +170,11 @@ function AddLeadDialog({ onAddLead }: { onAddLead: (lead: LeadFormValues) => voi
 
 export default function NetworkContent() {
     const [networkData, setNetworkData] = useState(initialNetworkData);
+    const { user } = useUser();
+    const { toast } = useToast();
     
     const handleAddLead = (lead: LeadFormValues) => {
-        const newMember = {
+        const newMember: NetworkMember = {
             id: `prospect-${Date.now()}`,
             ...lead,
             status: 'Prospect'
@@ -175,6 +182,32 @@ export default function NetworkContent() {
         setNetworkData(prevData => [newMember, ...prevData]);
     };
     
+    const handleInvite = (member: NetworkMember) => {
+        if (!user) {
+            toast({ variant: 'destructive', title: 'You must be logged in to invite someone.' });
+            return;
+        }
+
+        const referralLink = `${window.location.origin}/join?ref=${user.uid}`;
+        const message = encodeURIComponent(
+            `Hi, I'd like to invite you to join TransConnect, a network for transporters that helps you save money and find more work. Use my personal link to sign up: ${referralLink}`
+        );
+        const whatsappUrl = `https://wa.me/?text=${message}`;
+        
+        window.open(whatsappUrl, '_blank');
+        
+        setNetworkData(currentData =>
+            currentData.map(m =>
+                m.id === member.id ? { ...m, status: 'Invited' } : m
+            )
+        );
+        
+        toast({
+            title: "Invite Sent!",
+            description: `The status for ${member.companyName} has been updated to "Invited".`
+        });
+    };
+
     const columns: ColumnDef<NetworkMember>[] = useMemo(() => [
         {
           accessorKey: 'companyName',
@@ -205,11 +238,11 @@ export default function NetworkContent() {
             header: () => <div className="text-right">Actions</div>,
             cell: ({ row }) => (
                 <div className="text-right">
-                    <NetworkActionMenu member={row.original} />
+                    <NetworkActionMenu member={row.original} onInvite={handleInvite} />
                 </div>
             ),
         }
-    ], []);
+    ], [handleInvite]);
 
     return (
         <div className="space-y-8">
