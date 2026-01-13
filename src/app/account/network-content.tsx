@@ -1,8 +1,11 @@
 'use client';
 
 import { useState, useMemo } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Handshake, MoreVertical, Edit, Trash2, CheckCircle, XCircle, PlusCircle } from 'lucide-react';
+import { Handshake, MoreVertical, Edit, Trash2, CheckCircle, XCircle, PlusCircle, Loader2 } from 'lucide-react';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
 import { Badge } from '@/components/ui/badge';
@@ -14,6 +17,19 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { useToast } from '@/hooks/use-toast';
+
 
 // Mock data for referred network members
 const initialNetworkData = [
@@ -21,10 +37,18 @@ const initialNetworkData = [
   { id: 'net2', companyName: 'Freight Movers Inc.', email: 'info@freightmovers.com', mobile: '0719876543', status: 'Invited' },
   { id: 'net3', companyName: 'Speedy Logistics', email: 'ops@speedylog.co.za', mobile: '0835558899', status: 'Prospect' },
   { id: 'net4', companyName: 'SA Haulers', email: 'info@sah.co.za', mobile: '0841112233', status: 'Prospect' },
-  { id: 'net5', name: 'Coastal Carriers', email: 'fleet@coastal.com', mobile: '0723456789', status: 'Active' },
+  { id: 'net5', companyName: 'Coastal Carriers', email: 'fleet@coastal.com', mobile: '0723456789', status: 'Active' },
 ];
 
 type NetworkMember = typeof initialNetworkData[0];
+
+const leadSchema = z.object({
+    companyName: z.string().min(1, 'Company name is required.'),
+    email: z.string().email('Please enter a valid email.').optional().or(z.literal('')),
+    mobile: z.string().optional(),
+});
+
+type LeadFormValues = z.infer<typeof leadSchema>;
 
 const statusColors: { [key: string]: 'default' | 'secondary' | 'outline' } = {
   Active: 'default',
@@ -66,9 +90,90 @@ function NetworkActionMenu({ member }: { member: NetworkMember }) {
   );
 }
 
+function AddLeadDialog({ onAddLead }: { onAddLead: (lead: LeadFormValues) => void }) {
+    const [isOpen, setIsOpen] = useState(false);
+    const { toast } = useToast();
+    const form = useForm<LeadFormValues>({
+        resolver: zodResolver(leadSchema),
+        defaultValues: { companyName: '', email: '', mobile: '' },
+    });
+
+    const onSubmit = (values: LeadFormValues) => {
+        onAddLead(values);
+        toast({ title: 'Lead Added', description: `${values.companyName} has been added as a prospect.` });
+        form.reset();
+        setIsOpen(false);
+    };
+    
+    return (
+        <Dialog open={isOpen} onOpenChange={setIsOpen}>
+            <DialogTrigger asChild>
+                 <Button>
+                    <PlusCircle className="mr-2 h-4 w-4" />
+                    Add New Lead
+                </Button>
+            </DialogTrigger>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Add New Lead</DialogTitle>
+                    <DialogDescription>Enter the details of your new prospect. They will be added to your network with a "Prospect" status.</DialogDescription>
+                </DialogHeader>
+                <Form {...form}>
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
+                         <FormField
+                            control={form.control}
+                            name="companyName"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Company Name</FormLabel>
+                                    <FormControl><Input {...field} placeholder="e.g., SA Freight Solutions" /></FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                         <FormField
+                            control={form.control}
+                            name="email"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Email</FormLabel>
+                                    <FormControl><Input {...field} placeholder="contact@safreight.co.za" /></FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                         <FormField
+                            control={form.control}
+                            name="mobile"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Mobile (Optional)</FormLabel>
+                                    <FormControl><Input {...field} placeholder="083 123 4567" /></FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                         <DialogFooter>
+                            <Button type="submit">Add Lead</Button>
+                        </DialogFooter>
+                    </form>
+                </Form>
+            </DialogContent>
+        </Dialog>
+    )
+}
 
 export default function NetworkContent() {
     const [networkData, setNetworkData] = useState(initialNetworkData);
+    
+    const handleAddLead = (lead: LeadFormValues) => {
+        const newMember = {
+            id: `prospect-${Date.now()}`,
+            ...lead,
+            status: 'Prospect'
+        };
+        setNetworkData(prevData => [newMember, ...prevData]);
+    };
     
     const columns: ColumnDef<NetworkMember>[] = useMemo(() => [
         {
@@ -119,10 +224,7 @@ export default function NetworkContent() {
                             Manage your leads, send invites, and track the growth of your referral network.
                         </CardDescription>
                     </div>
-                    <Button>
-                        <PlusCircle className="mr-2 h-4 w-4" />
-                        Add New Lead
-                    </Button>
+                    <AddLeadDialog onAddLead={handleAddLead} />
                 </CardHeader>
                 <CardContent>
                     <DataTable columns={columns} data={networkData} />
