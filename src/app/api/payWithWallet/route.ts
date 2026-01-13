@@ -1,4 +1,6 @@
 
+'use server';
+
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuth } from 'firebase-admin/auth';
@@ -11,79 +13,115 @@ async function handleServicePayment(db: FirebaseFirestore.Firestore, adminUid: s
     }
 
     const companyRef = db.doc(`companies/${companyId}`);
-    const companySnap = await companyRef.get();
-    const companyData = companySnap.data();
-
-    if (!companyData || companyData.walletBalance < amount) {
-        throw new Error('Insufficient wallet balance.');
-    }
     
-    const userDoc = await db.collection('users').doc(companyData.ownerId).get();
-    const memberName = `${userDoc.data()?.firstName || ''} ${userDoc.data()?.lastName || ''}`.trim();
+    // Use a transaction to ensure all reads and writes are atomic
+    await db.runTransaction(async (transaction) => {
+        const companySnap = await transaction.get(companyRef);
+        const companyData = companySnap.data();
 
-    const batch = db.batch();
-    const now = FieldValue.serverTimestamp();
-
-    // 1. Debit company's wallet balance
-    batch.update(companyRef, {
-        walletBalance: FieldValue.increment(-amount),
-        updatedAt: now,
-    });
-
-    // 2. Create a DEBIT transaction record in the company's wallet ledger
-    const companyTransactionRef = db.collection(`companies/${companyId}/transactions`).doc();
-    const chartOfAccountsCode = description.toLowerCase().includes('membership') ? '4010' : '4410';
-    batch.set(companyTransactionRef, {
-        transactionId: companyTransactionRef.id,
-        type: 'debit',
-        amount: amount,
-        date: now,
-        description: description,
-        status: 'allocated',
-        isAdjustment: false,
-        chartOfAccountsCode, 
-        postedBy: adminUid,
-        companyId: companyId,
-    });
-
-    // 3. Create a corresponding CREDIT transaction in the PLATFORM's ledger (as revenue)
-    const platformTransactionRef = db.collection('platformTransactions').doc();
-    batch.set(platformTransactionRef, {
-        transactionId: platformTransactionRef.id,
-        type: 'credit',
-        amount: amount,
-        date: now,
-        description: `Revenue: ${description} from ${memberName} (${companyId})`,
-        status: 'allocated',
-        chartOfAccountsCode,
-        isAdjustment: false,
-        postedBy: 'system',
-        companyId: companyId,
-    });
-
-
-    // 4. If it's a pending payment from the dialog, delete the record. If it's a new membership purchase, update membership details & status.
-    if (payload.membershipDetails) {
-        const { planId, cycle } = payload.membershipDetails;
-        const newNextBillingDate = new Date();
-        if (cycle === 'monthly') {
-            newNextBillingDate.setMonth(newNextBillingDate.getMonth() + 1);
-        } else {
-            newNextBillingDate.setFullYear(newNextBillingDate.getFullYear() + 1);
+        if (!companyData || companyData.walletBalance < amount) {
+            throw new Error('Insufficient wallet balance.');
         }
-        batch.update(companyRef, {
-            membershipId: planId,
-            billingCycle: cycle,
-            nextBillingDate: newNextBillingDate,
-            status: 'active', // Set status to active on membership purchase
+        
+        const userDoc = await transaction.get(db.collection('users').doc(companyData.ownerId));
+        const memberName = `${userDoc.data()?.firstName || ''} ${userDoc.data()?.lastName || ''}`.trim();
+
+        // 1. Debit company's wallet balance
+        transaction.update(companyRef, {
+            walletBalance: FieldValue.increment(-amount),
+            updatedAt: FieldValue.serverTimestamp(),
         });
-    } else {
-        const paymentRef = db.doc(`companies/${companyId}/walletPayments/${paymentId}`);
-        batch.delete(paymentRef);
-    }
 
+        // 2. Create a DEBIT transaction record in the company's wallet ledger
+        const companyTransactionRef = db.collection(`companies/${companyId}/transactions`).doc();
+        const chartOfAccountsCode = description.toLowerCase().includes('membership') ? '4010' : '4410';
+        transaction.set(companyTransactionRef, {
+            transactionId: companyTransactionRef.id,
+            type: 'debit',
+            amount: amount,
+            date: FieldValue.serverTimestamp(),
+            description: description,
+            status: 'allocated',
+            isAdjustment: false,
+            chartOfAccountsCode, 
+            postedBy: adminUid,
+            companyId: companyId,
+        });
 
-    await batch.commit();
+        // 3. Create a corresponding CREDIT transaction in the PLATFORM's ledger (as revenue)
+        const platformTransactionRef = db.collection('platformTransactions').doc();
+        transaction.set(platformTransactionRef, {
+            transactionId: platformTransactionRef.id,
+            type: 'credit',
+            amount: amount,
+            date: FieldValue.serverTimestamp(),
+            description: `Revenue: ${description} from ${memberName} (${companyId})`,
+            status: 'allocated',
+            chartOfAccountsCode,
+            isAdjustment: false,
+            postedBy: 'system',
+            companyId: companyId,
+        });
+
+        // 4. Handle membership purchase logic
+        if (payload.membershipDetails) {
+            const { planId, cycle } = payload.membershipDetails;
+            const newNextBillingDate = new Date();
+            if (cycle === 'monthly') {
+                newNextBillingDate.setMonth(newNextBillingDate.getMonth() + 1);
+            } else {
+                newNextBillingDate.setFullYear(newNextBillingDate.getFullYear() + 1);
+            }
+            
+            const isFirstPaidMembership = companyData.membershipId === 'free';
+            
+            transaction.update(companyRef, {
+                membershipId: planId,
+                billingCycle: cycle,
+                nextBillingDate: newNextBillingDate,
+                status: 'active', // Set status to active on membership purchase
+            });
+
+            // 5. Handle Referrer Commission on FIRST paid membership purchase
+            if (isFirstPaidMembership && companyData.referrerId) {
+                const referrerUserDoc = await transaction.get(db.collection('users').doc(companyData.referrerId));
+                const referrerData = referrerUserDoc.data();
+                
+                if (referrerData && referrerData.companyId) {
+                    const referrerCompanyRef = db.collection('companies').doc(referrerData.companyId);
+                    const isaConfigSnap = await transaction.get(db.collection('configuration').doc('isaPitch'));
+                    const commissionRate = (isaConfigSnap.data()?.isaSharePercentage || 30) / 100;
+                    const commissionAmount = amount * commissionRate;
+
+                    if (commissionAmount > 0) {
+                        // Credit referrer's wallet
+                        transaction.update(referrerCompanyRef, {
+                            walletBalance: FieldValue.increment(commissionAmount)
+                        });
+
+                        // Create transaction log for referrer
+                        const referrerTxRef = db.collection(`companies/${referrerData.companyId}/transactions`).doc();
+                        transaction.set(referrerTxRef, {
+                            transactionId: referrerTxRef.id,
+                            type: 'credit',
+                            amount: commissionAmount,
+                            date: FieldValue.serverTimestamp(),
+                            description: `Referral Commission: ${memberName}`,
+                            status: 'allocated',
+                            isAdjustment: false,
+                            chartOfAccountsCode: '5010', // Commission Payout
+                            postedBy: 'system',
+                        });
+                    }
+                }
+            }
+        } else {
+            // This is for other service payments, not membership
+            const paymentRef = db.doc(`companies/${companyId}/walletPayments/${paymentId}`);
+            transaction.delete(paymentRef);
+        }
+    });
+
     return { success: true, message: 'Payment processed successfully.' };
 }
 
@@ -111,14 +149,12 @@ export async function POST(req: NextRequest) {
     // Verify user owns the company they are trying to pay from
     const userDoc = await db.collection('users').doc(uid).get();
     if (userDoc.data()?.companyId !== payload.companyId) {
-        // Allow admins to make payments on behalf of users for specific scenarios if needed
         const isAdmin = decodedToken.email === 'beyondtransport@gmail.com';
         if (!isAdmin) {
           return NextResponse.json({ success: false, error: 'Forbidden: You can only make payments for your own company.' }, { status: 403 });
         }
     }
     
-    // All payments from the dialog are generic service payments
     const result = await handleServicePayment(db, uid, payload);
     
     return NextResponse.json(result);
