@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
@@ -10,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { useUser, getClientSideAuthToken } from '@/firebase';
 import Link from 'next/link';
-import MemberActionMenu from '../backend/member-action-menu';
+import MemberActionMenu from '../account/member-action-menu';
 import { cn } from '@/lib/utils';
 
 // This component no longer uses useCollection or Firestore directly.

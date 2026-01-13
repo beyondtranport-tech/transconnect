@@ -34,7 +34,7 @@ async function handleServicePayment(db: FirebaseFirestore.Firestore, adminUid: s
     const companyTransactionRef = db.collection(`companies/${companyId}/transactions`).doc();
     const chartOfAccountsCode = description.toLowerCase().includes('membership') ? '4010' : '4410';
     batch.set(companyTransactionRef, {
-        transactionId: companyTransactionRef.id,
+        transactionId: transactionRef.id,
         type: 'debit',
         amount: amount,
         date: now,
@@ -62,7 +62,7 @@ async function handleServicePayment(db: FirebaseFirestore.Firestore, adminUid: s
     });
 
 
-    // 4. If it's a pending payment from the dialog, delete the record. If it's a new membership purchase, update membership details.
+    // 4. If it's a pending payment from the dialog, delete the record. If it's a new membership purchase, update membership details & status.
     if (payload.membershipDetails) {
         const { planId, cycle } = payload.membershipDetails;
         const newNextBillingDate = new Date();
@@ -75,6 +75,7 @@ async function handleServicePayment(db: FirebaseFirestore.Firestore, adminUid: s
             membershipId: planId,
             billingCycle: cycle,
             nextBillingDate: newNextBillingDate,
+            status: 'active', // Set status to active on membership purchase
         });
     } else {
         const paymentRef = db.doc(`companies/${companyId}/walletPayments/${paymentId}`);
@@ -110,10 +111,14 @@ export async function POST(req: NextRequest) {
     // Verify user owns the company they are trying to pay from
     const userDoc = await db.collection('users').doc(uid).get();
     if (userDoc.data()?.companyId !== payload.companyId) {
-        return NextResponse.json({ success: false, error: 'Forbidden: You can only make payments for your own company.' }, { status: 403 });
+        // Allow admins to make payments on behalf of users for specific scenarios if needed
+        const isAdmin = decodedToken.email === 'beyondtransport@gmail.com';
+        if (!isAdmin) {
+          return NextResponse.json({ success: false, error: 'Forbidden: You can only make payments for your own company.' }, { status: 403 });
+        }
     }
     
-    // For now, all payments from the dialog are generic service payments
+    // All payments from the dialog are generic service payments
     const result = await handleServicePayment(db, uid, payload);
     
     return NextResponse.json(result);
