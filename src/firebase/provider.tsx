@@ -4,7 +4,7 @@
 import React, { createContext, useContext, ReactNode, useMemo, useState, useEffect } from 'react';
 import { FirebaseApp } from 'firebase/app';
 import { Firestore, doc } from 'firebase/firestore';
-import { Auth, User, onIdTokenChanged, getIdToken } from 'firebase/auth';
+import { Auth, User, onIdTokenChanged } from 'firebase/auth';
 import { FirebaseStorage } from 'firebase/storage';
 import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
 import { useDoc } from './firestore/use-doc';
@@ -105,6 +105,7 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
         setBaseUser(null);
         setIsAuthLoading(false);
         setAuthError(error);
+        setSessionCookie(null);
       }
     );
     return () => unsubscribe();
@@ -145,20 +146,3 @@ export const useUser = (): UserAuthState => {
     const { user, isUserLoading, userError } = useFirebase();
     return { user, isUserLoading, userError };
 };
-
-// This function is safe to be called from client-side effects and callbacks
-// as it does not use any React hooks internally.
-export async function getClientSideAuthToken(): Promise<string | null> {
-    const auth = getAuth();
-    if (!auth) return null;
-    const user = auth.currentUser;
-    if (user) {
-        try {
-            return await getIdToken(user);
-        } catch (error) {
-            console.error("Error getting auth token:", error);
-            return null;
-        }
-    }
-    return null;
-}
