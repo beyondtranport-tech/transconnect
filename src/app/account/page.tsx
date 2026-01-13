@@ -11,8 +11,6 @@ import {
   SidebarMenuButton,
   SidebarFooter,
   SidebarInset,
-  SidebarMenuSub,
-  SidebarMenuSubButton,
 } from '@/components/ui/sidebar';
 import {
   Users,
@@ -27,12 +25,6 @@ import {
   Wallet,
   Gift,
   Activity,
-  Sheet,
-  TrendingUp,
-  DollarSign,
-  Map,
-  Target,
-  Presentation,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -50,13 +42,6 @@ import BillingContent from './billing-content';
 import WalletContent from './wallet-content';
 import RewardsContent from './rewards';
 import ActivityFeed from './activity-feed';
-import ForecastPage from './forecast/page';
-import BudgetPage from './budget/page';
-import FinancialSetup from './financial-setup';
-import SalesRoadmap from './sales-roadmap';
-import Targets from './targets';
-import MemberProjection from './member-projection';
-import PitchContent from './pitch-content';
 
 
 function DocumentsContent() {
@@ -121,18 +106,6 @@ function AccountPageContent() {
         return <WalletContent />;
       case 'billing':
         return <BillingContent />;
-      case 'financial-setup':
-        return <FinancialSetup />;
-      case 'targets':
-        return <Targets />;
-      case 'sales-roadmap':
-        return <SalesRoadmap />;
-      case 'member-projection':
-        return <MemberProjection />;
-      case 'budget':
-        return <BudgetPage />;
-      case 'forecast':
-        return <ForecastPage />;
       case 'rewards':
         return <RewardsContent />;
       case 'documents':
@@ -217,38 +190,6 @@ function AccountPageContent() {
                   <CreditCard />
                   <span>Billing</span>
                 </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Financials" isActive={['financial-setup', 'targets', 'sales-roadmap', 'member-projection', 'budget', 'forecast'].includes(activeView)}>
-                  <DollarSign />
-                  <span>Financial</span>
-                </SidebarMenuButton>
-                <SidebarMenuSub>
-                   <SidebarMenuSubButton isActive={activeView === 'financial-setup'} onClick={() => router.push('/account?view=financial-setup', { scroll: false })}>
-                    <Settings />
-                    <span>Set Up</span>
-                  </SidebarMenuSubButton>
-                  <SidebarMenuSubButton isActive={activeView === 'targets'} onClick={() => router.push('/account?view=targets', { scroll: false })}>
-                    <Target />
-                    <span>Targets</span>
-                  </SidebarMenuSubButton>
-                  <SidebarMenuSubButton isActive={activeView === 'sales-roadmap'} onClick={() => router.push('/account?view=sales-roadmap', { scroll: false })}>
-                    <Map />
-                    <span>Sales Roadmap</span>
-                  </SidebarMenuSubButton>
-                   <SidebarMenuSubButton isActive={activeView === 'member-projection'} onClick={() => router.push('/account?view=member-projection', { scroll: false })}>
-                    <Users />
-                    <span>Member Projection</span>
-                  </SidebarMenuSubButton>
-                  <SidebarMenuSubButton isActive={activeView === 'budget'} onClick={() => router.push('/account?view=budget', { scroll: false })}>
-                    <Sheet />
-                    <span>Budget</span>
-                  </SidebarMenuSubButton>
-                  <SidebarMenuSubButton isActive={activeView === 'forecast'} onClick={() => router.push('/account?view=forecast', { scroll: false })}>
-                    <TrendingUp />
-                    <span>Forecast</span>
-                  </SidebarMenuSubButton>
-                </SidebarMenuSub>
               </SidebarMenuItem>
               <SidebarMenuItem>
                 <SidebarMenuButton tooltip="Documents" isActive={activeView === 'documents'} onClick={() => router.push('/account?view=documents', { scroll: false })}>
