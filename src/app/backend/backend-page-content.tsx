@@ -63,6 +63,7 @@ import { signOut } from 'firebase/auth';
 import dynamic from 'next/dynamic';
 
 const DashboardContent = dynamic(() => import('./dashboard-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const MembersList = dynamic(() => import('./members-list'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const PermissionsContent = dynamic(() => import('./permissions-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const ActivityFeed = dynamic(() => import('./activity-feed'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const PlatformTasksContent = dynamic(() => import('./platform-tasks'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
@@ -141,6 +142,8 @@ export default function BackendPageContent() {
         return <TechDivisionContent />;
       case 'campaigns':
         return <CampaignContent />;
+      case 'members':
+        return <MembersList />;
       default:
         return <PlatformSettingsContent />;
     }
@@ -168,6 +171,12 @@ export default function BackendPageContent() {
                 <SidebarMenuButton tooltip="Go to Admin Account" onClick={() => router.push('/adminaccount')}>
                     <Building />
                     <span>Business Hub</span>
+                </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+                <SidebarMenuButton tooltip="Members" isActive={activeView === 'members'} onClick={() => router.push('/backend?view=members', { scroll: false })}>
+                <Users />
+                <span>Members</span>
                 </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
@@ -315,5 +324,3 @@ export default function BackendPageContent() {
     </SidebarProvider>
   );
 }
-
-    

@@ -66,6 +66,10 @@ import { signOut } from 'firebase/auth';
 
 import dynamic from 'next/dynamic';
 import React from 'react';
+import StaffContent from '@/app/adminaccount/staff-content';
+import MembersList from '../backend/members-list';
+import WalletTransactionsList from '../backend/wallet-transactions-list';
+import ReconciliationPage from '../backend/reconciliation/page';
 
 // --- Business Strategy Components ---
 const SalesRoadmap = dynamic(() => import('./sales-roadmap'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
@@ -79,12 +83,9 @@ const Targets = dynamic(() => import('../account/targets'), { loading: () => <Lo
 // --- Business Operations Components (from /backend) ---
 const MemberWallet = dynamic(() => import('../backend/wallet/[memberId]/member-wallet'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const DashboardContent = dynamic(() => import('../backend/dashboard-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const MembersList = dynamic(() => import('../backend/members-list'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const StaffContent = dynamic(() => import('./staff-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+// const StaffContent = dynamic(() => import('../adminaccount/staff-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const ShopsList = dynamic(() => import('../backend/shops-list'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const ContributionsList = dynamic(() => import('../backend/contributions-list'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const WalletTransactionsList = dynamic(() => import('../backend/wallet-transactions-list'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const ReconciliationPage = dynamic(() => import('../backend/reconciliation/page'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 
 
 function AdminAuthGuard({ children }: { children: React.ReactNode }) {
@@ -147,7 +148,6 @@ function AdminAccountContent() {
       
       // Business Operations
       case 'dashboard': return <DashboardContent />;
-      case 'members': return <MembersList />;
       case 'staff': return <StaffContent />;
       case 'shops': return <ShopsList />;
       case 'contributions': return <ContributionsList />;
@@ -201,12 +201,6 @@ function AdminAccountContent() {
                 <Presentation />
                 <span>ISA Pitch</span>
               </SidebarMenuButton>
-            </SidebarMenuItem>
-             <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Members" isActive={activeView === 'members'} onClick={() => router.push('/adminaccount?view=members', { scroll: false })}>
-                <Users />
-                <span>Members</span>
-                </SidebarMenuButton>
             </SidebarMenuItem>
              <SidebarMenuItem>
                 <SidebarMenuButton tooltip="Staff" isActive={activeView === 'staff'} onClick={() => router.push('/adminaccount?view=staff', { scroll: false })}>
