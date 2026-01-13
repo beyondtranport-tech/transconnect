@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useMemo, Suspense } from 'react';
@@ -20,85 +21,72 @@ const formatNumber = (value: number) => {
 };
 
 function ForecastContent() {
-    const { salesInputs, budgetInputs } = useMemo(() => {
-        if (typeof window === 'undefined') {
-            return { salesInputs: null, budgetInputs: null };
-        }
+    const { salesInputs, budgetData, settings, targets } = useMemo(() => {
+        if (typeof window === 'undefined') return { salesInputs: null, budgetData: null, settings: null, targets: null };
         try {
-            const budgetDataString = localStorage.getItem('backendBudgetAssumptions_v3');
-            const salaryDataString = localStorage.getItem('backendSalaryAssumptions_v1');
+            const settingsString = localStorage.getItem('accountFinancialSetup_v1');
+            const budgetString = localStorage.getItem('accountBudgetAssumptions_v2');
+            const salesRoadmapString = localStorage.getItem('accountSalesRoadmapScenarios_v1');
+            const activeScenarioName = salesRoadmapString ? JSON.parse(salesRoadmapString).activeScenario : 'Default';
+            const scenarios = salesRoadmapString ? JSON.parse(salesRoadmapString).scenarios : {};
+
+            const targetsString = localStorage.getItem('accountFinancialTargets_v1');
             
-            const budgetData = budgetDataString ? JSON.parse(budgetDataString) : {};
-            const salaryData = salaryDataString ? JSON.parse(salaryDataString) : {};
+            const settings = settingsString ? JSON.parse(settingsString) : null;
+            const budget = budgetString ? JSON.parse(budgetString) : null;
+            const salesRoadmap = scenarios[activeScenarioName] || null;
+            const targets = targetsString ? JSON.parse(targetsString) : null;
 
-            return {
-                salesInputs: budgetData.salesInputs,
-                budgetInputs: { ...budgetData.budgetInputs, opexSalaries: salaryData.opexSalaries },
+            if (!settings || !budget || !salesRoadmap || !targets) {
+                return { salesInputs: null, budgetData: null, settings: null, targets: null };
+            }
+
+            return { 
+                salesInputs: salesRoadmap.monthlyAssumptions, 
+                budgetData: budget, 
+                settings,
+                targets,
             };
-
         } catch (e) {
             console.error("Failed to parse forecast data:", e);
-            return { salesInputs: null, budgetInputs: null };
+            return { salesInputs: null, budgetData: null, settings: null, targets: null };
         }
     }, []);
     
-    const roadmapData = useMemo(() => {
-        if (!salesInputs) return [];
-        return salesRoadmapLogic(salesInputs);
-    }, [salesInputs]);
-
     const forecastData = useMemo(() => {
-        if (roadmapData.length === 0 || !budgetInputs) return [];
-        return budgetLogic(roadmapData, budgetInputs);
-    }, [roadmapData, budgetInputs]);
-    
-    const financialYears = useMemo(() => {
-        const years = [];
-        if (!forecastData || forecastData.length === 0) return years;
+        if (!settings || !budgetData || !targets) return [];
+        return budgetLogic(budgetData, targets);
+    }, [budgetData, targets, settings]);
 
-        for (let i = 0; i < forecastData.length; i += 12) {
-            const yearData = forecastData.slice(i, i + 12);
-            if (yearData.length === 0) continue;
-            
-            const total = yearData.reduce((acc, month) => {
-                Object.keys(month).forEach(key => {
-                    if (key !== 'month' && key !== 'year' && key !== 'members') {
-                        (acc as any)[key] = ((acc as any)[key] || 0) + (month as any)[key];
-                    }
-                });
-                return acc;
-            }, {} as any);
-            total.members = yearData[yearData.length - 1].members;
-
-            years.push({
-                yearLabel: `Year ${Math.floor(i / 12) + 1}`,
-                months: yearData,
-                total: total
-            });
-        }
-        return years;
-    }, [forecastData]);
-
-    const grandTotal = useMemo(() => {
-        if (!forecastData || forecastData.length === 0) return null;
+    const yearlyTotals = useMemo(() => {
+        const totals: Record<string, any> = {};
+        if (!forecastData || forecastData.length === 0) return totals;
         
-        const total = forecastData.reduce((acc, row) => {
-            for (const key in row) {
-                if (key !== 'month' && key !== 'year') {
-                    if (key !== 'members') {
-                         (acc as any)[key] = ((acc as any)[key] || 0) + (row as any)[key];
-                    } else {
-                        (acc as any)[key] = (row as any)[key]; // Keep last member count
-                    }
-                }
+        forecastData.forEach(row => {
+            if (!totals[row.year]) {
+                 totals[row.year] = {
+                    members: 0,
+                    // Revenue
+                    membershipRevenue: 0, connectPlanRevenue: 0, mallRevenue: 0, techRevenue: 0, totalRevenue: 0,
+                    // COGS
+                    memberCommission: 0, isaCommission: 0, totalCogs: 0,
+                    grossProfit: 0,
+                    // OPEX
+                    opexSalaries: 0, digitalAdvertising: 0, contentCreation: 0, eventsAndSponsorships: 0,
+                    officeRental: 0, utilities: 0, insurance: 0, legalAndProfessional: 0, bankCharges: 0,
+                    telephone: 0, travelAndEntertainment: 0, platformCosts: 0, softwareLicenses: 0, totalOpex: 0,
+                    netProfit: 0
+                };
             }
-            return acc;
-        }, {} as any);
-
-        return total;
-
+            Object.keys(row).forEach(key => {
+                if (key !== 'month' && key !== 'year' && key !== 'members') {
+                     totals[row.year][key] += row[key];
+                }
+            });
+            totals[row.year].members = row.members; // Store last member count for the year
+        });
+        return totals;
     }, [forecastData]);
-
 
     const lineItems = [
         { key: 'members', label: 'Members', format: formatNumber, isHeader: true, isBold: true },
@@ -136,28 +124,36 @@ function ForecastContent() {
         { key: 'netProfit', label: 'Net Profit', format: formatCurrency, isBold: true, isPrimary: true, isProfit: true },
     ];
 
-    if (!salesInputs || !budgetInputs || !budgetInputs.opexSalaries || forecastData.length === 0) {
+    if (!settings || !salesInputs || !budgetData || !targets || forecastData.length === 0) {
         return (
             <Card className="w-full max-w-2xl mx-auto">
                 <CardHeader className="text-center">
                     <AlertTriangle className="mx-auto h-12 w-12 text-destructive" />
                     <CardTitle>Incomplete Forecast Data</CardTitle>
                     <CardDescription>
-                        It looks like you haven't entered all your budget assumptions yet. Please go to both the budget and salary forecast pages to enter your data first.
+                        It looks like you haven't entered all your forecast assumptions yet. Please complete the setup, targets, sales roadmap, and budget pages first.
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="text-center space-y-2">
                     <Button asChild>
-                        <Link href="/backend?view=budget">Go to Budget Page</Link>
+                        <Link href="/adminaccount?view=financial-setup">Go to Set Up</Link>
                     </Button>
                      <Button asChild variant="outline">
-                        <Link href="/backend?view=salary-forecast">Go to Salary Forecast Page</Link>
+                        <Link href="/adminaccount?view=targets">Go to Targets</Link>
+                    </Button>
+                    <Button asChild variant="outline">
+                        <Link href="/adminaccount?view=sales-roadmap">Go to Sales Roadmap</Link>
+                    </Button>
+                     <Button asChild variant="outline">
+                        <Link href="/adminaccount?view=budget">Go to Budget Page</Link>
                     </Button>
                 </CardContent>
             </Card>
         );
     }
     
+    const years = [...new Set(forecastData.map(d => d.year))];
+
     return (
         <Card>
           <CardHeader>
@@ -169,44 +165,29 @@ function ForecastContent() {
                 <TableHeader>
                     <TableRow>
                         <TableHead className="sticky left-0 bg-card z-10 w-[250px]">Line Item</TableHead>
-                        <TableHead className="text-right bg-primary/20 font-extrabold">Grand Total</TableHead>
-                        {financialYears.map((fy) => (
-                           <React.Fragment key={fy.yearLabel}>
-                               <TableHead className="text-right bg-primary/10 font-bold">{fy.yearLabel} Total</TableHead>
-                               {fy.months.map(col => (
-                                   <TableHead key={col.month} className="text-right">{col.month}</TableHead>
-                               ))}
-                           </React.Fragment> 
+                        {forecastData.map((col) => (
+                           <TableHead key={col.month} className="text-right">{col.month}</TableHead>
+                        ))}
+                        {years.map(year => (
+                            <TableHead key={`total-${year}`} className="text-right bg-primary/10 font-bold">Total {year}</TableHead>
                         ))}
                     </TableRow>
                 </TableHeader>
                 <TableBody>
                     {lineItems.map(item => (
                         <TableRow key={item.key} className={item.isHeader ? 'bg-muted/50' : ''}>
-                            {/* Line Item Label */}
                             <TableCell className={`sticky left-0 bg-card z-10 ${item.isBold ? 'font-semibold' : ''} ${item.isPrimary ? 'text-primary' : ''} ${item.indent ? `pl-${item.indent * 4}` : ''}`}>
                                 {item.label}
                             </TableCell>
-
-                            {/* Grand Total Column */}
-                             <TableCell className={`text-right bg-primary/20 font-extrabold font-mono text-base whitespace-nowrap ${item.isProfit && grandTotal?.[item.key] < 0 ? 'text-destructive' : ''}`}>
-                                 {item.format && grandTotal ? item.format(grandTotal[item.key]) : ''}
-                            </TableCell>
-
-                            {/* Yearly and Monthly columns */}
-                            {financialYears.map((fy) => (
-                                <React.Fragment key={`${fy.yearLabel}-${item.key}`}>
-                                    {/* Year Total Column */}
-                                    <TableCell className={`text-right bg-primary/10 font-bold font-mono text-sm whitespace-nowrap ${item.isProfit && fy.total[item.key] < 0 ? 'text-destructive' : ''}`}>
-                                         {item.format ? item.format(fy.total[item.key]) : ''}
-                                    </TableCell>
-                                    {/* Monthly Columns for that year */}
-                                    {fy.months.map(col => (
-                                        <TableCell key={`monthly-cell-${item.key}-${col.month}`} className={`text-right font-mono text-xs whitespace-nowrap ${item.isProfit && col[item.key as keyof typeof col] < 0 ? 'text-destructive' : ''}`}>
-                                            {item.format ? item.format(col[item.key as keyof typeof col]) : ''}
-                                        </TableCell>
-                                    ))}
-                                </React.Fragment>
+                            {forecastData.map(col => (
+                                <TableCell key={`${item.key}-${col.month}`} className={`text-right font-mono text-xs ${item.isProfit && col[item.key as keyof typeof col] < 0 ? 'text-destructive' : ''}`}>
+                                    {item.format ? item.format(col[item.key as keyof typeof col]) : ''}
+                                </TableCell>
+                            ))}
+                            {years.map(year => (
+                                <TableCell key={`total-${item.key}-${year}`} className={`text-right bg-primary/10 font-bold font-mono text-sm ${item.isProfit && yearlyTotals[year]?.[item.key] < 0 ? 'text-destructive' : ''}`}>
+                                     {item.format && yearlyTotals[year] ? item.format(yearlyTotals[year][item.key]) : ''}
+                                </TableCell>
                             ))}
                         </TableRow>
                     ))}

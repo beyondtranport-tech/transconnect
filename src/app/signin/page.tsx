@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, Suspense, useEffect } from 'react';
@@ -126,7 +125,7 @@ function SignInFormComponent() {
       });
       
       const isAdmin = loggedInUser.email === 'beyondtransport@gmail.com';
-      const defaultRedirect = isAdmin ? '/backend' : '/account';
+      const defaultRedirect = isAdmin ? '/adminaccount' : '/account';
       
       // Use router.replace for a clean navigation history
       router.replace(redirectParam || defaultRedirect);

@@ -23,9 +23,6 @@ import {
   Combine,
   Truck,
   Building,
-  TrendingUp,
-  LineChart,
-  Book,
   Loader2,
   ShieldAlert,
   Store,
@@ -52,9 +49,6 @@ import {
   Lock,
   Activity,
   Sparkles,
-  Map,
-  Sheet,
-  Presentation,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -97,12 +91,6 @@ const TechDivisionContent = dynamic(() => import('./tech-division-content'), { l
 const PlatformSettingsContent = dynamic(() => import('./platform-settings'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const DivisionsContent = dynamic(() => import('./divisions-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const CampaignContent = dynamic(() => import('./campaign-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const SalesRoadmap = dynamic(() => import('./sales-roadmap'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const BudgetPage = dynamic(() => import('./budget/page'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const SalaryForecastPage = dynamic(() => import('./salary-forecast'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const ForecastPage = dynamic(() => import('./forecast/page'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const PitchContent = dynamic(() => import('../account/pitch-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-
 
 export default function BackendPageContent() {
   const router = useRouter();
@@ -180,16 +168,6 @@ export default function BackendPageContent() {
         return <ReconciliationPage />;
       case 'campaigns':
         return <CampaignContent />;
-      case 'sales-roadmap':
-        return <SalesRoadmap />;
-      case 'budget':
-        return <BudgetPage />;
-      case 'salary-forecast':
-        return <SalaryForecastPage />;
-      case 'forecast':
-        return <ForecastPage />;
-      case 'pitch':
-        return <PitchContent />;
       default:
         return <DashboardContent />;
     }
@@ -222,52 +200,16 @@ export default function BackendPageContent() {
             <SidebarMenuItem>
                 <a href="https://analytics.google.com" target="_blank" rel="noopener noreferrer" className="w-full">
                     <SidebarMenuButton tooltip="Analytics">
-                        <LineChart />
+                        <Combine />
                         <span>Analytics</span>
                     </SidebarMenuButton>
                 </a>
             </SidebarMenuItem>
             <SidebarMenuItem>
-                <SidebarMenuButton tooltip="ISA Pitch" isActive={activeView === 'pitch'} onClick={() => router.push('/backend?view=pitch', { scroll: false })}>
-                  <Presentation />
-                  <span>ISA Pitch</span>
-                </SidebarMenuButton>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Campaigns" isActive={activeView === 'campaigns'}>
+                <SidebarMenuButton tooltip="Campaigns" isActive={activeView === 'campaigns'} onClick={() => router.push('/backend?view=campaigns', { scroll: false })}>
                   <Sparkles />
                   <span>Campaigns</span>
                 </SidebarMenuButton>
-                 <SidebarMenuSub>
-                    <SidebarMenuSubButton isActive={activeView === 'campaigns'} onClick={() => router.push('/backend?view=campaigns', { scroll: false })}>
-                        <Sparkles />
-                        <span>AI Tools</span>
-                    </SidebarMenuSubButton>
-                </SidebarMenuSub>
-            </SidebarMenuItem>
-             <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Projection" isActive={['sales-roadmap', 'budget', 'salary-forecast', 'forecast'].includes(activeView)}>
-                    <TrendingUp />
-                    <span>Projection</span>
-                </SidebarMenuButton>
-                 <SidebarMenuSub>
-                    <SidebarMenuSubButton isActive={activeView === 'sales-roadmap'} onClick={() => router.push('/backend?view=sales-roadmap', { scroll: false })}>
-                        <Map />
-                        <span>Sales Roadmap</span>
-                    </SidebarMenuSubButton>
-                    <SidebarMenuSubButton isActive={activeView === 'budget'} onClick={() => router.push('/backend?view=budget', { scroll: false })}>
-                        <Sheet />
-                        <span>Budget</span>
-                    </SidebarMenuSubButton>
-                    <SidebarMenuSubButton isActive={activeView === 'salary-forecast'} onClick={() => router.push('/backend?view=salary-forecast', { scroll: false })}>
-                        <Users />
-                        <span>Salary Forecast</span>
-                    </SidebarMenuSubButton>
-                    <SidebarMenuSubButton isActive={activeView === 'forecast'} onClick={() => router.push('/backend?view=forecast', { scroll: false })}>
-                        <TrendingUp />
-                        <span>Forecast</span>
-                    </SidebarMenuSubButton>
-                </SidebarMenuSub>
             </SidebarMenuItem>
             <SidebarMenuItem>
                 <SidebarMenuButton tooltip="Members" isActive={activeView === 'members'} onClick={() => router.push('/backend?view=members', { scroll: false })}>
@@ -390,7 +332,7 @@ export default function BackendPageContent() {
                     </SidebarMenuButton>
                     <SidebarMenuSub>
                         <SidebarMenuSubButton tooltip="Membership Plans" isActive={activeView === 'revenue-membership'} onClick={() => router.push('/backend?view=revenue-membership', { scroll: false })}>
-                            <TrendingUp />
+                            <Users />
                             <span>Membership</span>
                         </SidebarMenuSubButton>
                         <SidebarMenuSubButton tooltip="Mall Commissions" isActive={activeView === 'revenue-mall-commissions'} onClick={() => router.push('/backend?view=revenue-mall-commissions', { scroll: false })}>
