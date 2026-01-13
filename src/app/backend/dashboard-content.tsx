@@ -138,7 +138,7 @@ export default function DashboardContent() {
     return (
         <div className="space-y-8">
             <div>
-                <h1 className="text-2xl font-bold">Admin Dashboard</h1>
+                <h1 className="text-2xl font-bold">Backend Dashboard</h1>
                 <p className="text-muted-foreground">A high-level overview of platform activity and performance.</p>
             </div>
             
