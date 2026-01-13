@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -26,10 +27,6 @@ const formSchema = z.object({
   supplierMallCommission: z.coerce.number().min(0, "Must be >= 0").max(100, "Must be <= 100"),
   buySellMallCommission: z.coerce.number().min(0, "Must be >= 0").max(100, "Must be <= 100"),
   marketplaceCommission: z.coerce.number().min(0, "Must be >= 0").max(100, "Must be <= 100"),
-  
-  // These fields are kept for the example calculation on the pitch page
-  exampleDealSize: z.coerce.number().min(0, 'Must be non-negative.'),
-  exampleOriginationFee: z.coerce.number().min(0).max(100, 'Must be between 0-100'),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -50,8 +47,6 @@ export default function ISAPitchSettings() {
       supplierMallCommission: 20,
       buySellMallCommission: 20,
       marketplaceCommission: 50,
-      exampleDealSize: 400000,
-      exampleOriginationFee: 1,
     },
   });
 
@@ -118,14 +113,6 @@ export default function ISAPitchSettings() {
                              <FormField control={form.control} name="supplierMallCommission" render={({ field }) => (<FormItem><FormLabel>Supplier Mall Commission</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
                              <FormField control={form.control} name="buySellMallCommission" render={({ field }) => (<FormItem><FormLabel>Buy & Sell Mall Commission</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
                              <FormField control={form.control} name="marketplaceCommission" render={({ field }) => (<FormItem><FormLabel>Marketplace Products Commission</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                        </div>
-                    </div>
-                     <div>
-                        <h3 className="text-lg font-semibold text-muted-foreground flex items-center gap-2 mb-2"><Percent className="h-5 w-5"/>Pitch Page Example Values</h3>
-                         <p className="text-sm text-muted-foreground mb-4">These values are only used for the calculations shown on the ISA Pitch page and do not affect actual commissions.</p>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                             <FormField control={form.control} name="exampleDealSize" render={({ field }) => (<FormItem><FormLabel>Example Deal Size (R)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                             <FormField control={form.control} name="exampleOriginationFee" render={({ field }) => (<FormItem><FormLabel>Platform Origination Fee (%)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
                         </div>
                     </div>
                     <Button type="submit" disabled={isSaving} className="mt-4">
