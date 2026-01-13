@@ -11,6 +11,8 @@ import {
   SidebarMenuButton,
   SidebarFooter,
   SidebarInset,
+  SidebarMenuSub,
+  SidebarMenuSubButton,
 } from '@/components/ui/sidebar';
 import {
   Users,
@@ -26,6 +28,9 @@ import {
   Gift,
   Activity,
   Handshake,
+  TrendingUp,
+  Package,
+  DollarSign,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -44,6 +49,7 @@ import WalletContent from './wallet-content';
 import RewardsContent from './rewards';
 import ActivityFeed from './activity-feed';
 import NetworkContent from './network-content';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 
 
 function DocumentsContent() {
@@ -62,6 +68,33 @@ function SettingsContent() {
         </div>
     )
 }
+
+// Placeholder components for new sales sections
+function PerformanceContent() {
+    return (
+        <Card>
+            <CardHeader><CardTitle>Performance Dashboard</CardTitle></CardHeader>
+            <CardContent><p className="text-muted-foreground">This section is under construction. Your sales performance metrics will appear here.</p></CardContent>
+        </Card>
+    )
+}
+function ProductSalesContent() {
+    return (
+        <Card>
+            <CardHeader><CardTitle>Product Sales</CardTitle></CardHeader>
+            <CardContent><p className="text-muted-foreground">This section is under construction. A breakdown of your sales per product will appear here.</p></CardContent>
+        </Card>
+    )
+}
+function EarningsContent() {
+     return (
+        <Card>
+            <CardHeader><CardTitle>My Earnings</CardTitle></CardHeader>
+            <CardContent><p className="text-muted-foreground">This section is under construction. Your detailed earnings and commission statements will appear here.</p></CardContent>
+        </Card>
+    )
+}
+
 
 function AccountPageContent() {
   const router = useRouter();
@@ -112,6 +145,12 @@ function AccountPageContent() {
         return <RewardsContent />;
       case 'network':
         return <NetworkContent />;
+      case 'performance':
+        return <PerformanceContent />;
+      case 'product-sales':
+        return <ProductSalesContent />;
+      case 'earnings':
+        return <EarningsContent />;
       case 'documents':
         return <DocumentsContent />;
       case 'activity-feed':
@@ -190,10 +229,28 @@ function AccountPageContent() {
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton tooltip="My Network" isActive={activeView === 'network'} onClick={() => router.push('/account?view=network', { scroll: false })}>
+                <SidebarMenuButton tooltip="Sales" isActive={['network', 'performance', 'product-sales', 'earnings'].includes(activeView)}>
                   <Handshake />
-                  <span>My Network</span>
+                  <span>Sales</span>
                 </SidebarMenuButton>
+                <SidebarMenuSub>
+                    <SidebarMenuSubButton isActive={activeView === 'network'} onClick={() => router.push('/account?view=network', { scroll: false })}>
+                        <Users />
+                        <span>Network</span>
+                    </SidebarMenuSubButton>
+                    <SidebarMenuSubButton isActive={activeView === 'performance'} onClick={() => router.push('/account?view=performance', { scroll: false })}>
+                        <TrendingUp />
+                        <span>Performance</span>
+                    </SidebarMenuSubButton>
+                    <SidebarMenuSubButton isActive={activeView === 'product-sales'} onClick={() => router.push('/account?view=product-sales', { scroll: false })}>
+                        <Package />
+                        <span>Product Sales</span>
+                    </SidebarMenuSubButton>
+                     <SidebarMenuSubButton isActive={activeView === 'earnings'} onClick={() => router.push('/account?view=earnings', { scroll: false })}>
+                        <DollarSign />
+                        <span>Earnings</span>
+                    </SidebarMenuSubButton>
+                </SidebarMenuSub>
               </SidebarMenuItem>
               <SidebarMenuItem>
                 <SidebarMenuButton tooltip="Billing" isActive={activeView === 'billing'} onClick={() => router.push('/account?view=billing', { scroll: false })}>
