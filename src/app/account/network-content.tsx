@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useForm } from 'react-hook-form';
@@ -25,7 +24,7 @@ const leadFormSchema = z.object({
 type LeadFormValues = z.infer<typeof leadFormSchema>;
 
 // Mock data for network performance
-const mockNetworkData = [
+const initialNetworkData = [
   { id: 'mem1', name: 'ABC Transport', status: 'Active', productsSold: 5, commissionEarned: 250 },
   { id: 'mem2', name: 'Freight Movers', status: 'Invited', productsSold: 0, commissionEarned: 0 },
   { id: 'mem3', name: 'Speedy Logistics', status: 'Active', productsSold: 12, commissionEarned: 600 },
@@ -37,6 +36,7 @@ const formatCurrency = (amount: number) => new Intl.NumberFormat('en-ZA', { styl
 export default function NetworkContent() {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const [networkData, setNetworkData] = useState(initialNetworkData);
 
   const form = useForm<LeadFormValues>({
     resolver: zodResolver(leadFormSchema),
@@ -48,6 +48,16 @@ export default function NetworkContent() {
     // Simulate API call to submit lead
     await new Promise(resolve => setTimeout(resolve, 1000));
     console.log('Submitted lead:', values);
+
+    // Add the new lead to the local state
+    const newLead = {
+      id: `mem${networkData.length + 1}`,
+      name: values.companyName,
+      status: 'Prospect',
+      productsSold: 0,
+      commissionEarned: 0,
+    };
+    setNetworkData(prevData => [newLead, ...prevData]);
 
     toast({
       title: 'Lead Uploaded!',
@@ -114,10 +124,18 @@ export default function NetworkContent() {
                     </TableRow>
                 </TableHeader>
                 <TableBody>
-                    {mockNetworkData.map(member => (
+                    {networkData.map(member => (
                         <TableRow key={member.id}>
                             <TableCell className="font-medium">{member.name}</TableCell>
-                            <TableCell><Badge variant={member.status === 'Active' ? 'default' : 'secondary'}>{member.status}</Badge></TableCell>
+                            <TableCell>
+                              <Badge variant={
+                                member.status === 'Active' ? 'default' 
+                                : member.status === 'Prospect' ? 'outline'
+                                : 'secondary'
+                              }>
+                                {member.status}
+                              </Badge>
+                            </TableCell>
                             <TableCell className="text-center flex items-center justify-center gap-2">
                                 <ShoppingCart className="h-4 w-4 text-muted-foreground" />
                                 {member.productsSold}
