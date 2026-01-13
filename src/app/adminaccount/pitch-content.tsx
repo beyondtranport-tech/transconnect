@@ -3,7 +3,7 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Gift, DollarSign, TrendingUp, Handshake, CheckCircle } from 'lucide-react';
+import { Gift, DollarSign, TrendingUp, Handshake, CheckCircle, ShoppingBasket } from 'lucide-react';
 import React from 'react';
 
 const formatCurrency = (amount: number) => {
@@ -17,6 +17,7 @@ const IsaOffer = {
     exampleDealSize: 400000,
     exampleOriginationFee: 1,
     exampleIsaDealShare: 20,
+    marketplaceCommission: 15,
 };
 
 const annualSubscriptionRevenue = IsaOffer.membershipFee * 12;
@@ -76,18 +77,54 @@ export default function PitchContent() {
                     </CardHeader>
                     <CardContent className="space-y-4">
                         <p>Your earning potential goes far beyond subscriptions. You earn a significant share of the revenue TransConnect generates from your network's activity across all our Malls.</p>
-                        <p>
-                            <strong>Example:</strong> A member from your network finances a <strong className="font-mono">{formatCurrency(IsaOffer.exampleDealSize)}</strong> trailer through our Finance Mall.
-                        </p>
-                        <ul className="text-sm space-y-2 pl-4">
-                            <li className="flex items-start gap-2"><CheckCircle className="h-4 w-4 text-primary mt-1 shrink-0" /><span>TransConnect earns a <strong className="font-semibold">{IsaOffer.exampleOriginationFee}% origination fee</strong>: {formatCurrency(exampleDealCommission)}.</span></li>
-                            <li className="flex items-start gap-2"><CheckCircle className="h-4 w-4 text-primary mt-1 shrink-0" /><span>As their ISA, you earn a <strong className="font-semibold">{IsaOffer.exampleIsaDealShare}% share</strong> of that fee.</span></li>
-                            <li className="flex items-start gap-2"><CheckCircle className="h-4 w-4 text-green-600 mt-1 shrink-0" /><strong className="text-green-600">Your commission from this single deal: {formatCurrency(isaExampleDealShare)}.</strong></li>
+                        <ul className="text-sm space-y-4 pt-2">
+                            <li className="flex items-start gap-3">
+                                <CheckCircle className="h-4 w-4 text-green-600 mt-1 shrink-0" />
+                                <div>
+                                    <strong className="font-semibold">Finance Mall:</strong> A member from your network finances a <strong className="font-mono">{formatCurrency(IsaOffer.exampleDealSize)}</strong> trailer. TransConnect earns a {IsaOffer.exampleOriginationFee}% fee ({formatCurrency(exampleDealCommission)}). Your {IsaOffer.exampleIsaDealShare}% share earns you <strong className="text-green-600">{formatCurrency(isaExampleDealShare)}</strong>.
+                                </div>
+                            </li>
+                             <li className="flex items-start gap-3">
+                                <CheckCircle className="h-4 w-4 text-green-600 mt-1 shrink-0" />
+                                <div>
+                                    <strong className="font-semibold">Supplier Mall:</strong> Your network collectively spends R50,000 on parts. TransConnect earns a 2.5% commission (R1,250). Your share could earn you <strong className="text-green-600">R250</strong> from that activity alone.
+                                </div>
+                            </li>
+                             <li className="flex items-start gap-3">
+                                <CheckCircle className="h-4 w-4 text-green-600 mt-1 shrink-0" />
+                                <div>
+                                    <strong className="font-semibold">Buy & Sell Mall:</strong> A member sells a used truck for R250,000. TransConnect earns a 1% success fee (R2,500). Your share nets you <strong className="text-green-600">R500</strong>.
+                                </div>
+                            </li>
                         </ul>
-                         <p className="text-sm text-muted-foreground pt-4 border-t">This model applies to commissions earned in the Supplier Mall, transaction fees in the Buy & Sell Mall, and more. Your income grows as your network's activity on the platform grows.</p>
+                         <p className="text-sm text-muted-foreground pt-4 border-t">This model applies across all malls. Your income grows exponentially as your network's activity on the platform grows.</p>
                     </CardContent>
                 </Card>
             </div>
+
+            <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2"><ShoppingBasket className="h-6 w-6 text-primary" />Benefit #3: Earn from Value-Added Products</CardTitle>
+                    <CardDescription>Generate funds by selling essential services to your network.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    <p>The Marketplace is a curated collection of high-demand, third-party products that we offer to our members, often at a discount. As an ISA, you can sell these products directly to your network and earn a commission on every sale.</p>
+                     <ul className="text-sm space-y-3 pl-4">
+                            <li className="flex items-start gap-3">
+                                <CheckCircle className="h-4 w-4 text-green-600 mt-1 shrink-0" />
+                                <div>
+                                    <strong className="font-semibold">Example: RAF Assist Sales.</strong> You sell an RAF Assist package for R1,000 to a member in your network. TransConnect's commission is R200. You earn a <strong className="font-semibold">{IsaOffer.marketplaceCommission}% share</strong> of that commission, netting you <strong className="text-green-600">R30</strong>.
+                                </div>
+                            </li>
+                             <li className="flex items-start gap-3">
+                                <CheckCircle className="h-4 w-4 text-green-600 mt-1 shrink-0" />
+                                <div>
+                                    <strong className="font-semibold">Expand Your Portfolio:</strong> This applies to products like Open Loyalty Funeral/Roadside Assist, specialized liability cover, and more. Each product you sell adds another layer to your income.
+                                </div>
+                            </li>
+                        </ul>
+                </CardContent>
+            </Card>
 
             <Card>
                 <CardHeader>
@@ -100,11 +137,11 @@ export default function PitchContent() {
                     </div>
                      <div>
                         <h4 className="font-bold text-lg">Step 2: You Activate Your Network</h4>
-                        <p className="text-muted-foreground">You introduce TransConnect to your community. Your pitch is simple: invite them to join an ecosystem that saves them money on parts, helps them find work, and gives them access to better financing. We can even equip you with a limited-time "First Year Free" offer to make signing up irresistible.</p>
+                        <p className="text-muted-foreground">You introduce TransConnect to your community. Your pitch is simple: invite them to join an ecosystem that saves them money, helps them find work, and gives them access to better financing. We equip you with offers and materials to make signing up irresistible.</p>
                     </div>
                      <div>
                         <h4 className="font-bold text-lg">Step 3: You Earn Automatically</h4>
-                        <p className="text-muted-foreground">Every time a member from your network pays a subscription or completes a transaction in the mall, your share is automatically calculated and credited to your wallet. It's a transparent, seamless process.</p>
+                        <p className="text-muted-foreground">Every time a member from your network pays a subscription, completes a transaction, or buys a product, your share is automatically calculated and credited to your wallet. It's a transparent, seamless process designed for your success.</p>
                     </div>
                 </CardContent>
                 <CardFooter>
