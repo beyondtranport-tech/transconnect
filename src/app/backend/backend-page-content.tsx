@@ -168,9 +168,11 @@ export default function BackendPageContent() {
         <SidebarContent>
         <SidebarGroup>
             <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Go to Admin Account" onClick={() => router.push('/adminaccount')}>
-                    <Building />
-                    <span>Business Hub</span>
+                <SidebarMenuButton tooltip="Go to Admin Account" asChild>
+                    <Link href="/adminaccount">
+                        <Building />
+                        <span>Business Hub</span>
+                    </Link>
                 </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
