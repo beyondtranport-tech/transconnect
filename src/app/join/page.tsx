@@ -56,6 +56,7 @@ function JoinFormComponent() {
   const userRole = searchParams.get('role');
   const financierType = searchParams.get('type');
   const redirectParam = searchParams.get('redirect');
+  const referrerId = searchParams.get('ref');
 
   const form = useForm<JoinFormValues>({
     resolver: zodResolver(formSchema),
@@ -102,6 +103,7 @@ function JoinFormComponent() {
               'Authorization': `Bearer ${token}`,
               'Content-Type': 'application/json',
           },
+          body: JSON.stringify({ referrerId }), // Pass the referrer ID to the backend
       });
 
       if (!response.ok) {
@@ -230,28 +232,33 @@ function JoinFormComponent() {
               name="password"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Password</FormLabel>
+                  <div className="flex items-center justify-between">
+                      <FormLabel>Password</FormLabel>
+                      <button type="button" onClick={handlePasswordReset} className="text-sm font-medium text-primary hover:underline">
+                          Forgot password?
+                      </button>
+                  </div>
                   <div className="relative">
-                    <FormControl>
-                      <Input
-                        type={showPassword ? 'text' : 'password'}
-                        {...field}
-                      />
-                    </FormControl>
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground"
-                      aria-label={
-                        showPassword ? 'Hide password' : 'Show password'
-                      }
-                    >
-                      {showPassword ? (
-                        <EyeOff className="h-5 w-5" />
-                      ) : (
-                        <Eye className="h-5 w-5" />
-                      )}
-                    </button>
+                      <FormControl>
+                        <Input
+                          type={showPassword ? 'text' : 'password'}
+                          {...field}
+                        />
+                      </FormControl>
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground"
+                        aria-label={
+                          showPassword ? 'Hide password' : 'Show password'
+                        }
+                      >
+                        {showPassword ? (
+                          <EyeOff className="h-5 w-5" />
+                        ) : (
+                          <Eye className="h-5 w-5" />
+                        )}
+                      </button>
                   </div>
                   <FormMessage />
                 </FormItem>
@@ -283,5 +290,3 @@ export default function JoinPage() {
     </div>
   );
 }
-
-    

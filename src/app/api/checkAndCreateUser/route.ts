@@ -19,7 +19,8 @@ export async function POST(req: NextRequest) {
   }
 
   const idToken = authorization.split('Bearer ')[1];
-  
+  const { referrerId } = await req.json();
+
   try {
     const adminAuth = getAuth(app);
     const decodedToken = await adminAuth.verifyIdToken(idToken);
@@ -33,50 +34,63 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ success: true, message: 'User document already exists.' });
     }
 
-    // --- User document does NOT exist, so create it and the associated company ---
     console.log(`Document for user ${firebaseUser.uid} not found. Creating user and company documents.`);
     
-    // Fetch loyalty settings to get signup points
     const loyaltyConfigDoc = await db.collection('configuration').doc('loyaltySettings').get();
-    const signupPoints = loyaltyConfigDoc.data()?.userSignupPoints || 50; // Default to 50 if not set
+    const signupPoints = loyaltyConfigDoc.data()?.userSignupPoints || 50;
 
     const displayName = firebaseUser.displayName || '';
     const nameParts = displayName.split(' ');
     const firstName = nameParts[0] || 'New';
     const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : 'User';
 
-    // Create a new company document first
     const companyRef = db.collection('companies').doc();
     
-    const newCompanyData = {
+    const newCompanyData: any = {
         id: companyRef.id,
         ownerId: firebaseUser.uid,
         companyName: firebaseUser.displayName ? `${firebaseUser.displayName}'s Company` : 'My Company',
         membershipId: 'free',
-        rewardPoints: signupPoints, // Award sign-up points
+        rewardPoints: signupPoints,
         walletBalance: 0,
         loyaltyTier: 'bronze',
         createdAt: FieldValue.serverTimestamp(),
         updatedAt: FieldValue.serverTimestamp(),
     };
+    
+    if (referrerId) {
+        newCompanyData.referrerId = referrerId;
+    }
 
-    // Create the new user document
     const newUserData = {
         id: firebaseUser.uid,
         firstName,
         lastName,
         email: firebaseUser.email,
         phone: firebaseUser.phoneNumber || '',
-        companyId: companyRef.id, // Link to the new company
-        role: 'owner', // The creator is always the owner
+        companyId: companyRef.id,
+        role: 'owner',
         createdAt: FieldValue.serverTimestamp(),
         updatedAt: FieldValue.serverTimestamp(),
     };
     
-    // Use a batch to write both documents atomically
     const batch = db.batch();
     batch.set(companyRef, newCompanyData);
     batch.set(userDocRef, newUserData);
+
+    // If there's a referrer, award them points
+    if (referrerId) {
+        const partnerReferralPoints = loyaltyConfigDoc.data()?.partnerReferralPoints || 200;
+        const referrerUserDoc = await db.collection('users').doc(referrerId).get();
+        if (referrerUserDoc.exists) {
+            const referrerCompanyId = referrerUserDoc.data()?.companyId;
+            if (referrerCompanyId) {
+                const referrerCompanyRef = db.collection('companies').doc(referrerCompanyId);
+                batch.update(referrerCompanyRef, { rewardPoints: FieldValue.increment(partnerReferralPoints) });
+            }
+        }
+    }
+
     await batch.commit();
 
     console.log(`Successfully created user ${firebaseUser.uid} and company ${companyRef.id}.`);
