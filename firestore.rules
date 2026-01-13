@@ -27,10 +27,10 @@ service cloud.firestore {
       // Allow creation by any authenticated user via the backend API.
       allow create: if request.auth != null; 
       
-      // Allow a user to get/update their own company document. Admins have full access.
+      // Allow a user to GET/UPDATE their own company document. Admins have full access.
       allow get, update: if isAdmin() || get(/databases/$(database)/documents/companies/$(companyId)).data.ownerId == request.auth.uid;
-
-      // Allow a list query ONLY if it's an admin OR if the query specifically filters by the user's own referrerId.
+      
+      // Allow a LIST query if it's an admin OR if the query specifically filters by the user's own referrerId.
       allow list: if isAdmin() || (request.query.limit <= 100 && request.query.where.referrerId == request.auth.uid);
 
       // --- Company Subcollections (Direct Access) ---
