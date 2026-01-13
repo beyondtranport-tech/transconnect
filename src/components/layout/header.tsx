@@ -134,14 +134,9 @@ export function Header() {
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
                     {isAdmin ? (
-                        <>
-                            <DropdownMenuItem asChild>
-                                <Link href="/backend">Backend</Link>
-                            </DropdownMenuItem>
-                            <DropdownMenuItem asChild>
-                                <Link href="/backend">Admin Account</Link>
-                            </DropdownMenuItem>
-                        </>
+                        <DropdownMenuItem asChild>
+                            <Link href="/backend">Admin Account</Link>
+                        </DropdownMenuItem>
                     ) : (
                         <DropdownMenuItem asChild>
                             <Link href="/account">My Account</Link>
