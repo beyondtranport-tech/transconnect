@@ -10,12 +10,8 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { useUser, getClientSideAuthToken } from '@/firebase';
 import Link from 'next/link';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+import MemberActionMenu from '../backend/member-action-menu';
+import { cn } from '@/lib/utils';
 
 // This component no longer uses useCollection or Firestore directly.
 
@@ -38,6 +34,12 @@ async function fetchNetworkData() {
   }
   return result.data;
 }
+
+const statusColors: { [key: string]: 'default' | 'secondary' | 'destructive' | 'outline' } = {
+  active: 'default',
+  suspended: 'destructive',
+  pending: 'secondary',
+};
 
 
 export default function NetworkContent() {
@@ -103,6 +105,15 @@ export default function NetworkContent() {
           cell: ({ row }) => <Badge variant="outline" className="capitalize">{row.original.membershipId || 'Free'}</Badge>,
         },
         {
+          accessorKey: 'status',
+          header: 'Status',
+          cell: ({ row }) => (
+            <Badge variant={statusColors[row.original.status] || 'secondary'} className="capitalize">
+              {row.original.status || 'Pending'}
+            </Badge>
+          ),
+        },
+        {
           accessorKey: 'createdAt',
           header: 'Date Joined',
           cell: ({ row }) => {
@@ -116,24 +127,11 @@ export default function NetworkContent() {
             header: () => <div className="text-right">Actions</div>,
             cell: ({ row }) => (
                 <div className="text-right">
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon">
-                                <MoreVertical className="h-4 w-4" />
-                            </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                            <DropdownMenuItem asChild>
-                                <Link href={`/backend?view=wallet&memberId=${row.original.id}`}>
-                                    View Member
-                                </Link>
-                            </DropdownMenuItem>
-                        </DropdownMenuContent>
-                    </DropdownMenu>
+                    <MemberActionMenu member={row.original} onUpdate={loadNetwork} />
                 </div>
             ),
         }
-    ], []);
+    ], [loadNetwork]);
     
     const pageIsLoading = isLoading || isUserLoading;
 

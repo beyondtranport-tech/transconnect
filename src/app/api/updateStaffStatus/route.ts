@@ -31,8 +31,9 @@ export async function POST(req: NextRequest) {
     const companySnap = await companyRef.get();
     const companyData = companySnap.data();
 
-    // Authorization: Only the owner of the company can update staff status
-    if (companyData?.ownerId !== uid) {
+    // Authorization: Only the owner of the company OR an admin can update staff status
+    const isAdmin = decodedToken.email === 'beyondtransport@gmail.com';
+    if (companyData?.ownerId !== uid && !isAdmin) {
         return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
     }
 

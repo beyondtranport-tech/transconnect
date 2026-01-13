@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -25,6 +24,23 @@ import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken } from '@/firebase';
 import { usePermissions } from '@/hooks/use-permissions';
 
+async function performAdminAction(token: string, action: string, payload: any) {
+    const response = await fetch('/api/admin', {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ action, payload }),
+    });
+
+    const result = await response.json();
+    if (!response.ok || !result.success) {
+        throw new Error(result.error || `API Error for action: ${action}`);
+    }
+    return result;
+}
+
 export default function StaffActionMenu({ staffMember, onUpdate, onEdit }: { staffMember: any; onUpdate: () => void, onEdit: () => void }) {
   const [isProcessing, setIsProcessing] = useState(false);
   const [isAlertOpen, setIsAlertOpen] = useState(false);
@@ -42,34 +58,20 @@ export default function StaffActionMenu({ staffMember, onUpdate, onEdit }: { sta
       const token = await getClientSideAuthToken();
       if (!token) throw new Error('Authentication failed.');
 
-      let response;
+      let apiAction = '';
+      let payload: any = { companyId: staffMember.companyId, staffId: staffMember.id };
       let successMessage = '';
 
       if (actionToConfirm === 'delete') {
-        response = await fetch('/api/deleteUserDoc', {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ path: `companies/${staffMember.companyId}/staff/${staffMember.id}` }),
-        });
+        apiAction = 'deleteStaffMember';
         successMessage = 'Staff member has been deleted.';
       } else {
-         response = await fetch('/api/updateStaffStatus', {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                companyId: staffMember.companyId,
-                staffId: staffMember.id,
-                status: actionToConfirm === 'confirm' ? 'confirmed' : 'unconfirmed'
-            }),
-        });
-        successMessage = `Staff member status updated.`;
+        apiAction = 'updateStaffStatus';
+        payload.status = actionToConfirm === 'confirm' ? 'confirmed' : 'unconfirmed';
+        successMessage = `Staff member status updated to ${payload.status}.`;
       }
       
-      const result = await response.json();
-      if (!response.ok || (result.success !== undefined && !result.success)) {
-        throw new Error(result.error || 'Action failed.');
-      }
-
+      await performAdminAction(token, apiAction, payload);
       toast({ title: 'Success', description: successMessage });
       onUpdate();
 

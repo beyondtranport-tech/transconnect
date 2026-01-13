@@ -1,4 +1,3 @@
-
 import { NextRequest, NextResponse } from 'next/server';
 import { getFirestore, Timestamp, FieldValue, FieldPath } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
@@ -395,19 +394,15 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, message: 'Shop approved and published.' });
             }
             case 'updateStaffStatus': {
+                 if (!isAdmin) throw new Error("Forbidden: Admin access required for this action.");
                 const { companyId, staffId, status } = payload;
                 if (!companyId || !staffId || !status) {
                     throw new Error("Missing companyId, staffId, or status.");
                 }
                 
-                const userDoc = await db.collection('users').doc(adminUid).get();
-                const userCompanyId = userDoc.data()?.companyId;
-
-                // Authorization: Only allow if the admin is the owner of the company, or is a platform admin
-                if (!isAdmin && userCompanyId !== companyId) {
-                    throw new Error("Forbidden: You can only update staff for your own company.");
-                }
-
+                // Note: The original had auth logic for the user, but since this is an admin-only
+                // action now, we rely on the `isAdmin` check at the top.
+                
                 const staffRef = db.doc(`companies/${companyId}/staff/${staffId}`);
                 await staffRef.update({ status, updatedAt: FieldValue.serverTimestamp() });
                 return NextResponse.json({ success: true, message: "Staff status updated." });
