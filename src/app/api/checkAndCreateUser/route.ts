@@ -19,7 +19,15 @@ export async function POST(req: NextRequest) {
   }
 
   const idToken = authorization.split('Bearer ')[1];
-  const { referrerId } = await req.json();
+  
+  // Safely parse body
+  let referrerId: string | null = null;
+  try {
+      const body = await req.json();
+      referrerId = body.referrerId;
+  } catch (e) {
+      // Body might be empty, which is fine.
+  }
 
   try {
     const adminAuth = getAuth(app);
@@ -54,6 +62,7 @@ export async function POST(req: NextRequest) {
         rewardPoints: signupPoints,
         walletBalance: 0,
         loyaltyTier: 'bronze',
+        status: 'pending', // Set initial status to pending
         createdAt: FieldValue.serverTimestamp(),
         updatedAt: FieldValue.serverTimestamp(),
     };

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, Suspense, useEffect } from 'react';
@@ -112,6 +113,7 @@ function SignInFormComponent() {
               'Authorization': `Bearer ${token}`,
               'Content-Type': 'application/json',
           },
+          body: JSON.stringify({}), // Send an empty object
       });
 
       if (!response.ok) {
@@ -231,5 +233,3 @@ export default function SignInPage() {
         </div>
     )
 }
-
-    
