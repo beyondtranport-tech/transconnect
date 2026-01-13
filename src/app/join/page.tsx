@@ -11,6 +11,7 @@ import {
   createUserWithEmailAndPassword,
   updateProfile,
   getIdToken,
+  sendPasswordResetEmail,
 } from 'firebase/auth';
 
 import { useAuth } from '@/firebase';
@@ -68,6 +69,42 @@ function JoinFormComponent() {
       password: '',
     },
   });
+
+  const handlePasswordReset = async () => {
+    const email = form.getValues('email');
+    if (!email) {
+      toast({
+        variant: 'destructive',
+        title: 'Email required',
+        description: 'Please enter your email address to reset your password.',
+      });
+      return;
+    }
+    
+    if (!auth) {
+        toast({
+            variant: 'destructive',
+            title: 'Authentication Error',
+            description: 'Could not connect to authentication service. Please try again later.',
+        });
+        return;
+    }
+    
+    try {
+      await sendPasswordResetEmail(auth, email);
+      toast({
+        title: 'Password Reset Email Sent',
+        description: `If an account exists for ${email}, a password reset link has been sent.`,
+      });
+    } catch (error: any) {
+       toast({
+        variant: 'destructive',
+        title: 'Error sending reset email',
+        description: 'Please try again later.',
+      });
+    }
+  };
+
 
   const onSubmit = async (values: JoinFormValues) => {
     setIsLoading(true);
