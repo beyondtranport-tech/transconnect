@@ -30,10 +30,9 @@ service cloud.firestore {
       // Allow a user to get their own company document.
       allow get, update: if isAdmin() || get(/databases/$(database)/documents/companies/$(companyId)).data.ownerId == request.auth.uid;
 
-      // Allow a collection query (list) under two conditions:
-      // 1. The user is an admin.
-      // 2. The user is querying for companies they referred.
-      allow list: if isAdmin() || (request.auth != null && request.query.filters[0].value == request.auth.uid);
+      // Allow a collection query (list) only if the user is an admin OR 
+      // if they are specifically querying for companies they referred.
+      allow list: if isAdmin() || (request.query.where.referrerId == request.auth.uid);
 
       // --- Company Subcollections (Direct Access) ---
       // The company owner and admins have full access to all subcollections (staff, wallet, etc.).
