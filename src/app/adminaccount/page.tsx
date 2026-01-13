@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -79,7 +80,7 @@ const Targets = dynamic(() => import('../account/targets'), { loading: () => <Lo
 const MemberWallet = dynamic(() => import('../backend/wallet/[memberId]/member-wallet'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const DashboardContent = dynamic(() => import('../backend/dashboard-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const MembersList = dynamic(() => import('../backend/members-list'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const StaffList = dynamic(() => import('../backend/staff-list'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const StaffContent = dynamic(() => import('./staff-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const ShopsList = dynamic(() => import('../backend/shops-list'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const ContributionsList = dynamic(() => import('../backend/contributions-list'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const WalletTransactionsList = dynamic(() => import('../backend/wallet-transactions-list'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
@@ -147,7 +148,7 @@ function AdminAccountContent() {
       // Business Operations
       case 'dashboard': return <DashboardContent />;
       case 'members': return <MembersList />;
-      case 'staff': return <StaffList />;
+      case 'staff': return <StaffContent />;
       case 'shops': return <ShopsList />;
       case 'contributions': return <ContributionsList />;
       case 'wallet-transactions': return <WalletTransactionsList />;
@@ -317,5 +318,3 @@ export default function AdminAccountPage() {
     </Suspense>
   );
 }
-
-    
