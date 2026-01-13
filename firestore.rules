@@ -33,7 +33,7 @@ service cloud.firestore {
       // Allow a collection query (list) under two conditions:
       // 1. The user is an admin.
       // 2. The user is querying for companies they referred.
-      allow list: if isAdmin() || (request.auth != null && request.query.where.referrerId == request.auth.uid);
+      allow list: if isAdmin() || (request.auth != null && request.query.filters[0].value == request.auth.uid);
 
       // --- Company Subcollections (Direct Access) ---
       // The company owner and admins have full access to all subcollections (staff, wallet, etc.).
