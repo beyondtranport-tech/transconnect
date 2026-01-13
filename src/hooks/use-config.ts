@@ -2,7 +2,7 @@
 'use client';
 
 import { doc } from 'firebase/firestore';
-import { useDoc, useFirestore } from '@/firebase';
+import { useDoc, useFirestore } from '@/firebase/provider';
 import { useMemo } from 'react';
 
 // A custom hook to memoize the document reference
