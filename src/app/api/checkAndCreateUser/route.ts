@@ -67,6 +67,7 @@ export async function POST(req: NextRequest) {
         updatedAt: FieldValue.serverTimestamp(),
     };
     
+    // The referrerId is the companyId of the referring user
     if (referrerId) {
         newCompanyData.referrerId = referrerId;
     }
@@ -83,20 +84,15 @@ export async function POST(req: NextRequest) {
     };
     
     const batch = db.batch();
-    batch.set(companyRef, newCompanyData);
+    batch.set(companyRef, newUserData);
     batch.set(userDocRef, newUserData);
 
     // If there's a referrer, award them points
     if (referrerId) {
         const partnerReferralPoints = loyaltyConfigDoc.data()?.partnerReferralPoints || 200;
-        const referrerUserDoc = await db.collection('users').doc(referrerId).get();
-        if (referrerUserDoc.exists) {
-            const referrerCompanyId = referrerUserDoc.data()?.companyId;
-            if (referrerCompanyId) {
-                const referrerCompanyRef = db.collection('companies').doc(referrerCompanyId);
-                batch.update(referrerCompanyRef, { rewardPoints: FieldValue.increment(partnerReferralPoints) });
-            }
-        }
+        // The referrerId is the companyId, so we update that company directly
+        const referrerCompanyRef = db.collection('companies').doc(referrerId);
+        batch.update(referrerCompanyRef, { rewardPoints: FieldValue.increment(partnerReferralPoints) });
     }
 
     await batch.commit();

@@ -1,3 +1,4 @@
+
 import { NextRequest, NextResponse } from 'next/server';
 import { getFirestore, FieldPath, Timestamp } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
@@ -38,30 +39,44 @@ export async function GET(req: NextRequest) {
         const uid = decodedToken.uid;
         const db = getFirestore(app);
 
-        // 1. Find all companies referred by the current user
-        const companiesQuery = db.collection('companies').where('referrerId', '==', uid);
+        // 1. Get the current user's profile to find their companyId
+        const userDocSnap = await db.collection('users').doc(uid).get();
+        const userData = userDocSnap.data();
+        if (!userData?.companyId) {
+            return NextResponse.json({ success: false, error: 'Could not determine your company to find referrals.' }, { status: 400 });
+        }
+        const referrerCompanyId = userData.companyId;
+
+        // 2. Find all companies referred by the current user's company
+        const companiesQuery = db.collection('companies').where('referrerId', '==', referrerCompanyId);
         const companiesSnap = await companiesQuery.get();
 
         if (companiesSnap.empty) {
             return NextResponse.json({ success: true, data: [] });
         }
 
-        // 2. Get the owner IDs from the referred companies
+        // 3. Get the owner IDs from the referred companies
         const ownerIds = companiesSnap.docs.map(doc => doc.data().ownerId);
 
-        // 3. Fetch the user documents for these owners to get their email
+        // 4. Fetch the user documents for these owners to get their name and email
         const usersSnap = await db.collection('users').where(FieldPath.documentId(), 'in', ownerIds).get();
-        const userEmailMap = new Map<string, string>();
+        const userDetailsMap = new Map<string, any>();
         usersSnap.forEach(doc => {
-            userEmailMap.set(doc.id, doc.data().email);
+            const data = doc.data();
+            userDetailsMap.set(doc.id, { 
+                email: data.email, 
+                name: `${data.firstName || ''} ${data.lastName || ''}`.trim()
+            });
         });
 
-        // 4. Combine the data
+        // 5. Combine the data
         const networkData = companiesSnap.docs.map(doc => {
             const companyData = doc.data();
+            const ownerDetails = userDetailsMap.get(companyData.ownerId) || { email: 'N/A', name: 'N/A' };
             return {
                 ...serializeTimestamps(companyData),
-                ownerEmail: userEmailMap.get(companyData.ownerId) || 'N/A'
+                ownerEmail: ownerDetails.email,
+                ownerName: ownerDetails.name
             };
         });
 

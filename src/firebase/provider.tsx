@@ -3,10 +3,12 @@
 
 import React, { createContext, useContext, ReactNode, useMemo, useState, useEffect } from 'react';
 import { FirebaseApp } from 'firebase/app';
-import { Firestore } from 'firebase/firestore';
+import { Firestore, doc } from 'firebase/firestore';
 import { Auth, User, onIdTokenChanged, getIdToken } from 'firebase/auth';
 import { FirebaseStorage } from 'firebase/storage';
 import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
+import { useDoc } from './firestore/use-doc';
+import { useMemoFirebase } from '@/hooks/use-config';
 
 interface FirebaseProviderProps {
   children: ReactNode;
@@ -16,8 +18,12 @@ interface FirebaseProviderProps {
   storage: FirebaseStorage;
 }
 
+interface EnrichedUser extends User {
+    companyId?: string;
+}
+
 interface UserAuthState {
-  user: User | null;
+  user: EnrichedUser | null;
   isUserLoading: boolean;
   userError: Error | null;
 }
@@ -27,7 +33,7 @@ export interface FirebaseContextState {
   firestore: Firestore | null;
   auth: Auth | null;
   storage: FirebaseStorage | null;
-  user: User | null;
+  user: EnrichedUser | null;
   isUserLoading: boolean;
   userError: Error | null;
 }
@@ -45,6 +51,28 @@ const setSessionCookie = (idToken: string | null) => {
     });
 };
 
+function useEnrichedUser(baseUser: User | null, firestore: Firestore | null) {
+    const userDocRef = useMemoFirebase(() => {
+        if (!firestore || !baseUser) return null;
+        return doc(firestore, 'users', baseUser.uid);
+    }, [firestore, baseUser]);
+
+    const { data: userData, isLoading: isUserDataLoading } = useDoc<{ companyId: string }>(userDocRef);
+    
+    return useMemo(() => {
+        if (!baseUser) return { enrichedUser: null, isEnriching: false };
+        if (isUserDataLoading) return { enrichedUser: baseUser, isEnriching: true };
+        
+        return {
+            enrichedUser: {
+                ...baseUser,
+                companyId: userData?.companyId
+            },
+            isEnriching: false
+        };
+    }, [baseUser, userData, isUserDataLoading]);
+}
+
 
 export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
   children,
@@ -53,27 +81,30 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
   auth,
   storage,
 }) => {
-  const [userAuthState, setUserAuthState] = useState<UserAuthState>({
-    user: auth.currentUser,
-    isUserLoading: true,
-    userError: null,
-  });
+  const [baseUser, setBaseUser] = useState<User | null>(auth.currentUser);
+  const [isAuthLoading, setIsAuthLoading] = useState(true);
+  const [authError, setAuthError] = useState<Error | null>(null);
+
+  const { enrichedUser, isEnriching } = useEnrichedUser(baseUser, firestore);
 
   useEffect(() => {
     const unsubscribe = onIdTokenChanged(
       auth,
       async (firebaseUser) => {
-        setUserAuthState({ user: firebaseUser, isUserLoading: false, userError: null });
+        setBaseUser(firebaseUser);
+        setIsAuthLoading(false);
+        setAuthError(null);
         
         if (typeof window !== 'undefined') {
             const idToken = firebaseUser ? await firebaseUser.getIdToken() : null;
-            // Call the non-async function without awaiting it.
             setSessionCookie(idToken);
         }
       },
       (error) => {
         console.error("FirebaseProvider: onIdTokenChanged error:", error);
-        setUserAuthState({ user: null, isUserLoading: false, userError: error });
+        setBaseUser(null);
+        setIsAuthLoading(false);
+        setAuthError(error);
       }
     );
     return () => unsubscribe();
@@ -84,8 +115,10 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
     firestore,
     auth,
     storage,
-    ...userAuthState,
-  }), [firebaseApp, firestore, auth, storage, userAuthState]);
+    user: enrichedUser,
+    isUserLoading: isAuthLoading || isEnriching,
+    userError: authError,
+  }), [firebaseApp, firestore, auth, storage, enrichedUser, isAuthLoading, isEnriching, authError]);
 
   return (
     <FirebaseContext.Provider value={contextValue}>

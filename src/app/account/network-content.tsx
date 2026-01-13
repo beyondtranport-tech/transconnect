@@ -77,7 +77,8 @@ export default function NetworkContent() {
             toast({ variant: 'destructive', title: 'You must be logged in to invite someone.' });
             return;
         }
-        const referralLink = `${window.location.origin}/join?ref=${user.uid}`;
+        // Updated to use companyId for referral link
+        const referralLink = `${window.location.origin}/join?ref=${user.companyId}`;
         const message = encodeURIComponent(
             `Hi, I'd like to invite you to join TransConnect, a network for transporters that helps you save money and find more work. Use my personal link to sign up: ${referralLink}`
         );
@@ -91,14 +92,18 @@ export default function NetworkContent() {
     
     const columns: ColumnDef<any>[] = useMemo(() => [
         {
-          accessorKey: 'companyName',
-          header: 'Company Name',
-          cell: ({ row }) => <div className="font-medium">{row.original.companyName}</div>,
+          accessorKey: 'ownerName',
+          header: 'Member Name',
+          cell: ({ row }) => <div className="font-medium">{row.original.ownerName}</div>,
         },
         {
           accessorKey: 'ownerEmail',
-          header: 'Owner Email',
+          header: 'Email',
           cell: ({ row }) => <div className="font-mono text-xs">{row.original.ownerEmail}</div>,
+        },
+        {
+          accessorKey: 'companyName',
+          header: 'Company Name',
         },
         {
           accessorKey: 'membershipId',
@@ -113,15 +118,6 @@ export default function NetworkContent() {
               {row.original.status || 'Pending'}
             </Badge>
           ),
-        },
-        {
-          accessorKey: 'createdAt',
-          header: 'Date Joined',
-          cell: ({ row }) => {
-            if (!row.original.createdAt) return 'N/A';
-            const date = new Date(row.original.createdAt);
-            return isNaN(date.getTime()) ? 'Invalid Date' : date.toLocaleDateString();
-          },
         },
         {
             id: 'actions',
