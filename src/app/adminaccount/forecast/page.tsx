@@ -27,14 +27,13 @@ function ForecastContent() {
             const settingsString = localStorage.getItem('accountFinancialSetup_v1');
             const budgetString = localStorage.getItem('accountBudgetAssumptions_v2');
             const salesRoadmapString = localStorage.getItem('accountSalesRoadmapScenarios_v1');
-            const activeScenarioName = salesRoadmapString ? JSON.parse(salesRoadmapString).activeScenario : 'Default';
-            const scenarios = salesRoadmapString ? JSON.parse(salesRoadmapString).scenarios : {};
-
             const targetsString = localStorage.getItem('accountFinancialTargets_v1');
-            
+
             const settings = settingsString ? JSON.parse(settingsString) : null;
             const budget = budgetString ? JSON.parse(budgetString) : null;
-            const salesRoadmap = scenarios[activeScenarioName] || null;
+            const salesRoadmapData = salesRoadmapString ? JSON.parse(salesRoadmapString) : null;
+            const activeScenarioName = salesRoadmapData?.activeScenario || 'Default';
+            const salesRoadmap = salesRoadmapData?.scenarios?.[activeScenarioName] || null;
             const targets = targetsString ? JSON.parse(targetsString) : null;
 
             if (!settings || !budget || !salesRoadmap || !targets) {
