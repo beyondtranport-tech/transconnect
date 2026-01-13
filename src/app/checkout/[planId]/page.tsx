@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Suspense, useState, useEffect, useMemo } from 'react';
@@ -33,14 +34,22 @@ function CheckoutComponent() {
       return doc(firestore, 'memberships', planId);
   }, [firestore, planId]);
 
-  const memberRef = useMemoFirebase(() => {
+  const userDocRef = useMemoFirebase(() => {
     if (!firestore || !user) return null;
-    return doc(firestore, 'members', user.uid);
+    return doc(firestore, 'users', user.uid);
   }, [firestore, user]);
-  
-  const { data: plan, isLoading: isPlanLoading } = useDoc(planRef);
-  const { data: member, isLoading: isMemberLoading } = useDoc(memberRef);
 
+  const { data: userData, isLoading: isUserDocLoading } = useDoc<{ companyId: string }>(userDocRef);
+
+  const companyDocRef = useMemoFirebase(() => {
+    if (!firestore || !userData?.companyId) return null;
+    return doc(firestore, 'companies', userData.companyId);
+  }, [firestore, userData]);
+
+  const { data: companyData, isLoading: isCompanyLoading } = useDoc(companyDocRef);
+
+  const { data: plan, isLoading: isPlanLoading } = useDoc(planRef);
+  
   useEffect(() => {
     if (!isUserLoading && !user) {
       router.push(`/signin?redirect=/checkout/${planId}?cycle=${cycle}`);
@@ -57,11 +66,11 @@ function CheckoutComponent() {
   }, [plan, cycle]);
 
   const handlePurchaseWithWallet = async () => {
-    if (!user || !plan || !member || !firestore) {
+    if (!user || !plan || !companyData || !firestore) {
         toast({ variant: 'destructive', title: 'Error', description: 'User, plan, or database not available.' });
         return;
     }
-    if (member.walletBalance < price) {
+    if (companyData.walletBalance < price) {
         toast({ variant: 'destructive', title: 'Insufficient Funds', description: 'Your wallet balance is too low to complete this purchase.' });
         return;
     }
@@ -73,11 +82,10 @@ function CheckoutComponent() {
         if (!token) throw new Error("Authentication failed.");
 
         const payload = {
-            memberId: user.uid,
-            paymentId: `membership_${plan.id}_${Date.now()}`, // Create a unique ID for the transaction
+            companyId: companyData.id,
+            paymentId: `membership_${plan.id}_${Date.now()}`,
             amount: price,
             description: `Membership Purchase: ${plan.name} (${cycle})`,
-            // This payload includes extra info for the new API to handle the membership update
             membershipDetails: {
               planId: plan.id,
               cycle: cycle,
@@ -109,8 +117,8 @@ function CheckoutComponent() {
     }
   };
 
-  const isLoading = isUserLoading || isPlanLoading || isMemberLoading;
-  const hasSufficientFunds = member && member.walletBalance >= price;
+  const isLoading = isUserLoading || isPlanLoading || isUserDocLoading || isCompanyLoading;
+  const hasSufficientFunds = companyData && companyData.walletBalance >= price;
 
   if (isLoading || !user) {
       return <div className="flex justify-center items-center h-full"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
@@ -133,7 +141,7 @@ function CheckoutComponent() {
             </div>
              <div className="flex justify-between items-center border-t pt-4">
                 <p className="font-medium">Your Wallet Balance</p>
-                <p className="font-bold text-lg">{formatPrice(member?.walletBalance || 0)}</p>
+                <p className="font-bold text-lg">{formatPrice(companyData?.walletBalance || 0)}</p>
             </div>
         </div>
         
