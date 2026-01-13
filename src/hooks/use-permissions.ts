@@ -46,6 +46,8 @@ export function usePermissions() {
     const { user } = useUser();
     const firestore = useFirestore();
 
+    const isAdmin = user?.email === 'beyondtransport@gmail.com';
+
     // 1. Get the current user's profile to find their role and companyId
     const userDocRef = useMemoFirebase(() => {
         if (!firestore || !user) return null;
@@ -63,8 +65,8 @@ export function usePermissions() {
     const permissions = useMemo(() => {
         if (!userData) return new Set<string>();
 
-        // Company owners have all permissions by default
-        if (userData.role === 'owner') {
+        // Grant full permissions if the user is the admin or the company owner
+        if (isAdmin || userData.role === 'owner') {
             return new Set<string>(['manage:all']);
         }
         
@@ -74,7 +76,7 @@ export function usePermissions() {
         }
 
         return new Set<string>();
-    }, [userData, staffData]);
+    }, [userData, staffData, isAdmin]);
 
     const can = (action: Action, resource: Resource) => {
         if (!userData) return false;
