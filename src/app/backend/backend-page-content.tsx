@@ -101,7 +101,7 @@ const SalesRoadmap = dynamic(() => import('./sales-roadmap'), { loading: () => <
 const BudgetPage = dynamic(() => import('./budget/page'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const SalaryForecastPage = dynamic(() => import('./salary-forecast'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const ForecastPage = dynamic(() => import('./forecast/page'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const PitchContent = dynamic(() => import('./pitch-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const PitchContent = dynamic(() => import('../account/pitch-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 
 
 export default function BackendPageContent() {
@@ -127,8 +127,6 @@ export default function BackendPageContent() {
     switch (activeView) {
       case 'dashboard':
         return <DashboardContent />;
-      case 'pitch':
-        return <PitchContent />;
       case 'members':
         return <MembersList />;
       case 'staff':
@@ -217,12 +215,6 @@ export default function BackendPageContent() {
                 <SidebarMenuButton tooltip="Dashboard" isActive={activeView === 'dashboard'} onClick={() => router.push('/backend?view=dashboard', { scroll: false })}>
                 <LayoutDashboard />
                 <span>Dashboard</span>
-                </SidebarMenuButton>
-            </SidebarMenuItem>
-             <SidebarMenuItem>
-                <SidebarMenuButton tooltip="ISA Pitch" isActive={activeView === 'pitch'} onClick={() => router.push('/backend?view=pitch', { scroll: false })}>
-                <Presentation />
-                <span>ISA Pitch</span>
                 </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>

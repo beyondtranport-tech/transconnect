@@ -32,6 +32,7 @@ import {
   DollarSign,
   Map,
   Target,
+  Presentation,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -55,6 +56,7 @@ import FinancialSetup from './financial-setup';
 import SalesRoadmap from './sales-roadmap';
 import Targets from './targets';
 import MemberProjection from './member-projection';
+import PitchContent from './pitch-content';
 
 
 function DocumentsContent() {
@@ -137,6 +139,8 @@ function AccountPageContent() {
         return <DocumentsContent />;
       case 'activity-feed':
         return <ActivityFeed />;
+      case 'pitch':
+        return <PitchContent />;
       case 'settings':
         return <SettingsContent />;
       case 'dashboard':
@@ -172,6 +176,12 @@ function AccountPageContent() {
                 <SidebarMenuButton tooltip="Dashboard" isActive={activeView === 'dashboard'} onClick={() => router.push('/account?view=dashboard', { scroll: false })}>
                   <LayoutDashboard />
                   <span>Dashboard</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+               <SidebarMenuItem>
+                <SidebarMenuButton tooltip="ISA Pitch" isActive={activeView === 'pitch'} onClick={() => router.push('/account?view=pitch', { scroll: false })}>
+                  <Presentation />
+                  <span>ISA Pitch</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
