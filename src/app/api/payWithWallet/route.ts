@@ -1,4 +1,6 @@
 
+'use client';
+
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuth } from 'firebase-admin/auth';
@@ -34,7 +36,7 @@ async function handleServicePayment(db: FirebaseFirestore.Firestore, adminUid: s
     const companyTransactionRef = db.collection(`companies/${companyId}/transactions`).doc();
     const chartOfAccountsCode = description.toLowerCase().includes('membership') ? '4010' : '4410';
     batch.set(companyTransactionRef, {
-        transactionId: transactionRef.id,
+        transactionId: companyTransactionRef.id,
         type: 'debit',
         amount: amount,
         date: now,

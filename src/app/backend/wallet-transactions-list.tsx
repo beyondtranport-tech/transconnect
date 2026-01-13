@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
@@ -24,6 +25,7 @@ interface Payment {
     description: string;
     createdAt: any;
     memberName?: string;
+    status: 'pending' | 'approved' | 'rejected';
 }
 
 interface Transaction {
@@ -81,8 +83,7 @@ export default function WalletTransactionsList() {
             .filter(p => p.status === 'pending')
             .map(p => {
                 const company = companyMap.get(p.companyId);
-                const memberName = company ? `${company.firstName || ''} ${company.lastName || ''}`.trim() : 'Unknown Member';
-                return { ...p, memberName };
+                return { ...p, memberName: company?.companyName || 'Unknown Member' };
             })
             .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     }, [pendingPayments, companyMap]);
@@ -92,8 +93,7 @@ export default function WalletTransactionsList() {
         return allocatedTransactions
             .map(tx => {
                 const company = companyMap.get(tx.companyId);
-                const memberName = company ? `${company.firstName || ''} ${company.lastName || ''}`.trim() : 'Unknown Member';
-                return { ...tx, memberName };
+                return { ...tx, memberName: company?.companyName || 'Unknown Member' };
             })
             .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
     }, [allocatedTransactions, companyMap]);
@@ -116,7 +116,7 @@ export default function WalletTransactionsList() {
                             <TableHeader>
                                 <TableRow>
                                     <TableHead>Date Logged</TableHead>
-                                    <TableHead>Member Name</TableHead>
+                                    <TableHead>Company Name</TableHead>
                                     <TableHead>Company ID</TableHead>
                                     <TableHead>Description</TableHead>
                                     <TableHead>Amount</TableHead>
@@ -168,7 +168,7 @@ export default function WalletTransactionsList() {
                             <TableHeader>
                                 <TableRow>
                                     <TableHead>Date</TableHead>
-                                    <TableHead>Member Name</TableHead>
+                                    <TableHead>Company Name</TableHead>
                                     <TableHead>Company ID</TableHead>
                                     <TableHead>Description</TableHead>
                                     <TableHead className="text-right">Amount</TableHead>
