@@ -69,7 +69,6 @@ export async function POST(req: NextRequest) {
         email: firebaseUser.email,
         phone: firebaseUser.phoneNumber || '',
         companyId: companyRef.id,
-        role: 'owner',
         createdAt: FieldValue.serverTimestamp(),
         updatedAt: FieldValue.serverTimestamp(),
     };
