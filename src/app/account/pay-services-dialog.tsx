@@ -16,6 +16,24 @@ const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(amount);
 };
 
+// Robust date formatting function
+const formatDate = (dateValue: any) => {
+    if (!dateValue) return 'N/A';
+    // Handle Firestore Timestamp objects
+    if (dateValue && typeof dateValue.toDate === 'function') {
+        return format(dateValue.toDate(), "dd MMM yyyy");
+    }
+    // Handle ISO strings
+    if (typeof dateValue === 'string') {
+        const date = new Date(dateValue);
+        if (!isNaN(date.getTime())) {
+            return format(date, "dd MMM yyyy");
+        }
+    }
+    return 'Invalid Date';
+};
+
+
 export default function PayServicesDialog({ member, onPaymentSuccess }: { member: any, onPaymentSuccess: () => void }) {
     const { toast } = useToast();
     const firestore = useFirestore();
@@ -97,7 +115,7 @@ export default function PayServicesDialog({ member, onPaymentSuccess }: { member
                                     <h4 className="font-semibold">{payment.description}</h4>
                                     <p className="font-bold text-lg">{formatCurrency(payment.amount)}</p>
                                 </div>
-                                <p className="text-xs text-muted-foreground">Due: {format(new Date(payment.createdAt), "dd MMM yyyy")}</p>
+                                <p className="text-xs text-muted-foreground">Due: {formatDate(payment.createdAt)}</p>
                                 <Button 
                                     className="w-full mt-2" 
                                     onClick={() => handlePay(payment)}
