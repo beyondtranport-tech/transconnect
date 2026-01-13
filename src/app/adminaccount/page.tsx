@@ -178,127 +178,129 @@ function AdminAccountContent() {
   }
 
   return (
-    <SidebarProvider>
-      <Sidebar>
-        <SidebarHeader>
-          <div className="flex items-center gap-2">
-            <Building className="h-6 w-6 text-primary" />
-            <h2 className="text-lg font-semibold text-sidebar-foreground">
-              Admin Account
-            </h2>
+    <AdminAuthGuard>
+      <SidebarProvider>
+        <Sidebar>
+          <SidebarHeader>
+            <div className="flex items-center gap-2">
+              <Building className="h-6 w-6 text-primary" />
+              <h2 className="text-lg font-semibold text-sidebar-foreground">
+                Admin Account
+              </h2>
+            </div>
+          </SidebarHeader>
+          <SidebarContent>
+            <SidebarGroup>
+              <SidebarMenuItem>
+                <SidebarMenuButton tooltip="Dashboard" isActive={activeView === 'dashboard'} onClick={() => router.push('/adminaccount?view=dashboard', { scroll: false })}>
+                  <LayoutDashboard />
+                  <span>Dashboard</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton tooltip="ISA Pitch" isActive={activeView === 'pitch'} onClick={() => router.push('/adminaccount?view=pitch', { scroll: false })}>
+                  <Presentation />
+                  <span>ISA Pitch</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                  <SidebarMenuButton tooltip="Staff" isActive={activeView === 'staff'} onClick={() => router.push('/adminaccount?view=staff', { scroll: false })}>
+                  <Users />
+                  <span>Staff</span>
+                  </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                  <SidebarMenuButton tooltip="Wallet">
+                      <Wallet />
+                      <span>Wallet</span>
+                  </SidebarMenuButton>
+                  <SidebarMenuSub>
+                      <SidebarMenuSubButton isActive={activeView === 'wallet-transactions'} onClick={() => router.push('/adminaccount?view=wallet-transactions', { scroll: false })}>
+                          <DollarSign />
+                          <span>Member Wallet Ledger</span>
+                      </SidebarMenuSubButton>
+                      <SidebarMenuSubButton isActive={activeView === 'wallet-reconciliation'} onClick={() => router.push('/adminaccount?view=wallet-reconciliation', { scroll: false })}>
+                          <Combine />
+                          <span>Reconciliation</span>
+                      </SidebarMenuSubButton>
+                  </SidebarMenuSub>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                  <SidebarMenuButton tooltip="Projection" isActive={['financial-setup', 'sales-roadmap', 'targets', 'member-projection', 'budget', 'forecast'].includes(activeView)}>
+                      <TrendingUp />
+                      <span>Projection</span>
+                  </SidebarMenuButton>
+                  <SidebarMenuSub>
+                      <SidebarMenuSubButton isActive={activeView === 'financial-setup'} onClick={() => router.push('/adminaccount?view=financial-setup', { scroll: false })}>
+                          <Settings />
+                          <span>Setup</span>
+                      </SidebarMenuSubButton>
+                      <SidebarMenuSubButton isActive={activeView === 'sales-roadmap'} onClick={() => router.push('/adminaccount?view=sales-roadmap', { scroll: false })}>
+                          <Map />
+                          <span>Sales Roadmap</span>
+                      </SidebarMenuSubButton>
+                      <SidebarMenuSubButton isActive={activeView === 'targets'} onClick={() => router.push('/adminaccount?view=targets', { scroll: false })}>
+                          <Sheet />
+                          <span>Targets</span>
+                      </SidebarMenuSubButton>
+                      <SidebarMenuSubButton isActive={activeView === 'member-projection'} onClick={() => router.push('/adminaccount?view=member-projection', { scroll: false })}>
+                          <Users />
+                          <span>Member Projection</span>
+                      </SidebarMenuSubButton>
+                      <SidebarMenuSubButton isActive={activeView === 'budget'} onClick={() => router.push('/adminaccount?view=budget', { scroll: false })}>
+                          <Sheet />
+                          <span>Budget</span>
+                      </SidebarMenuSubButton>
+                      <SidebarMenuSubButton isActive={activeView === 'forecast'} onClick={() => router.push('/adminaccount?view=forecast', { scroll: false })}>
+                          <TrendingUp />
+                          <span>Forecast</span>
+                      </SidebarMenuSubButton>
+                  </SidebarMenuSub>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                  <SidebarMenuButton tooltip="Backend" onClick={() => router.push('/backend', { scroll: false })}>
+                      <Server />
+                      <span>App Backend</span>
+                  </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarGroup>
+          </SidebarContent>
+          <SidebarFooter>
+          {user && (
+              <div className="flex items-center gap-3 p-2 rounded-md bg-sidebar-accent">
+              <Avatar className="h-10 w-10">
+                  <AvatarFallback>{getInitials(user.displayName)}</AvatarFallback>
+              </Avatar>
+              <div className="flex flex-col truncate">
+                  <span className="text-sm font-medium text-sidebar-foreground truncate">
+                  {user.displayName || 'Super Admin'}
+                  </span>
+                  <span className="text-xs text-sidebar-foreground/70 truncate">
+                  {user.email}
+                  </span>
+              </div>
+              <Button
+                  variant="ghost"
+                  size="icon"
+                  className="ml-auto"
+                  onClick={onLogout}
+                  title="Sign Out"
+              >
+                  <LogOut className="h-5 w-5" />
+              </Button>
+              </div>
+          )}
+          </SidebarFooter>
+        </Sidebar>
+        <SidebarInset>
+          <div className="p-6">
+            <Suspense fallback={<Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" />}>
+              {renderContent()}
+            </Suspense>
           </div>
-        </SidebarHeader>
-        <SidebarContent>
-          <SidebarGroup>
-            <SidebarMenuItem>
-              <SidebarMenuButton tooltip="Dashboard" isActive={activeView === 'dashboard'} onClick={() => router.push('/adminaccount?view=dashboard', { scroll: false })}>
-                <LayoutDashboard />
-                <span>Dashboard</span>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-              <SidebarMenuButton tooltip="ISA Pitch" isActive={activeView === 'pitch'} onClick={() => router.push('/adminaccount?view=pitch', { scroll: false })}>
-                <Presentation />
-                <span>ISA Pitch</span>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-             <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Staff" isActive={activeView === 'staff'} onClick={() => router.push('/adminaccount?view=staff', { scroll: false })}>
-                <Users />
-                <span>Staff</span>
-                </SidebarMenuButton>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Wallet">
-                    <Wallet />
-                    <span>Wallet</span>
-                </SidebarMenuButton>
-                <SidebarMenuSub>
-                    <SidebarMenuSubButton isActive={activeView === 'wallet-transactions'} onClick={() => router.push('/adminaccount?view=wallet-transactions', { scroll: false })}>
-                        <DollarSign />
-                        <span>Member Wallet Ledger</span>
-                    </SidebarMenuSubButton>
-                    <SidebarMenuSubButton isActive={activeView === 'wallet-reconciliation'} onClick={() => router.push('/adminaccount?view=wallet-reconciliation', { scroll: false })}>
-                        <Combine />
-                        <span>Reconciliation</span>
-                    </SidebarMenuSubButton>
-                </SidebarMenuSub>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Projection" isActive={['financial-setup', 'sales-roadmap', 'targets', 'member-projection', 'budget', 'forecast'].includes(activeView)}>
-                    <TrendingUp />
-                    <span>Projection</span>
-                </SidebarMenuButton>
-                 <SidebarMenuSub>
-                    <SidebarMenuSubButton isActive={activeView === 'financial-setup'} onClick={() => router.push('/adminaccount?view=financial-setup', { scroll: false })}>
-                        <Settings />
-                        <span>Setup</span>
-                    </SidebarMenuSubButton>
-                    <SidebarMenuSubButton isActive={activeView === 'sales-roadmap'} onClick={() => router.push('/adminaccount?view=sales-roadmap', { scroll: false })}>
-                         <Map />
-                        <span>Sales Roadmap</span>
-                    </SidebarMenuSubButton>
-                    <SidebarMenuSubButton isActive={activeView === 'targets'} onClick={() => router.push('/adminaccount?view=targets', { scroll: false })}>
-                         <Sheet />
-                        <span>Targets</span>
-                    </SidebarMenuSubButton>
-                    <SidebarMenuSubButton isActive={activeView === 'member-projection'} onClick={() => router.push('/adminaccount?view=member-projection', { scroll: false })}>
-                        <Users />
-                        <span>Member Projection</span>
-                    </SidebarMenuSubButton>
-                    <SidebarMenuSubButton isActive={activeView === 'budget'} onClick={() => router.push('/adminaccount?view=budget', { scroll: false })}>
-                        <Sheet />
-                        <span>Budget</span>
-                    </SidebarMenuSubButton>
-                    <SidebarMenuSubButton isActive={activeView === 'forecast'} onClick={() => router.push('/adminaccount?view=forecast', { scroll: false })}>
-                        <TrendingUp />
-                        <span>Forecast</span>
-                    </SidebarMenuSubButton>
-                </SidebarMenuSub>
-            </SidebarMenuItem>
-             <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Backend" onClick={() => router.push('/backend', { scroll: false })}>
-                    <Server />
-                    <span>App Backend</span>
-                </SidebarMenuButton>
-            </SidebarMenuItem>
-          </SidebarGroup>
-        </SidebarContent>
-        <SidebarFooter>
-        {user && (
-            <div className="flex items-center gap-3 p-2 rounded-md bg-sidebar-accent">
-            <Avatar className="h-10 w-10">
-                <AvatarFallback>{getInitials(user.displayName)}</AvatarFallback>
-            </Avatar>
-            <div className="flex flex-col truncate">
-                <span className="text-sm font-medium text-sidebar-foreground truncate">
-                {user.displayName || 'Super Admin'}
-                </span>
-                <span className="text-xs text-sidebar-foreground/70 truncate">
-                {user.email}
-                </span>
-            </div>
-            <Button
-                variant="ghost"
-                size="icon"
-                className="ml-auto"
-                onClick={onLogout}
-                title="Sign Out"
-            >
-                <LogOut className="h-5 w-5" />
-            </Button>
-            </div>
-        )}
-        </SidebarFooter>
-      </Sidebar>
-      <SidebarInset>
-        <div className="p-6">
-          <Suspense fallback={<Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" />}>
-            {renderContent()}
-          </Suspense>
-        </div>
-      </SidebarInset>
-    </SidebarProvider>
+        </SidebarInset>
+      </SidebarProvider>
+    </AdminAuthGuard>
   );
 }
 
@@ -306,9 +308,7 @@ function AdminAccountContent() {
 export default function AdminAccountPage() {
   return (
     <Suspense fallback={<div className="flex justify-center items-center min-h-[calc(100vh-8rem)]"><Loader2 className="h-16 w-16 animate-spin text-primary" /></div>}>
-       <AdminAuthGuard>
-            <AdminAccountContent />
-       </AdminAuthGuard>
+      <AdminAccountContent />
     </Suspense>
   );
 }
