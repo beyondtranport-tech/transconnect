@@ -62,6 +62,7 @@ import { signOut } from 'firebase/auth';
 // Using next/dynamic to lazy-load components
 import dynamic from 'next/dynamic';
 
+const AdminAccountContent = dynamic(() => import('../adminaccount/page'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const DashboardContent = dynamic(() => import('./dashboard-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const MembersList = dynamic(() => import('./members-list'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const PermissionsContent = dynamic(() => import('./permissions-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
@@ -75,6 +76,9 @@ const TechDivisionContent = dynamic(() => import('./tech-division-content'), { l
 const PlatformSettingsContent = dynamic(() => import('./platform-settings'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const DivisionsContent = dynamic(() => import('./divisions-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const CampaignContent = dynamic(() => import('./campaign-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const MemberWallet = dynamic(() => import('./wallet/[memberId]/member-wallet'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const WalletTransactionsList = dynamic(() => import('./wallet-transactions-list'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const ReconciliationPage = dynamic(() => import('./reconciliation/page'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 
 const LoyaltySettings = dynamic(() => import('./loyalty-settings'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const RewardsManagement = dynamic(() => import('./rewards-management'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
@@ -90,6 +94,7 @@ export default function BackendPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const initialView = searchParams.get('view') || 'platform-settings';
+  const memberId = searchParams.get('memberId');
   const [activeView, setActiveView] = useState(initialView);
   const { user, isUserLoading } = useUser();
   const auth = useAuth();
@@ -106,6 +111,16 @@ export default function BackendPageContent() {
 
   const renderContent = () => {
     switch (activeView) {
+      case 'dashboard':
+        return <DashboardContent />;
+      case 'members':
+        return <MembersList />;
+      case 'wallet':
+        return memberId ? <MemberWallet memberId={memberId} /> : <WalletTransactionsList />;
+      case 'wallet-transactions':
+        return <WalletTransactionsList />;
+      case 'bank-reconciliation':
+        return <ReconciliationPage />;
       case 'activity-feed':
         return <ActivityFeed />;
       case 'platform-tasks':
@@ -142,8 +157,6 @@ export default function BackendPageContent() {
         return <TechDivisionContent />;
       case 'campaigns':
         return <CampaignContent />;
-      case 'members':
-        return <MembersList />;
       default:
         return <PlatformSettingsContent />;
     }
@@ -181,6 +194,22 @@ export default function BackendPageContent() {
                 <span>Members</span>
                 </SidebarMenuButton>
             </SidebarMenuItem>
+             <SidebarMenuItem>
+                  <SidebarMenuButton tooltip="Wallet" isActive={['wallet', 'wallet-transactions', 'bank-reconciliation'].includes(activeView)}>
+                      <Wallet />
+                      <span>Wallet</span>
+                  </SidebarMenuButton>
+                  <SidebarMenuSub>
+                      <SidebarMenuSubButton isActive={activeView === 'wallet-transactions'} onClick={() => router.push('/backend?view=wallet-transactions', { scroll: false })}>
+                          <DollarSign />
+                          <span>Member Wallet Ledger</span>
+                      </SidebarMenuSubButton>
+                      <SidebarMenuSubButton isActive={activeView === 'bank-reconciliation'} onClick={() => router.push('/backend?view=bank-reconciliation', { scroll: false })}>
+                          <Combine />
+                          <span>Bank Reconciliation</span>
+                      </SidebarMenuSubButton>
+                  </SidebarMenuSub>
+              </SidebarMenuItem>
             <SidebarMenuItem>
                 <SidebarMenuButton tooltip="Campaigns" isActive={activeView === 'campaigns'} onClick={() => router.push('/backend?view=campaigns', { scroll: false })}>
                   <Sparkles />
