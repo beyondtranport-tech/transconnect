@@ -25,6 +25,7 @@ import {
   Wallet,
   Gift,
   Activity,
+  Handshake,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -42,6 +43,7 @@ import BillingContent from './billing-content';
 import WalletContent from './wallet-content';
 import RewardsContent from './rewards';
 import ActivityFeed from './activity-feed';
+import NetworkContent from './network-content';
 
 
 function DocumentsContent() {
@@ -108,6 +110,8 @@ function AccountPageContent() {
         return <BillingContent />;
       case 'rewards':
         return <RewardsContent />;
+      case 'network':
+        return <NetworkContent />;
       case 'documents':
         return <DocumentsContent />;
       case 'activity-feed':
@@ -183,6 +187,12 @@ function AccountPageContent() {
                 <SidebarMenuButton tooltip="Rewards" isActive={activeView === 'rewards'} onClick={() => router.push('/account?view=rewards', { scroll: false })}>
                   <Gift />
                   <span>Rewards</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton tooltip="My Network" isActive={activeView === 'network'} onClick={() => router.push('/account?view=network', { scroll: false })}>
+                  <Handshake />
+                  <span>My Network</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
