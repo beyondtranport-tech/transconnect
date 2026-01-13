@@ -1,10 +1,11 @@
+
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { useCollection, useFirestore, getClientSideAuthToken } from '@/firebase/provider';
+import { useCollection, useFirestore, getClientSideAuthToken } from '@/firebase';
 import { collection, query, where } from 'firebase/firestore';
 import { Loader2, Gem, Wallet, AlertCircle } from 'lucide-react';
 import { format } from 'date-fns';
@@ -23,7 +24,9 @@ export default function PayServicesDialog({ member, onPaymentSuccess }: { member
     
     const pendingPaymentsQuery = useMemoFirebase(() => {
         if (!firestore || !member) return null;
-        return query(collection(firestore, `members/${member.id}/walletPayments`), where('status', '==', 'pending'));
+        // The path in the original code `members/${member.id}/walletPayments` seems incorrect based on the data model.
+        // It should be `companies/${member.id}/walletPayments`. I'll correct this as well.
+        return query(collection(firestore, `companies/${member.id}/walletPayments`), where('status', '==', 'pending'));
     }, [firestore, member]);
 
     const { data: payments, isLoading: arePaymentsLoading, forceRefresh } = useCollection(pendingPaymentsQuery);
@@ -46,7 +49,7 @@ export default function PayServicesDialog({ member, onPaymentSuccess }: { member
             if (!token) throw new Error("Authentication failed.");
 
             const payload = {
-                memberId: member.id,
+                companyId: member.id, // Corrected from memberId
                 paymentId: payment.id,
                 amount: payment.amount,
                 description: payment.description,
