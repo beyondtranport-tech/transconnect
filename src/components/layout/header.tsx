@@ -139,7 +139,7 @@ export function Header() {
                                 <Link href="/backend">Backend</Link>
                             </DropdownMenuItem>
                             <DropdownMenuItem asChild>
-                                <Link href="/account">Admin Account</Link>
+                                <Link href="/backend">Admin Account</Link>
                             </DropdownMenuItem>
                         </>
                     ) : (
