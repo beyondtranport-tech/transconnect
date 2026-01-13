@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Handshake, MoreVertical, Edit, Trash2, CheckCircle, XCircle, PlusCircle, Loader2, MessageSquare } from 'lucide-react';
+import { Handshake, PlusCircle, Loader2, MessageSquare } from 'lucide-react';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
 import { Badge } from '@/components/ui/badge';
@@ -62,7 +62,7 @@ export default function NetworkContent() {
         }
     }, [user, isUserLoading, loadNetwork]);
 
-    const handleInvite = (member: any) => {
+    const handleInvite = () => {
         if (!user) {
             toast({ variant: 'destructive', title: 'You must be logged in to invite someone.' });
             return;
@@ -74,8 +74,8 @@ export default function NetworkContent() {
         const whatsappUrl = `https://wa.me/?text=${message}`;
         window.open(whatsappUrl, '_blank');
         toast({
-            title: "Invite Sent!",
-            description: `You've opened WhatsApp to invite ${member.companyName}.`
+            title: "Invite Opened!",
+            description: `You can now send your personal referral link via WhatsApp.`
         });
     };
     
@@ -121,7 +121,9 @@ export default function NetworkContent() {
                             Manage your leads, send invites, and track the growth of your referral network.
                         </CardDescription>
                     </div>
-                    {/* The dialog for adding leads can remain as it is for now, as it's a demo feature. */}
+                     <Button onClick={handleInvite}>
+                        <MessageSquare className="mr-2" /> Invite Lead
+                    </Button>
                 </CardHeader>
                 <CardContent>
                     {pageIsLoading ? (
