@@ -1,155 +1,133 @@
 'use client';
 
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { useToast } from '@/hooks/use-toast';
-import { useState } from 'react';
-import { Handshake, Loader2, UserPlus, UploadCloud, Users, ShoppingCart, DollarSign } from 'lucide-react';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { useState, useMemo } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Handshake, MoreVertical, Edit, Trash2, CheckCircle, XCircle, PlusCircle } from 'lucide-react';
+import { DataTable } from '@/components/ui/data-table';
+import { type ColumnDef } from '@/hooks/use-data-table';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from '@/components/ui/dropdown-menu';
 
-// Schema for uploading a single lead
-const leadFormSchema = z.object({
-  companyName: z.string().min(1, 'Company name is required'),
-  contactName: z.string().optional(),
-  contactEmail: z.string().email('Please enter a valid email.').optional().or(z.literal('')),
-  contactPhone: z.string().optional(),
-});
-
-type LeadFormValues = z.infer<typeof leadFormSchema>;
-
-// Mock data for network performance
+// Mock data for referred network members
 const initialNetworkData = [
-  { id: 'mem1', name: 'ABC Transport', status: 'Active', productsSold: 5, commissionEarned: 250 },
-  { id: 'mem2', name: 'Freight Movers', status: 'Invited', productsSold: 0, commissionEarned: 0 },
-  { id: 'mem3', name: 'Speedy Logistics', status: 'Active', productsSold: 12, commissionEarned: 600 },
-  { id: 'mem4', name: 'SA Haulers', status: 'Prospect', productsSold: 0, commissionEarned: 0 },
+  { id: 'net1', companyName: 'ABC Transport', email: 'contact@abctransport.co.za', mobile: '0821234567', status: 'Active' },
+  { id: 'net2', companyName: 'Freight Movers Inc.', email: 'info@freightmovers.com', mobile: '0719876543', status: 'Invited' },
+  { id: 'net3', companyName: 'Speedy Logistics', email: 'ops@speedylog.co.za', mobile: '0835558899', status: 'Prospect' },
+  { id: 'net4', companyName: 'SA Haulers', email: 'info@sah.co.za', mobile: '0841112233', status: 'Prospect' },
+  { id: 'net5', name: 'Coastal Carriers', email: 'fleet@coastal.com', mobile: '0723456789', status: 'Active' },
 ];
 
-const formatCurrency = (amount: number) => new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(amount);
+type NetworkMember = typeof initialNetworkData[0];
 
-export default function NetworkContent() {
-  const { toast } = useToast();
-  const [isLoading, setIsLoading] = useState(false);
-  const [networkData, setNetworkData] = useState(initialNetworkData);
+const statusColors: { [key: string]: 'default' | 'secondary' | 'outline' } = {
+  Active: 'default',
+  Invited: 'secondary',
+  Prospect: 'outline',
+};
 
-  const form = useForm<LeadFormValues>({
-    resolver: zodResolver(leadFormSchema),
-    defaultValues: { companyName: '', contactName: '', contactEmail: '', contactPhone: '' },
-  });
-
-  const onSubmit = async (values: LeadFormValues) => {
-    setIsLoading(true);
-    // Simulate API call to submit lead
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    console.log('Submitted lead:', values);
-
-    // Add the new lead to the local state
-    const newLead = {
-      id: `mem${networkData.length + 1}`,
-      name: values.companyName,
-      status: 'Prospect',
-      productsSold: 0,
-      commissionEarned: 0,
-    };
-    setNetworkData(prevData => [newLead, ...prevData]);
-
-    toast({
-      title: 'Lead Uploaded!',
-      description: `${values.companyName} has been added to your prospect list.`,
-    });
-    form.reset();
-    setIsLoading(false);
-  };
+// A small action menu component for the table rows
+function NetworkActionMenu({ member }: { member: NetworkMember }) {
+  // Placeholder actions
+  const handleEdit = () => console.log('Edit:', member.id);
+  const handleConfirm = () => console.log('Confirm:', member.id);
+  const handleUnconfirm = () => console.log('Unconfirm:', member.id);
+  const handleDelete = () => console.log('Delete:', member.id);
 
   return (
-    <div className="space-y-8">
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-2xl">
-            <Handshake />
-            My Network & Referrals
-          </CardTitle>
-          <CardDescription>
-            Manage your leads, track your network's growth, and see your commissions.
-          </CardDescription>
-        </CardHeader>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2"><UploadCloud /> Upload a New Lead</CardTitle>
-          <CardDescription>
-            Add a potential member to your referral pipeline. We'll track their progress for you.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField control={form.control} name="companyName" render={({ field }) => (<FormItem><FormLabel>Company Name</FormLabel><FormControl><Input placeholder="e.g., SA Haulage" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                <FormField control={form.control} name="contactName" render={({ field }) => (<FormItem><FormLabel>Contact Name (Optional)</FormLabel><FormControl><Input placeholder="e.g., John Smith" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                <FormField control={form.control} name="contactEmail" render={({ field }) => (<FormItem><FormLabel>Contact Email (Optional)</FormLabel><FormControl><Input placeholder="e.g., john@sahaulage.co.za" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                <FormField control={form.control} name="contactPhone" render={({ field }) => (<FormItem><FormLabel>Contact Phone (Optional)</FormLabel><FormControl><Input placeholder="e.g., 082 123 4567" {...field} /></FormControl><FormMessage /></FormItem>)} />
-              </div>
-              <Button type="submit" disabled={isLoading}>
-                {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UserPlus className="mr-2 h-4 w-4" />}
-                Add Lead
-              </Button>
-            </form>
-          </Form>
-        </CardContent>
-      </Card>
-      
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2"><Users /> Network Performance</CardTitle>
-          <CardDescription>
-            Monitor the status and activity of members you've referred.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-           <Table>
-                <TableHeader>
-                    <TableRow>
-                        <TableHead>Company</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead className="text-center">Products Sold</TableHead>
-                        <TableHead className="text-right">Commission Earned</TableHead>
-                    </TableRow>
-                </TableHeader>
-                <TableBody>
-                    {networkData.map(member => (
-                        <TableRow key={member.id}>
-                            <TableCell className="font-medium">{member.name}</TableCell>
-                            <TableCell>
-                              <Badge variant={
-                                member.status === 'Active' ? 'default' 
-                                : member.status === 'Prospect' ? 'outline'
-                                : 'secondary'
-                              }>
-                                {member.status}
-                              </Badge>
-                            </TableCell>
-                            <TableCell className="text-center flex items-center justify-center gap-2">
-                                <ShoppingCart className="h-4 w-4 text-muted-foreground" />
-                                {member.productsSold}
-                            </TableCell>
-                            <TableCell className="text-right font-mono font-semibold flex items-center justify-end gap-2">
-                                <DollarSign className="h-4 w-4 text-muted-foreground" />
-                                {formatCurrency(member.commissionEarned)}
-                            </TableCell>
-                        </TableRow>
-                    ))}
-                </TableBody>
-           </Table>
-        </CardContent>
-      </Card>
-    </div>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" size="icon">
+          <MoreVertical className="h-4 w-4" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuItem onClick={handleEdit}>
+          <Edit className="mr-2 h-4 w-4" /> View / Edit
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={handleConfirm}>
+          <CheckCircle className="mr-2 h-4 w-4" /> Confirm Link
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={handleUnconfirm}>
+          <XCircle className="mr-2 h-4 w-4" /> Un-confirm
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem className="text-destructive" onClick={handleDelete}>
+          <Trash2 className="mr-2 h-4 w-4" /> Delete
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
+}
+
+
+export default function NetworkContent() {
+    const [networkData, setNetworkData] = useState(initialNetworkData);
+    
+    const columns: ColumnDef<NetworkMember>[] = useMemo(() => [
+        {
+          accessorKey: 'companyName',
+          header: 'Company Name',
+          cell: ({ row }) => <div className="font-medium">{row.original.companyName}</div>,
+        },
+        {
+          accessorKey: 'email',
+          header: 'Email',
+          cell: ({ row }) => <div>{row.original.email}</div>,
+        },
+        {
+          accessorKey: 'mobile',
+          header: 'Mobile',
+          cell: ({ row }) => <div>{row.original.mobile}</div>,
+        },
+        {
+          accessorKey: 'status',
+          header: 'Status',
+          cell: ({ row }) => (
+             <Badge variant={statusColors[row.original.status] || 'secondary'}>
+                {row.original.status}
+             </Badge>
+          ),
+        },
+        {
+            id: 'actions',
+            header: () => <div className="text-right">Actions</div>,
+            cell: ({ row }) => (
+                <div className="text-right">
+                    <NetworkActionMenu member={row.original} />
+                </div>
+            ),
+        }
+    ], []);
+
+    return (
+        <div className="space-y-8">
+            <Card>
+                <CardHeader className="flex flex-row items-center justify-between">
+                    <div>
+                        <CardTitle className="flex items-center gap-2 text-2xl">
+                            <Handshake />
+                            My Network
+                        </CardTitle>
+                        <CardDescription>
+                            Manage your leads, send invites, and track the growth of your referral network.
+                        </CardDescription>
+                    </div>
+                    <Button>
+                        <PlusCircle className="mr-2 h-4 w-4" />
+                        Add New Lead
+                    </Button>
+                </CardHeader>
+                <CardContent>
+                    <DataTable columns={columns} data={networkData} />
+                </CardContent>
+            </Card>
+        </div>
+    );
 }
