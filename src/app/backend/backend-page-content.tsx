@@ -188,6 +188,8 @@ export default function BackendPageContent() {
         return <SalaryForecastPage />;
       case 'forecast':
         return <ForecastPage />;
+      case 'pitch':
+        return <PitchContent />;
       default:
         return <DashboardContent />;
     }
@@ -224,6 +226,12 @@ export default function BackendPageContent() {
                         <span>Analytics</span>
                     </SidebarMenuButton>
                 </a>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+                <SidebarMenuButton tooltip="ISA Pitch" isActive={activeView === 'pitch'} onClick={() => router.push('/backend?view=pitch', { scroll: false })}>
+                  <Presentation />
+                  <span>ISA Pitch</span>
+                </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
                 <SidebarMenuButton tooltip="Campaigns" isActive={activeView === 'campaigns'}>
