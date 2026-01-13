@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
@@ -25,16 +24,16 @@ export default function PitchContent() {
         )
     }
 
-    const membershipFee = isaOffer?.membershipFee || 500;
-    const isaSharePercentage = isaOffer?.isaSharePercentage || 30;
+    const membershipFee = 500; // This is an example, not from config
+    const isaSharePercentage = isaOffer?.membershipCommission || 30;
     const exampleDealSize = isaOffer?.exampleDealSize || 400000;
     const exampleOriginationFee = isaOffer?.exampleOriginationFee || 1;
-    const exampleIsaDealShare = isaOffer?.exampleIsaDealShare || 20;
+    const isaExampleDealSharePercentage = isaOffer?.financeMallCommission || 20;
 
     const annualSubscriptionRevenue = membershipFee * 12;
     const isaAnnualSubscriptionShare = annualSubscriptionRevenue * (isaSharePercentage / 100);
     const exampleDealCommission = exampleDealSize * (exampleOriginationFee / 100);
-    const isaExampleDealShare = exampleDealCommission * (exampleIsaDealShare / 100);
+    const isaExampleDealShare = exampleDealCommission * (isaExampleDealSharePercentage / 100);
     
     const potentialEarnings = [
         { members: 10, annualRecurring: 10 * isaAnnualSubscriptionShare, potentialTransactional: 10 * isaExampleDealShare },
@@ -55,7 +54,7 @@ export default function PitchContent() {
                     <CardTitle className="flex items-center gap-2"><Gift className="h-6 w-6 text-primary"/>The Core Offer: A Foundation of Partnership</CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <p className="text-lg">As a founding ISA partner, you receive a <strong className="text-primary">Free Lifetime Premium Membership</strong>. This is our commitment to you, representing a significant value (e.g., over R60,000 over 10 years) and ensuring you have full access to the ecosystem you're helping to build, at no cost, forever.</p>
+                    <p className="text-lg">As a founding ISA partner, you receive a <strong className="text-primary">Free Lifetime Premium Membership</strong>. This is our commitment to you, representing a significant value and ensuring you have full access to the ecosystem you're helping to build, at no cost, forever.</p>
                 </CardContent>
             </Card>
 
@@ -67,7 +66,7 @@ export default function PitchContent() {
                     </CardHeader>
                     <CardContent className="space-y-4">
                         <p>You earn a <strong className="text-primary">{isaSharePercentage}% share</strong> of all membership and subscription fees from every member you bring into the network. This isn't a one-time payment; it's a recurring annuity for as long as they remain a member.</p>
-                        <p>Assuming a total monthly membership & subscription fee of <strong className="font-mono">{formatCurrency(membershipFee)}</strong>, your annual earning per member is <strong className="font-mono text-primary">{formatCurrency(isaAnnualSubscriptionShare)}</strong>.</p>
+                        <p>Assuming an average total monthly membership & subscription fee of <strong className="font-mono">{formatCurrency(membershipFee)}</strong>, your annual earning per member is <strong className="font-mono text-primary">{formatCurrency(isaAnnualSubscriptionShare)}</strong>.</p>
                         <Table>
                             <TableHeader><TableRow><TableHead>Network Size</TableHead><TableHead className="text-right">Potential Annual Recurring Income</TableHead></TableRow></TableHeader>
                             <TableBody>
@@ -92,19 +91,19 @@ export default function PitchContent() {
                             <li className="flex items-start gap-3">
                                 <CheckCircle className="h-4 w-4 text-green-600 mt-1 shrink-0" />
                                 <div>
-                                    <strong className="font-semibold">Finance Mall:</strong> A member from your network finances a <strong className="font-mono">{formatCurrency(exampleDealSize)}</strong> trailer. TransConnect earns a {exampleOriginationFee}% fee ({formatCurrency(exampleDealCommission)}). Your {exampleIsaDealShare}% share earns you <strong className="text-green-600">{formatCurrency(isaExampleDealShare)}</strong>.
+                                    <strong className="font-semibold">Finance Mall:</strong> A member from your network finances a <strong className="font-mono">{formatCurrency(exampleDealSize)}</strong> trailer. TransConnect earns a {exampleOriginationFee}% fee ({formatCurrency(exampleDealCommission)}). Your {isaExampleDealSharePercentage}% share earns you <strong className="text-green-600">{formatCurrency(isaExampleDealShare)}</strong>.
                                 </div>
                             </li>
                              <li className="flex items-start gap-3">
                                 <CheckCircle className="h-4 w-4 text-green-600 mt-1 shrink-0" />
                                 <div>
-                                    <strong className="font-semibold">Supplier Mall:</strong> Your network collectively spends R50,000 on parts. TransConnect earns a 2.5% commission (R1,250). Your share could earn you <strong className="text-green-600">R250</strong> from that activity alone.
+                                    <strong className="font-semibold">Supplier Mall:</strong> Your network collectively spends R50,000 on parts. TransConnect earns a 2.5% commission (R1,250). Your {isaOffer?.supplierMallCommission || 20}% share could earn you <strong className="text-green-600">{formatCurrency(1250 * ((isaOffer?.supplierMallCommission || 20) / 100))}</strong> from that activity alone.
                                 </div>
                             </li>
                              <li className="flex items-start gap-3">
                                 <CheckCircle className="h-4 w-4 text-green-600 mt-1 shrink-0" />
                                 <div>
-                                    <strong className="font-semibold">Buy & Sell Mall:</strong> A member sells a used truck for R250,000. TransConnect earns a 1% success fee (R2,500). Your share nets you <strong className="text-green-600">R500</strong>.
+                                    <strong className="font-semibold">Buy & Sell Mall:</strong> A member sells a used truck for R250,000. TransConnect earns a 1% success fee (R2,500). Your {isaOffer?.buySellMallCommission || 20}% share nets you <strong className="text-green-600">{formatCurrency(2500 * ((isaOffer?.buySellMallCommission || 20) / 100))}</strong>.
                                 </div>
                             </li>
                         </ul>
@@ -124,13 +123,13 @@ export default function PitchContent() {
                         <li className="flex items-start gap-3">
                             <CheckCircle className="h-4 w-4 text-green-600 mt-1 shrink-0" />
                             <div>
-                                <strong className="font-semibold">Example: Subscription Product Sales.</strong> A subscription product costs R40/month. TransConnect earns a R10 (25%) commission. We share 50% of our commission with you, the ISA.
+                                <strong className="font-semibold">Example: Subscription Product Sales.</strong> A subscription product costs R40/month. TransConnect earns a R10 (25%) commission. We share {isaOffer?.marketplaceCommission || 50}% of our commission with you, the ISA.
                             </div>
                         </li>
                          <li className="flex items-start gap-3">
                             <CheckCircle className="h-4 w-4 text-green-600 mt-1 shrink-0" />
                             <div>
-                                <strong className="font-semibold">The Model in Action:</strong> If you sell 20 products a month, by the end of the year you will have 240 active subscriptions. This generates <strong className="text-green-600">R1,200 per month</strong> (240 products x R5 commission/product) in passive, recurring income for you.
+                                <strong className="font-semibold">The Model in Action:</strong> If you sell 20 products a month, by the end of the year you will have 240 active subscriptions. This generates <strong className="text-green-600">{formatCurrency(240 * 10 * ((isaOffer?.marketplaceCommission || 50)/100))} per month</strong> in passive, recurring income for you.
                             </div>
                         </li>
                         <li className="flex items-start gap-3">

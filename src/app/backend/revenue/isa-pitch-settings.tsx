@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -22,11 +21,15 @@ import { useFirestore, useDoc, useMemoFirebase, getClientSideAuthToken } from '@
 import { doc } from 'firebase/firestore';
 
 const formSchema = z.object({
-  membershipFee: z.coerce.number().min(0, 'Must be non-negative.'),
-  isaSharePercentage: z.coerce.number().min(0).max(100, 'Must be between 0-100'),
+  membershipCommission: z.coerce.number().min(0, "Must be >= 0").max(100, "Must be <= 100"),
+  financeMallCommission: z.coerce.number().min(0, "Must be >= 0").max(100, "Must be <= 100"),
+  supplierMallCommission: z.coerce.number().min(0, "Must be >= 0").max(100, "Must be <= 100"),
+  buySellMallCommission: z.coerce.number().min(0, "Must be >= 0").max(100, "Must be <= 100"),
+  marketplaceCommission: z.coerce.number().min(0, "Must be >= 0").max(100, "Must be <= 100"),
+  
+  // These fields are kept for the example calculation on the pitch page
   exampleDealSize: z.coerce.number().min(0, 'Must be non-negative.'),
   exampleOriginationFee: z.coerce.number().min(0).max(100, 'Must be between 0-100'),
-  exampleIsaDealShare: z.coerce.number().min(0).max(100, 'Must be between 0-100'),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -42,11 +45,13 @@ export default function ISAPitchSettings() {
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      membershipFee: 500,
-      isaSharePercentage: 30,
+      membershipCommission: 30,
+      financeMallCommission: 20,
+      supplierMallCommission: 20,
+      buySellMallCommission: 20,
+      marketplaceCommission: 50,
       exampleDealSize: 400000,
       exampleOriginationFee: 1,
-      exampleIsaDealShare: 20,
     },
   });
 
@@ -75,7 +80,7 @@ export default function ISAPitchSettings() {
             throw new Error(result.error || 'Failed to save ISA settings.');
         }
 
-      toast({ title: 'ISA Pitch Settings Saved!', description: 'The values for the ISA pitch have been updated.' });
+      toast({ title: 'ISA Commission Settings Saved!', description: 'The commission splits have been updated.' });
       forceRefresh();
     } catch (e: any) {
       toast({ variant: 'destructive', title: 'Update Failed', description: e.message });
@@ -90,9 +95,9 @@ export default function ISAPitchSettings() {
             <div className="flex items-center gap-4">
                 <Handshake className="h-8 w-8 text-primary"/>
                 <div>
-                    <CardTitle>ISA Pitch & Commission Settings</CardTitle>
+                    <CardTitle>ISA Commission Settings</CardTitle>
                     <CardDescription>
-                        Control the values displayed in the ISA pitch and used for commission calculations.
+                        Set the percentage of platform revenue that Independent Sales Agents (ISAs) will earn from different sources.
                     </CardDescription>
                 </div>
             </div>
@@ -106,68 +111,21 @@ export default function ISAPitchSettings() {
                 <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                     <div>
-                        <h3 className="text-lg font-semibold text-muted-foreground flex items-center gap-2"><Percent className="h-5 w-5"/>Recurring Revenue</h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
-                             <FormField
-                                control={form.control}
-                                name="membershipFee"
-                                render={({ field }) => (
-                                    <FormItem>
-                                    <FormLabel>Avg. Membership Fee (R/mo)</FormLabel>
-                                    <FormControl><Input type="number" {...field} /></FormControl>
-                                    <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                             <FormField
-                                control={form.control}
-                                name="isaSharePercentage"
-                                render={({ field }) => (
-                                    <FormItem>
-                                    <FormLabel>ISA Share of Membership (%)</FormLabel>
-                                    <FormControl><Input type="number" {...field} /></FormControl>
-                                    <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
+                        <h3 className="text-lg font-semibold text-muted-foreground flex items-center gap-2 mb-2"><Percent className="h-5 w-5"/>Commission Splits (%)</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                             <FormField control={form.control} name="membershipCommission" render={({ field }) => (<FormItem><FormLabel>Membership Fee Commission</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                             <FormField control={form.control} name="financeMallCommission" render={({ field }) => (<FormItem><FormLabel>Finance Mall Commission</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                             <FormField control={form.control} name="supplierMallCommission" render={({ field }) => (<FormItem><FormLabel>Supplier Mall Commission</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                             <FormField control={form.control} name="buySellMallCommission" render={({ field }) => (<FormItem><FormLabel>Buy & Sell Mall Commission</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                             <FormField control={form.control} name="marketplaceCommission" render={({ field }) => (<FormItem><FormLabel>Marketplace Products Commission</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
                         </div>
                     </div>
                      <div>
-                        <h3 className="text-lg font-semibold text-muted-foreground flex items-center gap-2"><Percent className="h-5 w-5"/>Transactional Revenue (Example)</h3>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2">
-                             <FormField
-                                control={form.control}
-                                name="exampleDealSize"
-                                render={({ field }) => (
-                                    <FormItem>
-                                    <FormLabel>Example Deal Size (R)</FormLabel>
-                                    <FormControl><Input type="number" {...field} /></FormControl>
-                                    <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                             <FormField
-                                control={form.control}
-                                name="exampleOriginationFee"
-                                render={({ field }) => (
-                                    <FormItem>
-                                    <FormLabel>Origination Fee (%)</FormLabel>
-                                    <FormControl><Input type="number" {...field} /></FormControl>
-                                    <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                             <FormField
-                                control={form.control}
-                                name="exampleIsaDealShare"
-                                render={({ field }) => (
-                                    <FormItem>
-                                    <FormLabel>ISA Share of Fee (%)</FormLabel>
-                                    <FormControl><Input type="number" {...field} /></FormControl>
-                                    <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
+                        <h3 className="text-lg font-semibold text-muted-foreground flex items-center gap-2 mb-2"><Percent className="h-5 w-5"/>Pitch Page Example Values</h3>
+                         <p className="text-sm text-muted-foreground mb-4">These values are only used for the calculations shown on the ISA Pitch page and do not affect actual commissions.</p>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                             <FormField control={form.control} name="exampleDealSize" render={({ field }) => (<FormItem><FormLabel>Example Deal Size (R)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                             <FormField control={form.control} name="exampleOriginationFee" render={({ field }) => (<FormItem><FormLabel>Platform Origination Fee (%)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
                         </div>
                     </div>
                     <Button type="submit" disabled={isSaving} className="mt-4">

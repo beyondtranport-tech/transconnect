@@ -1,4 +1,3 @@
-
 'use server';
 
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
@@ -84,15 +83,12 @@ async function handleServicePayment(db: FirebaseFirestore.Firestore, adminUid: s
 
             // 5. Handle Referrer Commission on FIRST paid membership purchase
             if (isFirstPaidMembership && companyData.referrerId) {
-                const referrerUserDoc = await transaction.get(db.collection('users').doc(companyData.referrerId));
-                const referrerData = referrerUserDoc.data();
-                
-                if (referrerData && referrerData.companyId) {
-                    const referrerCompanyRef = db.collection('companies').doc(referrerData.companyId);
-                    
-                    // Fetch commission rate from config instead of hardcoding
+                const referrerCompanyRef = db.collection('companies').doc(companyData.referrerId);
+                const referrerCompanySnap = await transaction.get(referrerCompanyRef);
+
+                if (referrerCompanySnap.exists) {
                     const isaConfigSnap = await transaction.get(db.collection('configuration').doc('isaPitch'));
-                    const commissionRate = (isaConfigSnap.data()?.isaSharePercentage || 30) / 100;
+                    const commissionRate = (isaConfigSnap.data()?.membershipCommission || 30) / 100;
                     const commissionAmount = amount * commissionRate;
 
                     if (commissionAmount > 0) {
@@ -102,7 +98,7 @@ async function handleServicePayment(db: FirebaseFirestore.Firestore, adminUid: s
                         });
 
                         // Create transaction log for referrer
-                        const referrerTxRef = db.collection(`companies/${referrerData.companyId}/transactions`).doc();
+                        const referrerTxRef = db.collection(`companies/${companyData.referrerId}/transactions`).doc();
                         transaction.set(referrerTxRef, {
                             transactionId: referrerTxRef.id,
                             type: 'credit',
