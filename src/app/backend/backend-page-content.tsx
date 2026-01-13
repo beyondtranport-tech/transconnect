@@ -88,6 +88,7 @@ const MallCommissions = dynamic(() => import('./revenue/mall-commissions'), { lo
 const MarketplaceFees = dynamic(() => import('./revenue/marketplace-fees'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const ConnectPlanPricing = dynamic(() => import('./revenue/connect-plan-pricing'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const TechPricing = dynamic(() => import('./revenue/tech-pricing'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const ISAPitchSettings = dynamic(() => import('./revenue/isa-pitch-settings'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 
 
 export default function BackendPageContent() {
@@ -145,6 +146,8 @@ export default function BackendPageContent() {
         return <ConnectPlanPricing />;
       case 'revenue-tech-pricing':
         return <TechPricing />;
+      case 'revenue-isa-pitch':
+        return <ISAPitchSettings />;
       case 'divisions':
         return <DivisionsContent />;
       case 'divisions-funding':
@@ -297,6 +300,10 @@ export default function BackendPageContent() {
                         <SidebarMenuSubButton tooltip="Membership Plans" isActive={activeView === 'revenue-membership'} onClick={() => router.push('/backend?view=revenue-membership', { scroll: false })}>
                             <Users />
                             <span>Membership</span>
+                        </SidebarMenuSubButton>
+                        <SidebarMenuSubButton tooltip="ISA Pitch" isActive={activeView === 'revenue-isa-pitch'} onClick={() => router.push('/backend?view=revenue-isa-pitch', { scroll: false })}>
+                            <Handshake />
+                            <span>ISA Pitch</span>
                         </SidebarMenuSubButton>
                         <SidebarMenuSubButton tooltip="Mall Commissions" isActive={activeView === 'revenue-mall-commissions'} onClick={() => router.push('/backend?view=revenue-mall-commissions', { scroll: false })}>
                             <ShoppingBasket />

@@ -8,7 +8,7 @@ import { getAdminApp } from '@/lib/firebase-admin';
 
 async function handleServicePayment(db: FirebaseFirestore.Firestore, adminUid: string, payload: any) {
     const { companyId, paymentId, amount, description } = payload;
-    if (!companyId || !paymentId || typeof amount !== 'number' || !description) {
+    if (!companyId || paymentId === undefined || typeof amount !== 'number' || !description) {
         throw new Error('Missing required fields for service payment.');
     }
 
@@ -89,6 +89,8 @@ async function handleServicePayment(db: FirebaseFirestore.Firestore, adminUid: s
                 
                 if (referrerData && referrerData.companyId) {
                     const referrerCompanyRef = db.collection('companies').doc(referrerData.companyId);
+                    
+                    // Fetch commission rate from config instead of hardcoding
                     const isaConfigSnap = await transaction.get(db.collection('configuration').doc('isaPitch'));
                     const commissionRate = (isaConfigSnap.data()?.isaSharePercentage || 30) / 100;
                     const commissionAmount = amount * commissionRate;
@@ -115,8 +117,7 @@ async function handleServicePayment(db: FirebaseFirestore.Firestore, adminUid: s
                     }
                 }
             }
-        } else {
-            // This is for other service payments, not membership
+        } else if (paymentId) { // Only delete if it's a standard service payment
             const paymentRef = db.doc(`companies/${companyId}/walletPayments/${paymentId}`);
             transaction.delete(paymentRef);
         }
