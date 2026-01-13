@@ -105,24 +105,30 @@ export default function PitchContent() {
             <Card>
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2"><ShoppingBasket className="h-6 w-6 text-primary" />Benefit #3: Earn from Value-Added Products</CardTitle>
-                    <CardDescription>Generate funds by selling essential services to your network.</CardDescription>
+                    <CardDescription>Generate recurring funds by selling essential services to your network.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                    <p>The Marketplace is a curated collection of high-demand, third-party products that we offer to our members, often at a discount. As an ISA, you can sell these products directly to your network and earn a commission on every sale.</p>
-                     <ul className="text-sm space-y-3 pl-4">
-                            <li className="flex items-start gap-3">
-                                <CheckCircle className="h-4 w-4 text-green-600 mt-1 shrink-0" />
-                                <div>
-                                    <strong className="font-semibold">Example: RAF Assist Sales.</strong> You sell an RAF Assist package for R1,000 to a member in your network. TransConnect's commission is R200. You earn a <strong className="font-semibold">{IsaOffer.marketplaceCommission}% share</strong> of that commission, netting you <strong className="text-green-600">R30</strong>.
-                                </div>
-                            </li>
-                             <li className="flex items-start gap-3">
-                                <CheckCircle className="h-4 w-4 text-green-600 mt-1 shrink-0" />
-                                <div>
-                                    <strong className="font-semibold">Expand Your Portfolio:</strong> This applies to products like Open Loyalty Funeral/Roadside Assist, specialized liability cover, and more. Each product you sell adds another layer to your income.
-                                </div>
-                            </li>
-                        </ul>
+                    <p>The Marketplace is a curated collection of high-demand, third-party products that we offer to our members, often at a discount. As an ISA, you sell these products to your network and earn a commission on every sale.</p>
+                     <ul className="text-sm space-y-4 pt-2">
+                        <li className="flex items-start gap-3">
+                            <CheckCircle className="h-4 w-4 text-green-600 mt-1 shrink-0" />
+                            <div>
+                                <strong className="font-semibold">Example: Subscription Product Sales.</strong> A subscription product costs R40/month. TransConnect earns a R10 (25%) commission. We share 50% of our commission with you, the ISA.
+                            </div>
+                        </li>
+                         <li className="flex items-start gap-3">
+                            <CheckCircle className="h-4 w-4 text-green-600 mt-1 shrink-0" />
+                            <div>
+                                <strong className="font-semibold">The Model in Action:</strong> If you sell 20 products a month, by the end of the year you will have 240 active subscriptions. This generates <strong className="text-green-600">R1,200 per month</strong> (240 products x R5 commission/product) in passive, recurring income for you.
+                            </div>
+                        </li>
+                        <li className="flex items-start gap-3">
+                            <CheckCircle className="h-4 w-4 text-green-600 mt-1 shrink-0" />
+                            <div>
+                                <strong className="font-semibold">Expand Your Portfolio:</strong> This applies to products like RAF Assist, Open Loyalty Funeral/Roadside Assist, specialized liability cover, and more. Each product you sell adds another layer to your income.
+                            </div>
+                        </li>
+                    </ul>
                 </CardContent>
             </Card>
 
