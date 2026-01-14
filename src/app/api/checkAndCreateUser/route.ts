@@ -84,7 +84,7 @@ export async function POST(req: NextRequest) {
     };
     
     const batch = db.batch();
-    batch.set(companyRef, newUserData);
+    batch.set(companyRef, newCompanyData);
     batch.set(userDocRef, newUserData);
 
     // If there's a referrer, award them points
