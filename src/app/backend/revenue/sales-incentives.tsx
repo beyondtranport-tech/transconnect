@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -97,14 +98,14 @@ export default function SalesIncentives() {
     }
   };
 
-  const renderTierFields = (fields: any, removeFn: (index: number) => void) => (
+  const renderTierFields = (fields: any, removeFn: (index: number) => void, namePrefix: 'partnerTiers' | 'networkTiers') => (
     <div className="space-y-2">
         {fields.map((field: any, index: number) => (
             <div key={field.id} className="flex items-end gap-2">
-                <FormField control={form.control} name={`partnerTiers.${index}.threshold`} render={({ field }) => (
-                    <FormItem className="flex-1"><FormLabel>If > X Members/Mo</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
+                <FormField control={form.control} name={`${namePrefix}.${index}.threshold`} render={({ field }) => (
+                    <FormItem className="flex-1"><FormLabel>If &gt; X Members/Mo</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
                 )} />
-                 <FormField control={form.control} name={`partnerTiers.${index}.bonus`} render={({ field }) => (
+                 <FormField control={form.control} name={`${namePrefix}.${index}.bonus`} render={({ field }) => (
                     <FormItem className="flex-1"><FormLabel>Bonus %</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
                 )} />
                 <Button type="button" variant="ghost" size="icon" onClick={() => removeFn(index)}><Trash2 className="h-4 w-4" /></Button>
@@ -143,7 +144,7 @@ export default function SalesIncentives() {
                             
                             <div>
                                 <Label className="font-semibold">Performance Bonus Tiers</Label>
-                                {renderTierFields(partnerTiers, removePartner)}
+                                {renderTierFields(partnerTiers, removePartner, 'partnerTiers')}
                                 <Button type="button" size="sm" variant="outline" className="mt-2" onClick={() => appendPartner({ threshold: 0, bonus: 0 })}>
                                     <PlusCircle className="mr-2 h-4 w-4" /> Add Partner Tier
                                 </Button>
@@ -156,7 +157,7 @@ export default function SalesIncentives() {
                             <FormField control={form.control} name="networkBaseCommission" render={({ field }) => (<FormItem><FormLabel>Base Membership Commission (%)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
                             <div>
                                 <Label className="font-semibold">Performance Bonus Tiers</Label>
-                                {renderTierFields(networkTiers, removeNetwork)}
+                                {renderTierFields(networkTiers, removeNetwork, 'networkTiers')}
                                 <Button type="button" size="sm" variant="outline" className="mt-2" onClick={() => appendNetwork({ threshold: 0, bonus: 0 })}>
                                     <PlusCircle className="mr-2 h-4 w-4" /> Add Network Tier
                                 </Button>
