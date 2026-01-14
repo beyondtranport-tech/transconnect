@@ -113,3 +113,5 @@ export default function MemberLoyaltyStatus({ companies, memberships }: { compan
         </div>
     );
 }
+
+    
