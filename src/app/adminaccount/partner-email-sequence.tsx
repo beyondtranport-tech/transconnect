@@ -90,8 +90,8 @@ Best regards,
 [Your Name]
         `
     },
-    explanation: {
-        subject: "How the TransConnect Partnership Works",
+    revenue: {
+        subject: "How the TransConnect Partnership Revenue Works",
         content: `
 Dear [Partner Name],
 
@@ -109,6 +109,31 @@ Your earnings grow as your network uses the platform.
 This multi-stream approach ensures your income grows exponentially as your network's activity on our platform increases.
 
 Let me know if you have any questions.
+
+Best regards,
+
+[Your Name]
+        `
+    },
+    explanation: {
+        subject: "Your Network is Your Asset - Here's Why",
+        content: `
+Hi [Partner Name],
+
+Let's talk about the core of this partnership: your network.
+
+The transport industry thrives on relationships. You already have a network of transporters, suppliers, and contacts that you've built over years. TransConnect provides the tools to turn those relationships into a powerful, automated revenue engine.
+
+Think about it:
+- Who do you buy parts from?
+- Who do you subcontract loads to?
+- Who asks you for advice on financing?
+
+Every one of these interactions is an opportunity. By introducing them to TransConnect—where they can get better pricing, find more work, or access capital—you are not only helping them, but you are also building your own business within our ecosystem.
+
+Our platform handles the tracking, the transactions, and the payouts. Your job is to do what you already do best: connect people and solve problems. We just provide the framework for you to get paid for it.
+
+Ready to leverage your most valuable asset?
 
 Best regards,
 
@@ -140,6 +165,14 @@ Best regards,
     }
 };
 
+const tabs = [
+    { value: "intro", label: "1. Intro" },
+    { value: "proposal", label: "2. Proposal" },
+    { value: "revenue", label: "3. Revenue" },
+    { value: "explanation", label: "4. Explanation" },
+    { value: "howTo", label: "5. How To" },
+];
+
 
 export default function PartnerEmailSequence() {
     return (
@@ -156,17 +189,19 @@ export default function PartnerEmailSequence() {
                 </div>
             </CardHeader>
             <Tabs defaultValue="intro" className="w-full">
-                <TabsList className="grid w-full grid-cols-4">
-                    <TabsTrigger value="intro">1. Intro</TabsTrigger>
-                    <TabsTrigger value="proposal">2. Proposal</TabsTrigger>
-                    <TabsTrigger value="explanation">3. Explanation</TabsTrigger>
-                    <TabsTrigger value="howTo">4. How To</TabsTrigger>
+                <TabsList className="grid w-full grid-cols-5">
+                   {tabs.map(tab => (
+                       <TabsTrigger key={tab.value} value={tab.value}>{tab.label}</TabsTrigger>
+                   ))}
                 </TabsList>
                 <TabsContent value="intro">
                     <EmailTemplate subject={templates.intro.subject} content={templates.intro.content} />
                 </TabsContent>
                 <TabsContent value="proposal">
                      <EmailTemplate subject={templates.proposal.subject} content={templates.proposal.content} />
+                </TabsContent>
+                <TabsContent value="revenue">
+                     <EmailTemplate subject={templates.revenue.subject} content={templates.revenue.content} />
                 </TabsContent>
                 <TabsContent value="explanation">
                      <EmailTemplate subject={templates.explanation.subject} content={templates.explanation.content} />
