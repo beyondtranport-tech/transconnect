@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -31,6 +30,7 @@ import {
   TrendingUp,
   Package,
   DollarSign,
+  Presentation,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -50,6 +50,8 @@ import RewardsContent from './rewards';
 import ActivityFeed from './activity-feed';
 import NetworkContent from './network-content';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import PitchContent from './pitch-content';
+import PartnerEmailSequence from './partner-email-sequence';
 
 
 function DocumentsContent() {
@@ -151,6 +153,10 @@ function AccountPageContent() {
         return <ProductSalesContent />;
       case 'earnings':
         return <EarningsContent />;
+      case 'partner-offer':
+        return <PitchContent />;
+      case 'partner-emails':
+        return <PartnerEmailSequence />;
       case 'documents':
         return <DocumentsContent />;
       case 'activity-feed':
@@ -249,6 +255,22 @@ function AccountPageContent() {
                      <SidebarMenuSubButton isActive={activeView === 'earnings'} onClick={() => router.push('/account?view=earnings', { scroll: false })}>
                         <DollarSign />
                         <span>Earnings</span>
+                    </SidebarMenuSubButton>
+                </SidebarMenuSub>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton tooltip="Partnership" isActive={['partner-offer', 'partner-emails'].includes(activeView)}>
+                  <Presentation />
+                  <span>Partnership</span>
+                </SidebarMenuButton>
+                <SidebarMenuSub>
+                    <SidebarMenuSubButton isActive={activeView === 'partner-offer'} onClick={() => router.push('/account?view=partner-offer', { scroll: false })}>
+                        <Users />
+                        <span>Partner Offer</span>
+                    </SidebarMenuSubButton>
+                    <SidebarMenuSubButton isActive={activeView === 'partner-emails'} onClick={() => router.push('/account?view=partner-emails', { scroll: false })}>
+                        <TrendingUp />
+                        <span>Outreach Emails</span>
                     </SidebarMenuSubButton>
                 </SidebarMenuSub>
               </SidebarMenuItem>
