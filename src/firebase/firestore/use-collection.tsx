@@ -72,11 +72,23 @@ export function useCollection<T = any>(
         setError(null);
       },
       (err) => {
+        // Instead of directly throwing, we set the error state
+        // and emit a global event for debugging, which is more robust.
         console.error("useCollection onSnapshot error:", err);
-        // Do not create a new error. Pass the original error from Firestore.
-        setError(err);
+        setError(err); 
         setIsLoading(false);
         setData(null);
+        
+        // This check is important. We only create a rich error if it's a permissions issue.
+        if (err.code === 'permission-denied') {
+             errorEmitter.emit(
+                'permission-error',
+                new FirestorePermissionError({
+                    path: 'path' in memoizedTargetRefOrQuery ? memoizedTargetRefOrQuery.path : 'unknown collection group',
+                    operation: 'list',
+                })
+            );
+        }
       }
     );
 

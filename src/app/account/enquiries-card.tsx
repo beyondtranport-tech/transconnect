@@ -1,15 +1,14 @@
 'use client';
 
-import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase } from '@/firebase';
+import { useUser, getClientSideAuthToken } from '@/firebase';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Loader2, FileText, MoreVertical, Trash2, Edit, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { collection, query, orderBy, limit, deleteDoc, doc } from 'firebase/firestore';
 import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -34,19 +33,15 @@ const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(amount);
 };
 
-const formatDate = (dateValue: any) => {
-    // Check if it's a Firestore Timestamp object
-    if (dateValue && typeof dateValue.toDate === 'function') {
-        return format(dateValue.toDate(), "dd MMM yyyy");
+const formatDate = (isoString: string) => {
+    if (!isoString) return 'N/A';
+    try {
+        const date = new Date(isoString);
+        if (isNaN(date.getTime())) return 'Invalid Date';
+        return format(date, "dd MMM yyyy");
+    } catch {
+        return 'Invalid Date';
     }
-    // Check if it's an ISO string (from our serialized API response)
-    if (typeof dateValue === 'string') {
-        const date = new Date(dateValue);
-        if (!isNaN(date.getTime())) {
-            return format(date, "dd MMM yyyy");
-        }
-    }
-    return 'N/A';
 };
 
 const statusColors: { [key: string]: 'default' | 'secondary' | 'destructive' | 'outline' } = {
@@ -86,35 +81,83 @@ const fundingReasonsMap: { [key: string]: string } = {
 };
 
 export default function EnquiriesCard() {
-    const { user } = useUser();
-    const firestore = useFirestore();
+    const { user, isUserLoading: isAdminLoading } = useUser();
     const { toast } = useToast();
     const [isDeleting, setIsDeleting] = useState<string | null>(null);
+    const [enquiries, setEnquiries] = useState<any[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    const [companyId, setCompanyId] = useState<string | null>(null);
 
-    const userDocRef = useMemoFirebase(() => {
-        if (!firestore || !user) return null;
-        return doc(firestore, 'users', user.uid);
-    }, [firestore, user]);
-    const { data: userData, isLoading: isUserDocLoading } = useDoc<{ companyId: string }>(userDocRef);
+    const fetchCompanyId = useCallback(async () => {
+        if (!user) return;
+        const token = await getClientSideAuthToken();
+        if (!token) return;
+        
+        const response = await fetch('/api/getUserSubcollection', {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ path: `users/${user.uid}`, type: 'document' }),
+        });
+        const result = await response.json();
+        if (result.success && result.data?.companyId) {
+            setCompanyId(result.data.companyId);
+        }
+    }, [user]);
 
-    const enquiriesQuery = useMemoFirebase(() => {
-        if (!firestore || !userData?.companyId) return null;
-        return query(
-            collection(firestore, `companies/${userData.companyId}/enquiries`), 
-            orderBy('createdAt', 'desc'),
-            limit(10)
-        );
-    }, [firestore, userData]);
+    const fetchEnquiries = useCallback(async () => {
+        if (!companyId) return;
+        setIsLoading(true);
+        setError(null);
+        try {
+            const token = await getClientSideAuthToken();
+            if (!token) throw new Error("Authentication failed.");
 
-    const { data: enquiries, isLoading: isEnquiriesLoading, error, forceRefresh } = useCollection(enquiriesQuery);
+            const response = await fetch('/api/getUserSubcollection', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ path: `companies/${companyId}/enquiries`, type: 'collection' }),
+            });
+            
+            const result = await response.json();
+            if (!result.success) throw new Error(result.error || 'Failed to fetch enquiries.');
+            
+            const sortedEnquiries = (result.data || []).sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+            setEnquiries(sortedEnquiries.slice(0, 10));
+        } catch (e: any) {
+            setError(e.message);
+        } finally {
+            setIsLoading(false);
+        }
+    }, [companyId]);
+
+    useEffect(() => {
+        if (user) {
+            fetchCompanyId();
+        }
+    }, [user, fetchCompanyId]);
+
+    useEffect(() => {
+        if (companyId) {
+            fetchEnquiries();
+        }
+    }, [companyId, fetchEnquiries]);
 
     const handleDelete = async (enquiryId: string) => {
-        if (!firestore || !userData?.companyId) return;
+        if (!companyId) return;
         setIsDeleting(enquiryId);
         try {
-            await deleteDoc(doc(firestore, `companies/${userData.companyId}/enquiries`, enquiryId));
+            const token = await getClientSideAuthToken();
+            if (!token) throw new Error("Authentication failed.");
+            
+            await fetch('/api/deleteUserDoc', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ path: `companies/${companyId}/enquiries/${enquiryId}` }),
+            });
+            
             toast({ title: "Enquiry Deleted", description: "The enquiry has been removed." });
-            forceRefresh(); // Refresh the list
+            fetchEnquiries();
         } catch (e: any) {
             toast({ variant: 'destructive', title: "Delete Failed", description: e.message });
         } finally {
@@ -126,7 +169,7 @@ export default function EnquiriesCard() {
         return null;
     }
     
-    const isLoading = isUserDocLoading || isEnquiriesLoading;
+    const pageIsLoading = isAdminLoading || isLoading;
 
     return (
         <Card>
@@ -143,7 +186,7 @@ export default function EnquiriesCard() {
                         <Link href="/funding/apply">Start New Enquiry</Link>
                     </Button>
                 </div>
-                {isLoading && (
+                {pageIsLoading && (
                     <div className="flex justify-center items-center py-10">
                         <Loader2 className="h-8 w-8 animate-spin text-primary" />
                     </div>
@@ -151,11 +194,11 @@ export default function EnquiriesCard() {
                 
                 {error && (
                     <div className="text-center py-10 text-destructive">
-                        <p>Error loading enquiries: {error.message}</p>
+                        <p>Error loading enquiries: {error}</p>
                     </div>
                 )}
 
-                {!isLoading && !error && (
+                {!pageIsLoading && !error && (
                     enquiries && enquiries.length > 0 ? (
                         <div className="overflow-x-auto">
                             <Table>

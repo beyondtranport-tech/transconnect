@@ -1,12 +1,11 @@
 'use client';
 
-import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase } from '@/firebase';
+import { useUser, getClientSideAuthToken } from '@/firebase';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Loader2, FileText, MoreVertical, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { collection, query, orderBy, limit, deleteDoc, doc } from 'firebase/firestore';
 import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -27,50 +26,102 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useToast } from '@/hooks/use-toast';
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 const formatCurrency = (amount: number) => {
     if (typeof amount !== 'number') return 'N/A';
     return new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(amount);
 };
 
-const formatDate = (timestamp: any) => {
-    if (timestamp && timestamp.toDate) {
-        return format(timestamp.toDate(), "dd MMM yyyy");
+const formatDate = (isoString: string) => {
+    if (!isoString) return 'N/A';
+    try {
+        const date = new Date(isoString);
+        if (isNaN(date.getTime())) return 'Invalid Date';
+        return format(date, "dd MMM yyyy");
+    } catch {
+        return 'Invalid Date';
     }
-    return 'N/A';
 };
 
 export default function QuotesCard() {
-    const { user } = useUser();
-    const firestore = useFirestore();
+    const { user, isUserLoading: isAdminLoading } = useUser();
     const { toast } = useToast();
     const [isDeleting, setIsDeleting] = useState<string | null>(null);
+    const [quotes, setQuotes] = useState<any[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    const [companyId, setCompanyId] = useState<string | null>(null);
 
-    const userDocRef = useMemoFirebase(() => {
-        if (!firestore || !user) return null;
-        return doc(firestore, 'users', user.uid);
-    }, [firestore, user]);
-    const { data: userData, isLoading: isUserDocLoading } = useDoc<{ companyId: string }>(userDocRef);
+    const fetchCompanyId = useCallback(async () => {
+        if (!user) return;
+        const token = await getClientSideAuthToken();
+        if (!token) return;
+        
+        const response = await fetch('/api/getUserSubcollection', {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ path: `users/${user.uid}`, type: 'document' }),
+        });
+        const result = await response.json();
+        if (result.success && result.data?.companyId) {
+            setCompanyId(result.data.companyId);
+        }
+    }, [user]);
 
-    const quotesQuery = useMemoFirebase(() => {
-        if (!firestore || !userData?.companyId) return null;
-        return query(
-            collection(firestore, `companies/${userData.companyId}/quotes`), 
-            orderBy('createdAt', 'desc'), 
-            limit(10)
-        );
-    }, [firestore, userData]);
+    const fetchQuotes = useCallback(async () => {
+        if (!companyId) return;
+        setIsLoading(true);
+        setError(null);
+        try {
+            const token = await getClientSideAuthToken();
+            if (!token) throw new Error("Authentication failed.");
 
-    const { data: quotes, isLoading: isQuotesLoading, error, forceRefresh } = useCollection(quotesQuery);
+            const response = await fetch('/api/getUserSubcollection', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ path: `companies/${companyId}/quotes`, type: 'collection' }),
+            });
+            
+            const result = await response.json();
+            if (!result.success) throw new Error(result.error || 'Failed to fetch quotes.');
+            
+            const sortedQuotes = (result.data || []).sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+            setQuotes(sortedQuotes.slice(0, 10));
+        } catch (e: any) {
+            setError(e.message);
+        } finally {
+            setIsLoading(false);
+        }
+    }, [companyId]);
     
+    useEffect(() => {
+        if (user) {
+            fetchCompanyId();
+        }
+    }, [user, fetchCompanyId]);
+
+    useEffect(() => {
+        if (companyId) {
+            fetchQuotes();
+        }
+    }, [companyId, fetchQuotes]);
+
     const handleDelete = async (quoteId: string) => {
-        if (!firestore || !userData?.companyId) return;
+        if (!companyId) return;
         setIsDeleting(quoteId);
         try {
-            await deleteDoc(doc(firestore, `companies/${userData.companyId}/quotes`, quoteId));
+            const token = await getClientSideAuthToken();
+            if (!token) throw new Error("Authentication failed.");
+            
+            await fetch('/api/deleteUserDoc', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ path: `companies/${companyId}/quotes/${quoteId}` }),
+            });
+
             toast({ title: "Quote Deleted", description: "The quote has been removed from your saved list." });
-            forceRefresh();
+            fetchQuotes();
         } catch (e: any) {
             toast({ variant: 'destructive', title: "Delete Failed", description: e.message });
         } finally {
@@ -83,7 +134,7 @@ export default function QuotesCard() {
         return null;
     }
     
-    const isLoading = isUserDocLoading || isQuotesLoading;
+    const pageIsLoading = isAdminLoading || isLoading;
 
     return (
         <Card>
@@ -100,7 +151,7 @@ export default function QuotesCard() {
                         <Link href="/funding">Explore Funding & Get a Quote</Link>
                     </Button>
                 </div>
-                {isLoading && (
+                {pageIsLoading && (
                     <div className="flex justify-center items-center py-10">
                         <Loader2 className="h-8 w-8 animate-spin text-primary" />
                     </div>
@@ -108,11 +159,11 @@ export default function QuotesCard() {
                 
                 {error && (
                     <div className="text-center py-10 text-destructive">
-                        <p>Error loading quotes: {error.message}</p>
+                        <p>Error loading quotes: {error}</p>
                     </div>
                 )}
 
-                {!isLoading && !error && (
+                {!pageIsLoading && !error && (
                     quotes && quotes.length > 0 ? (
                         <Table>
                             <TableHeader>
