@@ -65,6 +65,12 @@ export default function PartnerOffer() {
     const isaMarketplaceEarnings = exampleMarketplacePlatformCommission * (isaMarketplaceShare / 100);
     const passiveIncomeExample = 240 * isaMarketplaceEarnings;
 
+    const potentialEarnings = [
+        { members: 10, annualRecurring: 10 * isaAnnualSubscriptionShare },
+        { members: 50, annualRecurring: 50 * isaAnnualSubscriptionShare },
+        { members: 100, annualRecurring: 100 * isaAnnualSubscriptionShare },
+    ];
+
 
     return (
         <div className="space-y-8">
@@ -78,7 +84,7 @@ export default function PartnerOffer() {
                     <CardTitle className="flex items-center gap-2"><Gift className="h-6 w-6 text-primary"/>The Core Offer: A Foundation of Partnership</CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <p className="text-lg">As a founding ISA partner, you receive a <strong className="text-primary">Free Lifetime Premium Membership</strong>. This is our commitment to you, representing a significant value and ensuring you have full access to the ecosystem you're helping to build, at no cost, forever.</p>
+                    <p className="text-lg">As a founding ISA partner, you receive a <strong className="text-primary">Free Lifetime Premium Membership</strong>. This is our commitment to you, representing a significant value (e.g., over R60,000 over 10 years) and ensuring you have full access to the ecosystem you're helping to build, at no cost, forever.</p>
                 </CardContent>
             </Card>
 
@@ -91,15 +97,17 @@ export default function PartnerOffer() {
                     <CardContent className="space-y-4">
                         <p>You earn a base commission of <strong className="text-primary">{isaMembershipShare}%</strong> on all membership and subscription fees from every member you bring into the network. This is a recurring annuity for as long as they remain a member.</p>
                         
+                        <p>Assuming an average total monthly membership & subscription fee of <strong className="font-mono">{formatCurrency(exampleMembershipFee)}</strong>, your annual earning per member is <strong className="font-mono text-primary">{formatCurrency(isaAnnualSubscriptionShare)}</strong>.</p>
+                        
                          <div className="p-4 border rounded-lg bg-background">
-                            <h4 className="font-semibold flex items-center gap-2 mb-2"><Award className="h-5 w-5 text-amber-500" />Monthly Performance Bonuses</h4>
+                            <h4 className="font-semibold flex items-center gap-2 mb-2"><Award className="h-5 w-5 text-amber-500" />Potential Annual Recurring Income</h4>
                              <Table>
-                                <TableHeader><TableRow><TableHead>Monthly Conversions</TableHead><TableHead className="text-right">Bonus Commission</TableHead></TableRow></TableHeader>
+                                <TableHeader><TableRow><TableHead>Network Size</TableHead><TableHead className="text-right">Potential Income</TableHead></TableRow></TableHeader>
                                 <TableBody>
-                                    {partnerTiers.map((tier: any, index: number) => (
+                                    {potentialEarnings.map((tier: any, index: number) => (
                                         <TableRow key={index}>
-                                            <TableCell>Sign up {tier.threshold}+ members</TableCell>
-                                            <TableCell className="text-right font-bold text-green-600">+{tier.bonus}%</TableCell>
+                                            <TableCell>{tier.members} Members</TableCell>
+                                            <TableCell className="text-right font-bold text-green-600">{formatCurrency(tier.annualRecurring)}</TableCell>
                                         </TableRow>
                                     ))}
                                 </TableBody>
