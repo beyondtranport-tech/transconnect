@@ -76,7 +76,7 @@ import ReconciliationPage from '../backend/reconciliation/page';
 const SalesRoadmap = dynamic(() => import('./sales-roadmap'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const BudgetPage = dynamic(() => import('../account/budget/page'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const ForecastPage = dynamic(() => import('./forecast/page'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const PitchContent = dynamic(() => import('./pitch-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const PartnerOffer = dynamic(() => import('./partner-offer'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const PartnerEmailSequence = dynamic(() => import('./partner-email-sequence'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const FinancialSetup = dynamic(() => import('../account/financial-setup'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const MemberProjection = dynamic(() => import('../account/member-projection'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
@@ -121,7 +121,7 @@ function AdminAuthGuard({ children }: { children: React.ReactNode }) {
 function AdminAccountContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const initialView = searchParams.get('view') || 'pitch';
+  const initialView = searchParams.get('view') || 'partner-offer';
   const memberId = searchParams.get('memberId');
   const [activeView, setActiveView] = useState(initialView);
   const { user, isUserLoading } = useUser();
@@ -140,7 +140,7 @@ function AdminAccountContent() {
   const renderContent = useCallback(() => {
     switch (activeView) {
       // Business Strategy
-      case 'pitch': return <PitchContent />;
+      case 'partner-offer': return <PartnerOffer />;
       case 'partner-email': return <PartnerEmailSequence />;
       case 'financial-setup': return <FinancialSetup />;
       case 'sales-roadmap': return <SalesRoadmap />;
@@ -163,7 +163,7 @@ function AdminAccountContent() {
         return <WalletTransactionsList />; // Fallback
 
       default:
-        return <PitchContent />;
+        return <PartnerOffer />;
     }
   }, [activeView, memberId]);
   
@@ -201,14 +201,14 @@ function AdminAccountContent() {
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Partner Pitch" isActive={['pitch', 'partner-email'].includes(activeView)}>
+                <SidebarMenuButton tooltip="Partner Pitch" isActive={['partner-offer', 'partner-email'].includes(activeView)}>
                   <Presentation />
                   <span>Partner Pitch</span>
                 </SidebarMenuButton>
                 <SidebarMenuSub>
-                    <SidebarMenuSubButton isActive={activeView === 'pitch'} onClick={() => router.push('/adminaccount?view=pitch', { scroll: false })}>
+                    <SidebarMenuSubButton isActive={activeView === 'partner-offer'} onClick={() => router.push('/adminaccount?view=partner-offer', { scroll: false })}>
                         <Presentation />
-                        <span>Pitch Deck</span>
+                        <span>Partner Offer</span>
                     </SidebarMenuSubButton>
                     <SidebarMenuSubButton isActive={activeView === 'partner-email'} onClick={() => router.push('/adminaccount?view=partner-email', { scroll: false })}>
                         <Mail />
