@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useCallback } from 'react';
@@ -35,7 +34,7 @@ import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { EditStaffDialog } from '@/app/account/EditStaffDialog';
+import { EditStaffDialog } from '../backend/EditStaffDialog';
 import { usePermissions } from '@/hooks/use-permissions';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { ShieldAlert } from 'lucide-react';
@@ -124,14 +123,14 @@ function AddStaffDialog({ companyId, onStaffAdded, canCreate }: { companyId: str
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
         <Button disabled={!canCreate}>
-          <PlusCircle className="mr-2 h-4 w-4" /> Add Staff
+          <PlusCircle className="mr-2 h-4 w-4" /> Add Staff/Partner
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[625px]">
         <DialogHeader>
-          <DialogTitle>Add New Staff Member</DialogTitle>
+          <DialogTitle>Add New Staff Member or Partner</DialogTitle>
           <DialogDescription>
-            Enter the details of the new staff member to add them to your profile.
+            Enter the details of the new person to add them to your company.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -371,9 +370,9 @@ export default function StaffContent() {
           <CardHeader className="flex flex-row items-center justify-between">
               <div>
                   <CardTitle className="text-2xl font-bold flex items-center gap-2">
-                      <Users /> My Staff
+                      <Users /> Staff & Partner Management
                   </CardTitle>
-                  <CardDescription>Add, edit, and manage permissions for all staff members in your company.</CardDescription>
+                  <CardDescription>Add, edit, and manage permissions for all internal staff and external partners.</CardDescription>
               </div>
               <TooltipProvider>
                 <Tooltip>
