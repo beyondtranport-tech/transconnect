@@ -54,6 +54,7 @@ import {
   Activity,
   Sparkles,
   LayoutDashboard,
+  Mail,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -76,6 +77,7 @@ const SalesRoadmap = dynamic(() => import('./sales-roadmap'), { loading: () => <
 const BudgetPage = dynamic(() => import('../account/budget/page'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const ForecastPage = dynamic(() => import('./forecast/page'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const PitchContent = dynamic(() => import('./pitch-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const PartnerEmailContent = dynamic(() => import('./partner-email-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const FinancialSetup = dynamic(() => import('../account/financial-setup'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const MemberProjection = dynamic(() => import('../account/member-projection'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const Targets = dynamic(() => import('../account/targets'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
@@ -139,6 +141,7 @@ function AdminAccountContent() {
     switch (activeView) {
       // Business Strategy
       case 'pitch': return <PitchContent />;
+      case 'partner-email': return <PartnerEmailContent />;
       case 'financial-setup': return <FinancialSetup />;
       case 'sales-roadmap': return <SalesRoadmap />;
       case 'targets': return <Targets />;
@@ -198,10 +201,20 @@ function AdminAccountContent() {
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton tooltip="ISA Pitch" isActive={activeView === 'pitch'} onClick={() => router.push('/adminaccount?view=pitch', { scroll: false })}>
+                <SidebarMenuButton tooltip="Partner Pitch" isActive={['pitch', 'partner-email'].includes(activeView)}>
                   <Presentation />
-                  <span>ISA Pitch</span>
+                  <span>Partner Pitch</span>
                 </SidebarMenuButton>
+                <SidebarMenuSub>
+                    <SidebarMenuSubButton isActive={activeView === 'pitch'} onClick={() => router.push('/adminaccount?view=pitch', { scroll: false })}>
+                        <Presentation />
+                        <span>Pitch Deck</span>
+                    </SidebarMenuSubButton>
+                    <SidebarMenuSubButton isActive={activeView === 'partner-email'} onClick={() => router.push('/adminaccount?view=partner-email', { scroll: false })}>
+                        <Mail />
+                        <span>Partner Email</span>
+                    </SidebarMenuSubButton>
+                </SidebarMenuSub>
               </SidebarMenuItem>
               <SidebarMenuItem>
                   <SidebarMenuButton tooltip="Staff" isActive={activeView === 'staff'} onClick={() => router.push('/adminaccount?view=staff', { scroll: false })}>
