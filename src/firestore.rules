@@ -13,6 +13,12 @@ service cloud.firestore {
       // In a real app, this would check a custom claim.
       return request.auth != null && request.auth.token.email == 'beyondtransport@gmail.com';
     }
+    
+    function isCompanyOwner(companyId) {
+        let companyDoc = get(/databases/$(database)/documents/companies/$(companyId)).data;
+        // Check both the new ownerId field and the user's own profile for legacy data.
+        return companyDoc.ownerId == request.auth.uid || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == companyId;
+    }
 
     // --- User Profiles ---
     // A user can read/update their own profile. Admins can read/list all profiles.
@@ -23,15 +29,20 @@ service cloud.firestore {
     }
     
     // --- Company Profiles ---
-    // A user can read or update their own company document. Admins have full access.
     match /companies/{companyId} {
-      allow create: if request.auth != null; // Controlled by backend function for user creation
-      allow get, list, update: if isAdmin() || get(/databases/$(database)/documents/companies/$(companyId)).data.ownerId == request.auth.uid;
+      // Allow creation by any authenticated user via the backend API.
+      allow create: if request.auth != null; 
+      
+      // Allow a user to GET/UPDATE their own company document. Admins have full access.
+      allow get, update: if isAdmin() || isCompanyOwner(companyId);
+      
+      // Allow an admin to LIST all companies. User queries are handled by the secure backend API.
+      allow list: if isAdmin();
 
       // --- Company Subcollections (Direct Access) ---
       // The company owner and admins have full access to all subcollections (staff, wallet, etc.).
       match /{subcollection}/{docId=**} {
-        allow read, write: if isAdmin() || get(/databases/$(database)/documents/companies/$(companyId)).data.ownerId == request.auth.uid;
+        allow read, write: if isAdmin() || isCompanyOwner(companyId);
       }
     }
     

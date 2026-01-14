@@ -56,18 +56,17 @@ export async function POST(req: NextRequest) {
     
     const newCompanyData: any = {
         id: companyRef.id,
-        ownerId: firebaseUser.uid,
+        ownerId: firebaseUser.uid, // This is the critical field
         companyName: firebaseUser.displayName ? `${firebaseUser.displayName}'s Company` : 'My Company',
         membershipId: 'free',
         rewardPoints: signupPoints,
         walletBalance: 0,
         loyaltyTier: 'bronze',
-        status: 'pending', // Set initial status to pending
+        status: 'pending',
         createdAt: FieldValue.serverTimestamp(),
         updatedAt: FieldValue.serverTimestamp(),
     };
     
-    // The referrerId is the companyId of the referring user
     if (referrerId) {
         newCompanyData.referrerId = referrerId;
     }
@@ -87,10 +86,8 @@ export async function POST(req: NextRequest) {
     batch.set(companyRef, newCompanyData);
     batch.set(userDocRef, newUserData);
 
-    // If there's a referrer, award them points
     if (referrerId) {
         const partnerReferralPoints = loyaltyConfigDoc.data()?.partnerReferralPoints || 200;
-        // The referrerId is the companyId, so we update that company directly
         const referrerCompanyRef = db.collection('companies').doc(referrerId);
         batch.update(referrerCompanyRef, { rewardPoints: FieldValue.increment(partnerReferralPoints) });
     }
