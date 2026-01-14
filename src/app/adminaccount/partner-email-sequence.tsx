@@ -141,26 +141,34 @@ Best regards,
         `
     },
     howTo: {
-        subject: "Getting Started as a TransConnect Partner",
+        subject: "User Manual: Managing Your Network",
         content: `
-Dear [Partner Name],
+**Your Guide to Building and Managing Your Referral Network in TransConnect**
 
-Great to have you on board! Here’s how we get you started:
+This guide explains how to use the "My Network" section of your account to invite new members and track your referral success.
 
-Step 1: We Empower You
-We will provide you with your lifetime premium membership, a unique referral code, and access to your personal Partner Dashboard. This is where you'll track sign-ups, activity, and earnings in real-time.
+**Step 1: Access Your Network Dashboard**
+1.  Log in to your TransConnect account.
+2.  From the main account dashboard, navigate to the "Sales" section in the sidebar and click on "Network".
+3.  This is your central hub for viewing all the members who have joined using your personal referral link.
 
-Step 2: You Activate Your Network
-You introduce TransConnect to your community. Your pitch is simple: invite them to join an ecosystem that saves them money, helps them find work, and gives them access to better financing. We can even equip you with a limited-time "First Year Free" offer to make signing up irresistible for your network.
+**Step 2: Invite New Leads**
+1.  Click the "Invite Lead" button. This will open WhatsApp on your device.
+2.  A pre-written message containing your unique referral link will be ready to send. Your link will look something like this: \`https://[app-url]/join?ref=[your_company_id]\`.
+3.  Send this message to any transporters, suppliers, or other businesses in your network who you think would benefit from TransConnect.
+4.  **Important:** They MUST use this specific link for you to be credited as the referrer and earn commissions.
 
-Step 3: You Earn Automatically
-Every time a member from your network pays a subscription, completes a transaction, or buys a product, your share is automatically calculated and credited to your wallet. It's a transparent, seamless process designed for your success.
+**Step 3: Track Your Referrals**
+-   The "My Network" table displays all the companies that have signed up using your link.
+-   **Member Name & Email:** Shows the details of the primary contact who registered.
+-   **Company Name:** The name of the business they registered.
+-   **Membership:** Shows their current membership plan (e.g., Free, Standard, Premium).
+-   **Status:** This is a key column.
+    -   \`Pending\`: The user has signed up but has not yet purchased a paid membership.
+    -   \`Active\`: The user has upgraded to a paid membership. You will now earn commission on their fees.
+    -   \`Suspended\`: The account has been temporarily suspended.
 
-We are here to support you every step of the way.
-
-Best regards,
-
-[Your Name]
+By actively inviting new members and tracking their status, you can effectively build a recurring revenue stream. The more your network grows and engages with the platform, the more you earn.
         `
     }
 };
