@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useUser, useFirestore, useDoc } from '@/firebase/provider';
@@ -45,7 +46,7 @@ export default function RewardsContent() {
         { points: loyaltySettings?.truckContributionPoints, name: 'Contribute Truck/Trailer Data', icon: Truck, cta: { label: 'Contribute', href: '/contribute' } },
         { points: loyaltySettings?.supplierContributionPoints, name: 'Contribute Supplier Data', icon: Building, cta: { label: 'Contribute', href: '/contribute?tab=suppliers' } },
         { points: loyaltySettings?.debtorContributionPoints, name: 'Contribute Debtor Data', icon: Users, cta: { label: 'Contribute', href: '/contribute?tab=debtors' } },
-        { points: loyaltySettings?.partnerReferralPoints, name: 'Refer a New Member', icon: HeartHandshake, cta: { label: 'Refer Now', href: '/incentives' } },
+        { points: loyaltySettings?.partnerReferralPoints, name: 'Refer a New Member', icon: HeartHandshake, cta: { label: 'Refer Now', href: '/account?view=network' } },
         { points: loyaltySettings?.aiVideoGeneratorPoints, name: 'Generate an AI Video', icon: Video, cta: { label: 'Go to Tech', href: '/tech' } },
         { points: loyaltySettings?.seoBoosterPoints, name: 'Use the AI SEO Booster', icon: Search, cta: { label: 'Go to My Shop', href: '/account?view=shop' } },
     ]
