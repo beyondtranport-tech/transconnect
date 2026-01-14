@@ -1,9 +1,8 @@
-
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Gift, DollarSign, TrendingUp, Handshake, CheckCircle, ShoppingBasket, Target } from 'lucide-react';
+import { Gift, DollarSign, TrendingUp, Handshake, CheckCircle, ShoppingBasket, Target, Award } from 'lucide-react';
 import React from 'react';
 import { useConfig } from '@/hooks/use-config';
 import { Loader2 } from 'lucide-react';
@@ -14,7 +13,7 @@ const formatCurrency = (amount: number) => {
 };
 
 export default function NetworkOffer() {
-    const { data: isaConfig, isLoading } = useConfig<any>('isaPitch');
+    const { data: salesIncentives, isLoading } = useConfig<any>('salesIncentives');
     
     if (isLoading) {
         return (
@@ -24,28 +23,17 @@ export default function NetworkOffer() {
         )
     }
 
-    // New, simplified incentive structure for network members
-    const networkMembershipShare = 10;
-    const networkTransactionalShare = 10;
+    const networkMembershipShare = salesIncentives?.networkBaseCommission || 10;
+    const networkTransactionalShare = salesIncentives?.networkBaseCommission || 10;
+    const networkTiers = salesIncentives?.networkTiers || [];
     
-    // Example figures for illustration purposes
     const exampleMembershipFee = 500;
     const exampleDealSize = 400000;
     const exampleOriginationFeePercent = 1;
 
-    // Derived example calculations
-    const annualSubscriptionRevenue = exampleMembershipFee * 12;
-    const networkAnnualSubscriptionShare = annualSubscriptionRevenue * (networkMembershipShare / 100);
-
     const exampleDealCommission = exampleDealSize * (exampleOriginationFeePercent / 100);
     const networkExampleDealShare = exampleDealCommission * (networkTransactionalShare / 100);
     
-    const potentialEarnings = [
-        { members: 10, annualRecurring: 10 * networkAnnualSubscriptionShare },
-        { members: 50, annualRecurring: 50 * networkAnnualSubscriptionShare },
-        { members: 100, annualRecurring: 100 * networkAnnualSubscriptionShare },
-    ];
-
 
     return (
         <div className="space-y-8">
@@ -70,19 +58,22 @@ export default function NetworkOffer() {
                         <CardDescription>Activate the "Actions Plan" and start earning.</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                        <p>By referring others, you earn a <strong className="text-primary">{networkMembershipShare}% share</strong> of all membership fees from every member you bring into the network. This is a recurring annuity income.</p>
-                        <p>Assuming an average monthly membership fee of <strong className="font-mono">{formatCurrency(exampleMembershipFee)}</strong>, your potential annual earning per referred member is <strong className="font-mono text-primary">{formatCurrency(networkAnnualSubscriptionShare)}</strong>.</p>
-                        <Table>
-                            <TableHeader><TableRow><TableHead>Your Network Size</TableHead><TableHead className="text-right">Potential Annual Recurring Income</TableHead></TableRow></TableHeader>
-                            <TableBody>
-                                {potentialEarnings.map(item => (
-                                    <TableRow key={item.members}>
-                                        <TableCell>{item.members} Members</TableCell>
-                                        <TableCell className="text-right font-bold text-primary">{formatCurrency(item.annualRecurring)}</TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
+                        <p>By referring others, you earn a base <strong className="text-primary">{networkMembershipShare}% share</strong> of all membership fees from every member you bring into the network. This is a recurring annuity income.</p>
+                        
+                        <div className="p-4 border rounded-lg bg-background">
+                            <h4 className="font-semibold flex items-center gap-2 mb-2"><Award className="h-5 w-5 text-amber-500" />Performance Bonuses</h4>
+                             <Table>
+                                <TableHeader><TableRow><TableHead>Monthly Referrals</TableHead><TableHead className="text-right">Bonus Commission</TableHead></TableRow></TableHeader>
+                                <TableBody>
+                                    {networkTiers.map((tier: any, index: number) => (
+                                        <TableRow key={index}>
+                                            <TableCell>Sign up {tier.threshold}+ members</TableCell>
+                                            <TableCell className="text-right font-bold text-green-600">+{tier.bonus}%</TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </div>
                     </CardContent>
                 </Card>
                  <Card>

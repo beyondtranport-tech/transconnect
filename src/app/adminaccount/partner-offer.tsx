@@ -1,9 +1,8 @@
-
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Gift, DollarSign, TrendingUp, Handshake, CheckCircle, ShoppingBasket } from 'lucide-react';
+import { Gift, DollarSign, TrendingUp, Handshake, CheckCircle, ShoppingBasket, Award } from 'lucide-react';
 import React from 'react';
 import { useConfig } from '@/hooks/use-config';
 import { Loader2 } from 'lucide-react';
@@ -14,10 +13,12 @@ const formatCurrency = (amount: number) => {
 };
 
 export default function PartnerOffer() {
-    const { data: isaConfig, isLoading } = useConfig<any>('isaPitch');
+    const { data: isaConfig, isLoading: isIsaLoading } = useConfig<any>('isaPitch');
+    const { data: salesIncentives, isLoading: isIncentivesLoading } = useConfig<any>('salesIncentives');
     const { data: mallCommissions } = useConfig<any>('mallCommissions');
     const { data: marketplaceFees } = useConfig<any>('marketplaceFees');
 
+    const isLoading = isIsaLoading || isIncentivesLoading;
 
     if (isLoading) {
         return (
@@ -43,6 +44,8 @@ export default function PartnerOffer() {
     const isaBuySellShare = isaConfig?.buySellMallCommission || 20;
     const isaMarketplaceShare = isaConfig?.marketplaceCommission || 50;
     
+    const partnerTiers = salesIncentives?.partnerTiers || [];
+
     // Derived example calculations
     const annualSubscriptionRevenue = exampleMembershipFee * 12;
     const isaAnnualSubscriptionShare = annualSubscriptionRevenue * (isaMembershipShare / 100);
@@ -60,13 +63,6 @@ export default function PartnerOffer() {
 
     const isaMarketplaceEarnings = exampleMarketplacePlatformCommission * (isaMarketplaceShare / 100);
     const passiveIncomeExample = 240 * isaMarketplaceEarnings;
-
-
-    const potentialEarnings = [
-        { members: 10, annualRecurring: 10 * isaAnnualSubscriptionShare },
-        { members: 50, annualRecurring: 50 * isaAnnualSubscriptionShare },
-        { members: 100, annualRecurring: 100 * isaAnnualSubscriptionShare },
-    ];
 
 
     return (
@@ -92,19 +88,22 @@ export default function PartnerOffer() {
                         <CardDescription>Earn a stable, growing income from memberships.</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                        <p>You earn a <strong className="text-primary">{isaMembershipShare}% share</strong> of all membership and subscription fees from every member you bring into the network. This isn't a one-time payment; it's a recurring annuity for as long as they remain a member.</p>
-                        <p>Assuming an average total monthly membership & subscription fee of <strong className="font-mono">{formatCurrency(exampleMembershipFee)}</strong>, your annual earning per member is <strong className="font-mono text-primary">{formatCurrency(isaAnnualSubscriptionShare)}</strong>.</p>
-                        <Table>
-                            <TableHeader><TableRow><TableHead>Network Size</TableHead><TableHead className="text-right">Potential Annual Recurring Income</TableHead></TableRow></TableHeader>
-                            <TableBody>
-                                {potentialEarnings.map(item => (
-                                    <TableRow key={item.members}>
-                                        <TableCell>{item.members} Members</TableCell>
-                                        <TableCell className="text-right font-bold text-primary">{formatCurrency(item.annualRecurring)}</TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
+                        <p>You earn a base commission of <strong className="text-primary">{isaMembershipShare}%</strong> on all membership and subscription fees from every member you bring into the network. This is a recurring annuity for as long as they remain a member.</p>
+                        
+                         <div className="p-4 border rounded-lg bg-background">
+                            <h4 className="font-semibold flex items-center gap-2 mb-2"><Award className="h-5 w-5 text-amber-500" />Monthly Performance Bonuses</h4>
+                             <Table>
+                                <TableHeader><TableRow><TableHead>Monthly Conversions</TableHead><TableHead className="text-right">Bonus Commission</TableHead></TableRow></TableHeader>
+                                <TableBody>
+                                    {partnerTiers.map((tier: any, index: number) => (
+                                        <TableRow key={index}>
+                                            <TableCell>Sign up {tier.threshold}+ members</TableCell>
+                                            <TableCell className="text-right font-bold text-green-600">+{tier.bonus}%</TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </div>
                     </CardContent>
                 </Card>
                  <Card>
@@ -180,7 +179,7 @@ export default function PartnerOffer() {
                     </div>
                      <div>
                         <h4 className="font-bold text-lg">Step 2: You Activate Your Network</h4>
-                        <p className="text-muted-foreground">You introduce TransConnect to your community. Your pitch is simple: invite them to join an ecosystem that saves them money, helps them find work, and gives them access to better financing. We equip you with offers and materials to make signing up irresistible.</p>
+                        <p className="text-muted-foreground">You introduce TransConnect to your community. Your pitch is simple: invite them to join an ecosystem that saves them money on parts, helps them find work, and gives them access to better financing. We equip you with offers and materials to make signing up irresistible.</p>
                     </div>
                      <div>
                         <h4 className="font-bold text-lg">Step 3: You Earn Automatically</h4>

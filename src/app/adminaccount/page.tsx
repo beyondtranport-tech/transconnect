@@ -67,9 +67,6 @@ import { signOut } from 'firebase/auth';
 
 import dynamic from 'next/dynamic';
 import React from 'react';
-import MembersList from '../backend/members-list';
-import WalletTransactionsList from '../backend/wallet-transactions-list';
-import ReconciliationPage from '../backend/reconciliation/page';
 
 // --- Business Strategy Components ---
 const SalesRoadmap = dynamic(() => import('./sales-roadmap'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
@@ -85,9 +82,7 @@ const StaffContent = dynamic(() => import('./staff-content'), { loading: () => <
 // --- Business Operations Components (from /backend) ---
 const MemberWallet = dynamic(() => import('../backend/wallet/[memberId]/member-wallet'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const DashboardContent = dynamic(() => import('../backend/dashboard-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-// const StaffContent = dynamic(() => import('../adminaccount/staff-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const ShopsList = dynamic(() => import('../backend/shops-list'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const ContributionsList = dynamic(() => import('../backend/contributions-list'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const PitchContent = dynamic(() => import('../backend/pitch-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 
 
 function AdminAuthGuard({ children }: { children: React.ReactNode }) {
@@ -152,15 +147,12 @@ function AdminAccountContent() {
       // Business Operations
       case 'dashboard': return <DashboardContent />;
       case 'staff': return <StaffContent />;
-      case 'shops': return <ShopsList />;
-      case 'contributions': return <ContributionsList />;
-      case 'wallet-transactions': return <WalletTransactionsList />;
-      case 'wallet-reconciliation': return <ReconciliationPage />;
+      case 'pitch': return <PitchContent />;
        case 'wallet':
         if (memberId) {
             return <MemberWallet memberId={memberId} />;
         }
-        return <WalletTransactionsList />; // Fallback
+        return null;
 
       default:
         return <PartnerOffer />;
@@ -221,22 +213,6 @@ function AdminAccountContent() {
                   <Users />
                   <span>Staff</span>
                   </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                  <SidebarMenuButton tooltip="Wallet">
-                      <Wallet />
-                      <span>Wallet</span>
-                  </SidebarMenuButton>
-                  <SidebarMenuSub>
-                      <SidebarMenuSubButton isActive={activeView === 'wallet-transactions'} onClick={() => router.push('/adminaccount?view=wallet-transactions', { scroll: false })}>
-                          <DollarSign />
-                          <span>Member Wallet Ledger</span>
-                      </SidebarMenuSubButton>
-                      <SidebarMenuSubButton isActive={activeView === 'wallet-reconciliation'} onClick={() => router.push('/adminaccount?view=wallet-reconciliation', { scroll: false })}>
-                          <Combine />
-                          <span>Reconciliation</span>
-                      </SidebarMenuSubButton>
-                  </SidebarMenuSub>
               </SidebarMenuItem>
               <SidebarMenuItem>
                   <SidebarMenuButton tooltip="Projection" isActive={['financial-setup', 'sales-roadmap', 'targets', 'member-projection', 'budget', 'forecast'].includes(activeView)}>

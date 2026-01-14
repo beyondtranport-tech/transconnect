@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -50,6 +49,7 @@ import {
   Activity,
   Sparkles,
   Handshake,
+  TrendingUp,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -90,6 +90,7 @@ const MarketplaceFees = dynamic(() => import('./revenue/marketplace-fees'), { lo
 const ConnectPlanPricing = dynamic(() => import('./revenue/connect-plan-pricing'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const TechPricing = dynamic(() => import('./revenue/tech-pricing'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const ISAPitchSettings = dynamic(() => import('./revenue/isa-pitch-settings'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const SalesIncentives = dynamic(() => import('./revenue/sales-incentives'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 
 
 export default function BackendPageContent() {
@@ -149,6 +150,8 @@ export default function BackendPageContent() {
         return <TechPricing />;
       case 'revenue-isa-pitch':
         return <ISAPitchSettings />;
+      case 'revenue-sales-incentives':
+        return <SalesIncentives />;
       case 'divisions':
         return <DivisionsContent />;
       case 'divisions-funding':
@@ -305,6 +308,10 @@ export default function BackendPageContent() {
                         <SidebarMenuSubButton tooltip="ISA Pitch" isActive={activeView === 'revenue-isa-pitch'} onClick={() => router.push('/backend?view=revenue-isa-pitch', { scroll: false })}>
                             <Handshake />
                             <span>ISA Pitch</span>
+                        </SidebarMenuSubButton>
+                         <SidebarMenuSubButton tooltip="Sales Incentives" isActive={activeView === 'revenue-sales-incentives'} onClick={() => router.push('/backend?view=revenue-sales-incentives', { scroll: false })}>
+                            <TrendingUp />
+                            <span>Sales Incentives</span>
                         </SidebarMenuSubButton>
                         <SidebarMenuSubButton tooltip="Mall Commissions" isActive={activeView === 'revenue-mall-commissions'} onClick={() => router.push('/backend?view=revenue-mall-commissions', { scroll: false })}>
                             <ShoppingBasket />
