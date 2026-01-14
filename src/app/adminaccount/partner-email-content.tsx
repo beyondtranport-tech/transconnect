@@ -15,25 +15,29 @@ I hope this email finds you well.
 
 My name is [Your Name], and I'm reaching out from TransConnect. We've developed a comprehensive digital ecosystem specifically for the transport industry, designed to solve the key challenges transporters face every day: accessing capital, finding work, and reducing operational costs.
 
-**What is TransConnect?**
+What is TransConnect?
 
 TransConnect is an all-in-one platform that brings together:
-*   **A Funding Division:** We offer flexible finance solutions where traditional banks often can't.
-*   **A Network of Malls:** Specialized marketplaces for parts, vehicles, and services where members get group-negotiated discounts.
-*   **Powerful Tech Tools:** Including an AI-powered system to match available trucks with freight loads, reducing empty miles.
 
-**The Opportunity for a Partnership**
+- A Funding Division: We offer flexible finance solutions where traditional banks often can't.
+- A Network of Malls: Specialized marketplaces for parts, vehicles, and services where members get group-negotiated discounts.
+- A Value-Added Marketplace: We provide essential third-party products, like the Mahala Hub for drivers, which offers benefits and rewards, creating more value for your network.
+- Powerful Tech Tools: Including an AI-powered system to match available trucks with freight loads, reducing empty miles.
+
+The Opportunity for a Partnership
 
 We believe in growth through collaboration. We are looking for key strategic partners like yourself who have a strong network and trusted relationships within the transport sector.
 
-**What we want from a partner:**
-*   To introduce TransConnect to your network of transporters, suppliers, and other industry players.
-*   To act as an ambassador for our mission to empower transport businesses.
+What we want from a partner:
 
-**What we will give you in return:**
-*   **A Free Lifetime Premium Membership:** Full access to our entire ecosystem, forever.
-*   **A Recurring Revenue Stream:** Earn a significant, recurring commission on all membership and subscription fees from every member you bring into the network.
-*   **Transactional Revenue Share:** Earn a share of the revenue TransConnect generates from your network's activity across our Finance and Supplier Malls.
+- To introduce TransConnect to your network of transporters, suppliers, and other industry players.
+- To act as an ambassador for our mission to empower transport businesses.
+
+What we will give you in return:
+
+- A Free Lifetime Premium Membership: Full access to our entire ecosystem, forever.
+- A Recurring Revenue Stream: Earn a significant, recurring commission on all membership and subscription fees from every member you bring into the network.
+- Transactional Revenue Share: Earn a share of the revenue TransConnect generates from your network's activity across our Finance and Supplier Malls.
 
 This is more than a referral program; it's a true business partnership where your earnings grow as your network's activity on our platform grows. We provide you with a unique referral link and a personal dashboard to track your sign-ups, activity, and earnings in real-time.
 
