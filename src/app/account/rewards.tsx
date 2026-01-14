@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useUser, useFirestore, useDoc, useConfig, useMemoFirebase } from '@/firebase';
+import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2, Star, Award, Gift, Percent, HeartHandshake, User, Store, Package, Search, Video, Building, Truck, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -9,6 +9,7 @@ import { doc } from 'firebase/firestore';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
+import { useConfig } from '@/hooks/use-config';
 
 export default function RewardsContent() {
     const { user, isUserLoading } = useUser();
