@@ -7,9 +7,11 @@ import { ClipboardCopy, Mail } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import React from 'react';
+import { useUser } from '@/firebase';
 
-const EmailTemplate = ({ subject, content }: { subject: string, content: string }) => {
+const EmailTemplate = ({ subject, content, referralLink }: { subject: string, content: string, referralLink: string }) => {
     const { toast } = useToast();
+    const formattedContent = content.replace('[Your Referral Link]', referralLink);
 
     const handleCopyToClipboard = (text: string) => {
         navigator.clipboard.writeText(text.trim());
@@ -27,11 +29,11 @@ const EmailTemplate = ({ subject, content }: { subject: string, content: string 
             </CardHeader>
             <CardContent>
                 <div className="p-4 bg-muted/50 border rounded-md whitespace-pre-wrap font-mono text-sm max-h-96 overflow-y-auto">
-                    {content.trim()}
+                    {formattedContent.trim()}
                 </div>
             </CardContent>
             <CardFooter>
-                 <Button onClick={() => handleCopyToClipboard(content)}>
+                 <Button onClick={() => handleCopyToClipboard(formattedContent)}>
                     <ClipboardCopy className="mr-2 h-4 w-4" />
                     Copy Email Content
                 </Button>
@@ -42,71 +44,17 @@ const EmailTemplate = ({ subject, content }: { subject: string, content: string 
 
 const templates = {
     intro: {
-        subject: "Partnership Opportunity with TransConnect",
+        subject: "Invitation to Join TransConnect",
         content: `
-Dear [Partner Name],
+Hi [Lead Name],
 
 I hope this email finds you well.
 
-My name is [Your Name], and I'm reaching out from TransConnect. We've developed a comprehensive digital ecosystem specifically for the transport industry, designed to solve the key challenges transporters face every day: accessing capital, finding work, and reducing operational costs.
+I'm reaching out to invite you to join TransConnect, a digital ecosystem built for transporters like us. It's designed to help us access capital, find more work, and reduce our operational costs.
 
-Would you be open to a brief chat next week to explore how a partnership could be mutually beneficial?
+I've been using it and think it could be really beneficial for your business.
 
-Best regards,
-
-[Your Name]
-        `
-    },
-    proposal: {
-        subject: "Following Up: The TransConnect Partnership Proposal",
-        content: `
-Dear [Partner Name],
-
-Following up on our brief chat, here is a bit more detail on what a partnership with TransConnect entails.
-
-What is TransConnect?
-
-An all-in-one platform that brings together:
-- A Funding Division: Flexible finance solutions where traditional banks often can't.
-- A Network of Malls: Specialized marketplaces for parts, vehicles, and services with group-negotiated discounts.
-- A Value-Added Marketplace: We provide essential third-party products, like the Mahala Hub for drivers, which offers benefits and rewards.
-- Powerful Tech Tools: Including an AI-powered system to match available trucks with freight loads.
-
-What we want from a partner:
-- To introduce TransConnect to your network of transporters and suppliers.
-- To act as an ambassador for our mission to empower transport businesses.
-
-What we will give you in return:
-- A Free Lifetime Premium Membership.
-- A Recurring Revenue Stream: Earn a significant, recurring commission on all membership and subscription fees from every member you bring into the network.
-- Transactional Revenue Share: Earn a share of the revenue TransConnect generates from your network's activity across our Finance and Supplier Malls.
-
-This is a true business partnership where your earnings grow with your network's activity.
-
-I would be delighted to schedule a more detailed call to walk you through the platform and the commission structure.
-
-Best regards,
-
-[Your Name]
-        `
-    },
-    revenue: {
-        subject: "How the TransConnect Partnership Revenue Works",
-        content: `
-Dear [Partner Name],
-
-Thanks for your interest. Here’s a simple explanation of how our partnership model creates value for you:
-
-1. Recurring Subscription Revenue:
-You earn a [X%] share of all membership fees from every member you refer. It's a recurring annuity for as long as they remain a member.
-
-2. Transactional Commission:
-Your earnings grow as your network uses the platform.
-- Finance Mall: When a member from your network finances a truck, you get a [Y%] share of our origination fee.
-- Supplier Mall: When your network buys parts, you get a [Z%] share of our commission.
-- Marketplace Products: You get a [W%] share of our commission on every value-added product (like RAF Assist or Mahala Hub subscriptions) sold to your network.
-
-This multi-stream approach ensures your income grows exponentially as your network's activity on our platform increases.
+You can sign up using my personal referral link: [Your Referral Link]
 
 Let me know if you have any questions.
 
@@ -115,25 +63,61 @@ Best regards,
 [Your Name]
         `
     },
-    explanation: {
-        subject: "Your Network is Your Asset - Here's Why",
+    proposal: {
+        subject: "How TransConnect Can Benefit Your Business",
         content: `
-Hi [Partner Name],
+Hi [Lead Name],
 
-Let's talk about the core of this partnership: your network.
+Following up on my previous message, here's a bit more detail on what TransConnect offers:
 
-The transport industry thrives on relationships. You already have a network of transporters, suppliers, and contacts that you've built over years. TransConnect provides the tools to turn those relationships into a powerful, automated revenue engine.
+- A Funding Division: Access to flexible finance solutions where traditional banks often can't help.
+- A Network of Malls: Specialized marketplaces for parts, vehicles, and services with group-negotiated discounts.
+- Powerful Tech Tools: Including an AI-powered system to match available trucks with freight loads, reducing empty miles.
+
+By joining, you become part of a community that works together to lower costs and create new opportunities.
+
+You can join using my personal link: [Your Referral Link]
+
+Best regards,
+
+[Your Name]
+        `
+    },
+    revenue: {
+        subject: "How You Can Earn with TransConnect",
+        content: `
+Hi [Lead Name],
+
+One of the best parts about TransConnect is that you can earn recurring revenue just by helping the network grow.
+
+Once you become a member, you also get your own referral link. When you invite other businesses and they sign up, you earn a percentage of their membership fees and a share of the revenue they generate on the platform.
+
+It's a true partnership model where your earnings grow as you help build the community.
+
+Sign up here to get started: [Your Referral Link]
+
+Best regards,
+
+[Your Name]
+        `
+    },
+    explanation: {
+        subject: "Your Network is Your Most Valuable Asset",
+        content: `
+Hi [Lead Name],
+
+The transport industry thrives on relationships. You already have a network of transporters, suppliers, and contacts you've built over years. TransConnect provides the tools to turn those relationships into a revenue engine.
 
 Think about it:
 - Who do you buy parts from?
 - Who do you subcontract loads to?
 - Who asks you for advice on financing?
 
-Every one of these interactions is an opportunity. By introducing them to TransConnect—where they can get better pricing, find more work, or access capital—you are not only helping them, but you are also building your own business within our ecosystem.
+By introducing them to TransConnect—where they can get better pricing, find more work, or access capital—you are not only helping them, but you are also building your own business within our ecosystem.
 
-Our platform handles the tracking, the transactions, and the payouts. Your job is to do what you already do best: connect people and solve problems. We just provide the framework for you to get paid for it.
+Our platform handles the tracking, the transactions, and the payouts. Your job is to do what you already do best: connect people. We just provide the framework for you to get paid for it.
 
-Ready to leverage your most valuable asset?
+Ready to leverage your most valuable asset? Join here: [Your Referral Link]
 
 Best regards,
 
@@ -141,7 +125,7 @@ Best regards,
         `
     },
     howTo: {
-        subject: "User Manual: Managing Your Network",
+        subject: "How to Use Your Network Dashboard",
         content: `
 **Your Guide to Building and Managing Your Referral Network in TransConnect**
 
@@ -149,7 +133,7 @@ This guide explains how to use the "My Network" section of your account to invit
 
 **Step 1: Access Your Network Dashboard**
 1.  Log in to your TransConnect account.
-2.  From the main account dashboard, navigate to the "Sales" section in the sidebar and click on "Network".
+2.  From the main account dashboard, navigate to the "Sales" section in the sidebar and click on "My Network".
 3.  This is your central hub for viewing all the members who have joined using your personal referral link.
 
 **Step 2: Invite New Leads**
@@ -160,9 +144,6 @@ This guide explains how to use the "My Network" section of your account to invit
 
 **Step 3: Track Your Referrals**
 -   The "My Network" table displays all the companies that have signed up using your link.
--   **Member Name & Email:** Shows the details of the primary contact who registered.
--   **Company Name:** The name of the business they registered.
--   **Membership:** Shows their current membership plan (e.g., Free, Standard, Premium).
 -   **Status:** This is a key column.
     -   \`Pending\`: The user has signed up but has not yet purchased a paid membership.
     -   \`Active\`: The user has upgraded to a paid membership. You will now earn commission on their fees.
@@ -183,6 +164,10 @@ const tabs = [
 
 
 export default function NetworkEmails() {
+    const { user } = useUser();
+    const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
+    const referralLink = user?.companyId ? `${baseUrl}/join?ref=${user.companyId}` : `${baseUrl}/join`;
+
     return (
         <div className="space-y-8">
             <CardHeader className="px-0">
@@ -191,7 +176,7 @@ export default function NetworkEmails() {
                     <div>
                         <CardTitle>Network Outreach Email Sequence</CardTitle>
                         <CardDescription>
-                            Use these templates to introduce, propose, and explain the TransConnect partnership opportunity.
+                            Use these templates to introduce, propose, and explain the TransConnect opportunity to your network. Your personal referral link is automatically included.
                         </CardDescription>
                     </div>
                 </div>
@@ -203,19 +188,19 @@ export default function NetworkEmails() {
                    ))}
                 </TabsList>
                 <TabsContent value="intro">
-                    <EmailTemplate subject={templates.intro.subject} content={templates.intro.content} />
+                    <EmailTemplate subject={templates.intro.subject} content={templates.intro.content} referralLink={referralLink} />
                 </TabsContent>
                 <TabsContent value="proposal">
-                     <EmailTemplate subject={templates.proposal.subject} content={templates.proposal.content} />
+                     <EmailTemplate subject={templates.proposal.subject} content={templates.proposal.content} referralLink={referralLink} />
                 </TabsContent>
                 <TabsContent value="revenue">
-                     <EmailTemplate subject={templates.revenue.subject} content={templates.revenue.content} />
+                     <EmailTemplate subject={templates.revenue.subject} content={templates.revenue.content} referralLink={referralLink} />
                 </TabsContent>
                 <TabsContent value="explanation">
-                     <EmailTemplate subject={templates.explanation.subject} content={templates.explanation.content} />
+                     <EmailTemplate subject={templates.explanation.subject} content={templates.explanation.content} referralLink={referralLink} />
                 </TabsContent>
                  <TabsContent value="howTo">
-                     <EmailTemplate subject={templates.howTo.subject} content={templates.howTo.content} />
+                     <EmailTemplate subject={templates.howTo.subject} content={templates.howTo.content} referralLink={referralLink} />
                 </TabsContent>
             </Tabs>
         </div>
