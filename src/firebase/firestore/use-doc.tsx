@@ -64,6 +64,9 @@ export function useDoc<T = any>(
       return;
     }
 
+    const controller = new AbortController();
+    const signal = controller.signal;
+
     const fetchData = async () => {
         setIsLoading(true);
         setError(null);
@@ -77,12 +80,15 @@ export function useDoc<T = any>(
                 if (!token) {
                     // This could happen if the user logs out while a fetch is pending.
                     // We don't throw an error, but we stop the fetch.
-                    setIsLoading(false);
+                    if (!signal.aborted) {
+                      setIsLoading(false);
+                    }
                     return;
                 }
             }
             
             const response = await fetch('/api/getUserSubcollection', {
+                signal,
                 method: 'POST',
                 headers: {
                     ...(token && { 'Authorization': `Bearer ${token}` }),
@@ -97,17 +103,30 @@ export function useDoc<T = any>(
                 throw new Error(result.error || 'Failed to fetch document data.');
             }
 
-            setData(result.data as WithId<T> | null);
+            if (!signal.aborted) {
+              setData(result.data as WithId<T> | null);
+            }
         } catch (e: any) {
-            console.error("useDoc fetch error:", e);
-            setError(e);
-            setData(null);
+            if (e.name !== 'AbortError') {
+              console.error("useDoc fetch error:", e);
+              if (!signal.aborted) {
+                setError(e);
+                setData(null);
+              }
+            }
         } finally {
-            setIsLoading(false);
+            if (!signal.aborted) {
+              setIsLoading(false);
+            }
         }
     };
 
     fetchData();
+    
+    // Cleanup function to abort fetch if component unmounts
+    return () => {
+      controller.abort();
+    };
 
   }, [path, isPublicPath, refreshKey]);
 
