@@ -86,23 +86,32 @@ function QuoteCalculator({ product, onQuoteSaved, onOpenChange }: { product: { i
 
     useEffect(() => {
         const monthlyRate = rate / 100 / 12;
-        const balloonAmount = isBalloonProduct ? amount * (balloonPercent / 100) : 0;
+        const n = term;
         
         if (monthlyRate > 0) {
-            const n = term;
-            const r = monthlyRate;
             const pv = amount;
-            const fv = balloonAmount;
+            const balloonAmount = isBalloonProduct ? pv * (balloonPercent / 100) : 0;
             
-            // PMT = [PV * r(1+r)^n - FV * r] / [(1+r)^n - 1]
-            const numerator = (pv * r * Math.pow(1 + r, n)) - (fv * r);
-            const denominator = Math.pow(1 + r, n) - 1;
-            const payment = denominator !== 0 ? numerator / denominator : (pv / n) + (fv / n); // Simplified fallback
+            // Correct formula for loan amortization with a future value (balloon)
+            // PMT = [PV - (FV / (1 + r)^n)] * [r(1+r)^n] / [(1+r)^n - 1]
+            
+            // Present value of the balloon payment
+            const pvOfBalloon = balloonAmount / Math.pow(1 + monthlyRate, n);
+            
+            // The principal amount that needs to be amortized
+            const principalToAmortize = pv - pvOfBalloon;
+            
+            // Amortization factor
+            const amortizationFactor = (monthlyRate * Math.pow(1 + monthlyRate, n)) / (Math.pow(1 + monthlyRate, n) - 1);
+            
+            const payment = principalToAmortize * amortizationFactor;
 
             setMonthlyPayment(payment);
-            setTotalRepayment(payment * n + fv);
-        } else { // No interest rate
-            const payment = (amount - balloonAmount) / term;
+            setTotalRepayment(payment * n + balloonAmount);
+
+        } else { // No interest rate scenario
+            const balloonAmount = isBalloonProduct ? amount * (balloonPercent / 100) : 0;
+            const payment = term > 0 ? (amount - balloonAmount) / term : 0;
             setMonthlyPayment(payment);
             setTotalRepayment(amount);
         }
