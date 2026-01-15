@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, Suspense } from 'react';
@@ -155,7 +154,7 @@ function JoinFormComponent() {
 
       const isAdmin = user.email === 'beyondtransport@gmail.com';
       const defaultRedirect = isAdmin ? '/backend' : '/account';
-      router.replace(redirectParam || defaultRedirect);
+      router.push(redirectParam || defaultRedirect);
 
     } catch (error: any) {
       let title = 'An error occurred.';

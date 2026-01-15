@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
@@ -11,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { useUser, getClientSideAuthToken } from '@/firebase';
 import Link from 'next/link';
-import MemberActionMenu from '../account/member-action-menu';
+import MemberActionMenu from './member-action-menu';
 import { cn } from '@/lib/utils';
 
 // This component no longer uses useCollection or Firestore directly.
@@ -73,8 +72,8 @@ export default function NetworkContent() {
     }, [user, isUserLoading, loadNetwork]);
 
     const handleInvite = () => {
-        if (!user) {
-            toast({ variant: 'destructive', title: 'You must be logged in to invite someone.' });
+        if (!user || !user.companyId) {
+            toast({ variant: 'destructive', title: 'Could not generate invite link. Your company profile might not be fully set up.' });
             return;
         }
         // Updated to use companyId for referral link
@@ -119,16 +118,7 @@ export default function NetworkContent() {
             </Badge>
           ),
         },
-        {
-            id: 'actions',
-            header: () => <div className="text-right">Actions</div>,
-            cell: ({ row }) => (
-                <div className="text-right">
-                    <MemberActionMenu member={row.original} onUpdate={loadNetwork} />
-                </div>
-            ),
-        }
-    ], [loadNetwork]);
+    ], []);
     
     const pageIsLoading = isLoading || isUserLoading;
 

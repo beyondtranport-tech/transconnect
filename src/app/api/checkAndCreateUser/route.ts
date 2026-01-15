@@ -1,4 +1,3 @@
-
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import { NextRequest, NextResponse } from 'next/server';
 import { headers } from 'next/headers';
@@ -20,7 +19,7 @@ export async function POST(req: NextRequest) {
 
   const idToken = authorization.split('Bearer ')[1];
   
-  // Safely parse body
+  // Safely parse body to get referrerId
   let referrerId: string | null = null;
   try {
       const body = await req.json();
@@ -56,7 +55,7 @@ export async function POST(req: NextRequest) {
     
     const newCompanyData: any = {
         id: companyRef.id,
-        ownerId: firebaseUser.uid, // This is the critical field
+        ownerId: firebaseUser.uid,
         companyName: firebaseUser.displayName ? `${firebaseUser.displayName}'s Company` : 'My Company',
         membershipId: 'free',
         rewardPoints: signupPoints,
@@ -99,7 +98,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: true, message: 'User and company documents created successfully.' });
 
   } catch (error: any) {
-    console.error(`Error in checkAndCreateUser for user ${idToken ? getAuth(app).verifyIdToken(idToken).then(t=>t.uid).catch(()=>'unknown') : 'unknown'}:`, error);
+    const uidFromToken = idToken ? await getAuth(app).verifyIdToken(idToken).then(t=>t.uid).catch(()=>'unknown') : 'unknown';
+    console.error(`Error in checkAndCreateUser for user ${uidFromToken}:`, error);
     if (error.code?.startsWith('auth/')) {
        return NextResponse.json({ success: false, error: `Authentication error: ${error.message}` }, { status: 401 });
     }

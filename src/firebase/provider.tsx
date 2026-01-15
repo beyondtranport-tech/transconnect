@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { createContext, useContext, ReactNode, useMemo, useState, useEffect } from 'react';
@@ -61,13 +60,13 @@ function useEnrichedUser(baseUser: User | null, firestore: Firestore | null) {
     
     return useMemo(() => {
         if (!baseUser) return { enrichedUser: null, isEnriching: false };
-        if (isUserDataLoading) return { enrichedUser: baseUser, isEnriching: true };
+        if (isUserDataLoading) return { enrichedUser: baseUser as EnrichedUser, isEnriching: true };
         
         return {
             enrichedUser: {
                 ...baseUser,
                 companyId: userData?.companyId
-            },
+            } as EnrichedUser,
             isEnriching: false
         };
     }, [baseUser, userData, isUserDataLoading]);

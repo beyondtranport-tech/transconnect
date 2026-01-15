@@ -1,4 +1,3 @@
-
 import { NextRequest, NextResponse } from 'next/server';
 import { getFirestore, FieldPath, Timestamp } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
@@ -57,6 +56,11 @@ export async function GET(req: NextRequest) {
 
         // 3. Get the owner IDs from the referred companies
         const ownerIds = companiesSnap.docs.map(doc => doc.data().ownerId);
+        
+        if (ownerIds.length === 0) {
+            return NextResponse.json({ success: true, data: [] });
+        }
+
 
         // 4. Fetch the user documents for these owners to get their name and email
         const usersSnap = await db.collection('users').where(FieldPath.documentId(), 'in', ownerIds).get();

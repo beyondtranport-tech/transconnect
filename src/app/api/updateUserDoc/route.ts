@@ -1,5 +1,3 @@
-
-
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import { NextRequest, NextResponse } from 'next/server';
 import { headers } from 'next/headers';
@@ -80,10 +78,6 @@ export async function POST(req: NextRequest) {
     } else {
         // User can update their own user doc
         if (pathSegments[0] === 'users' && pathSegments[1] === uid) {
-            isAuthorized = true;
-        }
-        // User can update documents within their own member document (deprecated)
-        else if (pathSegments[0] === 'members' && pathSegments[1] === uid) {
             isAuthorized = true;
         }
         // User can update their own company doc or its subcollections
