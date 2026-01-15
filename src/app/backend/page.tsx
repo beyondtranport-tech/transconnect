@@ -20,7 +20,7 @@ function AdminAuthGuard({ children }: { children: React.ReactNode }) {
         if (!user) {
             // If user is not logged in, redirect to sign-in
             router.replace('/signin?redirect=/backend');
-        } else if (user.email !== 'beyondtransport@gmail.com') {
+        } else if (user.email !== 'beyondtransport@gmail.com' && user.email !== 'mkoton100@gmail.com') {
             // If user is not an admin, redirect to their standard account page
             router.replace('/account');
         }
@@ -30,7 +30,7 @@ function AdminAuthGuard({ children }: { children: React.ReactNode }) {
     }, [user, isUserLoading, router]);
 
     // Show a loading state while we verify the user's admin status.
-    if (isUserLoading || !user || user.email !== 'beyondtransport@gmail.com') {
+    if (isUserLoading || !user || (user.email !== 'beyondtransport@gmail.com' && user.email !== 'mkoton100@gmail.com')) {
         return (
             <div className="flex flex-col justify-center items-center min-h-[calc(100vh-8rem)]">
                 <Loader2 className="h-12 w-12 animate-spin text-primary" />

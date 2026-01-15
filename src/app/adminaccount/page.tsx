@@ -122,12 +122,12 @@ function AdminAuthGuard({ children }: { children: React.ReactNode }) {
 
         if (!user) {
             router.replace('/signin?redirect=/adminaccount');
-        } else if (user.email !== 'beyondtransport@gmail.com') {
+        } else if (user.email !== 'beyondtransport@gmail.com' && user.email !== 'mkoton100@gmail.com') {
             router.replace('/account'); 
         }
     }, [user, isUserLoading, router]);
 
-    if (isUserLoading || !user || user.email !== 'beyondtransport@gmail.com') {
+    if (isUserLoading || !user || (user.email !== 'beyondtransport@gmail.com' && user.email !== 'mkoton100@gmail.com')) {
         return (
             <div className="flex flex-col justify-center items-center min-h-[calc(100vh-8rem)]">
                 <Loader2 className="h-12 w-12 animate-spin text-primary" />

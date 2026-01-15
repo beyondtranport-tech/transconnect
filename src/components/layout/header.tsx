@@ -66,7 +66,7 @@ export function Header() {
     return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
   };
 
-  const isAdmin = user && user.email === 'beyondtransport@gmail.com';
+  const isAdmin = user && (user.email === 'beyondtransport@gmail.com' || user.email === 'mkoton100@gmail.com');
 
   const navItems = [
     { href: "/", label: "Home" },

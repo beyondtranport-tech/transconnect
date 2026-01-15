@@ -111,7 +111,7 @@ function SignInFormComponent() {
         description: 'Redirecting to your dashboard...',
       });
       
-      const isAdmin = loggedInUser.email === 'beyondtransport@gmail.com';
+      const isAdmin = loggedInUser.email === 'beyondtransport@gmail.com' || loggedInUser.email === 'mkoton100@gmail.com';
       const defaultRedirect = isAdmin ? '/adminaccount' : '/account';
       
       // Use router.push to navigate immediately.
