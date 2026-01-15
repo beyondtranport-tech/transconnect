@@ -56,6 +56,7 @@ import {
   Sparkles,
   Handshake as HandshakeIcon,
   Package,
+  LayoutDashboard,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -212,7 +213,19 @@ function AdminAccountContent() {
     <AdminAuthGuard>
       <SidebarProvider>
         <Sidebar>
-          <SidebarHeader>
+          <SheetContent side="left" className="md:hidden">
+            <SheetHeader>
+              <SheetTitle>Admin Account</SheetTitle>
+            </SheetHeader>
+          </SheetContent>
+          <div className="flex w-full items-center justify-between border-b p-2 md:hidden">
+              <Link href="/adminaccount" className="flex items-center gap-2 font-semibold">
+                  <Building className="h-6 w-6 text-primary" />
+                  <span>Admin Account</span>
+              </Link>
+              <SidebarTrigger />
+          </div>
+          <SidebarHeader className="hidden md:flex">
             <div className="flex items-center gap-2">
               <Building className="h-6 w-6 text-primary" />
               <h2 className="text-lg font-semibold text-sidebar-foreground">
@@ -221,9 +234,6 @@ function AdminAccountContent() {
             </div>
           </SidebarHeader>
           <SidebarContent>
-            <div className="md:hidden p-2 flex items-center justify-between border-b">
-                 <SidebarTrigger />
-            </div>
             <SidebarGroup>
               <SidebarMenuItem>
                   <SidebarMenuButton tooltip="Member Area" asChild>
