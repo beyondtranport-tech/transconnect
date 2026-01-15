@@ -196,7 +196,7 @@ export function Header() {
               </Button>
             </SheetTrigger>
             <SheetContent side="left" className="flex h-full flex-col p-0">
-                <SheetHeader className="p-6 pb-2">
+                <SheetHeader className="p-6 pb-2 border-b">
                     <SheetTitle>
                         <Link href="/" className="flex items-center gap-2" onClick={() => setIsSheetOpen(false)}>
                         <Truck className="h-6 w-6 text-primary" />
@@ -246,7 +246,7 @@ export function Header() {
                         </div>
                     </nav>
                 </div>
-                <div className="border-t p-6">
+                <div className="border-t p-4">
                     {isUserLoading ? (
                         <div className="h-10 w-full rounded-md bg-muted/50 animate-pulse" />
                     ) : user ? (
