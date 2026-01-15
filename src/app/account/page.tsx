@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -62,14 +63,6 @@ const NetworkContent = dynamic(() => import('./network-content'), { loading: () 
 const NetworkOffer = dynamic(() => import('./network-offer'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const NetworkEmails = dynamic(() => import('./network-emails'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const PerformanceContent = dynamic(() => import('./performance-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-
-// --- Financials Section (Admin Only) ---
-const FinancialSetup = dynamic(() => import('../adminaccount/financial-setup'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const SalesRoadmap = dynamic(() => import('../adminaccount/sales-roadmap'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const Targets = dynamic(() => import('../adminaccount/targets'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const MemberProjection = dynamic(() => import('./member-projection'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const BudgetPage = dynamic(() => import('../adminaccount/budget/page'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const ForecastPage = dynamic(() => import('../adminaccount/forecast/page'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 
 
 // Placeholder components for sections under construction
@@ -157,14 +150,6 @@ function AccountPageContent() {
       case 'documents': return <DocumentsContent />;
       case 'activity-feed': return <ActivityFeed />;
       case 'settings': return <SettingsContent />;
-      // Financials
-      case 'financial-setup': return <FinancialSetup />;
-      case 'sales-roadmap': return <SalesRoadmap />;
-      case 'targets': return <Targets />;
-      case 'member-projection': return <MemberProjection />;
-      case 'budget': return <BudgetPage />;
-      case 'forecast': return <ForecastPage />;
-      
       case 'dashboard':
       default:
         return <AccountDashboard />;
