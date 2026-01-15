@@ -10,8 +10,9 @@ import { Building2, Search, ArrowRight, Sparkles, Loader2 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import * as gtag from '@/lib/gtag';
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { useCollection, useFirestore } from '@/firebase';
 import { collection, query, where } from 'firebase/firestore';
+import { useMemoFirebase } from '@/hooks/use-config';
 
 const { placeholderImages } = data;
 

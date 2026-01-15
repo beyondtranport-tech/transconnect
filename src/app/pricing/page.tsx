@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Check, Star, Minus } from 'lucide-react';
 import Link from 'next/link';
-import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { useUser, useFirestore, useCollection } from '@/firebase';
 import { cn } from '@/lib/utils';
 import { useState, useMemo } from 'react';
 import { Switch } from '@/components/ui/switch';
@@ -14,6 +14,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import * as React from 'react';
 import { collection, query } from 'firebase/firestore';
 import { Loader2 } from 'lucide-react';
+import { useMemoFirebase } from '@/hooks/use-config';
 
 const featureSections = [
     {
@@ -237,5 +238,3 @@ export default function MembershipPage() {
     </div>
   );
 }
-
-    
