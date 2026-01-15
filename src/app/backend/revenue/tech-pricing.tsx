@@ -18,8 +18,9 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Save, Cpu } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { getClientSideAuthToken, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
+import { getClientSideAuthToken, useDoc, useFirestore } from '@/firebase';
 import { doc } from 'firebase/firestore';
+import { useMemoFirebase } from '@/hooks/use-config';
 
 const formSchema = z.object({
   seoBooster: z.coerce.number().min(0, 'Must be non-negative.'),

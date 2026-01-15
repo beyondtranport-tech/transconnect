@@ -18,9 +18,10 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Save, Store, FileText, Heart, LifeBuoy, Gift } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useFirestore, useDoc, useMemoFirebase } from '@/firebase';
+import { useFirestore, useDoc } from '@/firebase';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { Separator } from '@/components/ui/separator';
+import { useMemoFirebase } from '@/hooks/use-config';
 
 const productSchema = z.object({
   monthlyPrice: z.coerce.number().min(0, 'Must be non-negative'),

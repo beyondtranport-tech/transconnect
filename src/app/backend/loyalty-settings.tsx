@@ -18,9 +18,10 @@ import { useToast } from '@/hooks/use-toast';
 import { useState, useEffect } from 'react';
 import { Loader2, Save, Star, Gift, UserPlus, Store, Package, Sparkles, Edit, Video, Search, Truck, Building, Users, Handshake, Briefcase, Bot, Code, ShoppingCart, Warehouse, ShieldCheck } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useFirestore, useDoc, useMemoFirebase } from '@/firebase';
+import { useFirestore, useDoc } from '@/firebase';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { Separator } from '@/components/ui/separator';
+import { useMemoFirebase } from '@/hooks/use-config';
 
 const formSchema = z.object({
   bronze: z.coerce.number().min(0, 'Points must be 0 or more.'),
