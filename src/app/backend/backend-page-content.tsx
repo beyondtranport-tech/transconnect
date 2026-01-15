@@ -180,6 +180,9 @@ export default function BackendPageContent() {
   return (
     <SidebarProvider>
     <Sidebar>
+        <SheetHeader>
+            <SheetTitle className="sr-only">Backend Menu</SheetTitle>
+        </SheetHeader>
         <SidebarHeader>
         <div className="flex items-center gap-2">
             <Server className="h-6 w-6 text-primary" />

@@ -20,7 +20,7 @@ import {
   Loader2,
   TrendingUp,
   Map,
-  Sheet,
+  Sheet as FinancialSheetIcon,
   Presentation,
   User,
   Settings,
@@ -70,6 +70,7 @@ import { signOut } from 'firebase/auth';
 
 import dynamic from 'next/dynamic';
 import React from 'react';
+import { SheetHeader, SheetTitle } from '@/components/ui/sheet';
 
 // --- Business Strategy Components ---
 const SalesRoadmap = dynamic(() => import('../account/sales-roadmap'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
@@ -213,6 +214,9 @@ function AdminAccountContent() {
     <AdminAuthGuard>
       <SidebarProvider>
         <Sidebar>
+          <SheetHeader>
+            <SheetTitle className="sr-only">Admin Account Menu</SheetTitle>
+          </SheetHeader>
           <SidebarHeader>
             <div className="flex items-center gap-2">
               <Building className="h-6 w-6 text-primary" />
@@ -306,7 +310,7 @@ function AdminAccountContent() {
                           <span>Sales Roadmap</span>
                       </SidebarMenuSubButton>
                       <SidebarMenuSubButton isActive={activeView === 'targets'} onClick={() => router.push('/adminaccount?view=targets', { scroll: false })}>
-                          <Sheet />
+                          <FinancialSheetIcon />
                           <span>Targets</span>
                       </SidebarMenuSubButton>
                       <SidebarMenuSubButton isActive={activeView === 'member-projection'} onClick={() => router.push('/adminaccount?view=member-projection', { scroll: false })}>
@@ -314,7 +318,7 @@ function AdminAccountContent() {
                           <span>Member Projection</span>
                       </SidebarMenuSubButton>
                       <SidebarMenuSubButton isActive={activeView === 'budget'} onClick={() => router.push('/adminaccount?view=budget', { scroll: false })}>
-                          <Sheet />
+                          <FinancialSheetIcon />
                           <span>Budget</span>
                       </SidebarMenuSubButton>
                       <SidebarMenuSubButton isActive={activeView === 'forecast'} onClick={() => router.push('/adminaccount?view=forecast', { scroll: false })}>
