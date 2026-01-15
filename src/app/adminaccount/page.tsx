@@ -223,7 +223,7 @@ function AdminAccountContent() {
           <SidebarContent>
             <div className="md:hidden p-2 flex items-center justify-between border-b">
                 <SheetHeader>
-                    <SheetTitle>Admin Account Menu</SheetTitle>
+                    <SheetTitle>Admin Menu</SheetTitle>
                 </SheetHeader>
                  <SidebarTrigger />
             </div>
