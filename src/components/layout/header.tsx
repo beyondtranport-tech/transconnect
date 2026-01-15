@@ -3,9 +3,9 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Truck, Menu, User, ChevronDown, ShieldCheck, Building } from "lucide-react";
+import { Truck, Menu, User, ChevronDown, ShieldCheck, Building, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetFooter } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 import * as React from "react";
 import { useUser, useAuth } from "@/firebase";
@@ -56,6 +56,7 @@ export function Header() {
         // Explicitly remove cookies on sign-out
         deleteCookie('decodedToken');
         router.push('/');
+        setIsSheetOpen(false); // Close mobile menu on sign out
     } catch (error) {
         console.error("Error signing out: ", error);
     }
@@ -246,27 +247,33 @@ export function Header() {
                         </div>
                     </nav>
                 </div>
-                <div className="border-t p-4">
+                <SheetFooter className="p-4 border-t">
                     {isUserLoading ? (
                         <div className="h-10 w-full rounded-md bg-muted/50 animate-pulse" />
                     ) : user ? (
-                        <Button asChild className="w-full justify-start" >
-                        <Link href={isAdmin ? "/adminaccount" : "/account"} onClick={() => setIsSheetOpen(false)}>
-                            {isAdmin ? <Building className="mr-2 h-5 w-5" /> : <User className="mr-2 h-5 w-5" />}
-                            {isAdmin ? "Admin Account" : "My Account"}
-                        </Link>
-                        </Button>
+                        <div className='flex flex-col gap-2'>
+                             <Button asChild className="w-full justify-start" >
+                                <Link href={isAdmin ? "/adminaccount" : "/account"} onClick={() => setIsSheetOpen(false)}>
+                                    {isAdmin ? <Building className="mr-2 h-5 w-5" /> : <User className="mr-2 h-5 w-5" />}
+                                    {isAdmin ? "Admin Account" : "My Account"}
+                                </Link>
+                            </Button>
+                             <Button onClick={handleSignOut} variant="outline" className="w-full justify-start">
+                                <LogOut className="mr-2 h-5 w-5" />
+                                Sign Out
+                            </Button>
+                        </div>
                     ) : (
                         <div className="flex flex-col gap-2">
-                        <Button asChild className="w-full justify-start" variant="outline">
-                            <Link href="/signin" onClick={() => setIsSheetOpen(false)}>Sign In</Link>
-                        </Button>
-                        <Button asChild className="w-full justify-start">
-                            <Link href="/join" onClick={() => setIsSheetOpen(false)}>Join Now</Link>
-                        </Button>
+                            <Button asChild className="w-full justify-start" variant="outline">
+                                <Link href="/signin" onClick={() => setIsSheetOpen(false)}>Sign In</Link>
+                            </Button>
+                            <Button asChild className="w-full justify-start">
+                                <Link href="/join" onClick={() => setIsSheetOpen(false)}>Join Now</Link>
+                            </Button>
                         </div>
                     )}
-                </div>
+                </SheetFooter>
             </SheetContent>
           </Sheet>
         </div>
