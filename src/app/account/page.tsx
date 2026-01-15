@@ -32,47 +32,63 @@ import {
   DollarSign,
   Presentation,
   Mail,
+  Sheet as FinancialSheetIcon, // Renaming to avoid conflict
+  Map,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, Suspense, useCallback } from 'react';
 import { useUser, useAuth } from '@/firebase';
 import { signOut } from 'firebase/auth';
-import AccountDashboard from './dashboard';
 import { Loader2 } from 'lucide-react';
-import StaffContent from './staff-content';
-import ProfileContent from './profile-content';
-import CompanyContent from './company-content';
-import ShopContent from './shop-content';
-import BillingContent from './billing-content';
-import WalletContent from './wallet-content';
-import RewardsContent from './rewards';
-import NetworkContent from './network-content';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import NetworkOffer from './network-offer';
-import NetworkEmails from './network-emails';
-import PerformanceContent from './performance-content';
+import dynamic from 'next/dynamic';
+import React from 'react';
 
+// Dynamically import all components that are conditionally rendered
+const AccountDashboard = dynamic(() => import('./dashboard'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const StaffContent = dynamic(() => import('./staff-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const ProfileContent = dynamic(() => import('./profile-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const CompanyContent = dynamic(() => import('./company-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const ShopContent = dynamic(() => import('./shop-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const BillingContent = dynamic(() => import('./billing-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const WalletContent = dynamic(() => import('./wallet-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const RewardsContent = dynamic(() => import('./rewards'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const ActivityFeed = dynamic(() => import('./activity-feed'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 
+// --- Sales Section ---
+const NetworkContent = dynamic(() => import('./network-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const NetworkOffer = dynamic(() => import('./network-offer'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const NetworkEmails = dynamic(() => import('./network-emails'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const PerformanceContent = dynamic(() => import('./performance-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+
+// --- Financials Section ---
+const FinancialSetup = dynamic(() => import('./financial-setup'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const SalesRoadmap = dynamic(() => import('./sales-roadmap'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const Targets = dynamic(() => import('./targets'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const MemberProjection = dynamic(() => import('./member-projection'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const BudgetPage = dynamic(() => import('./budget/page'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const ForecastPage = dynamic(() => import('./forecast/page'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+
+// Placeholder components for sections under construction
 function DocumentsContent() {
     return (
-        <div>
-            <h1 className="text-2xl font-bold">Documents</h1>
-            <p className="mt-2 text-muted-foreground">This is where document management will go.</p>
-        </div>
+        <Card>
+            <CardHeader><CardTitle>Documents</CardTitle></CardHeader>
+            <CardContent><p className="text-muted-foreground">This section is under construction. Your document management center will appear here.</p></CardContent>
+        </Card>
     )
 }
 function SettingsContent() {
-    return (
-        <div>
-            <h1 className="text-2xl font-bold">Settings</h1>
-            <p className="mt-2 text-muted-foreground">This is where account settings will go.</p>
-        </div>
+     return (
+        <Card>
+            <CardHeader><CardTitle>Settings</CardTitle></CardHeader>
+            <CardContent><p className="text-muted-foreground">This section is under construction. Your account settings will appear here.</p></CardContent>
+        </Card>
     )
 }
 
-// Placeholder components for new sales sections
 function ProductSalesContent() {
     return (
         <Card>
@@ -122,45 +138,37 @@ function AccountPageContent() {
     return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
   };
 
-  const renderContent = () => {
+  const renderContent = useCallback(() => {
     switch (activeView) {
-      case 'profile':
-        return <ProfileContent />;
-      case 'company':
-        return <CompanyContent />;
-      case 'staff':
-        return <StaffContent />;
-      case 'shop':
-        return <ShopContent />;
-      case 'wallet':
-        return <WalletContent />;
-      case 'billing':
-        return <BillingContent />;
-      case 'rewards':
-        return <RewardsContent />;
-      case 'network':
-        return <NetworkContent />;
-      case 'performance':
-        return <PerformanceContent />;
-      case 'product-sales':
-        return <ProductSalesContent />;
-      case 'earnings':
-        return <EarningsContent />;
-      case 'network-offer':
-        return <NetworkOffer />;
-      case 'network-emails':
-        return <NetworkEmails />;
-      case 'documents':
-        return <DocumentsContent />;
-      case 'activity-feed':
-        return <ActivityFeed />;
-      case 'settings':
-        return <SettingsContent />;
+      case 'profile': return <ProfileContent />;
+      case 'company': return <CompanyContent />;
+      case 'staff': return <StaffContent />;
+      case 'shop': return <ShopContent />;
+      case 'wallet': return <WalletContent />;
+      case 'billing': return <BillingContent />;
+      case 'rewards': return <RewardsContent />;
+      case 'network': return <NetworkContent />;
+      case 'network-offer': return <NetworkOffer />;
+      case 'network-emails': return <NetworkEmails />;
+      case 'performance': return <PerformanceContent />;
+      case 'product-sales': return <ProductSalesContent />;
+      case 'earnings': return <EarningsContent />;
+      case 'documents': return <DocumentsContent />;
+      case 'activity-feed': return <ActivityFeed />;
+      case 'settings': return <SettingsContent />;
+      // Financials
+      case 'financial-setup': return <FinancialSetup />;
+      case 'sales-roadmap': return <SalesRoadmap />;
+      case 'targets': return <Targets />;
+      case 'member-projection': return <MemberProjection />;
+      case 'budget': return <BudgetPage />;
+      case 'forecast': return <ForecastPage />;
+      
       case 'dashboard':
       default:
         return <AccountDashboard />;
     }
-  }
+  }, [activeView]);
 
   if (isUserLoading || !user) {
     return (
@@ -169,6 +177,13 @@ function AccountPageContent() {
         </div>
     );
   }
+
+  const navigate = (view: string) => {
+    router.push(`/account?view=${view}`, { scroll: false });
+  };
+  
+  const isSalesActive = ['network', 'performance', 'product-sales', 'earnings', 'network-offer', 'network-emails'].includes(activeView);
+  const isFinancialsActive = ['financial-setup', 'sales-roadmap', 'targets', 'member-projection', 'budget', 'forecast'].includes(activeView);
 
   return (
     <SidebarProvider>
@@ -186,99 +201,131 @@ function AccountPageContent() {
         <SidebarContent>
           <SidebarGroup>
               <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Dashboard" isActive={activeView === 'dashboard'} onClick={() => router.push('/account?view=dashboard', { scroll: false })}>
+                <SidebarMenuButton tooltip="Dashboard" isActive={activeView === 'dashboard'} onClick={() => navigate('dashboard')}>
                   <LayoutDashboard />
                   <span>Dashboard</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton tooltip="My Profile" isActive={activeView === 'profile'} onClick={() => router.push('/account?view=profile', { scroll: false })}>
+                <SidebarMenuButton tooltip="My Profile" isActive={activeView === 'profile'} onClick={() => navigate('profile')}>
                   <User />
                   <span>My Profile</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
                <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Company" isActive={activeView === 'company'} onClick={() => router.push('/account?view=company', { scroll: false })}>
+                <SidebarMenuButton tooltip="Company" isActive={activeView === 'company'} onClick={() => navigate('company')}>
                   <Building />
                   <span>Company</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
                <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Staff" isActive={activeView === 'staff'} onClick={() => router.push('/account?view=staff', { scroll: false })}>
+                <SidebarMenuButton tooltip="Staff" isActive={activeView === 'staff'} onClick={() => navigate('staff')}>
                   <Users />
                   <span>Staff</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton tooltip="My Shop" isActive={activeView === 'shop'} onClick={() => router.push('/account?view=shop', { scroll: false })}>
+                <SidebarMenuButton tooltip="My Shop" isActive={activeView === 'shop'} onClick={() => navigate('shop')}>
                   <Store />
                   <span>My Shop</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
                <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Wallet" isActive={activeView === 'wallet'} onClick={() => router.push('/account?view=wallet', { scroll: false })}>
+                <SidebarMenuButton tooltip="Wallet" isActive={activeView === 'wallet'} onClick={() => navigate('wallet')}>
                   <Wallet />
                   <span>Wallet</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
                <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Rewards" isActive={activeView === 'rewards'} onClick={() => router.push('/account?view=rewards', { scroll: false })}>
+                <SidebarMenuButton tooltip="Rewards" isActive={activeView === 'rewards'} onClick={() => navigate('rewards')}>
                   <Gift />
                   <span>Rewards</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Sales" isActive={['network', 'performance', 'product-sales', 'earnings', 'network-offer', 'network-emails'].includes(activeView)}>
+                <SidebarMenuButton tooltip="Sales" isActive={isSalesActive}>
                   <Handshake />
                   <span>Sales</span>
                 </SidebarMenuButton>
                 <SidebarMenuSub>
-                    <SidebarMenuSubButton isActive={activeView === 'network'} onClick={() => router.push('/account?view=network', { scroll: false })}>
+                    <SidebarMenuSubButton isActive={activeView === 'network'} onClick={() => navigate('network')}>
                         <Users />
                         <span>My Network</span>
                     </SidebarMenuSubButton>
-                     <SidebarMenuSubButton isActive={activeView === 'network-offer'} onClick={() => router.push('/account?view=network-offer', { scroll: false })}>
+                     <SidebarMenuSubButton isActive={activeView === 'network-offer'} onClick={() => navigate('network-offer')}>
                         <Presentation />
                         <span>Network Offer</span>
                     </SidebarMenuSubButton>
-                    <SidebarMenuSubButton isActive={activeView === 'network-emails'} onClick={() => router.push('/account?view=network-emails', { scroll: false })}>
+                    <SidebarMenuSubButton isActive={activeView === 'network-emails'} onClick={() => navigate('network-emails')}>
                         <Mail />
                         <span>Network Emails</span>
                     </SidebarMenuSubButton>
-                    <SidebarMenuSubButton isActive={activeView === 'performance'} onClick={() => router.push('/account?view=performance', { scroll: false })}>
+                    <SidebarMenuSubButton isActive={activeView === 'performance'} onClick={() => navigate('performance')}>
                         <TrendingUp />
                         <span>Performance</span>
                     </SidebarMenuSubButton>
-                    <SidebarMenuSubButton isActive={activeView === 'product-sales'} onClick={() => router.push('/account?view=product-sales', { scroll: false })}>
+                    <SidebarMenuSubButton isActive={activeView === 'product-sales'} onClick={() => navigate('product-sales')}>
                         <Package />
                         <span>Product Sales</span>
                     </SidebarMenuSubButton>
-                     <SidebarMenuSubButton isActive={activeView === 'earnings'} onClick={() => router.push('/account?view=earnings', { scroll: false })}>
+                     <SidebarMenuSubButton isActive={activeView === 'earnings'} onClick={() => navigate('earnings')}>
                         <DollarSign />
                         <span>Earnings</span>
                     </SidebarMenuSubButton>
                 </SidebarMenuSub>
               </SidebarMenuItem>
+               <SidebarMenuItem>
+                <SidebarMenuButton tooltip="Financials" isActive={isFinancialsActive}>
+                  <FinancialSheetIcon />
+                  <span>Financials</span>
+                </SidebarMenuButton>
+                <SidebarMenuSub>
+                     <SidebarMenuSubButton isActive={activeView === 'financial-setup'} onClick={() => navigate('financial-setup')}>
+                        <Settings />
+                        <span>Setup</span>
+                    </SidebarMenuSubButton>
+                     <SidebarMenuSubButton isActive={activeView === 'sales-roadmap'} onClick={() => navigate('sales-roadmap')}>
+                        <Map />
+                        <span>Sales Roadmap</span>
+                    </SidebarMenuSubButton>
+                     <SidebarMenuSubButton isActive={activeView === 'targets'} onClick={() => navigate('targets')}>
+                        <FileText />
+                        <span>Targets</span>
+                    </SidebarMenuSubButton>
+                     <SidebarMenuSubButton isActive={activeView === 'member-projection'} onClick={() => navigate('member-projection')}>
+                        <Users />
+                        <span>Member Projection</span>
+                    </SidebarMenuSubButton>
+                     <SidebarMenuSubButton isActive={activeView === 'budget'} onClick={() => navigate('budget')}>
+                        <FileText />
+                        <span>Budget</span>
+                    </SidebarMenuSubButton>
+                     <SidebarMenuSubButton isActive={activeView === 'forecast'} onClick={() => navigate('forecast')}>
+                        <TrendingUp />
+                        <span>Forecast</span>
+                    </SidebarMenuSubButton>
+                </SidebarMenuSub>
+              </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Billing" isActive={activeView === 'billing'} onClick={() => router.push('/account?view=billing', { scroll: false })}>
+                <SidebarMenuButton tooltip="Billing" isActive={activeView === 'billing'} onClick={() => navigate('billing')}>
                   <CreditCard />
                   <span>Billing</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Documents" isActive={activeView === 'documents'} onClick={() => router.push('/account?view=documents', { scroll: false })}>
+                <SidebarMenuButton tooltip="Documents" isActive={activeView === 'documents'} onClick={() => navigate('documents')}>
                   <FileText />
                   <span>Documents</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Activity Feed" isActive={activeView === 'activity-feed'} onClick={() => router.push('/account?view=activity-feed', { scroll: false })}>
+                <SidebarMenuButton tooltip="Activity Feed" isActive={activeView === 'activity-feed'} onClick={() => navigate('activity-feed')}>
                   <Activity />
                   <span>Activity Feed</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Settings" isActive={activeView === 'settings'} onClick={() => router.push('/account?view=settings', { scroll: false })}>
+                <SidebarMenuButton tooltip="Settings" isActive={activeView === 'settings'} onClick={() => navigate('settings')}>
                   <Settings />
                   <span>Settings</span>
                 </SidebarMenuButton>
@@ -311,7 +358,9 @@ function AccountPageContent() {
       </Sidebar>
       <SidebarInset>
         <div className="p-4 md:p-6">
-          {renderContent()}
+          <Suspense fallback={<Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" />}>
+            {renderContent()}
+          </Suspense>
         </div>
       </SidebarInset>
     </SidebarProvider>
