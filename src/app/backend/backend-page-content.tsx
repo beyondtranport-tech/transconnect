@@ -64,6 +64,7 @@ import { signOut } from 'firebase/auth';
 
 // Using next/dynamic to lazy-load components
 import dynamic from 'next/dynamic';
+import { SheetHeader, SheetTitle } from '@/components/ui/sheet';
 
 const AdminAccountContent = dynamic(() => import('../adminaccount/page'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const DashboardContent = dynamic(() => import('./dashboard-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });

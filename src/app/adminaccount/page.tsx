@@ -360,7 +360,7 @@ function AdminAccountContent() {
         </Sidebar>
         <SidebarInset>
             <div className="md:hidden flex items-center justify-between border-b p-2">
-                <Link href="/" className="flex items-center gap-2">
+                <Link href="/adminaccount" className="flex items-center gap-2">
                     <Building className="h-6 w-6 text-primary" />
                     <span className="font-bold text-lg">Admin Account</span>
                 </Link>
