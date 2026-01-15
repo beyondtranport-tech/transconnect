@@ -5,13 +5,12 @@ import { Suspense, useEffect } from 'react';
 import { Loader2 } from 'lucide-react';
 import BackendPageContent from './backend-page-content';
 import { useUser } from '@/firebase/provider';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import React from 'react';
 
 function AdminAuthGuard({ children }: { children: React.ReactNode }) {
     const { user, isUserLoading } = useUser();
     const router = useRouter();
-    const searchParams = useSearchParams();
 
     useEffect(() => {
         if (isUserLoading) {
@@ -19,20 +18,18 @@ function AdminAuthGuard({ children }: { children: React.ReactNode }) {
         }
 
         if (!user) {
+            // If user is not logged in, redirect to sign-in
             router.replace('/signin?redirect=/backend');
         } else if (user.email !== 'beyondtransport@gmail.com') {
-            router.replace('/account'); // Redirect non-admins to their account page
+            // If user is not an admin, redirect to their standard account page
+            router.replace('/account');
         }
-        
-        // If an admin lands here without a specific view, redirect them to a more suitable default.
-        if (user?.email === 'beyondtransport@gmail.com' && !searchParams.has('view')) {
-            router.replace('/adminaccount');
-        }
+        // If the user is an admin, they are allowed to see the content.
+        // The faulty redirect logic has been removed.
 
-    }, [user, isUserLoading, router, searchParams]);
+    }, [user, isUserLoading, router]);
 
-    // This is the key: show a loading state until Firebase has confirmed the user's status.
-    // If loading is finished and the user is not the admin, they will be redirected by the useEffect.
+    // Show a loading state while we verify the user's admin status.
     if (isUserLoading || !user || user.email !== 'beyondtransport@gmail.com') {
         return (
             <div className="flex flex-col justify-center items-center min-h-[calc(100vh-8rem)]">
@@ -42,7 +39,7 @@ function AdminAuthGuard({ children }: { children: React.ReactNode }) {
         );
     }
     
-    // Only render the children (the backend page) if the user is a loaded admin
+    // Only render the children (the backend page) if the user is a loaded admin.
     return <>{children}</>;
 }
 
