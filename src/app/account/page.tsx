@@ -52,6 +52,7 @@ import NetworkContent from './network-content';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import NetworkOffer from './network-offer';
 import NetworkEmails from './network-emails';
+import PerformanceContent from './performance-content';
 
 
 function DocumentsContent() {
@@ -72,14 +73,6 @@ function SettingsContent() {
 }
 
 // Placeholder components for new sales sections
-function PerformanceContent() {
-    return (
-        <Card>
-            <CardHeader><CardTitle>Performance Dashboard</CardTitle></CardHeader>
-            <CardContent><p className="text-muted-foreground">This section is under construction. Your sales performance metrics will appear here.</p></CardContent>
-        </Card>
-    )
-}
 function ProductSalesContent() {
     return (
         <Card>
