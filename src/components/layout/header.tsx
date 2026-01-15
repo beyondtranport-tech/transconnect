@@ -188,7 +188,6 @@ export function Header() {
             )}
           </div>
           
-
           <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon" className="md:hidden">
@@ -252,12 +251,29 @@ export function Header() {
                         <div className="h-10 w-full rounded-md bg-muted/50 animate-pulse" />
                     ) : user ? (
                         <div className='flex flex-col gap-2'>
-                             <Button asChild className="w-full justify-start" >
-                                <Link href={isAdmin ? "/adminaccount" : "/account"} onClick={() => setIsSheetOpen(false)}>
-                                    {isAdmin ? <Building className="mr-2 h-5 w-5" /> : <User className="mr-2 h-5 w-5" />}
-                                    {isAdmin ? "Admin Account" : "My Account"}
-                                </Link>
-                            </Button>
+                             {isAdmin ? (
+                                <>
+                                    <Button asChild className="w-full justify-start">
+                                        <Link href="/adminaccount" onClick={() => setIsSheetOpen(false)}>
+                                            <Building className="mr-2 h-5 w-5" />
+                                            Admin Account
+                                        </Link>
+                                    </Button>
+                                    <Button asChild className="w-full justify-start" variant="secondary">
+                                        <Link href="/account" onClick={() => setIsSheetOpen(false)}>
+                                            <User className="mr-2 h-5 w-5" />
+                                            View Member Area
+                                        </Link>
+                                    </Button>
+                                </>
+                             ) : (
+                                <Button asChild className="w-full justify-start">
+                                    <Link href="/account" onClick={() => setIsSheetOpen(false)}>
+                                        <User className="mr-2 h-5 w-5" />
+                                        My Account
+                                    </Link>
+                                </Button>
+                             )}
                              <Button onClick={handleSignOut} variant="outline" className="w-full justify-start">
                                 <LogOut className="mr-2 h-5 w-5" />
                                 Sign Out
