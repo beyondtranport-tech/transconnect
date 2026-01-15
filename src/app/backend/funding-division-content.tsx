@@ -82,6 +82,7 @@ export default function FundingDivisionContent() {
                 <Card><CardHeader><CardTitle>Total Applications</CardTitle></CardHeader><CardContent><div className="text-2xl font-bold">{stats.applications}</div></CardContent></Card>
                 <Card><CardHeader><CardTitle>Total Value Requested</CardTitle></CardHeader><CardContent><div className="text-2xl font-bold">{formatPrice(stats.totalRequested)}</div></CardContent></Card>
                 <Card><CardHeader><CardTitle>Total Value Funded</CardTitle></CardHeader><CardContent><div className="text-2xl font-bold">{formatPrice(stats.totalFunded)}</div></CardContent></Card>
+            </div>
              <Card>
                 <CardHeader>
                     <CardTitle>All Funding Records (Quotes & Enquiries)</CardTitle>
@@ -123,5 +124,5 @@ export default function FundingDivisionContent() {
                 </CardContent>
             </Card>
         </div>
-    )
+    );
 }
