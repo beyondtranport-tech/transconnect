@@ -20,7 +20,7 @@ import {
   Loader2,
   TrendingUp,
   Map,
-  Sheet as FinancialSheetIcon,
+  Sheet as FinancialSheetIcon, // Renaming to avoid conflict
   Presentation,
   User,
   Settings,
@@ -57,6 +57,7 @@ import {
   Handshake as HandshakeIcon,
   Package,
   LayoutDashboard,
+  Mail,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -70,6 +71,7 @@ import { signOut } from 'firebase/auth';
 import dynamic from 'next/dynamic';
 import React from 'react';
 import { SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 
 // --- Business Strategy Components ---
 const SalesRoadmap = dynamic(() => import('../account/sales-roadmap'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
