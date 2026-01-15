@@ -68,6 +68,27 @@ export function Header() {
 
   const isAdmin = user && user.email === 'beyondtransport@gmail.com';
 
+  const navItems = [
+    { href: "/", label: "Home" },
+    { href: "/about", label: "About" },
+    {
+      label: "Divisions",
+      isDropdown: true,
+      links: [
+        { href: "/divisions", label: "All Divisions" },
+        { href: "/funding", label: "Funding" },
+        { href: "/mall", label: "Mall" },
+        { href: "/marketplace", label: "Marketplace" },
+        { href: "/tech", label: "Tech" },
+      ]
+    },
+    { href: "/pricing", label: "Membership" },
+    { href: "/connect", label: "Connect" },
+    { href: "/incentives", label: "Incentives" },
+    { href: "/resources", label: "Resources" },
+    { href: "/contact", label: "Contact Us" },
+  ];
+  
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 items-center justify-between">
@@ -79,31 +100,32 @@ export function Header() {
         </div>
 
         <nav className="hidden md:flex items-center gap-1 text-sm font-medium">
-            {mainNavLinks.map(({ href, label }) => (
-                <Link key={href} href={href} className={cn("transition-colors hover:text-primary px-3 py-2 rounded-md", pathname === href ? "text-primary font-semibold" : "text-muted-foreground")}>
-                    {label}
-                </Link>
+            {navItems.map((item) => (
+                item.isDropdown ? (
+                    <DropdownMenu key={item.label}>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" className={cn(
+                                "flex items-center gap-1 px-3 py-2 text-sm font-medium hover:text-primary data-[state=open]:text-primary",
+                                item.links.some(p => pathname.startsWith(p.href)) ? "text-primary font-semibold" : "text-muted-foreground"
+                            )}>
+                                {item.label}
+                                <ChevronDown className="h-4 w-4" />
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="start">
+                            {item.links.map(({ href, label }) => (
+                                <DropdownMenuItem key={href} asChild>
+                                    <Link href={href}>{label}</Link>
+                                </DropdownMenuItem>
+                            ))}
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                ) : (
+                    <Link key={item.href} href={item.href!} className={cn("transition-colors hover:text-primary px-3 py-2 rounded-md", pathname === item.href ? "text-primary font-semibold" : "text-muted-foreground")}>
+                        {item.label}
+                    </Link>
+                )
             ))}
-            
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className={cn(
-                  "flex items-center gap-1 px-3 py-2 text-sm font-medium hover:text-primary data-[state=open]:text-primary",
-                  ["/divisions", "/marketplace", "/tech", "/funding", "/mall"].some(p => pathname.startsWith(p)) ? "text-primary font-semibold" : "text-muted-foreground"
-                )}>
-                  Divisions
-                  <ChevronDown className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start">
-                {divisionLinks.map(({ href, label }) => (
-                  <DropdownMenuItem key={href} asChild>
-                    <Link href={href}>{label}</Link>
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-
         </nav>
 
         <div className="flex items-center gap-4">
@@ -250,5 +272,3 @@ export function Header() {
     </header>
   );
 }
-
-    
