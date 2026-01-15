@@ -198,18 +198,10 @@ export default function BackendPageContent() {
         </div>
         <SidebarGroup>
             <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Go to Admin Account" asChild>
+                <SidebarMenuButton tooltip="Admin Account" asChild>
                     <Link href="/adminaccount">
                         <Building />
                         <span>Admin Account</span>
-                    </Link>
-                </SidebarMenuButton>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Go to Member Area" asChild>
-                    <Link href="/account">
-                        <Users />
-                        <span>Member Area</span>
                     </Link>
                 </SidebarMenuButton>
             </SidebarMenuItem>

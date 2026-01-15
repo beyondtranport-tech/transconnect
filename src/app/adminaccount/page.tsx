@@ -20,7 +20,7 @@ import {
   Loader2,
   TrendingUp,
   Map,
-  Sheet as FinancialSheetIcon, // Renaming to avoid conflict
+  Sheet as FinancialSheetIcon,
   Presentation,
   User,
   Settings,
@@ -223,10 +223,10 @@ function AdminAccountContent() {
           <SidebarContent>
             <SidebarGroup>
               <SidebarMenuItem>
-                  <SidebarMenuButton tooltip="Member Area" asChild>
-                      <Link href="/account">
-                          <Users />
-                          <span>Member Area</span>
+                  <SidebarMenuButton tooltip="App Backend" asChild>
+                      <Link href="/backend">
+                          <Server />
+                          <span>App Backend</span>
                       </Link>
                   </SidebarMenuButton>
               </SidebarMenuItem>
@@ -321,12 +321,6 @@ function AdminAccountContent() {
                           <span>Forecast</span>
                       </SidebarMenuSubButton>
                   </SidebarMenuSub>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                  <SidebarMenuButton tooltip="Backend" onClick={() => router.push('/backend', { scroll: false })}>
-                      <Server />
-                      <span>App Backend</span>
-                  </SidebarMenuButton>
               </SidebarMenuItem>
             </SidebarGroup>
           </SidebarContent>
