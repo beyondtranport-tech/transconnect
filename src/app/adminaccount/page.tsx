@@ -85,7 +85,6 @@ const StaffContent = dynamic(() => import('./staff-content'), { loading: () => <
 // --- Business Operations Components (from /backend) ---
 const MemberWallet = dynamic(() => import('../backend/wallet/[memberId]/member-wallet'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const DashboardContent = dynamic(() => import('../backend/dashboard-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const PitchContent = dynamic(() => import('../backend/pitch-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 
 // --- Sales Section (from /account) ---
 const NetworkContent = dynamic(() => import('../account/network-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
@@ -174,7 +173,6 @@ function AdminAccountContent() {
       // Business Operations
       case 'dashboard': return <DashboardContent />;
       case 'staff': return <StaffContent />;
-      case 'pitch': return <PitchContent />;
        case 'wallet':
         if (memberId) {
             return <MemberWallet memberId={memberId} />;
