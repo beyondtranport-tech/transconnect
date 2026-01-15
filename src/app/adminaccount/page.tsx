@@ -214,6 +214,12 @@ function AdminAccountContent() {
     <AdminAuthGuard>
       <SidebarProvider>
         <Sidebar>
+           <div className="md:hidden p-2 flex items-center justify-between border-b">
+                <SheetHeader>
+                    <SheetTitle>Admin Account Menu</SheetTitle>
+                </SheetHeader>
+                 <SidebarTrigger />
+            </div>
           <SidebarHeader>
             <div className="flex items-center gap-2">
               <Building className="h-6 w-6 text-primary" />
@@ -365,10 +371,7 @@ function AdminAccountContent() {
                     <Building className="h-6 w-6 text-primary" />
                     <span className="font-bold text-lg">Admin Account</span>
                 </Link>
-                <SheetHeader>
-                    <SheetTitle className="sr-only">Admin Account Menu</SheetTitle>
-                    <SidebarTrigger />
-                </SheetHeader>
+                <SidebarTrigger />
             </div>
             <div className="p-6">
                 <Suspense fallback={<Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" />}>

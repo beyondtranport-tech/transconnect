@@ -184,6 +184,12 @@ export default function BackendPageContent() {
   return (
     <SidebarProvider>
     <Sidebar>
+        <div className="md:hidden p-2 flex items-center justify-between border-b">
+            <SheetHeader>
+                <SheetTitle>Backend Menu</SheetTitle>
+            </SheetHeader>
+            <SidebarTrigger />
+        </div>
         <SidebarHeader>
         <div className="flex items-center gap-2">
             <Server className="h-6 w-6 text-primary" />
@@ -381,10 +387,7 @@ export default function BackendPageContent() {
                 <Server className="h-6 w-6 text-primary" />
                 <span className="font-bold text-lg">App Backend</span>
             </Link>
-            <SheetHeader>
-                <SheetTitle className="sr-only">Backend Menu</SheetTitle>
-                <SidebarTrigger />
-            </SheetHeader>
+            <SidebarTrigger />
         </div>
         <div className="p-6">
             <Suspense fallback={<Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" />}>
