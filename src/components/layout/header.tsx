@@ -246,7 +246,7 @@ export function Header() {
                    </div>
                 </nav>
               </div>
-              <div className="border-t p-6">
+              <div className="border-t p-6 mt-auto">
                   {isUserLoading ? (
                      <div className="h-10 w-full rounded-md bg-muted/50 animate-pulse" />
                   ) : user ? (
@@ -274,3 +274,5 @@ export function Header() {
     </header>
   );
 }
+
+    
