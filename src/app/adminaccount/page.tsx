@@ -244,7 +244,7 @@ function AdminAccountContent() {
                     </SidebarMenuSubButton>
                 </SidebarMenuSub>
               </SidebarMenuItem>
-              <SidebarMenuItem>
+               <SidebarMenuItem>
                   <SidebarMenuButton tooltip="Sales" isActive={isSalesActive}>
                     <HandshakeIcon />
                     <span>Sales</span>
@@ -369,3 +369,5 @@ export default function AdminAccountPage() {
     </Suspense>
   );
 }
+
+    
