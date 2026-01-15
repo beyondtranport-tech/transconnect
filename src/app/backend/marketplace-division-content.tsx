@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useConfig } from '@/hooks/use-config';
 import { Loader2, FileText, Heart, LifeBuoy, Gift, DollarSign, Percent } from 'lucide-react';
 import * as React from "react";
+import Link from 'next/link';
 
 const formatPrice = (price?: number) => {
     if (typeof price !== 'number') return 'N/A';
