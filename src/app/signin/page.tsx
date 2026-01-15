@@ -105,21 +105,6 @@ function SignInFormComponent() {
     try {
       const userCredential = await signInWithEmailAndPassword(auth, values.email, values.password);
       const loggedInUser = userCredential.user;
-
-      const token = await getIdToken(loggedInUser);
-      const response = await fetch('/api/checkAndCreateUser', {
-          method: 'POST',
-          headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({}), // Send an empty object
-      });
-
-      if (!response.ok) {
-          const result = await response.json();
-          throw new Error(result.error || "Failed to verify user profile.");
-      }
       
       toast({
         title: 'Sign In Successful',
@@ -129,8 +114,22 @@ function SignInFormComponent() {
       const isAdmin = loggedInUser.email === 'beyondtransport@gmail.com';
       const defaultRedirect = isAdmin ? '/adminaccount' : '/account';
       
-      // Use router.replace for a clean navigation history
-      router.replace(redirectParam || defaultRedirect);
+      // Use router.push to navigate immediately.
+      router.push(redirectParam || defaultRedirect);
+
+      // Perform the user check in the background without blocking navigation.
+      getIdToken(loggedInUser).then(token => {
+        if (token) {
+           fetch('/api/checkAndCreateUser', {
+              method: 'POST',
+              headers: {
+                  'Authorization': `Bearer ${token}`,
+                  'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({}),
+          }).catch(error => console.error("Background user check failed:", error));
+        }
+      });
       
     } catch (error: any) {
       let title = 'An error occurred.';
@@ -148,8 +147,7 @@ function SignInFormComponent() {
         title,
         description,
       });
-    } finally {
-        setIsLoading(false);
+       setIsLoading(false); // Only set loading to false if there's an error. On success, navigation happens.
     }
   };
 
