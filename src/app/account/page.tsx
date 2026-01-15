@@ -148,7 +148,6 @@ function AccountPageContent() {
       case 'product-sales': return <ProductSalesContent />;
       case 'earnings': return <EarningsContent />;
       case 'documents': return <DocumentsContent />;
-      case 'activity-feed': return <ActivityFeed />;
       case 'settings': return <SettingsContent />;
       case 'dashboard':
       default:
@@ -269,12 +268,6 @@ function AccountPageContent() {
                 <SidebarMenuButton tooltip="Documents" isActive={activeView === 'documents'} onClick={() => navigate('documents')}>
                   <FileText />
                   <span>Documents</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Activity Feed" isActive={activeView === 'activity-feed'} onClick={() => navigate('activity-feed')}>
-                  <Activity />
-                  <span>Activity Feed</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
