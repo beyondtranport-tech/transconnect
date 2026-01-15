@@ -54,8 +54,6 @@ import {
   Lock,
   Activity,
   Sparkles,
-  LayoutDashboard,
-  Mail,
   Handshake as HandshakeIcon,
   Package,
 } from 'lucide-react';
@@ -214,12 +212,6 @@ function AdminAccountContent() {
     <AdminAuthGuard>
       <SidebarProvider>
         <Sidebar>
-           <div className="md:hidden p-2 flex items-center justify-between border-b">
-                <SheetHeader>
-                    <SheetTitle>Admin Account Menu</SheetTitle>
-                </SheetHeader>
-                 <SidebarTrigger />
-            </div>
           <SidebarHeader>
             <div className="flex items-center gap-2">
               <Building className="h-6 w-6 text-primary" />
@@ -229,6 +221,12 @@ function AdminAccountContent() {
             </div>
           </SidebarHeader>
           <SidebarContent>
+            <div className="md:hidden p-2 flex items-center justify-between border-b">
+                <SheetHeader>
+                    <SheetTitle>Admin Account Menu</SheetTitle>
+                </SheetHeader>
+                 <SidebarTrigger />
+            </div>
             <SidebarGroup>
               <SidebarMenuItem>
                   <SidebarMenuButton tooltip="Member Area" asChild>
@@ -366,13 +364,6 @@ function AdminAccountContent() {
           </SidebarFooter>
         </Sidebar>
         <SidebarInset>
-            <div className="md:hidden flex items-center justify-between border-b p-2">
-                <Link href="/adminaccount" className="flex items-center gap-2">
-                    <Building className="h-6 w-6 text-primary" />
-                    <span className="font-bold text-lg">Admin Account</span>
-                </Link>
-                <SidebarTrigger />
-            </div>
             <div className="p-6">
                 <Suspense fallback={<Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" />}>
                 {renderContent()}

@@ -184,12 +184,6 @@ export default function BackendPageContent() {
   return (
     <SidebarProvider>
     <Sidebar>
-        <div className="md:hidden p-2 flex items-center justify-between border-b">
-            <SheetHeader>
-                <SheetTitle>Backend Menu</SheetTitle>
-            </SheetHeader>
-            <SidebarTrigger />
-        </div>
         <SidebarHeader>
         <div className="flex items-center gap-2">
             <Server className="h-6 w-6 text-primary" />
@@ -199,6 +193,12 @@ export default function BackendPageContent() {
         </div>
         </SidebarHeader>
         <SidebarContent>
+        <div className="md:hidden p-2 flex items-center justify-between border-b">
+            <SheetHeader>
+                <SheetTitle>Backend Menu</SheetTitle>
+            </SheetHeader>
+            <SidebarTrigger />
+        </div>
         <SidebarGroup>
             <SidebarMenuItem>
                 <SidebarMenuButton tooltip="Go to Admin Account" asChild>
@@ -382,13 +382,6 @@ export default function BackendPageContent() {
         </SidebarFooter>
     </Sidebar>
     <SidebarInset>
-        <div className="md:hidden flex items-center justify-between border-b p-2">
-            <Link href="/backend" className="flex items-center gap-2">
-                <Server className="h-6 w-6 text-primary" />
-                <span className="font-bold text-lg">App Backend</span>
-            </Link>
-            <SidebarTrigger />
-        </div>
         <div className="p-6">
             <Suspense fallback={<Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" />}>
             {renderContent()}
