@@ -201,7 +201,7 @@ export default function BackendPageContent() {
                 <SidebarMenuButton tooltip="Go to Admin Account" asChild>
                     <Link href="/adminaccount">
                         <Building />
-                        <span>Business Hub</span>
+                        <span>Admin Account</span>
                     </Link>
                 </SidebarMenuButton>
             </SidebarMenuItem>
