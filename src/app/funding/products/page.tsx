@@ -250,33 +250,35 @@ function QuoteCalculator({ product, onQuoteSaved, onOpenChange }: { product: { i
 function ProductTypesContent() {
     const searchParams = useSearchParams();
     const [isClient, setIsClient] = useState(false);
-    const agreement = searchParams.get('agreement') as keyof typeof productsData;
     const [openDialogs, setOpenDialogs] = useState<Record<string, boolean>>({});
 
     useEffect(() => {
         setIsClient(true);
     }, []);
 
+    const agreement = searchParams.get('agreement') as keyof typeof productsData;
+    
+    // Defer data and icon selection until client-side
+    const categoryData = isClient ? productsData[agreement] : null;
+    const Icon = categoryData?.icon || Landmark; // Default icon for server render
+
     const handleQuoteSaved = (productId: string) => {
         // The dialog logic is now handled inside the QuoteCalculator component
     };
 
-    const data = productsData[agreement] || { title: "Products", icon: Landmark, items: [] };
-    const Icon = data.icon;
-
     return (
         <div className="container mx-auto px-4 py-16">
             <div className="text-center max-w-3xl mx-auto mb-12">
-                 {isClient ? <Icon className="h-12 w-12 text-primary mx-auto mb-4" /> : <div className="h-12 w-12 mx-auto mb-4" />}
-                <h1 className="text-4xl md:text-5xl font-bold font-headline">{data.title}</h1>
+                 {isClient && categoryData ? <Icon className="h-12 w-12 text-primary mx-auto mb-4" /> : <div className="h-12 w-12 mx-auto mb-4" />}
+                <h1 className="text-4xl md:text-5xl font-bold font-headline">{isClient && categoryData ? categoryData.title : 'Products'}</h1>
                 <p className="mt-4 text-lg md:text-xl text-muted-foreground">
                     Select a specific product to start your application.
                 </p>
             </div>
             
-            {data.items.length > 0 ? (
+            {isClient && categoryData && categoryData.items.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-                    {data.items.map(product => (
+                    {categoryData.items.map(product => (
                         <Dialog key={product.id} open={openDialogs[product.id] || false} onOpenChange={(isOpen) => setOpenDialogs(prev => ({...prev, [product.id]: isOpen}))}>
                             <Card className="flex flex-col">
                                 <CardHeader>
@@ -307,7 +309,7 @@ function ProductTypesContent() {
                         </Dialog>
                     ))}
                 </div>
-            ) : (
+            ) : isClient ? (
                 <Card className="max-w-2xl mx-auto">
                     <CardHeader>
                         <CardTitle>Products Coming Soon</CardTitle>
@@ -321,6 +323,8 @@ function ProductTypesContent() {
                         </Button>
                     </CardFooter>
                 </Card>
+            ) : (
+                <div className="flex justify-center items-center py-20"><Loader2 className="h-8 w-8 animate-spin"/></div>
             )}
 
              <div className="text-center mt-16">
