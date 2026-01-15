@@ -223,6 +223,14 @@ function AdminAccountContent() {
           <SidebarContent>
             <SidebarGroup>
               <SidebarMenuItem>
+                  <SidebarMenuButton tooltip="Member Area" asChild>
+                      <Link href="/account">
+                          <Users />
+                          <span>Member Area</span>
+                      </Link>
+                  </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
                 <SidebarMenuButton tooltip="Dashboard" isActive={activeView === 'dashboard'} onClick={() => router.push('/adminaccount?view=dashboard', { scroll: false })}>
                   <LayoutDashboard />
                   <span>Dashboard</span>

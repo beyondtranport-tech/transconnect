@@ -24,8 +24,6 @@ function AdminAuthGuard({ children }: { children: React.ReactNode }) {
             // If user is not an admin, redirect to their standard account page
             router.replace('/account');
         }
-        // If the user is an admin, they are allowed to see the content.
-        // The faulty redirect logic has been removed.
 
     }, [user, isUserLoading, router]);
 

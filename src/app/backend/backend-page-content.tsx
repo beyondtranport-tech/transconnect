@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -196,6 +197,14 @@ export default function BackendPageContent() {
                 </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
+                <SidebarMenuButton tooltip="Go to Member Area" asChild>
+                    <Link href="/account">
+                        <Users />
+                        <span>Member Area</span>
+                    </Link>
+                </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
                 <SidebarMenuButton tooltip="Members" isActive={activeView === 'members'} onClick={() => router.push('/backend?view=members', { scroll: false })}>
                 <Users />
                 <span>Members</span>
@@ -370,5 +379,3 @@ export default function BackendPageContent() {
     </SidebarProvider>
   );
 }
-
-    
