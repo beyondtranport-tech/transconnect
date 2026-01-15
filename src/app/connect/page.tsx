@@ -13,8 +13,8 @@ import { Label } from "@/components/ui/label";
 import { DataContributionModal } from "./data-contribution-modal";
 import React from "react";
 import * as gtag from '@/lib/gtag';
-import { useConfig } from '@/hooks/use-config';
-import { useCollection, useFirestore, useMemoFirebase } from "@/firebase";
+import { useConfig, useMemoFirebase } from '@/hooks/use-config';
+import { useCollection, useFirestore } from "@/firebase";
 import { collection, query } from "firebase/firestore";
 
 const { placeholderImages } = data;
@@ -304,7 +304,5 @@ export default function ConnectPage() {
         </div>
     );
 }
-
-    
 
     
