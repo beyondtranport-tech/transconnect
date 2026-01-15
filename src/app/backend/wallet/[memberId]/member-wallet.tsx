@@ -1,11 +1,10 @@
-
 'use client';
 
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useUser, getClientSideAuthToken, useFirestore } from '@/firebase/provider';
+import { useUser, getClientSideAuthToken, useFirestore } from '@/firebase';
 import { doc, writeBatch, collection, increment, serverTimestamp } from 'firebase/firestore';
 import { Loader2, User, Wallet, Calendar, Mail, FileCheck, Users } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
