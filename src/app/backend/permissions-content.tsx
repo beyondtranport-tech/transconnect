@@ -232,7 +232,7 @@ export default function PermissionsContent() {
     const staffQuery = useMemoFirebase(() => firestore ? query(collectionGroup(firestore, 'staff')) : null, [firestore]);
     const companiesQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'companies')) : null, [firestore]);
     
-    const { data: staff, isLoading: isLoadingStaff, forceRefresh: refreshStaff } = useCollection(staffQuery);
+    const { data: staff, isLoading: isLoadingStaff, forceRefresh } = useCollection(staffQuery);
     const { data: companies, isLoading: isLoadingCompanies } = useCollection(companiesQuery);
 
     const enrichedStaff = useMemo(() => {

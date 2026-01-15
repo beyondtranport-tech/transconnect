@@ -1,116 +1,95 @@
 
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, Star } from 'lucide-react';
-import MemberLoyaltyStatus from './member-loyalty-status';
-import { getClientSideAuthToken } from '@/firebase';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Input } from '@/components/ui/input';
+import { Award, Bot, Briefcase, Code, Handshake, Search, ShieldCheck, ShoppingCart, Sparkles, Truck, UserPlus, Users, Video, Wand2, Warehouse } from 'lucide-react';
 
-interface Member {
-    id: string;
-    firstName?: string;
-    lastName?: string;
-    companyName?: string;
-    membershipId?: string;
-    walletBalance?: number;
-    createdAt?: string;
-    rewardPoints?: number;
-    loyaltyTier?: 'bronze' | 'silver' | 'gold';
-    ownerId: string;
-    email?: string;
-}
-
-interface Membership {
-    id: string;
-    name: string;
-    commissionShare?: number;
-    discountShare?: number;
-}
-
-async function fetchAdminData(token: string, action: string) {
-    const response = await fetch('/api/admin', {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action }),
-    });
-
-    const result = await response.json();
-    if (!response.ok || !result.success) {
-        throw new Error(result.error || `API Error for action: ${action}`);
-    }
-    return result.data;
-}
-
+const rewardActions = [
+    { category: 'Vendors', icon: ShoppingCart, actions: [
+        { id: 'shopCreationPoints', name: 'Shop Creation' },
+        { id: 'productAddPoints', name: 'Product Add' },
+        { id: 'supplierContributionPoints', name: 'Supplier Contribution' },
+        { id: 'debtorContributionPoints', name: 'Debtor Contribution' },
+    ]},
+    { category: 'Transporters (Buyers)', icon: Truck, actions: [
+        { id: 'truckContributionPoints', name: 'Truck Contribution' },
+        { id: 'trailerContributionPoints', name: 'Trailer Contribution' },
+    ]},
+    { category: 'Partners & Referrals', icon: Handshake, actions: [
+        { id: 'partnerReferralPoints', name: 'Member Referral' },
+        { id: 'isaSaleCommissionPoints', name: 'ISA Sale' },
+    ]},
+    { category: 'Associates', icon: Briefcase, actions: [
+        { id: 'associateServiceListingPoints', name: 'Service Listing' },
+    ]},
+    { category: 'Drivers', icon: Users, actions: [
+        { id: 'driverSafetyRecordPoints', name: 'Safety Record Submission' },
+    ]},
+    { category: 'Developers', icon: Code, actions: [
+        { id: 'developerApiIntegrationPoints', name: 'API Integration' },
+    ]},
+    { category: 'General & AI Actions', icon: Sparkles, actions: [
+        { id: 'userSignupPoints', name: 'User Sign-up' },
+        { id: 'seoBoosterPoints', name: 'AI SEO Booster Use' },
+        { id: 'aiImageGeneratorPoints', name: 'AI Image Generation' },
+        { id: 'imageEnhancerPoints', name: 'AI Image Enhancement' },
+        { id: 'aiVideoGeneratorPoints', name: 'AI Video Generation' },
+    ]},
+];
 
 export default function RewardsManagement() {
-    const [companies, setCompanies] = useState<Member[]>([]);
-    const [memberships, setMemberships] = useState<Membership[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
 
-    const loadData = useCallback(async () => {
-        setIsLoading(true);
-        setError(null);
-        try {
-            const token = await getClientSideAuthToken();
-            if (!token) throw new Error("Authentication failed.");
-            
-            const [companiesData, membershipsData] = await Promise.all([
-                fetchAdminData(token, 'getMembers'),
-                fetchAdminData(token, 'getMemberships')
-            ]);
-            setCompanies(companiesData || []);
-            setMemberships(membershipsData || []);
-        } catch (e: any) {
-            setError(e.message || 'An unknown error occurred');
-        } finally {
-            setIsLoading(false);
-        }
-    }, []);
-
-    useEffect(() => {
-        loadData();
-    }, [loadData]);
-    
-    if (isLoading) {
-        return (
-            <Card>
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2"><Star /> Member Loyalty Status</CardTitle>
-                </CardHeader>
-                <CardContent className="flex justify-center items-center py-20">
-                    <Loader2 className="h-12 w-12 animate-spin text-primary" />
-                </CardContent>
-            </Card>
-        );
-    }
-
-    if (error) {
-        return (
-            <Card>
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-destructive"><Star /> Error Loading Status</CardTitle>
-                    <CardDescription>Could not fetch member or membership data.</CardDescription>
-                </CardHeader>
-                <CardContent className="text-destructive bg-destructive/10 p-4 rounded-md">
-                   {error}
-                </CardContent>
-            </Card>
-        );
-    }
-    
-    return (
-         <div>
-            <div className="mb-8">
-                <h1 className="text-2xl font-bold">Member Loyalty & Rewards Status</h1>
-                <p className="text-muted-foreground mt-2">
-                    This dashboard shows the loyalty status of each member, their accumulated points, and the reward percentages they are entitled to based on their membership tier.
-                </p>
-            </div>
-            <MemberLoyaltyStatus companies={companies || []} memberships={memberships || []} />
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2"><Award className="h-6 w-6" />Reward Status Framework</CardTitle>
+        <CardDescription>
+          This dashboard outlines the structure for tracking member rewards. It shows each action, the points required per tier to unlock benefits from that action, the member's actual earned points, and the resulting financial savings.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="border rounded-lg overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-1/3">Action</TableHead>
+                <TableHead className="text-center">Target (Bronze)</TableHead>
+                <TableHead className="text-center">Target (Silver)</TableHead>
+                <TableHead className="text-center">Target (Gold)</TableHead>
+                <TableHead className="text-center">Actual Points</TableHead>
+                <TableHead className="text-right">Result (Savings)</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {rewardActions.map(section => (
+                <React.Fragment key={section.category}>
+                  <TableRow className="bg-muted/50">
+                    <TableCell colSpan={6}>
+                      <h3 className="font-semibold text-primary flex items-center gap-2">
+                        <section.icon className="h-5 w-5" />
+                        {section.category}
+                      </h3>
+                    </TableCell>
+                  </TableRow>
+                  {section.actions.map(action => (
+                    <TableRow key={action.id}>
+                      <TableCell className="font-medium pl-8">{action.name}</TableCell>
+                      <TableCell><Input type="number" defaultValue="0" className="text-center" /></TableCell>
+                      <TableCell><Input type="number" defaultValue="100" className="text-center" /></TableCell>
+                      <TableCell><Input type="number" defaultValue="500" className="text-center" /></TableCell>
+                      <TableCell><Input type="number" placeholder="-" className="text-center" disabled /></TableCell>
+                      <TableCell className="text-right"><Input type="text" placeholder="R 0.00" className="text-right font-mono" disabled /></TableCell>
+                    </TableRow>
+                  ))}
+                </React.Fragment>
+              ))}
+            </TableBody>
+          </Table>
         </div>
-    );
+      </CardContent>
+    </Card>
+  );
 }
-
-    
