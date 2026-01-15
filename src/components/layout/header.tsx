@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Truck, Menu, User, ChevronDown, ShieldCheck, Building } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 import * as React from "react";
 import { useUser, useAuth } from "@/firebase";
@@ -196,13 +196,16 @@ export function Header() {
               </Button>
             </SheetTrigger>
             <SheetContent side="left">
+                <SheetHeader>
+                    <SheetTitle className="sr-only">Mobile Menu</SheetTitle>
+                     <div className="border-b pb-4">
+                        <Link href="/" className="flex items-center gap-2" onClick={() => setIsSheetOpen(false)}>
+                            <Truck className="h-6 w-6 text-primary" />
+                            <span className="font-bold text-lg">TransConnect</span>
+                        </Link>
+                    </div>
+                </SheetHeader>
               <div className="flex flex-col h-full">
-                <div className="border-b pb-4">
-                    <Link href="/" className="flex items-center gap-2" onClick={() => setIsSheetOpen(false)}>
-                        <Truck className="h-6 w-6 text-primary" />
-                        <span className="font-bold text-lg">TransConnect</span>
-                    </Link>
-                </div>
                 <nav className="flex flex-col gap-4 mt-6">
                   {mainNavLinks.map(({ href, label }) => (
                     <Link
