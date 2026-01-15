@@ -13,6 +13,7 @@ import {
   SidebarInset,
   SidebarMenuSub,
   SidebarMenuSubButton,
+  SidebarTrigger,
 } from '@/components/ui/sidebar';
 import {
   LogOut,
@@ -358,11 +359,18 @@ function AdminAccountContent() {
           </SidebarFooter>
         </Sidebar>
         <SidebarInset>
-          <div className="p-6">
-            <Suspense fallback={<Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" />}>
-              {renderContent()}
-            </Suspense>
-          </div>
+            <div className="md:hidden flex items-center justify-between border-b p-2">
+                <Link href="/" className="flex items-center gap-2">
+                    <Building className="h-6 w-6 text-primary" />
+                    <span className="font-bold text-lg">Admin Account</span>
+                </Link>
+                <SidebarTrigger />
+            </div>
+            <div className="p-6">
+                <Suspense fallback={<Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" />}>
+                {renderContent()}
+                </Suspense>
+            </div>
         </SidebarInset>
       </SidebarProvider>
     </AdminAuthGuard>

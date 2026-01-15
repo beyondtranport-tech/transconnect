@@ -13,6 +13,7 @@ import {
   SidebarInset,
   SidebarMenuSub,
   SidebarMenuSubButton,
+  SidebarTrigger,
 } from '@/components/ui/sidebar';
 import {
   Users,
@@ -370,6 +371,13 @@ export default function BackendPageContent() {
         </SidebarFooter>
     </Sidebar>
     <SidebarInset>
+        <div className="md:hidden flex items-center justify-between border-b p-2">
+            <Link href="/backend" className="flex items-center gap-2">
+                <Server className="h-6 w-6 text-primary" />
+                <span className="font-bold text-lg">App Backend</span>
+            </Link>
+            <SidebarTrigger />
+        </div>
         <div className="p-6">
             <Suspense fallback={<Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" />}>
             {renderContent()}
