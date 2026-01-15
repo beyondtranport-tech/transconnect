@@ -196,15 +196,16 @@ export function Header() {
               </Button>
             </SheetTrigger>
             <SheetContent side="left" className="flex flex-col">
-              <SheetHeader className="border-b pb-4">
-                  <SheetTitle className="sr-only">Mobile Menu</SheetTitle>
-                  <Link href="/" className="flex items-center gap-2" onClick={() => setIsSheetOpen(false)}>
+              <SheetHeader>
+                  <SheetTitle>
+                     <Link href="/" className="flex items-center gap-2" onClick={() => setIsSheetOpen(false)}>
                       <Truck className="h-6 w-6 text-primary" />
                       <span className="font-bold text-lg">TransConnect</span>
-                  </Link>
+                    </Link>
+                  </SheetTitle>
               </SheetHeader>
-              <div className="flex-grow overflow-y-auto">
-                <nav className="flex flex-col gap-4 mt-6">
+              <div className="flex-1 overflow-y-auto py-6">
+                <nav className="flex flex-col gap-4">
                   {mainNavLinks.map(({ href, label }) => (
                     <Link
                       key={href}
@@ -245,7 +246,7 @@ export function Header() {
                    </div>
                 </nav>
               </div>
-              <div className="mt-auto border-t pt-4">
+              <div className="border-t pt-4">
                   {isUserLoading ? (
                      <div className="h-10 w-full rounded-md bg-muted/50 animate-pulse" />
                   ) : user ? (
