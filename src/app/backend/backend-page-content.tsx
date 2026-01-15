@@ -70,7 +70,6 @@ import { signOut } from 'firebase/auth';
 import dynamic from 'next/dynamic';
 import { SheetHeader, SheetTitle } from '@/components/ui/sheet';
 
-const AdminAccountContent = dynamic(() => import('../adminaccount/page'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const DashboardContent = dynamic(() => import('./dashboard-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const MembersList = dynamic(() => import('./members-list'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const PermissionsContent = dynamic(() => import('./permissions-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
@@ -203,6 +202,12 @@ export default function BackendPageContent() {
                         <Building />
                         <span>Admin Account</span>
                     </Link>
+                </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+                <SidebarMenuButton tooltip="Dashboard" isActive={activeView === 'dashboard'} onClick={() => router.push('/backend?view=dashboard', { scroll: false })}>
+                <LayoutDashboard />
+                <span>Dashboard</span>
                 </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
