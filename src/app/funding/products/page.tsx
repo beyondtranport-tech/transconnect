@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { Suspense, useState, useEffect } from 'react';
@@ -78,21 +77,36 @@ function QuoteCalculator({ product, onQuoteSaved, onOpenChange }: { product: { i
     const [amount, setAmount] = useState(500000);
     const [rate, setRate] = useState(15);
     const [term, setTerm] = useState(60);
+    const [balloonPercent, setBalloonPercent] = useState(0);
     const [monthlyPayment, setMonthlyPayment] = useState(0);
     const [totalRepayment, setTotalRepayment] = useState(0);
     const [view, setView] = useState('calculator'); // 'calculator' or 'conversion'
+    
+    const isBalloonProduct = product.id.includes('balloon');
 
     useEffect(() => {
         const monthlyRate = rate / 100 / 12;
+        const balloonAmount = isBalloonProduct ? amount * (balloonPercent / 100) : 0;
+        
         if (monthlyRate > 0) {
-            const payment = amount * (monthlyRate * Math.pow(1 + monthlyRate, term)) / (Math.pow(1 + monthlyRate, term) - 1);
+            const n = term;
+            const r = monthlyRate;
+            const pv = amount;
+            const fv = balloonAmount;
+            
+            // PMT = [PV * r(1+r)^n - FV * r] / [(1+r)^n - 1]
+            const numerator = (pv * r * Math.pow(1 + r, n)) - (fv * r);
+            const denominator = Math.pow(1 + r, n) - 1;
+            const payment = denominator !== 0 ? numerator / denominator : (pv / n) + (fv / n); // Simplified fallback
+
             setMonthlyPayment(payment);
-            setTotalRepayment(payment * term);
-        } else {
-            setMonthlyPayment(amount / term);
+            setTotalRepayment(payment * n + fv);
+        } else { // No interest rate
+            const payment = (amount - balloonAmount) / term;
+            setMonthlyPayment(payment);
             setTotalRepayment(amount);
         }
-    }, [amount, rate, term]);
+    }, [amount, rate, term, balloonPercent, isBalloonProduct]);
 
     const handleSaveQuote = async () => {
         if (!user) {
@@ -111,6 +125,7 @@ function QuoteCalculator({ product, onQuoteSaved, onOpenChange }: { product: { i
                 details: {
                     rate,
                     term,
+                    balloonPercent: isBalloonProduct ? balloonPercent : undefined,
                     monthlyPayment,
                     totalRepayment,
                 },
@@ -195,6 +210,15 @@ function QuoteCalculator({ product, onQuoteSaved, onOpenChange }: { product: { i
                     </div>
                     <Slider id="term-slider" min={12} max={120} step={6} value={[term]} onValueChange={(v) => setTerm(v[0])} />
                 </div>
+                 {isBalloonProduct && (
+                    <div>
+                        <div className="flex justify-between items-center mb-2">
+                            <Label htmlFor="balloon-slider">Balloon Percentage</Label>
+                            <span className="font-bold">{balloonPercent}% ({formatPrice(amount * (balloonPercent / 100))})</span>
+                        </div>
+                        <Slider id="balloon-slider" min={0} max={50} step={5} value={[balloonPercent]} onValueChange={(v) => setBalloonPercent(v[0])} />
+                    </div>
+                )}
 
                 <div className="border-t border-dashed pt-4 space-y-2">
                     <div className="flex justify-between items-center">
