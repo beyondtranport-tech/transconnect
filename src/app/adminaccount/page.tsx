@@ -70,7 +70,6 @@ import { signOut } from 'firebase/auth';
 
 import dynamic from 'next/dynamic';
 import React from 'react';
-import { SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 
 // --- Business Strategy Components ---
@@ -213,19 +212,7 @@ function AdminAccountContent() {
     <AdminAuthGuard>
       <SidebarProvider>
         <Sidebar>
-          <SheetContent side="left" className="md:hidden">
-            <SheetHeader>
-              <SheetTitle>Admin Account</SheetTitle>
-            </SheetHeader>
-          </SheetContent>
-          <div className="flex w-full items-center justify-between border-b p-2 md:hidden">
-              <Link href="/adminaccount" className="flex items-center gap-2 font-semibold">
-                  <Building className="h-6 w-6 text-primary" />
-                  <span>Admin Account</span>
-              </Link>
-              <SidebarTrigger />
-          </div>
-          <SidebarHeader className="hidden md:flex">
+          <SidebarHeader>
             <div className="flex items-center gap-2">
               <Building className="h-6 w-6 text-primary" />
               <h2 className="text-lg font-semibold text-sidebar-foreground">
