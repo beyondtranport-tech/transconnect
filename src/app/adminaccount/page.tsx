@@ -56,6 +56,7 @@ import {
   LayoutDashboard,
   Mail,
   Handshake as HandshakeIcon,
+  Package,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -84,6 +85,30 @@ const StaffContent = dynamic(() => import('./staff-content'), { loading: () => <
 const MemberWallet = dynamic(() => import('../backend/wallet/[memberId]/member-wallet'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const DashboardContent = dynamic(() => import('../backend/dashboard-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const PitchContent = dynamic(() => import('../backend/pitch-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+
+// --- Sales Section (from /account) ---
+const NetworkContent = dynamic(() => import('../account/network-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const NetworkOffer = dynamic(() => import('../account/network-offer'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const NetworkEmails = dynamic(() => import('../account/network-emails'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const PerformanceContent = dynamic(() => import('../account/performance-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+
+// --- Placeholder Components ---
+function ProductSalesContent() {
+    return (
+        <Card>
+            <CardHeader><CardTitle>Product Sales</CardTitle></CardHeader>
+            <CardContent><p className="text-muted-foreground">This section is under construction.</p></CardContent>
+        </Card>
+    )
+}
+function EarningsContent() {
+     return (
+        <Card>
+            <CardHeader><CardTitle>My Earnings</CardTitle></CardHeader>
+            <CardContent><p className="text-muted-foreground">This section is under construction.</p></CardContent>
+        </Card>
+    )
+}
 
 
 function AdminAuthGuard({ children }: { children: React.ReactNode }) {
@@ -155,6 +180,14 @@ function AdminAccountContent() {
         }
         return null;
 
+       // Sales Section
+      case 'network': return <NetworkContent />;
+      case 'network-offer': return <NetworkOffer />;
+      case 'network-emails': return <NetworkEmails />;
+      case 'performance': return <PerformanceContent />;
+      case 'product-sales': return <ProductSalesContent />;
+      case 'earnings': return <EarningsContent />;
+
       default:
         return <PartnerOffer />;
     }
@@ -172,6 +205,8 @@ function AdminAccountContent() {
         </div>
     );
   }
+
+  const isSalesActive = ['network', 'network-offer', 'network-emails', 'performance', 'product-sales', 'earnings'].includes(activeView);
 
   return (
     <AdminAuthGuard>
@@ -208,6 +243,38 @@ function AdminAccountContent() {
                         <span>Email Sequence</span>
                     </SidebarMenuSubButton>
                 </SidebarMenuSub>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                  <SidebarMenuButton tooltip="Sales" isActive={isSalesActive}>
+                    <HandshakeIcon />
+                    <span>Sales</span>
+                  </SidebarMenuButton>
+                  <SidebarMenuSub>
+                      <SidebarMenuSubButton isActive={activeView === 'network'} onClick={() => router.push('/adminaccount?view=network', { scroll: false })}>
+                          <Users />
+                          <span>My Network</span>
+                      </SidebarMenuSubButton>
+                      <SidebarMenuSubButton isActive={activeView === 'network-offer'} onClick={() => router.push('/adminaccount?view=network-offer', { scroll: false })}>
+                          <Presentation />
+                          <span>Network Offer</span>
+                      </SidebarMenuSubButton>
+                      <SidebarMenuSubButton isActive={activeView === 'network-emails'} onClick={() => router.push('/adminaccount?view=network-emails', { scroll: false })}>
+                          <Mail />
+                          <span>Network Emails</span>
+                      </SidebarMenuSubButton>
+                      <SidebarMenuSubButton isActive={activeView === 'performance'} onClick={() => router.push('/adminaccount?view=performance', { scroll: false })}>
+                          <TrendingUp />
+                          <span>Performance</span>
+                      </SidebarMenuSubButton>
+                      <SidebarMenuSubButton isActive={activeView === 'product-sales'} onClick={() => router.push('/adminaccount?view=product-sales', { scroll: false })}>
+                          <Package />
+                          <span>Product Sales</span>
+                      </SidebarMenuSubButton>
+                      <SidebarMenuSubButton isActive={activeView === 'earnings'} onClick={() => router.push('/adminaccount?view=earnings', { scroll: false })}>
+                          <DollarSign />
+                          <span>Earnings</span>
+                      </SidebarMenuSubButton>
+                  </SidebarMenuSub>
               </SidebarMenuItem>
               <SidebarMenuItem>
                   <SidebarMenuButton tooltip="Staff" isActive={activeView === 'staff'} onClick={() => router.push('/adminaccount?view=staff', { scroll: false })}>
@@ -302,5 +369,3 @@ export default function AdminAccountPage() {
     </Suspense>
   );
 }
-
-    
