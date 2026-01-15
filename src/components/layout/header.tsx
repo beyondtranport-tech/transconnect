@@ -196,15 +196,13 @@ export function Header() {
               </Button>
             </SheetTrigger>
             <SheetContent side="left" className="flex flex-col">
-                <SheetHeader>
-                    <SheetTitle className="sr-only">Mobile Menu</SheetTitle>
-                     <div className="border-b pb-4">
-                        <Link href="/" className="flex items-center gap-2" onClick={() => setIsSheetOpen(false)}>
-                            <Truck className="h-6 w-6 text-primary" />
-                            <span className="font-bold text-lg">TransConnect</span>
-                        </Link>
-                    </div>
-                </SheetHeader>
+              <SheetHeader className="border-b pb-4">
+                  <SheetTitle className="sr-only">Mobile Menu</SheetTitle>
+                  <Link href="/" className="flex items-center gap-2" onClick={() => setIsSheetOpen(false)}>
+                      <Truck className="h-6 w-6 text-primary" />
+                      <span className="font-bold text-lg">TransConnect</span>
+                  </Link>
+              </SheetHeader>
               <div className="flex-grow overflow-y-auto">
                 <nav className="flex flex-col gap-4 mt-6">
                   {mainNavLinks.map(({ href, label }) => (
@@ -247,27 +245,27 @@ export function Header() {
                    </div>
                 </nav>
               </div>
-                 <div className="mt-auto border-t pt-4">
-                    {isUserLoading ? (
-                       <div className="h-10 w-full rounded-md bg-muted/50 animate-pulse" />
-                    ) : user ? (
-                      <Button asChild className="w-full justify-start" >
-                        <Link href={isAdmin ? "/adminaccount" : "/account"} onClick={() => setIsSheetOpen(false)}>
-                            {isAdmin ? <Building className="mr-2 h-5 w-5" /> : <User className="mr-2 h-5 w-5" />}
-                            {isAdmin ? "Admin Account" : "My Account"}
-                        </Link>
-                      </Button>
-                    ) : (
-                       <div className="flex flex-col gap-2">
-                         <Button asChild className="w-full justify-start" variant="outline">
-                            <Link href="/signin" onClick={() => setIsSheetOpen(false)}>Sign In</Link>
-                         </Button>
-                         <Button asChild className="w-full justify-start">
-                            <Link href="/join" onClick={() => setIsSheetOpen(false)}>Join Now</Link>
-                         </Button>
-                       </div>
-                    )}
-                 </div>
+              <div className="mt-auto border-t pt-4">
+                  {isUserLoading ? (
+                     <div className="h-10 w-full rounded-md bg-muted/50 animate-pulse" />
+                  ) : user ? (
+                    <Button asChild className="w-full justify-start" >
+                      <Link href={isAdmin ? "/adminaccount" : "/account"} onClick={() => setIsSheetOpen(false)}>
+                          {isAdmin ? <Building className="mr-2 h-5 w-5" /> : <User className="mr-2 h-5 w-5" />}
+                          {isAdmin ? "Admin Account" : "My Account"}
+                      </Link>
+                    </Button>
+                  ) : (
+                     <div className="flex flex-col gap-2">
+                       <Button asChild className="w-full justify-start" variant="outline">
+                          <Link href="/signin" onClick={() => setIsSheetOpen(false)}>Sign In</Link>
+                       </Button>
+                       <Button asChild className="w-full justify-start">
+                          <Link href="/join" onClick={() => setIsSheetOpen(false)}>Join Now</Link>
+                       </Button>
+                     </div>
+                  )}
+              </div>
             </SheetContent>
           </Sheet>
         </div>
