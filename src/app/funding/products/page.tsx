@@ -92,9 +92,6 @@ function QuoteCalculator({ product, onQuoteSaved, onOpenChange }: { product: { i
             const pv = amount;
             const balloonAmount = isBalloonProduct ? pv * (balloonPercent / 100) : 0;
             
-            // Correct formula for loan amortization with a future value (balloon)
-            // PMT = [PV - (FV / (1 + r)^n)] * [r(1+r)^n] / [(1+r)^n - 1]
-            
             // Present value of the balloon payment
             const pvOfBalloon = balloonAmount / Math.pow(1 + monthlyRate, n);
             
@@ -252,8 +249,13 @@ function QuoteCalculator({ product, onQuoteSaved, onOpenChange }: { product: { i
 
 function ProductTypesContent() {
     const searchParams = useSearchParams();
+    const [isClient, setIsClient] = useState(false);
     const agreement = searchParams.get('agreement') as keyof typeof productsData;
     const [openDialogs, setOpenDialogs] = useState<Record<string, boolean>>({});
+
+    useEffect(() => {
+        setIsClient(true);
+    }, []);
 
     const handleQuoteSaved = (productId: string) => {
         // The dialog logic is now handled inside the QuoteCalculator component
@@ -265,7 +267,7 @@ function ProductTypesContent() {
     return (
         <div className="container mx-auto px-4 py-16">
             <div className="text-center max-w-3xl mx-auto mb-12">
-                 <Icon className="h-12 w-12 text-primary mx-auto mb-4" />
+                 {isClient ? <Icon className="h-12 w-12 text-primary mx-auto mb-4" /> : <div className="h-12 w-12 mx-auto mb-4" />}
                 <h1 className="text-4xl md:text-5xl font-bold font-headline">{data.title}</h1>
                 <p className="mt-4 text-lg md:text-xl text-muted-foreground">
                     Select a specific product to start your application.
