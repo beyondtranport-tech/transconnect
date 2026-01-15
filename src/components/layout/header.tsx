@@ -195,78 +195,78 @@ export function Header() {
                 <span className="sr-only">Toggle navigation menu</span>
               </Button>
             </SheetTrigger>
-            <SheetContent side="left" className="flex flex-col p-0">
-              <SheetHeader className="p-6 pb-2">
-                  <SheetTitle>
-                     <Link href="/" className="flex items-center gap-2" onClick={() => setIsSheetOpen(false)}>
-                      <Truck className="h-6 w-6 text-primary" />
-                      <span className="font-bold text-lg">TransConnect</span>
-                    </Link>
-                  </SheetTitle>
-              </SheetHeader>
-              <div className="flex-1 overflow-y-auto px-6 py-4">
-                <nav className="flex flex-col gap-4">
-                  {mainNavLinks.map(({ href, label }) => (
-                    <Link
-                      key={href}
-                      href={href}
-                      onClick={() => setIsSheetOpen(false)}
-                      className={cn(
-                        "text-lg transition-colors hover:text-primary",
-                        pathname === href ? "text-primary" : "text-muted-foreground"
-                      )}
-                    >
-                      {label}
-                    </Link>
-                  ))}
-                   <Link
-                      href="/divisions"
-                      onClick={() => setIsSheetOpen(false)}
-                      className={cn(
-                        "text-lg transition-colors hover:text-primary",
-                         ["/divisions", "/marketplace", "/tech", "/funding", "/mall"].some(p => pathname.startsWith(p)) ? "text-primary" : "text-muted-foreground"
-                      )}
-                    >
-                      Divisions
-                    </Link>
-                   <div className="pl-4 border-l ml-2">
-                     {divisionLinks.map(({ href, label }) => (
-                      <Link
-                        key={href}
-                        href={href}
-                        onClick={() => setIsSheetOpen(false)}
-                        className={cn(
-                          "text-base transition-colors hover:text-primary block py-2",
-                          pathname === href ? "text-primary" : "text-muted-foreground"
-                        )}
-                      >
-                        {label}
-                      </Link>
-                     ))}
-                   </div>
-                </nav>
-              </div>
-              <div className="border-t p-6 mt-auto">
-                  {isUserLoading ? (
-                     <div className="h-10 w-full rounded-md bg-muted/50 animate-pulse" />
-                  ) : user ? (
-                    <Button asChild className="w-full justify-start" >
-                      <Link href={isAdmin ? "/adminaccount" : "/account"} onClick={() => setIsSheetOpen(false)}>
-                          {isAdmin ? <Building className="mr-2 h-5 w-5" /> : <User className="mr-2 h-5 w-5" />}
-                          {isAdmin ? "Admin Account" : "My Account"}
-                      </Link>
-                    </Button>
-                  ) : (
-                     <div className="flex flex-col gap-2">
-                       <Button asChild className="w-full justify-start" variant="outline">
-                          <Link href="/signin" onClick={() => setIsSheetOpen(false)}>Sign In</Link>
-                       </Button>
-                       <Button asChild className="w-full justify-start">
-                          <Link href="/join" onClick={() => setIsSheetOpen(false)}>Join Now</Link>
-                       </Button>
-                     </div>
-                  )}
-              </div>
+            <SheetContent side="left" className="flex h-full flex-col p-0">
+                <SheetHeader className="p-6 pb-2">
+                    <SheetTitle>
+                        <Link href="/" className="flex items-center gap-2" onClick={() => setIsSheetOpen(false)}>
+                        <Truck className="h-6 w-6 text-primary" />
+                        <span className="font-bold text-lg">TransConnect</span>
+                        </Link>
+                    </SheetTitle>
+                </SheetHeader>
+                <div className="flex-1 overflow-y-auto px-6 py-4">
+                    <nav className="flex flex-col gap-4">
+                        {mainNavLinks.map(({ href, label }) => (
+                            <Link
+                            key={href}
+                            href={href}
+                            onClick={() => setIsSheetOpen(false)}
+                            className={cn(
+                                "text-lg transition-colors hover:text-primary",
+                                pathname === href ? "text-primary" : "text-muted-foreground"
+                            )}
+                            >
+                            {label}
+                            </Link>
+                        ))}
+                        <Link
+                            href="/divisions"
+                            onClick={() => setIsSheetOpen(false)}
+                            className={cn(
+                                "text-lg transition-colors hover:text-primary",
+                                ["/divisions", "/marketplace", "/tech", "/funding", "/mall"].some(p => pathname.startsWith(p)) ? "text-primary" : "text-muted-foreground"
+                            )}
+                        >
+                            Divisions
+                        </Link>
+                        <div className="pl-4 border-l ml-2">
+                            {divisionLinks.map(({ href, label }) => (
+                            <Link
+                                key={href}
+                                href={href}
+                                onClick={() => setIsSheetOpen(false)}
+                                className={cn(
+                                "text-base transition-colors hover:text-primary block py-2",
+                                pathname === href ? "text-primary" : "text-muted-foreground"
+                                )}
+                            >
+                                {label}
+                            </Link>
+                            ))}
+                        </div>
+                    </nav>
+                </div>
+                <div className="border-t p-6">
+                    {isUserLoading ? (
+                        <div className="h-10 w-full rounded-md bg-muted/50 animate-pulse" />
+                    ) : user ? (
+                        <Button asChild className="w-full justify-start" >
+                        <Link href={isAdmin ? "/adminaccount" : "/account"} onClick={() => setIsSheetOpen(false)}>
+                            {isAdmin ? <Building className="mr-2 h-5 w-5" /> : <User className="mr-2 h-5 w-5" />}
+                            {isAdmin ? "Admin Account" : "My Account"}
+                        </Link>
+                        </Button>
+                    ) : (
+                        <div className="flex flex-col gap-2">
+                        <Button asChild className="w-full justify-start" variant="outline">
+                            <Link href="/signin" onClick={() => setIsSheetOpen(false)}>Sign In</Link>
+                        </Button>
+                        <Button asChild className="w-full justify-start">
+                            <Link href="/join" onClick={() => setIsSheetOpen(false)}>Join Now</Link>
+                        </Button>
+                        </div>
+                    )}
+                </div>
             </SheetContent>
           </Sheet>
         </div>
@@ -274,5 +274,3 @@ export function Header() {
     </header>
   );
 }
-
-    
