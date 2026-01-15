@@ -206,7 +206,7 @@ export function Header() {
                     </div>
                 </SheetHeader>
               <div className="flex flex-col h-full">
-                <nav className="flex flex-col gap-4 mt-6">
+                <nav className="flex flex-col gap-4 mt-6 overflow-y-auto">
                   {mainNavLinks.map(({ href, label }) => (
                     <Link
                       key={href}
