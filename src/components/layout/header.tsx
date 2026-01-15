@@ -195,8 +195,8 @@ export function Header() {
                 <span className="sr-only">Toggle navigation menu</span>
               </Button>
             </SheetTrigger>
-            <SheetContent side="left" className="flex flex-col">
-              <SheetHeader>
+            <SheetContent side="left" className="flex flex-col p-0">
+              <SheetHeader className="p-6 pb-2">
                   <SheetTitle>
                      <Link href="/" className="flex items-center gap-2" onClick={() => setIsSheetOpen(false)}>
                       <Truck className="h-6 w-6 text-primary" />
@@ -204,7 +204,7 @@ export function Header() {
                     </Link>
                   </SheetTitle>
               </SheetHeader>
-              <div className="flex-1 overflow-y-auto py-6">
+              <div className="flex-1 overflow-y-auto px-6 py-4">
                 <nav className="flex flex-col gap-4">
                   {mainNavLinks.map(({ href, label }) => (
                     <Link
@@ -246,7 +246,7 @@ export function Header() {
                    </div>
                 </nav>
               </div>
-              <div className="border-t pt-4">
+              <div className="border-t p-6">
                   {isUserLoading ? (
                      <div className="h-10 w-full rounded-md bg-muted/50 animate-pulse" />
                   ) : user ? (
