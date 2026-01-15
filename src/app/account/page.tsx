@@ -63,13 +63,14 @@ const NetworkOffer = dynamic(() => import('./network-offer'), { loading: () => <
 const NetworkEmails = dynamic(() => import('./network-emails'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const PerformanceContent = dynamic(() => import('./performance-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 
-// --- Financials Section ---
-const FinancialSetup = dynamic(() => import('./financial-setup'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const SalesRoadmap = dynamic(() => import('./sales-roadmap'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const Targets = dynamic(() => import('./targets'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+// --- Financials Section (Admin Only) ---
+const FinancialSetup = dynamic(() => import('../adminaccount/financial-setup'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const SalesRoadmap = dynamic(() => import('../adminaccount/sales-roadmap'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const Targets = dynamic(() => import('../adminaccount/targets'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const MemberProjection = dynamic(() => import('./member-projection'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const BudgetPage = dynamic(() => import('./budget/page'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const ForecastPage = dynamic(() => import('./forecast/page'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const BudgetPage = dynamic(() => import('../adminaccount/budget/page'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const ForecastPage = dynamic(() => import('../adminaccount/forecast/page'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+
 
 // Placeholder components for sections under construction
 function DocumentsContent() {
@@ -183,7 +184,6 @@ function AccountPageContent() {
   };
   
   const isSalesActive = ['network', 'performance', 'product-sales', 'earnings', 'network-offer', 'network-emails'].includes(activeView);
-  const isFinancialsActive = ['financial-setup', 'sales-roadmap', 'targets', 'member-projection', 'budget', 'forecast'].includes(activeView);
 
   return (
     <SidebarProvider>
@@ -271,38 +271,6 @@ function AccountPageContent() {
                      <SidebarMenuSubButton isActive={activeView === 'earnings'} onClick={() => navigate('earnings')}>
                         <DollarSign />
                         <span>Earnings</span>
-                    </SidebarMenuSubButton>
-                </SidebarMenuSub>
-              </SidebarMenuItem>
-               <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Financials" isActive={isFinancialsActive}>
-                  <FinancialSheetIcon />
-                  <span>Financials</span>
-                </SidebarMenuButton>
-                <SidebarMenuSub>
-                     <SidebarMenuSubButton isActive={activeView === 'financial-setup'} onClick={() => navigate('financial-setup')}>
-                        <Settings />
-                        <span>Setup</span>
-                    </SidebarMenuSubButton>
-                     <SidebarMenuSubButton isActive={activeView === 'sales-roadmap'} onClick={() => navigate('sales-roadmap')}>
-                        <Map />
-                        <span>Sales Roadmap</span>
-                    </SidebarMenuSubButton>
-                     <SidebarMenuSubButton isActive={activeView === 'targets'} onClick={() => navigate('targets')}>
-                        <FileText />
-                        <span>Targets</span>
-                    </SidebarMenuSubButton>
-                     <SidebarMenuSubButton isActive={activeView === 'member-projection'} onClick={() => navigate('member-projection')}>
-                        <Users />
-                        <span>Member Projection</span>
-                    </SidebarMenuSubButton>
-                     <SidebarMenuSubButton isActive={activeView === 'budget'} onClick={() => navigate('budget')}>
-                        <FileText />
-                        <span>Budget</span>
-                    </SidebarMenuSubButton>
-                     <SidebarMenuSubButton isActive={activeView === 'forecast'} onClick={() => navigate('forecast')}>
-                        <TrendingUp />
-                        <span>Forecast</span>
                     </SidebarMenuSubButton>
                 </SidebarMenuSub>
               </SidebarMenuItem>
