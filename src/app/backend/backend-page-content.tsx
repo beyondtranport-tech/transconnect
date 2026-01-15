@@ -194,9 +194,6 @@ export default function BackendPageContent() {
         </SidebarHeader>
         <SidebarContent>
         <div className="md:hidden p-2 flex items-center justify-between border-b">
-            <SheetHeader>
-                <SheetTitle>Backend Menu</SheetTitle>
-            </SheetHeader>
             <SidebarTrigger />
         </div>
         <SidebarGroup>
