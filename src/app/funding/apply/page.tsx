@@ -18,13 +18,14 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Landmark, ArrowLeft, ArrowRight, Send, CheckCircle } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useUser, getClientSideAuthToken, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
+import { useUser, getClientSideAuthToken, useDoc, useFirestore } from '@/firebase';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { cn } from '@/lib/utils';
 import { doc } from 'firebase/firestore';
+import { useMemoFirebase } from '@/hooks/use-config';
 
 
 const fundingNeeds = {
@@ -522,3 +523,5 @@ export default function ApplyPage() {
         </div>
     )
 }
+
+    
