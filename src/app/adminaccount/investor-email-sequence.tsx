@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
@@ -63,14 +64,14 @@ Dear [Investor Name],
 
 Following up on my previous email, I wanted to highlight the specific problem we solve. The transport industry is fragmented, leading to major inefficiencies:
 
-- **Funding Access:** Traditional banks don't understand the unique cash flow needs, rejecting viable businesses.
-- **Operational Costs:** Individual operators lack the collective buying power to get discounts on parts, tires, and services.
-- **Wasted Capacity:** Empty trucks on return journeys ("deadhead miles") severely impact profitability.
+- Funding Access: Traditional banks don't understand the unique cash flow needs, rejecting viable businesses.
+- Operational Costs: Individual operators lack the collective buying power to get discounts on parts, tires, and services.
+- Wasted Capacity: Empty trucks on return journeys ("deadhead miles") severely impact profitability.
 
 TransConnect solves this with an integrated ecosystem:
-- **Finance Mall:** Connects pre-vetted borrowers with a network of niche lenders, banks, and grant providers.
-- **Supplier Mall:** Aggregates demand to negotiate bulk discounts, passing savings to members.
-- **Tech Division:** Our AI Freight Matcher fills empty trucks, turning a cost into a revenue opportunity.
+- Finance Mall: Connects pre-vetted borrowers with a network of niche lenders, banks, and grant providers.
+- Supplier Mall: Aggregates demand to negotiate bulk discounts, passing savings to members.
+- Tech Division: Our AI Freight Matcher fills empty trucks, turning a cost into a revenue opportunity.
 
 We're not just another app; we're building the digital backbone for a massive, underserved industry. I would be happy to provide a more detailed walkthrough.
 
@@ -87,10 +88,10 @@ Dear [Investor Name],
 A key question for any platform is user acquisition. We have secured a powerful, low-cost path to our first 1,000 members through strategic partnerships.
 
 Our pending agreements give us direct access to:
-- **SA Auction Online:** A database of 40,000 transport companies.
-- **SATL:** A national network of freight forwarders and their relationships with shippers.
-- **Ludic Financial Services:** A captive audience of insured transporters needing our services.
-- **CTS Trailers:** A channel to reach new asset buyers at the point of sale.
+- SA Auction Online: A database of 40,000 transport companies.
+- SATL: A national network of freight forwarders and their relationships with shippers.
+- Ludic Financial Services: A captive audience of insured transporters needing our services.
+- CTS Trailers: A channel to reach new asset buyers at the point of sale.
 
 These partnerships provide a clear, defensible go-to-market strategy that bypasses expensive traditional marketing and validates the industry's need for our solution.
 
@@ -109,9 +110,9 @@ Dear [Investor Name],
 To capitalize on the momentum from our strategic partnerships, we are seeking R500,000 in seed funding.
 
 This investment will be used to:
-1.  **Scale Operations:** Onboard our founding ISA (Independent Sales Agent) partners to accelerate user acquisition.
-2.  **Go Live:** Finalize platform deployment and infrastructure for our launch.
-3.  **Enhance Technology:** Continue development of our AI and data-driven tools.
+1.  Scale Operations: Onboard our founding ISA (Independent Sales Agent) partners to accelerate user acquisition.
+2.  Go Live: Finalize platform deployment and infrastructure for our launch.
+3.  Enhance Technology: Continue development of our AI and data-driven tools.
 
 Our model projects a positive net position within the first year, driven by recurring membership fees and transaction-based commissions. This is an opportunity to get in on the ground floor of a platform set to become essential infrastructure for the South African transport sector.
 
