@@ -2,6 +2,7 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { DollarSign, Building, Users, TrendingUp, Lightbulb, CheckCircle } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 
 export default function InvestorOffer() {
     return (
@@ -15,8 +16,12 @@ export default function InvestorOffer() {
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2"><Building className="h-6 w-6 text-primary"/>This is us</CardTitle>
                 </CardHeader>
-                <CardContent>
-                    <p className="text-muted-foreground">Placeholder for 'This is us' content. We are a team dedicated to revolutionizing the transport industry in South Africa.</p>
+                <CardContent className="space-y-4">
+                    <p className="text-muted-foreground">We are a team with 25 years of experience in transport finance, now transforming into a tech-driven service provider for the logistics sector.</p>
+                    <ul className="list-disc list-inside space-y-2">
+                        <li><strong className="text-foreground">Mission:</strong> To empower and reward transporters by providing access to capital, reducing risk, and creating value through a digital ecosystem.</li>
+                        <li><strong className="text-foreground">Vision:</strong> To simplify credit and business operations for the transport industry through collaboration, data, and digital platforms.</li>
+                    </ul>
                 </CardContent>
             </Card>
 
@@ -24,8 +29,13 @@ export default function InvestorOffer() {
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2"><Lightbulb className="h-6 w-6 text-primary"/>This is what we realized</CardTitle>
                 </CardHeader>
-                <CardContent>
-                    <p className="text-muted-foreground">Placeholder for 'This is what we realized' content. The transport sector is fragmented, inefficient, and underserved by traditional financial institutions.</p>
+                <CardContent className="space-y-4">
+                     <p className="text-muted-foreground">The transport sector is fragmented and underserved. Businesses face significant roadblocks:</p>
+                    <ul className="list-disc list-inside space-y-2">
+                        <li>Traditional banks don't understand their unique business needs and cash flow.</li>
+                        <li>Finance solutions are rigid and often fall short of operational requirements.</li>
+                        <li>Access to fast, opportunity-seizing capital is extremely limited.</li>
+                    </ul>
                 </CardContent>
             </Card>
 
@@ -33,8 +43,15 @@ export default function InvestorOffer() {
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2"><CheckCircle className="h-6 w-6 text-primary"/>This is what we built</CardTitle>
                 </CardHeader>
-                <CardContent>
-                    <p className="text-muted-foreground">Placeholder for 'This is what we built' content. We built an integrated digital ecosystem with divisions for Funding, a supplier Mall, a value-added Marketplace, and cutting-edge Tech.</p>
+                <CardContent className="space-y-4">
+                    <p className="text-muted-foreground">An integrated digital ecosystem to break constraints and drive efficiency, built on four interconnected divisions:</p>
+                     <div className="grid grid-cols-2 gap-4">
+                        <Badge variant="outline" className="p-2 justify-center">Funding Division</Badge>
+                        <Badge variant="outline" className="p-2 justify-center">Mall Division</Badge>
+                        <Badge variant="outline" className="p-2 justify-center">Marketplace Division</Badge>
+                        <Badge variant="outline" className="p-2 justify-center">Tech Division</Badge>
+                    </div>
+                    <p className="text-muted-foreground">This ecosystem provides everything a transport business needs, from flexible finance and parts sourcing to freight matching and operational tools.</p>
                 </CardContent>
             </Card>
 
@@ -42,8 +59,14 @@ export default function InvestorOffer() {
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2"><Users className="h-6 w-6 text-primary"/>Transporters want what we built</CardTitle>
                 </CardHeader>
-                <CardContent>
-                    <p className="text-muted-foreground">Placeholder for 'Transporters want what we built' content. There is a clear market need for our solutions, evidenced by early adoption and engagement metrics.</p>
+                <CardContent className="space-y-4">
+                    <p className="text-muted-foreground">The platform directly addresses the core pain points of the industry, creating a strong value proposition for members:</p>
+                     <ul className="list-disc list-inside space-y-2">
+                        <li><strong>Access to Capital:</strong> Our primary draw is funding solutions that traditional lenders won't offer.</li>
+                        <li><strong>Cost Reduction:</strong> Group buying power in the Supplier Mall leads to direct savings on parts and consumables.</li>
+                        <li><strong>Increased Revenue:</strong> The AI Freight Matcher reduces empty miles, and the Actions Plan creates new revenue streams through referrals.</li>
+                        <li><strong>Efficiency:</strong> Digital tools for document management, compliance, and operations save time and reduce administrative burden.</li>
+                    </ul>
                 </CardContent>
             </Card>
 
@@ -52,7 +75,7 @@ export default function InvestorOffer() {
                     <CardTitle className="flex items-center gap-2"><DollarSign className="h-6 w-6 text-primary"/>Investment needed</CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <p className="text-muted-foreground">Placeholder for 'Investment needed' content. We are seeking seed funding to scale our operations, expand our user base, and enhance our technology platform.</p>
+                    <p className="text-muted-foreground">We are seeking seed funding to scale operations, accelerate user acquisition through our ISA and Partner programs, and further develop our proprietary technology platform, particularly our AI and data analytics capabilities.</p>
                 </CardContent>
             </Card>
 
@@ -61,7 +84,8 @@ export default function InvestorOffer() {
                     <CardTitle className="flex items-center gap-2"><TrendingUp className="h-6 w-6 text-primary"/>Yield on investment</CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <p className="text-muted-foreground">Placeholder for 'Yield on investment' content. We project a significant return on investment driven by multiple recurring revenue streams and a large, addressable market.</p>
+                    <p className="text-muted-foreground">Revenue is generated through multiple streams, creating a robust and diversified business model. This includes membership fees, commissions from mall transactions, fees for value-added services in the marketplace, and subscriptions to our premium tech tools.</p>
+                    <p className="mt-4 text-muted-foreground">We project a significant return on investment driven by network effects and a large, underserved addressable market.</p>
                 </CardContent>
             </Card>
 
