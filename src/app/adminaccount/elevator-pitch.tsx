@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,7 +12,7 @@ const sections = [
         points: [
             "An integrated digital ecosystem designed specifically for the South African transport industry.",
             "A platform that unifies four core business pillars: Funding, a multi-faceted Mall, a value-added Marketplace, and a powerful Tech division.",
-            "It's a community-driven model where member participation directly increases the value for everyone involved.",
+            "A reward-first, loyalty-driven community where member participation and moderation create a trusted, high-value network.",
         ]
     },
     {
