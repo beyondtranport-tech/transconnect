@@ -81,6 +81,7 @@ const ForecastPage = dynamic(() => import('../account/forecast/page'), { loading
 const PartnerOffer = dynamic(() => import('./partner-offer'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const InvestorOffer = dynamic(() => import('./investor-offer'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const ElevatorPitch = dynamic(() => import('./elevator-pitch'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const PartnerElevatorPitch = dynamic(() => import('./partner-elevator-pitch'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const PartnerEmailSequence = dynamic(() => import('./partner-email-sequence'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const InvestorEmailSequence = dynamic(() => import('./investor-email-sequence'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const FinancialSetup = dynamic(() => import('../account/financial-setup'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
@@ -170,6 +171,7 @@ function AdminAccountContent() {
     switch (activeView) {
       // Business Strategy
       case 'partner-offer': return <PartnerOffer />;
+      case 'partner-elevator-pitch': return <PartnerElevatorPitch />;
       case 'partner-email': return <PartnerEmailSequence />;
       case 'investor-offer': return <InvestorOffer />;
       case 'elevator-pitch': return <ElevatorPitch />;
@@ -218,6 +220,7 @@ function AdminAccountContent() {
   }
 
   const isSalesActive = ['network', 'network-offer', 'network-emails', 'performance', 'product-sales', 'earnings'].includes(activeView);
+  const isPartnerPitchActive = ['partner-offer', 'partner-email', 'partner-elevator-pitch'].includes(activeView);
   const isInvestorPitchActive = ['investor-offer', 'investor-email', 'elevator-pitch'].includes(activeView);
 
   return (
@@ -249,11 +252,15 @@ function AdminAccountContent() {
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Partner Pitch" isActive={['partner-offer', 'partner-email'].includes(activeView)}>
+                <SidebarMenuButton tooltip="Partner Pitch" isActive={isPartnerPitchActive}>
                   <Presentation />
                   <span>Partner Pitch</span>
                 </SidebarMenuButton>
                 <SidebarMenuSub>
+                    <SidebarMenuSubButton isActive={activeView === 'partner-elevator-pitch'} onClick={() => router.push('/adminaccount?view=partner-elevator-pitch', { scroll: false })}>
+                        <Info />
+                        <span>Elevator Pitch</span>
+                    </SidebarMenuSubButton>
                     <SidebarMenuSubButton isActive={activeView === 'partner-offer'} onClick={() => router.push('/adminaccount?view=partner-offer', { scroll: false })}>
                         <Presentation />
                         <span>Partner Offer</span>
