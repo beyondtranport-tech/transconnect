@@ -81,6 +81,7 @@ const ForecastPage = dynamic(() => import('../account/forecast/page'), { loading
 const PartnerOffer = dynamic(() => import('./partner-offer'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const InvestorOffer = dynamic(() => import('./investor-offer'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const PartnerEmailSequence = dynamic(() => import('./partner-email-sequence'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const InvestorEmailSequence = dynamic(() => import('./investor-email-sequence'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const FinancialSetup = dynamic(() => import('../account/financial-setup'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const MemberProjection = dynamic(() => import('../account/member-projection'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const Targets = dynamic(() => import('../account/targets'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
@@ -170,7 +171,7 @@ function AdminAccountContent() {
       case 'partner-offer': return <PartnerOffer />;
       case 'partner-email': return <PartnerEmailSequence />;
       case 'investor-offer': return <InvestorOffer />;
-      case 'investor-email': return <PartnerEmailSequence />;
+      case 'investor-email': return <InvestorEmailSequence />;
       case 'financial-setup': return <FinancialSetup />;
       case 'sales-roadmap': return <SalesRoadmap />;
       case 'targets': return <Targets />;
