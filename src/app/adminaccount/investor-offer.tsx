@@ -1,7 +1,8 @@
+
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
-import { DollarSign, Building, Users, TrendingUp, Lightbulb, CheckCircle } from 'lucide-react';
+import { DollarSign, Building, Users, TrendingUp, Lightbulb, CheckCircle, Handshake } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
 const formatCurrency = (value: number) => new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR', maximumFractionDigits: 0 }).format(value);
@@ -65,7 +66,7 @@ export default function InvestorOffer() {
                     <CardTitle className="flex items-center gap-2"><CheckCircle className="h-6 w-6 text-primary"/>This is what we built</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                    <ul className="list-disc list-inside space-y-4 text-muted-foreground">
+                     <ul className="list-disc list-inside space-y-4 text-muted-foreground">
                         <li>
                             <strong className="text-foreground">Integrated Malls:</strong> Our various Malls (e.g., Supplier, Finance, Buy & Sell) create a seamless commercial environment. This integration solves the pain point of fragmentation by bringing procurement, financing, and sales into one place, reducing operational friction.
                         </li>
@@ -91,6 +92,23 @@ export default function InvestorOffer() {
                 </CardContent>
             </Card>
             
+            <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2"><Handshake className="h-6 w-6 text-primary"/>Our Path to 1,000 Members</CardTitle>
+                     <CardDescription>Our growth strategy is rooted in strategic partnerships with key industry players.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    <p className="text-muted-foreground">We have established a powerful acquisition funnel through pending partnership agreements with major networks:</p>
+                    <ul className="list-disc list-inside space-y-2 text-foreground">
+                        <li><strong className="font-semibold">SA Auction Online:</strong> Access to a large database of active buyers and sellers in the transport sector.</li>
+                        <li><strong className="font-semibold">SATL:</strong> Direct line to over 40,000 transport companies and a national container depot network.</li>
+                        <li><strong className="font-semibold">Ludic Financial Services:</strong> Partnership with a specialist insurer provides a captive audience in need of our services.</li>
+                        <li><strong className="font-semibold">CTS Trailers:</strong> Collaboration with a national manufacturer to reach new asset buyers at the point of sale.</li>
+                    </ul>
+                    <p className="font-semibold pt-2 border-t">These partnerships provide a clear and achievable path to reaching our target of 1,000 members within the first year.</p>
+                </CardContent>
+            </Card>
+
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
                  <Card>
                     <CardHeader>
