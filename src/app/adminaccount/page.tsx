@@ -79,6 +79,7 @@ const SalesRoadmap = dynamic(() => import('../account/sales-roadmap'), { loading
 const BudgetPage = dynamic(() => import('../account/budget/page'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const ForecastPage = dynamic(() => import('../account/forecast/page'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const PartnerOffer = dynamic(() => import('./partner-offer'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const InvestorOffer = dynamic(() => import('./investor-offer'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const PartnerEmailSequence = dynamic(() => import('./partner-email-sequence'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const FinancialSetup = dynamic(() => import('../account/financial-setup'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const MemberProjection = dynamic(() => import('../account/member-projection'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
@@ -168,7 +169,7 @@ function AdminAccountContent() {
       // Business Strategy
       case 'partner-offer': return <PartnerOffer />;
       case 'partner-email': return <PartnerEmailSequence />;
-      case 'investor-offer': return <PartnerOffer />;
+      case 'investor-offer': return <InvestorOffer />;
       case 'investor-email': return <PartnerEmailSequence />;
       case 'financial-setup': return <FinancialSetup />;
       case 'sales-roadmap': return <SalesRoadmap />;
