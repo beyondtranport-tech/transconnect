@@ -5,7 +5,7 @@ import React, { useMemo, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { TrendingUp, AlertTriangle, Loader2 } from 'lucide-react';
+import { TrendingUp, AlertTriangle, Loader2, DollarSign, Users } from 'lucide-react';
 import { salesRoadmapLogic, budgetLogic } from './calculations';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -86,6 +86,31 @@ function ForecastContent() {
         });
         return totals;
     }, [forecastData]);
+    
+     const grandTotals = useMemo(() => {
+        if (!forecastData || forecastData.length === 0) {
+        return null;
+        }
+        const totals = {
+            totalRevenue: 0,
+            totalCogs: 0,
+            totalOpex: 0,
+            netProfit: 0,
+            finalMemberCount: 0,
+        };
+        forecastData.forEach((row) => {
+            totals.totalRevenue += row.totalRevenue;
+            totals.totalCogs += row.totalCogs;
+            totals.totalOpex += row.totalOpex;
+            totals.netProfit += row.netProfit;
+        });
+        
+        if (forecastData.length > 0) {
+            totals.finalMemberCount = forecastData[forecastData.length - 1].members;
+        }
+
+        return totals;
+    }, [forecastData]);
 
     const lineItems = [
         { key: 'members', label: 'Members', format: formatNumber, isHeader: true, isBold: true },
@@ -154,46 +179,102 @@ function ForecastContent() {
     const years = [...new Set(forecastData.map(d => d.year))];
 
     return (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2"><TrendingUp /> Income Statement Forecast</CardTitle>
-            <CardDescription>This is a forecast based on the assumptions from the budget page. All figures in ZAR.</CardDescription>
-          </CardHeader>
-          <CardContent className="overflow-x-auto">
-            <Table>
-                <TableHeader>
-                    <TableRow>
-                        <TableHead className="sticky left-0 bg-card z-10 w-[250px]">Line Item</TableHead>
-                        {forecastData.map((col) => (
-                           <TableHead key={col.month} className="text-right">{col.month}</TableHead>
-                        ))}
-                        {years.map(year => (
-                            <TableHead key={`total-${year}`} className="text-right bg-primary/10 font-bold">Total {year}</TableHead>
-                        ))}
-                    </TableRow>
-                </TableHeader>
-                <TableBody>
-                    {lineItems.map(item => (
-                        <TableRow key={item.key} className={item.isHeader ? 'bg-muted/50' : ''}>
-                            <TableCell className={`sticky left-0 bg-card z-10 ${item.isBold ? 'font-semibold' : ''} ${item.isPrimary ? 'text-primary' : ''} ${item.indent ? `pl-${item.indent * 4}` : ''}`}>
-                                {item.label}
-                            </TableCell>
-                            {forecastData.map(col => (
-                                <TableCell key={`${item.key}-${col.month}`} className={`text-right font-mono text-xs ${item.isProfit && col[item.key as keyof typeof col] < 0 ? 'text-destructive' : ''}`}>
-                                    {item.format ? item.format(col[item.key as keyof typeof col]) : ''}
-                                </TableCell>
+        <div className="space-y-8">
+            <Card>
+                <CardHeader>
+                    <CardTitle>Forecast Summary</CardTitle>
+                    <CardDescription>
+                        A high-level summary of your financial forecast over the next {settings.forecastMonths} months.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    {!grandTotals ? (
+                        <p>Calculating...</p>
+                    ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                             <Card>
+                                <CardHeader className="flex-row items-center justify-between pb-2">
+                                    <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
+                                    <DollarSign className="h-4 w-4 text-muted-foreground" />
+                                </CardHeader>
+                                <CardContent>
+                                    <p className="text-2xl font-bold">{formatCurrency(grandTotals.totalRevenue)}</p>
+                                </CardContent>
+                            </Card>
+                             <Card>
+                                <CardHeader className="flex-row items-center justify-between pb-2">
+                                    <CardTitle className="text-sm font-medium">Total Costs</CardTitle>
+                                    <DollarSign className="h-4 w-4 text-muted-foreground" />
+                                </CardHeader>
+                                <CardContent>
+                                    <p className="text-2xl font-bold">{formatCurrency(grandTotals.totalCogs + grandTotals.totalOpex)}</p>
+                                    <p className="text-xs text-muted-foreground">COGS + OPEX</p>
+                                </CardContent>
+                            </Card>
+                             <Card>
+                                <CardHeader className="flex-row items-center justify-between pb-2">
+                                    <CardTitle className="text-sm font-medium">Net Profit</CardTitle>
+                                    <DollarSign className="h-4 w-4 text-muted-foreground" />
+                                </CardHeader>
+                                <CardContent>
+                                    <p className={`text-2xl font-bold ${grandTotals.netProfit < 0 ? 'text-destructive' : 'text-green-600'}`}>{formatCurrency(grandTotals.netProfit)}</p>
+                                </CardContent>
+                            </Card>
+                             <Card>
+                                <CardHeader className="flex-row items-center justify-between pb-2">
+                                    <CardTitle className="text-sm font-medium">Ending Member Count</CardTitle>
+                                    <Users className="h-4 w-4 text-muted-foreground" />
+                                </CardHeader>
+                                <CardContent>
+                                    <p className="text-2xl font-bold">{formatNumber(grandTotals.finalMemberCount)}</p>
+                                </CardContent>
+                            </Card>
+                        </div>
+                    )}
+                </CardContent>
+            </Card>
+
+            <Card>
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2"><TrendingUp /> Income Statement Forecast</CardTitle>
+                <CardDescription>This is a forecast based on the assumptions from the budget page. All figures in ZAR.</CardDescription>
+            </CardHeader>
+            <CardContent className="overflow-x-auto">
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead className="sticky left-0 bg-card z-10 w-[250px]">Line Item</TableHead>
+                            {forecastData.map((col) => (
+                            <TableHead key={col.month} className="text-right">{col.month}</TableHead>
                             ))}
                             {years.map(year => (
-                                <TableCell key={`total-${item.key}-${year}`} className={`text-right bg-primary/10 font-bold font-mono text-sm ${item.isProfit && yearlyTotals[year]?.[item.key] < 0 ? 'text-destructive' : ''}`}>
-                                     {item.format && yearlyTotals[year] ? item.format(yearlyTotals[year][item.key]) : ''}
-                                </TableCell>
+                                <TableHead key={`total-${year}`} className="text-right bg-primary/10 font-bold">Total {year}</TableHead>
                             ))}
                         </TableRow>
-                    ))}
-                </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
+                    </TableHeader>
+                    <TableBody>
+                        {lineItems.map(item => (
+                            <TableRow key={item.key} className={item.isHeader ? 'bg-muted/50' : ''}>
+                                <TableCell className={`sticky left-0 bg-card z-10 ${item.isBold ? 'font-semibold' : ''} ${item.isPrimary ? 'text-primary' : ''} ${item.indent ? `pl-${item.indent * 4}` : ''}`}>
+                                    {item.label}
+                                </TableCell>
+                                {forecastData.map(col => (
+                                    <TableCell key={`${item.key}-${col.month}`} className={`text-right font-mono text-xs ${item.isProfit && col[item.key as keyof typeof col] < 0 ? 'text-destructive' : ''}`}>
+                                        {item.format ? item.format(col[item.key as keyof typeof col]) : ''}
+                                    </TableCell>
+                                ))}
+                                {years.map(year => (
+                                    <TableCell key={`total-${item.key}-${year}`} className={`text-right bg-primary/10 font-bold font-mono text-sm ${item.isProfit && yearlyTotals[year]?.[item.key] < 0 ? 'text-destructive' : ''}`}>
+                                        {item.format && yearlyTotals[year] ? item.format(yearlyTotals[year][item.key]) : ''}
+                                    </TableCell>
+                                ))}
+                            </TableRow>
+                        ))}
+                    </TableBody>
+                </Table>
+            </CardContent>
+            </Card>
+        </div>
     );
 }
 
