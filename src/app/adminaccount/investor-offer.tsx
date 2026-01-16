@@ -44,14 +44,15 @@ export default function InvestorOffer() {
                     <CardTitle className="flex items-center gap-2"><CheckCircle className="h-6 w-6 text-primary"/>This is what we built</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                    <p className="text-muted-foreground">An integrated digital ecosystem to break constraints and drive efficiency, built on four interconnected divisions:</p>
-                     <div className="grid grid-cols-2 gap-4">
-                        <Badge variant="outline" className="p-2 justify-center">Funding Division</Badge>
-                        <Badge variant="outline" className="p-2 justify-center">Mall Division</Badge>
-                        <Badge variant="outline" className="p-2 justify-center">Marketplace Division</Badge>
-                        <Badge variant="outline" className="p-2 justify-center">Tech Division</Badge>
-                    </div>
-                    <p className="text-muted-foreground">This ecosystem provides everything a transport business needs, from flexible finance and parts sourcing to freight matching and operational tools.</p>
+                    <p className="text-muted-foreground">An integrated digital ecosystem designed to solve core industry pain points through several interconnected Malls:</p>
+                    <ul className="list-disc list-inside space-y-2 text-muted-foreground">
+                        <li>
+                            <strong className="text-foreground">Integrated Malls:</strong> Our various Malls (e.g., Supplier, Finance, Buy & Sell) create a seamless commercial environment. This integration solves the pain point of fragmentation by bringing procurement, financing, and sales into one place, reducing operational friction.
+                        </li>
+                        <li>
+                            <strong className="text-foreground">Value-Added Marketplace:</strong> The marketplace offers curated third-party products (like RAF Assist and Insurance) at group-negotiated rates, directly addressing the pain point of high operational costs. For members, it's a source of savings; for our partners, it creates a powerful new revenue opportunity through commission sharing.
+                        </li>
+                    </ul>
                 </CardContent>
             </Card>
 
