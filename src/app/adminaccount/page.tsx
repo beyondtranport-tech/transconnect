@@ -58,6 +58,8 @@ import {
   Package,
   LayoutDashboard,
   Mail,
+  Calculator,
+  Target
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -82,6 +84,8 @@ const FinancialSetup = dynamic(() => import('../account/financial-setup'), { loa
 const MemberProjection = dynamic(() => import('../account/member-projection'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const Targets = dynamic(() => import('../account/targets'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const StaffContent = dynamic(() => import('./staff-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const CostCalculator = dynamic(() => import('./cost-calculator'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+
 
 // --- Business Operations Components (from /backend) ---
 const MemberWallet = dynamic(() => import('../backend/wallet/[memberId]/member-wallet'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
@@ -170,6 +174,7 @@ function AdminAccountContent() {
       case 'member-projection': return <MemberProjection />;
       case 'budget': return <BudgetPage />;
       case 'forecast': return <ForecastPage />;
+      case 'cost-calculator': return <CostCalculator />;
       
       // Business Operations
       case 'dashboard': return <DashboardContent />;
@@ -291,7 +296,7 @@ function AdminAccountContent() {
                   </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                  <SidebarMenuButton tooltip="Projection" isActive={['financial-setup', 'sales-roadmap', 'targets', 'member-projection', 'budget', 'forecast'].includes(activeView)}>
+                  <SidebarMenuButton tooltip="Projection" isActive={['financial-setup', 'sales-roadmap', 'targets', 'member-projection', 'budget', 'forecast', 'cost-calculator'].includes(activeView)}>
                       <TrendingUp />
                       <span>Projection</span>
                   </SidebarMenuButton>
@@ -305,12 +310,16 @@ function AdminAccountContent() {
                           <span>Sales Roadmap</span>
                       </SidebarMenuSubButton>
                       <SidebarMenuSubButton isActive={activeView === 'targets'} onClick={() => router.push('/adminaccount?view=targets', { scroll: false })}>
-                          <FinancialSheetIcon />
+                          <Target />
                           <span>Targets</span>
                       </SidebarMenuSubButton>
                       <SidebarMenuSubButton isActive={activeView === 'member-projection'} onClick={() => router.push('/adminaccount?view=member-projection', { scroll: false })}>
                           <Users />
                           <span>Member Projection</span>
+                      </SidebarMenuSubButton>
+                      <SidebarMenuSubButton isActive={activeView === 'cost-calculator'} onClick={() => router.push('/adminaccount?view=cost-calculator', { scroll: false })}>
+                          <Calculator />
+                          <span>Cost Calculator</span>
                       </SidebarMenuSubButton>
                       <SidebarMenuSubButton isActive={activeView === 'budget'} onClick={() => router.push('/adminaccount?view=budget', { scroll: false })}>
                           <FinancialSheetIcon />
