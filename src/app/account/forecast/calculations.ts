@@ -2,84 +2,119 @@
 
 const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
-export function salesRoadmapLogic(settings: any, salesInputs: any) {
-    if (!settings || !salesInputs) return [];
-    
-    const data = [];
-    let cumulativeMembers = 0;
+// This function is corrected to use the right logic for sales projections.
+export function salesRoadmapLogic(settings: any, roadmapInputs: any) {
+    if (!roadmapInputs || !roadmapInputs.monthlyAssumptions || !settings) {
+        return [];
+    }
 
-    for (let i = 0; i < settings.forecastMonths; i++) {
-        const date = new Date(settings.startYear, settings.startMonth + i, 1);
+    const monthlyAssumptions = roadmapInputs.monthlyAssumptions;
+    const { forecastMonths, startYear, startMonth } = settings;
+    
+    const memberRoleGroups = [
+        { role: 'Vendors', id: 'Vendors' },
+        { role: 'Buyers', id: 'Buyers' },
+        { role: 'Associates', id: 'Associates' },
+        { role: 'ISA Agents', id: 'IsaAgents' },
+        { role: 'Drivers', id: 'Drivers' },
+        { role: 'Developers', id: 'Developers' }
+    ];
+
+    let byRoleProjections: { [key: string]: any[] } = {};
+
+    memberRoleGroups.forEach(group => {
+        const roleKey = group.role;
+        const roleId = group.id;
+        byRoleProjections[roleKey] = [];
+        
+        const initialMembers = Number(monthlyAssumptions[`initialMembers${roleId}`]?.[0]) || 0;
+        let cumulativeForRole = initialMembers;
+        
+        const referralsArray = monthlyAssumptions[`referralsPerMember${roleId}`] || [];
+        const conversionArray = monthlyAssumptions[`conversionToMember${roleId}`] || [];
+
+        for (let i = 0; i < forecastMonths; i++) {
+            const date = new Date(startYear, startMonth + i, 1);
+            const month = monthNames[date.getMonth()];
+            const year = date.getFullYear();
+            const referralsPerMember = Number(referralsArray[i]) || 0;
+            const conversionToMember = (Number(conversionArray[i]) || 0) / 100;
+            const newMembersThisMonth = Math.round(cumulativeForRole * referralsPerMember * conversionToMember);
+            cumulativeForRole += newMembersThisMonth;
+            byRoleProjections[roleKey].push({
+                month: `${month} ${year}`,
+                newMembers: newMembersThisMonth,
+                cumulativeMembers: cumulativeForRole,
+            });
+        }
+    });
+
+    let totalProjection: any[] = [];
+    const initialTotalMembers = memberRoleGroups.reduce((acc, group) => {
+        const roleId = group.id;
+        return acc + (Number(monthlyAssumptions[`initialMembers${roleId}`]?.[0]) || 0);
+    }, 0);
+    
+    let cumulativeTotal = initialTotalMembers;
+
+    for (let i = 0; i < forecastMonths; i++) {
+        const date = new Date(startYear, startMonth + i, 1);
         const month = monthNames[date.getMonth()];
         const year = date.getFullYear();
 
-        const monthlyInitialTransporters = salesInputs.initialTransporters?.[i] || 0;
-        const monthlyInitialSuppliers = salesInputs.initialSuppliers?.[i] || 0;
-        const monthlyPowerPartners = salesInputs.numberOfPowerPartners?.[i] || 0;
-        const monthlyOppsPerPartner = salesInputs.opportunitiesPerPartner?.[i] || 0;
-        const monthlyCampaignConversion = (salesInputs.campaignConversionRate?.[i] || 0) / 100;
-        const monthlyCampaignDuration = salesInputs.campaignDuration?.[i] || 0;
-
-        const totalPowerPartnerProspects = monthlyPowerPartners * monthlyOppsPerPartner;
-        const totalInitialProspects = monthlyInitialTransporters + monthlyInitialSuppliers + totalPowerPartnerProspects;
+        let newMembersFromRoles = 0;
+        memberRoleGroups.forEach(group => {
+            const roleKey = group.role;
+            const projectionForMonth = byRoleProjections[roleKey][i];
+            if (projectionForMonth) {
+                newMembersFromRoles += projectionForMonth.newMembers;
+            }
+        });
         
-        const currentCampaignConversionRate = i < monthlyCampaignDuration ? monthlyCampaignConversion : 0;
-        const campaignNewMembers = Math.floor(totalInitialProspects * currentCampaignConversionRate);
+        const powerPartnerConversionForMonth = (Number(monthlyAssumptions.powerPartnerConversion?.[i]) || 0) / 100;
+        const powerPartnerNewMembers = Math.round(
+            (Number(monthlyAssumptions.numberOfPowerPartners?.[i]) || 0) *
+            (Number(monthlyAssumptions.opportunitiesPerPartner?.[i]) || 0) *
+            powerPartnerConversionForMonth
+        );
 
-        let networkNewMembers = 0;
-        const lag = salesInputs.customerConversionLag?.[i] || 3;
-        if (i >= lag) {
-            const membersAtLag = data[i - lag]?.cumulativeMembers || 0;
-            const avgCustomers = salesInputs.avgCustomersPerMember?.[i] || 0;
-            const potentialNetworkPool = membersAtLag * avgCustomers;
-            const customerConversion = (salesInputs.customerConversionRate?.[i] || 0) / 100;
-            networkNewMembers = Math.floor(potentialNetworkPool * customerConversion / 12);
-        }
-
-        const monthlyIsas = salesInputs.numberOfIsas?.[i] || 0;
-        const monthlyReferralsPerIsa = salesInputs.referralsPerIsa?.[i] || 0;
-        const monthlyIsaConversion = (salesInputs.isaConversionRate?.[i] || 0) / 100;
-        const isaNewMembers = Math.floor(monthlyIsas * monthlyReferralsPerIsa * monthlyIsaConversion);
+        const totalNewThisMonth = newMembersFromRoles + powerPartnerNewMembers;
+        cumulativeTotal += totalNewThisMonth;
         
-        const totalNewMembers = campaignNewMembers + networkNewMembers + isaNewMembers;
-        cumulativeMembers += totalNewMembers;
-
-        data.push({ month: `${month} ${year}`, year, totalNewMembers, cumulativeMembers });
+        totalProjection.push({
+            month: `${month} ${year}`,
+            year,
+            powerPartnerNewMembers: powerPartnerNewMembers,
+            referralNewMembers: newMembersFromRoles,
+            totalNewMembers: totalNewThisMonth,
+            cumulativeMembers: cumulativeTotal,
+        });
     }
-    return data;
-}
 
-export function budgetLogic(budgetData: any, targets: any) {
-    if (!budgetData || !budgetData.budgetInputs || !targets || !targets.monthlyTargets) return [];
+    return totalProjection;
+};
+
+
+export function budgetLogic(roadmapData: any[], budgetData: any, targets: any) {
+    if (!roadmapData || roadmapData.length === 0 || !budgetData || !budgetData.budgetInputs || !targets || !targets.monthlyTargets) return [];
     
     const { budgetInputs } = budgetData;
     const { monthlyTargets } = targets;
     const forecastData = [];
 
-    // Simplified Loyalty Tier Commission Shares
     const loyaltyTierShares = { bronze: 0.10, silver: 0.15, gold: 0.20 };
     
-    const forecastMonths = monthlyTargets.membersVendors?.length || 0;
+    const forecastMonths = roadmapData.length;
 
     for (let i = 0; i < forecastMonths; i++) {
-        const date = new Date(budgetData.startYear, budgetData.startMonth + i, 1);
-        const month = monthNames[date.getMonth()];
-        const year = date.getFullYear();
+        const { month, year } = roadmapData[i];
+        
+        const members = roadmapData[i]?.cumulativeMembers || 0;
 
-        const members = (monthlyTargets.membersVendors?.[i] || 0) + 
-                        (monthlyTargets.membersBuyers?.[i] || 0) + 
-                        (monthlyTargets.membersPartners?.[i] || 0) +
-                        (monthlyTargets.membersAssociates?.[i] || 0) +
-                        (monthlyTargets.membersIsaAgents?.[i] || 0) +
-                        (monthlyTargets.membersDrivers?.[i] || 0) +
-                        (monthlyTargets.membersDevelopers?.[i] || 0);
-
-        // Get adoption counts directly from targets
         const rewardsAdoptionCount = monthlyTargets.rewardsPlans?.[i] || 0;
         const loyaltyAdoptionCount = monthlyTargets.loyaltyPlans?.[i] || 0;
         const actionsAdoptionCount = monthlyTargets.actionPlans?.[i] || 0;
 
-        // Get monthly plan prices and other revenue inputs
         const rewardsPrice = budgetInputs.revenue.avgConnectPlanFee[i];
         const loyaltyPrice = budgetInputs.revenue.avgConnectPlanFee[i];
         const actionsPrice = budgetInputs.revenue.avgConnectPlanFee[i];
@@ -89,19 +124,16 @@ export function budgetLogic(budgetData: any, targets: any) {
         const techAdoption = budgetInputs.revenue.techServicesAdoptionRate[i] / 100;
         const techSpend = budgetInputs.revenue.avgTechSpendPerMember[i];
         
-        // Calculate revenue from each Connect Plan
         const rewardsRevenue = rewardsAdoptionCount * rewardsPrice;
         const loyaltyRevenue = loyaltyAdoptionCount * loyaltyPrice;
         const actionsRevenue = actionsAdoptionCount * actionsPrice;
         const connectPlanRevenue = rewardsRevenue + loyaltyRevenue + actionsRevenue;
         
-        // Total Revenue Calculation
         const membershipRevenue = members * membershipFee;
         const mallRevenue = members * mallSpend * mallCommissionRate;
         const techRevenue = members * techAdoption * techSpend;
         const totalRevenue = membershipRevenue + connectPlanRevenue + mallRevenue + techRevenue;
 
-        // --- COGS Calculation with Loyalty Tiers ---
         const memberDistribution = { bronze: members * 0.6, silver: members * 0.3, gold: members * 0.1 };
         const weightedCommissionShare = 
             (memberDistribution.bronze * loyaltyTierShares.bronze) +
@@ -114,8 +146,7 @@ export function budgetLogic(budgetData: any, targets: any) {
 
         const grossProfit = totalRevenue - totalCogs;
         
-        // OPEX Calculation
-        const opexSalaries = budgetInputs.opexSalaries.reduce((sum: number, role: any) => {
+        const opexSalaries = budgetData.opexSalaries.reduce((sum: number, role: any) => {
             const countForMonth = role.monthlyHeadcount?.[i] || 0;
             const salaryForMonth = role.monthlySalary?.[i] || 0;
             return sum + (countForMonth * salaryForMonth);
@@ -131,7 +162,7 @@ export function budgetLogic(budgetData: any, targets: any) {
         const netProfit = grossProfit - totalOpex;
 
         forecastData.push({
-            month: `${month} ${year}`,
+            month,
             year,
             members,
             

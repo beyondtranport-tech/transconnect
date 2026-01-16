@@ -31,9 +31,11 @@ function ForecastContent() {
 
             const settings = settingsString ? JSON.parse(settingsString) : null;
             const budget = budgetString ? JSON.parse(budgetString) : null;
+            
             const salesRoadmapData = salesRoadmapString ? JSON.parse(salesRoadmapString) : null;
             const activeScenarioName = salesRoadmapData?.activeScenario || 'Default';
             const salesRoadmap = salesRoadmapData?.scenarios?.[activeScenarioName] || null;
+
             const targets = targetsString ? JSON.parse(targetsString) : null;
 
             if (!settings || !budget || !salesRoadmap || !targets) {
@@ -41,7 +43,7 @@ function ForecastContent() {
             }
 
             return { 
-                salesInputs: salesRoadmap.monthlyAssumptions, 
+                salesInputs: salesRoadmap,
                 budgetData: budget, 
                 settings,
                 targets,
@@ -52,10 +54,15 @@ function ForecastContent() {
         }
     }, []);
     
+    const roadmapData = useMemo(() => {
+        if (!salesInputs || !settings) return [];
+        return salesRoadmapLogic(settings, salesInputs);
+    }, [salesInputs, settings]);
+    
     const forecastData = useMemo(() => {
-        if (!settings || !budgetData || !targets) return [];
-        return budgetLogic(budgetData, targets);
-    }, [budgetData, targets, settings]);
+        if (roadmapData.length === 0 || !budgetData || !targets) return [];
+        return budgetLogic(roadmapData, budgetData, targets);
+    }, [roadmapData, budgetData, targets]);
 
     const yearlyTotals = useMemo(() => {
         const totals: Record<string, any> = {};
@@ -65,12 +72,9 @@ function ForecastContent() {
             if (!totals[row.year]) {
                  totals[row.year] = {
                     members: 0,
-                    // Revenue
                     membershipRevenue: 0, connectPlanRevenue: 0, mallRevenue: 0, techRevenue: 0, totalRevenue: 0,
-                    // COGS
                     memberCommission: 0, isaCommission: 0, totalCogs: 0,
                     grossProfit: 0,
-                    // OPEX
                     opexSalaries: 0, digitalAdvertising: 0, contentCreation: 0, eventsAndSponsorships: 0,
                     officeRental: 0, utilities: 0, insurance: 0, legalAndProfessional: 0, bankCharges: 0,
                     telephone: 0, travelAndEntertainment: 0, platformCosts: 0, softwareLicenses: 0, totalOpex: 0,
@@ -82,7 +86,7 @@ function ForecastContent() {
                      totals[row.year][key] += row[key];
                 }
             });
-            totals[row.year].members = row.members; // Store last member count for the year
+            totals[row.year].members = row.members;
         });
         return totals;
     }, [forecastData]);
@@ -114,21 +118,17 @@ function ForecastContent() {
 
     const lineItems = [
         { key: 'members', label: 'Members', format: formatNumber, isHeader: true, isBold: true },
-        // Revenue
         { key: 'revenue', label: 'Revenue', isHeader: true },
         { key: 'membershipRevenue', label: 'Membership Revenue', format: formatCurrency, indent: 1 },
         { key: 'connectPlanRevenue', label: 'Connect Plan Revenue', format: formatCurrency, indent: 1 },
         { key: 'mallRevenue', label: 'Mall Commission Revenue', format: formatCurrency, indent: 1 },
         { key: 'techRevenue', label: 'Tech Services Revenue', format: formatCurrency, indent: 1 },
         { key: 'totalRevenue', label: 'Total Revenue', format: formatCurrency, isBold: true, isPrimary: true },
-        // COGS
         { key: 'cogs', label: 'Cost of Goods Sold (COGS)', isHeader: true },
         { key: 'memberCommission', label: 'Member Commission Share', format: formatCurrency, indent: 1 },
         { key: 'isaCommission', label: 'ISA Commission', format: formatCurrency, indent: 1 },
         { key: 'totalCogs', label: 'Total COGS', format: formatCurrency, isBold: true },
-        // Gross Profit
         { key: 'grossProfit', label: 'Gross Profit', format: formatCurrency, isBold: true, isPrimary: true },
-        // OPEX
         { key: 'opex', label: 'Operating Expenses (OPEX)', isHeader: true },
         { key: 'opexSalaries', label: 'Salaries & Wages', format: formatCurrency, indent: 1 },
         { key: 'digitalAdvertising', label: 'Digital Advertising', format: formatCurrency, indent: 1 },
@@ -144,7 +144,6 @@ function ForecastContent() {
         { key: 'platformCosts', label: 'Cloud Hosting & Infrastructure', format: formatCurrency, indent: 1 },
         { key: 'softwareLicenses', label: 'Software Licenses', format: formatCurrency, indent: 1 },
         { key: 'totalOpex', label: 'Total OPEX', format: formatCurrency, isBold: true },
-        // Net Profit
         { key: 'netProfit', label: 'Net Profit', format: formatCurrency, isBold: true, isPrimary: true, isProfit: true },
     ];
 
@@ -265,7 +264,7 @@ function ForecastContent() {
                                 ))}
                                 {years.map(year => (
                                     <TableCell key={`total-${item.key}-${year}`} className={`text-right bg-primary/10 font-bold font-mono text-sm ${item.isProfit && yearlyTotals[year]?.[item.key] < 0 ? 'text-destructive' : ''}`}>
-                                        {item.format && yearlyTotals[year] ? item.format(yearlyTotals[year][item.key]) : ''}
+                                         {item.format && yearlyTotals[year] ? item.format(yearlyTotals[year][item.key]) : ''}
                                     </TableCell>
                                 ))}
                             </TableRow>
