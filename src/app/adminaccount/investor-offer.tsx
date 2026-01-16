@@ -100,8 +100,8 @@ export default function InvestorOffer() {
                 <CardContent className="space-y-4">
                     <p className="text-muted-foreground">We have established a powerful acquisition funnel through pending partnership agreements with major networks:</p>
                     <ul className="list-disc list-inside space-y-2 text-foreground">
-                        <li><strong className="font-semibold">SA Auction Online:</strong> Access to a large database of active buyers and sellers in the transport sector.</li>
-                        <li><strong className="font-semibold">SATL:</strong> Direct line to over 40,000 transport companies and a national container depot network.</li>
+                        <li><strong className="font-semibold">SA Auction Online:</strong> Access to a database of 40,000 transport companies.</li>
+                        <li><strong className="font-semibold">SATL:</strong> Access to a network of freight forwarders and relationships with shippers.</li>
                         <li><strong className="font-semibold">Ludic Financial Services:</strong> Partnership with a specialist insurer provides a captive audience in need of our services.</li>
                         <li><strong className="font-semibold">CTS Trailers:</strong> Collaboration with a national manufacturer to reach new asset buyers at the point of sale.</li>
                     </ul>
