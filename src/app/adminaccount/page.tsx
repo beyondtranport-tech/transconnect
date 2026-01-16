@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -59,7 +58,8 @@ import {
   LayoutDashboard,
   Mail,
   Calculator,
-  Target
+  Target,
+  Info,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -80,6 +80,7 @@ const BudgetPage = dynamic(() => import('../account/budget/page'), { loading: ()
 const ForecastPage = dynamic(() => import('../account/forecast/page'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const PartnerOffer = dynamic(() => import('./partner-offer'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const InvestorOffer = dynamic(() => import('./investor-offer'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const ElevatorPitch = dynamic(() => import('./elevator-pitch'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const PartnerEmailSequence = dynamic(() => import('./partner-email-sequence'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const InvestorEmailSequence = dynamic(() => import('./investor-email-sequence'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const FinancialSetup = dynamic(() => import('../account/financial-setup'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
@@ -171,6 +172,7 @@ function AdminAccountContent() {
       case 'partner-offer': return <PartnerOffer />;
       case 'partner-email': return <PartnerEmailSequence />;
       case 'investor-offer': return <InvestorOffer />;
+      case 'elevator-pitch': return <ElevatorPitch />;
       case 'investor-email': return <InvestorEmailSequence />;
       case 'financial-setup': return <FinancialSetup />;
       case 'sales-roadmap': return <SalesRoadmap />;
@@ -216,6 +218,7 @@ function AdminAccountContent() {
   }
 
   const isSalesActive = ['network', 'network-offer', 'network-emails', 'performance', 'product-sales', 'earnings'].includes(activeView);
+  const isInvestorPitchActive = ['investor-offer', 'investor-email', 'elevator-pitch'].includes(activeView);
 
   return (
     <AdminAuthGuard>
@@ -262,11 +265,15 @@ function AdminAccountContent() {
                 </SidebarMenuSub>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Investor Pitch" isActive={['investor-offer', 'investor-email'].includes(activeView)}>
+                <SidebarMenuButton tooltip="Investor Pitch" isActive={isInvestorPitchActive}>
                   <Presentation />
                   <span>Investor Pitch</span>
                 </SidebarMenuButton>
                 <SidebarMenuSub>
+                    <SidebarMenuSubButton isActive={activeView === 'elevator-pitch'} onClick={() => router.push('/adminaccount?view=elevator-pitch', { scroll: false })}>
+                        <Info />
+                        <span>Elevator Pitch</span>
+                    </SidebarMenuSubButton>
                     <SidebarMenuSubButton isActive={activeView === 'investor-offer'} onClick={() => router.push('/adminaccount?view=investor-offer', { scroll: false })}>
                         <Presentation />
                         <span>Investor Offer</span>
