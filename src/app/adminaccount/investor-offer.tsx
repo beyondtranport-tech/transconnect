@@ -4,7 +4,28 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { DollarSign, Building, Users, TrendingUp, Lightbulb, CheckCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
+const formatCurrency = (value: number) => new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR', maximumFractionDigits: 0 }).format(value);
+
 export default function InvestorOffer() {
+    // Revenue Projections
+    const targetMembers = 1000;
+    const monthlyFee = 500 + 100; // Membership + Subscription
+    const annualFeeRevenue = targetMembers * monthlyFee * 12;
+    const annualTransactionalRevenue = targetMembers * 100 * 12; // Estimate
+    const annualDiscountRevenue = targetMembers * 200 * 12; // Estimate
+    const totalAnnualRevenue = annualFeeRevenue + annualTransactionalRevenue + annualDiscountRevenue;
+
+    // Expense Projections
+    const annualSalaries = 1860000;
+    const annualPlatformCosts = 60000;
+    const annualOpex = 396000;
+    const totalAnnualExpenses = annualSalaries + annualPlatformCosts + annualOpex;
+    
+    const netPosition = totalAnnualRevenue - totalAnnualExpenses;
+    
+    const investmentAsk = 500000;
+
+
     return (
         <div className="space-y-8">
             <div>
@@ -44,8 +65,7 @@ export default function InvestorOffer() {
                     <CardTitle className="flex items-center gap-2"><CheckCircle className="h-6 w-6 text-primary"/>This is what we built</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                    <p className="text-muted-foreground">An integrated digital ecosystem designed to solve core industry pain points through several interconnected Malls:</p>
-                    <ul className="list-disc list-inside space-y-2 text-muted-foreground">
+                    <ul className="list-disc list-inside space-y-4 text-muted-foreground">
                         <li>
                             <strong className="text-foreground">Integrated Malls:</strong> Our various Malls (e.g., Supplier, Finance, Buy & Sell) create a seamless commercial environment. This integration solves the pain point of fragmentation by bringing procurement, financing, and sales into one place, reducing operational friction.
                         </li>
@@ -70,25 +90,49 @@ export default function InvestorOffer() {
                     </ul>
                 </CardContent>
             </Card>
-
-            <Card>
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2"><DollarSign className="h-6 w-6 text-primary"/>Investment needed</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <p className="text-muted-foreground">We are seeking seed funding to scale operations, accelerate user acquisition through our ISA and Partner programs, and further develop our proprietary technology platform, particularly our AI and data analytics capabilities.</p>
-                </CardContent>
-            </Card>
-
-            <Card>
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2"><TrendingUp className="h-6 w-6 text-primary"/>Yield on investment</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <p className="text-muted-foreground">Revenue is generated through multiple streams, creating a robust and diversified business model. This includes membership fees, commissions from mall transactions, fees for value-added services in the marketplace, and subscriptions to our premium tech tools.</p>
-                    <p className="mt-4 text-muted-foreground">We project a significant return on investment driven by network effects and a large, underserved addressable market.</p>
-                </CardContent>
-            </Card>
+            
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+                 <Card>
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2"><TrendingUp className="h-6 w-6 text-primary"/>High-Level 1-Year Financial Model</CardTitle>
+                        <CardDescription>Based on a target of {targetMembers.toLocaleString()} paying members.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <div>
+                            <h4 className="font-semibold text-foreground mb-2">Projected Annual Revenue Streams</h4>
+                            <ul className="space-y-1 list-disc list-inside text-muted-foreground text-sm">
+                                <li><strong>Membership & Subscription Fees:</strong> {formatCurrency(annualFeeRevenue)}</li>
+                                <li><strong>Transactional Revenue (Estimate):</strong> {formatCurrency(annualTransactionalRevenue)}</li>
+                                <li><strong>Discount Retention Share (Estimate):</strong> {formatCurrency(annualDiscountRevenue)}</li>
+                            </ul>
+                            <p className="text-right font-bold text-base mt-2 pr-2">Total Projected Revenue: {formatCurrency(totalAnnualRevenue)}</p>
+                        </div>
+                        <div className="border-t pt-4">
+                            <h4 className="font-semibold text-foreground mb-2">Projected Annual Expenses</h4>
+                            <ul className="space-y-1 list-disc list-inside text-muted-foreground text-sm">
+                                <li><strong>Salaries & Wages (Core Team):</strong> {formatCurrency(annualSalaries)}</li>
+                                <li><strong>Platform & Tech Costs:</strong> {formatCurrency(annualPlatformCosts)}</li>
+                                <li><strong>Operational Overheads:</strong> {formatCurrency(annualOpex)}</li>
+                            </ul>
+                            <p className="text-right font-bold text-base mt-2 pr-2">Total Projected Expenses: {formatCurrency(totalAnnualExpenses)}</p>
+                        </div>
+                    </CardContent>
+                    <CardFooter className="bg-muted/50 p-3 border-t">
+                        <p className="text-lg font-bold text-green-600 w-full text-right">Projected Net Position (Year 1): {formatCurrency(netPosition)}</p>
+                    </CardFooter>
+                </Card>
+                <div className="space-y-8">
+                     <Card>
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2"><DollarSign className="h-6 w-6 text-primary"/>Investment Needed</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <p className="text-4xl font-bold text-primary">{formatCurrency(investmentAsk)}</p>
+                            <p className="text-muted-foreground mt-2">Seed funding to scale operations, accelerate user acquisition through our ISA and Partner programs, and further develop our technology platform.</p>
+                        </CardContent>
+                    </Card>
+                </div>
+            </div>
 
         </div>
     );
