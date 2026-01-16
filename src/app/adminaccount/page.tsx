@@ -168,6 +168,8 @@ function AdminAccountContent() {
       // Business Strategy
       case 'partner-offer': return <PartnerOffer />;
       case 'partner-email': return <PartnerEmailSequence />;
+      case 'investor-offer': return <PartnerOffer />;
+      case 'investor-email': return <PartnerEmailSequence />;
       case 'financial-setup': return <FinancialSetup />;
       case 'sales-roadmap': return <SalesRoadmap />;
       case 'targets': return <Targets />;
@@ -252,6 +254,22 @@ function AdminAccountContent() {
                         <span>Partner Offer</span>
                     </SidebarMenuSubButton>
                     <SidebarMenuSubButton isActive={activeView === 'partner-email'} onClick={() => router.push('/adminaccount?view=partner-email', { scroll: false })}>
+                        <Mail />
+                        <span>Email Sequence</span>
+                    </SidebarMenuSubButton>
+                </SidebarMenuSub>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton tooltip="Investor Pitch" isActive={['investor-offer', 'investor-email'].includes(activeView)}>
+                  <Presentation />
+                  <span>Investor Pitch</span>
+                </SidebarMenuButton>
+                <SidebarMenuSub>
+                    <SidebarMenuSubButton isActive={activeView === 'investor-offer'} onClick={() => router.push('/adminaccount?view=investor-offer', { scroll: false })}>
+                        <Presentation />
+                        <span>Investor Offer</span>
+                    </SidebarMenuSubButton>
+                    <SidebarMenuSubButton isActive={activeView === 'investor-email'} onClick={() => router.push('/adminaccount?view=investor-email', { scroll: false })}>
                         <Mail />
                         <span>Email Sequence</span>
                     </SidebarMenuSubButton>
