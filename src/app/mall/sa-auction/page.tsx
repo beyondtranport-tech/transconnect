@@ -48,9 +48,8 @@ const featuredAuctions = [
 ];
 
 const formatCurrency = (price: number) => {
-    const formatted = new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(price);
-    // Normalize non-breaking spaces to regular spaces to prevent hydration errors.
-    return formatted.replace(/\s/g, ' ');
+    // Manual formatting to ensure consistency between server and client
+    return 'R ' + price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 };
 
 
