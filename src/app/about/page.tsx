@@ -33,7 +33,30 @@ const values = [
         description: "We operate with transparency and trust, ensuring a secure and reliable ecosystem for all members.",
         image: placeholderImages.find(p => p.id === 'value-integrity'),
     }
-]
+];
+
+const partners = [
+  { 
+    name: 'SA Auction Online', 
+    description: 'Powering our auction mall with a vast inventory of vehicles and assets.', 
+    logo: 'https://placehold.co/200x60/14532d/ffffff?text=SA+Auction+Online' 
+  },
+  { 
+    name: 'SATL', 
+    description: 'Connecting our members to a national network of freight forwarders and shippers.', 
+    logo: 'https://placehold.co/200x60/14532d/ffffff?text=SATL' 
+  },
+  { 
+    name: 'Ludic Financial Services', 
+    description: 'Providing specialist insurance solutions for the transport sector.', 
+    logo: 'https://placehold.co/200x60/14532d/ffffff?text=Ludic' 
+  },
+  { 
+    name: 'CTS Trailers', 
+    description: 'A national trailer manufacturer offering quality assets to our members.', 
+    logo: 'https://placehold.co/200x60/14532d/ffffff?text=CTS+Trailers' 
+  }
+];
 
 export default function AboutPage() {
   return (
@@ -106,6 +129,32 @@ export default function AboutPage() {
         </section>
 
         <section className="py-16 md:py-24 bg-card">
+            <div className="container mx-auto px-4">
+                <div className="text-center max-w-3xl mx-auto mb-16">
+                    <h2 className="text-3xl md:text-4xl font-bold font-headline">Our Valued Partners</h2>
+                    <p className="mt-4 text-lg text-muted-foreground">
+                        Collaboration is at the heart of our ecosystem. We're proud to work with industry leaders who share our vision.
+                    </p>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+                    {partners.map((partner) => (
+                         <Card key={partner.name} className="flex flex-col items-center justify-center p-6 text-center">
+                            <Image src={partner.logo} alt={`${partner.name} logo`} width={150} height={50} className="object-contain mb-4" />
+                            <p className="text-muted-foreground text-sm flex-grow">{partner.description}</p>
+                        </Card>
+                    ))}
+                </div>
+                 <div className="text-center mt-12">
+                    <Button asChild>
+                        <Link href="/for-financiers">
+                            Become a Partner <ArrowRight className="ml-2 h-4 w-4" />
+                        </Link>
+                    </Button>
+                </div>
+            </div>
+        </section>
+
+        <section className="py-16 md:py-24 bg-background">
             <div className="container mx-auto px-4">
                 <div className="text-center max-w-3xl mx-auto mb-12">
                     <h2 className="text-3xl md:text-4xl font-bold font-headline">Our Core Values</h2>
