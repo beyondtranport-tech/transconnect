@@ -3,7 +3,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { ArrowRight, ShoppingBasket, Building2, Truck, Landmark, PackageSearch, Store, Network, Warehouse, Recycle, Wrench } from "lucide-react";
+import { ArrowRight, ShoppingBasket, Building2, Truck, Landmark, PackageSearch, Store, Network, Warehouse, Recycle, Wrench, Scale } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import data from "@/lib/placeholder-images.json";
@@ -23,6 +23,8 @@ const fundingImage = placeholderImages.find(p => p.id === 'funding-division')!;
 const marketplaceImage = placeholderImages.find(p => p.id === 'marketplace-division')!;
 const techImage = placeholderImages.find(p => p.id === 'tech-division')!;
 const tiresImage = placeholderImages.find(p => p.id === 'product-tires')!;
+const saAuctionMallImage = placeholderImages.find(p => p.id === 'sa-auction-mall')!;
+
 
 const formatPrice = (price: number) => {
     const formattedPrice = new Intl.NumberFormat('en-ZA', {
@@ -76,6 +78,14 @@ const malls = [
         href: "/marketplace",
         id: "buy-sell",
         image: marketplaceImage!,
+    },
+    {
+        name: "SA Auction Mall",
+        description: "Live auctions for vehicles, equipment, and salvaged assets from SA Auction Online.",
+        icon: Scale,
+        href: "/mall/sa-auction",
+        id: "sa-auction",
+        image: saAuctionMallImage,
     },
     {
         name: "Distribution Mall",
