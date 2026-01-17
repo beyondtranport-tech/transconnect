@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Button } from "@/components/ui/button";
@@ -11,8 +12,6 @@ import Link from "next/link";
 import * as gtag from '@/lib/gtag';
 
 const { placeholderImages } = data;
-
-const saAuctionMallImage = placeholderImages.find(p => p.id === 'sa-auction-mall');
 
 // Placeholder for featured auction items
 const featuredAuctions = [
@@ -47,7 +46,9 @@ const featuredAuctions = [
 ];
 
 const formatCurrency = (price: number) => {
-    return new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(price);
+    const formatted = new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(price);
+    // Normalize non-breaking spaces to regular spaces to prevent hydration errors.
+    return formatted.replace(/\s/g, ' ');
 };
 
 
