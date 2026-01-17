@@ -13,6 +13,8 @@ import * as gtag from '@/lib/gtag';
 
 const { placeholderImages } = data;
 
+const saAuctionMallImage = placeholderImages.find(p => p.id === 'sa-auction-mall');
+
 // Placeholder for featured auction items
 const featuredAuctions = [
     {
