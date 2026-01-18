@@ -76,6 +76,8 @@ const StaffList = dynamic(() => import('./staff-list'), { loading: () => <Loader
 const PermissionsContent = dynamic(() => import('./permissions-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const ActivityFeed = dynamic(() => import('./activity-feed'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const PlatformTasksContent = dynamic(() => import('./platform-tasks'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const LeadsContent = dynamic(() => import('./leads-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+
 
 const FundingDivisionContent = dynamic(() => import('./funding-division-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const MallDivisionContent = dynamic(() => import('./mall-division-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
@@ -173,6 +175,8 @@ export default function BackendPageContent() {
         return <TechDivisionContent />;
       case 'campaigns':
         return <CampaignContent />;
+      case 'leads':
+        return <LeadsContent />;
       default:
         return <PlatformSettingsContent />;
     }
@@ -217,6 +221,12 @@ export default function BackendPageContent() {
                 <SidebarMenuButton tooltip="Members" isActive={activeView === 'members'} onClick={() => router.push('/backend?view=members', { scroll: false })}>
                 <Users />
                 <span>Members</span>
+                </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+                <SidebarMenuButton tooltip="Leads" isActive={activeView === 'leads'} onClick={() => router.push('/backend?view=leads', { scroll: false })}>
+                <Users />
+                <span>Leads</span>
                 </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>

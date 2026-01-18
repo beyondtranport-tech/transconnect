@@ -303,6 +303,25 @@
             "after": { "type": "object", "description": "State of the document after the change." }
         },
         "required": ["collectionPath", "documentId", "userId", "action", "timestamp"]
+    },
+    "Lead": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Lead",
+      "type": "object",
+      "description": "Represents a potential member lead for sales and marketing.",
+      "properties": {
+        "id": { "type": "string" },
+        "companyName": { "type": "string" },
+        "contactPerson": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "phone": { "type": "string" },
+        "role": { "type": "string", "description": "The potential role of the lead, e.g., Vendor, Buyer." },
+        "status": { "type": "string", "enum": ["new", "contacted", "qualified", "unqualified"], "description": "The current status of the lead in the sales funnel." },
+        "notes": { "type": "string" },
+        "createdAt": { "type": "object" },
+        "updatedAt": { "type": "object" }
+      },
+      "required": ["companyName", "role", "status"]
     }
   },
   "auth": {
@@ -460,6 +479,14 @@
           "entityName": "Permission",
           "schema": { "$ref": "#/entities/Permission" },
           "description": "Admin-managed collection of all available permissions in the system."
+        }
+      },
+      {
+        "path": "/leads/{leadId}",
+        "definition": {
+          "entityName": "Lead",
+          "schema": { "$ref": "#/entities/Lead" },
+          "description": "Admin-managed collection of sales leads."
         }
       }
     ],
