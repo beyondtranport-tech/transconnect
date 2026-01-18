@@ -8,7 +8,7 @@
  */
 
 import { ai } from '@/ai/genkit';
-import { z } from 'genkit';
+import { z } from 'zod';
 
 export const ImageGenerateInputSchema = z.object({
   prompt: z.string().describe('The text prompt describing the desired image.'),

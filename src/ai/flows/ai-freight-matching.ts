@@ -8,7 +8,7 @@
  */
 
 import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
+import {z} from 'zod';
 
 const MatchFreightInputSchema = z.object({
   location: z.string().describe('The current location of the transporter.'),
