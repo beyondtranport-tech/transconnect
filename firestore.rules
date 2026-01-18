@@ -124,7 +124,10 @@ service cloud.firestore {
 
     // Admin-managed collection for sales leads.
     match /leads/{leadId} {
-      allow read, write: if isAdmin();
+      allow get, update, delete: if isAdmin();
+    }
+    match /leads {
+      allow list, create: if isAdmin();
     }
   }
 }
