@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Loader2, Sparkles, Bot, Save } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { leadGenerationFlow, LeadGenerationInputSchema, type LeadGenerationOutput } from '@/ai/flows/lead-generation-flow';
-import type { z } from 'zod';
+import { z } from 'zod';
 import { roles } from '@/lib/roles';
 import { getClientSideAuthToken } from '@/firebase';
 import { useRouter } from 'next/navigation';
