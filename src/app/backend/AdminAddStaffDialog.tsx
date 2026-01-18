@@ -24,11 +24,12 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { useCollection, useFirestore, getClientSideAuthToken, useMemoFirebase } from '@/firebase';
+import { useCollection, useFirestore, getClientSideAuthToken } from '@/firebase';
 import { collection, query } from 'firebase/firestore';
 import { Loader2, PlusCircle, UserPlus } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useMemoFirebase } from '@/hooks/use-config';
 
 const staffFormSchema = z.object({
   companyId: z.string().min(1, 'Company is required'),
@@ -183,3 +184,5 @@ export function AdminAddStaffDialog({ onStaffAdded }: { onStaffAdded: () => void
     </Dialog>
   );
 }
+
+    
