@@ -1,3 +1,4 @@
+
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import { NextRequest, NextResponse } from 'next/server';
 import { headers } from 'next/headers';
@@ -19,7 +20,6 @@ export async function POST(req: NextRequest) {
 
   const idToken = authorization.split('Bearer ')[1];
   
-  // Safely parse body to get referrerId
   let referrerId: string | null = null;
   try {
       const body = await req.json();
@@ -41,6 +41,45 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ success: true, message: 'User document already exists.' });
     }
 
+    // --- NEW LOGIC: Check for pending staff invitation ---
+    const staffQuery = db.collectionGroup('staff').where('email', '==', firebaseUser.email).limit(1);
+    const staffSnap = await staffQuery.get();
+
+    if (!staffSnap.empty) {
+        console.log(`Found pending staff invitation for email: ${firebaseUser.email}`);
+        const invitedStaffDoc = staffSnap.docs[0];
+        const invitedStaffData = invitedStaffDoc.data();
+        const companyId = invitedStaffData.companyId;
+
+        const batch = db.batch();
+
+        // Create the new user document, linked to the correct company
+        batch.set(userDocRef, {
+            id: firebaseUser.uid,
+            firstName: invitedStaffData.firstName,
+            lastName: invitedStaffData.lastName,
+            email: firebaseUser.email,
+            phone: firebaseUser.phoneNumber || '',
+            companyId: companyId,
+            role: 'staff', // Assign the staff role
+            createdAt: FieldValue.serverTimestamp(),
+            updatedAt: FieldValue.serverTimestamp(),
+        });
+        
+        // Delete the original invitation document
+        batch.delete(invitedStaffDoc.ref);
+
+        // Re-create the staff document using the UID as the key for permissioning
+        const newStaffDocRef = db.collection(`companies/${companyId}/staff`).doc(firebaseUser.uid);
+        batch.set(newStaffDocRef, { ...invitedStaffData, id: firebaseUser.uid });
+
+        await batch.commit();
+        
+        console.log(`Successfully converted invitation for ${firebaseUser.email} to staff member of company ${companyId}.`);
+        return NextResponse.json({ success: true, message: 'Staff member account created and linked to company.' });
+    }
+
+    // --- ORIGINAL LOGIC: Create new user and company ---
     console.log(`Document for user ${firebaseUser.uid} not found. Creating user and company documents.`);
     
     const loyaltyConfigDoc = await db.collection('configuration').doc('loyaltySettings').get();
