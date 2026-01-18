@@ -177,8 +177,6 @@ export default function LeadsContent() {
       loadLeads();
   }, [loadLeads]);
 
-  const forceRefresh = loadLeads;
-
   const handleDelete = async (leadId: string) => {
     try {
       const token = await getClientSideAuthToken();
@@ -192,7 +190,7 @@ export default function LeadsContent() {
       if (!response.ok) throw new Error((await response.json()).error || 'Failed to delete lead.');
       
       toast({ title: 'Lead Deleted' });
-      forceRefresh();
+      loadLeads();
     } catch(e: any) {
       toast({ variant: 'destructive', title: 'Delete Failed', description: e.message });
     }
@@ -207,7 +205,7 @@ export default function LeadsContent() {
     { accessorKey: 'status', header: 'Status', cell: ({row}) => <Badge className="capitalize">{row.original.status}</Badge>},
     { id: 'actions', header: () => <div className="text-right">Actions</div>, cell: ({row}) => (
         <div className="text-right">
-            <LeadDialog lead={row.original} onSave={forceRefresh}><Button variant="ghost" size="icon"><Edit className="h-4 w-4" /></Button></LeadDialog>
+            <LeadDialog lead={row.original} onSave={loadLeads}><Button variant="ghost" size="icon"><Edit className="h-4 w-4" /></Button></LeadDialog>
             <AlertDialog>
                 <AlertDialogTrigger asChild><Button variant="ghost" size="icon"><Trash2 className="h-4 w-4 text-destructive" /></Button></AlertDialogTrigger>
                 <AlertDialogContent>
@@ -217,7 +215,7 @@ export default function LeadsContent() {
             </AlertDialog>
         </div>
     )},
-  ], [forceRefresh]);
+  ], [loadLeads]);
 
   return (
       <Card>
@@ -226,7 +224,7 @@ export default function LeadsContent() {
             <CardTitle className="flex items-center gap-2"><Users /> Potential Member Leads</CardTitle>
             <CardDescription>Add, edit, and manage your sales leads to build your member database.</CardDescription>
           </div>
-          <LeadDialog onSave={forceRefresh}>
+          <LeadDialog onSave={loadLeads}>
             <Button><PlusCircle className="mr-2 h-4 w-4"/>Add Lead</Button>
           </LeadDialog>
         </CardHeader>
