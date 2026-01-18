@@ -19,8 +19,8 @@ import { collection, query } from "firebase/firestore";
 
 const { placeholderImages } = data;
 
-const connectHeroImage = placeholderImages.find(p => p.id === 'tech-division');
-const opportunityImage = placeholderImages.find(p => p.id === 'mall-division');
+const connectHeroImage = placeholderImages.find(p => p.id === 'value-integrity');
+const marketplaceImage = placeholderImages.find(p => p.id === 'marketplace-division')!;
 
 const iconMap: { [key: string]: React.ElementType } = {
     "Rewards Plan": Gift,
@@ -113,6 +113,12 @@ export default function ConnectPage() {
         },
     ];
 
+    const planImages = {
+        rewards: placeholderImages.find(p => p.id === 'funding-division'),
+        loyalty: placeholderImages.find(p => p.id === 'value-community'),
+        actions: placeholderImages.find(p => p.id === 'incentives-hero'),
+    };
+
     useEffect(() => {
         setIsClient(true);
     }, []);
@@ -189,16 +195,17 @@ export default function ConnectPage() {
                     <div className="space-y-16">
                         {plans.map((plan, index) => {
                             const IconComponent = iconMap[plan.title];
+                            const planImage = planImages[plan.id as keyof typeof planImages] || marketplaceImage;
                             return (
                                 <div key={plan.title} className="grid md:grid-cols-2 gap-8 md:gap-12 items-center">
                                     <div className={`relative aspect-video rounded-lg overflow-hidden shadow-lg ${index % 2 === 1 ? 'md:order-2' : ''}`}>
-                                         {opportunityImage && (
+                                         {planImage && (
                                             <Image
-                                                src={opportunityImage.imageUrl}
+                                                src={planImage.imageUrl}
                                                 alt={plan.title}
                                                 fill
                                                 className="object-cover"
-                                                data-ai-hint={opportunityImage.imageHint}
+                                                data-ai-hint={planImage.imageHint}
                                             />
                                          )}
                                     </div>
