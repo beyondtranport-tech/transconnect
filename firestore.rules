@@ -78,9 +78,9 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
     
-    // Anyone can create (to log their visit), but only admins can read.
+    // Anyone can create/update their visitor log. Only admins can read.
     match /visitors/{visitorId} {
-      allow create: if true;
+      allow write: if true;
       allow read: if isAdmin();
     }
 
