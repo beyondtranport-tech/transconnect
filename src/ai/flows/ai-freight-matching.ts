@@ -19,7 +19,7 @@ const prompt = ai.definePrompt({
   input: {schema: MatchFreightInputSchema},
   output: {schema: MatchFreightOutputSchema},
   config: {
-    model: 'googleai/gemini-1.0-pro',
+    model: 'googleai/gemini-pro',
   },
   prompt: `You are an AI assistant specialized in matching freight loads with transporters.
 

@@ -19,7 +19,7 @@ const prompt = ai.definePrompt({
   input: { schema: ShopSeoInputSchema },
   output: { schema: ShopSeoOutputSchema },
   config: {
-    model: 'googleai/gemini-1.0-pro',
+    model: 'googleai/gemini-pro',
   },
   prompt: `You are an SEO expert for e-commerce websites in the transport and logistics industry. 
   
