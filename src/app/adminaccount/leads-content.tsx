@@ -1,6 +1,7 @@
+
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -25,9 +26,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { useCollection, useFirestore, getClientSideAuthToken } from '@/firebase';
-import { useMemoFirebase } from '@/hooks/use-config';
-import { collection, query } from 'firebase/firestore';
+import { getClientSideAuthToken } from '@/firebase';
 import { Loader2, PlusCircle, Users, Edit, Trash2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
@@ -85,15 +84,17 @@ function LeadDialog({ lead, onSave, children }: { lead?: any, onSave: () => void
         const token = await getClientSideAuthToken();
         if (!token) throw new Error("Authentication token not found.");
         
-        const path = lead ? `leads/${lead.id}` : `leads`;
-        const data = lead 
-            ? { ...values, updatedAt: { _methodName: 'serverTimestamp' } }
-            : { ...values, createdAt: { _methodName: 'serverTimestamp' } };
+        const payload = {
+            lead: {
+                ...values,
+                id: lead?.id, // Pass existing id for updates
+            }
+        };
 
-        const response = await fetch(lead ? '/api/updateConfigDoc' : '/api/addUserDoc', {
+        const response = await fetch('/api/admin', {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify(lead ? { path, data } : { collectionPath: path, data }),
+            body: JSON.stringify({ action: 'saveLead', payload }),
         });
         
         const result = await response.json();
@@ -143,20 +144,50 @@ function LeadDialog({ lead, onSave, children }: { lead?: any, onSave: () => void
 }
 
 export default function LeadsContent() {
-  const firestore = useFirestore();
-  const leadsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'leads')) : null, [firestore]);
-  const { data: leads, isLoading, forceRefresh } = useCollection(leadsQuery);
+  const [leads, setLeads] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
+
+  const loadLeads = useCallback(async () => {
+      setIsLoading(true);
+      setError(null);
+      try {
+          const token = await getClientSideAuthToken();
+          if (!token) throw new Error("Authentication failed.");
+
+          const response = await fetch('/api/admin', {
+              method: 'POST',
+              headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+              body: JSON.stringify({ action: 'getLeads' }),
+          });
+
+          const result = await response.json();
+          if (!result.success) throw new Error(result.error || 'Failed to fetch leads.');
+          
+          setLeads(result.data || []);
+      } catch (e: any) {
+          setError(e.message);
+      } finally {
+          setIsLoading(false);
+      }
+  }, []);
+
+  useEffect(() => {
+      loadLeads();
+  }, [loadLeads]);
+
+  const forceRefresh = loadLeads;
 
   const handleDelete = async (leadId: string) => {
     try {
       const token = await getClientSideAuthToken();
       if (!token) throw new Error("Authentication failed.");
       
-      const response = await fetch('/api/deleteConfigDoc', {
+      const response = await fetch('/api/admin', {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ path: `leads/${leadId}` }),
+        body: JSON.stringify({ action: 'deleteLead', payload: { leadId } }),
       });
       if (!response.ok) throw new Error((await response.json()).error || 'Failed to delete lead.');
       
@@ -202,8 +233,14 @@ export default function LeadsContent() {
         <CardContent>
           {isLoading ? (
             <div className="flex justify-center items-center py-10"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
+          ) : error ? (
+            <div className="text-center py-10 text-destructive bg-destructive/10 rounded-md">
+                <h3 className="font-semibold">Error loading leads</h3>
+                <p>{error}</p>
+                <Button onClick={loadLeads} variant="destructive" className="mt-4">Try Again</Button>
+            </div>
           ) : (
-            <DataTable columns={columns} data={leads || []} />
+            <DataTable columns={columns} data={leads} />
           )}
         </CardContent>
       </Card>

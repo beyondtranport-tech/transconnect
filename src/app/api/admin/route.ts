@@ -47,9 +47,12 @@ export async function POST(req: NextRequest) {
         const { db, adminUid, isAdmin } = await verifyAdmin(req);
         const { action, payload } = await req.json();
 
+        if (!isAdmin) {
+             throw new Error("Forbidden: Admin access required.");
+        }
+
         switch (action) {
             case 'getUserDoc': {
-                if (!isAdmin) throw new Error("Forbidden: Admin access required.");
                 const { uid } = payload;
                 if (!uid) {
                     throw new Error("Missing uid for getUserDoc.");
@@ -63,16 +66,7 @@ export async function POST(req: NextRequest) {
             case 'getAuditLogs': {
                 let logsQuery;
 
-                if (!isAdmin) {
-                    const userDoc = await db.collection('users').doc(adminUid).get();
-                    const companyId = userDoc.data()?.companyId;
-                    if (!companyId) {
-                         return NextResponse.json({ success: true, data: [] });
-                    }
-                    logsQuery = db.collection('auditLogs').where('companyId', '==', companyId).orderBy('timestamp', 'desc').limit(50);
-                } else {
-                    logsQuery = db.collection('auditLogs').orderBy('timestamp', 'desc').limit(200);
-                }
+                logsQuery = db.collection('auditLogs').orderBy('timestamp', 'desc').limit(200);
 
                 const logsSnap = await logsQuery.get();
                 if (logsSnap.empty) {
@@ -116,8 +110,37 @@ export async function POST(req: NextRequest) {
 
                 return NextResponse.json({ success: true, data: enrichedLogs });
             }
+            case 'getLeads': {
+                const leadsSnap = await db.collection('leads').orderBy('createdAt', 'desc').get();
+                const data = leadsSnap.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
+                return NextResponse.json({ success: true, data });
+            }
+            case 'saveLead': {
+                const { lead } = payload;
+                if (!lead) throw new Error("Lead data is required.");
+
+                let docRef;
+                let data;
+
+                if (lead.id) { // Update existing lead
+                    docRef = db.collection('leads').doc(lead.id);
+                    data = { ...lead, updatedAt: FieldValue.serverTimestamp() };
+                    delete data.id; // Don't save the ID inside the document
+                    await docRef.set(data, { merge: true });
+                } else { // Create new lead
+                    docRef = db.collection('leads').doc();
+                    data = { ...lead, id: docRef.id, createdAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp() };
+                    await docRef.set(data);
+                }
+                return NextResponse.json({ success: true, id: docRef.id });
+            }
+            case 'deleteLead': {
+                const { leadId } = payload;
+                if (!leadId) throw new Error("leadId is required.");
+                await db.collection('leads').doc(leadId).delete();
+                return NextResponse.json({ success: true });
+            }
             case 'saveLeads': {
-                if (!isAdmin) throw new Error("Forbidden: Admin access required.");
                 const { leads } = payload;
                 if (!Array.isArray(leads)) {
                     throw new Error("Payload must contain an array of leads.");
@@ -142,7 +165,6 @@ export async function POST(req: NextRequest) {
             }
             // Admin-only actions below this point
             case 'getMembers': {
-                if (!isAdmin) throw new Error("Forbidden: Admin access required.");
                 const companiesSnap = await db.collection('companies').get();
                 const usersSnap = await db.collection('users').get();
                 
@@ -164,7 +186,6 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, data: members });
             }
              case 'getStaff': {
-                if (!isAdmin) throw new Error("Forbidden: Admin access required.");
                 const staffSnap = await db.collectionGroup('staff').get();
                 const data = staffSnap.docs.map(doc => {
                     const docData = doc.data();
@@ -181,7 +202,6 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, data: data });
             }
             case 'addStaffMember': {
-                if (!isAdmin) throw new Error("Forbidden: Admin access required.");
                 const { companyId, data } = payload;
                 if (!companyId || !data) {
                     throw new Error("Missing companyId or data for addStaffMember.");
@@ -193,7 +213,6 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, id: newStaffDocRef.id });
             }
             case 'getWalletPayments': {
-                if (!isAdmin) throw new Error("Forbidden: Admin access required.");
                 const snapshot = await db.collectionGroup('walletPayments').get();
                 const data = snapshot.docs.map(doc => {
                     const docPath = doc.ref.path;
@@ -210,7 +229,6 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, data });
             }
             case 'getWalletTransactions': {
-                if (!isAdmin) throw new Error("Forbidden: Admin access required.");
                 const snapshot = await db.collectionGroup('transactions').get();
                 const data = snapshot.docs.map(doc => {
                      const docPath = doc.ref.path;
@@ -227,25 +245,21 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, data });
             }
              case 'getMemberships': {
-                if (!isAdmin) throw new Error("Forbidden: Admin access required.");
                 const snapshot = await db.collection('memberships').get();
                 const data = snapshot.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
                 return NextResponse.json({ success: true, data });
             }
             case 'getContributions': {
-                if (!isAdmin) throw new Error("Forbidden: Admin access required.");
                 const snapshot = await db.collection('contributions').get();
                 const data = snapshot.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
                 return NextResponse.json({ success: true, data });
             }
             case 'getShops': {
-                if (!isAdmin) throw new Error("Forbidden: Admin access required.");
                 const snapshot = await db.collectionGroup('shops').where('status', 'in', ['pending_review', 'approved', 'rejected']).orderBy('createdAt', 'desc').get();
                 const data = snapshot.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
                 return NextResponse.json({ success: true, data });
             }
             case 'getFinanceApplications': {
-                if (!isAdmin) throw new Error("Forbidden: Admin access required.");
                  const [quotesSnap, enquiriesSnap] = await Promise.all([
                     db.collectionGroup('quotes').get(),
                     db.collectionGroup('enquiries').get()
@@ -263,7 +277,6 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, data: combined });
             }
             case 'approveWalletPayment': {
-                 if (!isAdmin) throw new Error("Forbidden: Admin access required.");
                  const { companyId, paymentId, amount, description, reconciliationId } = payload;
                  if (!companyId || !paymentId || !amount || !description) {
                     throw new Error("Missing required payload for approveWalletPayment.");
@@ -296,14 +309,12 @@ export async function POST(req: NextRequest) {
                  return NextResponse.json({ success: true, message: "Payment approved and wallet updated." });
             }
             case 'deleteTransaction': {
-                if (!isAdmin) throw new Error("Forbidden: Admin access required.");
                 const { memberId, transactionId } = payload;
                 if (!memberId || !transactionId) throw new Error("memberId and transactionId are required.");
                 await db.doc(`companies/${memberId}/transactions/${transactionId}`).delete();
                 return NextResponse.json({ success: true });
             }
              case 'updateMemberStatus': {
-                if (!isAdmin) throw new Error("Forbidden: Admin access required.");
                 const { companyId, status } = payload;
                 if (!companyId || !status) {
                     throw new Error("Missing companyId or status.");
@@ -334,7 +345,6 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, message: "Member status updated and audited." });
             }
             case 'deleteMember': {
-                if (!isAdmin) throw new Error("Forbidden: Admin access required.");
                 const { companyId } = payload;
                 if (!companyId) throw new Error("Missing companyId.");
 
@@ -362,7 +372,6 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, message: "Member deleted and action audited." });
             }
             case 'updateStaffMember': {
-                if (!isAdmin) throw new Error("Forbidden: Admin access required.");
                 const { companyId, staffId, data } = payload;
                 if (!companyId || !staffId || !data) {
                     throw new Error("Missing companyId, staffId, or data for update.");
@@ -372,7 +381,6 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, message: "Staff member updated." });
             }
             case 'deleteStaffMember': {
-                 if (!isAdmin) throw new Error("Forbidden: Admin access required.");
                  const { companyId, staffId } = payload;
                  if (!companyId || !staffId) {
                     throw new Error("Missing companyId or staffId.");
@@ -382,7 +390,6 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, message: "Staff member deleted." });
             }
             case 'approveShop': {
-                 if (!isAdmin) throw new Error("Forbidden: Admin access required.");
                  const { shopId, companyId } = payload;
                 if (!shopId || !companyId) {
                     throw new Error("Missing shopId or companyId for approveShop action.");
@@ -419,14 +426,10 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, message: 'Shop approved and published.' });
             }
             case 'updateStaffStatus': {
-                 if (!isAdmin) throw new Error("Forbidden: Admin access required for this action.");
                 const { companyId, staffId, status } = payload;
                 if (!companyId || !staffId || !status) {
                     throw new Error("Missing companyId, staffId, or status.");
                 }
-                
-                // Note: The original had auth logic for the user, but since this is an admin-only
-                // action now, we rely on the `isAdmin` check at the top.
                 
                 const staffRef = db.doc(`companies/${companyId}/staff/${staffId}`);
                 await staffRef.update({ status, updatedAt: FieldValue.serverTimestamp() });
