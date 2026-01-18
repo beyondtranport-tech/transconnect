@@ -31,7 +31,7 @@ const searchWeb = ai.defineTool(
     async (query) => {
         const apiKey = process.env.SERPAPI_API_KEY;
         if (!apiKey) {
-            console.error("SERPAPI_API_KEY is not set. The web search will return mock data.");
+            console.warn("SERPAPI_API_KEY is not set. The web search will return mock data.");
             // Fallback to mock data if API key is not set
             return [
                 { title: "Top Transporters in Gauteng - Logistics SA", link: "https://example.com/1", snippet: "ABC Hauliers, a leading logistics company in Johannesburg... Contact Mike at 011..." },
@@ -83,7 +83,6 @@ export const leadGenerationFlow = ai.defineFlow(
     const location = `${input.city ? `${input.city}, ` : ''}${input.region}`;
     
     const { output } = await ai.generate({
-        model: 'googleai/gemini-pro',
         tools: [searchWeb],
         output: {
             schema: LeadGenerationOutputSchema,
