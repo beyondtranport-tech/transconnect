@@ -8,20 +8,7 @@
  */
 
 import { ai } from '@/ai/genkit';
-import { z } from 'zod';
-
-export const ShopSeoInputSchema = z.object({
-  shopName: z.string().describe('The name of the online shop.'),
-  shopDescription: z.string().describe('A brief description of the shop and what it sells.'),
-});
-export type ShopSeoInput = z.infer<typeof ShopSeoInputSchema>;
-
-export const ShopSeoOutputSchema = z.object({
-    metaTitle: z.string().describe('An SEO-optimized title for the shop page, under 60 characters.'),
-    metaDescription: z.string().describe('An SEO-optimized meta description, under 160 characters.'),
-    tags: z.array(z.string()).describe('A list of 5-7 relevant SEO keywords or tags for the shop.'),
-});
-export type ShopSeoOutput = z.infer<typeof ShopSeoOutputSchema>;
+import { ShopSeoInputSchema, ShopSeoOutputSchema, type ShopSeoInput, type ShopSeoOutput } from '@/ai/schemas';
 
 export async function generateShopSeo(input: ShopSeoInput): Promise<ShopSeoOutput> {
   return shopSeoFlow(input);

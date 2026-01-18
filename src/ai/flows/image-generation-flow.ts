@@ -8,19 +8,7 @@
  */
 
 import { ai } from '@/ai/genkit';
-import { z } from 'zod';
-
-export const ImageGenerateInputSchema = z.object({
-  prompt: z.string().describe('The text prompt describing the desired image.'),
-});
-export type ImageGenerateInput = z.infer<typeof ImageGenerateInputSchema>;
-
-export const ImageGenerateOutputSchema = z.object({
-  imageDataUri: z
-    .string()
-    .describe('The generated image as a data URI.'),
-});
-export type ImageGenerateOutput = z.infer<typeof ImageGenerateOutputSchema>;
+import { ImageGenerateInputSchema, ImageGenerateOutputSchema, type ImageGenerateInput, type ImageGenerateOutput } from '@/ai/schemas';
 
 export async function generateImage(input: ImageGenerateInput): Promise<ImageGenerateOutput> {
   return imageGenerateFlow(input);

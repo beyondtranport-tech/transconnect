@@ -8,24 +8,7 @@
  */
 
 import { ai } from '@/ai/genkit';
-import { z } from 'zod';
-
-export const ImageEditInputSchema = z.object({
-  photoDataUri: z
-    .string()
-    .describe(
-      "A photo to edit, as a data URI that must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'."
-    ),
-  prompt: z.string().describe('The text prompt describing the desired edit.'),
-});
-export type ImageEditInput = z.infer<typeof ImageEditInputSchema>;
-
-export const ImageEditOutputSchema = z.object({
-  enhancedImageDataUri: z
-    .string()
-    .describe('The edited image as a data URI.'),
-});
-export type ImageEditOutput = z.infer<typeof ImageEditOutputSchema>;
+import { ImageEditInputSchema, ImageEditOutputSchema } from '@/ai/schemas';
 
 export const imageEditFlow = ai.defineFlow(
   {

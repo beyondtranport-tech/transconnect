@@ -24,6 +24,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2, Sparkles, Wand2 } from 'lucide-react';
 import Image from 'next/image';
 import { getClientSideAuthToken } from '@/firebase';
+import { imageEditFlow } from '@/ai/flows/image-edit-flow';
 
 export default function ImageEditorCard() {
   const [isOpen, setIsOpen] = useState(false);
@@ -67,25 +68,11 @@ export default function ImageEditorCard() {
     setEditedImage(null);
 
     try {
-      const token = await getClientSideAuthToken();
-      if (!token) throw new Error("Authentication failed. Please sign in again.");
-
-      const response = await fetch('/api/editImage', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          photoDataUri: originalImage,
-          prompt: prompt,
-        }),
+      const result = await imageEditFlow({
+        photoDataUri: originalImage,
+        prompt: prompt,
       });
 
-      const result = await response.json();
-      if (!response.ok) {
-        throw new Error(result.error || result.message || 'Failed to edit image.');
-      }
       setEditedImage(result.enhancedImageDataUri);
       toast({
         title: 'Image Edited!',
@@ -106,10 +93,10 @@ export default function ImageEditorCard() {
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <Wand2 /> Nano Banana Image Editor
+          <Wand2 /> AI Image Editor
         </CardTitle>
         <CardDescription>
-          Edit an existing image with a text prompt.
+          Edit an existing image with a text prompt using Gemini.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -119,7 +106,7 @@ export default function ImageEditorCard() {
           </DialogTrigger>
           <DialogContent className="sm:max-w-[725px]">
             <DialogHeader>
-              <DialogTitle>Nano Banana Image Editor (Image-to-Image)</DialogTitle>
+              <DialogTitle>AI Image Editor (Image-to-Image)</DialogTitle>
               <DialogDescription>
                 Upload an image and describe the changes you want to make.
               </DialogDescription>

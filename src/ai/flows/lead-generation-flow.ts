@@ -9,31 +9,7 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
-
-export const LeadSchema = z.object({
-    id: z.string().optional(),
-    companyName: z.string(),
-    contactPerson: z.string().optional(),
-    email: z.string().email().optional(),
-    phone: z.string().optional(),
-    role: z.string(),
-    status: z.enum(['new', 'contacted', 'qualified', 'unqualified']),
-    notes: z.string().optional(),
-});
-export type Lead = z.infer<typeof LeadSchema>;
-
-export const LeadGenerationInputSchema = z.object({
-  role: z.string().describe('The role of the potential member, e.g., Vendor, Buyer, Transporter.'),
-  region: z.string().describe('The geographical province to search in, e.g., Gauteng, Western Cape.'),
-  city: z.string().optional().describe('The specific city or town to search in.'),
-  quantity: z.number().min(1).max(10).default(5).describe('The number of leads to generate.'),
-});
-export type LeadGenerationInput = z.infer<typeof LeadGenerationInputSchema>;
-
-export const LeadGenerationOutputSchema = z.object({
-  leads: z.array(LeadSchema).describe('An array of generated leads.'),
-});
-export type LeadGenerationOutput = z.infer<typeof LeadGenerationOutputSchema>;
+import { LeadGenerationInputSchema, LeadGenerationOutputSchema } from '@/ai/schemas';
 
 
 // This is a placeholder tool. In a real-world scenario, you would replace this

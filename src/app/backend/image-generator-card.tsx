@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -24,6 +23,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Sparkles, Image as ImageIcon } from 'lucide-react';
 import Image from 'next/image';
+import { generateImage } from '@/ai/flows/image-generation-flow';
 
 export default function ImageGeneratorCard() {
   const [isOpen, setIsOpen] = useState(false);
@@ -46,18 +46,7 @@ export default function ImageGeneratorCard() {
     setGeneratedImage(null);
 
     try {
-      const response = await fetch('/api/generateImage', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ prompt }),
-      });
-
-      const result = await response.json();
-      if (!response.ok) {
-        throw new Error(result.error || 'Failed to generate image.');
-      }
+      const result = await generateImage({ prompt });
       setGeneratedImage(result.imageDataUri);
       toast({
         title: 'Image Generated!',
@@ -81,7 +70,7 @@ export default function ImageGeneratorCard() {
           <ImageIcon /> AI Image Generator
         </CardTitle>
         <CardDescription>
-          Create a new image from a text description.
+          Create a new image from a text description using Imagen.
         </CardDescription>
       </CardHeader>
       <CardContent>

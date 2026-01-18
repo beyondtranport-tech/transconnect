@@ -1,11 +1,10 @@
-
 "use client";
 
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { MatchFreightInputSchema, type MatchFreightOutput } from "@/ai/flows/ai-freight-matching";
-import type { z } from "zod";
+import { MatchFreightInputSchema, type MatchFreightOutput, type MatchFreightInput } from "@/ai/schemas";
+
 
 import { handleMatchFreight } from "./actions";
 
@@ -16,7 +15,6 @@ import { useToast } from "@/hooks/use-toast";
 import { Loader2, Route, Package, Weight, ArrowRight } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 
-type MatchFreightInput = z.infer<typeof MatchFreightInputSchema>;
 
 export default function FreightMatcher() {
     const [isLoading, setIsLoading] = useState(false);

@@ -10,14 +10,12 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Loader2, Sparkles, Bot, Save } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { leadGenerationFlow, LeadGenerationInputSchema, type LeadGenerationOutput } from '@/ai/flows/lead-generation-flow';
-import { z } from 'zod';
+import { leadGenerationFlow } from '@/ai/flows/lead-generation-flow';
+import { LeadGenerationInputSchema, type LeadGenerationInput, type LeadGenerationOutput } from '@/ai/schemas';
 import { roles } from '@/lib/roles';
 import { getClientSideAuthToken } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import { provinces } from '@/lib/geodata';
-
-type LeadGenerationInput = z.infer<typeof LeadGenerationInputSchema>;
 
 export default function LeadsGenerator() {
     const [isLoading, setIsLoading] = useState(false);

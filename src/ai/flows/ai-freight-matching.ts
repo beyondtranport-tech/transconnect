@@ -8,30 +8,7 @@
  */
 
 import {ai} from '@/ai/genkit';
-import {z} from 'zod';
-
-const MatchFreightInputSchema = z.object({
-  location: z.string().describe('The current location of the transporter.'),
-  vehicleType: z.string().describe('The type of vehicle the transporter has (e.g., truck, van).'),
-  capacity: z.string().describe('The carrying capacity of the vehicle.'),
-  preferences: z.string().optional().describe('Any specific preferences or requirements of the transporter.'),
-});
-export type MatchFreightInput = z.infer<typeof MatchFreightInputSchema>;
-
-const MatchFreightOutputSchema = z.object({
-  matches: z.array(
-    z.object({
-      loadId: z.string().describe('The ID of the freight load.'),
-      origin: z.string().describe('The origin location of the freight load.'),
-      destination: z.string().describe('The destination location of the freight load.'),
-      weight: z.string().describe('The weight of the freight load.'),
-      size: z.string().describe('The size of the freight load.'),
-      price: z.string().describe('The price offered for the freight load.'),
-      requirements: z.string().optional().describe('Any special requirements for the freight load.'),
-    })
-  ).describe('A list of freight loads that match the transporter criteria.'),
-});
-export type MatchFreightOutput = z.infer<typeof MatchFreightOutputSchema>;
+import { MatchFreightInputSchema, MatchFreightOutputSchema, type MatchFreightInput, type MatchFreightOutput } from '@/ai/schemas';
 
 export async function matchFreight(input: MatchFreightInput): Promise<MatchFreightOutput> {
   return matchFreightFlow(input);
