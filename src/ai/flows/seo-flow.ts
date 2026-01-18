@@ -8,6 +8,7 @@
  */
 
 import {ai} from '@/ai/genkit';
+import { googleAI } from '@genkit-ai/google-genai';
 import { ShopSeoInputSchema, ShopSeoOutputSchema, type ShopSeoInput, type ShopSeoOutput } from '@/ai/schemas';
 import {z} from 'genkit';
 
@@ -23,7 +24,7 @@ const shopSeoFlow = ai.defineFlow(
   },
   async (input) => {
     const { text } = await ai.generate({
-        model: 'googleai/gemini-1.5-flash-preview',
+        model: googleAI.model('gemini-pro'),
         prompt: `You are an SEO expert for e-commerce websites in the transport and logistics industry. 
   
         Your output MUST be a valid JSON object with the following keys: "metaTitle" (string, under 60 chars), "metaDescription" (string, under 160 chars), and "tags" (an array of 5-7 relevant string keywords).

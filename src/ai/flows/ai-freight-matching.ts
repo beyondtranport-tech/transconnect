@@ -8,6 +8,7 @@
  */
 
 import {ai} from '@/ai/genkit';
+import { googleAI } from '@genkit-ai/google-genai';
 import { MatchFreightInputSchema, MatchFreightOutputSchema, type MatchFreightInput, type MatchFreightOutput } from '@/ai/schemas';
 import {z} from 'genkit';
 
@@ -23,7 +24,7 @@ const matchFreightFlow = ai.defineFlow(
   },
   async (input) => {
     const { text } = await ai.generate({
-        model: 'googleai/gemini-1.5-flash-preview',
+        model: googleAI.model('gemini-pro'),
         prompt: `You are an AI assistant specialized in matching freight loads with transporters.
 
         Your output MUST be a valid JSON object with a single key "matches", which is an array of objects. Each object in the array should have the following fields: "loadId" (string), "origin" (string), "destination" (string), "weight" (string), "size" (string), "price" (string), and "requirements" (string, optional).
