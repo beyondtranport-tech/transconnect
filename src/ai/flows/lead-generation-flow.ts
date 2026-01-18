@@ -48,7 +48,7 @@ export const leadGenerationFlow = ai.defineFlow(
     const searchQuery = `Find ${input.quantity} ${input.role} businesses in ${location}, South Africa`;
 
     const llmResponse = await ai.generate({
-        model: 'googleai/gemini-pro',
+        model: 'googleai/gemini-1.5-flash-latest',
         prompt: `You are a lead generation expert for the transport industry. Your task is to find potential leads based on a user's request and structure them into the requested JSON format. Use the provided web search tool to find information.
 
         User Request: Find ${input.quantity} ${input.role}s in ${location}.
