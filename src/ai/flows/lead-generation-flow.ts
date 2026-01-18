@@ -9,7 +9,6 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
-import { googleAI } from '@genkit-ai/google-genai';
 import { LeadGenerationInputSchema, LeadGenerationOutputSchema } from '@/ai/schemas';
 
 
@@ -49,7 +48,7 @@ export const leadGenerationFlow = ai.defineFlow(
     const searchQuery = `Find ${input.quantity} ${input.role} businesses in ${location}, South Africa`;
 
     const llmResponse = await ai.generate({
-        model: googleAI.model('gemini-1.0-pro'),
+        model: 'googleai/gemini-1.0-pro',
         prompt: `You are a lead generation expert for the transport industry. Your task is to find potential leads based on a user's request and structure them into the requested JSON format. Use the provided web search tool to find information.
 
         User Request: Find ${input.quantity} ${input.role}s in ${location}.
