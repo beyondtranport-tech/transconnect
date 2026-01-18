@@ -22,7 +22,7 @@ const shopSeoFlow = ai.defineFlow(
   },
   async (input) => {
     const { text } = await ai.generate({
-        model: 'googleai/models/gemini-1.0-pro',
+        model: 'googleai/gemini-2.5-flash-image-preview',
         prompt: `You are an SEO expert for e-commerce websites in the transport and logistics industry. 
   
         Your output MUST be a valid JSON object with the following keys: "metaTitle" (string, under 60 chars), "metaDescription" (string, under 160 chars), and "tags" (an array of 5-7 relevant string keywords).
