@@ -11,7 +11,6 @@ import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 import { LeadGenerationInputSchema, LeadGenerationOutputSchema } from '@/ai/schemas';
 
-
 // This is a placeholder tool. In a real-world scenario, you would replace this
 // with a tool that calls a real search API (e.g., Google Custom Search, SerpAPI).
 const searchWeb = ai.defineTool(
@@ -36,6 +35,27 @@ const searchWeb = ai.defineTool(
     }
 );
 
+const leadGenPrompt = ai.definePrompt({
+    name: 'leadGenAgentPrompt',
+    input: {
+        schema: z.object({
+            quantity: z.number(),
+            role: z.string(),
+            location: z.string()
+        })
+    },
+    output: {
+        schema: LeadGenerationOutputSchema,
+    },
+    model: 'googleai/gemini-1.0-pro',
+    tools: [searchWeb],
+    prompt: `You are a lead generation expert for the transport industry. Your task is to find potential leads based on a user's request and structure them into the requested JSON format. Use the provided web search tool to find information.
+
+    User Request: Find {{quantity}} {{role}}s in {{location}}.
+    
+    For each lead, please extract the company name, a contact person if available, phone number, and email. Set the status to "new".`,
+});
+
 
 export const leadGenerationFlow = ai.defineFlow(
   {
@@ -45,22 +65,13 @@ export const leadGenerationFlow = ai.defineFlow(
   },
   async (input) => {
     const location = `${input.city ? `${input.city}, ` : ''}${input.region}`;
-    const searchQuery = `Find ${input.quantity} ${input.role} businesses in ${location}, South Africa`;
-
-    const llmResponse = await ai.generate({
-        model: 'googleai/gemini-1.0-pro',
-        prompt: `You are a lead generation expert for the transport industry. Your task is to find potential leads based on a user's request and structure them into the requested JSON format. Use the provided web search tool to find information.
-
-        User Request: Find ${input.quantity} ${input.role}s in ${location}.
-        
-        For each lead, please extract the company name, a contact person if available, phone number, and email. Set the status to "new".`,
-        tools: [searchWeb],
-        output: {
-            format: 'json',
-            schema: LeadGenerationOutputSchema,
-        }
+    
+    const { output } = await leadGenPrompt({
+        quantity: input.quantity,
+        role: input.role,
+        location: location
     });
-
-    return llmResponse.output || { leads: [] };
+    
+    return output || { leads: [] };
   }
 );
