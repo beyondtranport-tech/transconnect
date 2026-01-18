@@ -14,26 +14,6 @@ export async function generateShopSeo(input: ShopSeoInput): Promise<ShopSeoOutpu
   return shopSeoFlow(input);
 }
 
-const prompt = ai.definePrompt({
-  name: 'shopSeoPrompt',
-  model: 'googleai/gemini-1.5-flash-preview',
-  input: { schema: ShopSeoInputSchema },
-  output: { schema: ShopSeoOutputSchema },
-  prompt: `You are an SEO expert for e-commerce websites in the transport and logistics industry. 
-  
-  Based on the following shop details:
-  - Shop Name: {{{shopName}}}
-  - Shop Description: {{{shopDescription}}}
-
-  Generate the following SEO content:
-  1.  A compelling meta title (under 60 characters).
-  2.  An engaging meta description (under 160 characters).
-  3.  An array of 5 to 7 relevant keywords (tags).
-
-  Return the response in the specified JSON format.`,
-});
-
-
 const shopSeoFlow = ai.defineFlow(
   {
     name: 'shopSeoFlow',
@@ -41,7 +21,28 @@ const shopSeoFlow = ai.defineFlow(
     outputSchema: ShopSeoOutputSchema,
   },
   async (input) => {
-    const { output } = await prompt(input);
-    return output!;
+    const { text } = await ai.generate({
+        model: 'googleai/gemini-1.5-flash-preview',
+        prompt: `You are an SEO expert for e-commerce websites in the transport and logistics industry. 
+  
+        Your output MUST be a valid JSON object with the following keys: "metaTitle" (string, under 60 chars), "metaDescription" (string, under 160 chars), and "tags" (an array of 5-7 relevant string keywords).
+
+        Do NOT include any text, explanation, or markdown formatting before or after the JSON object.
+
+        Based on the following shop details:
+        - Shop Name: ${input.shopName}
+        - Shop Description: ${input.shopDescription}
+
+        Generate the SEO content and return it in the specified JSON format.`,
+    });
+    
+    try {
+        const parsedOutput = JSON.parse(text());
+        return ShopSeoOutputSchema.parse(parsedOutput);
+    } catch (e) {
+        console.error("Failed to parse JSON from AI SEO response:", text());
+        // Provide a fallback empty object that matches the schema
+        return { metaTitle: '', metaDescription: '', tags: [] };
+    }
   }
 );

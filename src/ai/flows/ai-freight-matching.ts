@@ -14,40 +14,36 @@ export async function matchFreight(input: MatchFreightInput): Promise<MatchFreig
   return matchFreightFlow(input);
 }
 
-const prompt = ai.definePrompt({
-  name: 'matchFreightPrompt',
-  model: 'googleai/gemini-1.5-flash-preview',
-  input: {schema: MatchFreightInputSchema},
-  output: {schema: MatchFreightOutputSchema},
-  prompt: `You are an AI assistant specialized in matching freight loads with transporters.
-
-  Given the following information about a transporter:
-  - Location: {{{location}}}
-  - Vehicle Type: {{{vehicleType}}}
-  - Capacity: {{{capacity}}}
-  - Preferences: {{{preferences}}}
-
-  Find available freight loads that match these criteria.  Provide a list of freight loads that include:
-  - loadId: The ID of the freight load.
-  - origin: The origin location of the freight load.
-  - destination: The destination location of the freight load.
-  - weight: The weight of the freight load.
-  - size: The size of the freight load.
-  - price: The price offered for the freight load.
-  - requirements: Any special requirements for the freight load.
-
-  Return the matches in JSON format.
-  `,
-});
-
 const matchFreightFlow = ai.defineFlow(
   {
     name: 'matchFreightFlow',
     inputSchema: MatchFreightInputSchema,
     outputSchema: MatchFreightOutputSchema,
   },
-  async input => {
-    const {output} = await prompt(input);
-    return output!;
+  async (input) => {
+    const { text } = await ai.generate({
+        model: 'googleai/gemini-1.5-flash-preview',
+        prompt: `You are an AI assistant specialized in matching freight loads with transporters.
+
+        Your output MUST be a valid JSON object with a single key "matches", which is an array of objects. Each object in the array should have the following fields: "loadId" (string), "origin" (string), "destination" (string), "weight" (string), "size" (string), "price" (string), and "requirements" (string, optional).
+
+        Do NOT include any text, explanation, or markdown formatting before or after the JSON object.
+
+        Given the following information about a transporter:
+        - Location: ${input.location}
+        - Vehicle Type: ${input.vehicleType}
+        - Capacity: ${input.capacity}
+        - Preferences: ${input.preferences || 'None'}
+
+        Find available freight loads that match these criteria and return them in the specified JSON format.`,
+    });
+    
+    try {
+        const parsedOutput = JSON.parse(text());
+        return MatchFreightOutputSchema.parse(parsedOutput);
+    } catch (e) {
+        console.error("Failed to parse JSON from AI freight matching response:", text());
+        return { matches: [] };
+    }
   }
 );
