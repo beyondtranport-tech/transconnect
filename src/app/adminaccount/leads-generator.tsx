@@ -12,7 +12,6 @@ import { Loader2, Sparkles, Bot, Save } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { leadGenerationFlow } from '@/ai/flows/lead-generation-flow';
 import { LeadGenerationInputSchema, type LeadGenerationInput, type LeadGenerationOutput } from '@/ai/schemas';
-import { roles } from '@/lib/roles';
 import { getClientSideAuthToken } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import { provinces } from '@/lib/geodata';
@@ -27,7 +26,7 @@ export default function LeadsGenerator() {
     const form = useForm<LeadGenerationInput>({
         resolver: zodResolver(LeadGenerationInputSchema),
         defaultValues: {
-            role: '',
+            businessType: '',
             region: 'Gauteng',
             city: '',
             quantity: 5,
@@ -104,7 +103,7 @@ export default function LeadsGenerator() {
                      <Form {...form}>
                         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                                <FormField control={form.control} name="role" render={({ field }) => ( <FormItem><FormLabel>Role to Find</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select a role" /></SelectTrigger></FormControl><SelectContent>{roles.map(r => <SelectItem key={r.id} value={r.title}>{r.title}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )} />
+                                <FormField control={form.control} name="businessType" render={({ field }) => ( <FormItem><FormLabel>Business Type to Find</FormLabel><FormControl><Input placeholder="e.g., Trucking companies" {...field} /></FormControl><FormMessage /></FormItem> )} />
                                 
                                 <FormField control={form.control} name="region" render={({ field }) => ( <FormItem><FormLabel>Province</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select a province" /></SelectTrigger></FormControl><SelectContent>{provinces.map(p => <SelectItem key={p.name} value={p.name}>{p.name}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )} />
 

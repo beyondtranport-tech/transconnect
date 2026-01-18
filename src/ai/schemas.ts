@@ -71,7 +71,7 @@ export const LeadSchema = z.object({
 export type Lead = z.infer<typeof LeadSchema>;
 
 export const LeadGenerationInputSchema = z.object({
-  role: z.string().describe('The role of the potential member, e.g., Vendor, Buyer, Transporter.'),
+  businessType: z.string().describe('The type of business to search for, e.g., "trucking companies", "diesel mechanics", "freight forwarders".'),
   region: z.string().describe('The geographical province to search in, e.g., Gauteng, Western Cape.'),
   city: z.string().optional().describe('The specific city or town to search in.'),
   quantity: z.coerce.number().min(1).max(10).default(5).describe('The number of leads to generate.'),
