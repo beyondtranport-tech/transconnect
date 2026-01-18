@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useCallback } from 'react';
@@ -25,11 +26,11 @@ import {
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { useUser, useFirestore, getClientSideAuthToken, useDoc, useCollection, useMemoFirebase } from '@/firebase';
+import { useUser, useFirestore, getClientSideAuthToken, useDoc, useCollection } from '@/firebase';
 import { collection, doc } from 'firebase/firestore';
 import { Loader2, PlusCircle, UserPlus, Users } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import StaffActionMenu from '@/app/account/staff-action-menu'; 
+import StaffActionMenu from '@/app/account/staff-action-menu';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
 import { Textarea } from '@/components/ui/textarea';
@@ -38,6 +39,8 @@ import { EditStaffDialog } from '../backend/EditStaffDialog';
 import { usePermissions } from '@/hooks/use-permissions';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { ShieldAlert } from 'lucide-react';
+import { useMemoFirebase } from '@/hooks/use-config';
+import { useRouter } from 'next/navigation';
 
 const staffFormSchema = z.object({
   firstName: z.string().min(1, 'First name is required'),
@@ -53,8 +56,13 @@ type StaffFormValues = z.infer<typeof staffFormSchema>;
 
 function AddStaffDialog({ companyId, onStaffAdded, canCreate }: { companyId: string, onStaffAdded: () => void, canCreate: boolean }) {
   const [isOpen, setIsOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
+  const router = useRouter();
+
+  const [inviteStep, setInviteStep] = useState(false);
+  const [newUserEmail, setNewUserEmail] = useState('');
+
 
   const form = useForm<StaffFormValues>({
     resolver: zodResolver(staffFormSchema),
@@ -70,7 +78,7 @@ function AddStaffDialog({ companyId, onStaffAdded, canCreate }: { companyId: str
   });
 
   const onSubmit = async (values: StaffFormValues) => {
-    setIsLoading(true);
+    setIsSubmitting(true);
     
     try {
       const token = await getClientSideAuthToken();
@@ -101,13 +109,13 @@ function AddStaffDialog({ companyId, onStaffAdded, canCreate }: { companyId: str
       }
 
       toast({
-        title: 'Staff Added',
-        description: `${values.firstName} ${values.lastName} has been added to your team.`,
+        title: 'Staff Profile Created',
+        description: `A profile for ${values.firstName} has been created.`,
       });
-
-      form.reset();
-      setIsOpen(false);
-      onStaffAdded();
+      
+      setNewUserEmail(values.email);
+      setInviteStep(true); // Move to invite step
+      onStaffAdded(); // Refresh the list in the background
     } catch (error: any) {
       toast({
         variant: 'destructive',
@@ -115,163 +123,117 @@ function AddStaffDialog({ companyId, onStaffAdded, canCreate }: { companyId: str
         description: error.message || 'An unexpected error occurred.',
       });
     } finally {
-      setIsLoading(false);
+      setIsSubmitting(false);
     }
   };
 
+  const onOpenChange = (open: boolean) => {
+    if (!open) {
+      // Reset form and state when dialog closes
+      form.reset();
+      setInviteStep(false);
+      setNewUserEmail('');
+    }
+    setIsOpen(open);
+  }
+
+  const copyInviteLink = () => {
+    const signupUrl = `${window.location.origin}/join`;
+    navigator.clipboard.writeText(signupUrl);
+    toast({
+        title: 'Sign-up Link Copied!',
+        description: 'You can now send the link to the new staff member.'
+    });
+  }
+
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+    <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogTrigger asChild>
         <Button disabled={!canCreate}>
           <PlusCircle className="mr-2 h-4 w-4" /> Add Staff/Partner
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[625px]">
-        <DialogHeader>
-          <DialogTitle>Add New Staff Member or Partner</DialogTitle>
-          <DialogDescription>
-            Enter the details of the new person to add them to your company.
-          </DialogDescription>
-        </DialogHeader>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
-             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="firstName"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>First Name</FormLabel>
-                      <FormControl>
-                        <Input placeholder="John" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="lastName"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Last Name</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Doe" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-            </div>
-            <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Email</FormLabel>
-                  <FormControl>
-                    <Input placeholder="john.doe@example.com" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-               <FormField
-                  control={form.control}
-                  name="title"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Title</FormLabel>
-                       <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select a title" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="Executive Director">Executive Director</SelectItem>
-                          <SelectItem value="Non-Executive Director">Non-Executive Director</SelectItem>
-                          <SelectItem value="Manager">Manager</SelectItem>
-                          <SelectItem value="Admin">Admin</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="role"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Role</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select a role" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="operations">Operations</SelectItem>
-                          <SelectItem value="marketing">Marketing</SelectItem>
-                          <SelectItem value="IT">IT</SelectItem>
-                          <SelectItem value="logistics">Logistics</SelectItem>
-                          <SelectItem value="store">Store</SelectItem>
-                          <SelectItem value="sales">Sales</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="function"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Function</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select a function" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
+         {inviteStep ? (
+            <>
+                <DialogHeader>
+                    <DialogTitle>Step 2: Invite Your Staff Member</DialogTitle>
+                    <DialogDescription>
+                        The staff profile has been created. Now, instruct the user to sign up for their own account.
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="py-4 space-y-4">
+                    <p className="text-sm">Please copy the sign-up link and send it to <span className="font-semibold text-primary">{newUserEmail}</span>. They must create their account using this specific email address to be correctly linked to your company.</p>
+                     <Button onClick={copyInviteLink} className="w-full">Copy Sign-up Link</Button>
+                </div>
+                 <DialogFooter>
+                    <Button onClick={() => onOpenChange(false)}>Done</Button>
+                </DialogFooter>
+            </>
+         ) : (
+            <>
+                <DialogHeader>
+                <DialogTitle>Add New Staff Member or Partner</DialogTitle>
+                <DialogDescription>
+                    Enter the details of the new person to add them to your company.
+                </DialogDescription>
+                </DialogHeader>
+                <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <FormField control={form.control} name="firstName" render={({ field }) => (
+                            <FormItem><FormLabel>First Name</FormLabel><FormControl><Input placeholder="John" {...field} /></FormControl><FormMessage /></FormItem>
+                        )} />
+                        <FormField control={form.control} name="lastName" render={({ field }) => (
+                            <FormItem><FormLabel>Last Name</FormLabel><FormControl><Input placeholder="Doe" {...field} /></FormControl><FormMessage /></FormItem>
+                        )} />
+                    </div>
+                    <FormField control={form.control} name="email" render={({ field }) => (
+                        <FormItem><FormLabel>Email</FormLabel><FormControl><Input placeholder="john.doe@example.com" {...field} /></FormControl><FormMessage /></FormItem>
+                    )} />
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <FormField control={form.control} name="title" render={({ field }) => (
+                        <FormItem><FormLabel>Title</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select a title" /></SelectTrigger></FormControl><SelectContent>
+                            <SelectItem value="Executive Director">Executive Director</SelectItem>
+                            <SelectItem value="Non-Executive Director">Non-Executive Director</SelectItem>
+                            <SelectItem value="Manager">Manager</SelectItem>
+                            <SelectItem value="Admin">Admin</SelectItem>
+                        </SelectContent></Select><FormMessage /></FormItem>
+                    )} />
+                    <FormField control={form.control} name="role" render={({ field }) => (
+                        <FormItem><FormLabel>Role</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select a role" /></SelectTrigger></FormControl><SelectContent>
+                            <SelectItem value="operations">Operations</SelectItem>
+                            <SelectItem value="marketing">Marketing</SelectItem>
+                            <SelectItem value="IT">IT</SelectItem>
+                            <SelectItem value="logistics">Logistics</SelectItem>
+                            <SelectItem value="store">Store</SelectItem>
+                            <SelectItem value="sales">Sales</SelectItem>
+                        </SelectContent></Select><FormMessage /></FormItem>
+                    )} />
+                    <FormField control={form.control} name="function" render={({ field }) => (
+                        <FormItem><FormLabel>Function</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select a function" /></SelectTrigger></FormControl><SelectContent>
                             <SelectItem value="Set Policy">Set Policy</SelectItem>
                             <SelectItem value="Manage Staff">Manage Staff</SelectItem>
                             <SelectItem value="Set Budgets">Set Budgets</SelectItem>
                             <SelectItem value="Ensure Implementation">Ensure Implementation</SelectItem>
                             <SelectItem value="Monitor Deliverables">Monitor Deliverables</SelectItem>
                             <SelectItem value="Ensure Compliance">Ensure Compliance</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-            </div>
-            <FormField
-              control={form.control}
-              name="jobDescription"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Job Description (Optional)</FormLabel>
-                  <FormControl>
-                    <Textarea placeholder="Describe the staff member's responsibilities, e.g., manage performance, set budgets, ensure compliance..." {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <DialogFooter>
-              <Button type="submit" disabled={isLoading}>
-                {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UserPlus className="mr-2 h-4 w-4" />}
-                Add Staff Member
-              </Button>
-            </DialogFooter>
-          </form>
-        </Form>
+                        </SelectContent></Select><FormMessage /></FormItem>
+                    )} />
+                    </div>
+                    <FormField control={form.control} name="jobDescription" render={({ field }) => (
+                        <FormItem><FormLabel>Job Description (Optional)</FormLabel><FormControl><Textarea placeholder="Describe responsibilities..." {...field} /></FormControl><FormMessage /></FormItem>
+                    )} />
+                    <DialogFooter>
+                    <Button type="submit" disabled={isSubmitting}>
+                        {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UserPlus className="mr-2 h-4 w-4" />}
+                        Create Staff Profile
+                    </Button>
+                    </DialogFooter>
+                </form>
+                </Form>
+            </>
+         )}
       </DialogContent>
     </Dialog>
   );
@@ -290,11 +252,12 @@ export default function StaffContent() {
     return doc(firestore, 'users', user.uid);
   }, [firestore, user]);
   const { data: userData, isLoading: isUserDataLoading } = useDoc<{ companyId: string }>(userDocRef);
+  const companyId = userData?.companyId;
 
   const staffCollectionRef = useMemoFirebase(() => {
-    if (!firestore || !userData?.companyId) return null;
-    return collection(firestore, `companies/${userData.companyId}/staff`);
-  }, [firestore, userData?.companyId]);
+    if (!firestore || !companyId) return null;
+    return collection(firestore, `companies/${companyId}/staff`);
+  }, [firestore, companyId]);
 
   const { data: staff, isLoading: isStaffLoading, forceRefresh } = useCollection(staffCollectionRef);
 
@@ -378,7 +341,7 @@ export default function StaffContent() {
                 <Tooltip>
                     <TooltipTrigger asChild>
                         <div className="inline-block">
-                             {userData?.companyId && <AddStaffDialog companyId={userData.companyId} onStaffAdded={forceRefresh} canCreate={canCreateStaff} />}
+                             {companyId && <AddStaffDialog companyId={companyId} onStaffAdded={forceRefresh} canCreate={canCreateStaff} />}
                         </div>
                     </TooltipTrigger>
                     {!canCreateStaff && (
