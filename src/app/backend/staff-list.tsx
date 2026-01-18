@@ -1,15 +1,15 @@
 'use client';
 
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2, Users } from 'lucide-react';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
 import { Badge } from '@/components/ui/badge';
 import StaffActionMenu from './staff-action-menu';
-import { useCollection, useFirestore } from '@/firebase';
-import { useMemoFirebase } from '@/hooks/use-config';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query, collectionGroup } from 'firebase/firestore';
+import { AdminAddStaffDialog } from './AdminAddStaffDialog';
 
 interface StaffMember {
     id: string;
@@ -107,6 +107,7 @@ export default function StaffList() {
                         A consolidated view of all staff across all member companies.
                     </CardDescription>
                 </div>
+                 <AdminAddStaffDialog onStaffAdded={forceRefresh} />
             </CardHeader>
             <CardContent>
                 {isLoading ? (
