@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, Suspense } from 'react';
+import { useState, Suspense, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useForm } from 'react-hook-form';
@@ -13,7 +13,7 @@ import {
   sendPasswordResetEmail,
 } from 'firebase/auth';
 
-import { useAuth } from '@/firebase';
+import { useAuth, useUser } from '@/firebase';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -57,13 +57,14 @@ function JoinFormComponent() {
   const financierType = searchParams.get('type');
   const redirectParam = searchParams.get('redirect');
   const referrerId = searchParams.get('ref');
+  const emailParam = searchParams.get('email');
 
   const form = useForm<JoinFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       firstName: '',
       lastName: '',
-      email: '',
+      email: emailParam || '',
       phone: '',
       password: '',
     },
@@ -244,7 +245,7 @@ function JoinFormComponent() {
                 <FormItem>
                   <FormLabel>Email</FormLabel>
                   <FormControl>
-                    <Input placeholder="you@example.com" {...field} />
+                    <Input placeholder="you@example.com" {...field} disabled={!!emailParam} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
