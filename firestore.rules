@@ -10,7 +10,13 @@ service cloud.firestore {
 
     function isAdmin() {
       // In a real app, this would check a custom claim.
-      return request.auth != null && request.auth.token.email == 'beyondtransport@gmail.com';
+      return request.auth != null && (request.auth.token.email == 'beyondtransport@gmail.com' || request.auth.token.email == 'mkoton100@gmail.com');
+    }
+    
+    function isCompanyOwner(companyId) {
+        let companyDoc = get(/databases/$(database)/documents/companies/$(companyId)).data;
+        // Check both the new ownerId field and the user's own profile for legacy data.
+        return companyDoc.ownerId == request.auth.uid || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == companyId;
     }
 
     // --- User Profiles ---
@@ -27,7 +33,7 @@ service cloud.firestore {
       allow create: if request.auth != null; 
       
       // Allow a user to GET/UPDATE their own company document. Admins have full access.
-      allow get, update: if isAdmin() || get(/databases/$(database)/documents/companies/$(companyId)).data.ownerId == request.auth.uid;
+      allow get, update: if isAdmin() || isCompanyOwner(companyId);
       
       // Allow an admin to LIST all companies. User queries are handled by the secure backend API.
       allow list: if isAdmin();
@@ -35,7 +41,7 @@ service cloud.firestore {
       // --- Company Subcollections (Direct Access) ---
       // The company owner and admins have full access to all subcollections (staff, wallet, etc.).
       match /{subcollection}/{docId=**} {
-        allow read, write: if isAdmin() || get(/databases/$(database)/documents/companies/$(companyId)).data.ownerId == request.auth.uid;
+        allow read, write: if isAdmin() || isCompanyOwner(companyId);
       }
     }
     
@@ -56,6 +62,9 @@ service cloud.firestore {
       allow get, list: if isAdmin();
     }
     match /{path=**}/shops/{shopId} {
+      allow get, list: if isAdmin();
+    }
+    match /{path=**}/auditLogs/{logId} {
       allow get, list: if isAdmin();
     }
 
@@ -109,6 +118,11 @@ service cloud.firestore {
 
     // Admin-only collection for managing platform permissions.
     match /permissions/{path=**} {
+        allow read, write: if isAdmin();
+    }
+
+    // Admin-managed collection for sales leads.
+    match /leads/{leadId} {
         allow read, write: if isAdmin();
     }
   }
