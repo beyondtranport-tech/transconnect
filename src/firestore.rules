@@ -78,9 +78,9 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
     
-    // Anyone can create (to log their visit), but only admins can read.
+    // Anyone can create/update their visitor log. Only admins can read.
     match /visitors/{visitorId} {
-      allow create: if true;
+      allow write: if true;
       allow read: if isAdmin();
     }
 
@@ -120,6 +120,11 @@ service cloud.firestore {
     // Admin-only collection for managing platform permissions.
     match /permissions/{path=**} {
         allow read, write: if isAdmin();
+    }
+
+    // Admin-managed collection for sales leads.
+    match /leads/{leadId=**} {
+      allow read, write: if isAdmin();
     }
   }
 }
