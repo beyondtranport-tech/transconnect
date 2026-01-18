@@ -16,13 +16,13 @@ export const leadGenerationFlow = ai.defineFlow(
     name: 'leadGenerationFlow',
     inputSchema: LeadGenerationInputSchema,
     outputSchema: LeadGenerationOutputSchema,
+    tools: [googleSearchTool],
   },
   async (input) => {
     const location = `${input.city ? `${input.city}, ` : ''}${input.region}`;
     
     const { output } = await ai.generate({
         model: 'googleai/gemini-1.5-flash-preview',
-        tools: [googleSearchTool],
         output: {
             schema: LeadGenerationOutputSchema,
         },
