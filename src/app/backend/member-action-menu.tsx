@@ -102,10 +102,9 @@ export default function MemberActionMenu({ member, onUpdate }: { member: any; on
   return (
     <div className="flex justify-end items-center gap-1">
         <Button asChild variant="ghost" size="icon">
-            <Link href={`/backend?view=wallet&memberId=${member.id}`}><Wallet className="h-4 w-4" /></Link>
-        </Button>
-         <Button asChild variant="ghost" size="icon">
-            <Link href={`/account?view=profile`}><Edit className="h-4 w-4" /></Link>
+            <Link href={`/backend?view=wallet&memberId=${member.id}`} title="View & Manage Member">
+                <Eye className="h-4 w-4" />
+            </Link>
         </Button>
       <AlertDialog open={isAlertOpen} onOpenChange={setIsAlertOpen}>
         <DropdownMenu>

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -10,7 +9,6 @@ import { Badge } from '@/components/ui/badge';
 import StaffActionMenu from './staff-action-menu';
 import { useCollection, useFirestore } from '@/firebase';
 import { collection, query, collectionGroup } from 'firebase/firestore';
-import { AdminAddStaffDialog } from './AdminAddStaffDialog';
 import { useMemoFirebase } from '@/hooks/use-config';
 
 interface StaffMember {
@@ -100,16 +98,13 @@ export default function StaffList() {
 
     return (
         <Card>
-            <CardHeader className="flex-row items-center justify-between">
-                <div>
-                    <CardTitle className="flex items-center gap-2">
-                        <Users /> All Staff Members
-                    </CardTitle>
-                    <CardDescription>
-                        A consolidated view of all staff across all member companies.
-                    </CardDescription>
-                </div>
-                 <AdminAddStaffDialog onStaffAdded={forceRefresh} />
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                    <Users /> All Staff Members
+                </CardTitle>
+                <CardDescription>
+                    A consolidated view of all staff across all member companies. To add or manage staff for a specific company, go to the "Members" page and select a member to manage.
+                </CardDescription>
             </CardHeader>
             <CardContent>
                 {isLoading ? (
