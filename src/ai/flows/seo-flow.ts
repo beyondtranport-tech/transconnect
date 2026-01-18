@@ -7,8 +7,9 @@
  * - ShopSeoOutput - The return type for the generateShopSeo function.
  */
 
-import { ai } from '@/ai/genkit';
+import {ai} from '@/ai/genkit';
 import { ShopSeoInputSchema, ShopSeoOutputSchema, type ShopSeoInput, type ShopSeoOutput } from '@/ai/schemas';
+import {z} from 'genkit';
 
 export async function generateShopSeo(input: ShopSeoInput): Promise<ShopSeoOutput> {
   return shopSeoFlow(input);
@@ -22,7 +23,7 @@ const shopSeoFlow = ai.defineFlow(
   },
   async (input) => {
     const { text } = await ai.generate({
-        model: 'googleai/gemini-2.5-flash-image-preview',
+        model: 'googleai/gemini-1.5-flash-preview',
         prompt: `You are an SEO expert for e-commerce websites in the transport and logistics industry. 
   
         Your output MUST be a valid JSON object with the following keys: "metaTitle" (string, under 60 chars), "metaDescription" (string, under 160 chars), and "tags" (an array of 5-7 relevant string keywords).
@@ -39,8 +40,11 @@ const shopSeoFlow = ai.defineFlow(
     try {
         const parsedOutput = JSON.parse(text());
         return ShopSeoOutputSchema.parse(parsedOutput);
-    } catch (e) {
-        console.error("Failed to parse JSON from AI SEO response:", text());
+    } catch (e: any) {
+        console.error("Failed to parse JSON from AI SEO response:", text(), e);
+        if (e instanceof z.ZodError) {
+          throw new Error(`AI returned invalid JSON structure: ${e.message}`);
+        }
         // Provide a fallback empty object that matches the schema
         return { metaTitle: '', metaDescription: '', tags: [] };
     }

@@ -9,6 +9,7 @@
 
 import {ai} from '@/ai/genkit';
 import { MatchFreightInputSchema, MatchFreightOutputSchema, type MatchFreightInput, type MatchFreightOutput } from '@/ai/schemas';
+import {z} from 'genkit';
 
 export async function matchFreight(input: MatchFreightInput): Promise<MatchFreightOutput> {
   return matchFreightFlow(input);
@@ -22,7 +23,7 @@ const matchFreightFlow = ai.defineFlow(
   },
   async (input) => {
     const { text } = await ai.generate({
-        model: 'googleai/gemini-2.5-flash-image-preview',
+        model: 'googleai/gemini-1.5-flash-preview',
         prompt: `You are an AI assistant specialized in matching freight loads with transporters.
 
         Your output MUST be a valid JSON object with a single key "matches", which is an array of objects. Each object in the array should have the following fields: "loadId" (string), "origin" (string), "destination" (string), "weight" (string), "size" (string), "price" (string), and "requirements" (string, optional).
@@ -41,8 +42,11 @@ const matchFreightFlow = ai.defineFlow(
     try {
         const parsedOutput = JSON.parse(text());
         return MatchFreightOutputSchema.parse(parsedOutput);
-    } catch (e) {
-        console.error("Failed to parse JSON from AI freight matching response:", text());
+    } catch (e: any) {
+        console.error("Failed to parse JSON from AI freight matching response:", text(), e);
+        if (e instanceof z.ZodError) {
+          throw new Error(`AI returned invalid JSON structure: ${e.message}`);
+        }
         return { matches: [] };
     }
   }
