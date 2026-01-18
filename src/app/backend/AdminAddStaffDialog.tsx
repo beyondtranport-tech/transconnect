@@ -26,7 +26,7 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { useCollection, useFirestore, getClientSideAuthToken } from '@/firebase';
 import { collection, query } from 'firebase/firestore';
-import { Loader2, PlusCircle, UserPlus } from 'lucide-react';
+import { Loader2, PlusCircle, UserPlus, CheckCircle, Copy } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useMemoFirebase } from '@/hooks/use-config';
@@ -44,9 +44,17 @@ const staffFormSchema = z.object({
 
 type StaffFormValues = z.infer<typeof staffFormSchema>;
 
+interface AddedStaffInfo {
+  name: string;
+  email: string;
+}
+
 export function AdminAddStaffDialog({ onStaffAdded }: { onStaffAdded: () => void }) {
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [addedStaffInfo, setAddedStaffInfo] = useState<AddedStaffInfo | null>(null);
+
   const { toast } = useToast();
   const firestore = useFirestore();
 
@@ -66,6 +74,13 @@ export function AdminAddStaffDialog({ onStaffAdded }: { onStaffAdded: () => void
       jobDescription: '',
     },
   });
+
+  const resetDialog = () => {
+    form.reset();
+    setIsOpen(false);
+    setShowSuccess(false);
+    setAddedStaffInfo(null);
+  };
 
   const onSubmit = async (values: StaffFormValues) => {
     setIsLoading(true);
@@ -103,15 +118,11 @@ export function AdminAddStaffDialog({ onStaffAdded }: { onStaffAdded: () => void
       if (!response.ok) {
         throw new Error(result.error || 'Failed to add staff member.');
       }
-
-      toast({
-        title: 'Staff Added',
-        description: `${values.firstName} ${values.lastName} has been added.`,
-      });
-
-      form.reset();
-      setIsOpen(false);
+      
+      setAddedStaffInfo({ name: `${values.firstName} ${values.lastName}`, email: values.email });
+      setShowSuccess(true);
       onStaffAdded();
+
     } catch (error: any) {
       toast({
         variant: 'destructive',
@@ -123,66 +134,105 @@ export function AdminAddStaffDialog({ onStaffAdded }: { onStaffAdded: () => void
     }
   };
 
+  const copyInviteLink = () => {
+      const joinUrl = `${window.location.origin}/join`;
+      navigator.clipboard.writeText(joinUrl);
+      toast({
+        title: 'Link Copied!',
+        description: `The sign up link has been copied to your clipboard.`,
+      });
+  }
+
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+    <Dialog open={isOpen} onOpenChange={ (open) => {
+        if (!open) {
+            resetDialog();
+        }
+        setIsOpen(open);
+    }}>
       <DialogTrigger asChild>
         <Button>
           <PlusCircle className="mr-2 h-4 w-4" /> Add Staff/Partner
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[625px]">
-        <DialogHeader>
-          <DialogTitle>Add New Staff Member or Partner</DialogTitle>
-          <DialogDescription>
-            Enter the details for the new person and select their company.
-          </DialogDescription>
-        </DialogHeader>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
-             <FormField
-                control={form.control}
-                name="companyId"
-                render={({ field }) => (
-                <FormItem>
-                    <FormLabel>Company</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                        <SelectTrigger disabled={areCompaniesLoading}>
-                            <SelectValue placeholder={areCompaniesLoading ? "Loading companies..." : "Select a company"} />
-                        </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                        {companies?.map((c: any) => (
-                            <SelectItem key={c.id} value={c.id}>{c.companyName}</SelectItem>
-                        ))}
-                    </SelectContent>
-                    </Select>
-                    <FormMessage />
-                </FormItem>
-                )}
-            />
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <FormField control={form.control} name="firstName" render={({ field }) => (<FormItem><FormLabel>First Name</FormLabel><FormControl><Input placeholder="John" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                <FormField control={form.control} name="lastName" render={({ field }) => (<FormItem><FormLabel>Last Name</FormLabel><FormControl><Input placeholder="Doe" {...field} /></FormControl><FormMessage /></FormItem>)} />
-            </div>
-            <FormField control={form.control} name="email" render={({ field }) => (<FormItem><FormLabel>Email</FormLabel><FormControl><Input placeholder="john.doe@example.com" {...field} /></FormControl><FormMessage /></FormItem>)} />
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-               <FormField control={form.control} name="title" render={({ field }) => (<FormItem><FormLabel>Title</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select a title" /></SelectTrigger></FormControl><SelectContent><SelectItem value="Executive Director">Executive Director</SelectItem><SelectItem value="Non-Executive Director">Non-Executive Director</SelectItem><SelectItem value="Manager">Manager</SelectItem><SelectItem value="Admin">Admin</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
-                <FormField control={form.control} name="role" render={({ field }) => (<FormItem><FormLabel>Role</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select a role" /></SelectTrigger></FormControl><SelectContent><SelectItem value="operations">Operations</SelectItem><SelectItem value="marketing">Marketing</SelectItem><SelectItem value="IT">IT</SelectItem><SelectItem value="logistics">Logistics</SelectItem><SelectItem value="store">Store</SelectItem><SelectItem value="sales">Sales</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
-                <FormField control={form.control} name="function" render={({ field }) => (<FormItem><FormLabel>Function</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select a function" /></SelectTrigger></FormControl><SelectContent><SelectItem value="Set Policy">Set Policy</SelectItem><SelectItem value="Manage Staff">Manage Staff</SelectItem><SelectItem value="Set Budgets">Set Budgets</SelectItem><SelectItem value="Ensure Implementation">Ensure Implementation</SelectItem><SelectItem value="Monitor Deliverables">Monitor Deliverables</SelectItem><SelectItem value="Ensure Compliance">Ensure Compliance</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
-            </div>
-            <FormField control={form.control} name="jobDescription" render={({ field }) => (<FormItem><FormLabel>Job Description (Optional)</FormLabel><FormControl><Textarea placeholder="Describe the staff member's responsibilities..." {...field} /></FormControl><FormMessage /></FormItem>)} />
-            <DialogFooter>
-              <Button type="submit" disabled={isLoading}>
-                {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UserPlus className="mr-2 h-4 w-4" />}
-                Add Staff Member
-              </Button>
-            </DialogFooter>
-          </form>
-        </Form>
+        {showSuccess && addedStaffInfo ? (
+            <>
+                <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2"><CheckCircle className="h-6 w-6 text-green-500" /> Staff Member Added!</DialogTitle>
+                    <DialogDescription>
+                        A profile for {addedStaffInfo.name} has been created.
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="py-4 space-y-4">
+                    <p className="text-sm font-semibold">Next Step: Invite Them to Join</p>
+                    <div className="p-4 bg-muted border rounded-lg">
+                        <p className="text-muted-foreground">
+                            Please send the sign-up link to your new staff member. They must register using this email address: <strong className="text-foreground">{addedStaffInfo.email}</strong>
+                        </p>
+                        <Button onClick={copyInviteLink} className="mt-4 w-full">
+                            <Copy className="mr-2 h-4 w-4" /> Copy Sign-Up Link
+                        </Button>
+                    </div>
+                </div>
+                 <DialogFooter>
+                    <Button onClick={resetDialog}>Done</Button>
+                </DialogFooter>
+            </>
+        ) : (
+            <>
+                <DialogHeader>
+                    <DialogTitle>Add New Staff Member or Partner</DialogTitle>
+                    <DialogDescription>
+                        Enter the details for the new person and select their company.
+                    </DialogDescription>
+                </DialogHeader>
+                <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
+                    <FormField
+                        control={form.control}
+                        name="companyId"
+                        render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Company</FormLabel>
+                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                                <SelectTrigger disabled={areCompaniesLoading}>
+                                    <SelectValue placeholder={areCompaniesLoading ? "Loading companies..." : "Select a company"} />
+                                </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                                {companies?.map((c: any) => (
+                                    <SelectItem key={c.id} value={c.id}>{c.companyName}</SelectItem>
+                                ))}
+                            </SelectContent>
+                            </Select>
+                            <FormMessage />
+                        </FormItem>
+                        )}
+                    />
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <FormField control={form.control} name="firstName" render={({ field }) => (<FormItem><FormLabel>First Name</FormLabel><FormControl><Input placeholder="John" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                        <FormField control={form.control} name="lastName" render={({ field }) => (<FormItem><FormLabel>Last Name</FormLabel><FormControl><Input placeholder="Doe" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                    </div>
+                    <FormField control={form.control} name="email" render={({ field }) => (<FormItem><FormLabel>Email</FormLabel><FormControl><Input placeholder="john.doe@example.com" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <FormField control={form.control} name="title" render={({ field }) => (<FormItem><FormLabel>Title</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select a title" /></SelectTrigger></FormControl><SelectContent><SelectItem value="Executive Director">Executive Director</SelectItem><SelectItem value="Non-Executive Director">Non-Executive Director</SelectItem><SelectItem value="Manager">Manager</SelectItem><SelectItem value="Admin">Admin</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
+                        <FormField control={form.control} name="role" render={({ field }) => (<FormItem><FormLabel>Role</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select a role" /></SelectTrigger></FormControl><SelectContent><SelectItem value="operations">Operations</SelectItem><SelectItem value="marketing">Marketing</SelectItem><SelectItem value="IT">IT</SelectItem><SelectItem value="logistics">Logistics</SelectItem><SelectItem value="store">Store</SelectItem><SelectItem value="sales">Sales</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
+                        <FormField control={form.control} name="function" render={({ field }) => (<FormItem><FormLabel>Function</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select a function" /></SelectTrigger></FormControl><SelectContent><SelectItem value="Set Policy">Set Policy</SelectItem><SelectItem value="Manage Staff">Manage Staff</SelectItem><SelectItem value="Set Budgets">Set Budgets</SelectItem><SelectItem value="Ensure Implementation">Ensure Implementation</SelectItem><SelectItem value="Monitor Deliverables">Monitor Deliverables</SelectItem><SelectItem value="Ensure Compliance">Ensure Compliance</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
+                    </div>
+                    <FormField control={form.control} name="jobDescription" render={({ field }) => (<FormItem><FormLabel>Job Description (Optional)</FormLabel><FormControl><Textarea placeholder="Describe the staff member's responsibilities..." {...field} /></FormControl><FormMessage /></FormItem>)} />
+                    <DialogFooter>
+                    <Button type="submit" disabled={isLoading}>
+                        {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UserPlus className="mr-2 h-4 w-4" />}
+                        Add Staff Member
+                    </Button>
+                    </DialogFooter>
+                </form>
+                </Form>
+            </>
+        )}
       </DialogContent>
     </Dialog>
   );
 }
-
-    
