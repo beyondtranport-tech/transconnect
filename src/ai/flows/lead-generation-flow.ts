@@ -83,7 +83,7 @@ export const leadGenerationFlow = ai.defineFlow(
     const location = `${input.city ? `${input.city}, ` : ''}${input.region}`;
     
     const { output } = await ai.generate({
-        model: 'googleai/gemini-1.5-pro-latest',
+        model: 'googleai/gemini-pro',
         tools: [searchWeb],
         output: {
             schema: LeadGenerationOutputSchema,
