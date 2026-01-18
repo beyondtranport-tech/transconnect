@@ -35,28 +35,6 @@ const searchWeb = ai.defineTool(
     }
 );
 
-const leadGenPrompt = ai.definePrompt({
-    name: 'leadGenAgentPrompt',
-    input: {
-        schema: z.object({
-            quantity: z.number(),
-            role: z.string(),
-            location: z.string()
-        })
-    },
-    output: {
-        schema: LeadGenerationOutputSchema,
-    },
-    model: 'googleai/gemini-1.0-pro',
-    tools: [searchWeb],
-    prompt: `You are a lead generation expert for the transport industry. Your task is to find potential leads based on a user's request and structure them into the requested JSON format. Use the provided web search tool to find information.
-
-    User Request: Find {{quantity}} {{role}}s in {{location}}.
-    
-    For each lead, please extract the company name, a contact person if available, phone number, and email. Set the status to "new".`,
-});
-
-
 export const leadGenerationFlow = ai.defineFlow(
   {
     name: 'leadGenerationFlow',
@@ -66,10 +44,17 @@ export const leadGenerationFlow = ai.defineFlow(
   async (input) => {
     const location = `${input.city ? `${input.city}, ` : ''}${input.region}`;
     
-    const { output } = await leadGenPrompt({
-        quantity: input.quantity,
-        role: input.role,
-        location: location
+    const { output } = await ai.generate({
+        model: 'googleai/gemini-1.0-pro',
+        tools: [searchWeb],
+        output: {
+            schema: LeadGenerationOutputSchema,
+        },
+        prompt: `You are a lead generation expert for the transport industry. Your task is to find potential leads based on a user's request and structure them into the requested JSON format. Use the provided web search tool to find information.
+
+        User Request: Find ${input.quantity} ${input.role}s in ${location}.
+        
+        For each lead, please extract the company name, a contact person if available, phone number, and email. Set the status to "new".`,
     });
     
     return output || { leads: [] };
