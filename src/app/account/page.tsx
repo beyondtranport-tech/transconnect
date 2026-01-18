@@ -228,9 +228,9 @@ function AccountPageContent() {
                 </SidebarMenuButton>
               </SidebarMenuItem>
                <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Staff" isActive={activeView === 'staff'} onClick={() => navigate('staff')}>
+                <SidebarMenuButton tooltip="Company Staff" isActive={activeView === 'staff'} onClick={() => navigate('staff')}>
                   <Users />
-                  <span>Staff</span>
+                  <span>Company Staff</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
