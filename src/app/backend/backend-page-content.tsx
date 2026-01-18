@@ -77,8 +77,6 @@ const StaffList = dynamic(() => import('./staff-list'), { loading: () => <Loader
 const PermissionsContent = dynamic(() => import('./permissions-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const ActivityFeed = dynamic(() => import('./activity-feed'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const PlatformTasksContent = dynamic(() => import('./platform-tasks'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const LeadsContent = dynamic(() => import('./leads-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const LeadsGenerator = dynamic(() => import('./leads-generator'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 
 
 const FundingDivisionContent = dynamic(() => import('./funding-division-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
@@ -177,10 +175,6 @@ export default function BackendPageContent() {
         return <TechDivisionContent />;
       case 'campaigns':
         return <CampaignContent />;
-      case 'leads':
-        return <LeadsContent />;
-      case 'leads-generator':
-        return <LeadsGenerator />;
       default:
         return <PlatformSettingsContent />;
     }
@@ -226,22 +220,6 @@ export default function BackendPageContent() {
                 <Users />
                 <span>Members</span>
                 </SidebarMenuButton>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Leads" isActive={activeView.startsWith('leads')}>
-                    <Users />
-                    <span>Leads</span>
-                </SidebarMenuButton>
-                 <SidebarMenuSub>
-                    <SidebarMenuSubButton isActive={activeView === 'leads'} onClick={() => router.push('/backend?view=leads', { scroll: false })}>
-                        <Users />
-                        <span>Lead Database</span>
-                    </SidebarMenuSubButton>
-                    <SidebarMenuSubButton isActive={activeView === 'leads-generator'} onClick={() => router.push('/backend?view=leads-generator', { scroll: false })}>
-                        <Bot />
-                        <span>AI Lead Generator</span>
-                    </SidebarMenuSubButton>
-                </SidebarMenuSub>
             </SidebarMenuItem>
             <SidebarMenuItem>
                 <SidebarMenuButton tooltip="All Staff" isActive={activeView === 'staff'} onClick={() => router.push('/backend?view=staff', { scroll: false })}>
