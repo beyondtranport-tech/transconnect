@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
@@ -15,12 +15,14 @@ import type { z } from 'zod';
 import { roles } from '@/lib/roles';
 import { getClientSideAuthToken } from '@/firebase';
 import { useRouter } from 'next/navigation';
+import { provinces } from '@/lib/geodata';
 
 type LeadGenerationInput = z.infer<typeof LeadGenerationInputSchema>;
 
 export default function LeadsGenerator() {
     const [isLoading, setIsLoading] = useState(false);
     const [generatedLeads, setGeneratedLeads] = useState<LeadGenerationOutput['leads']>([]);
+    const [cities, setCities] = useState<string[]>([]);
     const { toast } = useToast();
     const router = useRouter();
 
@@ -29,9 +31,18 @@ export default function LeadsGenerator() {
         defaultValues: {
             role: '',
             region: 'Gauteng',
+            city: '',
             quantity: 5,
         },
     });
+
+    const watchedRegion = form.watch('region');
+
+    useEffect(() => {
+        const selectedProvince = provinces.find(p => p.name === watchedRegion);
+        setCities(selectedProvince ? selectedProvince.cities : []);
+        form.setValue('city', ''); // Reset city when province changes
+    }, [watchedRegion, form]);
 
     const onSubmit = async (values: LeadGenerationInput) => {
         setIsLoading(true);
@@ -94,9 +105,13 @@ export default function LeadsGenerator() {
                 <CardContent>
                      <Form {...form}>
                         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                                 <FormField control={form.control} name="role" render={({ field }) => ( <FormItem><FormLabel>Role to Find</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select a role" /></SelectTrigger></FormControl><SelectContent>{roles.map(r => <SelectItem key={r.id} value={r.title}>{r.title}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )} />
-                                <FormField control={form.control} name="region" render={({ field }) => ( <FormItem><FormLabel>Geographical Region</FormLabel><FormControl><Input placeholder="e.g., Gauteng" {...field} /></FormControl><FormMessage /></FormItem> )} />
+                                
+                                <FormField control={form.control} name="region" render={({ field }) => ( <FormItem><FormLabel>Province</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select a province" /></SelectTrigger></FormControl><SelectContent>{provinces.map(p => <SelectItem key={p.name} value={p.name}>{p.name}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )} />
+
+                                <FormField control={form.control} name="city" render={({ field }) => ( <FormItem><FormLabel>City / Town</FormLabel><Select onValueChange={field.onChange} value={field.value} disabled={cities.length === 0}><FormControl><SelectTrigger><SelectValue placeholder="Select a city" /></SelectTrigger></FormControl><SelectContent>{cities.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )} />
+                                
                                 <FormField control={form.control} name="quantity" render={({ field }) => ( <FormItem><FormLabel>Number of Leads (1-10)</FormLabel><FormControl><Input type="number" min="1" max="10" {...field} /></FormControl><FormMessage /></FormItem> )} />
                             </div>
                             <Button type="submit" disabled={isLoading}>

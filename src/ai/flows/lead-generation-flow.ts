@@ -24,7 +24,8 @@ export type Lead = z.infer<typeof LeadSchema>;
 
 export const LeadGenerationInputSchema = z.object({
   role: z.string().describe('The role of the potential member, e.g., Vendor, Buyer, Transporter.'),
-  region: z.string().describe('The geographical region to search in, e.g., Gauteng, Western Cape.'),
+  region: z.string().describe('The geographical province to search in, e.g., Gauteng, Western Cape.'),
+  city: z.string().optional().describe('The specific city or town to search in.'),
   quantity: z.number().min(1).max(10).default(5).describe('The number of leads to generate.'),
 });
 export type LeadGenerationInput = z.infer<typeof LeadGenerationInputSchema>;
@@ -67,13 +68,14 @@ export const leadGenerationFlow = ai.defineFlow(
     outputSchema: LeadGenerationOutputSchema,
   },
   async (input) => {
-    const searchQuery = `Find ${input.quantity} ${input.role} businesses in ${input.region}, South Africa`;
+    const location = `${input.city ? `${input.city}, ` : ''}${input.region}`;
+    const searchQuery = `Find ${input.quantity} ${input.role} businesses in ${location}, South Africa`;
 
     const llmResponse = await ai.generate({
         model: 'googleai/gemini-pro',
         prompt: `You are a lead generation expert for the transport industry. Your task is to find potential leads based on a user's request and structure them into the requested JSON format. Use the provided web search tool to find information.
 
-        User Request: Find ${input.quantity} ${input.role}s in ${input.region}.
+        User Request: Find ${input.quantity} ${input.role}s in ${location}.
         
         For each lead, please extract the company name, a contact person if available, phone number, and email. Set the status to "new".`,
         tools: [searchWeb],
