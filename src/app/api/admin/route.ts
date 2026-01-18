@@ -116,6 +116,30 @@ export async function POST(req: NextRequest) {
 
                 return NextResponse.json({ success: true, data: enrichedLogs });
             }
+            case 'saveLeads': {
+                if (!isAdmin) throw new Error("Forbidden: Admin access required.");
+                const { leads } = payload;
+                if (!Array.isArray(leads)) {
+                    throw new Error("Payload must contain an array of leads.");
+                }
+
+                const batch = db.batch();
+                const leadsCollection = db.collection('leads');
+                
+                leads.forEach((lead: any) => {
+                    const docRef = leadsCollection.doc();
+                    batch.set(docRef, {
+                        ...lead,
+                        id: docRef.id,
+                        status: 'new',
+                        createdAt: FieldValue.serverTimestamp(),
+                        updatedAt: FieldValue.serverTimestamp(),
+                    });
+                });
+                
+                await batch.commit();
+                return NextResponse.json({ success: true, message: `${leads.length} leads saved successfully.` });
+            }
             // Admin-only actions below this point
             case 'getMembers': {
                 if (!isAdmin) throw new Error("Forbidden: Admin access required.");

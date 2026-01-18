@@ -11,3 +11,4 @@ import '@/ai/flows/ai-freight-matching.ts';
 import '@/ai/flows/image-edit-flow.ts';
 import '@/ai/flows/image-generation-flow.ts';
 import '@/ai/flows/seo-flow.ts';
+import '@/ai/flows/lead-generation-flow.ts';
