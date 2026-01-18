@@ -8,7 +8,6 @@
  */
 
 import { ai } from '@/ai/genkit';
-import { googleAI } from '@genkit-ai/google-genai';
 import { ImageGenerateInputSchema, ImageGenerateOutputSchema, type ImageGenerateInput, type ImageGenerateOutput } from '@/ai/schemas';
 
 export async function generateImage(input: ImageGenerateInput): Promise<ImageGenerateOutput> {
@@ -23,7 +22,7 @@ const imageGenerateFlow = ai.defineFlow(
   },
   async input => {
     const { media } = await ai.generate({
-      model: googleAI.model('imagen-4.0-fast-generate-001'),
+      model: 'googleai/imagen-4.0-fast-generate-001',
       prompt: input.prompt,
     });
 

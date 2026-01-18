@@ -8,7 +8,6 @@
  */
 
 import { ai } from '@/ai/genkit';
-import { googleAI } from '@genkit-ai/google-genai';
 import { ImageEditInputSchema, ImageEditOutputSchema } from '@/ai/schemas';
 
 export const imageEditFlow = ai.defineFlow(
@@ -19,7 +18,7 @@ export const imageEditFlow = ai.defineFlow(
   },
   async (input) => {
     const { media } = await ai.generate({
-      model: googleAI.model('gemini-1.5-pro-latest'),
+      model: 'googleai/gemini-1.5-pro-latest',
       prompt: [
         { media: { url: input.photoDataUri } },
         { text: input.prompt },
