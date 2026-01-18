@@ -16,6 +16,7 @@ export async function generateShopSeo(input: ShopSeoInput): Promise<ShopSeoOutpu
 
 const prompt = ai.definePrompt({
   name: 'shopSeoPrompt',
+  model: 'googleai/gemini-1.5-flash-preview',
   input: { schema: ShopSeoInputSchema },
   output: { schema: ShopSeoOutputSchema },
   prompt: `You are an SEO expert for e-commerce websites in the transport and logistics industry. 

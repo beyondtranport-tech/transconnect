@@ -16,6 +16,7 @@ export async function matchFreight(input: MatchFreightInput): Promise<MatchFreig
 
 const prompt = ai.definePrompt({
   name: 'matchFreightPrompt',
+  model: 'googleai/gemini-1.5-flash-preview',
   input: {schema: MatchFreightInputSchema},
   output: {schema: MatchFreightOutputSchema},
   prompt: `You are an AI assistant specialized in matching freight loads with transporters.
