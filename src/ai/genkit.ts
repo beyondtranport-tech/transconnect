@@ -4,7 +4,7 @@ import {googleAI} from '@genkit-ai/google-genai';
 // This is now the single source of truth for AI configuration.
 export const ai = genkit({
   plugins: [
-    googleAI(),
+    googleAI({ projectId: 'transconnect-v1-39578841-2a857' }),
   ],
   logLevel: 'debug',
   enableTracingAndMetrics: false,
