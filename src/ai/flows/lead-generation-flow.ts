@@ -21,7 +21,7 @@ const leadGenerationFlowInternal = ai.defineFlow(
   async (input) => {
     
     const { text } = await ai.generate({
-        model: googleAI.model('gemini-pro'),
+        model: googleAI.model('gemini-1.5-pro-preview'),
         prompt: `You are a lead generation expert for the transport industry. Your task is to generate plausible, fictional business leads based on a user's request.
       
         Your output MUST be a valid JSON object with a single key "leads", which is an array of objects. Each object in the array should have the following fields: "companyName" (string), "contactPerson" (string, optional), "email" (string, optional), "phone" (string, optional), "role" (string), and "status" (string, always "new").
