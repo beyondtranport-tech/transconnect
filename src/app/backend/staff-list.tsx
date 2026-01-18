@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -7,9 +8,10 @@ import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
 import { Badge } from '@/components/ui/badge';
 import StaffActionMenu from './staff-action-menu';
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { useCollection, useFirestore } from '@/firebase';
 import { collection, query, collectionGroup } from 'firebase/firestore';
 import { AdminAddStaffDialog } from './AdminAddStaffDialog';
+import { useMemoFirebase } from '@/hooks/use-config';
 
 interface StaffMember {
     id: string;
