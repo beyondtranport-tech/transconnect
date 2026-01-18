@@ -18,7 +18,7 @@ export const imageEditFlow = ai.defineFlow(
   },
   async (input) => {
     const { media } = await ai.generate({
-      model: 'gemini-pro',
+      model: 'gemini-1.5-flash-latest',
       prompt: [
         { media: { url: input.photoDataUri } },
         { text: input.prompt },
