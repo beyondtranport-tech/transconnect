@@ -85,6 +85,6 @@ export const leadGenerationFlow = ai.defineFlow(
         }
     });
 
-    return llmResponse.output() || { leads: [] };
+    return llmResponse.output || { leads: [] };
   }
 );
