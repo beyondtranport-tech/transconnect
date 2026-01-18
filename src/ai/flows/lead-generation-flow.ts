@@ -11,8 +11,13 @@ import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 import { LeadGenerationInputSchema, LeadGenerationOutputSchema } from '@/ai/schemas';
 
-// This is a placeholder tool. In a real-world scenario, you would replace this
-// with a tool that calls a real search API (e.g., Google Custom Search, SerpAPI).
+// =================================================================
+// IMPORTANT: The 'searchWeb' tool below is a PLACEHOLDER.
+// It returns mock data and DOES NOT perform a live web search.
+// To make this agent fully functional, you must replace the mock
+// implementation with a call to a real search API service
+// (e.g., Google Custom Search API, SerpAPI, etc.).
+// =================================================================
 const searchWeb = ai.defineTool(
     {
         name: 'searchWeb',
