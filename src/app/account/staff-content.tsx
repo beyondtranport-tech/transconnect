@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useCallback } from 'react';
@@ -30,7 +29,7 @@ import { useUser, useFirestore, getClientSideAuthToken, useDoc, useCollection } 
 import { collection, doc } from 'firebase/firestore';
 import { Loader2, PlusCircle, UserPlus, Users } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import StaffActionMenu from './staff-action-menu'; 
+import StaffActionMenu from './staff-action-menu';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
 import { Textarea } from '@/components/ui/textarea';
@@ -280,7 +279,7 @@ function AddStaffDialog({ companyId, onStaffAdded, canCreate }: { companyId: str
 }
 
 
-export default function StaffContent() {
+export default function StaffContent({ companyId: propCompanyId }: { companyId?: string }) {
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
   const [selectedStaff, setSelectedStaff] = useState<any | null>(null);
@@ -288,19 +287,20 @@ export default function StaffContent() {
   const { can, isLoading: permissionsLoading } = usePermissions();
 
   const userDocRef = useMemoFirebase(() => {
-    if (!firestore || !user) return null;
+    if (propCompanyId || !firestore || !user) return null; // Don't fetch if we have a prop
     return doc(firestore, 'users', user.uid);
-  }, [firestore, user]);
-  const { data: userData, isLoading: isUserDataLoading } = useDoc<{ companyId: string }>(userDocRef);
+  }, [firestore, user, propCompanyId]);
+  const { data: userData, isLoading: isUserDocLoading } = useDoc<{ companyId: string }>(userDocRef);
+  const companyId = propCompanyId || userData?.companyId;
 
   const staffCollectionRef = useMemoFirebase(() => {
-    if (!firestore || !userData?.companyId) return null;
-    return collection(firestore, `companies/${userData.companyId}/staff`);
-  }, [firestore, userData?.companyId]);
+    if (!firestore || !companyId) return null;
+    return collection(firestore, `companies/${companyId}/staff`);
+  }, [firestore, companyId]);
 
   const { data: staff, isLoading: isStaffLoading, forceRefresh } = useCollection(staffCollectionRef);
 
-  const isLoading = isUserLoading || isUserDataLoading || isStaffLoading || permissionsLoading;
+  const isLoading = isUserLoading || (propCompanyId ? false : isUserDocLoading) || isStaffLoading || permissionsLoading;
 
   const handleEdit = (staffMember: any) => {
     setSelectedStaff(staffMember);
@@ -380,7 +380,7 @@ export default function StaffContent() {
                 <Tooltip>
                     <TooltipTrigger asChild>
                         <div className="inline-block">
-                             {userData?.companyId && <AddStaffDialog companyId={userData.companyId} onStaffAdded={forceRefresh} canCreate={canCreateStaff} />}
+                             {companyId && <AddStaffDialog companyId={companyId} onStaffAdded={forceRefresh} canCreate={canCreateStaff} />}
                         </div>
                     </TooltipTrigger>
                     {!canCreateStaff && (

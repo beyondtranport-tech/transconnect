@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useMemo, useEffect, useCallback } from 'react';
-import { useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useUser, getClientSideAuthToken, useFirestore } from '@/firebase';
@@ -17,6 +16,8 @@ import MemberFundingRecords from './member-funding-records';
 import MemberWalletPayments from './member-wallet-payments';
 import MemberTransactions from './member-transactions';
 import StaffContent from '@/app/account/staff-content';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
 
 const formatCurrency = (amount: number) => new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(amount);
 const formatDate = (isoString: any) => {
@@ -211,50 +212,63 @@ export default function MemberWallet({ memberId }: { memberId: string }) {
                     </div>
                 </CardContent>
             </Card>
-
-            <Card>
-                <CardHeader>
-                    <CardTitle>Manual Wallet Adjustment</CardTitle>
-                    <CardDescription>
-                        Manually add a credit or debit to this member's wallet. Use a negative number for debits.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div className="md:col-span-1">
-                            <Label htmlFor="amount">Amount (R)</Label>
-                            <Input 
-                                id="amount" 
-                                type="number" 
-                                placeholder="e.g., 500 or -50" 
-                                value={newRecordAmount}
-                                onChange={(e) => setNewRecordAmount(e.target.value)}
-                            />
-                        </div>
-                         <div className="md:col-span-2">
-                            <Label htmlFor="description">Description</Label>
-                            <Input 
-                                id="description" 
-                                placeholder="e.g., Manual top-up for sign-on bonus" 
-                                value={newRecordDescription}
-                                onChange={(e) => setNewRecordDescription(e.target.value)}
-                             />
-                        </div>
-                    </div>
-                </CardContent>
-                <CardFooter>
-                    <Button onClick={handleAddRecord} disabled={isPosting}>
-                        {isPosting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <FileCheck className="mr-2 h-4 w-4" />}
-                        Add Record & Update Wallet
-                    </Button>
-                </CardFooter>
-            </Card>
-
-            <StaffContent />
             
-            <MemberWalletPayments companyId={memberId} onUpdate={() => setRefreshTrigger(prev => prev + 1)} />
-            <MemberFundingRecords companyId={memberId} />
-            <MemberTransactions companyId={memberId} key={refreshTrigger} />
+            <Tabs defaultValue="wallet" className="w-full">
+                <TabsList className="grid w-full grid-cols-3">
+                    <TabsTrigger value="wallet">Wallet</TabsTrigger>
+                    <TabsTrigger value="staff">Staff</TabsTrigger>
+                    <TabsTrigger value="funding">Funding Records</TabsTrigger>
+                </TabsList>
+                <TabsContent value="wallet" className="mt-6">
+                    <div className="space-y-8">
+                         <Card>
+                            <CardHeader>
+                                <CardTitle>Manual Wallet Adjustment</CardTitle>
+                                <CardDescription>
+                                    Manually add a credit or debit to this member's wallet. Use a negative number for debits.
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent className="space-y-4">
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    <div className="md:col-span-1">
+                                        <Label htmlFor="amount">Amount (R)</Label>
+                                        <Input 
+                                            id="amount" 
+                                            type="number" 
+                                            placeholder="e.g., 500 or -50" 
+                                            value={newRecordAmount}
+                                            onChange={(e) => setNewRecordAmount(e.target.value)}
+                                        />
+                                    </div>
+                                     <div className="md:col-span-2">
+                                        <Label htmlFor="description">Description</Label>
+                                        <Input 
+                                            id="description" 
+                                            placeholder="e.g., Manual top-up for sign-on bonus" 
+                                            value={newRecordDescription}
+                                            onChange={(e) => setNewRecordDescription(e.target.value)}
+                                         />
+                                    </div>
+                                </div>
+                            </CardContent>
+                            <CardFooter>
+                                <Button onClick={handleAddRecord} disabled={isPosting}>
+                                    {isPosting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <FileCheck className="mr-2 h-4 w-4" />}
+                                    Add Record & Update Wallet
+                                </Button>
+                            </CardFooter>
+                        </Card>
+                        <MemberWalletPayments companyId={memberId} onUpdate={() => setRefreshTrigger(prev => prev + 1)} />
+                        <MemberTransactions companyId={memberId} key={refreshTrigger} />
+                    </div>
+                </TabsContent>
+                 <TabsContent value="staff" className="mt-6">
+                    <StaffContent companyId={memberId} />
+                </TabsContent>
+                 <TabsContent value="funding" className="mt-6">
+                    <MemberFundingRecords companyId={memberId} />
+                </TabsContent>
+            </Tabs>
         </div>
     );
 }
