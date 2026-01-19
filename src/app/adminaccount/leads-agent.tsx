@@ -125,6 +125,9 @@ export default function LeadsAgent() {
                                         <p className="text-sm text-muted-foreground">Role: {lead.role}</p>
                                         {lead.website && <p className="text-xs text-primary hover:underline"><a href={lead.website} target="_blank" rel="noopener noreferrer">{lead.website}</a></p>}
                                         {lead.address && <p className="text-xs text-muted-foreground">Address: {lead.address}</p>}
+                                        {lead.phone && <p className="text-xs text-muted-foreground">Phone: {lead.phone}</p>}
+                                        {lead.email && <p className="text-xs text-muted-foreground">Email: {lead.email}</p>}
+                                        {lead.contactPerson && <p className="text-xs text-muted-foreground">Contact: {lead.contactPerson}</p>}
                                     </div>
                                     <div className="flex items-center gap-2">
                                         <Button variant="outline" size="sm" onClick={() => handleAddLead(lead)}>
