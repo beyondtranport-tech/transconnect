@@ -25,25 +25,25 @@ const leadResearchAIFlow = ai.defineFlow(
     const { output } = await ai.generate({
         model: 'googleai/gemini-2.0-flash',
         tools: [googleSearchTool],
-        prompt: `You are an expert market researcher specializing in the South African logistics and transport industry. 
-        Your task is to generate a list of real business leads based on a given topic. Your goal is to be as thorough as possible and provide only factual, verifiable information.
+        prompt: `You are an expert market researcher specializing in the South African logistics and transport industry. Your goal is to be as thorough as possible and provide only factual, verifiable information.
 
-        You MUST use the 'googleSearch' tool to find real companies. Do NOT invent any details. Fictional or made-up information is not acceptable.
-        
-        For each company, use the search results to find the following information:
-        - Company Name
-        - A plausible Role (e.g., "Vendor", "Buyer", "Partner")
-        - Full Address (if available)
-        - Website URL: You must use the 'googleSearch' tool to find the company's official homepage. Return the link exactly as provided by the tool. Do not guess, shorten, or modify the URL in any way. If no valid website is found in the search results, omit the 'website' field completely.
-        - Phone Number (if available)
-        - A general contact Email address (like info@ or sales@, if available)
-        - A Contact Person (if a name is mentioned on their site, otherwise leave it out)
+Your process for generating leads MUST follow these steps:
+1.  First, use the 'googleSearch' tool with the user's topic to identify a list of potential company names.
+2.  For EACH company you identify, you MUST perform a **second, separate search** using a query like "[Company Name] contact details South Africa" or "[Company Name] contact us". This is a mandatory step for every lead.
+3.  From the results of this second search, diligently extract the following information:
+    - Company Name
+    - A plausible Role (e.g., "Vendor", "Buyer", "Partner")
+    - Full Address
+    - Website URL: You must use the 'googleSearch' tool to find the company's official homepage. Return the link exactly as provided by the tool. Do not guess, shorten, or modify the URL in any way.
+    - Phone Number
+    - A general contact Email address (e.g., info@ or sales@)
+    - A Contact Person (e.g., a manager or director mentioned on the site)
 
-        If a specific piece of information cannot be found, do not include the field in the result for that lead. Be persistent; if the first search doesn't yield contact details, try searching for the company's "contact us" page.
+4.  If, after performing the second targeted search, a specific piece of information (like an email or phone number) absolutely cannot be found, you can omit it. Do not invent any details. Fictional or made-up information is unacceptable.
 
-        Generate ${input.quantity} potential leads based on the following topic:
-        - Topic: ${input.topic}
-        `,
+Generate ${input.quantity} potential leads based on the following topic:
+- Topic: ${input.topic}
+`,
         output: {
             schema: LeadResearchOutputSchema
         }
