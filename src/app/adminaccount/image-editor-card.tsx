@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -112,14 +111,14 @@ export default function ImageEditorCard({ promptTemplate }: { promptTemplate?: s
           <DialogTrigger asChild>
             <Button className="w-full">Start Editing</Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[725px]">
+          <DialogContent className="sm:max-w-[725px] flex h-full max-h-[90vh] flex-col">
             <DialogHeader>
               <DialogTitle>AI Image Editor (Image-to-Image)</DialogTitle>
               <DialogDescription>
                 Upload an image and describe the changes you want to make.
               </DialogDescription>
             </DialogHeader>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-4 overflow-y-auto">
               <div className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="image-upload">1. Upload Original Image</Label>
@@ -152,7 +151,7 @@ export default function ImageEditorCard({ promptTemplate }: { promptTemplate?: s
                 </div>
               </div>
             </div>
-            <DialogFooter>
+            <DialogFooter className="mt-auto flex-shrink-0 pt-4">
               <Button onClick={handleEdit} disabled={isLoading}>
                 {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
                 Generate Edit

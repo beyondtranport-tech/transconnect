@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -81,14 +80,14 @@ export default function ImageGeneratorCard({ promptTemplate }: { promptTemplate?
           <DialogTrigger asChild>
             <Button className="w-full">Start Generating</Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[725px]">
+          <DialogContent className="sm:max-w-[725px] flex h-full max-h-[90vh] flex-col">
             <DialogHeader>
               <DialogTitle>AI Image Generator (Text-to-Image)</DialogTitle>
               <DialogDescription>
                 Use the template below or write your own detailed prompt to create an image.
               </DialogDescription>
             </DialogHeader>
-            <div className="py-4 space-y-4">
+            <div className="py-4 space-y-4 overflow-y-auto">
                 <div className="space-y-2">
                   <Label htmlFor="generate-prompt">Your Prompt</Label>
                   <Textarea id="generate-prompt" value={prompt} onChange={(e) => setPrompt(e.target.value)} rows={7} />
@@ -106,7 +105,7 @@ export default function ImageGeneratorCard({ promptTemplate }: { promptTemplate?
                     )}
                 </div>
             </div>
-            <DialogFooter>
+            <DialogFooter className="mt-auto flex-shrink-0 pt-4">
               <Button onClick={handleGenerate} disabled={isLoading}>
                 {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
                 Generate Image
