@@ -11,6 +11,7 @@
 import {ai} from '@/ai/genkit';
 import { LeadResearchInputSchema, LeadResearchOutputSchema, type LeadResearchInput, type LeadResearchOutput } from '@/ai/schemas';
 import {z} from 'genkit';
+import { googleSearchTool } from '../tools/google-search';
 
 export async function leadResearchFlow(input: LeadResearchInput): Promise<LeadResearchOutput> {
   return leadResearchAIFlow(input);
@@ -21,15 +22,19 @@ const leadResearchAIFlow = ai.defineFlow(
     name: 'leadResearchAIFlow',
     inputSchema: LeadResearchInputSchema,
     outputSchema: LeadResearchOutputSchema,
+    tools: [googleSearchTool]
   },
   async (input) => {
     const { text } = await ai.generate({
         model: 'googleai/gemini-2.5-flash',
-        prompt: `You are an expert market researcher specializing in the South African logistics and transport industry. Your task is to generate a list of potential business leads based on a given topic.
+        prompt: `You are an expert market researcher specializing in the South African logistics and transport industry. 
+        Your task is to generate a list of real business leads based on a given topic.
 
-        Your output MUST be a valid JSON object with a single key "leads", which is an array of objects. Each object in the array should have the following fields: "companyName" (string) and "role" (string, e.g., "Vendor", "Buyer", "Partner").
+        You MUST use the 'googleSearch' tool to find real companies. Do NOT invent company names, websites, or addresses.
+        
+        Use the search results to extract the company name, a plausible role (e.g., "Vendor", "Buyer", "Partner"), and if available, their address and website from the search snippets or titles.
 
-        The company names should be plausible and relevant to the South African context. Do NOT invent contact details like phone numbers or emails.
+        Your output MUST be a valid JSON object with a single key "leads", which is an array of objects. Each object in the array should have the following fields: "companyName" (string), "role" (string), "address" (string, optional), and "website" (string, optional).
 
         Do NOT include any text, explanation, or markdown formatting before or after the JSON object.
 
@@ -50,4 +55,3 @@ const leadResearchAIFlow = ai.defineFlow(
     }
   }
 );
-

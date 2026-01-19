@@ -52,16 +52,20 @@ export default function LeadsAgent() {
         }
     };
     
-    const handleAddLead = (lead: { companyName: string, role: string }) => {
-        // Here you would typically open a dialog pre-filled with this info
-        // For now, we'll just log it and redirect to the database page
+    const handleAddLead = (lead: { companyName: string, role: string, address?: string, website?: string }) => {
         console.log("Adding lead:", lead);
         toast({
             title: "Redirecting to Add Lead",
             description: `Pre-filling new lead for ${lead.companyName}.`
         });
-        // A more advanced implementation would use a dialog here
-        router.push(`/adminaccount?view=leads-database&newCompanyName=${encodeURIComponent(lead.companyName)}&newRole=${encodeURIComponent(lead.role)}`);
+        const queryParams = new URLSearchParams({
+            newCompanyName: lead.companyName,
+            newRole: lead.role,
+        });
+        if (lead.address) queryParams.set('newAddress', lead.address);
+        if (lead.website) queryParams.set('newWebsite', lead.website);
+
+        router.push(`/adminaccount?view=leads-database&${queryParams.toString()}`);
     }
 
     return (
@@ -83,12 +87,12 @@ export default function LeadsAgent() {
                                 <Sparkles className="h-4 w-4" />
                                 <AlertTitle>How this works</AlertTitle>
                                 <AlertDescription>
-                                   Describe the type of companies you're looking for. The AI will generate a list of potential company names based on its training data. This is a starting point for your own research.
+                                   This agent uses the Google Search API to find real companies based on your topic. The results are a starting point for your own research. Please note that a valid API key is required.
                                 </AlertDescription>
                             </Alert>
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 <FormField control={form.control} name="topic" render={({ field }) => ( <FormItem className="md:col-span-2"><FormLabel>Research Topic</FormLabel><FormControl><Input placeholder="e.g., 'truck and trailer repair shops in Gauteng' or 'largest logistics companies in South Africa'" {...field} /></FormControl><FormMessage /></FormItem> )} />
-                                <FormField control={form.control} name="quantity" render={({ field }) => ( <FormItem><FormLabel>Number of Leads (1-25)</FormLabel><FormControl><Input type="number" min="1" max="25" {...field} /></FormControl><FormMessage /></FormItem> )} />
+                                <FormField control={form.control} name="quantity" render={({ field }) => ( <FormItem><FormLabel>Number of Leads (1-10)</FormLabel><FormControl><Input type="number" min="1" max="10" {...field} /></FormControl><FormMessage /></FormItem> )} />
                             </div>
                             <Button type="submit" disabled={isLoading}>
                                 {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Search className="mr-2 h-4 w-4" />}
@@ -116,17 +120,14 @@ export default function LeadsAgent() {
                         <ul className="space-y-3">
                            {generatedLeads.map((lead, index) => (
                                 <li key={index} className="flex items-center justify-between p-3 border rounded-md bg-background">
-                                    <div>
+                                    <div className="space-y-1">
                                         <p className="font-semibold">{lead.companyName}</p>
-                                        <p className="text-sm text-muted-foreground">Suggested Role: {lead.role}</p>
+                                        <p className="text-sm text-muted-foreground">Role: {lead.role}</p>
+                                        {lead.website && <p className="text-xs text-primary hover:underline"><a href={lead.website} target="_blank" rel="noopener noreferrer">{lead.website}</a></p>}
+                                        {lead.address && <p className="text-xs text-muted-foreground">Address: {lead.address}</p>}
                                     </div>
                                     <div className="flex items-center gap-2">
-                                        <Button variant="outline" size="sm" asChild>
-                                            <a href={`https://www.google.com/search?q=${encodeURIComponent(lead.companyName)}`} target="_blank" rel="noopener noreferrer">
-                                                <Search className="mr-2 h-4 w-4" /> Verify
-                                            </a>
-                                        </Button>
-                                        <Button size="sm" onClick={() => handleAddLead(lead)}>
+                                        <Button variant="outline" size="sm" onClick={() => handleAddLead(lead)}>
                                             <PlusCircle className="mr-2 h-4 w-4" /> Add to Database
                                         </Button>
                                     </div>

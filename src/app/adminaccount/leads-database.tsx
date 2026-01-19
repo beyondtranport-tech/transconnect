@@ -79,8 +79,8 @@ function LeadDialog({ lead, onSave, children, defaultValues }: { lead?: any, onS
                 role: defaultValues?.role || '',
                 status: 'new',
                 notes: '',
-                website: '',
-                address: '',
+                website: defaultValues?.website || '',
+                address: defaultValues?.address || '',
             });
         }
     }
@@ -289,7 +289,11 @@ function LeadsDatabaseComponent() {
   const newLeadDefaults = useMemo(() => {
     const companyName = searchParams.get('newCompanyName');
     const role = searchParams.get('newRole');
-    if (companyName) return { companyName, role: role || '' };
+    const address = searchParams.get('newAddress');
+    const website = searchParams.get('newWebsite');
+    if (companyName) {
+      return { companyName, role: role || '', address: address || '', website: website || '' };
+    }
     return undefined;
   }, [searchParams]);
 
@@ -316,7 +320,6 @@ function LeadsDatabaseComponent() {
     { accessorKey: 'id', header: 'Lead ID', cell: ({row}) => <div className="font-mono text-xs">{row.original.id}</div> },
     { accessorKey: 'companyName', header: 'Company', cell: ({row}) => <div>{row.original.companyName}</div> },
     { accessorKey: 'contactPerson', header: 'Contact', cell: ({row}) => <div>{row.original.contactPerson}</div> },
-    { accessorKey: 'email', header: 'Email', cell: ({row}) => <div className="font-mono text-xs">{row.original.email}</div> },
     { accessorKey: 'website', header: 'Website', cell: ({row}) => row.original.website ? <a href={row.original.website} target="_blank" rel="noopener noreferrer" className="text-primary underline">{row.original.website}</a> : null},
     { accessorKey: 'address', header: 'Address', cell: ({row}) => <div className="text-xs">{row.original.address}</div>},
     { accessorKey: 'role', header: 'Role', cell: ({row}) => <Badge variant="outline">{row.original.role}</Badge>},
@@ -367,4 +370,5 @@ export default function LeadsDatabase() {
         </Suspense>
     );
 }
+
 
