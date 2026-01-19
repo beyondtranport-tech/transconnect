@@ -141,38 +141,41 @@ export default function ImageEditorCard({ promptTemplate }: { promptTemplate?: s
     try {
       const response = await fetch(editedImage);
       const blob = await response.blob();
-      
       const fileName = `edited-image-${Date.now()}.png`;
       const storageRef = ref(storage, `generated-images/${user.uid}/${fileName}`);
-      const uploadTask = uploadBytesResumable(storageRef, blob);
-
-      uploadTask.on('state_changed', 
-        (snapshot) => {
-          const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-          setUploadProgress(progress);
-        },
-        (error) => {
-          console.error("Upload Error:", error);
-          toast({ variant: 'destructive', title: 'Save to Cloud Failed', description: error.message });
-          setIsSaving(false);
-        },
-        async () => {
-          try {
-            const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-            setSavedImageUrl(downloadURL);
-            toast({ title: 'Image Saved!', description: 'Your image is now stored in the cloud.' });
-          } catch (error: any) {
-            toast({ variant: 'destructive', title: 'Save Failed', description: `Could not get download URL: ${error.message}` });
-          } finally {
-            setIsSaving(false);
+      
+      await new Promise<string>((resolve, reject) => {
+        const uploadTask = uploadBytesResumable(storageRef, blob);
+        uploadTask.on('state_changed',
+          (snapshot) => {
+            const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+            setUploadProgress(progress);
+          },
+          (error) => {
+            console.error("Upload Error:", error);
+            reject(new Error(`Upload failed: ${error.message}`));
+          },
+          async () => {
+            try {
+              const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+              resolve(downloadURL);
+            } catch (error) {
+              reject(new Error(`Failed to get download URL: ${(error as Error).message}`));
+            }
           }
-        }
-      );
+        );
+      }).then((downloadURL) => {
+        setSavedImageUrl(downloadURL);
+        toast({ title: 'Image Saved!', description: 'Your image is now stored in the cloud.' });
+      });
+      
     } catch (error: any) {
       toast({ variant: 'destructive', title: 'Save Failed', description: error.message });
+    } finally {
       setIsSaving(false);
     }
   };
+
 
   const copyUrlToClipboard = () => {
     if (savedImageUrl) {
