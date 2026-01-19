@@ -10,7 +10,6 @@
 
 import {ai} from '@/ai/genkit';
 import { ShopSeoInputSchema, ShopSeoOutputSchema, type ShopSeoInput, type ShopSeoOutput } from '@/ai/schemas';
-import {z} from 'zod';
 
 export async function generateShopSeo(input: ShopSeoInput): Promise<ShopSeoOutput> {
   return shopSeoFlow(input);
@@ -23,31 +22,20 @@ const shopSeoFlow = ai.defineFlow(
     outputSchema: ShopSeoOutputSchema,
   },
   async (input) => {
-    const { text } = await ai.generate({
+    const { output } = await ai.generate({
         model: 'googleai/gemini-2.5-flash',
         prompt: `You are an SEO expert for e-commerce websites in the transport and logistics industry. 
   
-        Your output MUST be a valid JSON object with the following keys: "metaTitle" (string, under 60 chars), "metaDescription" (string, under 160 chars), and "tags" (an array of 5-7 relevant string keywords).
-
-        Do NOT include any text, explanation, or markdown formatting before or after the JSON object.
-
         Based on the following shop details:
         - Shop Name: ${input.shopName}
         - Shop Description: ${input.shopDescription}
 
-        Generate the SEO content and return it in the specified JSON format.`,
+        Generate the SEO content.`,
+        output: {
+            schema: ShopSeoOutputSchema
+        }
     });
     
-    try {
-        const parsedOutput = JSON.parse(text);
-        return ShopSeoOutputSchema.parse(parsedOutput);
-    } catch (e: any) {
-        console.error("Failed to parse JSON from AI SEO response:", text, e);
-        if (e instanceof z.ZodError) {
-          throw new Error(`AI returned invalid JSON structure: ${e.message}`);
-        }
-        // Provide a fallback empty object that matches the schema
-        return { metaTitle: '', metaDescription: '', tags: [] };
-    }
+    return output || { metaTitle: '', metaDescription: '', tags: [] };
   }
 );
