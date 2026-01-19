@@ -14,8 +14,29 @@ import { LeadResearchInputSchema, type LeadResearchOutput } from '@/ai/schemas';
 import type { z } from 'zod';
 import { useRouter } from 'next/navigation';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Textarea } from '@/components/ui/textarea';
 
 type LeadResearchInput = z.infer<typeof LeadResearchInputSchema>;
+
+const defaultPrompt = `You are an expert market researcher specializing in the South African logistics and transport industry. Your goal is to be as thorough as possible and provide only factual, verifiable information.
+
+Your process for generating leads MUST follow these steps:
+1.  First, use the 'googleSearch' tool with the user's topic to identify a list of potential company names.
+2.  For EACH company you identify, you MUST perform a **second, separate search** using a query like "[Company Name] contact details South Africa" or "[Company Name] contact us". This is a mandatory step for every lead.
+3.  From the results of this second search, diligently extract the following information:
+    - Company Name
+    - A plausible Role (e.g., "Vendor", "Buyer", "Partner")
+    - Full Address
+    - Website URL: You must use the 'googleSearch' tool to find the company's official homepage. Return the link exactly as provided by the tool. Do not guess, shorten, or modify the URL in any way.
+    - Phone Number
+    - A general contact Email address (e.g., info@ or sales@)
+    - A Contact Person (e.g., a manager or director mentioned on the site)
+
+4.  If, after performing the second targeted search, a specific piece of information (like an email or phone number) absolutely cannot be found, you can return it as \`null\`. Do not invent any details. Fictional or made-up information is unacceptable.
+
+Generate 5 potential leads based on the following topic:
+- Topic: Scania truck mechanics in Cape Town`;
+
 
 export default function LeadsAgent() {
     const [isLoading, setIsLoading] = useState(false);
@@ -26,8 +47,7 @@ export default function LeadsAgent() {
     const form = useForm<LeadResearchInput>({
         resolver: zodResolver(LeadResearchInputSchema),
         defaultValues: {
-            topic: '',
-            quantity: 5,
+            prompt: defaultPrompt,
         },
     });
 
@@ -87,13 +107,26 @@ export default function LeadsAgent() {
                                 <Sparkles className="h-4 w-4" />
                                 <AlertTitle>How this works</AlertTitle>
                                 <AlertDescription>
-                                   This agent uses the Google Search API to find real companies based on your topic. The results are a starting point for your own research. Please note that a valid API key is required.
+                                   This agent uses the Google Search API to find real companies based on the prompt below. You can edit the prompt to refine the search. The results are a starting point for your own research. Please note that a valid API key is required.
                                 </AlertDescription>
                             </Alert>
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                <FormField control={form.control} name="topic" render={({ field }) => ( <FormItem className="md:col-span-2"><FormLabel>Research Topic</FormLabel><FormControl><Input placeholder="e.g., 'truck and trailer repair shops in Gauteng' or 'largest logistics companies in South Africa'" {...field} /></FormControl><FormMessage /></FormItem> )} />
-                                <FormField control={form.control} name="quantity" render={({ field }) => ( <FormItem><FormLabel>Number of Leads (1-10)</FormLabel><FormControl><Input type="number" min="1" max="10" {...field} /></FormControl><FormMessage /></FormItem> )} />
-                            </div>
+                             <FormField
+                              control={form.control}
+                              name="prompt"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Agent Prompt</FormLabel>
+                                  <FormControl>
+                                    <Textarea
+                                      placeholder="Enter the detailed prompt for the AI agent..."
+                                      className="min-h-[350px] font-mono text-xs"
+                                      {...field}
+                                    />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
                             <Button type="submit" disabled={isLoading}>
                                 {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Search className="mr-2 h-4 w-4" />}
                                 Start Research

@@ -72,8 +72,7 @@ export type ShopSeoOutput = z.infer<typeof ShopSeoOutputSchema>;
 
 // From lead-research-flow.ts
 export const LeadResearchInputSchema = z.object({
-  topic: z.string().describe('The research topic or query for lead generation (e.g., "logistics companies in Cape Town").'),
-  quantity: z.coerce.number().min(1).max(10).describe('The number of leads to generate.'),
+  prompt: z.string().min(20, 'Please provide a detailed prompt.').describe('A detailed prompt for the AI agent, instructing it what to research.'),
 });
 export type LeadResearchInput = z.infer<typeof LeadResearchInputSchema>;
 
