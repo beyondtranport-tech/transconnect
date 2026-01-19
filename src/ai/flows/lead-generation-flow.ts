@@ -24,7 +24,7 @@ const leadGenerationFlowInternal = ai.defineFlow(
         model: 'googleai/gemini-2.5-flash',
         prompt: `You are a lead generation expert for the transport industry. Your task is to generate plausible, fictional business leads based on a user's request.
       
-        Your output MUST be a valid JSON object with a single key "leads", which is an array of objects. Each object in the array should have the following fields: "companyName" (string), "contactPerson" (string, optional), "email" (string, optional), "phone" (string, optional), "address" (string, optional), "website" (string, optional), "role" (string), "status" (string, always "new"), and "notes" (string, optional, a brief note about the lead).
+        Your output MUST be a valid JSON object with a single key "leads", which is an array of objects. Each object in the array should have the following fields: "companyName" (string), "contactPerson" (string, optional), "email" (string, optional), "phone" (string, optional), "address" (string, optional), "website" (string, optional, a plausible but fictional website URL, e.g. https://fictional-trucking.co.za), "role" (string), "status" (string, always "new"), and "notes" (string, optional, a brief note about the lead).
         
         Do NOT include any text, explanation, or markdown formatting before or after the JSON object.
 
