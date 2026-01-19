@@ -21,10 +21,13 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Sparkles, Wand2, Download } from 'lucide-react';
+import { Loader2, Sparkles, Wand2, Download, Save, Copy } from 'lucide-react';
 import Image from 'next/image';
 import { imageEditFlow } from '@/ai/flows/image-edit-flow';
 import { Textarea } from '@/components/ui/textarea';
+import { useStorage, useUser } from '@/firebase';
+import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
+import { Progress } from '@/components/ui/progress';
 
 const defaultEditPrompt = `Place the truck on a winding mountain pass at sunset.
 
@@ -40,6 +43,12 @@ export default function ImageEditorCard({ promptTemplate }: { promptTemplate?: s
   const [originalImage, setOriginalImage] = useState<string | null>(null);
   const [editedImage, setEditedImage] = useState<string | null>(null);
   const { toast } = useToast();
+  const { user } = useUser();
+  const storage = useStorage();
+
+  const [isSaving, setIsSaving] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [savedImageUrl, setSavedImageUrl] = useState<string | null>(null);
 
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -49,12 +58,15 @@ export default function ImageEditorCard({ promptTemplate }: { promptTemplate?: s
     reader.onload = (e) => {
       setOriginalImage(e.target?.result as string);
       setEditedImage(null); // Clear previous edit
+      setSavedImageUrl(null); // Clear saved URL
     };
     reader.readAsDataURL(file);
   };
   
   const clearOriginalImage = () => {
     setOriginalImage(null);
+    setEditedImage(null);
+    setSavedImageUrl(null);
     const fileInput = document.getElementById('image-upload') as HTMLInputElement;
     if (fileInput) {
       fileInput.value = '';
@@ -73,6 +85,7 @@ export default function ImageEditorCard({ promptTemplate }: { promptTemplate?: s
 
     setIsLoading(true);
     setEditedImage(null);
+    setSavedImageUrl(null);
 
     try {
       const result = await imageEditFlow({
@@ -110,6 +123,54 @@ export default function ImageEditorCard({ promptTemplate }: { promptTemplate?: s
     });
   };
 
+  const handleSaveToCloud = async () => {
+    if (!editedImage || !user || !storage) {
+        toast({ variant: 'destructive', title: 'Error', description: 'No image, user, or storage service available.' });
+        return;
+    }
+
+    setIsSaving(true);
+    setUploadProgress(0);
+
+    try {
+        const response = await fetch(editedImage);
+        const blob = await response.blob();
+        
+        const fileName = `edited-image-${Date.now()}.png`;
+        const storageRef = ref(storage, `generated-images/${user.uid}/${fileName}`);
+
+        const uploadTask = uploadBytesResumable(storageRef, blob);
+
+        uploadTask.on('state_changed', 
+            (snapshot) => {
+                const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                setUploadProgress(progress);
+            },
+            (error) => {
+                throw error; // Let the catch block handle it
+            },
+            async () => {
+                const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+                setSavedImageUrl(downloadURL);
+                toast({ title: 'Image Saved!', description: 'Your image is now stored in the cloud.' });
+                setIsSaving(false);
+            }
+        );
+
+    } catch (error: any) {
+        toast({ variant: 'destructive', title: 'Save to Cloud Failed', description: error.message });
+        setIsSaving(false);
+    }
+  };
+
+  const copyUrlToClipboard = () => {
+    if (savedImageUrl) {
+        navigator.clipboard.writeText(savedImageUrl);
+        toast({ title: 'URL Copied!', description: 'The permanent image URL is on your clipboard.' });
+    }
+  }
+
+
   return (
     <Card>
       <CardHeader>
@@ -132,7 +193,7 @@ export default function ImageEditorCard({ promptTemplate }: { promptTemplate?: s
                 Upload an image and describe the changes you want to make.
               </DialogDescription>
             </DialogHeader>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-4 overflow-y-auto">
+            <div className="grid flex-1 grid-cols-1 gap-6 overflow-y-auto py-4 pr-4 md:grid-cols-2">
               <div className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="image-upload">1. Upload Original Image</Label>
@@ -163,15 +224,33 @@ export default function ImageEditorCard({ promptTemplate }: { promptTemplate?: s
                         <p className="text-sm text-muted-foreground">Your result will appear here.</p>
                     )}
                 </div>
+                {isSaving && (
+                    <Progress value={uploadProgress} className="w-full" />
+                )}
+                {savedImageUrl && (
+                    <div className="space-y-2">
+                        <Label>Permanent URL</Label>
+                        <div className="flex items-center gap-2">
+                            <Input value={savedImageUrl} readOnly />
+                            <Button variant="outline" size="icon" onClick={copyUrlToClipboard}>
+                                <Copy className="h-4 w-4"/>
+                            </Button>
+                        </div>
+                    </div>
+                )}
               </div>
             </div>
             <DialogFooter className="mt-auto flex-shrink-0 pt-4 sm:justify-between">
               <div>
                 {editedImage && (
-                  <Button variant="outline" onClick={handleDownload}>
-                    <Download className="mr-2 h-4 w-4" />
-                    Download Edited Image
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    <Button variant="secondary" onClick={handleDownload} disabled={isSaving}>
+                        <Download className="mr-2 h-4 w-4" /> Download
+                    </Button>
+                     <Button variant="outline" onClick={handleSaveToCloud} disabled={isSaving || !!savedImageUrl}>
+                        <Save className="mr-2 h-4 w-4" /> {savedImageUrl ? 'Saved' : 'Save to Cloud'}
+                    </Button>
+                  </div>
                 )}
               </div>
               <Button onClick={handleEdit} disabled={isLoading}>
