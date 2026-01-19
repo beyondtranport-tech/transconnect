@@ -204,11 +204,11 @@ export default function LeadsContent() {
   };
 
   const columns: ColumnDef<any>[] = useMemo(() => [
-    { accessorKey: 'companyName', header: 'Company' },
-    { accessorKey: 'contactPerson', header: 'Contact' },
-    { accessorKey: 'email', header: 'Email' },
-    { accessorKey: 'phone', header: 'Phone' },
-    { accessorKey: 'address', header: 'Address' },
+    { accessorKey: 'companyName', header: 'Company', cell: ({ row }) => <div>{row.original.companyName}</div> },
+    { accessorKey: 'contactPerson', header: 'Contact', cell: ({ row }) => <div>{row.original.contactPerson}</div> },
+    { accessorKey: 'email', header: 'Email', cell: ({ row }) => <div>{row.original.email}</div> },
+    { accessorKey: 'phone', header: 'Phone', cell: ({ row }) => <div>{row.original.phone}</div> },
+    { accessorKey: 'address', header: 'Address', cell: ({ row }) => <div>{row.original.address}</div> },
     { accessorKey: 'role', header: 'Role', cell: ({row}) => <Badge variant="outline">{row.original.role}</Badge>},
     { accessorKey: 'status', header: 'Status', cell: ({row}) => <Badge className="capitalize">{row.original.status}</Badge>},
     { id: 'actions', header: () => <div className="text-right">Actions</div>, cell: ({row}) => (
@@ -252,5 +252,3 @@ export default function LeadsContent() {
       </Card>
   );
 }
-
-    

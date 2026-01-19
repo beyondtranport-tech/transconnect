@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
@@ -103,6 +104,7 @@ export default function NetworkContent() {
         {
           accessorKey: 'companyName',
           header: 'Company Name',
+          cell: ({ row }) => <div>{row.original.companyName}</div>,
         },
         {
           accessorKey: 'membershipId',
