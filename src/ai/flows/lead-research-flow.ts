@@ -8,7 +8,6 @@
  */
 
 import {ai} from '@/ai/genkit';
-import { googleAI } from '@genkit-ai/google-genai';
 import { LeadResearchInputSchema, LeadResearchOutputSchema, type LeadResearchInput, type LeadResearchOutput } from '@/ai/schemas';
 import { googleSearchTool } from '../tools/google-search';
 
@@ -24,7 +23,7 @@ const leadResearchAIFlow = ai.defineFlow(
   },
   async (input) => {
     const { output } = await ai.generate({
-        model: googleAI.model('gemini-pro'),
+        model: 'gemini-pro',
         tools: [googleSearchTool],
         prompt: `You are an expert market researcher specializing in the South African logistics and transport industry. 
         Your task is to generate a list of real business leads based on a given topic.
