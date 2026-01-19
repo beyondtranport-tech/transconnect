@@ -1,4 +1,3 @@
-
 import { NextRequest, NextResponse } from 'next/server';
 import { getFirestore, Timestamp, FieldValue, FieldPath } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
@@ -162,6 +161,40 @@ export async function POST(req: NextRequest) {
                 
                 await batch.commit();
                 return NextResponse.json({ success: true, message: `${leads.length} leads saved successfully.` });
+            }
+             case 'findDuplicateLeads': {
+                const leadsSnap = await db.collection('leads').get();
+                const leads = leadsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+                const groups: { [key: string]: any[] } = {};
+                leads.forEach(lead => {
+                    const key = (lead.companyName || '').trim().toLowerCase();
+                    if (!key) return; // Skip leads without a company name
+                    if (!groups[key]) {
+                        groups[key] = [];
+                    }
+                    groups[key].push(lead);
+                });
+
+                const duplicates = Object.values(groups).filter(group => group.length > 1);
+                
+                const serializedDuplicates = duplicates.map(group => 
+                    group.map(lead => serializeTimestamps(lead))
+                );
+
+                return NextResponse.json({ success: true, data: serializedDuplicates });
+            }
+            case 'deleteLeads': {
+                const { leadIds } = payload;
+                if (!Array.isArray(leadIds) || leadIds.length === 0) {
+                    throw new Error("leadIds array is required.");
+                }
+                const batch = db.batch();
+                leadIds.forEach(id => {
+                    batch.delete(db.collection('leads').doc(id));
+                });
+                await batch.commit();
+                return NextResponse.json({ success: true, message: `${leadIds.length} leads deleted.` });
             }
             // Admin-only actions below this point
             case 'getMembers': {

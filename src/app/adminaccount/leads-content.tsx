@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useEffect, useCallback } from 'react';
@@ -27,14 +26,17 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken } from '@/firebase';
-import { Loader2, PlusCircle, Users, Edit, Trash2 } from 'lucide-react';
+import { Loader2, PlusCircle, Users, Edit, Trash2, Search } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { roles } from '@/lib/roles';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 const leadSchema = z.object({
   companyName: z.string().min(1, 'Company name is required'),
@@ -155,6 +157,12 @@ export default function LeadsContent() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
+  
+  const [isFindingDuplicates, setIsFindingDuplicates] = useState(false);
+  const [isDeletingDuplicates, setIsDeletingDuplicates] = useState(false);
+  const [duplicateGroups, setDuplicateGroups] = useState<any[][]>([]);
+  const [isCleanDialogOpen, setIsCleanDialogOpen] = useState(false);
+  const [leadsToKeep, setLeadsToKeep] = useState<Record<string, string>>({});
 
   const loadLeads = useCallback(async () => {
       setIsLoading(true);
@@ -203,7 +211,77 @@ export default function LeadsContent() {
     }
   };
 
+  const handleFindDuplicates = async () => {
+      setIsFindingDuplicates(true);
+      try {
+          const token = await getClientSideAuthToken();
+          if (!token) throw new Error("Authentication failed.");
+          const response = await fetch('/api/admin', {
+              method: 'POST',
+              headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+              body: JSON.stringify({ action: 'findDuplicateLeads' }),
+          });
+          const result = await response.json();
+          if (!result.success) throw new Error(result.error || 'Failed to find duplicates.');
+          if (result.data.length === 0) {
+              toast({ title: 'No Duplicates Found', description: 'Your leads database looks clean!' });
+          } else {
+              setDuplicateGroups(result.data);
+              const initialToKeep: Record<string, string> = {};
+              result.data.forEach((group: any[], index: number) => {
+                  if (group.length > 0) {
+                      initialToKeep[String(index)] = group[0].id;
+                  }
+              });
+              setLeadsToKeep(initialToKeep);
+              setIsCleanDialogOpen(true);
+          }
+      } catch(e: any) {
+          toast({ variant: 'destructive', title: 'Error', description: e.message });
+      } finally {
+          setIsFindingDuplicates(false);
+      }
+  };
+
+  const handleDeleteDuplicates = async () => {
+      const allIds = duplicateGroups.flat().map(lead => lead.id);
+      const idsToDelete = allIds.filter(id => !Object.values(leadsToKeep).includes(id));
+
+      if (idsToDelete.length === 0) {
+          toast({ title: "No changes to make." });
+          setIsCleanDialogOpen(false);
+          return;
+      }
+      
+      setIsDeletingDuplicates(true);
+      try {
+          const token = await getClientSideAuthToken();
+          if (!token) throw new Error("Authentication failed.");
+          const response = await fetch('/api/admin', {
+              method: 'POST',
+              headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+              body: JSON.stringify({ action: 'deleteLeads', payload: { leadIds: idsToDelete } }),
+          });
+          const result = await response.json();
+          if (!result.success) throw new Error(result.error || 'Failed to delete duplicates.');
+          
+          toast({ title: 'Duplicates Cleaned', description: `${idsToDelete.length} duplicate leads have been removed.` });
+          setIsCleanDialogOpen(false);
+          setDuplicateGroups([]);
+          loadLeads();
+      } catch(e: any) {
+          toast({ variant: 'destructive', title: 'Deletion Failed', description: e.message });
+      } finally {
+          setIsDeletingDuplicates(false);
+      }
+  };
+
   const columns: ColumnDef<any>[] = useMemo(() => [
+    { 
+      accessorKey: 'id', 
+      header: 'Lead ID',
+      cell: ({ row }) => <div className="font-mono text-xs max-w-[150px] truncate">{row.original.id}</div>
+    },
     { 
       accessorKey: 'companyName', 
       header: 'Company',
@@ -218,11 +296,6 @@ export default function LeadsContent() {
       accessorKey: 'email', 
       header: 'Email',
       cell: ({ row }) => <div>{row.original.email}</div>
-    },
-    { 
-      accessorKey: 'phone', 
-      header: 'Phone',
-      cell: ({ row }) => <div>{row.original.phone}</div>
     },
     { 
       accessorKey: 'address', 
@@ -263,15 +336,22 @@ export default function LeadsContent() {
   ], [loadLeads]);
 
   return (
+    <>
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
+        <CardHeader className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <CardTitle className="flex items-center gap-2"><Users /> Potential Member Leads</CardTitle>
             <CardDescription>Add, edit, and manage your sales leads to build your member database.</CardDescription>
           </div>
-          <LeadDialog onSave={loadLeads}>
-            <Button><PlusCircle className="mr-2 h-4 w-4"/>Add Lead</Button>
-          </LeadDialog>
+          <div className="flex gap-2">
+            <Button onClick={handleFindDuplicates} disabled={isFindingDuplicates} variant="outline">
+                {isFindingDuplicates ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Search className="mr-2 h-4 w-4"/>}
+                Find & Clean Duplicates
+            </Button>
+            <LeadDialog onSave={loadLeads}>
+                <Button><PlusCircle className="mr-2 h-4 w-4"/>Add Lead</Button>
+            </LeadDialog>
+          </div>
         </CardHeader>
         <CardContent>
           {isLoading ? (
@@ -287,5 +367,52 @@ export default function LeadsContent() {
           )}
         </CardContent>
       </Card>
+      <Dialog open={isCleanDialogOpen} onOpenChange={setIsCleanDialogOpen}>
+        <DialogContent className="max-w-4xl">
+            <DialogHeader>
+            <DialogTitle>Duplicate Leads Found</DialogTitle>
+            <DialogDescription>
+                The following groups of duplicate leads were found based on company name. For each group, please select the one record you want to keep. The rest will be deleted.
+            </DialogDescription>
+            </DialogHeader>
+            <ScrollArea className="max-h-[60vh] p-1">
+            <div className="space-y-6 pr-4">
+                {duplicateGroups.map((group, groupIndex) => (
+                <div key={groupIndex} className="p-4 border rounded-lg">
+                    <h3 className="font-semibold mb-2">Group {groupIndex + 1}: "{group[0].companyName}"</h3>
+                    <RadioGroup
+                    value={leadsToKeep[String(groupIndex)]}
+                    onValueChange={(leadId) => setLeadsToKeep(prev => ({...prev, [String(groupIndex)]: leadId}))}
+                    >
+                    <Table>
+                        <TableHeader><TableRow><TableHead className="w-12">Keep</TableHead><TableHead>Contact</TableHead><TableHead>Email</TableHead><TableHead>Notes</TableHead></TableRow></TableHeader>
+                        <TableBody>
+                        {group.map((lead: any) => (
+                            <TableRow key={lead.id}>
+                            <TableCell>
+                                <RadioGroupItem value={lead.id} id={`keep-${lead.id}`} />
+                            </TableCell>
+                            <TableCell>{lead.contactPerson || 'N/A'}</TableCell>
+                            <TableCell>{lead.email || 'N/A'}</TableCell>
+                            <TableCell className="max-w-[200px] truncate">{lead.notes || 'N/A'}</TableCell>
+                            </TableRow>
+                        ))}
+                        </TableBody>
+                    </Table>
+                    </RadioGroup>
+                </div>
+                ))}
+            </div>
+            </ScrollArea>
+            <DialogFooter>
+            <Button variant="outline" onClick={() => setIsCleanDialogOpen(false)}>Cancel</Button>
+            <Button onClick={handleDeleteDuplicates} disabled={isDeletingDuplicates} variant="destructive">
+                {isDeletingDuplicates && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Delete Duplicates & Keep Selected
+            </Button>
+            </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }

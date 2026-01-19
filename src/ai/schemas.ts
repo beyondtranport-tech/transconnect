@@ -76,7 +76,7 @@ export const LeadGenerationInputSchema = z.object({
   businessType: z.string().describe('The type of business to search for, e.g., "trucking companies", "diesel mechanics", "freight forwarders".'),
   region: z.string().describe('The geographical province to search in, e.g., Gauteng, Western Cape.'),
   city: z.string().optional().describe('The specific city or town to search in.'),
-  quantity: z.coerce.number().min(1).max(10).default(5).describe('The number of leads to generate.'),
+  quantity: z.coerce.number().min(1).max(25).default(10).describe('The number of leads to generate.'),
 });
 export type LeadGenerationInput = z.infer<typeof LeadGenerationInputSchema>;
 
@@ -98,5 +98,3 @@ export const ShopSeoOutputSchema = z.object({
     tags: z.array(z.string()).describe('A list of 5-7 relevant SEO keywords or tags for the shop.'),
 });
 export type ShopSeoOutput = z.infer<typeof ShopSeoOutputSchema>;
-
-    

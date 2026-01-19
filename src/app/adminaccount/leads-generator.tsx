@@ -29,7 +29,7 @@ export default function LeadsGenerator() {
             businessType: '',
             region: 'Gauteng',
             city: '',
-            quantity: 5,
+            quantity: 10,
         },
     });
 
@@ -109,7 +109,7 @@ export default function LeadsGenerator() {
 
                                 <FormField control={form.control} name="city" render={({ field }) => ( <FormItem><FormLabel>City / Town</FormLabel><Select onValueChange={field.onChange} value={field.value} disabled={cities.length === 0}><FormControl><SelectTrigger><SelectValue placeholder="Select a city" /></SelectTrigger></FormControl><SelectContent>{cities.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )} />
                                 
-                                <FormField control={form.control} name="quantity" render={({ field }) => ( <FormItem><FormLabel>Number of Leads (1-10)</FormLabel><FormControl><Input type="number" min="1" max="10" {...field} /></FormControl><FormMessage /></FormItem> )} />
+                                <FormField control={form.control} name="quantity" render={({ field }) => ( <FormItem><FormLabel>Number of Leads (1-25)</FormLabel><FormControl><Input type="number" min="1" max="25" {...field} /></FormControl><FormMessage /></FormItem> )} />
                             </div>
                             <Button type="submit" disabled={isLoading}>
                                 {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Sparkles className="mr-2 h-4 w-4" />}
