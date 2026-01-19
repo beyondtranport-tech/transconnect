@@ -1,4 +1,3 @@
-
 'use client';
 
 import ImageEditorCard from "./image-editor-card";
@@ -9,7 +8,7 @@ export default function CampaignContent() {
     return (
         <div className="space-y-8">
              <div>
-                <h1 className="text-2xl font-bold">AI Marketing Campaigns</h1>
+                <h1 className="text-2xl font-bold">AI Content & Marketing Campaigns</h1>
                 <p className="mt-2 text-muted-foreground">
                     Leverage AI to generate and enhance marketing assets for your business.
                 </p>

@@ -98,6 +98,7 @@ const MemberWallet = dynamic(() => import('../backend/wallet/[memberId]/member-w
 const DashboardContent = dynamic(() => import('../backend/dashboard-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const LeadsAgent = dynamic(() => import('./leads-agent'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const LeadsDatabase = dynamic(() => import('./leads-database'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const CampaignContent = dynamic(() => import('./campaign-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 
 
 // --- Sales Section (from /account) ---
@@ -195,6 +196,7 @@ function AdminAccountContent() {
       case 'staff': return <StaffContent />;
       case 'leads-agent': return <LeadsAgent />;
       case 'leads-database': return <LeadsDatabase />;
+      case 'campaigns': return <CampaignContent />;
        case 'wallet':
         if (memberId) {
             return <MemberWallet memberId={memberId} />;
@@ -230,6 +232,7 @@ function AdminAccountContent() {
   const isSalesActive = ['network', 'network-offer', 'network-emails', 'performance', 'product-sales', 'earnings'].includes(activeView);
   const isPartnerPitchActive = ['partner-offer', 'partner-email', 'partner-elevator-pitch'].includes(activeView);
   const isInvestorPitchActive = ['investor-offer', 'investor-email', 'elevator-pitch'].includes(activeView);
+  const isResearchActive = ['leads-agent', 'leads-database', 'campaigns'].includes(activeView);
 
 
   return (
@@ -267,16 +270,24 @@ function AdminAccountContent() {
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                  <SidebarMenuButton tooltip="AI Lead Agent" isActive={activeView === 'leads-agent'} onClick={() => router.push('/adminaccount?view=leads-agent', { scroll: false })}>
+                  <SidebarMenuButton tooltip="Research &amp; AI" isActive={isResearchActive}>
                       <Bot />
-                      <span>AI Lead Agent</span>
+                      <span>Research &amp; AI</span>
                   </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                  <SidebarMenuButton tooltip="Leads Database" isActive={activeView === 'leads-database'} onClick={() => router.push('/adminaccount?view=leads-database', { scroll: false })}>
-                      <Database />
-                      <span>Leads Database</span>
-                  </SidebarMenuButton>
+                  <SidebarMenuSub>
+                      <SidebarMenuSubButton isActive={activeView === 'leads-agent'} onClick={() => router.push('/adminaccount?view=leads-agent', { scroll: false })}>
+                          <Bot />
+                          <span>AI Lead Agent</span>
+                      </SidebarMenuSubButton>
+                       <SidebarMenuSubButton isActive={activeView === 'leads-database'} onClick={() => router.push('/adminaccount?view=leads-database', { scroll: false })}>
+                          <Database />
+                          <span>Leads Database</span>
+                      </SidebarMenuSubButton>
+                      <SidebarMenuSubButton isActive={activeView === 'campaigns'} onClick={() => router.push('/adminaccount?view=campaigns', { scroll: false })}>
+                          <Sparkles />
+                          <span>AI Campaigns</span>
+                      </SidebarMenuSubButton>
+                  </SidebarMenuSub>
               </SidebarMenuItem>
               <SidebarMenuItem>
                 <SidebarMenuButton tooltip="Partner Pitch" isActive={isPartnerPitchActive}>
