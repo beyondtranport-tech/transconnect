@@ -81,9 +81,9 @@ export const LeadResearchOutputSchema = z.object({
     leads: z.array(z.object({
         companyName: z.string().describe('The name of the potential lead company.'),
         role: z.string().describe('The likely role of this company in the ecosystem (e.g., Vendor, Buyer, Partner).'),
-        address: z.string().optional().describe("The company's physical address, if found."),
+        address: z.string().nullable().optional().describe("The company's physical address, if found."),
         website: z.string().url().nullable().optional().describe("The company's website URL, if found."),
-        phone: z.string().optional().describe("The company's primary phone number, if found."),
+        phone: z.string().nullable().optional().describe("The company's primary phone number, if found."),
         email: z.string().email().nullable().optional().describe("A general contact email for the company (e.g., info@, sales@), if found."),
         contactPerson: z.string().nullable().optional().describe("A potential contact person's name, if found."),
     })).describe('A list of potential leads based on the research topic.')
