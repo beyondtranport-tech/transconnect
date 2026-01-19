@@ -54,58 +54,112 @@ import {
   Lock,
   Activity,
   Sparkles,
-  Handshake,
+  Handshake as HandshakeIcon,
+  Package,
   LayoutDashboard,
-  Bot
+  Mail,
+  Calculator,
+  Target,
+  Info,
+  Bot,
+  Database,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useState, useEffect, Suspense, useMemo, useCallback } from 'react';
+import { useState, useEffect, Suspense, useCallback } from 'react';
 import Link from 'next/link';
 
 import { useUser, useAuth } from '@/firebase';
 import { signOut } from 'firebase/auth';
 
-// Using next/dynamic to lazy-load components
 import dynamic from 'next/dynamic';
-import { SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import React from 'react';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 
-const DashboardContent = dynamic(() => import('./dashboard-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const MembersList = dynamic(() => import('./members-list'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const StaffList = dynamic(() => import('./staff-list'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const PermissionsContent = dynamic(() => import('./permissions-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const ActivityFeed = dynamic(() => import('./activity-feed'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const PlatformTasksContent = dynamic(() => import('./platform-tasks'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+// --- Business Strategy Components ---
+const SalesRoadmap = dynamic(() => import('../account/sales-roadmap'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const BudgetPage = dynamic(() => import('../account/budget/page'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const ForecastPage = dynamic(() => import('../account/forecast/page'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const PartnerOffer = dynamic(() => import('./partner-offer'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const InvestorOffer = dynamic(() => import('./investor-offer'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const ElevatorPitch = dynamic(() => import('./elevator-pitch'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const PartnerElevatorPitch = dynamic(() => import('./partner-elevator-pitch'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const PartnerEmailSequence = dynamic(() => import('./partner-email-sequence'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const InvestorEmailSequence = dynamic(() => import('./investor-email-sequence'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const FinancialSetup = dynamic(() => import('../account/financial-setup'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const MemberProjection = dynamic(() => import('../account/member-projection'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const Targets = dynamic(() => import('../account/targets'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const StaffContent = dynamic(() => import('./staff-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const CostCalculator = dynamic(() => import('./cost-calculator'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 
 
-const FundingDivisionContent = dynamic(() => import('./funding-division-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const MallDivisionContent = dynamic(() => import('./mall-division-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const MarketplaceDivisionContent = dynamic(() => import('./marketplace-division-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const TechDivisionContent = dynamic(() => import('./tech-division-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const PlatformSettingsContent = dynamic(() => import('./platform-settings'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const DivisionsContent = dynamic(() => import('./divisions-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+// --- Business Operations Components (from /backend) ---
+const MemberWallet = dynamic(() => import('../backend/wallet/[memberId]/member-wallet'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const DashboardContent = dynamic(() => import('../backend/dashboard-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const LeadsAgent = dynamic(() => import('./leads-agent'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const LeadsDatabase = dynamic(() => import('./leads-database'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const CampaignContent = dynamic(() => import('./campaign-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const MemberWallet = dynamic(() => import('./wallet/[memberId]/member-wallet'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const WalletTransactionsList = dynamic(() => import('./wallet-transactions-list'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const ReconciliationPage = dynamic(() => import('./reconciliation/page'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-
-const LoyaltySettings = dynamic(() => import('./loyalty-settings'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const RewardsManagement = dynamic(() => import('./rewards-management'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const RewardStatus = dynamic(() => import('./reward-status'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const PricingManagement = dynamic(() => import('./revenue/pricing-management'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const MallCommissions = dynamic(() => import('./revenue/mall-commissions'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const MarketplaceFees = dynamic(() => import('./revenue/marketplace-fees'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const ConnectPlanPricing = dynamic(() => import('./revenue/connect-plan-pricing'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const TechPricing = dynamic(() => import('./revenue/tech-pricing'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const ISAPitchSettings = dynamic(() => import('./revenue/isa-pitch-settings'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const SalesIncentives = dynamic(() => import('./revenue/sales-incentives'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 
 
-export default function BackendPageContent() {
+// --- Sales Section (from /account) ---
+const NetworkContent = dynamic(() => import('../account/network-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const NetworkOffer = dynamic(() => import('../account/network-offer'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const NetworkEmails = dynamic(() => import('../account/network-emails'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const PerformanceContent = dynamic(() => import('../account/performance-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+
+
+// --- Placeholder Components ---
+function ProductSalesContent() {
+    return (
+        <Card>
+            <CardHeader><CardTitle>Product Sales</CardTitle></CardHeader>
+            <CardContent><p className="text-muted-foreground">This section is under construction.</p></CardContent>
+        </Card>
+    )
+}
+function EarningsContent() {
+     return (
+        <Card>
+            <CardHeader><CardTitle>My Earnings</CardTitle></CardHeader>
+            <CardContent><p className="text-muted-foreground">This section is under construction.</p></CardContent>
+        </Card>
+    )
+}
+
+
+function AdminAuthGuard({ children }: { children: React.ReactNode }) {
+    const { user, isUserLoading } = useUser();
+    const router = useRouter();
+
+    useEffect(() => {
+        if (isUserLoading) {
+            return;
+        }
+
+        if (!user) {
+            router.replace('/signin?redirect=/adminaccount');
+        } else if (user.email !== 'beyondtransport@gmail.com' && user.email !== 'mkoton100@gmail.com') {
+            router.replace('/account'); 
+        }
+    }, [user, isUserLoading, router]);
+
+    if (isUserLoading || !user || (user.email !== 'beyondtransport@gmail.com' && user.email !== 'mkoton100@gmail.com')) {
+        return (
+            <div className="flex flex-col justify-center items-center min-h-[calc(100vh-8rem)]">
+                <Loader2 className="h-12 w-12 animate-spin text-primary" />
+                <p className="mt-4 text-muted-foreground">Verifying admin credentials...</p>
+            </div>
+        );
+    }
+    
+    return <>{children}</>;
+}
+
+function AdminAccountContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const initialView = searchParams.get('view') || 'platform-settings';
+  const initialView = searchParams.get('view') || 'partner-offer';
   const memberId = searchParams.get('memberId');
   const [activeView, setActiveView] = useState(initialView);
   const { user, isUserLoading } = useUser();
@@ -121,278 +175,272 @@ export default function BackendPageContent() {
     router.push('/');
   };
 
-  const renderContent = () => {
+  const renderContent = useCallback(() => {
     switch (activeView) {
-      case 'dashboard':
-        return <DashboardContent />;
-      case 'members':
-        return <MembersList />;
-      case 'staff':
-        return <StaffList />;
-      case 'wallet':
-        return memberId ? <MemberWallet memberId={memberId} /> : <WalletTransactionsList />;
-      case 'wallet-transactions':
-        return <WalletTransactionsList />;
-      case 'bank-reconciliation':
-        return <ReconciliationPage />;
-      case 'activity-feed':
-        return <ActivityFeed />;
-      case 'platform-tasks':
-        return <PlatformTasksContent />;
-      case 'platform-settings':
-        return <PlatformSettingsContent />;
-      case 'permissions':
-        return <PermissionsContent />;
-      case 'loyalty-settings':
-        return <LoyaltySettings />;
-      case 'rewards':
-        return <RewardsManagement />;
-      case 'reward-status':
-        return <RewardStatus />;
-      case 'revenue-membership':
-        return <PricingManagement />;
-      case 'revenue-mall-commissions':
-        return <MallCommissions />;
-      case 'revenue-marketplace-fees':
-        return <MarketplaceFees />;
-      case 'revenue-connect-plans':
-        return <ConnectPlanPricing />;
-      case 'revenue-tech-pricing':
-        return <TechPricing />;
-      case 'revenue-isa-pitch':
-        return <ISAPitchSettings />;
-      case 'revenue-sales-incentives':
-        return <SalesIncentives />;
-      case 'divisions':
-        return <DivisionsContent />;
-      case 'divisions-funding':
-        return <FundingDivisionContent />;
-      case 'divisions-mall':
-        return <MallDivisionContent />;
-      case 'divisions-marketplace':
-        return <MarketplaceDivisionContent />;
-      case 'divisions-tech':
-        return <TechDivisionContent />;
-      case 'campaigns':
-        return <CampaignContent />;
+      // Business Strategy
+      case 'partner-offer': return <PartnerOffer />;
+      case 'partner-elevator-pitch': return <PartnerElevatorPitch />;
+      case 'partner-email': return <PartnerEmailSequence />;
+      case 'investor-offer': return <InvestorOffer />;
+      case 'elevator-pitch': return <ElevatorPitch />;
+      case 'investor-email': return <InvestorEmailSequence />;
+      case 'financial-setup': return <FinancialSetup />;
+      case 'sales-roadmap': return <SalesRoadmap />;
+      case 'targets': return <Targets />;
+      case 'member-projection': return <MemberProjection />;
+      case 'budget': return <BudgetPage />;
+      case 'forecast': return <ForecastPage />;
+      case 'cost-calculator': return <CostCalculator />;
+      
+      // Business Operations
+      case 'dashboard': return <DashboardContent />;
+      case 'staff': return <StaffContent />;
+      case 'leads-agent': return <LeadsAgent />;
+      case 'leads-database': return <LeadsDatabase />;
+      case 'campaigns': return <CampaignContent />;
+       case 'wallet':
+        if (memberId) {
+            return <MemberWallet memberId={memberId} />;
+        }
+        return null;
+
+       // Sales Section
+      case 'network': return <NetworkContent />;
+      case 'network-offer': return <NetworkOffer />;
+      case 'network-emails': return <NetworkEmails />;
+      case 'performance': return <PerformanceContent />;
+      case 'product-sales': return <ProductSalesContent />;
+      case 'earnings': return <EarningsContent />;
+
       default:
-        return <PlatformSettingsContent />;
+        return <PartnerOffer />;
     }
-  }
+  }, [activeView, memberId]);
   
   const getInitials = (name: string | null | undefined) => {
     if (!name) return "AD";
     return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
   };
 
+  if (isUserLoading || !user) {
+    return (
+        <div className="flex justify-center items-center min-h-[calc(100vh-8rem)]">
+            <Loader2 className="h-16 w-16 animate-spin text-primary" />
+        </div>
+    );
+  }
+
+  const isSalesActive = ['network', 'network-offer', 'network-emails', 'performance', 'product-sales', 'earnings'].includes(activeView);
+  const isPartnerPitchActive = ['partner-offer', 'partner-email', 'partner-elevator-pitch'].includes(activeView);
+  const isInvestorPitchActive = ['investor-offer', 'investor-email', 'elevator-pitch'].includes(activeView);
+
+
   return (
-    <SidebarProvider>
-    <Sidebar>
-        <SidebarHeader>
-        <div className="flex items-center gap-2">
-            <Server className="h-6 w-6 text-primary" />
-            <h2 className="text-lg font-semibold text-sidebar-foreground">
-              App Backend
-            </h2>
-        </div>
-        </SidebarHeader>
-        <SidebarContent>
-        <div className="md:hidden p-2 flex items-center justify-between border-b">
-            <SidebarTrigger />
-        </div>
-        <SidebarGroup>
-            <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Admin Account" asChild>
-                    <Link href="/adminaccount">
-                        <Building />
-                        <span>Admin Account</span>
-                    </Link>
-                </SidebarMenuButton>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Dashboard" isActive={activeView === 'dashboard'} onClick={() => router.push('/backend?view=dashboard', { scroll: false })}>
-                <LayoutDashboard />
-                <span>Dashboard</span>
-                </SidebarMenuButton>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Members" isActive={activeView === 'members'} onClick={() => router.push('/backend?view=members', { scroll: false })}>
-                <Users />
-                <span>Members</span>
-                </SidebarMenuButton>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-                <SidebarMenuButton tooltip="All Staff" isActive={activeView === 'staff'} onClick={() => router.push('/backend?view=staff', { scroll: false })}>
-                <Users />
-                <span>All Staff</span>
-                </SidebarMenuButton>
-            </SidebarMenuItem>
-             <SidebarMenuItem>
-                  <SidebarMenuButton tooltip="Wallet" isActive={['wallet', 'wallet-transactions', 'bank-reconciliation'].includes(activeView)}>
-                      <Wallet />
-                      <span>Wallet</span>
+    <AdminAuthGuard>
+      <SidebarProvider>
+        <Sidebar>
+          <SidebarHeader>
+            <div className="flex items-center gap-2">
+              <Building className="h-6 w-6 text-primary" />
+              <h2 className="text-lg font-semibold text-sidebar-foreground">
+                Admin Account
+              </h2>
+            </div>
+          </SidebarHeader>
+          <SidebarContent>
+            <SidebarGroup>
+              <SidebarMenuItem>
+                  <SidebarMenuButton tooltip="App Backend" asChild>
+                      <Link href="/backend">
+                          <Server />
+                          <span>App Backend</span>
+                      </Link>
                   </SidebarMenuButton>
-                  <SidebarMenuSub>
-                      <SidebarMenuSubButton isActive={activeView === 'wallet-transactions'} onClick={() => router.push('/backend?view=wallet-transactions', { scroll: false })}>
-                          <DollarSign />
-                          <span>Member Wallet Ledger</span>
-                      </SidebarMenuSubButton>
-                      <SidebarMenuSubButton isActive={activeView === 'bank-reconciliation'} onClick={() => router.push('/backend?view=bank-reconciliation', { scroll: false })}>
-                          <Combine />
-                          <span>Bank Reconciliation</span>
-                      </SidebarMenuSubButton>
-                  </SidebarMenuSub>
               </SidebarMenuItem>
-            <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Campaigns" isActive={activeView === 'campaigns'} onClick={() => router.push('/backend?view=campaigns', { scroll: false })}>
+              <SidebarMenuItem>
+                <SidebarMenuButton tooltip="Dashboard" isActive={activeView === 'dashboard'} onClick={() => router.push('/adminaccount?view=dashboard', { scroll: false })}>
+                  <LayoutDashboard />
+                  <span>Dashboard</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton tooltip="Platform Staff" isActive={activeView === 'staff'} onClick={() => router.push('/adminaccount?view=staff', { scroll: false })}>
+                  <Users />
+                  <span>Platform Staff</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                  <SidebarMenuButton tooltip="AI Lead Agent" isActive={activeView === 'leads-agent'} onClick={() => router.push('/adminaccount?view=leads-agent', { scroll: false })}>
+                      <Bot />
+                      <span>AI Lead Agent</span>
+                  </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                  <SidebarMenuButton tooltip="Leads Database" isActive={activeView === 'leads-database'} onClick={() => router.push('/adminaccount?view=leads-database', { scroll: false })}>
+                      <Database />
+                      <span>Leads Database</span>
+                  </SidebarMenuButton>
+              </SidebarMenuItem>
+               <SidebarMenuItem>
+                <SidebarMenuButton tooltip="Campaigns" isActive={activeView === 'campaigns'} onClick={() => router.push('/adminaccount?view=campaigns', { scroll: false })}>
                   <Sparkles />
                   <span>Campaigns</span>
                 </SidebarMenuButton>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Permissions" isActive={activeView === 'permissions'} onClick={() => router.push('/backend?view=permissions', { scroll: false })}>
-                    <Lock />
-                    <span>Permissions</span>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton tooltip="Partner Pitch" isActive={isPartnerPitchActive}>
+                  <Presentation />
+                  <span>Partner Pitch</span>
                 </SidebarMenuButton>
-            </SidebarMenuItem>
-                <SidebarMenuItem>
-                    <SidebarMenuButton tooltip="Divisions" isActive={activeView.startsWith('divisions')}>
-                        <Boxes />
-                        <span>Divisions</span>
-                    </SidebarMenuButton>
-                    <SidebarMenuSub>
-                        <SidebarMenuSubButton isActive={activeView === 'divisions-funding'} onClick={() => router.push('/backend?view=divisions-funding', { scroll: false })}>
-                            <Landmark />
-                            <span>Funding</span>
-                        </SidebarMenuSubButton>
-                        <SidebarMenuSubButton isActive={activeView === 'divisions-mall'} onClick={() => router.push('/backend?view=divisions-mall', { scroll: false })}>
-                            <ShoppingBasket />
-                            <span>Mall</span>
-                        </SidebarMenuSubButton>
-                        <SidebarMenuSubButton isActive={activeView === 'divisions-marketplace'} onClick={() => router.push('/backend?view=divisions-marketplace', { scroll: false })}>
-                            <Store />
-                            <span>Marketplace</span>
-                        </SidebarMenuSubButton>
-                        <SidebarMenuSubButton isActive={activeView === 'divisions-tech'} onClick={() => router.push('/backend?view=divisions-tech', { scroll: false })}>
-                            <Cpu />
-                            <span>Tech</span>
-                        </SidebarMenuSubButton>
-                    </SidebarMenuSub>
-                </SidebarMenuItem>
-
-                <SidebarMenuItem>
-                    <SidebarMenuButton tooltip="Rewards and Loyalty" isActive={activeView.includes('loyalty') || activeView.includes('reward')}>
-                        <Star />
-                        <span>Rewards and Loyalty</span>
-                    </SidebarMenuButton>
-                    <SidebarMenuSub>
-                        <SidebarMenuSubButton isActive={activeView === 'loyalty-settings'} onClick={() => router.push('/backend?view=loyalty-settings', { scroll: false })}>
-                            <Settings />
-                            <span>Tier & Point Settings</span>
-                        </SidebarMenuSubButton>
-                        <SidebarMenuSubButton isActive={activeView === 'reward-status'} onClick={() => router.push('/backend?view=reward-status', { scroll: false })}>
-                            <Award />
-                            <span>Reward Status</span>
-                        </SidebarMenuSubButton>
-                        <SidebarMenuSubButton isActive={activeView === 'rewards'} onClick={() => router.push('/backend?view=rewards', { scroll: false })}>
-                            <Gift />
-                            <span>Redeemable Rewards</span>
-                        </SidebarMenuSubButton>
-                    </SidebarMenuSub>
-                </SidebarMenuItem>
-
-                <SidebarMenuItem>
-                    <SidebarMenuButton tooltip="Platform">
-                        <Server />
-                        <span>Platform</span>
-                    </SidebarMenuButton>
-                    <SidebarMenuSub>
-                        <SidebarMenuSubButton isActive={activeView === 'platform-settings'} onClick={() => router.push('/backend?view=platform-settings', { scroll: false })}>
-                            <Settings />
-                            <span>Settings</span>
-                        </SidebarMenuSubButton>
-                        <SidebarMenuSubButton isActive={activeView === 'activity-feed'} onClick={() => router.push('/backend?view=activity-feed', { scroll: false })}>
-                            <Activity />
-                            <span>Activity Feed</span>
-                        </SidebarMenuSubButton>
-                        <SidebarMenuSubButton isActive={activeView === 'platform-tasks'} onClick={() => router.push('/backend?view=platform-tasks', { scroll: false })}>
-                            <ListTodo />
-                            <span>Tasks</span>
-                        </SidebarMenuSubButton>
-                    </SidebarMenuSub>
-                </SidebarMenuItem>
-                <SidebarMenuItem>
-                    <SidebarMenuButton tooltip="Revenue" isActive={activeView.startsWith('revenue')}>
-                        <DollarSign />
-                        <span>Revenue</span>
-                    </SidebarMenuButton>
-                    <SidebarMenuSub>
-                        <SidebarMenuSubButton tooltip="Membership Plans" isActive={activeView === 'revenue-membership'} onClick={() => router.push('/backend?view=revenue-membership', { scroll: false })}>
-                            <Users />
-                            <span>Membership</span>
-                        </SidebarMenuSubButton>
-                        <SidebarMenuSubButton tooltip="ISA Pitch" isActive={activeView === 'revenue-isa-pitch'} onClick={() => router.push('/backend?view=revenue-isa-pitch', { scroll: false })}>
-                            <Handshake />
-                            <span>ISA Pitch</span>
-                        </SidebarMenuSubButton>
-                         <SidebarMenuSubButton tooltip="Sales Incentives" isActive={activeView === 'revenue-sales-incentives'} onClick={() => router.push('/backend?view=revenue-sales-incentives', { scroll: false })}>
-                            <TrendingUp />
-                            <span>Sales Incentives</span>
-                        </SidebarMenuSubButton>
-                        <SidebarMenuSubButton tooltip="Mall Commissions" isActive={activeView === 'revenue-mall-commissions'} onClick={() => router.push('/backend?view=revenue-mall-commissions', { scroll: false })}>
-                            <ShoppingBasket />
-                            <span>Mall Commissions</span>
-                        </SidebarMenuSubButton>
-                        <SidebarMenuSubButton tooltip="Marketplace Fees" isActive={activeView === 'revenue-marketplace-fees'} onClick={() => router.push('/backend?view=revenue-marketplace-fees', { scroll: false })}>
-                            <Store />
-                            <span>Marketplace Fees</span>
-                        </SidebarMenuSubButton>
-                        <SidebarMenuSubButton tooltip="Connect Plan Pricing" isActive={activeView === 'revenue-connect-plans'} onClick={() => router.push('/backend?view=revenue-connect-plans', { scroll: false })}>
-                            <HandCoins />
-                            <span>Connect Plans</span>
-                        </SidebarMenuSubButton>
-                        <SidebarMenuSubButton tooltip="Tech Component Pricing" isActive={activeView === 'revenue-tech-pricing'} onClick={() => router.push('/backend?view=revenue-tech-pricing', { scroll: false })}>
-                            <Cpu />
-                            <span>Tech Pricing</span>
-                        </SidebarMenuSubButton>
-                    </SidebarMenuSub>
-                </SidebarMenuItem>
-        </SidebarGroup>
-        </SidebarContent>
-        <SidebarFooter>
-        {user && (
-            <div className="flex items-center gap-3 p-2 rounded-md bg-sidebar-accent">
-            <Avatar className="h-10 w-10">
-                <AvatarFallback>{getInitials(user.displayName)}</AvatarFallback>
-            </Avatar>
-            <div className="flex flex-col truncate">
-                <span className="text-sm font-medium text-sidebar-foreground truncate">
-                {user.displayName || 'Super Admin'}
-                </span>
-                <span className="text-xs text-sidebar-foreground/70 truncate">
-                {user.email}
-                </span>
+                <SidebarMenuSub>
+                    <SidebarMenuSubButton isActive={activeView === 'partner-elevator-pitch'} onClick={() => router.push('/adminaccount?view=partner-elevator-pitch', { scroll: false })}>
+                        <Info />
+                        <span>Elevator Pitch</span>
+                    </SidebarMenuSubButton>
+                    <SidebarMenuSubButton isActive={activeView === 'partner-offer'} onClick={() => router.push('/adminaccount?view=partner-offer', { scroll: false })}>
+                        <Presentation />
+                        <span>Partner Offer</span>
+                    </SidebarMenuSubButton>
+                    <SidebarMenuSubButton isActive={activeView === 'partner-email'} onClick={() => router.push('/adminaccount?view=partner-email', { scroll: false })}>
+                        <Mail />
+                        <span>Email Sequence</span>
+                    </SidebarMenuSubButton>
+                </SidebarMenuSub>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton tooltip="Investor Pitch" isActive={isInvestorPitchActive}>
+                  <Presentation />
+                  <span>Investor Pitch</span>
+                </SidebarMenuButton>
+                <SidebarMenuSub>
+                    <SidebarMenuSubButton isActive={activeView === 'elevator-pitch'} onClick={() => router.push('/adminaccount?view=elevator-pitch', { scroll: false })}>
+                        <Info />
+                        <span>Elevator Pitch</span>
+                    </SidebarMenuSubButton>
+                    <SidebarMenuSubButton isActive={activeView === 'investor-offer'} onClick={() => router.push('/adminaccount?view=investor-offer', { scroll: false })}>
+                        <Presentation />
+                        <span>Investor Offer</span>
+                    </SidebarMenuSubButton>
+                    <SidebarMenuSubButton isActive={activeView === 'investor-email'} onClick={() => router.push('/adminaccount?view=investor-email', { scroll: false })}>
+                        <Mail />
+                        <span>Email Sequence</span>
+                    </SidebarMenuSubButton>
+                </SidebarMenuSub>
+              </SidebarMenuItem>
+               <SidebarMenuItem>
+                  <SidebarMenuButton tooltip="Sales" isActive={isSalesActive}>
+                    <HandshakeIcon />
+                    <span>Sales</span>
+                  </SidebarMenuButton>
+                  <SidebarMenuSub>
+                      <SidebarMenuSubButton isActive={activeView === 'network'} onClick={() => router.push('/adminaccount?view=network', { scroll: false })}>
+                          <Users />
+                          <span>My Network</span>
+                      </SidebarMenuSubButton>
+                      <SidebarMenuSubButton isActive={activeView === 'network-offer'} onClick={() => router.push('/adminaccount?view=network-offer', { scroll: false })}>
+                          <Presentation />
+                          <span>Network Offer</span>
+                      </SidebarMenuSubButton>
+                      <SidebarMenuSubButton isActive={activeView === 'network-emails'} onClick={() => router.push('/adminaccount?view=network-emails', { scroll: false })}>
+                          <Mail />
+                          <span>Network Emails</span>
+                      </SidebarMenuSubButton>
+                      <SidebarMenuSubButton isActive={activeView === 'performance'} onClick={() => router.push('/adminaccount?view=performance', { scroll: false })}>
+                          <TrendingUp />
+                          <span>Performance</span>
+                      </SidebarMenuSubButton>
+                      <SidebarMenuSubButton isActive={activeView === 'product-sales'} onClick={() => router.push('/adminaccount?view=product-sales', { scroll: false })}>
+                          <Package />
+                          <span>Product Sales</span>
+                      </SidebarMenuSubButton>
+                      <SidebarMenuSubButton isActive={activeView === 'earnings'} onClick={() => router.push('/adminaccount?view=earnings', { scroll: false })}>
+                          <DollarSign />
+                          <span>Earnings</span>
+                      </SidebarMenuSubButton>
+                  </SidebarMenuSub>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                  <SidebarMenuButton tooltip="Projection" isActive={['financial-setup', 'sales-roadmap', 'targets', 'member-projection', 'budget', 'forecast', 'cost-calculator'].includes(activeView)}>
+                      <TrendingUp />
+                      <span>Projection</span>
+                  </SidebarMenuButton>
+                  <SidebarMenuSub>
+                      <SidebarMenuSubButton isActive={activeView === 'financial-setup'} onClick={() => router.push('/adminaccount?view=financial-setup', { scroll: false })}>
+                          <Settings />
+                          <span>Setup</span>
+                      </SidebarMenuSubButton>
+                      <SidebarMenuSubButton isActive={activeView === 'sales-roadmap'} onClick={() => router.push('/adminaccount?view=sales-roadmap', { scroll: false })}>
+                          <Map />
+                          <span>Sales Roadmap</span>
+                      </SidebarMenuSubButton>
+                      <SidebarMenuSubButton isActive={activeView === 'targets'} onClick={() => router.push('/adminaccount?view=targets', { scroll: false })}>
+                          <Target />
+                          <span>Targets</span>
+                      </SidebarMenuSubButton>
+                      <SidebarMenuSubButton isActive={activeView === 'member-projection'} onClick={() => router.push('/adminaccount?view=member-projection', { scroll: false })}>
+                          <Users />
+                          <span>Member Projection</span>
+                      </SidebarMenuSubButton>
+                      <SidebarMenuSubButton isActive={activeView === 'cost-calculator'} onClick={() => router.push('/adminaccount?view=cost-calculator', { scroll: false })}>
+                          <Calculator />
+                          <span>Cost Calculator</span>
+                      </SidebarMenuSubButton>
+                      <SidebarMenuSubButton isActive={activeView === 'budget'} onClick={() => router.push('/adminaccount?view=budget', { scroll: false })}>
+                          <FinancialSheetIcon />
+                          <span>Budget</span>
+                      </SidebarMenuSubButton>
+                      <SidebarMenuSubButton isActive={activeView === 'forecast'} onClick={() => router.push('/adminaccount?view=forecast', { scroll: false })}>
+                          <TrendingUp />
+                          <span>Forecast</span>
+                      </SidebarMenuSubButton>
+                  </SidebarMenuSub>
+              </SidebarMenuItem>
+            </SidebarGroup>
+          </SidebarContent>
+          <SidebarFooter>
+          {user && (
+              <div className="flex items-center gap-3 p-2 rounded-md bg-sidebar-accent">
+              <Avatar className="h-10 w-10">
+                  <AvatarFallback>{getInitials(user.displayName)}</AvatarFallback>
+              </Avatar>
+              <div className="flex flex-col truncate">
+                  <span className="text-sm font-medium text-sidebar-foreground truncate">
+                  {user.displayName || 'Super Admin'}
+                  </span>
+                  <span className="text-xs text-sidebar-foreground/70 truncate">
+                  {user.email}
+                  </span>
+              </div>
+              <Button
+                  variant="ghost"
+                  size="icon"
+                  className="ml-auto"
+                  onClick={onLogout}
+                  title="Sign Out"
+              >
+                  <LogOut className="h-5 w-5" />
+              </Button>
+              </div>
+          )}
+          </SidebarFooter>
+        </Sidebar>
+        <SidebarInset>
+            <div className="p-6">
+                <Suspense fallback={<Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" />}>
+                {renderContent()}
+                </Suspense>
             </div>
-            <Button
-                variant="ghost"
-                size="icon"
-                className="ml-auto"
-                onClick={onLogout}
-                title="Sign Out of Backend"
-            >
-                <LogOut className="h-5 w-5" />
-            </Button>
-            </div>
-        )}
-        </SidebarFooter>
-    </Sidebar>
-    <SidebarInset>
-        <div className="p-6">
-            <Suspense fallback={<Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" />}>
-            {renderContent()}
-            </Suspense>
-        </div>
-    </SidebarInset>
-    </SidebarProvider>
+        </SidebarInset>
+      </SidebarProvider>
+    </AdminAuthGuard>
+  );
+}
+
+
+export default function AdminAccountPage() {
+  return (
+    <Suspense fallback={<div className="flex justify-center items-center min-h-[calc(100vh-8rem)]"><Loader2 className="h-16 w-16 animate-spin text-primary" /></div>}>
+      <AdminAccountContent />
+    </Suspense>
   );
 }

@@ -1,3 +1,4 @@
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   /* config options here */
@@ -34,6 +35,7 @@ const nextConfig = {
       bodySizeLimit: '10mb',
     },
     serverMinification: false,
+    serverActionTimeout: 120,
   },
 };
 
