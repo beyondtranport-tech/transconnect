@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -101,7 +102,7 @@ const NetworkContent = dynamic(() => import('../account/network-content'), { loa
 const NetworkOffer = dynamic(() => import('../account/network-offer'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const NetworkEmails = dynamic(() => import('../account/network-emails'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const PerformanceContent = dynamic(() => import('../account/performance-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const LeadsContent = dynamic(() => import('./leads-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+
 
 // --- Placeholder Components ---
 function ProductSalesContent() {
@@ -202,7 +203,6 @@ function AdminAccountContent() {
       case 'performance': return <PerformanceContent />;
       case 'product-sales': return <ProductSalesContent />;
       case 'earnings': return <EarningsContent />;
-      case 'leads': return <LeadsContent />;
 
       default:
         return <PartnerOffer />;
@@ -225,7 +225,6 @@ function AdminAccountContent() {
   const isSalesActive = ['network', 'network-offer', 'network-emails', 'performance', 'product-sales', 'earnings'].includes(activeView);
   const isPartnerPitchActive = ['partner-offer', 'partner-email', 'partner-elevator-pitch'].includes(activeView);
   const isInvestorPitchActive = ['investor-offer', 'investor-email', 'elevator-pitch'].includes(activeView);
-  const isLeadsActive = ['leads'].includes(activeView);
 
 
   return (
@@ -260,12 +259,6 @@ function AdminAccountContent() {
                 <SidebarMenuButton tooltip="Platform Staff" isActive={activeView === 'staff'} onClick={() => router.push('/adminaccount?view=staff', { scroll: false })}>
                   <Users />
                   <span>Platform Staff</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Leads" isActive={isLeadsActive} onClick={() => router.push('/adminaccount?view=leads', { scroll: false })}>
-                    <Users />
-                    <span>Leads</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
