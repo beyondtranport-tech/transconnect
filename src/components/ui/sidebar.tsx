@@ -706,6 +706,22 @@ const SidebarMenuSubItem = React.forwardRef<
 >(({ ...props }, ref) => <li ref={ref} {...props} />)
 SidebarMenuSubItem.displayName = "SidebarMenuSubItem"
 
+const SidebarMenuSeparator = React.forwardRef<
+  HTMLLIElement,
+  React.ComponentProps<"li">
+>(({ className, ...props }, ref) => (
+  <li
+    ref={ref}
+    data-sidebar="menu-separator"
+    className={cn(
+      "-mx-2 my-1 h-px bg-sidebar-border",
+      className
+    )}
+    {...props}
+  />
+));
+SidebarMenuSeparator.displayName = "SidebarMenuSeparator";
+
 const SidebarMenuSubButton = React.forwardRef<
   HTMLAnchorElement,
   React.ComponentProps<"a"> & {
@@ -752,6 +768,7 @@ export {
   SidebarMenuBadge,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarMenuSeparator,
   SidebarMenuSkeleton,
   SidebarMenuSub,
   SidebarMenuSubButton,
@@ -762,3 +779,5 @@ export {
   SidebarTrigger,
   useSidebar,
 }
+
+    
