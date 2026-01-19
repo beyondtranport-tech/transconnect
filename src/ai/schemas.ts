@@ -82,7 +82,7 @@ export const LeadResearchOutputSchema = z.object({
         companyName: z.string().describe('The name of the potential lead company.'),
         role: z.string().describe('The likely role of this company in the ecosystem (e.g., Vendor, Buyer, Partner).'),
         address: z.string().optional().describe("The company's physical address, if found."),
-        website: z.string().url().optional().describe("The company's website URL, if found."),
+        website: z.string().url().nullable().optional().describe("The company's website URL, if found."),
     })).describe('A list of potential leads based on the research topic.')
 });
 export type LeadResearchOutput = z.infer<typeof LeadResearchOutputSchema>;
