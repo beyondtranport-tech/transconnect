@@ -33,9 +33,6 @@ import {
   DollarSign,
   Presentation,
   Mail,
-  Sheet as FinancialSheetIcon, // Renaming to avoid conflict
-  Map,
-  Target,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -335,5 +332,3 @@ export default function AccountPage() {
     </Suspense>
   );
 }
-
-    
