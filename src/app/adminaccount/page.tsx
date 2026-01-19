@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import {
@@ -15,6 +14,7 @@ import {
   SidebarMenuSub,
   SidebarMenuSubButton,
   SidebarTrigger,
+  SidebarMenuSeparator,
 } from '@/components/ui/sidebar';
 import {
   LogOut,
@@ -473,4 +473,3 @@ export default function AdminAccountPage() {
     </Suspense>
   );
 }
-
