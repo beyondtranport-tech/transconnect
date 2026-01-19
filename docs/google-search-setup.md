@@ -1,6 +1,6 @@
 # Setting up Google Custom Search API for Lead Generation
 
-To enable the AI Lead Agent to find real-world company data, you need to configure Google's Custom Search JSON API. This requires two things: an **API Key** and a **Programmable Search Engine ID**.
+To enable the AI Lead Agent to find real-world company data, you need to configure Google's Custom Search API. This requires two things: an **API Key** and a **Programmable Search Engine ID**.
 
 ## Step 1: Get Your Google Cloud API Key
 
@@ -15,8 +15,8 @@ To enable the AI Lead Agent to find real-world company data, you need to configu
 **This is a critical step.** The API must be enabled for your project before you can restrict your key to it.
 
 1.  Go directly to the API Library for your project by clicking this link: **[https://console.cloud.google.com/apis/library?project=transconnect-v1-39578841-2a857](https://console.cloud.google.com/apis/library?project=transconnect-v1-39578841-2a857)**
-2.  The page will have a search bar at the top. In this search bar, type "**Custom Search JSON API**" and press Enter.
-3.  Click on the "Custom Search JSON API" result from the search.
+2.  The page will have a search bar at the top. In this search bar, type "**Custom Search API**" and press Enter.
+3.  Click on the "Custom Search API" result from the search.
 4.  Click the **Enable** button. Wait for it to finish. If the button says "Manage", the API is already enabled, and you can proceed to the next step.
 
 ## Step 3: Restrict Your API Key
@@ -24,7 +24,7 @@ To enable the AI Lead Agent to find real-world company data, you need to configu
 1.  Go back to **APIs & Services > Credentials**.
 2.  Click on the name of the API key you just created.
 3.  Under "API restrictions", select "Restrict key".
-4.  In the "Select APIs" dropdown, you should now be able to find and select "**Custom Search JSON API**".
+4.  In the "Select APIs" dropdown, you should now be able to find and select "**Custom Search API**".
 5.  Click **OK** and then **Save**.
 6.  Paste your copied API key into your `.env` file as the value for `GOOGLE_SEARCH_API_KEY`.
 
