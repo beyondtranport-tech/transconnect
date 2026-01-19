@@ -23,7 +23,7 @@ const matchFreightFlow = ai.defineFlow(
   },
   async (input) => {
     const { output } = await ai.generate({
-        model: 'gemini-1.5-flash-001',
+        model: 'gemini-pro',
         prompt: `You are an AI assistant specialized in matching freight loads with transporters.
 
         Given the following information about a transporter:
