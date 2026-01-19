@@ -215,7 +215,10 @@ function AdminAccountContent() {
       case 'leads-database': return <LeadsDatabase />;
       
       // Marketing & AI
-      case 'campaigns': return <CampaignContent />;
+      case 'campaigns': return <CampaignContent 
+        title="Sales & Marketing AI Studio"
+        description="Use these tools to generate and enhance visual assets for your sales and marketing campaigns."
+      />;
       case 'partner-ai-content': return <PartnerAiContent />;
       case 'investor-ai-content': return <InvestorAiContent />;
 

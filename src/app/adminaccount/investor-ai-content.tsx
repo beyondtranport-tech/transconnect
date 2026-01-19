@@ -3,12 +3,23 @@
 
 import CampaignContent from "./campaign-content";
 
+const investorGeneratorPrompt = `A futuristic, abstract image representing financial growth and logistics technology for an investor presentation. The image should blend themes of data streams, network graphs, and subtle truck motifs. Use a professional color palette of forest green, charcoal, and light gray, with upward-trending lines to signify growth and profitability.`;
+
+const investorEditorPrompt = `Take this graph of our financial projections and make it look more professional.
+
+Examples of other good prompts:
+- Overlay our company logo onto this image of a high-tech dashboard.
+- Change the color scheme of this chart to match our brand colors (forest green, charcoal).
+- Add the text 'Projected Y1 Revenue: R12M' to the top right of the image.`;
+
+
 export default function InvestorAiContent() {
     return (
-        <div>
-            <h1 className="text-3xl font-bold font-headline mb-2">Investor Pitch AI Content Studio</h1>
-            <p className="text-lg text-muted-foreground mb-8">Use these tools to generate images and content for your investor presentations and documents.</p>
-            <CampaignContent />
-        </div>
+        <CampaignContent
+            title="Investor Pitch AI Content Studio"
+            description="Use these tools to generate images and content for your investor presentations and documents."
+            imageGeneratorPrompt={investorGeneratorPrompt}
+            imageEditorPrompt={investorEditorPrompt}
+        />
     );
 }

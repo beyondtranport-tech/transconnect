@@ -34,9 +34,9 @@ Examples of other good prompts:
 - Add a logo for 'TransConnect' on the side of the trailer.
 - Make the background a busy city street at night.`;
 
-export default function ImageEditorCard() {
+export default function ImageEditorCard({ promptTemplate }: { promptTemplate?: string }) {
   const [isOpen, setIsOpen] = useState(false);
-  const [prompt, setPrompt] = useState(defaultEditPrompt);
+  const [prompt, setPrompt] = useState(promptTemplate || defaultEditPrompt);
   const [isLoading, setIsLoading] = useState(false);
   const [originalImage, setOriginalImage] = useState<string | null>(null);
   const [editedImage, setEditedImage] = useState<string | null>(null);

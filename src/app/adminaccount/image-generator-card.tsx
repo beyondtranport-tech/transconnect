@@ -28,9 +28,9 @@ import { Textarea } from '@/components/ui/textarea';
 
 const defaultPrompt = `A cinematic, professional photograph of a futuristic, gleaming white and green Scania truck driving on a high-tech highway at dusk. The road is illuminated with glowing data lines, and the sky has a vibrant sunset. The image should look modern, professional, and convey a sense of speed and efficiency.`;
 
-export default function ImageGeneratorCard() {
+export default function ImageGeneratorCard({ promptTemplate }: { promptTemplate?: string }) {
   const [isOpen, setIsOpen] = useState(false);
-  const [prompt, setPrompt] = useState(defaultPrompt);
+  const [prompt, setPrompt] = useState(promptTemplate || defaultPrompt);
   const [isLoading, setIsLoading] = useState(false);
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   const { toast } = useToast();
