@@ -23,7 +23,7 @@ const matchFreightFlow = ai.defineFlow(
   },
   async (input) => {
     const { text } = await ai.generate({
-        model: 'googleai/gemini-1.5-pro-latest',
+        model: 'googleai/gemini-2.0-flash',
         prompt: `You are an AI assistant specialized in matching freight loads with transporters.
 
         Your output MUST be a valid JSON object with a single key "matches", which is an array of objects. Each object in the array should have the following fields: "loadId" (string), "origin" (string), "destination" (string), "weight" (string), "size" (string), "price" (string), and "requirements" (string, optional).
