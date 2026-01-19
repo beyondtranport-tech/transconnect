@@ -12,12 +12,12 @@ To enable the AI Lead Agent to find real-world company data, you need to configu
 
 ## Step 2: Enable the Custom Search API
 
-**This is a critical step.** Before you can restrict your key, you must enable the API for your project. The list you provided shows APIs that are *already* enabled. You need to find and enable a new one.
+**This is a critical step.** The API must be enabled for your project before you can restrict your key to it.
 
-1.  In the navigation menu, go to **APIs & Services > Library**. (This is different from the Dashboard).
-2.  In the search bar at the top of the Library page, type "**Custom Search JSON API**" and press Enter.
+1.  Go directly to the API Library for your project by clicking this link: **[https://console.cloud.google.com/apis/library?project=transconnect-v1-39578841-2a857](https://console.cloud.google.com/apis/library?project=transconnect-v1-39578841-2a857)**
+2.  The page will have a search bar at the top. In this search bar, type "**Custom Search JSON API**" and press Enter.
 3.  Click on the "Custom Search JSON API" result from the search.
-4.  Click the **Enable** button. Wait for it to finish.
+4.  Click the **Enable** button. Wait for it to finish. If the button says "Manage", the API is already enabled, and you can proceed to the next step.
 
 ## Step 3: Restrict Your API Key
 
