@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect, useCallback } from 'react';
@@ -40,6 +41,8 @@ const leadSchema = z.object({
   contactPerson: z.string().optional(),
   email: z.string().email('Invalid email address').optional().or(z.literal('')),
   phone: z.string().optional(),
+  address: z.string().optional(),
+  website: z.string().url('Invalid URL').optional().or(z.literal('')),
   role: z.string().min(1, 'Role is required'),
   status: z.enum(['new', 'contacted', 'qualified', 'unqualified']),
   notes: z.string().optional(),
@@ -69,6 +72,8 @@ function LeadDialog({ lead, onSave, children }: { lead?: any, onSave: () => void
                 contactPerson: '',
                 email: '',
                 phone: '',
+                address: '',
+                website: '',
                 role: '',
                 status: 'new',
                 notes: '',
@@ -120,19 +125,22 @@ function LeadDialog({ lead, onSave, children }: { lead?: any, onSave: () => void
                 </DialogDescription>
             </DialogHeader>
             <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4 max-h-[70vh] overflow-y-auto pr-4">
                     <FormField control={form.control} name="companyName" render={({ field }) => ( <FormItem><FormLabel>Company Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <FormField control={form.control} name="contactPerson" render={({ field }) => ( <FormItem><FormLabel>Contact Person</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
                         <FormField control={form.control} name="phone" render={({ field }) => ( <FormItem><FormLabel>Phone</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
                     </div>
                     <FormField control={form.control} name="email" render={({ field }) => ( <FormItem><FormLabel>Email</FormLabel><FormControl><Input {...field} type="email"/></FormControl><FormMessage /></FormItem> )} />
+                    <FormField control={form.control} name="address" render={({ field }) => ( <FormItem><FormLabel>Address</FormLabel><FormControl><Textarea placeholder="123 Main St, Johannesburg, 2000" {...field} /></FormControl><FormMessage /></FormItem> )} />
+                    <FormField control={form.control} name="website" render={({ field }) => ( <FormItem><FormLabel>Website</FormLabel><FormControl><Input placeholder="https://example.com" {...field} /></FormControl><FormMessage /></FormItem> )} />
+
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <FormField control={form.control} name="role" render={({ field }) => ( <FormItem><FormLabel>Potential Role</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select a role" /></SelectTrigger></FormControl><SelectContent>{roles.map(r => <SelectItem key={r.id} value={r.title}>{r.title}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )} />
                         <FormField control={form.control} name="status" render={({ field }) => ( <FormItem><FormLabel>Status</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="new">New</SelectItem><SelectItem value="contacted">Contacted</SelectItem><SelectItem value="qualified">Qualified</SelectItem><SelectItem value="unqualified">Unqualified</SelectItem></SelectContent></Select><FormMessage /></FormItem> )} />
                     </div>
                     <FormField control={form.control} name="notes" render={({ field }) => ( <FormItem><FormLabel>Notes</FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage /></FormItem> )} />
-                    <DialogFooter>
+                    <DialogFooter className="pt-4">
                         <Button type="submit" disabled={isLoading}>{isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null} Save Lead</Button>
                     </DialogFooter>
                 </form>
@@ -200,6 +208,7 @@ export default function LeadsContent() {
     { accessorKey: 'contactPerson', header: 'Contact' },
     { accessorKey: 'email', header: 'Email' },
     { accessorKey: 'phone', header: 'Phone' },
+    { accessorKey: 'address', header: 'Address' },
     { accessorKey: 'role', header: 'Role', cell: ({row}) => <Badge variant="outline">{row.original.role}</Badge>},
     { accessorKey: 'status', header: 'Status', cell: ({row}) => <Badge className="capitalize">{row.original.status}</Badge>},
     { id: 'actions', header: () => <div className="text-right">Actions</div>, cell: ({row}) => (
@@ -243,3 +252,5 @@ export default function LeadsContent() {
       </Card>
   );
 }
+
+    

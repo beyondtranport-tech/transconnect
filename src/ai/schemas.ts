@@ -64,6 +64,8 @@ export const LeadSchema = z.object({
     contactPerson: z.string().optional(),
     email: z.string().email().optional(),
     phone: z.string().optional(),
+    address: z.string().optional(),
+    website: z.string().optional(),
     role: z.string(),
     status: z.enum(['new', 'contacted', 'qualified', 'unqualified']),
     notes: z.string().optional(),
@@ -96,3 +98,5 @@ export const ShopSeoOutputSchema = z.object({
     tags: z.array(z.string()).describe('A list of 5-7 relevant SEO keywords or tags for the shop.'),
 });
 export type ShopSeoOutput = z.infer<typeof ShopSeoOutputSchema>;
+
+    
