@@ -112,22 +112,31 @@ export default function ImageGeneratorCard({ promptTemplate }: { promptTemplate?
         const blob = await response.blob();
         const fileName = `generated-image-${Date.now()}.png`;
         const storageRef = ref(storage, `generated-images/${user.uid}/${fileName}`);
-
         const uploadTask = uploadBytesResumable(storageRef, blob);
 
-        uploadTask.on('state_changed', 
-            (snapshot) => {
-                const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-                setUploadProgress(progress);
-            }
-        );
-
-        await uploadTask; // This will wait for the upload to complete and throw on error
-
-        const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-        setSavedImageUrl(downloadURL);
-        toast({ title: 'Image Saved!', description: 'Your image is now stored in the cloud.' });
-
+        await new Promise<void>((resolve, reject) => {
+            uploadTask.on('state_changed',
+                (snapshot) => {
+                    const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                    setUploadProgress(progress);
+                },
+                (error) => {
+                    console.error("Upload failed:", error);
+                    reject(error);
+                },
+                async () => {
+                    try {
+                        const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+                        setSavedImageUrl(downloadURL);
+                        toast({ title: 'Image Saved!', description: 'Your image is now stored in the cloud.' });
+                        resolve();
+                    } catch (getUrlError) {
+                        console.error("Failed to get download URL:", getUrlError);
+                        reject(getUrlError);
+                    }
+                }
+            );
+        });
     } catch (error: any) {
         toast({ variant: 'destructive', title: 'Save Failed', description: error.message });
     } finally {
