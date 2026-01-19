@@ -23,7 +23,7 @@ const leadResearchAIFlow = ai.defineFlow(
   },
   async (input) => {
     const { output } = await ai.generate({
-        model: 'gemini-pro',
+        model: 'gemini-1.0-pro',
         tools: [googleSearchTool],
         prompt: `You are an expert market researcher specializing in the South African logistics and transport industry. 
         Your task is to generate a list of real business leads based on a given topic.
