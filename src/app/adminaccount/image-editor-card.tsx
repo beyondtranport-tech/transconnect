@@ -144,28 +144,18 @@ export default function ImageEditorCard({ promptTemplate }: { promptTemplate?: s
         const fileName = `edited-image-${Date.now()}.png`;
         const storageRef = ref(storage, `generated-images/${user.uid}/${fileName}`);
 
-        const downloadURL = await new Promise<string>((resolve, reject) => {
-            const uploadTask = uploadBytesResumable(storageRef, blob);
-            uploadTask.on('state_changed',
-                (snapshot) => {
-                    const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-                    setUploadProgress(progress);
-                },
-                (error) => {
-                    console.error("Upload Error:", error);
-                    reject(new Error(`Upload failed: ${error.message}`));
-                },
-                async () => {
-                    try {
-                        const url = await getDownloadURL(uploadTask.snapshot.ref);
-                        resolve(url);
-                    } catch (error) {
-                        reject(new Error(`Failed to get download URL: ${(error as Error).message}`));
-                    }
-                }
-            );
-        });
+        const uploadTask = uploadBytesResumable(storageRef, blob);
 
+        uploadTask.on('state_changed', 
+            (snapshot) => {
+                const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                setUploadProgress(progress);
+            }
+        );
+
+        await uploadTask; // This will wait for the upload to complete and throw on error
+
+        const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
         setSavedImageUrl(downloadURL);
         toast({ title: 'Image Saved!', description: 'Your image is now stored in the cloud.' });
 
