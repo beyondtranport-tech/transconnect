@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -63,10 +64,16 @@ export default function ImageEditorCard({ promptTemplate }: { promptTemplate?: s
     reader.readAsDataURL(file);
   };
   
-  const clearOriginalImage = () => {
-    setOriginalImage(null);
+  const handleClear = () => {
     setEditedImage(null);
     setSavedImageUrl(null);
+    setUploadProgress(0);
+    setIsSaving(false);
+  }
+
+  const clearOriginalImage = () => {
+    setOriginalImage(null);
+    handleClear();
     const fileInput = document.getElementById('image-upload') as HTMLInputElement;
     if (fileInput) {
       fileInput.value = '';
@@ -84,8 +91,7 @@ export default function ImageEditorCard({ promptTemplate }: { promptTemplate?: s
     }
 
     setIsLoading(true);
-    setEditedImage(null);
-    setSavedImageUrl(null);
+    handleClear();
 
     try {
       const result = await imageEditFlow({

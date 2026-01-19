@@ -3,24 +3,13 @@ rules_version = '2';
 
 service firebase.storage {
   match /b/{bucket}/o {
-    // Allow users to read any file. 
-    // This is necessary for public product and shop images.
+    // Allow public read access to all files.
+    // This is necessary for generated images to be displayed in the app.
     match /{allPaths=**} {
       allow read;
     }
-    
-    // Only allow an authenticated user to write to their own folder.
-    // Example path: /shops/{userId}/{fileName}
-    match /shops/{userId}/{allPaths=**} {
-      allow write: if request.auth != null && request.auth.uid == userId;
-    }
 
-    // Example path: /products/{userId}/{shopId}/{fileName}
-    match /products/{userId}/{allPaths=**} {
-      allow write: if request.auth != null && request.auth.uid == userId;
-    }
-
-    // Allow authenticated users to write to their own generated-images folder
+    // Allow authenticated users to write only to their own designated folder.
     match /generated-images/{userId}/{allPaths=**} {
       allow write: if request.auth != null && request.auth.uid == userId;
     }
