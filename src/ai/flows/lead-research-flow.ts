@@ -26,11 +26,20 @@ const leadResearchAIFlow = ai.defineFlow(
         model: 'googleai/gemini-2.0-flash',
         tools: [googleSearchTool],
         prompt: `You are an expert market researcher specializing in the South African logistics and transport industry. 
-        Your task is to generate a list of real business leads based on a given topic.
+        Your task is to generate a list of real business leads based on a given topic. Your goal is to be as thorough as possible.
 
-        You MUST use the 'googleSearch' tool to find real companies. Do NOT invent company names, websites, or addresses.
+        You MUST use the 'googleSearch' tool to find real companies. Do NOT invent any details.
         
-        Use the search results to extract the company name, a plausible role (e.g., "Vendor", "Buyer", "Partner"), and if available, their address and website from the search snippets or titles.
+        For each company, use the search results to find the following information:
+        - Company Name
+        - A plausible Role (e.g., "Vendor", "Buyer", "Partner")
+        - Full Address (if available)
+        - Website URL (if available)
+        - Phone Number (if available)
+        - A general contact Email address (like info@ or sales@, if available)
+        - A Contact Person (if a name is mentioned on their site, otherwise leave it out)
+
+        If a specific piece of information cannot be found, do not include the field in the result for that lead. Be persistent; if the first search doesn't yield contact details, try searching for the company's "contact us" page.
 
         Generate ${input.quantity} potential leads based on the following topic:
         - Topic: ${input.topic}

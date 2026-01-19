@@ -73,9 +73,9 @@ function LeadDialog({ lead, onSave, children, defaultValues }: { lead?: any, onS
         } else {
             form.reset({
                 companyName: defaultValues?.companyName || '',
-                contactPerson: '',
-                email: '',
-                phone: '',
+                contactPerson: defaultValues?.contactPerson || '',
+                email: defaultValues?.email || '',
+                phone: defaultValues?.phone || '',
                 role: defaultValues?.role || '',
                 status: 'new',
                 notes: '',
@@ -288,11 +288,16 @@ function LeadsDatabaseComponent() {
 
   const newLeadDefaults = useMemo(() => {
     const companyName = searchParams.get('newCompanyName');
-    const role = searchParams.get('newRole');
-    const address = searchParams.get('newAddress');
-    const website = searchParams.get('newWebsite');
     if (companyName) {
-      return { companyName, role: role || '', address: address || '', website: website || '' };
+      return { 
+        companyName, 
+        role: searchParams.get('newRole') || '', 
+        address: searchParams.get('newAddress') || '', 
+        website: searchParams.get('newWebsite') || '',
+        phone: searchParams.get('newPhone') || '',
+        email: searchParams.get('newEmail') || '',
+        contactPerson: searchParams.get('newContactPerson') || '',
+      };
     }
     return undefined;
   }, [searchParams]);
@@ -370,5 +375,6 @@ export default function LeadsDatabase() {
         </Suspense>
     );
 }
+
 
 

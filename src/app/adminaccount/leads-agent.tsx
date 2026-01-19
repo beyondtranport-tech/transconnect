@@ -49,7 +49,7 @@ export default function LeadsAgent() {
         }
     };
     
-    const handleAddLead = (lead: { companyName: string, role: string, address?: string, website?: string }) => {
+    const handleAddLead = (lead: { companyName: string, role: string, address?: string | null, website?: string | null, phone?: string | null, email?: string | null, contactPerson?: string | null }) => {
         console.log("Adding lead:", lead);
         toast({
             title: "Redirecting to Add Lead",
@@ -61,6 +61,9 @@ export default function LeadsAgent() {
         });
         if (lead.address) queryParams.set('newAddress', lead.address);
         if (lead.website) queryParams.set('newWebsite', lead.website);
+        if (lead.phone) queryParams.set('newPhone', lead.phone);
+        if (lead.email) queryParams.set('newEmail', lead.email);
+        if (lead.contactPerson) queryParams.set('newContactPerson', lead.contactPerson);
 
         router.push(`/adminaccount?view=leads-database&${queryParams.toString()}`);
     }
