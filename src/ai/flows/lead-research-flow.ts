@@ -34,7 +34,7 @@ const leadResearchAIFlow = ai.defineFlow(
         - Company Name
         - A plausible Role (e.g., "Vendor", "Buyer", "Partner")
         - Full Address (if available)
-        - Website URL: Crucially, only provide a website URL if it is explicitly returned by the 'googleSearch' tool. Do not guess or construct URLs. If no URL is found, omit the field entirely.
+        - Website URL: You must use the 'googleSearch' tool to find the company's official homepage. Return the link exactly as provided by the tool. Do not guess, shorten, or modify the URL in any way. If no valid website is found in the search results, omit the 'website' field completely.
         - Phone Number (if available)
         - A general contact Email address (like info@ or sales@, if available)
         - A Contact Person (if a name is mentioned on their site, otherwise leave it out)
