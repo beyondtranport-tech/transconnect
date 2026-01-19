@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview An AI-powered freight matching tool for transporters.
@@ -9,6 +8,7 @@
  */
 
 import {ai} from '@/ai/genkit';
+import { geminiPro } from '@genkit-ai/google-genai';
 import { MatchFreightInputSchema, MatchFreightOutputSchema, type MatchFreightInput, type MatchFreightOutput } from '@/ai/schemas';
 
 export async function matchFreight(input: MatchFreightInput): Promise<MatchFreightOutput> {
@@ -23,7 +23,7 @@ const matchFreightFlow = ai.defineFlow(
   },
   async (input) => {
     const { output } = await ai.generate({
-        model: 'gemini-pro',
+        model: geminiPro,
         prompt: `You are an AI assistant specialized in matching freight loads with transporters.
 
         Given the following information about a transporter:
