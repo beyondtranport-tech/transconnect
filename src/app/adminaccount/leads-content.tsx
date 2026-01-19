@@ -204,14 +204,50 @@ export default function LeadsContent() {
   };
 
   const columns: ColumnDef<any>[] = useMemo(() => [
-    { accessorKey: 'companyName', header: 'Company', cell: ({ row }) => <div>{row.original.companyName}</div> },
-    { accessorKey: 'contactPerson', header: 'Contact', cell: ({ row }) => <div>{row.original.contactPerson}</div> },
-    { accessorKey: 'email', header: 'Email', cell: ({ row }) => <div>{row.original.email}</div> },
-    { accessorKey: 'phone', header: 'Phone', cell: ({ row }) => <div>{row.original.phone}</div> },
-    { accessorKey: 'address', header: 'Address', cell: ({ row }) => <div>{row.original.address}</div> },
-    { accessorKey: 'role', header: 'Role', cell: ({row}) => <Badge variant="outline">{row.original.role}</Badge>},
-    { accessorKey: 'status', header: 'Status', cell: ({row}) => <Badge className="capitalize">{row.original.status}</Badge>},
-    { id: 'actions', header: () => <div className="text-right">Actions</div>, cell: ({row}) => (
+    { 
+      accessorKey: 'companyName', 
+      header: 'Company',
+      cell: ({ row }) => <div>{row.original.companyName}</div>
+    },
+    { 
+      accessorKey: 'contactPerson', 
+      header: 'Contact',
+      cell: ({ row }) => <div>{row.original.contactPerson}</div>
+    },
+    { 
+      accessorKey: 'email', 
+      header: 'Email',
+      cell: ({ row }) => <div>{row.original.email}</div>
+    },
+    { 
+      accessorKey: 'phone', 
+      header: 'Phone',
+      cell: ({ row }) => <div>{row.original.phone}</div>
+    },
+    { 
+      accessorKey: 'address', 
+      header: 'Address',
+      cell: ({ row }) => <div className="max-w-[200px] truncate">{row.original.address}</div>
+    },
+     { 
+      accessorKey: 'website', 
+      header: 'Website',
+      cell: ({ row }) => row.original.website ? <a href={row.original.website} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Link</a> : null
+    },
+    { 
+      accessorKey: 'role', 
+      header: 'Role',
+      cell: ({row}) => <Badge variant="outline">{row.original.role}</Badge>
+    },
+    { 
+      accessorKey: 'status', 
+      header: 'Status',
+      cell: ({row}) => <Badge className="capitalize">{row.original.status}</Badge>
+    },
+    { 
+      id: 'actions', 
+      header: () => <div className="text-right">Actions</div>, 
+      cell: ({row}) => (
         <div className="text-right">
             <LeadDialog lead={row.original} onSave={loadLeads}><Button variant="ghost" size="icon"><Edit className="h-4 w-4" /></Button></LeadDialog>
             <AlertDialog>
@@ -222,7 +258,8 @@ export default function LeadsContent() {
                 </AlertDialogContent>
             </AlertDialog>
         </div>
-    )},
+    )
+    },
   ], [loadLeads]);
 
   return (
