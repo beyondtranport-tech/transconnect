@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -107,6 +108,9 @@ const NetworkOffer = dynamic(() => import('../account/network-offer'), { loading
 const NetworkEmails = dynamic(() => import('../account/network-emails'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const PerformanceContent = dynamic(() => import('../account/performance-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 
+const PartnerAiContent = dynamic(() => import('./partner-ai-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const InvestorAiContent = dynamic(() => import('./investor-ai-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+
 
 // --- Placeholder Components ---
 function ProductSalesContent() {
@@ -210,6 +214,9 @@ function AdminAccountContent() {
       case 'performance': return <PerformanceContent />;
       case 'product-sales': return <ProductSalesContent />;
       case 'earnings': return <EarningsContent />;
+      
+      case 'partner-ai-content': return <PartnerAiContent />;
+      case 'investor-ai-content': return <InvestorAiContent />;
 
       default:
         return <PartnerOffer />;
@@ -230,8 +237,8 @@ function AdminAccountContent() {
   }
 
   const isSalesActive = ['network', 'network-offer', 'network-emails', 'performance', 'product-sales', 'earnings'].includes(activeView);
-  const isPartnerPitchActive = ['partner-offer', 'partner-email', 'partner-elevator-pitch'].includes(activeView);
-  const isInvestorPitchActive = ['investor-offer', 'investor-email', 'elevator-pitch'].includes(activeView);
+  const isPartnerPitchActive = ['partner-offer', 'partner-email', 'partner-elevator-pitch', 'partner-ai-content'].includes(activeView);
+  const isInvestorPitchActive = ['investor-offer', 'investor-email', 'elevator-pitch', 'investor-ai-content'].includes(activeView);
   const isResearchActive = ['leads-agent', 'leads-database', 'campaigns'].includes(activeView);
 
 
@@ -307,6 +314,10 @@ function AdminAccountContent() {
                         <Mail />
                         <span>Email Sequence</span>
                     </SidebarMenuSubButton>
+                     <SidebarMenuSubButton isActive={activeView === 'partner-ai-content'} onClick={() => router.push('/adminaccount?view=partner-ai-content', { scroll: false })}>
+                        <Sparkles />
+                        <span>AI Content</span>
+                    </SidebarMenuSubButton>
                 </SidebarMenuSub>
               </SidebarMenuItem>
               <SidebarMenuItem>
@@ -326,6 +337,10 @@ function AdminAccountContent() {
                     <SidebarMenuSubButton isActive={activeView === 'investor-email'} onClick={() => router.push('/adminaccount?view=investor-email', { scroll: false })}>
                         <Mail />
                         <span>Email Sequence</span>
+                    </SidebarMenuSubButton>
+                     <SidebarMenuSubButton isActive={activeView === 'investor-ai-content'} onClick={() => router.push('/adminaccount?view=investor-ai-content', { scroll: false })}>
+                        <Sparkles />
+                        <span>AI Content</span>
                     </SidebarMenuSubButton>
                 </SidebarMenuSub>
               </SidebarMenuItem>
