@@ -36,10 +36,11 @@ To enable the AI Lead Agent to find real-world company data, you need to configu
 3.  In the "What to search?" section, enter a valid website to search (e.g., `www.google.com`). This is just a starting point and doesn't limit your searches.
 4.  Give your search engine a name (e.g., "TransConnect Lead Finder").
 5.  Click **Create**.
-6.  Once created, click on **Customize**.
-7.  Under the "Basics" tab, you will find the **Search engine ID**. Copy this ID.
-8.  In the same section, make sure to turn **ON** the "Search the entire web" option. This is the most crucial step, as it allows the agent to search the entire internet for leads, not just the site you entered during setup.
-9.  Click **Save Changes** if you made any.
-10. Paste the Search Engine ID into your `.env` file as the value for `CUSTOM_SEARCH_ENGINE_ID`.
+6.  After creation, you may be shown a code snippet. If so, look for the `cx` parameter inside it, which looks like `cx="YOUR_SEARCH_ENGINE_ID"`. The value inside the quotes is your ID.
+7.  If you don't see a code snippet, click on **Customize** for your new search engine.
+8.  Under the "Basics" tab, you will find the **Search engine ID**. Copy this ID.
+9.  In the same section, make sure to turn **ON** the "Search the entire web" option. This is the most crucial step, as it allows the agent to search the entire internet for leads, not just the site you entered during setup.
+10. Click **Save Changes** if you made any.
+11. Paste the Search Engine ID into your `.env` file as the value for `CUSTOM_SEARCH_ENGINE_ID`.
 
 Once both values are in your `.env` file, the AI Lead Agent will be fully functional and able to search for real companies.
