@@ -9,10 +9,27 @@ To enable the AI Lead Agent to find real-world company data, you need to configu
 3.  In the navigation menu (hamburger icon), go to **APIs & Services > Credentials**.
 4.  Click **+ CREATE CREDENTIALS** at the top and select **API key**.
 5.  A new API key will be created. Copy this key.
-6.  **Important:** For security, it's recommended to restrict this key. Click on the new key, and under "API restrictions", select "Restrict key" and choose the "Custom Search API".
-7.  Paste this key into your `.env` file as the value for `GOOGLE_SEARCH_API_KEY`.
 
-## Step 2: Create a Programmable Search Engine
+## Step 2: Enable the Custom Search API
+
+**This is a critical step.** Before you can restrict your key, you must enable the API for your project.
+
+1.  In the navigation menu, go to **APIs & Services > Library**.
+2.  In the search bar, type "**Custom Search JSON API**" and press Enter.
+3.  Click on the "Custom Search JSON API" result.
+4.  Click the **Enable** button. Wait for it to finish.
+
+## Step 3: Restrict Your API Key
+
+1.  Go back to **APIs & Services > Credentials**.
+2.  Click on the name of the API key you just created.
+3.  Under "API restrictions", select "Restrict key".
+4.  In the "Select APIs" dropdown, you should now be able to find and select "**Custom Search JSON API**".
+5.  Click **OK** and then **Save**.
+6.  Paste your copied API key into your `.env` file as the value for `GOOGLE_SEARCH_API_KEY`.
+
+
+## Step 4: Create a Programmable Search Engine
 
 1.  Go to the [Programmable Search Engine control panel](https://programmablesearchengine.google.com/controlpanel/all).
 2.  Click **Add** to create a new search engine.
