@@ -56,35 +56,6 @@ export const ImageGenerateOutputSchema = z.object({
 });
 export type ImageGenerateOutput = z.infer<typeof ImageGenerateOutputSchema>;
 
-
-// From lead-generation-flow.ts
-export const LeadSchema = z.object({
-    id: z.string().optional(),
-    companyName: z.string(),
-    contactPerson: z.string().optional(),
-    email: z.string().email('Invalid email address').optional().or(z.literal('')),
-    phone: z.string().optional(),
-    address: z.string().optional(),
-    website: z.string().url('Invalid URL').optional().or(z.literal('')),
-    role: z.string(),
-    status: z.enum(['new', 'contacted', 'qualified', 'unqualified']),
-    notes: z.string().optional(),
-});
-export type Lead = z.infer<typeof LeadSchema>;
-
-export const LeadGenerationInputSchema = z.object({
-  businessType: z.string().describe('The type of business to search for, e.g., "trucking companies", "diesel mechanics", "freight forwarders".'),
-  region: z.string().describe('The geographical province to search in, e.g., Gauteng, Western Cape.'),
-  city: z.string().optional().describe('The specific city or town to search in.'),
-  quantity: z.coerce.number().min(1).max(25).default(10).describe('The number of leads to generate.'),
-});
-export type LeadGenerationInput = z.infer<typeof LeadGenerationInputSchema>;
-
-export const LeadGenerationOutputSchema = z.object({
-  leads: z.array(LeadSchema).describe('An array of generated leads.'),
-});
-export type LeadGenerationOutput = z.infer<typeof LeadGenerationOutputSchema>;
-
 // From seo-flow.ts
 export const ShopSeoInputSchema = z.object({
   shopName: z.string().describe('The name of the online shop.'),

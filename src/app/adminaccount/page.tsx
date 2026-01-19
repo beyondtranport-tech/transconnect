@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -103,7 +102,6 @@ const NetworkOffer = dynamic(() => import('../account/network-offer'), { loading
 const NetworkEmails = dynamic(() => import('../account/network-emails'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const PerformanceContent = dynamic(() => import('../account/performance-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const LeadsContent = dynamic(() => import('./leads-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const LeadsGenerator = dynamic(() => import('./leads-generator'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 
 // --- Placeholder Components ---
 function ProductSalesContent() {
@@ -205,7 +203,6 @@ function AdminAccountContent() {
       case 'product-sales': return <ProductSalesContent />;
       case 'earnings': return <EarningsContent />;
       case 'leads': return <LeadsContent />;
-      case 'leads-generator': return <LeadsGenerator />;
 
       default:
         return <PartnerOffer />;
@@ -228,7 +225,7 @@ function AdminAccountContent() {
   const isSalesActive = ['network', 'network-offer', 'network-emails', 'performance', 'product-sales', 'earnings'].includes(activeView);
   const isPartnerPitchActive = ['partner-offer', 'partner-email', 'partner-elevator-pitch'].includes(activeView);
   const isInvestorPitchActive = ['investor-offer', 'investor-email', 'elevator-pitch'].includes(activeView);
-  const isLeadsActive = ['leads', 'leads-generator'].includes(activeView);
+  const isLeadsActive = ['leads'].includes(activeView);
 
 
   return (
@@ -266,20 +263,10 @@ function AdminAccountContent() {
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Leads" isActive={isLeadsActive}>
+                <SidebarMenuButton tooltip="Leads" isActive={isLeadsActive} onClick={() => router.push('/adminaccount?view=leads', { scroll: false })}>
                     <Users />
                     <span>Leads</span>
                 </SidebarMenuButton>
-                 <SidebarMenuSub>
-                    <SidebarMenuSubButton isActive={activeView === 'leads'} onClick={() => router.push('/adminaccount?view=leads', { scroll: false })}>
-                        <Users />
-                        <span>Lead Database</span>
-                    </SidebarMenuSubButton>
-                    <SidebarMenuSubButton isActive={activeView === 'leads-generator'} onClick={() => router.push('/adminaccount?view=leads-generator', { scroll: false })}>
-                        <Bot />
-                        <span>AI Lead Generator</span>
-                    </SidebarMenuSubButton>
-                </SidebarMenuSub>
               </SidebarMenuItem>
               <SidebarMenuItem>
                 <SidebarMenuButton tooltip="Partner Pitch" isActive={isPartnerPitchActive}>
