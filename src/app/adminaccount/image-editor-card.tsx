@@ -125,41 +125,46 @@ export default function ImageEditorCard({ promptTemplate }: { promptTemplate?: s
 
   const handleSaveToCloud = async () => {
     if (!editedImage || !user || !storage) {
-        toast({ variant: 'destructive', title: 'Error', description: 'No image, user, or storage service available.' });
-        return;
+      toast({ variant: 'destructive', title: 'Error', description: 'No image, user, or storage service available.' });
+      return;
     }
 
     setIsSaving(true);
     setUploadProgress(0);
 
     try {
-        const response = await fetch(editedImage);
-        const blob = await response.blob();
-        
-        const fileName = `edited-image-${Date.now()}.png`;
-        const storageRef = ref(storage, `generated-images/${user.uid}/${fileName}`);
+      const response = await fetch(editedImage);
+      const blob = await response.blob();
+      
+      const fileName = `edited-image-${Date.now()}.png`;
+      const storageRef = ref(storage, `generated-images/${user.uid}/${fileName}`);
+      const uploadTask = uploadBytesResumable(storageRef, blob);
 
-        const uploadTask = uploadBytesResumable(storageRef, blob);
-
-        uploadTask.on('state_changed', 
-            (snapshot) => {
-                const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-                setUploadProgress(progress);
-            },
-            (error) => {
-                throw error; // Let the catch block handle it
-            },
-            async () => {
-                const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-                setSavedImageUrl(downloadURL);
-                toast({ title: 'Image Saved!', description: 'Your image is now stored in the cloud.' });
-                setIsSaving(false);
-            }
-        );
-
+      uploadTask.on('state_changed', 
+        (snapshot) => {
+          const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+          setUploadProgress(progress);
+        },
+        (error) => {
+          console.error("Upload Error:", error);
+          toast({ variant: 'destructive', title: 'Save to Cloud Failed', description: error.message });
+          setIsSaving(false);
+        },
+        async () => {
+          try {
+            const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+            setSavedImageUrl(downloadURL);
+            toast({ title: 'Image Saved!', description: 'Your image is now stored in the cloud.' });
+          } catch (error: any) {
+            toast({ variant: 'destructive', title: 'Save Failed', description: `Could not get download URL: ${error.message}` });
+          } finally {
+            setIsSaving(false);
+          }
+        }
+      );
     } catch (error: any) {
-        toast({ variant: 'destructive', title: 'Save to Cloud Failed', description: error.message });
-        setIsSaving(false);
+      toast({ variant: 'destructive', title: 'Save Failed', description: error.message });
+      setIsSaving(false);
     }
   };
 

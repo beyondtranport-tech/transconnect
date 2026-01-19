@@ -44,6 +44,13 @@ export default function ImageGeneratorCard({ promptTemplate }: { promptTemplate?
   const [uploadProgress, setUploadProgress] = useState(0);
   const [savedImageUrl, setSavedImageUrl] = useState<string | null>(null);
 
+  const handleClear = () => {
+    setGeneratedImage(null);
+    setSavedImageUrl(null);
+    setUploadProgress(0);
+    setIsSaving(false);
+  };
+
 
   const handleGenerate = async () => {
     if (!prompt) {
@@ -56,8 +63,7 @@ export default function ImageGeneratorCard({ promptTemplate }: { promptTemplate?
     }
 
     setIsLoading(true);
-    setGeneratedImage(null);
-    setSavedImageUrl(null);
+    handleClear();
 
     try {
       const result = await generateImage({ prompt });
@@ -93,8 +99,8 @@ export default function ImageGeneratorCard({ promptTemplate }: { promptTemplate?
 
   const handleSaveToCloud = async () => {
     if (!generatedImage || !user || !storage) {
-        toast({ variant: 'destructive', title: 'Error', description: 'No image, user, or storage service available.' });
-        return;
+      toast({ variant: 'destructive', title: 'Error', description: 'No image, user, or storage service available.' });
+      return;
     }
 
     setIsSaving(true);
@@ -106,7 +112,6 @@ export default function ImageGeneratorCard({ promptTemplate }: { promptTemplate?
         
         const fileName = `generated-image-${Date.now()}.png`;
         const storageRef = ref(storage, `generated-images/${user.uid}/${fileName}`);
-
         const uploadTask = uploadBytesResumable(storageRef, blob);
 
         uploadTask.on('state_changed', 
@@ -115,18 +120,24 @@ export default function ImageGeneratorCard({ promptTemplate }: { promptTemplate?
                 setUploadProgress(progress);
             },
             (error) => {
-                throw error; // Let the catch block handle it
+                console.error("Upload Error:", error);
+                toast({ variant: 'destructive', title: 'Save to Cloud Failed', description: error.message });
+                setIsSaving(false);
             },
             async () => {
-                const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-                setSavedImageUrl(downloadURL);
-                toast({ title: 'Image Saved!', description: 'Your image is now stored in the cloud.' });
-                setIsSaving(false);
+                try {
+                    const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+                    setSavedImageUrl(downloadURL);
+                    toast({ title: 'Image Saved!', description: 'Your image is now stored in the cloud.' });
+                } catch (error: any) {
+                    toast({ variant: 'destructive', title: 'Save Failed', description: `Could not get download URL: ${error.message}` });
+                } finally {
+                    setIsSaving(false);
+                }
             }
         );
-
     } catch (error: any) {
-        toast({ variant: 'destructive', title: 'Save to Cloud Failed', description: error.message });
+        toast({ variant: 'destructive', title: 'Save Failed', description: error.message });
         setIsSaving(false);
     }
   };
@@ -201,15 +212,18 @@ export default function ImageGeneratorCard({ promptTemplate }: { promptTemplate?
                     )}
                 </div>
             </div>
-            <DialogFooter className="mt-auto flex-shrink-0 pt-4 sm:justify-end">
+            <DialogFooter className="mt-auto flex-shrink-0 pt-4 sm:justify-between">
               {generatedImage && (
                 <div className="flex w-full items-center justify-between gap-2">
-                  <Button variant="secondary" onClick={handleDownload} disabled={isSaving}>
-                    <Download className="mr-2 h-4 w-4" /> Download
-                  </Button>
-                  <Button variant="outline" onClick={handleSaveToCloud} disabled={isSaving || !!savedImageUrl}>
-                    <Save className="mr-2 h-4 w-4" /> {savedImageUrl ? 'Saved' : 'Save to Cloud'}
-                  </Button>
+                   <div className="flex items-center gap-2">
+                        <Button variant="secondary" onClick={handleDownload} disabled={isSaving}>
+                            <Download className="mr-2 h-4 w-4" /> Download
+                        </Button>
+                        <Button variant="outline" onClick={handleSaveToCloud} disabled={isSaving || !!savedImageUrl}>
+                            <Save className="mr-2 h-4 w-4" /> {savedImageUrl ? 'Saved' : 'Save to Cloud'}
+                        </Button>
+                   </div>
+                   <Button variant="ghost" onClick={handleClear}>Clear Image</Button>
                 </div>
               )}
             </DialogFooter>
