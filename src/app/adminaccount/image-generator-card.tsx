@@ -19,16 +19,18 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Sparkles, Image as ImageIcon } from 'lucide-react';
 import Image from 'next/image';
 import { generateImage } from '@/ai/flows/image-generation-flow';
+import { Textarea } from '@/components/ui/textarea';
+
+const defaultPrompt = `A cinematic, professional photograph of a futuristic, gleaming white and green Scania truck driving on a high-tech highway at dusk. The road is illuminated with glowing data lines, and the sky has a vibrant sunset. The image should look modern, professional, and convey a sense of speed and efficiency.`;
 
 export default function ImageGeneratorCard() {
   const [isOpen, setIsOpen] = useState(false);
-  const [prompt, setPrompt] = useState('');
+  const [prompt, setPrompt] = useState(defaultPrompt);
   const [isLoading, setIsLoading] = useState(false);
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   const { toast } = useToast();
@@ -83,13 +85,13 @@ export default function ImageGeneratorCard() {
             <DialogHeader>
               <DialogTitle>AI Image Generator (Text-to-Image)</DialogTitle>
               <DialogDescription>
-                Describe the image you want to create in detail.
+                Use the template below or write your own detailed prompt to create an image.
               </DialogDescription>
             </DialogHeader>
             <div className="py-4 space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="generate-prompt">Your Prompt</Label>
-                  <Input id="generate-prompt" value={prompt} onChange={(e) => setPrompt(e.target.value)} placeholder="e.g., A red Scania truck driving on a mountain pass at sunset" />
+                  <Textarea id="generate-prompt" value={prompt} onChange={(e) => setPrompt(e.target.value)} rows={7} />
                 </div>
                 <div className="relative aspect-square w-full rounded-md border border-dashed flex items-center justify-center bg-muted">
                      {isLoading ? (

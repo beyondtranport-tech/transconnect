@@ -25,10 +25,18 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2, Sparkles, Wand2 } from 'lucide-react';
 import Image from 'next/image';
 import { imageEditFlow } from '@/ai/flows/image-edit-flow';
+import { Textarea } from '@/components/ui/textarea';
+
+const defaultEditPrompt = `Place the truck on a winding mountain pass at sunset.
+
+Examples of other good prompts:
+- Change the color of the truck to a metallic blue.
+- Add a logo for 'TransConnect' on the side of the trailer.
+- Make the background a busy city street at night.`;
 
 export default function ImageEditorCard() {
   const [isOpen, setIsOpen] = useState(false);
-  const [prompt, setPrompt] = useState('');
+  const [prompt, setPrompt] = useState(defaultEditPrompt);
   const [isLoading, setIsLoading] = useState(false);
   const [originalImage, setOriginalImage] = useState<string | null>(null);
   const [editedImage, setEditedImage] = useState<string | null>(null);
@@ -96,7 +104,7 @@ export default function ImageEditorCard() {
           <Wand2 /> AI Image Editor
         </CardTitle>
         <CardDescription>
-          Edit an existing image with a text prompt using Gemini.
+          Edit an existing image with a text prompt using Gemini (Nano Banana).
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -125,7 +133,7 @@ export default function ImageEditorCard() {
                 )}
                  <div className="space-y-2">
                     <Label htmlFor="prompt">2. Describe Your Edit</Label>
-                    <Input id="prompt" value={prompt} onChange={(e) => setPrompt(e.target.value)} placeholder="e.g., place this truck in a forest" />
+                    <Textarea id="prompt" value={prompt} onChange={(e) => setPrompt(e.target.value)} placeholder="e.g., place this truck in a forest" rows={7} />
                  </div>
               </div>
               <div className="space-y-4">
