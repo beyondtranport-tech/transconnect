@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview An AI-powered SEO content generation flow for shops.
@@ -9,7 +10,7 @@
 
 import {ai} from '@/ai/genkit';
 import { ShopSeoInputSchema, ShopSeoOutputSchema, type ShopSeoInput, type ShopSeoOutput } from '@/ai/schemas';
-import {z} from 'genkit';
+import {z} from 'zod';
 
 export async function generateShopSeo(input: ShopSeoInput): Promise<ShopSeoOutput> {
   return shopSeoFlow(input);

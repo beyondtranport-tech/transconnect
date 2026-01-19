@@ -10,7 +10,7 @@
 
 import {ai} from '@/ai/genkit';
 import { LeadResearchInputSchema, LeadResearchOutputSchema, type LeadResearchInput, type LeadResearchOutput } from '@/ai/schemas';
-import {z} from 'genkit';
+import {z} from 'zod';
 import { googleSearchTool } from '../tools/google-search';
 
 export async function leadResearchFlow(input: LeadResearchInput): Promise<LeadResearchOutput> {

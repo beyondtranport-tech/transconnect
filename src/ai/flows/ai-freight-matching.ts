@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview An AI-powered freight matching tool for transporters.
@@ -9,7 +10,7 @@
 
 import {ai} from '@/ai/genkit';
 import { MatchFreightInputSchema, MatchFreightOutputSchema, type MatchFreightInput, type MatchFreightOutput } from '@/ai/schemas';
-import {z} from 'genkit';
+import {z} from 'zod';
 
 export async function matchFreight(input: MatchFreightInput): Promise<MatchFreightOutput> {
   return matchFreightFlow(input);

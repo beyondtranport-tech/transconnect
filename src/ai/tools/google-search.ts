@@ -1,8 +1,7 @@
 
 'use server';
 import { ai } from '@/ai/genkit';
-import { z } from 'genkit';
-import { error } from 'console';
+import { z } from 'zod';
 
 const GoogleSearchInputSchema = z.object({
   query: z.string().describe('The search query.'),
