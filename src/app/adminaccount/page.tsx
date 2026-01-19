@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -198,9 +197,6 @@ function AdminAccountContent() {
       // Business Operations
       case 'dashboard': return <DashboardContent />;
       case 'staff': return <StaffContent />;
-      case 'leads-agent': return <LeadsAgent />;
-      case 'leads-database': return <LeadsDatabase />;
-      case 'campaigns': return <CampaignContent />;
        case 'wallet':
         if (memberId) {
             return <MemberWallet memberId={memberId} />;
@@ -214,7 +210,11 @@ function AdminAccountContent() {
       case 'performance': return <PerformanceContent />;
       case 'product-sales': return <ProductSalesContent />;
       case 'earnings': return <EarningsContent />;
+      case 'leads-agent': return <LeadsAgent />;
+      case 'leads-database': return <LeadsDatabase />;
       
+      // Marketing & AI
+      case 'campaigns': return <CampaignContent />;
       case 'partner-ai-content': return <PartnerAiContent />;
       case 'investor-ai-content': return <InvestorAiContent />;
 
@@ -236,10 +236,10 @@ function AdminAccountContent() {
     );
   }
 
-  const isSalesActive = ['network', 'network-offer', 'network-emails', 'performance', 'product-sales', 'earnings'].includes(activeView);
+  const isSalesActive = ['network', 'network-offer', 'network-emails', 'performance', 'product-sales', 'earnings', 'leads-agent', 'leads-database'].includes(activeView);
   const isPartnerPitchActive = ['partner-offer', 'partner-email', 'partner-elevator-pitch', 'partner-ai-content'].includes(activeView);
   const isInvestorPitchActive = ['investor-offer', 'investor-email', 'elevator-pitch', 'investor-ai-content'].includes(activeView);
-  const isResearchActive = ['leads-agent', 'leads-database', 'campaigns'].includes(activeView);
+  const isMarketingActive = ['campaigns', 'partner-ai-content', 'investor-ai-content'].includes(activeView);
 
 
   return (
@@ -277,22 +277,22 @@ function AdminAccountContent() {
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                  <SidebarMenuButton tooltip="Research &amp; AI" isActive={isResearchActive}>
-                      <Bot />
-                      <span>Research &amp; AI</span>
+                  <SidebarMenuButton tooltip="Marketing &amp; AI" isActive={isMarketingActive}>
+                      <Sparkles />
+                      <span>Marketing &amp; AI</span>
                   </SidebarMenuButton>
                   <SidebarMenuSub>
-                      <SidebarMenuSubButton isActive={activeView === 'leads-agent'} onClick={() => router.push('/adminaccount?view=leads-agent', { scroll: false })}>
-                          <Bot />
-                          <span>AI Lead Agent</span>
-                      </SidebarMenuSubButton>
-                       <SidebarMenuSubButton isActive={activeView === 'leads-database'} onClick={() => router.push('/adminaccount?view=leads-database', { scroll: false })}>
-                          <Database />
-                          <span>Leads Database</span>
-                      </SidebarMenuSubButton>
                       <SidebarMenuSubButton isActive={activeView === 'campaigns'} onClick={() => router.push('/adminaccount?view=campaigns', { scroll: false })}>
                           <Sparkles />
                           <span>AI Campaigns</span>
+                      </SidebarMenuSubButton>
+                      <SidebarMenuSubButton isActive={activeView === 'partner-ai-content'} onClick={() => router.push('/adminaccount?view=partner-ai-content', { scroll: false })}>
+                          <Presentation />
+                          <span>Partner Content</span>
+                      </SidebarMenuSubButton>
+                      <SidebarMenuSubButton isActive={activeView === 'investor-ai-content'} onClick={() => router.push('/adminaccount?view=investor-ai-content', { scroll: false })}>
+                          <Presentation />
+                          <span>Investor Content</span>
                       </SidebarMenuSubButton>
                   </SidebarMenuSub>
               </SidebarMenuItem>
@@ -350,6 +350,14 @@ function AdminAccountContent() {
                     <span>Sales</span>
                   </SidebarMenuButton>
                   <SidebarMenuSub>
+                      <SidebarMenuSubButton isActive={activeView === 'leads-agent'} onClick={() => router.push('/adminaccount?view=leads-agent', { scroll: false })}>
+                          <Bot />
+                          <span>AI Lead Agent</span>
+                      </SidebarMenuSubButton>
+                       <SidebarMenuSubButton isActive={activeView === 'leads-database'} onClick={() => router.push('/adminaccount?view=leads-database', { scroll: false })}>
+                          <Database />
+                          <span>Leads Database</span>
+                      </SidebarMenuSubButton>
                       <SidebarMenuSubButton isActive={activeView === 'network'} onClick={() => router.push('/adminaccount?view=network', { scroll: false })}>
                           <Users />
                           <span>My Network</span>
