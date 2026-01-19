@@ -1,3 +1,4 @@
+
 'use client';
     
 import { useState, useEffect, useCallback, useMemo } from 'react';
@@ -5,7 +6,7 @@ import {
   DocumentReference,
   DocumentData,
 } from 'firebase/firestore';
-import { getClientSideAuthToken } from '@/firebase/index';
+import { getClientSideAuthToken } from '@/firebase/errors';
 
 /** Utility type to add an 'id' field to a given type T. */
 type WithId<T> = T & { id: string };
