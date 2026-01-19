@@ -7,7 +7,8 @@ export const ai = genkit({
   plugins: [
     googleAI({ 
       projectId: 'transconnect-v1-39578841-2a857',
-      location: 'us-central1'
+      location: 'us-central1',
+      api: 'vertex' // Explicitly force the use of the Vertex AI backend
     }),
   ],
   logLevel: 'debug',
