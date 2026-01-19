@@ -12,11 +12,11 @@ To enable the AI Lead Agent to find real-world company data, you need to configu
 
 ## Step 2: Enable the Custom Search API
 
-**This is a critical step.** Before you can restrict your key, you must enable the API for your project.
+**This is a critical step.** Before you can restrict your key, you must enable the API for your project. The list you provided shows APIs that are *already* enabled. You need to find and enable a new one.
 
-1.  In the navigation menu, go to **APIs & Services > Library**.
-2.  In the search bar, type "**Custom Search JSON API**" and press Enter.
-3.  Click on the "Custom Search JSON API" result.
+1.  In the navigation menu, go to **APIs & Services > Library**. (This is different from the Dashboard).
+2.  In the search bar at the top of the Library page, type "**Custom Search JSON API**" and press Enter.
+3.  Click on the "Custom Search JSON API" result from the search.
 4.  Click the **Enable** button. Wait for it to finish.
 
 ## Step 3: Restrict Your API Key
