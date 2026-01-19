@@ -38,7 +38,7 @@ To enable the AI Lead Agent to find real-world company data, you need to configu
 5.  Click **Create**.
 6.  Once created, click on **Customize**.
 7.  Under the "Basics" tab, you will find the **Search engine ID**. Copy this ID.
-8.  In the same section, make sure to turn **ON** the "Search the entire web" option. This is crucial for the tool to work correctly.
+8.  In the same section, make sure to turn **ON** the "Search the entire web" option. This is the most crucial step, as it allows the agent to search the entire internet for leads, not just the site you entered during setup.
 9.  Click **Save Changes** if you made any.
 10. Paste the Search Engine ID into your `.env` file as the value for `CUSTOM_SEARCH_ENGINE_ID`.
 
