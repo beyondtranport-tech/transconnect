@@ -62,6 +62,7 @@ import {
   Target,
   Info,
   Bot,
+  Database,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -96,6 +97,9 @@ const CostCalculator = dynamic(() => import('./cost-calculator'), { loading: () 
 // --- Business Operations Components (from /backend) ---
 const MemberWallet = dynamic(() => import('../backend/wallet/[memberId]/member-wallet'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const DashboardContent = dynamic(() => import('../backend/dashboard-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const LeadsAgent = dynamic(() => import('./leads-agent'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const LeadsDatabase = dynamic(() => import('./leads-database'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+
 
 // --- Sales Section (from /account) ---
 const NetworkContent = dynamic(() => import('../account/network-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
@@ -190,6 +194,8 @@ function AdminAccountContent() {
       // Business Operations
       case 'dashboard': return <DashboardContent />;
       case 'staff': return <StaffContent />;
+      case 'leads-agent': return <LeadsAgent />;
+      case 'leads-database': return <LeadsDatabase />;
        case 'wallet':
         if (memberId) {
             return <MemberWallet memberId={memberId} />;
@@ -223,6 +229,7 @@ function AdminAccountContent() {
   }
 
   const isSalesActive = ['network', 'network-offer', 'network-emails', 'performance', 'product-sales', 'earnings'].includes(activeView);
+  const isLeadsActive = ['leads-agent', 'leads-database'].includes(activeView);
   const isPartnerPitchActive = ['partner-offer', 'partner-email', 'partner-elevator-pitch'].includes(activeView);
   const isInvestorPitchActive = ['investor-offer', 'investor-email', 'elevator-pitch'].includes(activeView);
 
@@ -260,6 +267,22 @@ function AdminAccountContent() {
                   <Users />
                   <span>Platform Staff</span>
                 </SidebarMenuButton>
+              </SidebarMenuItem>
+               <SidebarMenuItem>
+                <SidebarMenuButton tooltip="Leads" isActive={isLeadsActive}>
+                  <Bot />
+                  <span>Leads</span>
+                </SidebarMenuButton>
+                <SidebarMenuSub>
+                    <SidebarMenuSubButton isActive={activeView === 'leads-agent'} onClick={() => router.push('/adminaccount?view=leads-agent', { scroll: false })}>
+                        <Sparkles />
+                        <span>AI Lead Agent</span>
+                    </SidebarMenuSubButton>
+                    <SidebarMenuSubButton isActive={activeView === 'leads-database'} onClick={() => router.push('/adminaccount?view=leads-database', { scroll: false })}>
+                        <Database />
+                        <span>Lead Database</span>
+                    </SidebarMenuSubButton>
+                </SidebarMenuSub>
               </SidebarMenuItem>
               <SidebarMenuItem>
                 <SidebarMenuButton tooltip="Partner Pitch" isActive={isPartnerPitchActive}>

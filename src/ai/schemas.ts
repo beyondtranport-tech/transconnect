@@ -69,3 +69,18 @@ export const ShopSeoOutputSchema = z.object({
     tags: z.array(z.string()).describe('A list of 5-7 relevant SEO keywords or tags for the shop.'),
 });
 export type ShopSeoOutput = z.infer<typeof ShopSeoOutputSchema>;
+
+// From lead-research-flow.ts
+export const LeadResearchInputSchema = z.object({
+  topic: z.string().describe('The research topic or query for lead generation (e.g., "logistics companies in Cape Town").'),
+  quantity: z.coerce.number().min(1).max(25).describe('The number of leads to generate.'),
+});
+export type LeadResearchInput = z.infer<typeof LeadResearchInputSchema>;
+
+export const LeadResearchOutputSchema = z.object({
+    leads: z.array(z.object({
+        companyName: z.string().describe('The name of the potential lead company.'),
+        role: z.string().describe('The likely role of this company in the ecosystem (e.g., Vendor, Buyer, Partner).'),
+    })).describe('A list of potential leads based on the research topic.')
+});
+export type LeadResearchOutput = z.infer<typeof LeadResearchOutputSchema>;
