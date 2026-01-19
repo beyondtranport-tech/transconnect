@@ -8,7 +8,7 @@
  */
 
 import {ai} from '@/ai/genkit';
-import { geminiPro } from '@genkit-ai/google-genai';
+import { googleAI } from '@genkit-ai/google-genai';
 import { ShopSeoInputSchema, ShopSeoOutputSchema, type ShopSeoInput, type ShopSeoOutput } from '@/ai/schemas';
 
 export async function generateShopSeo(input: ShopSeoInput): Promise<ShopSeoOutput> {
@@ -23,7 +23,7 @@ const shopSeoFlow = ai.defineFlow(
   },
   async (input) => {
     const { output } = await ai.generate({
-        model: geminiPro,
+        model: googleAI.model('gemini-pro'),
         prompt: `You are an SEO expert for e-commerce websites in the transport and logistics industry. 
   
         Based on the following shop details:
