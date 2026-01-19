@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -229,7 +228,6 @@ function AdminAccountContent() {
   }
 
   const isSalesActive = ['network', 'network-offer', 'network-emails', 'performance', 'product-sales', 'earnings'].includes(activeView);
-  const isLeadsActive = ['leads-agent', 'leads-database'].includes(activeView);
   const isPartnerPitchActive = ['partner-offer', 'partner-email', 'partner-elevator-pitch'].includes(activeView);
   const isInvestorPitchActive = ['investor-offer', 'investor-email', 'elevator-pitch'].includes(activeView);
 
@@ -268,21 +266,17 @@ function AdminAccountContent() {
                   <span>Platform Staff</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
-               <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Leads" isActive={isLeadsActive}>
-                  <Bot />
-                  <span>Leads</span>
-                </SidebarMenuButton>
-                <SidebarMenuSub>
-                    <SidebarMenuSubButton isActive={activeView === 'leads-agent'} onClick={() => router.push('/adminaccount?view=leads-agent', { scroll: false })}>
-                        <Sparkles />
-                        <span>AI Lead Agent</span>
-                    </SidebarMenuSubButton>
-                    <SidebarMenuSubButton isActive={activeView === 'leads-database'} onClick={() => router.push('/adminaccount?view=leads-database', { scroll: false })}>
-                        <Database />
-                        <span>Lead Database</span>
-                    </SidebarMenuSubButton>
-                </SidebarMenuSub>
+              <SidebarMenuItem>
+                  <SidebarMenuButton tooltip="AI Lead Agent" isActive={activeView === 'leads-agent'} onClick={() => router.push('/adminaccount?view=leads-agent', { scroll: false })}>
+                      <Bot />
+                      <span>AI Lead Agent</span>
+                  </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                  <SidebarMenuButton tooltip="Leads Database" isActive={activeView === 'leads-database'} onClick={() => router.push('/adminaccount?view=leads-database', { scroll: false })}>
+                      <Database />
+                      <span>Leads Database</span>
+                  </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
                 <SidebarMenuButton tooltip="Partner Pitch" isActive={isPartnerPitchActive}>
