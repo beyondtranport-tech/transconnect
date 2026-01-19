@@ -38,10 +38,10 @@ const shopSeoFlow = ai.defineFlow(
     });
     
     try {
-        const parsedOutput = JSON.parse(text());
+        const parsedOutput = JSON.parse(text);
         return ShopSeoOutputSchema.parse(parsedOutput);
     } catch (e: any) {
-        console.error("Failed to parse JSON from AI SEO response:", text(), e);
+        console.error("Failed to parse JSON from AI SEO response:", text, e);
         if (e instanceof z.ZodError) {
           throw new Error(`AI returned invalid JSON structure: ${e.message}`);
         }

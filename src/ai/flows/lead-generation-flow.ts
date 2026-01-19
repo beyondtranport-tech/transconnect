@@ -35,10 +35,10 @@ const leadGenerationFlowInternal = ai.defineFlow(
     });
     
     try {
-        const parsedOutput = JSON.parse(text());
+        const parsedOutput = JSON.parse(text);
         return LeadGenerationOutputSchema.parse(parsedOutput);
     } catch (e: any) {
-        console.error("Failed to parse JSON from AI lead generation response:", text(), e);
+        console.error("Failed to parse JSON from AI lead generation response:", text, e);
         if (e instanceof z.ZodError) {
           throw new Error(`AI returned invalid JSON structure: ${e.message}`);
         }
