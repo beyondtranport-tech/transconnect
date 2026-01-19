@@ -100,8 +100,8 @@ export default function ImageGeneratorCard({ promptTemplate }: { promptTemplate?
 
   const handleSaveToCloud = async () => {
     if (!generatedImage || !user || !storage) {
-      toast({ variant: 'destructive', title: 'Error', description: 'No image, user, or storage service available.' });
-      return;
+        toast({ variant: 'destructive', title: 'Error', description: 'No image, user, or storage service available.' });
+        return;
     }
 
     setIsSaving(true);
@@ -112,8 +112,8 @@ export default function ImageGeneratorCard({ promptTemplate }: { promptTemplate?
         const blob = await response.blob();
         const fileName = `generated-image-${Date.now()}.png`;
         const storageRef = ref(storage, `generated-images/${user.uid}/${fileName}`);
-        
-        await new Promise<string>((resolve, reject) => {
+
+        const downloadURL = await new Promise<string>((resolve, reject) => {
             const uploadTask = uploadBytesResumable(storageRef, blob);
             uploadTask.on('state_changed',
                 (snapshot) => {
@@ -126,17 +126,17 @@ export default function ImageGeneratorCard({ promptTemplate }: { promptTemplate?
                 },
                 async () => {
                     try {
-                        const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-                        resolve(downloadURL);
+                        const url = await getDownloadURL(uploadTask.snapshot.ref);
+                        resolve(url);
                     } catch (error) {
                         reject(new Error(`Failed to get download URL: ${(error as Error).message}`));
                     }
                 }
             );
-        }).then((downloadURL) => {
-            setSavedImageUrl(downloadURL);
-            toast({ title: 'Image Saved!', description: 'Your image is now stored in the cloud.' });
         });
+
+        setSavedImageUrl(downloadURL);
+        toast({ title: 'Image Saved!', description: 'Your image is now stored in the cloud.' });
 
     } catch (error: any) {
         toast({ variant: 'destructive', title: 'Save Failed', description: error.message });
