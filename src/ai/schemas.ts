@@ -85,7 +85,7 @@ export const LeadResearchOutputSchema = z.object({
         website: z.string().url().nullable().optional().describe("The company's website URL, if found."),
         phone: z.string().optional().describe("The company's primary phone number, if found."),
         email: z.string().email().nullable().optional().describe("A general contact email for the company (e.g., info@, sales@), if found."),
-        contactPerson: z.string().optional().describe("A potential contact person's name, if found."),
+        contactPerson: z.string().nullable().optional().describe("A potential contact person's name, if found."),
     })).describe('A list of potential leads based on the research topic.')
 });
 export type LeadResearchOutput = z.infer<typeof LeadResearchOutputSchema>;
