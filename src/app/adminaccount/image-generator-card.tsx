@@ -20,7 +20,7 @@ import {
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Sparkles, Image as ImageIcon } from 'lucide-react';
+import { Loader2, Sparkles, Image as ImageIcon, Download } from 'lucide-react';
 import Image from 'next/image';
 import { generateImage } from '@/ai/flows/image-generation-flow';
 import { Textarea } from '@/components/ui/textarea';
@@ -65,6 +65,20 @@ export default function ImageGeneratorCard({ promptTemplate }: { promptTemplate?
     }
   };
 
+  const handleDownload = () => {
+    if (!generatedImage) return;
+    const link = document.createElement('a');
+    link.href = generatedImage;
+    link.download = `generated-image-${Date.now()}.png`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast({
+      title: 'Image Downloaded',
+      description: 'The image has been saved to your downloads folder.',
+    });
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -105,7 +119,15 @@ export default function ImageGeneratorCard({ promptTemplate }: { promptTemplate?
                     )}
                 </div>
             </div>
-            <DialogFooter className="mt-auto flex-shrink-0 pt-4">
+            <DialogFooter className="mt-auto flex-shrink-0 pt-4 sm:justify-between">
+              <div>
+                {generatedImage && (
+                  <Button variant="outline" onClick={handleDownload}>
+                    <Download className="mr-2 h-4 w-4" />
+                    Download Image
+                  </Button>
+                )}
+              </div>
               <Button onClick={handleGenerate} disabled={isLoading}>
                 {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
                 Generate Image

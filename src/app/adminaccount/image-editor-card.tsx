@@ -21,7 +21,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Sparkles, Wand2 } from 'lucide-react';
+import { Loader2, Sparkles, Wand2, Download } from 'lucide-react';
 import Image from 'next/image';
 import { imageEditFlow } from '@/ai/flows/image-edit-flow';
 import { Textarea } from '@/components/ui/textarea';
@@ -96,6 +96,20 @@ export default function ImageEditorCard({ promptTemplate }: { promptTemplate?: s
     }
   };
 
+  const handleDownload = () => {
+    if (!editedImage) return;
+    const link = document.createElement('a');
+    link.href = editedImage;
+    link.download = `edited-image-${Date.now()}.png`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast({
+      title: 'Image Downloaded',
+      description: 'The image has been saved to your downloads folder.',
+    });
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -151,7 +165,15 @@ export default function ImageEditorCard({ promptTemplate }: { promptTemplate?: s
                 </div>
               </div>
             </div>
-            <DialogFooter className="mt-auto flex-shrink-0 pt-4">
+            <DialogFooter className="mt-auto flex-shrink-0 pt-4 sm:justify-between">
+              <div>
+                {editedImage && (
+                  <Button variant="outline" onClick={handleDownload}>
+                    <Download className="mr-2 h-4 w-4" />
+                    Download Edited Image
+                  </Button>
+                )}
+              </div>
               <Button onClick={handleEdit} disabled={isLoading}>
                 {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
                 Generate Edit
