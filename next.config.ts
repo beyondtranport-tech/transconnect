@@ -35,7 +35,7 @@ const nextConfig = {
   },
   serverActions: {
     bodySizeLimit: '10mb',
-    timeout: 120000, // 120 seconds
+    serverActionTimeout: 120000, // 120 seconds
   },
 };
 
