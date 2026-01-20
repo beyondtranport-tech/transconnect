@@ -1,4 +1,3 @@
-
 'use client';
 
 import Link from 'next/link';
@@ -33,10 +32,10 @@ export default function Home() {
         <div className="absolute inset-0 bg-black/50" />
         <div className="relative z-10 px-4 max-w-4xl mx-auto">
           <h1 className="text-4xl md:text-6xl font-bold text-primary-foreground font-headline tracking-tight">
-            The Future of Transport is Connected
+            Driven by Community. Powered by You.
           </h1>
           <p className="mt-4 text-lg md:text-xl text-primary-foreground/90 max-w-2xl mx-auto">
-            Join the Logistics Flow ecosystem to unlock funding, a dedicated marketplace, and powerful tech to drive your business forward.
+            Welcome to Logistics Flow, the ecosystem where you build the future. Collaborate with peers, contribute your knowledge to earn rewards, and unlock passive income streams. It's more than logistics—it's shared success.
           </p>
           <Button asChild size="lg" className="mt-8">
             <Link href="/join">Join the Ecosystem</Link>
@@ -161,4 +160,3 @@ export default function Home() {
     </div>
   );
 }
-    
