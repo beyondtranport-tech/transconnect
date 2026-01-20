@@ -12,7 +12,7 @@ const techImage = placeholderImages.find(p => p.id === 'tech-division')!;
 export const divisions: Division[] = [
   {
     id: 'funding',
-    title: 'Logistics Flow Funding',
+    title: 'Funding',
     icon: 'DollarSign',
     description: "Breaking the constraints of traditional lending. We restore the flow of capital to your business by connecting you with funders who understand the transport industry.",
     longDescription: 'We have dared to challenge the status quo. We are able to fund where banks are not able to',
@@ -20,7 +20,7 @@ export const divisions: Division[] = [
   },
   {
     id: 'mall',
-    title: 'Logistics Flow Mall',
+    title: 'Mall',
     icon: 'ShoppingBasket',
     description: "Breaking the constraints of high operating costs. We create a flow of savings by leveraging our community's collective buying power for better deals on parts, services, and assets.",
     longDescription: "Join each of our malls are set up to break specific business constraints that you have.",
@@ -28,7 +28,7 @@ export const divisions: Division[] = [
   },
   {
     id: 'marketplace',
-    title: 'Logistics Flow Marketplace',
+    title: 'Marketplace',
     icon: 'Store',
     description: "Breaking the constraints of a limited network. We create a flow of new opportunities by enabling you to buy from, sell to, and collaborate with trusted partners.",
     longDescription: 'Access unique products from our partner partners and earn by sharing discounts from them.',
@@ -36,7 +36,7 @@ export const divisions: Division[] = [
   },
   {
     id: 'tech',
-    title: 'Logistics Flow Tech',
+    title: 'Tech',
     icon: 'Cpu',
     description: "Breaking the constraints of inefficiency. We restore the flow of information and opportunity with AI-powered tools that reduce empty miles and optimize your operations.",
     longDescription: 'Gain a competitive edge with Logistics Flow Tech. Our suite of digital tools is designed to optimize your operations. Key features include our AI-powered freight matching service to eliminate deadhead miles, route optimization software to save on fuel, and a digital document vault for compliance management. We handle the tech, so you can focus on the road.',

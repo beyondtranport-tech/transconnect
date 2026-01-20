@@ -18,7 +18,7 @@ export default function DivisionsPage() {
     <div className="bg-background">
       <div className="container mx-auto px-4 py-16">
         <div className="text-center max-w-3xl mx-auto mb-12">
-            <h1 className="text-4xl md:text-5xl font-bold font-headline">The TransConnect Ecosystem</h1>
+            <h1 className="text-4xl md:text-5xl font-bold font-headline">The Logistics Flow Ecosystem</h1>
             <p className="mt-4 text-lg md:text-xl text-muted-foreground">
                 Four interconnected divisions working together to power your business. Explore a division to see its dashboard.
             </p>
@@ -33,7 +33,7 @@ export default function DivisionsPage() {
                         <CardHeader className="flex-row items-start gap-4">
                             {IconComponent && <IconComponent className="h-10 w-10 text-primary" />}
                             <div className="flex-1">
-                                <CardTitle>{division.title.split(' ')[1]}</CardTitle>
+                                <CardTitle>{division.title}</CardTitle>
                                 <CardDescription className="mt-1">{division.description}</CardDescription>
                             </div>
                         </CardHeader>
@@ -43,7 +43,7 @@ export default function DivisionsPage() {
                         <CardFooter>
                             <Button asChild className="w-full">
                                 <Link href={href}>
-                                    Explore {division.title.split(' ')[1]} <ArrowRight className="ml-2 h-4 w-4" />
+                                    Explore {division.title} <ArrowRight className="ml-2 h-4 w-4" />
                                 </Link>
                             </Button>
                         </CardFooter>
