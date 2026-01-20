@@ -1,4 +1,3 @@
-
 'use client';
 
 import Link from 'next/link';
@@ -9,6 +8,8 @@ import data from '@/lib/placeholder-images.json';
 import * as React from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter, CardDescription } from '@/components/ui/card';
 import { divisions } from "@/lib/data";
+import { HomeIntentModal } from './home-intent-modal';
+import { useState } from 'react';
 
 const { placeholderImages } = data;
 
@@ -23,8 +24,11 @@ const iconComponents: { [key: string]: React.ElementType } = {
 };
 
 export default function Home() {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
   return (
     <div className="flex flex-col">
+      <HomeIntentModal isOpen={isModalOpen} onOpenChange={setIsModalOpen} />
       <section className="relative w-full h-[60vh] md:h-[70vh] flex items-center justify-center text-center">
         {heroImage && (
           <Image
@@ -44,8 +48,8 @@ export default function Home() {
            <p className="mt-4 text-lg md:text-xl text-primary-foreground/90 max-w-3xl mx-auto">
             Our platform is tailor-made to be an efficient, community-driven ecosystem. We provide innovative solutions and tools to help you build trust, create opportunity, and foster collaboration. Our members drive our community, and our software is purpose-built to break constraints and create lasting, meaningful change for your business.
           </p>
-          <Button asChild size="lg" className="mt-8">
-            <Link href="/join">Join for Free</Link>
+          <Button size="lg" className="mt-8" onClick={() => setIsModalOpen(true)}>
+            Get Started
           </Button>
         </div>
       </section>
