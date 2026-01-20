@@ -8,7 +8,7 @@ import React from 'react';
 const sections = [
     {
         icon: <Cpu className="h-8 w-8 text-primary" />,
-        title: "What is TransConnect?",
+        title: "What is Logistics Flow?",
         points: [
             "An integrated digital ecosystem designed specifically for the South African transport industry.",
             "A platform that unifies four core business pillars: Funding, a multi-faceted Mall, a value-added Marketplace, and a powerful Tech division.",
@@ -37,7 +37,7 @@ const sections = [
     },
     {
         icon: <CheckCircle className="h-8 w-8 text-green-500" />,
-        title: "Why TransConnect is the Ideal Partner",
+        title: "Why Logistics Flow is the Ideal Partner",
         points: [
             "Our platform handles all tracking, transactions, and commission payouts automatically and transparently through your dedicated dashboard.",
             "We provide you with the marketing materials and unique referral links to make onboarding your network seamless.",
@@ -51,7 +51,7 @@ export default function PartnerElevatorPitch() {
         <div className="space-y-8">
             <div>
                 <h1 className="text-3xl font-bold font-headline">Partner Elevator Pitch</h1>
-                <p className="text-lg text-muted-foreground mt-2">A concise summary of the TransConnect partnership opportunity.</p>
+                <p className="text-lg text-muted-foreground mt-2">A concise summary of the Logistics Flow partnership opportunity.</p>
             </div>
 
             {sections.map(section => (
@@ -74,3 +74,5 @@ export default function PartnerElevatorPitch() {
         </div>
     );
 }
+
+    

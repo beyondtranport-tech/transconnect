@@ -74,7 +74,7 @@ export default function AboutPage() {
             )}
             <div className="absolute inset-0 bg-black/60" />
             <div className="relative h-full flex flex-col items-center justify-center text-center text-primary-foreground z-10 p-4">
-                <h1 className="text-4xl md:text-5xl font-bold font-headline">About TransConnect</h1>
+                <h1 className="text-4xl md:text-5xl font-bold font-headline">About Logistics Flow</h1>
                 <p className="mt-4 text-lg md:text-xl max-w-3xl">We are dedicated to revolutionizing the transport industry through connection and innovation.</p>
             </div>
         </section>
@@ -101,7 +101,7 @@ export default function AboutPage() {
         <section className="py-16 md:py-24 bg-background">
             <div className="container mx-auto px-4">
                 <div className="text-center max-w-3xl mx-auto mb-16">
-                    <h2 className="text-3xl md:text-4xl font-bold font-headline">Who is TransConnect for?</h2>
+                    <h2 className="text-3xl md:text-4xl font-bold font-headline">Who is Logistics Flow for?</h2>
                     <p className="mt-4 text-lg text-muted-foreground">
                         Our ecosystem is designed for every participant in the transport industry. Find your place and start connecting.
                     </p>
@@ -193,3 +193,5 @@ export default function AboutPage() {
     </div>
   );
 }
+
+    

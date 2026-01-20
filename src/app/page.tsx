@@ -36,7 +36,7 @@ export default function Home() {
             The Future of Transport is Connected
           </h1>
           <p className="mt-4 text-lg md:text-xl text-primary-foreground/90 max-w-2xl mx-auto">
-            Join the TransConnect ecosystem to unlock funding, a dedicated marketplace, and powerful tech to drive your business forward.
+            Join the Logistics Flow ecosystem to unlock funding, a dedicated marketplace, and powerful tech to drive your business forward.
           </p>
           <Button asChild size="lg" className="mt-8">
             <Link href="/join">Join the Ecosystem</Link>
@@ -102,7 +102,7 @@ export default function Home() {
                  <p>Central to our vision is to use digital platforms to drive efficiencies, data to enhance decisioning and collaboration to drive leverage.</p>
               </CardContent>
             </Card>
-          </div>
+          </Card>
           <Card className="max-w-5xl mx-auto mt-8 bg-card">
              <CardHeader>
                 <CardTitle className="flex items-center gap-3">
@@ -161,3 +161,5 @@ export default function Home() {
     </div>
   );
 }
+
+    

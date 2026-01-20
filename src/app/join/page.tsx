@@ -151,7 +151,7 @@ function JoinFormComponent() {
 
       toast({
         title: 'Account Created!',
-        description: "Welcome to TransConnect. Redirecting you now...",
+        description: "Welcome to Logistics Flow. Redirecting you now...",
       });
 
       const isAdmin = user.email === 'beyondtransport@gmail.com';
@@ -194,7 +194,7 @@ function JoinFormComponent() {
     <Card className="w-full max-w-lg">
       <CardHeader className="text-center">
         <CardTitle className="text-3xl font-bold font-headline">
-          Join TransConnect
+          Join Logistics Flow
         </CardTitle>
         <CardDescription>
           Create your free account to get started. Membership is free for the first year.
@@ -328,3 +328,5 @@ export default function JoinPage() {
     </div>
   );
 }
+
+    

@@ -121,24 +121,24 @@ export default function PartnerOffer() {
                          <CardDescription>Unlock high-upside potential from ecosystem activity.</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                        <p>Your earning potential goes far beyond subscriptions. You earn a significant share of the revenue TransConnect generates from your network's activity across all our Malls.</p>
+                        <p>Your earning potential goes far beyond subscriptions. You earn a significant share of the revenue Logistics Flow generates from your network's activity across all our Malls.</p>
                         <ul className="text-sm space-y-4 pt-2">
                             <li className="flex items-start gap-3">
                                 <CheckCircle className="h-4 w-4 text-green-600 mt-1 shrink-0" />
                                 <div>
-                                    <strong className="font-semibold">Finance Mall:</strong> A member from your network finances a <strong className="font-mono">{formatCurrency(exampleDealSize)}</strong> trailer. TransConnect earns a {exampleOriginationFeePercent}% fee ({formatCurrency(exampleDealCommission)}). Your {isaFinanceShare}% share earns you <strong className="text-green-600">{formatCurrency(isaExampleDealShare)}</strong>.
+                                    <strong className="font-semibold">Finance Mall:</strong> A member from your network finances a <strong className="font-mono">{formatCurrency(exampleDealSize)}</strong> trailer. Logistics Flow earns a {exampleOriginationFeePercent}% fee ({formatCurrency(exampleDealCommission)}). Your {isaFinanceShare}% share earns you <strong className="text-green-600">{formatCurrency(isaExampleDealShare)}</strong>.
                                 </div>
                             </li>
                              <li className="flex items-start gap-3">
                                 <CheckCircle className="h-4 w-4 text-green-600 mt-1 shrink-0" />
                                 <div>
-                                    <strong className="font-semibold">Supplier Mall:</strong> Your network collectively spends {formatCurrency(exampleSupplierSpend)} on parts. TransConnect earns a {supplierMallPlatformCommission*100}% commission ({formatCurrency(supplierPlatformEarnings)}). Your {isaSupplierShare}% share could earn you <strong className="text-green-600">{formatCurrency(isaSupplierEarnings)}</strong>.
+                                    <strong className="font-semibold">Supplier Mall:</strong> Your network collectively spends {formatCurrency(exampleSupplierSpend)} on parts. Logistics Flow earns a {supplierMallPlatformCommission*100}% commission ({formatCurrency(supplierPlatformEarnings)}). Your {isaSupplierShare}% share could earn you <strong className="text-green-600">{formatCurrency(isaSupplierEarnings)}</strong>.
                                 </div>
                             </li>
                              <li className="flex items-start gap-3">
                                 <CheckCircle className="h-4 w-4 text-green-600 mt-1 shrink-0" />
                                 <div>
-                                    <strong className="font-semibold">Buy & Sell Mall:</strong> A member sells a used truck for {formatCurrency(exampleTruckSale)}. TransConnect earns a {buySellMallPlatformCommission*100}% success fee ({formatCurrency(buySellPlatformEarnings)}). Your {isaBuySellShare}% share nets you <strong className="text-green-600">{formatCurrency(isaBuySellEarnings)}</strong>.
+                                    <strong className="font-semibold">Buy & Sell Mall:</strong> A member sells a used truck for {formatCurrency(exampleTruckSale)}. Logistics Flow earns a {buySellMallPlatformCommission*100}% success fee ({formatCurrency(buySellPlatformEarnings)}). Your {isaBuySellShare}% share nets you <strong className="text-green-600">{formatCurrency(isaBuySellEarnings)}</strong>.
                                 </div>
                             </li>
                         </ul>
@@ -158,7 +158,7 @@ export default function PartnerOffer() {
                         <li className="flex items-start gap-3">
                             <CheckCircle className="h-4 w-4 text-green-600 mt-1 shrink-0" />
                             <div>
-                                <strong className="font-semibold">Example: Subscription Product Sales.</strong> A subscription product costs {formatCurrency(exampleMarketplaceProductPrice)}/month. TransConnect earns a {formatCurrency(exampleMarketplacePlatformCommission)} (25%) commission. We share {isaMarketplaceShare}% of our commission with you, the ISA.
+                                <strong className="font-semibold">Example: Subscription Product Sales.</strong> A subscription product costs {formatCurrency(exampleMarketplaceProductPrice)}/month. Logistics Flow earns a {formatCurrency(exampleMarketplacePlatformCommission)} (25%) commission. We share {isaMarketplaceShare}% of our commission with you, the ISA.
                             </div>
                         </li>
                          <li className="flex items-start gap-3">
@@ -188,7 +188,7 @@ export default function PartnerOffer() {
                     </div>
                      <div>
                         <h4 className="font-bold text-lg">Step 2: You Activate Your Network</h4>
-                        <p className="text-muted-foreground">You introduce TransConnect to your community. Your pitch is simple: invite them to join an ecosystem that saves them money on parts, helps them find work, and gives them access to better financing. We equip you with offers and materials to make signing up irresistible.</p>
+                        <p className="text-muted-foreground">You introduce Logistics Flow to your community. Your pitch is simple: invite them to join an ecosystem that saves them money on parts, helps them find work, and gives them access to better financing. We equip you with offers and materials to make signing up irresistible.</p>
                     </div>
                      <div>
                         <h4 className="font-bold text-lg">Step 3: You Earn Automatically</h4>
@@ -202,3 +202,5 @@ export default function PartnerOffer() {
         </div>
     );
 }
+
+    

@@ -13,14 +13,14 @@ const resources = [
         title: "Getting Started Guide",
         content: (
             <div className="space-y-4 text-muted-foreground">
-                <p>Welcome to TransConnect! Here’s how to get the most out of our ecosystem from day one.</p>
+                <p>Welcome to Logistics Flow! Here’s how to get the most out of our ecosystem from day one.</p>
                 <div>
                     <h4 className="font-semibold text-foreground">1. Create Your Free Account</h4>
                     <p>Click the "Join Now" button on the homepage or navigation bar. The registration process is quick and easy. All you need is your name, company name, and contact details. Your account gives you immediate access to the member dashboard and marketplace.</p>
                 </div>
                 <div>
                     <h4 className="font-semibold text-foreground">2. Explore the Divisions</h4>
-                    <p>TransConnect is built on four core divisions. Visit the "Divisions" page to understand how each one can help your business: Funding, the Mall, the Marketplace, and our cutting-edge Tech.</p>
+                    <p>Logistics Flow is built on four core divisions. Visit the "Divisions" page to understand how each one can help your business: Funding, the Mall, the Marketplace, and our cutting-edge Tech.</p>
                 </div>
                  <div>
                     <h4 className="font-semibold text-foreground">3. Visit Your Account Dashboard</h4>
@@ -79,7 +79,7 @@ const resources = [
                 </div>
                 <div>
                     <h4 className="font-semibold text-foreground">The Rewards & Actions Plans</h4>
-                    <p>The Rewards Plan allows you to earn points on purchases made through the TransConnect Mall, which can be redeemed for valuable items like fuel vouchers. The Actions Plan allows you to earn direct commission by referring new members or sharing supplier discounts with your network.</p>
+                    <p>The Rewards Plan allows you to earn points on purchases made through the Logistics Flow Mall, which can be redeemed for valuable items like fuel vouchers. The Actions Plan allows you to earn direct commission by referring new members or sharing supplier discounts with your network.</p>
                 </div>
             </div>
         )
@@ -92,7 +92,7 @@ export default function ResourcesPage() {
       <div className="text-center max-w-3xl mx-auto mb-12">
         <h1 className="text-4xl md:text-5xl font-bold font-headline">Resource Center</h1>
         <p className="mt-4 text-lg md:text-xl text-muted-foreground">
-          Your central hub for guides, manuals, and tutorials. Find everything you need to know about navigating the TransConnect ecosystem.
+          Your central hub for guides, manuals, and tutorials. Find everything you need to know about navigating the Logistics Flow ecosystem.
         </p>
       </div>
 
@@ -116,3 +116,5 @@ export default function ResourcesPage() {
     </div>
   );
 }
+
+    

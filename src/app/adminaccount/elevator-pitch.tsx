@@ -8,7 +8,7 @@ import React from 'react';
 const sections = [
     {
         icon: <Cpu className="h-8 w-8 text-primary" />,
-        title: "What is TransConnect?",
+        title: "What is Logistics Flow?",
         points: [
             "An integrated digital ecosystem designed specifically for the South African transport industry.",
             "A platform that unifies four core business pillars: Funding, a multi-faceted Mall, a value-added Marketplace, and a powerful Tech division.",
@@ -36,7 +36,7 @@ const sections = [
     },
     {
         icon: <CheckCircle className="h-8 w-8 text-green-500" />,
-        title: "Why TransConnect is The Solution",
+        title: "Why Logistics Flow is The Solution",
         points: [
             "Our Finance Mall connects pre-vetted borrowers with a network of niche lenders, directly solving the funding access problem.",
             "The Supplier Mall aggregates member demand to negotiate significant bulk discounts, directly reducing operational costs.",
@@ -51,7 +51,7 @@ export default function ElevatorPitch() {
         <div className="space-y-8">
             <div>
                 <h1 className="text-3xl font-bold font-headline">Elevator Pitch</h1>
-                <p className="text-lg text-muted-foreground mt-2">A concise summary of the TransConnect opportunity.</p>
+                <p className="text-lg text-muted-foreground mt-2">A concise summary of the Logistics Flow opportunity.</p>
             </div>
 
             {sections.map(section => (
@@ -74,3 +74,5 @@ export default function ElevatorPitch() {
         </div>
     );
 }
+
+    

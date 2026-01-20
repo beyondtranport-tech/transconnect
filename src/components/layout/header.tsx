@@ -96,7 +96,7 @@ export function Header() {
         <div className="flex items-center gap-6">
           <Link href="/" className="flex items-center gap-2">
             <Truck className="h-6 w-6 text-primary" />
-            <span className="font-bold text-lg">TransConnect</span>
+            <span className="font-bold text-lg">Logistics Flow</span>
           </Link>
         </div>
 
@@ -200,7 +200,7 @@ export function Header() {
                     <SheetTitle>
                         <Link href="/" className="flex items-center gap-2" onClick={() => setIsSheetOpen(false)}>
                         <Truck className="h-6 w-6 text-primary" />
-                        <span className="font-bold text-lg">TransConnect</span>
+                        <span className="font-bold text-lg">Logistics Flow</span>
                         </Link>
                     </SheetTitle>
                 </SheetHeader>
@@ -297,3 +297,5 @@ export function Header() {
     </header>
   );
 }
+
+    

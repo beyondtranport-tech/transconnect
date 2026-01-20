@@ -9,7 +9,7 @@ import Analytics from '@/components/Analytics';
 import { VisitorTracker } from '@/components/VisitorTracker';
 
 export const metadata: Metadata = {
-  title: 'TransConnect',
+  title: 'Logistics Flow',
   description: 'An ecosystem for the transport industry.',
 };
 
@@ -43,3 +43,5 @@ export default function RootLayout({
     </html>
   );
 }
+
+    

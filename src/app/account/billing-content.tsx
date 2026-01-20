@@ -13,7 +13,7 @@ export default function BillingContent() {
                    <CreditCard className="h-6 w-6" />
                    Billing
                 </CardTitle>
-                <CardDescription>View your monthly invoices, statements, and charges reports from TransConnect.</CardDescription>
+                <CardDescription>View your monthly invoices, statements, and charges reports from Logistics Flow.</CardDescription>
             </CardHeader>
             <CardContent>
                 <div className="text-center py-20 border-2 border-dashed rounded-lg">
@@ -27,3 +27,5 @@ export default function BillingContent() {
         </Card>
     );
 }
+
+    

@@ -32,7 +32,7 @@ To enable the AI Lead Agent to find real-world company data, you need to configu
 1.  Go to the [Programmable Search Engine control panel](https://programmablesearchengine.google.com/controlpanel/all).
 2.  Click **Add** to create a new search engine.
 3.  In the "What to search?" section, enter a valid website to search (e.g., `www.google.com`). This is just a starting point.
-4.  Give your search engine a name (e.g., "TransConnect Lead Finder").
+4.  Give your search engine a name (e.g., "Logistics Flow Lead Finder").
 5.  Click **Create**.
 6.  If you see a code snippet like `<script ... cx="YOUR_ID" ...>`, your **Search engine ID** is the value inside the `cx` quotes.
 7.  If not, click **Customize** for your new search engine. Under the "Basics" tab, find and copy the **Search engine ID**.
@@ -52,3 +52,5 @@ GOOGLE_SEARCH_API_KEY=YOUR_API_KEY_HERE
 CUSTOM_SEARCH_ENGINE_ID=YOUR_SEARCH_ENGINE_ID_HERE
 ```
 The AI Lead Agent will now be fully functional.
+
+    

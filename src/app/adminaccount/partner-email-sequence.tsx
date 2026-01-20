@@ -42,13 +42,13 @@ const EmailTemplate = ({ subject, content }: { subject: string, content: string 
 
 const templates = {
     intro: {
-        subject: "Partnership Opportunity with TransConnect",
+        subject: "Partnership Opportunity with Logistics Flow",
         content: `
 Dear [Partner Name],
 
 I hope this email finds you well.
 
-My name is [Your Name], and I'm reaching out from TransConnect. We've developed a comprehensive digital ecosystem specifically for the transport industry, designed to solve the key challenges transporters face every day: accessing capital, finding work, and reducing operational costs.
+My name is [Your Name], and I'm reaching out from Logistics Flow. We've developed a comprehensive digital ecosystem specifically for the transport industry, designed to solve the key challenges transporters face every day: accessing capital, finding work, and reducing operational costs.
 
 Would you be open to a brief chat next week to explore how a partnership could be mutually beneficial?
 
@@ -58,13 +58,13 @@ Best regards,
         `
     },
     proposal: {
-        subject: "Following Up: The TransConnect Partnership Proposal",
+        subject: "Following Up: The Logistics Flow Partnership Proposal",
         content: `
 Dear [Partner Name],
 
-Following up on our brief chat, here is a bit more detail on what a partnership with TransConnect entails.
+Following up on our brief chat, here is a bit more detail on what a partnership with Logistics Flow entails.
 
-What is TransConnect?
+What is Logistics Flow?
 
 An all-in-one platform that brings together:
 - A Funding Division: Flexible finance solutions where traditional banks often can't.
@@ -73,13 +73,13 @@ An all-in-one platform that brings together:
 - Powerful Tech Tools: Including an AI-powered system to match available trucks with freight loads.
 
 What we want from a partner:
-- To introduce TransConnect to your network of transporters and suppliers.
+- To introduce Logistics Flow to your network of transporters and suppliers.
 - To act as an ambassador for our mission to empower transport businesses.
 
 What we will give you in return:
 - A Free Lifetime Premium Membership.
 - A Recurring Revenue Stream: Earn a significant, recurring commission on all membership and subscription fees from every member you bring into the network.
-- Transactional Revenue Share: Earn a share of the revenue TransConnect generates from your network's activity across our Finance and Supplier Malls.
+- Transactional Revenue Share: Earn a share of the revenue Logistics Flow generates from your network's activity across our Finance and Supplier Malls.
 
 This is a true business partnership where your earnings grow with your network's activity.
 
@@ -91,7 +91,7 @@ Best regards,
         `
     },
     revenue: {
-        subject: "How the TransConnect Partnership Revenue Works",
+        subject: "How the Logistics Flow Partnership Revenue Works",
         content: `
 Dear [Partner Name],
 
@@ -122,14 +122,14 @@ Hi [Partner Name],
 
 Let's talk about the core of this partnership: your network.
 
-The transport industry thrives on relationships. You already have a network of transporters, suppliers, and contacts that you've built over years. TransConnect provides the tools to turn those relationships into a powerful, automated revenue engine.
+The transport industry thrives on relationships. You already have a network of transporters, suppliers, and contacts that you've built over years. Logistics Flow provides the tools to turn those relationships into a powerful, automated revenue engine.
 
 Think about it:
 - Who do you buy parts from?
 - Who do you subcontract loads to?
 - Who asks you for advice on financing?
 
-Every one of these interactions is an opportunity. By introducing them to TransConnect—where they can get better pricing, find more work, or access capital—you are not only helping them, but you are also building your own business within our ecosystem.
+Every one of these interactions is an opportunity. By introducing them to Logistics Flow—where they can get better pricing, find more work, or access capital—you are not only helping them, but you are also building your own business within our ecosystem.
 
 Our platform handles the tracking, the transactions, and the payouts. Your job is to do what you already do best: connect people and solve problems. We just provide the framework for you to get paid for it.
 
@@ -143,19 +143,19 @@ Best regards,
     howTo: {
         subject: "User Manual: Managing Your Network",
         content: `
-**Your Guide to Building and Managing Your Referral Network in TransConnect**
+**Your Guide to Building and Managing Your Referral Network in Logistics Flow**
 
 This guide explains how to use the "My Network" section of your account to invite new members and track your referral success.
 
 **Step 1: Access Your Network Dashboard**
-1.  Log in to your TransConnect account.
+1.  Log in to your Logistics Flow account.
 2.  From the main account dashboard, navigate to the "Sales" section in the sidebar and click on "Network".
 3.  This is your central hub for viewing all the members who have joined using your personal referral link.
 
 **Step 2: Invite New Leads**
 1.  Click the "Invite Lead" button. This will open WhatsApp on your device.
 2.  A pre-written message containing your unique referral link will be ready to send. Your link will look something like this: \`https://[app-url]/join?ref=[your_company_id]\`.
-3.  Send this message to any transporters, suppliers, or other businesses in your network who you think would benefit from TransConnect.
+3.  Send this message to any transporters, suppliers, or other businesses in your network who you think would benefit from Logistics Flow.
 4.  **Important:** They MUST use this specific link for you to be credited as the referrer and earn commissions.
 
 **Step 3: Track Your Referrals**
@@ -191,7 +191,7 @@ export default function PartnerEmailSequence() {
                     <div>
                         <CardTitle>Partner Outreach Email Sequence</CardTitle>
                         <CardDescription>
-                            Use these templates to introduce, propose, and explain the TransConnect partnership opportunity.
+                            Use these templates to introduce, propose, and explain the Logistics Flow partnership opportunity.
                         </CardDescription>
                     </div>
                 </div>
@@ -221,3 +221,5 @@ export default function PartnerEmailSequence() {
         </div>
     );
 }
+
+    

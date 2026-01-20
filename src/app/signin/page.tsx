@@ -158,7 +158,7 @@ function SignInFormComponent() {
           Member Sign In
         </CardTitle>
         <CardDescription>
-          Access your TransConnect account.
+          Access your Logistics Flow account.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -231,3 +231,5 @@ export default function SignInPage() {
         </div>
     )
 }
+
+    

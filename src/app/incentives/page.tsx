@@ -16,7 +16,7 @@ const products = [
         id: "ecosystem-membership",
         icon: <Boxes className="h-8 w-8 text-primary" />,
         title: "Refer New Members",
-        description: "Invite other businesses to join TransConnect. You earn reward points for every new member who signs up for a paid plan through your referral.",
+        description: "Invite other businesses to join Logistics Flow. You earn reward points for every new member who signs up for a paid plan through your referral.",
         linkUrl: "/account?view=referrals", // This page would need to be created
         isExternal: false,
     },
@@ -78,8 +78,8 @@ export default function IncentivesPage() {
                 )}
                 <div className="absolute inset-0 bg-black/60" />
                 <div className="relative h-full flex flex-col items-center justify-center text-center text-primary-foreground z-10 p-4">
-                    <h1 className="text-4xl md:text-5xl font-bold font-headline">The TransConnect Referral Program</h1>
-                    <p className="mt-4 text-lg md:text-xl max-w-3xl">Turn your industry connections into revenue. Earn points and commission by sharing the value of TransConnect with your network.</p>
+                    <h1 className="text-4xl md:text-5xl font-bold font-headline">The Logistics Flow Referral Program</h1>
+                    <p className="mt-4 text-lg md:text-xl max-w-3xl">Turn your industry connections into revenue. Earn points and commission by sharing the value of Logistics Flow with your network.</p>
                 </div>
             </section>
 
@@ -88,7 +88,7 @@ export default function IncentivesPage() {
                     <div className="max-w-3xl mx-auto">
                         <h2 className="text-3xl md:text-4xl font-bold font-headline">The Opportunity: Earn By Sharing</h2>
                         <p className="mt-4 text-lg text-muted-foreground">
-                            You have the network. We have the products. Our referral program allows every TransConnect member to earn by recommending our high-demand services and memberships. There are no limits to what you can earn. Top performers can qualify for our elite ISA (Independent Sales Agent) program, unlocking even higher commission tiers and exclusive bonuses.
+                            You have the network. We have the products. Our referral program allows every Logistics Flow member to earn by recommending our high-demand services and memberships. There are no limits to what you can earn. Top performers can qualify for our elite ISA (Independent Sales Agent) program, unlocking even higher commission tiers and exclusive bonuses.
                         </p>
                     </div>
                 </div>
@@ -135,11 +135,11 @@ export default function IncentivesPage() {
                 <div className="container mx-auto px-4 text-center">
                     <h2 className="text-3xl md:text-4xl font-bold font-headline">Ready to Start Earning?</h2>
                     <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
-                        Your referral dashboard is waiting in your account. Join TransConnect today to get your unique sharing links and start earning rewards.
+                        Your referral dashboard is waiting in your account. Join Logistics Flow today to get your unique sharing links and start earning rewards.
                     </p>
                     <Button asChild size="lg" className="mt-8">
                         <Link href="/join">
-                            Join TransConnect Now <ArrowRight className="ml-2 h-4 w-4" />
+                            Join Logistics Flow Now <ArrowRight className="ml-2 h-4 w-4" />
                         </Link>
                     </Button>
                 </div>
@@ -147,3 +147,5 @@ export default function IncentivesPage() {
         </div>
     );
 }
+
+    

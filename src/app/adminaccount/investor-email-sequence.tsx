@@ -46,7 +46,7 @@ const templates = {
         content: `
 Dear [Investor Name],
 
-My name is [Your Name], founder of TransConnect. With 25 years of experience in transport finance, we are launching a tech platform to solve the core challenges of fragmentation and funding access in South Africa's logistics sector.
+My name is [Your Name], founder of Logistics Flow. With 25 years of experience in transport finance, we are launching a tech platform to solve the core challenges of fragmentation and funding access in South Africa's logistics sector.
 
 We've built an ecosystem that integrates finance, a supplier marketplace, and powerful data tools to increase efficiency and profitability for transporters.
 
@@ -58,7 +58,7 @@ Best regards,
         `
     },
     problemSolution: {
-        subject: "Re: TransConnect - Solving the R1 Trillion Transport Sector's Pain Points",
+        subject: "Re: Logistics Flow - Solving the R1 Trillion Transport Sector's Pain Points",
         content: `
 Dear [Investor Name],
 
@@ -68,7 +68,7 @@ Following up on my previous email, I wanted to highlight the specific problem we
 - Operational Costs: Individual operators lack the collective buying power to get discounts on parts, tires, and services.
 - Wasted Capacity: Empty trucks on return journeys ("deadhead miles") severely impact profitability.
 
-TransConnect solves this with an integrated ecosystem:
+Logistics Flow solves this with an integrated ecosystem:
 - Finance Mall: Connects pre-vetted borrowers with a network of niche lenders, banks, and grant providers.
 - Supplier Mall: Aggregates demand to negotiate bulk discounts, passing savings to members.
 - Tech Division: Our AI Freight Matcher fills empty trucks, turning a cost into a revenue opportunity.
@@ -81,7 +81,7 @@ Best regards,
         `
     },
     traction: {
-        subject: "Re: TransConnect - Our Go-To-Market Strategy & Traction",
+        subject: "Re: Logistics Flow - Our Go-To-Market Strategy & Traction",
         content: `
 Dear [Investor Name],
 
@@ -103,7 +103,7 @@ Best regards,
         `
     },
     ask: {
-        subject: "Re: TransConnect - The Investment Opportunity",
+        subject: "Re: Logistics Flow - The Investment Opportunity",
         content: `
 Dear [Investor Name],
 
@@ -124,13 +124,13 @@ Best regards,
         `
     },
     followUp: {
-        subject: "Following Up on TransConnect",
+        subject: "Following Up on Logistics Flow",
         content: `
 Dear [Investor Name],
 
 I hope you're having a productive week.
 
-I wanted to briefly follow up on my previous emails regarding the investment opportunity with TransConnect. We are making significant progress with our go-to-market partners and are on track to fundamentally improve how the transport industry operates.
+I wanted to briefly follow up on my previous emails regarding the investment opportunity with Logistics Flow. We are making significant progress with our go-to-market partners and are on track to fundamentally improve how the transport industry operates.
 
 If you have 15 minutes next week, I would be grateful for the chance to answer any questions you might have.
 
@@ -159,7 +159,7 @@ export default function InvestorEmailSequence() {
                     <div>
                         <CardTitle>Investor Outreach Email Sequence</CardTitle>
                         <CardDescription>
-                            Use these templates to introduce, propose, and explain the TransConnect investment opportunity.
+                            Use these templates to introduce, propose, and explain the Logistics Flow investment opportunity.
                         </CardDescription>
                     </div>
                 </div>
@@ -189,3 +189,5 @@ export default function InvestorEmailSequence() {
         </div>
     );
 }
+
+    

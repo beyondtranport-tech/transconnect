@@ -11,10 +11,10 @@ export function Footer() {
         <div className="flex flex-col md:flex-row justify-between items-center">
           <div className="flex items-center gap-2 mb-4 md:mb-0">
             <Truck className="h-6 w-6 text-primary" />
-            <span className="font-bold text-lg">TransConnect</span>
+            <span className="font-bold text-lg">Logistics Flow</span>
           </div>
           <div className="text-sm text-muted-foreground text-center md:text-right">
-            <p>&copy; {year} TransConnect Inc. All rights reserved.</p>
+            <p>&copy; {year} Logistics Flow Inc. All rights reserved.</p>
             <p className="mt-1">
               <Link href="/privacy" className="hover:text-primary transition-colors">Privacy Policy</Link>
               <span className="mx-2">|</span>
@@ -26,3 +26,5 @@ export function Footer() {
     </footer>
   );
 }
+
+    

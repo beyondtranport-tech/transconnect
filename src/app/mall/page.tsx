@@ -289,7 +289,7 @@ export default function MallPage() {
                 )}
                 <div className="absolute inset-0 bg-black/60" />
                 <div className="relative h-full flex flex-col items-center justify-center text-center text-primary-foreground z-10 p-4">
-                    <h1 className="text-4xl md:text-5xl font-bold font-headline">The TransConnect Mall Ecosystem</h1>
+                    <h1 className="text-4xl md:text-5xl font-bold font-headline">The Logistics Flow Mall Ecosystem</h1>
                     <p className="mt-4 text-lg md:text-xl max-w-3xl">A collective of specialized marketplaces designed to break constraints and drive efficiency throughout the logistics sector.</p>
                 </div>
             </section>
@@ -341,7 +341,7 @@ export default function MallPage() {
                     <div className="text-center max-w-3xl mx-auto mb-12">
                         <h2 className="text-3xl md:text-4xl font-bold font-headline">Featured Products</h2>
                         <p className="mt-4 text-lg text-muted-foreground">
-                            Hand-picked deals and essential items for your fleet, available at special prices for TransConnect members.
+                            Hand-picked deals and essential items for your fleet, available at special prices for Logistics Flow members.
                         </p>
                     </div>
 
@@ -387,3 +387,5 @@ export default function MallPage() {
         </div>
     )
 }
+
+    
