@@ -1,10 +1,10 @@
 
-
 'use client';
 
 import { Suspense } from 'react';
 import { notFound, useParams, useRouter } from 'next/navigation';
-import { useDoc, useFirestore, useMemoFirebase, getClientSideAuthToken } from '@/firebase';
+import { useDoc, useFirestore, getClientSideAuthToken } from '@/firebase';
+import { useMemoFirebase } from '@/hooks/use-config';
 import { doc } from 'firebase/firestore';
 import { useState } from 'react';
 import { Loader2, CheckCircle, FileCheck, ArrowLeft, Landmark } from 'lucide-react';

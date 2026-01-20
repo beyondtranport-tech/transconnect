@@ -27,7 +27,8 @@ import {
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { useCollection, useFirestore, getClientSideAuthToken, useMemoFirebase } from '@/firebase';
+import { useCollection, useFirestore, getClientSideAuthToken } from '@/firebase';
+import { useMemoFirebase } from '@/hooks/use-config';
 import { collection, query } from 'firebase/firestore';
 import { Loader2, PlusCircle, Users, Edit, Trash2, Search, Check, AlertTriangle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
@@ -375,6 +376,7 @@ export default function LeadsDatabase() {
         </Suspense>
     );
 }
+
 
 
 

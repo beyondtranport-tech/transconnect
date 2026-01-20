@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -8,7 +9,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { useCollection, useFirestore, useMemoFirebase, getClientSideAuthToken } from '@/firebase';
+import { useCollection, useFirestore, getClientSideAuthToken } from '@/firebase';
+import { useMemoFirebase } from '@/hooks/use-config';
 import { collection, doc, query, collectionGroup, where } from 'firebase/firestore';
 import { ShopPreview } from '@/components/shop-preview';
 
@@ -131,18 +133,16 @@ export default function ShopsList() {
                 <CardDescription>Review, approve, and manage all member shops on the platform. Showing approved shops for now.</CardDescription>
             </CardHeader>
             <CardContent>
-                {isLoading && (
-                    <div className="flex justify-center items-center py-10">
-                        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                {isLoading ? (
+                    <div className="flex justify-center items-center py-20">
+                        <Loader2 className="h-12 w-12 animate-spin text-primary" />
                     </div>
-                )}
-                {error && (
+                ) : error ? (
                      <div className="text-destructive-foreground bg-destructive/90 p-4 rounded-md">
                         <h4 className="font-semibold">Error loading shops</h4>
                         <p className="text-sm">{error.message}</p>
                     </div>
-                )}
-                {!isLoading && !error && shops && (
+                ) : shops && shops.length > 0 ? (
                     <div className="overflow-x-auto">
                         <Table>
                             <TableHeader>
@@ -190,8 +190,7 @@ export default function ShopsList() {
                             </TableBody>
                         </Table>
                     </div>
-                )}
-                 {!isLoading && !error && shops && shops.length === 0 && (
+                ) : (
                     <div className="text-center py-20 border-2 border-dashed rounded-lg">
                         <CheckCircle className="mx-auto h-12 w-12 text-green-500" />
                         <h3 className="mt-4 text-xl font-semibold">All Clear!</h3>

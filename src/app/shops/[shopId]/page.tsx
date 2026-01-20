@@ -1,6 +1,8 @@
+
 'use client';
 
-import { useDoc, useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { useDoc, useCollection, useFirestore } from '@/firebase';
+import { useMemoFirebase } from '@/hooks/use-config';
 import { collection, doc, query } from 'firebase/firestore';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Loader2, Store, ShoppingCart } from 'lucide-react';

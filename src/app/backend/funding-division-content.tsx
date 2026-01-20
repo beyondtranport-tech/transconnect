@@ -7,7 +7,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Loader2, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { useCollection, useFirestore } from '@/firebase';
+import { useMemoFirebase } from '@/hooks/use-config';
 import { collectionGroup, query } from 'firebase/firestore';
 import { Badge } from '@/components/ui/badge';
 
