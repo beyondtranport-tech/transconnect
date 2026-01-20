@@ -42,7 +42,7 @@ export default function Home() {
             Your Business Should Flow.
           </h1>
           <p className="mt-4 text-lg md:text-xl text-primary-foreground/90 max-w-3xl mx-auto">
-            Our platform is tailor-made to be an efficient, community-driven ecosystem. We provide innovative solutions and tools that help you build trust, opportunity and community. Your membership gives you access to a range of benefits including a rewards program that unlocks passive income opportunities through collaboration.
+            We break the constraints that hold your business back. By restoring the flow of capital, opportunity, and information, we improve your efficiency, boost your profitability, and create lasting momentum for your company's growth.
           </p>
           <Button asChild size="lg" className="mt-8">
             <Link href="/join">Join the Ecosystem</Link>
@@ -235,5 +235,3 @@ export default function Home() {
     </div>
   );
 }
-
-    
