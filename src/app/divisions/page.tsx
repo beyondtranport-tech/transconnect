@@ -29,7 +29,7 @@ export default function DivisionsPage() {
                 const IconComponent = iconComponents[division.icon];
                 const href = ['marketplace', 'tech', 'funding', 'mall'].includes(division.id) ? `/${division.id}` : `/divisions#${division.id}`;
                 return (
-                    <Card key={division.id} className="group flex flex-col shadow-lg hover:shadow-primary/20 transition-shadow h-full hover:border-primary">
+                    <Card key={division.id} className="group relative flex flex-col shadow-lg hover:shadow-primary/20 transition-shadow h-full hover:border-primary">
                         <CardHeader className="flex-row items-start gap-4">
                             {IconComponent && <IconComponent className="h-10 w-10 text-primary" />}
                             <div className="flex-1">
@@ -41,13 +41,14 @@ export default function DivisionsPage() {
                              {/* Can be used for more details in the future */}
                         </CardContent>
                         <CardFooter className="flex justify-between items-center pt-4">
-                           <Link href={`/faq#${division.id}`} className="text-sm font-semibold text-primary hover:underline z-10 relative">
+                           <Link href={`/faq#${division.id}`} className="text-sm font-semibold text-primary hover:underline z-20 relative">
                                 FAQ
                             </Link>
-                            <Link href={href} className="text-sm font-semibold text-primary flex items-center gap-1">
+                            <div className="text-sm font-semibold text-primary flex items-center gap-1">
                                 Read More <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-                            </Link>
+                            </div>
                         </CardFooter>
+                        <Link href={href} className="absolute inset-0 z-10" aria-label={`View ${division.title}`} />
                     </Card>
                 )
             })}

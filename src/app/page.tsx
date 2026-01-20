@@ -153,25 +153,24 @@ export default function Home() {
               const IconComponent = iconComponents[division.icon];
               const divisionHref = `/${division.id}`;
               return (
-                <Link key={division.id} href={divisionHref} className="block group">
-                    <Card className="flex flex-col text-center shadow-lg hover:shadow-primary/20 transition-shadow h-full hover:border-primary">
-                        <CardHeader>
-                            {IconComponent && <IconComponent className="h-10 w-10 text-primary mx-auto mb-4" />}
-                            <CardTitle>{division.title}</CardTitle>
-                        </CardHeader>
-                        <CardContent className="flex-grow">
-                            <p className="text-muted-foreground">{division.description}</p>
-                        </CardContent>
-                        <CardFooter className="flex justify-between items-center pt-4">
-                            <Link href={`/faq#${division.id}`} className="text-sm font-semibold text-primary hover:underline z-10 relative">
-                                FAQ
-                            </Link>
-                            <div className="text-sm font-semibold text-primary flex items-center gap-1">
-                                Read More <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-                            </div>
-                        </CardFooter>
-                    </Card>
-                </Link>
+                <Card key={division.id} className="group relative flex flex-col text-center shadow-lg hover:shadow-primary/20 transition-shadow h-full hover:border-primary">
+                    <CardHeader>
+                        {IconComponent && <IconComponent className="h-10 w-10 text-primary mx-auto mb-4" />}
+                        <CardTitle>{division.title}</CardTitle>
+                    </CardHeader>
+                    <CardContent className="flex-grow">
+                        <p className="text-muted-foreground">{division.description}</p>
+                    </CardContent>
+                    <CardFooter className="flex justify-between items-center pt-4">
+                        <Link href={`/faq#${division.id}`} className="text-sm font-semibold text-primary hover:underline relative z-20">
+                            FAQ
+                        </Link>
+                        <div className="text-sm font-semibold text-primary flex items-center gap-1">
+                            Read More <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                        </div>
+                    </CardFooter>
+                    <Link href={divisionHref} className="absolute inset-0 z-10" aria-label={`View ${division.title}`} />
+                </Card>
               );
             })}
           </div>
