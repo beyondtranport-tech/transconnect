@@ -10,6 +10,7 @@ import Link from "next/link";
 import data from "@/lib/placeholder-images.json";
 import { useUser } from "@/firebase";
 import * as React from "react";
+import { useState, useEffect } from "react";
 
 const { placeholderImages } = data;
 
@@ -44,6 +45,11 @@ const agreementTypes = [
 
 export default function FundingPage() {
     const { user } = useUser();
+    const [isClient, setIsClient] = useState(false);
+
+    useEffect(() => {
+        setIsClient(true);
+    }, []);
 
     return (
         <div>
@@ -87,7 +93,7 @@ export default function FundingPage() {
                         </div>
                         <div className="mt-12">
                              <Button asChild size="lg">
-                                <Link href={user ? '/funding/apply' : '/join?redirect=/funding/apply'}>
+                                <Link href={isClient && user ? '/funding/apply' : '/join?redirect=/funding/apply'}>
                                     Start Your Application <ArrowRight className="ml-2 h-5 w-5" />
                                 </Link>
                             </Button>
