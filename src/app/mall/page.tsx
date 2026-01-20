@@ -106,7 +106,7 @@ const malls = [
     },
     {
         name: "Repurpose Mall",
-        description: "Give a second life to decommissioned assets and parts.",
+        description: "Give a second life to decommissioned assets, parts, and components.",
         icon: Recycle,
         href: "/mall/repurpose",
         id: "repurpose",
