@@ -2,7 +2,7 @@
 import Image from "next/image";
 import data from "@/lib/placeholder-images.json";
 import { Card, CardContent } from "@/components/ui/card";
-import { CheckCircle, ArrowRight } from "lucide-react";
+import { CheckCircle, ArrowRight, DollarSign, Handshake, Cpu, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import React from "react";
@@ -14,24 +14,28 @@ const aboutHeroImage = placeholderImages.find(p => p.id === 'about-hero');
 
 const values = [
     {
-        title: "Efficiency",
-        description: "We build tools and systems that streamline operations and maximize profitability for our members.",
-        image: placeholderImages.find(p => p.id === 'value-efficiency'),
+        title: "Cash Flow",
+        description: "We break the constraint of locked capital by connecting you with a network of funders who understand the transport industry, turning your assets and contracts into accessible cash.",
+        image: placeholderImages.find(p => p.id === 'funding-division'),
+        icon: DollarSign,
     },
     {
-        title: "Community",
-        description: "We foster a collaborative environment where transporters can connect, trade, and grow together.",
-        image: placeholderImages.find(p => p.id === 'value-community'),
+        title: "Opportunity Flow",
+        description: "We break the constraint of isolation by connecting you to a network. Earn passive income by referring members, find new loads with our AI matcher, and discover subcontracting opportunities.",
+        image: placeholderImages.find(p => p.id === 'incentives-hero'),
+        icon: Handshake,
     },
     {
-        title: "Innovation",
-        description: "We relentlessly pursue technological advancements to solve the industry's most pressing challenges.",
-        image: placeholderImages.find(p => p.id === 'value-innovation'),
+        title: "Information Flow",
+        description: "We break the constraint of inefficiency. Our tech tools streamline your operations, providing data and insights to reduce empty miles and optimize your routes for maximum profitability.",
+        image: placeholderImages.find(p => p.id === 'tech-division'),
+        icon: Cpu,
     },
     {
-        title: "Integrity",
-        description: "We operate with transparency and trust, ensuring a secure and reliable ecosystem for all members.",
-        image: placeholderImages.find(p => p.id === 'value-integrity'),
+        title: "Savings Flow",
+        description: "We break the constraint of high costs. By uniting our members, we create collective buying power to negotiate significant discounts on parts, tires, and services you use every day.",
+        image: placeholderImages.find(p => p.id === 'mall-division'),
+        icon: Shield,
     }
 ];
 
@@ -79,25 +83,51 @@ export default function AboutPage() {
             </div>
         </section>
 
-        <section className="py-16 md:py-24">
+        <section className="py-16 md:py-24 bg-background">
             <div className="container mx-auto px-4">
-                <div className="grid md:grid-cols-2 gap-12 items-center">
-                    <div>
-                        <h2 className="text-3xl md:text-4xl font-bold font-headline">Our Mission</h2>
-                        <p className="mt-4 text-lg text-muted-foreground">
-                            To empower transporters by providing an integrated ecosystem that breaks down traditional barriers. We strive to offer accessible funding, a vibrant marketplace, and cutting-edge technology that enables businesses of all sizes to thrive. By fostering a connected community, we aim to make the transport industry more efficient, profitable, and sustainable for everyone.
-                        </p>
-                    </div>
-                     <div>
-                        <h2 className="text-3xl md:text-4xl font-bold font-headline">Our Vision</h2>
-                        <p className="mt-4 text-lg text-muted-foreground">
-                            To be the central nervous system of the transport industry. We envision a future where every transporter, from a single owner-operator to a large fleet, has the tools and resources they need to succeed at their fingertips. A future where logistics are seamless, opportunities are abundant, and the entire industry moves forward, together.
-                        </p>
-                    </div>
+                <div className="text-center max-w-3xl mx-auto">
+                    <h2 className="text-3xl md:text-4xl font-bold font-headline">Breaking Constraints, Creating Flow</h2>
+                    <p className="mt-4 text-lg text-muted-foreground">
+                        Your business should flow. But the transport industry is full of constraints that block your progress—from accessing capital to finding work and managing high costs. We identify these blockages and build powerful solutions to restore the natural flow of capital, opportunity, and information, helping your business move forward.
+                    </p>
                 </div>
             </div>
         </section>
         
+        <section className="py-16 md:py-24 bg-card">
+            <div className="container mx-auto px-4">
+                 <div className="space-y-16">
+                    {values.map((value, index) => {
+                        const Icon = value.icon;
+                        return (
+                             <div key={value.title} className="grid md:grid-cols-2 gap-8 md:gap-12 items-center">
+                                <div className={`relative aspect-video rounded-lg overflow-hidden shadow-lg ${index % 2 === 1 ? 'md:order-2' : ''}`}>
+                                     {value.image && (
+                                        <Image
+                                            src={value.image.imageUrl}
+                                            alt={value.title}
+                                            fill
+                                            className="object-cover"
+                                            data-ai-hint={value.image.imageHint}
+                                        />
+                                     )}
+                                </div>
+                                <div className={index % 2 === 1 ? 'md:order-1' : ''}>
+                                    <div className="flex items-center gap-4">
+                                         <Icon className="h-10 w-10 text-primary" />
+                                        <h3 className="text-3xl font-bold font-headline">{value.title}</h3>
+                                    </div>
+                                    <p className="mt-4 text-lg text-muted-foreground">
+                                        {value.description}
+                                    </p>
+                                </div>
+                            </div>
+                        )
+                    })}
+                 </div>
+            </div>
+        </section>
+
         <section className="py-16 md:py-24 bg-background">
             <div className="container mx-auto px-4">
                 <div className="text-center max-w-3xl mx-auto mb-16">
@@ -153,45 +183,6 @@ export default function AboutPage() {
                 </div>
             </div>
         </section>
-
-        <section className="py-16 md:py-24 bg-background">
-            <div className="container mx-auto px-4">
-                <div className="text-center max-w-3xl mx-auto mb-12">
-                    <h2 className="text-3xl md:text-4xl font-bold font-headline">Our Core Values</h2>
-                    <p className="mt-4 text-lg text-muted-foreground">
-                        The principles that guide every decision we make.
-                    </p>
-                </div>
-                 <div className="space-y-16">
-                    {values.map((value, index) => (
-                         <div key={value.title} className="grid md:grid-cols-2 gap-8 md:gap-12 items-center">
-                            <div className={`relative aspect-video rounded-lg overflow-hidden shadow-lg ${index % 2 === 1 ? 'md:order-2' : ''}`}>
-                                 {value.image && (
-                                    <Image
-                                        src={value.image.imageUrl}
-                                        alt={value.title}
-                                        fill
-                                        className="object-cover"
-                                        data-ai-hint={value.image.imageHint}
-                                    />
-                                 )}
-                            </div>
-                            <div className={index % 2 === 1 ? 'md:order-1' : ''}>
-                                <div className="flex items-center gap-4">
-                                     <CheckCircle className="h-10 w-10 text-primary" />
-                                    <h3 className="text-3xl font-bold font-headline">{value.title}</h3>
-                                </div>
-                                <p className="mt-4 text-lg text-muted-foreground">
-                                    {value.description}
-                                </p>
-                            </div>
-                        </div>
-                    ))}
-                 </div>
-            </div>
-        </section>
     </div>
   );
 }
-
-    

@@ -3,12 +3,10 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, Cpu, DollarSign, Heart, Shield, CheckCircle, Info, Handshake } from 'lucide-react';
+import { ArrowRight, Cpu, DollarSign, Handshake, Shield } from 'lucide-react';
 import data from '@/lib/placeholder-images.json';
 import * as React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
-
 
 const { placeholderImages } = data;
 
@@ -32,10 +30,10 @@ export default function Home() {
         <div className="absolute inset-0 bg-black/50" />
         <div className="relative z-10 px-4 max-w-4xl mx-auto">
           <h1 className="text-4xl md:text-6xl font-bold text-primary-foreground font-headline tracking-tight">
-            Driven by Community. Powered by You.
+            Your Business Should Flow.
           </h1>
-          <p className="mt-4 text-lg md:text-xl text-primary-foreground/90 max-w-2xl mx-auto">
-            Welcome to Logistics Flow, the ecosystem where you build the future. Collaborate with peers, contribute your knowledge to earn rewards, and unlock passive income streams. It's more than logistics—it's shared success.
+          <p className="mt-4 text-lg md:text-xl text-primary-foreground/90 max-w-3xl mx-auto">
+            Our platform is tailor-made to be an efficient, community-driven ecosystem. We provide innovative solutions and tools that help you build trust, create opportunity, and collaborate to achieve passive income and shared rewards.
           </p>
           <Button asChild size="lg" className="mt-8">
             <Link href="/join">Join the Ecosystem</Link>
@@ -46,75 +44,85 @@ export default function Home() {
       <section id="about" className="py-16 md:py-24 bg-background">
         <div className="container mx-auto px-4">
           <div className="text-center max-w-3xl mx-auto mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold font-headline">About Us</h2>
+            <h2 className="text-3xl md:text-4xl font-bold font-headline">How We Create Flow</h2>
             <p className="mt-4 text-lg text-muted-foreground">
-              Running a transport company is challenging. Having financed transporters for the past 30 years, we understand your challenges. Most importantly we understand how difficult it is to access the capital you need to grow your business. This is why we have developed a unique approach to unlock your business.
-                <Dialog>
-                    <DialogTrigger asChild>
-                        <Button variant="link" className="text-lg p-1">Read More...</Button>
-                    </DialogTrigger>
-                    <DialogContent className="sm:max-w-xl">
-                        <DialogHeader>
-                        <DialogTitle>Our Story</DialogTitle>
-                        <DialogDescription>
-                            Our journey and commitment to the transport industry.
-                        </DialogDescription>
-                        </DialogHeader>
-                        <div className="py-4 space-y-4 text-sm text-muted-foreground text-left">
-                            <p>Our origins began in 1998 as a lending to transporters. We witnessed first-hand funding gap and difficulties transporters face in trying to build their business. That is why we have developed a unique lending methodology focused on industry process and cashflow.</p>
-                            <p>After 25 years’ experience in lending, we are transforming ourselves into a focused supplier of services to the logistics sector and in particular the transport industry.</p>
-                            <p>Our aim is to use our knowledge, technology and skills to transform and improve your business. We focus on you the customer. The 1 thing that we have earned during this time is that you deserve more than just funding. You deserve to be rewarded.</p>
-                        </div>
-                        <DialogFooter>
-                            <DialogTrigger asChild><Button>Close</Button></DialogTrigger>
-                        </DialogFooter>
-                    </DialogContent>
-                </Dialog>
+              Every transport business faces constraints: cash flow bottlenecks, high costs, and missed opportunities. Logistics Flow is designed to break these constraints, creating a seamless flow of capital, savings, and work to fuel your growth.
             </p>
           </div>
-          <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-7xl mx-auto">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-3">
-                  <Heart className="h-8 w-8 text-primary"/>
-                  Our Mission
+                  <DollarSign className="h-8 w-8 text-primary"/>
+                  Capital Flow
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-3 text-muted-foreground">
-                  <p>Our mission is to Reward Borrowers to engage with our ecosystem by:</p>
-                  <ul className="list-disc list-inside space-y-2 pl-2">
-                    <li>Empowering borrowers to obtain funding from Simplyfi Flow and our Funding partners.</li>
-                    <li>Developing our own data source which will reduce lender risk.</li>
-                    <li>Streamlining interactions to remove anxiety and create value for all role-players.</li>
-                  </ul>
+              <CardContent>
+                  <p className="font-semibold text-destructive">Constraint: Locked Capital</p>
+                  <p className="text-sm text-muted-foreground mt-1">
+                      Traditional financing doesn't understand your business, blocking access to vital funds.
+                  </p>
+                  <p className="font-semibold text-primary mt-3">Flow: Unlocked Funding</p>
+                  <p className="text-sm text-muted-foreground mt-1">
+                      We connect you with a network of funders, turning your assets and contracts into accessible cash flow.
+                  </p>
               </CardContent>
             </Card>
             <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-3">
+                  <Cpu className="h-8 w-8 text-primary"/>
+                  Opportunity Flow
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                  <p className="font-semibold text-destructive">Constraint: Wasted Capacity</p>
+                  <p className="text-sm text-muted-foreground mt-1">
+                      Empty return trips and inefficient routes drain your profitability every day.
+                  </p>
+                  <p className="font-semibold text-primary mt-3">Flow: Maximized Efficiency</p>
+                  <p className="text-sm text-muted-foreground mt-1">
+                      Our AI-powered tools help you find profitable backloads and optimize your routes, turning empty miles into revenue.
+                  </p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-3">
+                  <Handshake className="h-8 w-8 text-primary"/>
+                  Network Flow
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                  <p className="font-semibold text-destructive">Constraint: Limited Network</p>
+                  <p className="text-sm text-muted-foreground mt-1">
+                      Growth is difficult when you're operating in isolation.
+                  </p>
+                  <p className="font-semibold text-primary mt-3">Flow: Passive Income & Collaboration</p>
+                  <p className="text-sm text-muted-foreground mt-1">
+                      Activate the 'Actions' plan to earn recurring income by referring members. Collaborate and subcontract with trusted peers.
+                  </p>
+              </CardContent>
+            </Card>
+             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-3">
                   <Shield className="h-8 w-8 text-primary"/>
-                  Our Vision
+                  Savings Flow
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-3 text-muted-foreground">
-                 <p>Our vision is to simplify credit by collaborating, rewarding, and working with clients and partners. We want to build a better future for our customers and decrease their credit risk.</p>
-                 <p>Central to our vision is to use digital platforms to drive efficiencies, data to enhance decisioning and collaboration to drive leverage.</p>
+              <CardContent>
+                  <p className="font-semibold text-destructive">Constraint: High Costs</p>
+                  <p className="text-sm text-muted-foreground mt-1">
+                      Individual operators lack the leverage to get significant discounts on essential parts and services.
+                  </p>
+                  <p className="font-semibold text-primary mt-3">Flow: Collective Buying Power</p>
+                  <p className="text-sm text-muted-foreground mt-1">
+                      Our community's combined volume allows us to negotiate bulk discounts, passing the savings directly on to you.
+                  </p>
               </CardContent>
             </Card>
           </div>
-          <Card className="max-w-5xl mx-auto mt-8 bg-card">
-             <CardHeader>
-                <CardTitle className="flex items-center gap-3">
-                    <Handshake className="h-8 w-8 text-primary"/>
-                    Our Member Value Guarantee
-                </CardTitle>
-             </CardHeader>
-             <CardContent>
-                <p className="text-muted-foreground">
-                    Our Member Value guarantee is valid for 12 months from date of signing on as a member. We will refund you, the Member, the difference between (Total membership fee + Subscription fee) - (Incentive + Cash back Rewards).
-                </p>
-             </CardContent>
-          </Card>
         </div>
       </section>
 
