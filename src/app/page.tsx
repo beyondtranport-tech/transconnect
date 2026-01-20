@@ -3,15 +3,23 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, Cpu, DollarSign, Handshake, Shield } from 'lucide-react';
+import { ArrowRight, Cpu, DollarSign, Handshake, Shield, ShoppingBasket, Store } from 'lucide-react';
 import data from '@/lib/placeholder-images.json';
 import * as React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { divisions } from "@/lib/data";
 
 const { placeholderImages } = data;
 
 const heroImage = placeholderImages.find(p => p.id === "hero-home");
 const techImage = placeholderImages.find(p => p.id === "tech-home");
+
+const iconComponents: { [key: string]: React.ElementType } = {
+    DollarSign,
+    ShoppingBasket,
+    Store,
+    Cpu,
+};
 
 export default function Home() {
   return (
@@ -33,7 +41,7 @@ export default function Home() {
             Your Business Should Flow.
           </h1>
           <p className="mt-4 text-lg md:text-xl text-primary-foreground/90 max-w-3xl mx-auto">
-            Our platform is tailor-made to be an efficient, community-driven ecosystem. We provide innovative solutions and tools that help you build trust, create opportunity, and collaborate to achieve passive income and shared rewards.
+            Our platform is tailor-made to be an efficient, community-driven ecosystem. We provide innovative solutions and tools that help you build trust, opportunity, and community.
           </p>
           <Button asChild size="lg" className="mt-8">
             <Link href="/join">Join the Ecosystem</Link>
@@ -127,6 +135,42 @@ export default function Home() {
       </section>
 
       <section className="py-16 md:py-24 bg-card">
+        <div className="container mx-auto px-4">
+          <div className="text-center max-w-3xl mx-auto mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold font-headline">Explore Our Divisions</h2>
+            <p className="mt-4 text-lg text-muted-foreground">
+              Each division is a specialized hub designed to address key areas of your business, from financing to sales.
+            </p>
+          </div>
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+            {divisions.map((division) => {
+              const IconComponent = iconComponents[division.icon];
+              const divisionHref = `/${division.id}`;
+              return (
+                <Card key={division.id} className="flex flex-col text-center shadow-lg hover:shadow-primary/20 transition-shadow">
+                  <CardHeader>
+                    {IconComponent && <IconComponent className="h-10 w-10 text-primary mx-auto mb-4" />}
+                    <CardTitle>{division.title}</CardTitle>
+                  </CardHeader>
+                  <CardContent className="flex-grow">
+                    <p className="text-muted-foreground">{division.description}</p>
+                  </CardContent>
+                  <CardFooter className="flex flex-col gap-2">
+                    <Button asChild className="w-full">
+                      <Link href={divisionHref}>Read More</Link>
+                    </Button>
+                    <Button asChild variant="outline" className="w-full">
+                      <Link href="/resources">FAQ</Link>
+                    </Button>
+                  </CardFooter>
+                </Card>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      <section className="py-16 md:py-24 bg-background">
          <div className="container mx-auto px-4">
            <div className="grid md:grid-cols-2 gap-12 items-center">
             <div className="relative aspect-video rounded-lg overflow-hidden shadow-2xl">
@@ -154,7 +198,7 @@ export default function Home() {
          </div>
       </section>
 
-      <section className="py-16 md:py-24 bg-background">
+      <section className="py-16 md:py-24 bg-card">
         <div className="container mx-auto px-4 text-center">
           <h2 className="text-3xl md:text-4xl font-bold font-headline">Ready to Join?</h2>
           <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
