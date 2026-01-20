@@ -60,8 +60,8 @@ export default function FundingPage() {
                 )}
                 <div className="absolute inset-0 bg-black/60" />
                 <div className="relative h-full flex flex-col items-center justify-center text-center text-primary-foreground z-10 p-4">
-                    <h1 className="text-4xl md:text-5xl font-bold font-headline">Funding That Moves You Forward</h1>
-                    <p className="mt-4 text-lg md:text-xl max-w-3xl">Our single application process connects you to a network of ideal lenders who understand the transport industry.</p>
+                    <h1 className="text-4xl md:text-5xl font-bold font-headline">Unlock Your Capital Flow</h1>
+                    <p className="mt-4 text-lg md:text-xl max-w-3xl">Traditional financing doesn't understand your business. We break the constraint of locked capital by connecting you to a network of funders who see opportunity in your assets and contracts, not just your balance sheet.</p>
                 </div>
             </section>
 
@@ -86,7 +86,7 @@ export default function FundingPage() {
                         </ul>
                          <p className="mt-8 text-xl font-semibold">Then you have landed in the right place!</p>
                         <div className="mt-8 text-left space-y-4 text-muted-foreground bg-card p-8 rounded-lg shadow-sm">
-                            <p className="text-lg">At TransConnect, our business is built on empowering yours through intelligent finance. We've redesigned the funding process to make it work for you, not against you. Our systems put you in control, providing access to a broad range of products and unique, industry-specific solutions designed to help you do what you do best—managing and growing your business.</p>
+                            <p className="text-lg">At Logistics Flow, our business is built on empowering yours through intelligent finance. We've redesigned the funding process to make it work for you, not against you. Our systems put you in control, providing access to a broad range of products and unique, industry-specific solutions designed to help you do what you do best—managing and growing your business.</p>
                             <p className="text-lg">We see the opportunities that others miss. Our expertise lies in our ability to take something that seems 'un-financeable', structure it correctly, and convert it into a viable funding opportunity. We don’t want to run your business; we want to fuel it.</p>
                         </div>
                         <div className="mt-12">

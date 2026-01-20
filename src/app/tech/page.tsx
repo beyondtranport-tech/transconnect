@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useConfig } from '@/hooks/use-config';
@@ -15,9 +16,9 @@ export default function TechPage() {
                     <div className="inline-block bg-primary/10 p-4 rounded-full mb-4">
                         <Cpu className="h-12 w-12 text-primary" />
                     </div>
-                    <h1 className="text-4xl md:text-5xl font-bold font-headline">TransConnect Tech</h1>
+                    <h1 className="text-4xl md:text-5xl font-bold font-headline">Create Your Information Flow</h1>
                     <p className="mt-4 text-lg md:text-xl text-muted-foreground">
-                        Leverage our powerful AI tools and value-added services to optimize your routes, enhance your shop, and maximize your profits.
+                        Inefficiency is a constraint on your profitability. Our Tech Division provides AI-powered tools, like the Freight Matcher, to break the constraint of wasted capacity and empty miles, creating a seamless flow of data-driven decisions that boost your bottom line.
                     </p>
                 </div>
 

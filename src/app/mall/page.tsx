@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { Button } from "@/components/ui/button";
@@ -289,8 +290,8 @@ export default function MallPage() {
                 )}
                 <div className="absolute inset-0 bg-black/60" />
                 <div className="relative h-full flex flex-col items-center justify-center text-center text-primary-foreground z-10 p-4">
-                    <h1 className="text-4xl md:text-5xl font-bold font-headline">The Logistics Flow Mall Ecosystem</h1>
-                    <p className="mt-4 text-lg md:text-xl max-w-3xl">A collective of specialized marketplaces designed to break constraints and drive efficiency throughout the logistics sector.</p>
+                    <h1 className="text-4xl md:text-5xl font-bold font-headline">Where Collective Buying Creates Savings Flow</h1>
+                    <p className="mt-4 text-lg md:text-xl max-w-3xl">Stop overpaying for parts, services, and assets. Our Mall ecosystem unites the buying power of the entire community, breaking the constraint of high operational costs and creating a continuous flow of savings directly to your bottom line.</p>
                 </div>
             </section>
              <section id="malls-grid" className="py-16 md:py-24 bg-background">
@@ -387,5 +388,3 @@ export default function MallPage() {
         </div>
     )
 }
-
-    

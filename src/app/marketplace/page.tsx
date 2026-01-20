@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { Button } from "@/components/ui/button";
@@ -67,9 +68,9 @@ export default function MarketplacePage() {
                 )}
                 <div className="absolute inset-0 bg-black/60" />
                 <div className="relative h-full flex flex-col items-center justify-center text-center text-primary-foreground z-10 p-4">
-                    <h1 className="text-4xl md:text-5xl font-bold font-headline">Marketplace of Resellers</h1>
+                    <h1 className="text-4xl md:text-5xl font-bold font-headline">Create Your Opportunity Flow</h1>
                     <p className="mt-4 text-lg md:text-xl max-w-3xl">
-                        We have searched for the best partners to make your life easier. We have negotiated bulk discounts upfront and will share up to 50% of this discount with you.
+                        Your network is your most valuable asset. The Marketplace gives you the tools to resell high-demand products and services—from digital marketing to specialized insurance—to your network, breaking the constraint of a single revenue stream and creating a new flow of passive income.
                     </p>
                 </div>
             </section>
