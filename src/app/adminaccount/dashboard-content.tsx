@@ -138,12 +138,12 @@ export default function DashboardContent() {
     return (
         <div className="space-y-8">
             <div>
-                <h1 className="text-2xl font-bold">Backend Dashboard</h1>
+                <h1 className="text-2xl font-bold">Business Dashboard</h1>
                 <p className="text-muted-foreground">A high-level overview of platform activity and performance.</p>
             </div>
             
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                <Link href="/backend?view=members">
+                <Link href="/adminaccount?view=members">
                     <Card className="hover:bg-accent transition-colors">
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                             <CardTitle className="text-sm font-medium">Total Members</CardTitle>
@@ -163,7 +163,7 @@ export default function DashboardContent() {
                         <div className="text-2xl font-bold">{formatPrice(stats.totalFunded)}</div>
                     </CardContent>
                 </Card>
-                <Link href="/backend?view=divisions-funding">
+                <Link href="/adminaccount?view=divisions-funding">
                     <Card className="hover:bg-accent transition-colors">
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                             <CardTitle className="text-sm font-medium">Finance Applications</CardTitle>
@@ -174,7 +174,7 @@ export default function DashboardContent() {
                         </CardContent>
                     </Card>
                 </Link>
-                 <Link href="/backend?view=contributions">
+                 <Link href="/adminaccount?view=contributions">
                     <Card className="hover:bg-accent transition-colors">
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                             <CardTitle className="text-sm font-medium">Data Contributions</CardTitle>
@@ -215,7 +215,7 @@ export default function DashboardContent() {
                 <Card>
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2"><Clock className="h-5 w-5" /> Actionable Funding Tasks</CardTitle>
-                        <CardDescription>Formal funding applications that require your immediate attention.</CardDescription>
+                        <CardDescription>Formal funding applications that require immediate attention.</CardDescription>
                     </CardHeader>
                     <CardContent>
                         <Table>
