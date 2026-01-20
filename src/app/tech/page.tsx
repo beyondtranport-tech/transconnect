@@ -5,6 +5,11 @@ import { useConfig } from '@/hooks/use-config';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2, Cpu, Truck } from 'lucide-react';
 import FreightMatcher from './freight-matcher';
+import Image from 'next/image';
+import data from '@/lib/placeholder-images.json';
+
+const { placeholderImages } = data;
+const techImage = placeholderImages.find(p => p.id === "tech-home");
 
 export default function TechPage() {
     const { data: pricing, isLoading } = useConfig<any>('techPricing');
@@ -20,6 +25,27 @@ export default function TechPage() {
                     <p className="mt-4 text-lg md:text-xl text-muted-foreground">
                         Inefficiency is a constraint on your profitability. Our Tech Division provides AI-powered tools, like the Freight Matcher, to break the constraint of wasted capacity and empty miles, creating a seamless flow of data-driven decisions that boost your bottom line.
                     </p>
+                </div>
+                
+                <div className="grid md:grid-cols-2 gap-12 items-center my-16 md:my-24">
+                    <div className="relative aspect-video rounded-lg overflow-hidden shadow-2xl">
+                        {techImage && (
+                        <Image
+                            src={techImage.imageUrl}
+                            alt={techImage.description}
+                            fill
+                            className="object-cover"
+                            data-ai-hint={techImage.imageHint}
+                        />
+                        )}
+                    </div>
+                    <div>
+                        <span className="text-primary font-semibold">TECH-POWERED</span>
+                        <h2 className="text-3xl md:text-4xl font-bold font-headline mt-2">Smarter, Faster, Further</h2>
+                        <p className="mt-4 text-lg text-muted-foreground">
+                        Our advanced technology suite, featuring an AI-powered freight matching system, helps you eliminate guesswork, reduce empty miles, and maximize your profitability. Find the perfect load in real-time.
+                        </p>
+                    </div>
                 </div>
 
                  {isLoading ? (

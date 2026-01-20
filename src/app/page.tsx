@@ -215,34 +215,6 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="py-16 md:py-24 bg-background">
-         <div className="container mx-auto px-4">
-           <div className="grid md:grid-cols-2 gap-12 items-center">
-            <div className="relative aspect-video rounded-lg overflow-hidden shadow-2xl">
-              {techImage && (
-                <Image
-                  src={techImage.imageUrl}
-                  alt={techImage.description}
-                  fill
-                  className="object-cover"
-                  data-ai-hint={techImage.imageHint}
-                />
-              )}
-             </div>
-             <div>
-              <span className="text-primary font-semibold">TECH-POWERED</span>
-              <h2 className="text-3xl md:text-4xl font-bold font-headline mt-2">Smarter, Faster, Further</h2>
-              <p className="mt-4 text-lg text-muted-foreground">
-                Our advanced technology suite, featuring an AI-powered freight matching system, helps you eliminate guesswork, reduce empty miles, and maximize your profitability. Find the perfect load in real-time.
-              </p>
-              <Button asChild size="lg" className="mt-8">
-                <Link href="/tech">Explore Our Tech <ArrowRight className="ml-2 h-4 w-4" /></Link>
-              </Button>
-             </div>
-           </div>
-         </div>
-      </section>
-
       <section className="py-16 md:py-24 bg-card">
         <div className="container mx-auto px-4 text-center">
           <h2 className="text-3xl md:text-4xl font-bold font-headline">Ready to Join?</h2>
