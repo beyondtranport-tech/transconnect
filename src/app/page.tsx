@@ -153,26 +153,24 @@ export default function Home() {
               const IconComponent = iconComponents[division.icon];
               const divisionHref = `/${division.id}`;
               return (
-                <div key={division.id} className="group relative">
-                    <Card className="flex flex-col text-center shadow-lg hover:shadow-primary/20 transition-shadow h-full hover:border-primary">
-                        <CardHeader>
-                            {IconComponent && <IconComponent className="h-10 w-10 text-primary mx-auto mb-4" />}
-                            <CardTitle>{division.title}</CardTitle>
-                        </CardHeader>
-                        <CardContent className="flex-grow">
-                            <p className="text-muted-foreground">{division.description}</p>
-                        </CardContent>
-                         <CardFooter className="flex justify-between items-center pt-4">
-                           <Link href={`/faq#${division.id}`} className="text-sm font-semibold text-primary hover:underline z-20 relative">
-                                FAQ
-                            </Link>
-                            <div className="text-sm font-semibold text-primary flex items-center gap-1">
-                                Read More <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-                            </div>
-                        </CardFooter>
-                    </Card>
+                <Card key={division.id} className="group relative flex flex-col shadow-lg hover:shadow-primary/20 transition-shadow h-full hover:border-primary">
+                    <CardHeader>
+                        {IconComponent && <IconComponent className="h-10 w-10 text-primary mx-auto mb-4" />}
+                        <CardTitle>{division.title}</CardTitle>
+                    </CardHeader>
+                    <CardContent className="flex-grow">
+                        <p className="text-muted-foreground">{division.description}</p>
+                    </CardContent>
+                    <CardFooter className="flex justify-between items-center pt-4">
+                       <Link href={`/faq#${division.id}`} className="text-sm font-semibold text-primary hover:underline z-20 relative">
+                            FAQ
+                        </Link>
+                        <div className="text-sm font-semibold text-primary flex items-center gap-1">
+                            Read More <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                        </div>
+                    </CardFooter>
                     <Link href={divisionHref} className="absolute inset-0 z-10" aria-label={`View ${division.title}`} />
-                </div>
+                </Card>
               );
             })}
           </div>
@@ -200,15 +198,15 @@ export default function Home() {
                 <Card className="bg-card shadow-lg">
                   <CardHeader>
                      <CardTitle className="flex items-center gap-3">
-                         <ShieldCheck className="h-8 w-8 text-primary"/>
-                         Member Value Guarantee
+                         <Cpu className="h-8 w-8 text-primary"/>
+                         TECH-POWERED
                      </CardTitle>
                      <CardDescription>
-                       Our promise to deliver tangible results for your business.
+                       Smarter, Faster, Further
                      </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4 text-muted-foreground">
-                     <p>We stand by the value we provide. If you don't see a tangible return on your investment within the first 90 days of your premium membership, we'll work with you to make it right, or refund your subscription. It's our commitment to your success.</p>
+                     <p>Our advanced technology suite, featuring an AI-powered freight matching system, helps you eliminate guesswork, reduce empty miles, and maximize your profitability. Find the perfect load in real-time.</p>
                   </CardContent>
                 </Card>
             </div>
