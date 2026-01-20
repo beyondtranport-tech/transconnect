@@ -29,7 +29,7 @@ export default function DivisionsPage() {
                 const IconComponent = iconComponents[division.icon];
                 const href = ['marketplace', 'tech', 'funding', 'mall'].includes(division.id) ? `/${division.id}` : `/divisions#${division.id}`;
                 return (
-                    <Card key={division.id} className="flex flex-col shadow-lg hover:shadow-primary/20 transition-shadow">
+                    <Card key={division.id} className="flex flex-col shadow-lg hover:shadow-primary/20 transition-shadow h-full">
                         <CardHeader className="flex-row items-start gap-4">
                             {IconComponent && <IconComponent className="h-10 w-10 text-primary" />}
                             <div className="flex-1">
@@ -40,12 +40,13 @@ export default function DivisionsPage() {
                         <CardContent className="flex-grow">
                              {/* Can be used for more details in the future */}
                         </CardContent>
-                        <CardFooter>
-                            <Button asChild className="w-full">
-                                <Link href={href}>
-                                    Explore {division.title} <ArrowRight className="ml-2 h-4 w-4" />
-                                </Link>
-                            </Button>
+                        <CardFooter className="flex justify-between items-center pt-4">
+                           <Link href={`/faq#${division.id}`} className="text-sm font-semibold text-primary hover:underline">
+                                FAQ
+                            </Link>
+                            <Link href={href} className="text-sm font-semibold text-primary hover:underline flex items-center gap-1">
+                                Read More <ArrowRight className="h-4 w-4" />
+                            </Link>
                         </CardFooter>
                     </Card>
                 )

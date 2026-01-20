@@ -148,8 +148,7 @@ export default function Home() {
               const IconComponent = iconComponents[division.icon];
               const divisionHref = `/${division.id}`;
               return (
-                 <Link href={divisionHref} key={division.id} className="block group">
-                    <Card className="flex flex-col text-center shadow-lg hover:shadow-primary/20 transition-all h-full group-hover:border-primary">
+                 <Card key={division.id} className="flex flex-col text-center shadow-lg hover:shadow-primary/20 transition-shadow h-full">
                     <CardHeader>
                         {IconComponent && <IconComponent className="h-10 w-10 text-primary mx-auto mb-4" />}
                         <CardTitle>{division.title}</CardTitle>
@@ -157,13 +156,15 @@ export default function Home() {
                     <CardContent className="flex-grow">
                         <p className="text-muted-foreground">{division.description}</p>
                     </CardContent>
-                     <CardFooter>
-                        <p className="text-sm font-semibold text-primary mx-auto flex items-center gap-2">
-                           Explore {division.title} <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-                        </p>
+                     <CardFooter className="flex justify-between items-center pt-4">
+                       <Link href={`/faq#${division.id}`} className="text-sm font-semibold text-primary hover:underline">
+                           FAQ
+                       </Link>
+                       <Link href={divisionHref} className="text-sm font-semibold text-primary hover:underline flex items-center gap-1">
+                           Read More <ArrowRight className="h-4 w-4" />
+                       </Link>
                     </CardFooter>
                     </Card>
-                </Link>
               );
             })}
           </div>
