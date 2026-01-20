@@ -3,10 +3,10 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, Cpu, DollarSign, Handshake, Shield, ShoppingBasket, Store } from 'lucide-react';
+import { ArrowRight, Cpu, DollarSign, Handshake, Shield, ShoppingBasket, Store, ShieldCheck } from 'lucide-react';
 import data from '@/lib/placeholder-images.json';
 import * as React from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardFooter, CardDescription } from '@/components/ui/card';
 import { divisions } from "@/lib/data";
 
 const { placeholderImages } = data;
@@ -38,10 +38,10 @@ export default function Home() {
         <div className="absolute inset-0 bg-black/50" />
         <div className="relative z-10 px-4 max-w-4xl mx-auto">
           <h1 className="text-4xl md:text-6xl font-bold text-primary-foreground font-headline tracking-tight">
-            Your Business Should Flow.
+             Your Business Should Flow.
           </h1>
           <p className="mt-4 text-lg md:text-xl text-primary-foreground/90 max-w-3xl mx-auto">
-            Our platform is tailor-made to be an efficient, community-driven ecosystem. We provide innovative solutions and tools that help you build trust, opportunity, and community.
+            Our platform is tailor-made to be an efficient, community-driven ecosystem. We provide innovative solutions and tools that help you build trust, opportunity and community. Your membership gives you access to a range of benefits including a rewards program, passive income opportunities and ways to collaborate.
           </p>
           <Button asChild size="lg" className="mt-8">
             <Link href="/join">Join the Ecosystem</Link>
@@ -167,6 +167,28 @@ export default function Home() {
               );
             })}
           </div>
+        </div>
+      </section>
+
+      <section className="py-16 md:py-24 bg-muted/50">
+        <div className="container mx-auto px-4">
+            <div className="max-w-4xl mx-auto">
+                <Card className="bg-card shadow-lg">
+                  <CardHeader>
+                     <CardTitle className="flex items-center gap-3">
+                         <ShieldCheck className="h-8 w-8 text-primary"/>
+                         Member Value Guarantee
+                     </CardTitle>
+                     <CardDescription>
+                       Our commitment to creating a fair, transparent, and valuable ecosystem for every member.
+                     </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4 text-muted-foreground">
+                     <p>We are a community that is built on the foundation of our member contributions. Our technology provides the tools that allow our members to connect and collaborate with each other. This is a powerful combination that, when managed correctly, is able to unlock enormous value that can be shared amongst all our members.</p>
+                     <p>Central to our vision is to use digital platforms to drive efficiencies, data to enhance decisioning and collaboration to drive leverage.</p>
+                  </CardContent>
+                </Card>
+            </div>
         </div>
       </section>
 
