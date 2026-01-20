@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -63,7 +64,7 @@ export default function Home() {
                         <div className="py-4 space-y-4 text-sm text-muted-foreground text-left">
                             <p>Our origins began in 1998 as a lending to transporters. We witnessed first-hand funding gap and difficulties transporters face in trying to build their business. That is why we have developed a unique lending methodology focused on industry process and cashflow.</p>
                             <p>After 25 years’ experience in lending, we are transforming ourselves into a focused supplier of services to the logistics sector and in particular the transport industry.</p>
-                            <p>Our aim is to use our knowledge, technology and skills to transform and improve your business. We focus on you the customer. The 1 thing that we have earned during this time is that you deserve more than just funding. You deserve recognition for the hard work. You deserve to be rewarded.</p>
+                            <p>Our aim is to use our knowledge, technology and skills to transform and improve your business. We focus on you the customer. The 1 thing that we have earned during this time is that you deserve more than just funding. You deserve to be rewarded.</p>
                         </div>
                         <DialogFooter>
                             <DialogTrigger asChild><Button>Close</Button></DialogTrigger>
