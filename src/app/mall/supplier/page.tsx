@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { Button } from "@/components/ui/button";
@@ -125,36 +126,36 @@ export default function SupplierMallPage() {
                     ) : suppliers && suppliers.length > 0 ? (
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
                             {suppliers.map(supplier => (
-                                <Card key={supplier.id} className="overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300 flex flex-col">
-                                    <div className="relative aspect-video bg-muted">
-                                        {supplier.heroBannerUrl ? (
-                                            <Image
-                                                src={supplier.heroBannerUrl}
-                                                alt={supplier.shopName}
-                                                fill
-                                                className="object-cover"
-                                            />
-                                        ) : (
-                                            <div className="flex items-center justify-center h-full">
-                                                <Building2 className="h-12 w-12 text-muted-foreground"/>
-                                            </div>
-                                        )}
-                                    </div>
-                                    <CardHeader>
-                                        <CardTitle className="text-xl">{supplier.shopName}</CardTitle>
-                                        <CardDescription>{supplier.category}</CardDescription>
-                                    </CardHeader>
-                                    <CardContent className="flex-grow">
-                                        {/* Future content like rating can go here */}
-                                    </CardContent>
-                                    <CardFooter>
-                                        <Button asChild className="w-full" onClick={() => handleSupplierClick(supplier.id)}>
-                                            <Link href={`/mall/supplier/${supplier.id}`}>
-                                                View Profile <ArrowRight className="ml-2" />
-                                            </Link>
-                                        </Button>
-                                    </CardFooter>
-                                </Card>
+                                <Link key={supplier.id} href={`/mall/supplier/${supplier.id}`} className="block group" onClick={() => handleSupplierClick(supplier.id)}>
+                                    <Card className="overflow-hidden shadow-md hover:shadow-lg transition-all h-full flex flex-col group-hover:border-primary">
+                                        <div className="relative aspect-video bg-muted">
+                                            {supplier.heroBannerUrl ? (
+                                                <Image
+                                                    src={supplier.heroBannerUrl}
+                                                    alt={supplier.shopName}
+                                                    fill
+                                                    className="object-cover"
+                                                />
+                                            ) : (
+                                                <div className="flex items-center justify-center h-full">
+                                                    <Building2 className="h-12 w-12 text-muted-foreground"/>
+                                                </div>
+                                            )}
+                                        </div>
+                                        <CardHeader>
+                                            <CardTitle className="text-xl">{supplier.shopName}</CardTitle>
+                                            <CardDescription>{supplier.category}</CardDescription>
+                                        </CardHeader>
+                                        <CardContent className="flex-grow">
+                                            {/* Future content like rating can go here */}
+                                        </CardContent>
+                                        <CardFooter>
+                                             <p className="text-sm font-semibold text-primary flex items-center gap-2">
+                                               View Profile <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                                            </p>
+                                        </CardFooter>
+                                    </Card>
+                                </Link>
                             ))}
                         </div>
                     ) : (

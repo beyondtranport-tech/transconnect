@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { Button } from "@/components/ui/button";
@@ -153,9 +154,11 @@ export default function SA_AuctionMallPage() {
                                         <p className="text-2xl font-bold text-primary">{formatCurrency(auction.currentBid)}</p>
                                     </CardContent>
                                     <CardFooter>
-                                        <Button className="w-full" onClick={() => handleAuctionClick(auction.id)}>
-                                            <Hammer className="mr-2 h-4 w-4" />
-                                            View & Bid
+                                        <Button asChild className="w-full" onClick={() => handleAuctionClick(auction.id)}>
+                                            <a href="https://www.saauctiongroup.co.za" target="_blank" rel="noopener noreferrer">
+                                                <Hammer className="mr-2 h-4 w-4" />
+                                                View & Bid
+                                            </a>
                                         </Button>
                                     </CardFooter>
                                 </Card>

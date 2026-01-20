@@ -113,24 +113,24 @@ export default function FundingPage() {
                        {agreementTypes.map((item) => {
                             const Icon = item.icon;
                             return (
-                               <Card key={item.title} className="flex flex-col overflow-hidden shadow-lg hover:shadow-primary/20 transition-shadow duration-300">
-                                    <CardHeader>
-                                        <div className="flex items-center gap-4">
-                                            <Icon className="h-8 w-8 text-primary" />
-                                            <CardTitle>{item.title}</CardTitle>
-                                        </div>
-                                    </CardHeader>
-                                    <CardContent className="flex-grow">
-                                        <p className="text-muted-foreground">{item.description}</p>
-                                    </CardContent>
-                                    <CardFooter>
-                                        <Button asChild className="w-full">
-                                            <Link href={`/funding/products?agreement=${item.id}`}>
-                                                View Products <ArrowRight className="ml-2 h-4 w-4" />
-                                            </Link>
-                                        </Button>
-                                    </CardFooter>
-                               </Card>
+                               <Link href={`/funding/products?agreement=${item.id}`} key={item.title} className="block group">
+                                   <Card className="flex flex-col overflow-hidden shadow-lg hover:shadow-primary/20 transition-all h-full group-hover:border-primary">
+                                        <CardHeader>
+                                            <div className="flex items-center gap-4">
+                                                <Icon className="h-8 w-8 text-primary" />
+                                                <CardTitle>{item.title}</CardTitle>
+                                            </div>
+                                        </CardHeader>
+                                        <CardContent className="flex-grow">
+                                            <p className="text-muted-foreground">{item.description}</p>
+                                        </CardContent>
+                                        <CardFooter>
+                                            <p className="text-sm font-semibold text-primary flex items-center gap-2">
+                                                View Products <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                                            </p>
+                                        </CardFooter>
+                                   </Card>
+                               </Link>
                            )
                         })}
                     </div>

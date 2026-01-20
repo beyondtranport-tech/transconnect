@@ -1,7 +1,7 @@
 
 import Image from "next/image";
 import data from "@/lib/placeholder-images.json";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { CheckCircle, ArrowRight, DollarSign, Handshake, Cpu, Shield, Lock, DatabaseZap, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
@@ -140,18 +140,18 @@ export default function AboutPage() {
                     {roles.map((role) => {
                         const Icon = role.icon;
                         return (
-                            <Card key={role.title} className="flex flex-col text-center items-center p-6">
-                                <div className="bg-primary/10 p-4 rounded-full mb-4">
-                                    <Icon className="h-8 w-8 text-primary" />
-                                </div>
-                                <h3 className="text-xl font-bold">{role.title}</h3>
-                                <p className="text-muted-foreground mt-2 flex-grow">{role.description}</p>
-                                <Button asChild className="mt-6 w-full" variant="outline">
-                                    <Link href={`/roles/${role.id}`}>
-                                        Learn More
-                                    </Link>
-                                </Button>
-                            </Card>
+                             <Link href={`/roles/${role.id}`} key={role.title} className="block group">
+                                <Card className="flex flex-col text-center items-center p-6 h-full transition-all group-hover:border-primary group-hover:shadow-lg">
+                                    <div className="bg-primary/10 p-4 rounded-full mb-4">
+                                        <Icon className="h-8 w-8 text-primary" />
+                                    </div>
+                                    <h3 className="text-xl font-bold">{role.title}</h3>
+                                    <p className="text-muted-foreground mt-2 flex-grow">{role.description}</p>
+                                     <div className="mt-6 font-semibold text-primary flex items-center gap-2">
+                                        Learn More <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                                    </div>
+                                </Card>
+                            </Link>
                         )
                     })}
                 </div>
@@ -221,5 +221,3 @@ export default function AboutPage() {
     </div>
   );
 }
-
-    

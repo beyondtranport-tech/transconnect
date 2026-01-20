@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { Button } from "@/components/ui/button";
@@ -71,37 +72,37 @@ export default function DistributionMallPage() {
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
                         {featuredPartners.map(partner => (
-                            <Card key={partner.id} className="overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300 flex flex-col">
-                                {partner.image && (
-                                    <div className="relative aspect-video">
-                                        <Image
-                                            src={partner.image.imageUrl}
-                                            alt={partner.name}
-                                            fill
-                                            className="object-cover"
-                                            data-ai-hint={partner.image.imageHint}
-                                        />
-                                    </div>
-                                )}
-                                <CardHeader>
-                                    <CardTitle className="text-xl">{partner.name}</CardTitle>
-                                    <CardDescription>{partner.focus}</CardDescription>
-                                </CardHeader>
-                                <CardContent className="flex-grow">
-                                     <div className="flex items-center gap-1">
-                                        <Star className="h-5 w-5 text-yellow-400 fill-yellow-400" />
-                                        <span className="font-semibold">{partner.rating.toFixed(1)}</span>
-                                        <span className="text-sm text-muted-foreground">/ 5.0</span>
-                                    </div>
-                                </CardContent>
-                                <CardFooter>
-                                    <Button asChild className="w-full" onClick={() => handlePartnerClick(partner.id)}>
-                                        <Link href={`/mall/distribution/${partner.id}`}>
-                                            View Partner <ArrowRight className="ml-2" />
-                                        </Link>
-                                    </Button>
-                                </CardFooter>
-                            </Card>
+                             <Link href={`/mall/distribution/${partner.id}`} key={partner.id} className="block group" onClick={() => handlePartnerClick(partner.id)}>
+                                <Card className="overflow-hidden shadow-md hover:shadow-lg transition-all h-full flex flex-col group-hover:border-primary">
+                                    {partner.image && (
+                                        <div className="relative aspect-video">
+                                            <Image
+                                                src={partner.image.imageUrl}
+                                                alt={partner.name}
+                                                fill
+                                                className="object-cover"
+                                                data-ai-hint={partner.image.imageHint}
+                                            />
+                                        </div>
+                                    )}
+                                    <CardHeader>
+                                        <CardTitle className="text-xl">{partner.name}</CardTitle>
+                                        <CardDescription>{partner.focus}</CardDescription>
+                                    </CardHeader>
+                                    <CardContent className="flex-grow">
+                                        <div className="flex items-center gap-1">
+                                            <Star className="h-5 w-5 text-yellow-400 fill-yellow-400" />
+                                            <span className="font-semibold">{partner.rating.toFixed(1)}</span>
+                                            <span className="text-sm text-muted-foreground">/ 5.0</span>
+                                        </div>
+                                    </CardContent>
+                                    <CardFooter>
+                                        <p className="text-sm font-semibold text-primary flex items-center gap-2">
+                                            View Partner <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                                        </p>
+                                    </CardFooter>
+                                </Card>
+                            </Link>
                         ))}
                     </div>
                     <div className="text-center mt-16">

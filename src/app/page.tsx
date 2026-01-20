@@ -41,8 +41,8 @@ export default function Home() {
           <h1 className="text-4xl md:text-6xl font-bold text-primary-foreground font-headline tracking-tight">
             Your Business Should Flow.
           </h1>
-          <p className="mt-4 text-lg md:text-xl text-primary-foreground/90 max-w-3xl mx-auto">
-            We break the constraints that hold your business back. By restoring the flow of capital, opportunity, and information, we improve your efficiency, boost your profitability, and create lasting momentum for your company's growth.
+           <p className="mt-4 text-lg md:text-xl text-primary-foreground/90 max-w-3xl mx-auto">
+            Our platform is tailor-made to be an efficient, community-driven ecosystem. We provide innovative solutions and tools to help you build trust, create opportunity, and foster collaboration. Our members drive our community, and our software is purpose-built to break constraints and create lasting, meaningful change for your business.
           </p>
           <Button asChild size="lg" className="mt-8">
             <Link href="/join">Join the Ecosystem</Link>
@@ -148,23 +148,22 @@ export default function Home() {
               const IconComponent = iconComponents[division.icon];
               const divisionHref = `/${division.id}`;
               return (
-                <Card key={division.id} className="flex flex-col text-center shadow-lg hover:shadow-primary/20 transition-shadow">
-                  <CardHeader>
-                    {IconComponent && <IconComponent className="h-10 w-10 text-primary mx-auto mb-4" />}
-                    <CardTitle>{division.title}</CardTitle>
-                  </CardHeader>
-                  <CardContent className="flex-grow">
-                    <p className="text-muted-foreground">{division.description}</p>
-                  </CardContent>
-                  <CardFooter className="flex flex-col gap-2">
-                    <Button asChild className="w-full">
-                      <Link href={divisionHref}>Read More</Link>
-                    </Button>
-                    <Button asChild variant="outline" className="w-full">
-                      <Link href="/resources">FAQ</Link>
-                    </Button>
-                  </CardFooter>
-                </Card>
+                 <Link href={divisionHref} key={division.id} className="block group">
+                    <Card className="flex flex-col text-center shadow-lg hover:shadow-primary/20 transition-all h-full group-hover:border-primary">
+                    <CardHeader>
+                        {IconComponent && <IconComponent className="h-10 w-10 text-primary mx-auto mb-4" />}
+                        <CardTitle>{division.title}</CardTitle>
+                    </CardHeader>
+                    <CardContent className="flex-grow">
+                        <p className="text-muted-foreground">{division.description}</p>
+                    </CardContent>
+                     <CardFooter>
+                        <p className="text-sm font-semibold text-primary mx-auto flex items-center gap-2">
+                           Explore {division.title} <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                        </p>
+                    </CardFooter>
+                    </Card>
+                </Link>
               );
             })}
           </div>

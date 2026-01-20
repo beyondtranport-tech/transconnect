@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { Button } from "@/components/ui/button";
@@ -71,33 +72,33 @@ export default function RepurposeMallPage() {
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
                         {featuredItems.map(item => (
-                            <Card key={item.id} className="overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300 flex flex-col">
-                                {item.image && (
-                                    <div className="relative aspect-video">
-                                        <Image
-                                            src={item.image.imageUrl}
-                                            alt={item.name}
-                                            fill
-                                            className="object-cover"
-                                            data-ai-hint={item.image.imageHint}
-                                        />
-                                    </div>
-                                )}
-                                <CardHeader>
-                                    <CardTitle className="text-xl">{item.name}</CardTitle>
-                                    <CardDescription>{item.category}</CardDescription>
-                                </CardHeader>
-                                <CardContent className="flex-grow">
-                                     <p className="text-sm">Condition: <span className="font-semibold">{item.condition}</span></p>
-                                </CardContent>
-                                <CardFooter>
-                                    <Button asChild className="w-full" onClick={() => handleItemClick(item.id)}>
-                                        <Link href={`/mall/repurpose/${item.id}`}>
-                                            View Listing <ArrowRight className="ml-2" />
-                                        </Link>
-                                    </Button>
-                                </CardFooter>
-                            </Card>
+                             <Link href={`/mall/repurpose/${item.id}`} key={item.id} className="block group" onClick={() => handleItemClick(item.id)}>
+                                <Card className="overflow-hidden shadow-md hover:shadow-lg transition-all h-full flex flex-col group-hover:border-primary">
+                                    {item.image && (
+                                        <div className="relative aspect-video">
+                                            <Image
+                                                src={item.image.imageUrl}
+                                                alt={item.name}
+                                                fill
+                                                className="object-cover"
+                                                data-ai-hint={item.image.imageHint}
+                                            />
+                                        </div>
+                                    )}
+                                    <CardHeader>
+                                        <CardTitle className="text-xl">{item.name}</CardTitle>
+                                        <CardDescription>{item.category}</CardDescription>
+                                    </CardHeader>
+                                    <CardContent className="flex-grow">
+                                        <p className="text-sm">Condition: <span className="font-semibold">{item.condition}</span></p>
+                                    </CardContent>
+                                    <CardFooter>
+                                         <p className="text-sm font-semibold text-primary flex items-center gap-2">
+                                           View Listing <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                                        </p>
+                                    </CardFooter>
+                                </Card>
+                            </Link>
                         ))}
                     </div>
                     <div className="text-center mt-16">

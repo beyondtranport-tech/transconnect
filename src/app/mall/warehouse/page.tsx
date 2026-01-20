@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { Button } from "@/components/ui/button";
@@ -73,37 +74,37 @@ export default function WarehouseMallPage() {
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
                         {featuredFacilities.map(facility => (
-                            <Card key={facility.id} className="overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300 flex flex-col">
-                                {facility.image && (
-                                    <div className="relative aspect-video">
-                                        <Image
-                                            src={facility.image.imageUrl}
-                                            alt={facility.name}
-                                            fill
-                                            className="object-cover"
-                                            data-ai-hint={facility.image.imageHint}
-                                        />
-                                    </div>
-                                )}
-                                <CardHeader>
-                                    <CardTitle className="text-xl">{facility.name}</CardTitle>
-                                    <CardDescription>{facility.type} - {facility.location}</CardDescription>
-                                </CardHeader>
-                                <CardContent className="flex-grow">
-                                     <div className="flex items-center gap-1">
-                                        <Star className="h-5 w-5 text-yellow-400 fill-yellow-400" />
-                                        <span className="font-semibold">{facility.rating.toFixed(1)}</span>
-                                        <span className="text-sm text-muted-foreground">/ 5.0</span>
-                                    </div>
-                                </CardContent>
-                                <CardFooter>
-                                    <Button asChild className="w-full" onClick={() => handleFacilityClick(facility.id)}>
-                                        <Link href={`/mall/warehouse/${facility.id}`}>
-                                            View Facility <ArrowRight className="ml-2" />
-                                        </Link>
-                                    </Button>
-                                </CardFooter>
-                            </Card>
+                            <Link href={`/mall/warehouse/${facility.id}`} key={facility.id} className="block group" onClick={() => handleFacilityClick(facility.id)}>
+                                <Card className="overflow-hidden shadow-md hover:shadow-lg transition-all h-full flex flex-col group-hover:border-primary">
+                                    {facility.image && (
+                                        <div className="relative aspect-video">
+                                            <Image
+                                                src={facility.image.imageUrl}
+                                                alt={facility.name}
+                                                fill
+                                                className="object-cover"
+                                                data-ai-hint={facility.image.imageHint}
+                                            />
+                                        </div>
+                                    )}
+                                    <CardHeader>
+                                        <CardTitle className="text-xl">{facility.name}</CardTitle>
+                                        <CardDescription>{facility.type} - {facility.location}</CardDescription>
+                                    </CardHeader>
+                                    <CardContent className="flex-grow">
+                                        <div className="flex items-center gap-1">
+                                            <Star className="h-5 w-5 text-yellow-400 fill-yellow-400" />
+                                            <span className="font-semibold">{facility.rating.toFixed(1)}</span>
+                                            <span className="text-sm text-muted-foreground">/ 5.0</span>
+                                        </div>
+                                    </CardContent>
+                                    <CardFooter>
+                                        <p className="text-sm font-semibold text-primary flex items-center gap-2">
+                                            View Facility <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                                        </p>
+                                    </CardFooter>
+                                </Card>
+                            </Link>
                         ))}
                     </div>
                      <div className="text-center mt-16">
