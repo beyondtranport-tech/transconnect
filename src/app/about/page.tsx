@@ -1,7 +1,7 @@
 
 import Image from "next/image";
 import data from "@/lib/placeholder-images.json";
-import { Card, CardContent, CardFooter } from "@/components/ui/card";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { CheckCircle, ArrowRight, DollarSign, Handshake, Cpu, Shield, Lock, DatabaseZap, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
@@ -140,18 +140,25 @@ export default function AboutPage() {
                     {roles.map((role) => {
                         const Icon = role.icon;
                         return (
-                             <Link href={`/roles/${role.id}`} key={role.title} className="block group">
-                                <Card className="flex flex-col text-center items-center p-6 h-full transition-all group-hover:border-primary group-hover:shadow-lg">
-                                    <div className="bg-primary/10 p-4 rounded-full mb-4">
+                            <Card key={role.title} className="flex flex-col text-center items-center p-6 h-full transition-all hover:border-primary hover:shadow-lg">
+                                <CardHeader className="p-0">
+                                    <div className="bg-primary/10 p-4 rounded-full mb-4 mx-auto">
                                         <Icon className="h-8 w-8 text-primary" />
                                     </div>
-                                    <h3 className="text-xl font-bold">{role.title}</h3>
-                                    <p className="text-muted-foreground mt-2 flex-grow">{role.description}</p>
-                                     <div className="mt-6 font-semibold text-primary flex items-center gap-2">
-                                        Learn More <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-                                    </div>
-                                </Card>
-                            </Link>
+                                    <CardTitle>{role.title}</CardTitle>
+                                </CardHeader>
+                                <CardContent className="flex-grow p-0 mt-2">
+                                    <p className="text-muted-foreground">{role.description}</p>
+                                </CardContent>
+                                <CardFooter className="flex justify-between w-full pt-6 p-0">
+                                    <Link href={`/faq#${role.id}`} className="text-sm font-semibold text-primary hover:underline">
+                                        FAQ
+                                    </Link>
+                                    <Link href={`/roles/${role.id}`} className="text-sm font-semibold text-primary hover:underline flex items-center gap-1">
+                                        Read More <ArrowRight className="h-4 w-4" />
+                                    </Link>
+                                </CardFooter>
+                            </Card>
                         )
                     })}
                 </div>
