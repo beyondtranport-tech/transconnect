@@ -60,8 +60,8 @@ export default function FundingPage() {
                 )}
                 <div className="absolute inset-0 bg-black/60" />
                 <div className="relative h-full flex flex-col items-center justify-center text-center text-primary-foreground z-10 p-4">
-                    <h1 className="text-4xl md:text-5xl font-bold font-headline">Unlock Your Capital Flow</h1>
-                    <p className="mt-4 text-lg md:text-xl max-w-3xl">Traditional financing doesn't understand your business. We break the constraint of locked capital by connecting you to a network of funders who see opportunity in your assets and contracts, not just your balance sheet.</p>
+                    <h1 className="text-4xl md:text-5xl font-bold font-headline">Funding That Understands Your Business</h1>
+                    <p className="mt-4 text-lg md:text-xl max-w-3xl">Tired of being turned down by banks that don’t understand the transport industry? Our simple, industry-specific finance solutions are designed to empower you to do what you do best: manage and grow your business.</p>
                 </div>
             </section>
 
@@ -71,10 +71,6 @@ export default function FundingPage() {
                         <h2 className="text-3xl md:text-4xl font-bold font-headline">Are You Facing These Funding Roadblocks?</h2>
                         <p className="mt-6 text-lg text-muted-foreground">If you're a transport operator, you know that traditional financing doesn't always fit. We understand the challenges you face.</p>
                         <ul className="mt-6 space-y-2 text-left inline-block">
-                             <li className="flex items-start">
-                                <CheckCircle className="h-6 w-6 text-primary mr-3 mt-1 flex-shrink-0" />
-                                <span>Tired of being turned down by banks that don’t understand your unique business needs?</span>
-                            </li>
                              <li className="flex items-start">
                                 <CheckCircle className="h-6 w-6 text-primary mr-3 mt-1 flex-shrink-0" />
                                 <span>Frustrated with rigid finance solutions that fall short of meeting your operational requirements?</span>
