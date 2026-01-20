@@ -2,7 +2,7 @@
 import Image from "next/image";
 import data from "@/lib/placeholder-images.json";
 import { Card, CardContent } from "@/components/ui/card";
-import { CheckCircle, ArrowRight, DollarSign, Handshake, Cpu, Shield } from "lucide-react";
+import { CheckCircle, ArrowRight, DollarSign, Handshake, Cpu, Shield, Lock, DatabaseZap, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import React from "react";
@@ -183,6 +183,43 @@ export default function AboutPage() {
                 </div>
             </div>
         </section>
+
+        <section className="py-16 md:py-24 bg-background">
+            <div className="container mx-auto px-4">
+                <div className="text-center max-w-3xl mx-auto mb-16">
+                    <h2 className="text-3xl md:text-4xl font-bold font-headline">Your Security &amp; Data Protection: Our Priority</h2>
+                    <p className="mt-4 text-lg text-muted-foreground">
+                        We understand that your business data is sensitive. We are committed to protecting your privacy and securing your information with robust, industry-standard practices.
+                    </p>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+                    <Card>
+                        <CardContent className="p-6 text-center">
+                            <Lock className="h-10 w-10 text-primary mx-auto mb-4" />
+                            <h3 className="text-xl font-semibold">Data Privacy</h3>
+                            <p className="mt-2 text-muted-foreground">Your personal and company data is never shared or sold. It is only used to power the services you choose to use within the platform.</p>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardContent className="p-6 text-center">
+                            <DatabaseZap className="h-10 w-10 text-primary mx-auto mb-4" />
+                            <h3 className="text-xl font-semibold">Anonymous Contributions</h3>
+                            <p className="mt-2 text-muted-foreground">Data you contribute to the community, like fleet details, is always anonymized and aggregated. It is only used to negotiate group discounts and will never be linked back to you.</p>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardContent className="p-6 text-center">
+                            <ShieldCheck className="h-10 w-10 text-primary mx-auto mb-4" />
+                            <h3 className="text-xl font-semibold">Secure Platform</h3>
+                            <p className="mt-2 text-muted-foreground">Our platform is built on secure, modern infrastructure to protect against unauthorized access and ensure your data remains safe.</p>
+                        </CardContent>
+                    </Card>
+                </div>
+            </div>
+        </section>
+
     </div>
   );
 }
+
+    

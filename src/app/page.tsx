@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -38,10 +39,10 @@ export default function Home() {
         <div className="absolute inset-0 bg-black/50" />
         <div className="relative z-10 px-4 max-w-4xl mx-auto">
           <h1 className="text-4xl md:text-6xl font-bold text-primary-foreground font-headline tracking-tight">
-             Your Business Should Flow.
+            Your Business Should Flow.
           </h1>
           <p className="mt-4 text-lg md:text-xl text-primary-foreground/90 max-w-3xl mx-auto">
-            Our platform is tailor-made to be an efficient, community-driven ecosystem. We provide innovative solutions and tools that help you build trust, opportunity and community. Your membership gives you access to a range of benefits including a rewards program, passive income opportunities and ways to collaborate.
+            Our platform is tailor-made to be an efficient, community-driven ecosystem. We provide innovative solutions and tools that help you build trust, opportunity and community. Your membership gives you access to a range of benefits including a rewards program that unlocks passive income opportunities through collaboration.
           </p>
           <Button asChild size="lg" className="mt-8">
             <Link href="/join">Join the Ecosystem</Link>
@@ -234,3 +235,5 @@ export default function Home() {
     </div>
   );
 }
+
+    
