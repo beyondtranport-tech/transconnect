@@ -31,11 +31,11 @@ const nextConfig = {
     ],
   },
   experimental: {
-    serverActions: {
-      bodySizeLimit: '10mb',
-    },
     serverMinification: false,
-    serverActionTimeout: 120,
+  },
+  serverActions: {
+    bodySizeLimit: '10mb',
+    timeout: 120000, // 120 seconds
   },
 };
 

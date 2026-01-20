@@ -102,7 +102,7 @@ export default function Home() {
                  <p>Central to our vision is to use digital platforms to drive efficiencies, data to enhance decisioning and collaboration to drive leverage.</p>
               </CardContent>
             </Card>
-          </Card>
+          </div>
           <Card className="max-w-5xl mx-auto mt-8 bg-card">
              <CardHeader>
                 <CardTitle className="flex items-center gap-3">
@@ -161,5 +161,4 @@ export default function Home() {
     </div>
   );
 }
-
     
