@@ -182,7 +182,7 @@ export function Header() {
                   <Link href="/signin">Sign In</Link>
                 </Button>
                 <Button asChild>
-                  <Link href="/join">Join Now</Link>
+                  <Link href="/join">Join for Free</Link>
                 </Button>
               </>
             )}
@@ -285,7 +285,7 @@ export function Header() {
                                 <Link href="/signin" onClick={() => setIsSheetOpen(false)}>Sign In</Link>
                             </Button>
                             <Button asChild className="w-full justify-start">
-                                <Link href="/join" onClick={() => setIsSheetOpen(false)}>Join Now</Link>
+                                <Link href="/join" onClick={() => setIsSheetOpen(false)}>Join for Free</Link>
                             </Button>
                         </div>
                     )}
@@ -297,5 +297,3 @@ export function Header() {
     </header>
   );
 }
-
-    

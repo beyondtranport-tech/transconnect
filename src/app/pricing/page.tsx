@@ -184,7 +184,7 @@ export default function MembershipPage() {
                       <CardFooter className="p-6">
                         <Button asChild className="w-full" size="lg" variant={tier.isPopular ? 'default' : 'outline'}>
                           <Link href={tier.id === 'free' ? (user ? '/account' : '/join') : `/checkout/${tier.id}?cycle=${billingCycle}`}>
-                            {tier.id === 'free' ? (user ? 'Go to Dashboard' : 'Get Started') : `Choose ${tier.name}`}
+                            {tier.id === 'free' ? (user ? 'Go to Dashboard' : 'Get Started for Free') : `Choose ${tier.name}`}
                           </Link>
                         </Button>
                       </CardFooter>

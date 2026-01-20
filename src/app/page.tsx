@@ -45,7 +45,7 @@ export default function Home() {
             Our platform is tailor-made to be an efficient, community-driven ecosystem. We provide innovative solutions and tools to help you build trust, create opportunity, and foster collaboration. Our members drive our community, and our software is purpose-built to break constraints and create lasting, meaningful change for your business.
           </p>
           <Button asChild size="lg" className="mt-8">
-            <Link href="/join">Join the Ecosystem</Link>
+            <Link href="/join">Join for Free</Link>
           </Button>
         </div>
       </section>
@@ -230,7 +230,7 @@ export default function Home() {
             Become a member today and gain access to a world of opportunities. Benefit from our rewards program, community support, and a full suite of tools to supercharge your business.
           </p>
           <Button asChild size="lg" className="mt-8">
-            <Link href="/join">Create Your Account</Link>
+            <Link href="/join">Create Your Free Account</Link>
           </Button>
         </div>
       </section>

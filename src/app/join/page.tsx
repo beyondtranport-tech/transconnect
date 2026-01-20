@@ -194,10 +194,10 @@ function JoinFormComponent() {
     <Card className="w-full max-w-lg">
       <CardHeader className="text-center">
         <CardTitle className="text-3xl font-bold font-headline">
-          Join Logistics Flow
+          Join Logistics Flow for Free
         </CardTitle>
         <CardDescription>
-          Create your free account to get started. Membership is free for the first year.
+          Create your account to get started. Membership is free for the first year.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -304,7 +304,7 @@ function JoinFormComponent() {
             />
             <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Create Account
+              Create Free Account
             </Button>
           </form>
         </Form>
@@ -328,5 +328,3 @@ export default function JoinPage() {
     </div>
   );
 }
-
-    

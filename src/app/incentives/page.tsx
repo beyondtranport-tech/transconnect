@@ -139,7 +139,7 @@ export default function IncentivesPage() {
                     </p>
                     <Button asChild size="lg" className="mt-8">
                         <Link href="/join">
-                            Join Logistics Flow Now <ArrowRight className="ml-2 h-4 w-4" />
+                            Join Logistics Flow for Free <ArrowRight className="ml-2 h-4 w-4" />
                         </Link>
                     </Button>
                 </div>
@@ -147,5 +147,3 @@ export default function IncentivesPage() {
         </div>
     );
 }
-
-    
