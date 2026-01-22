@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { useForm, useFieldArray } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -18,6 +18,11 @@ import { useMemoFirebase } from '@/hooks/use-config';
 import { collection, query, doc, deleteDoc } from 'firebase/firestore';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
+import { Separator } from '@/components/ui/separator';
+import { Checkbox } from '@/components/ui/checkbox';
+import featuresData from '@/lib/features.json';
+
+const { featureSections } = featuresData;
 
 const planSchema = z.object({
   id: z.string().min(1, 'ID is required (e.g., "basic")'),
@@ -49,14 +54,9 @@ function PlanDialog({ plan, onSave }: { plan?: PlanFormValues; onSave: () => voi
       price: { monthly: 0, annual: 0 },
       commissionShare: 0,
       discountShare: 0,
-      features: [''],
+      features: [],
       isPopular: false,
     },
-  });
-
-  const { fields, append, remove } = useFieldArray({
-    control: form.control,
-    name: 'features',
   });
   
   useEffect(() => {
@@ -66,7 +66,7 @@ function PlanDialog({ plan, onSave }: { plan?: PlanFormValues; onSave: () => voi
         } else {
           form.reset({
             id: '', name: '', description: '', price: { monthly: 0, annual: 0 },
-            commissionShare: 0, discountShare: 0, features: [''], isPopular: false,
+            commissionShare: 0, discountShare: 0, features: [], isPopular: false,
           });
         }
     }
@@ -109,12 +109,12 @@ function PlanDialog({ plan, onSave }: { plan?: PlanFormValues; onSave: () => voi
           <Button><PlusCircle className="mr-2 h-4 w-4" /> Add New Plan</Button>
         )}
       </DialogTrigger>
-      <DialogContent className="sm:max-w-xl">
+      <DialogContent className="sm:max-w-3xl">
         <DialogHeader>
           <DialogTitle>{plan ? 'Edit' : 'Add New'} Membership Plan</DialogTitle>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 max-h-[80vh] overflow-y-auto pr-4">
             <FormField name="id" control={form.control} render={({ field }) => (
               <FormItem><FormLabel>Plan ID</FormLabel><FormControl><Input {...field} disabled={!!plan} placeholder="e.g. basic"/></FormControl><FormMessage /></FormItem>
             )} />
@@ -140,16 +140,71 @@ function PlanDialog({ plan, onSave }: { plan?: PlanFormValues; onSave: () => voi
                     <FormItem><FormLabel>Discount Share (%)</FormLabel><FormControl><Input type="number" placeholder="e.g., 10" {...field} /></FormControl><FormMessage /></FormItem>
                 )} />
             </div>
-            <div>
-              <Label>Features</Label>
-              {fields.map((field, index) => (
-                <div key={field.id} className="flex items-center gap-2 mt-2">
-                  <Input {...form.register(`features.${index}` as const)} />
-                  <Button type="button" variant="destructive" size="icon" onClick={() => remove(index)}><Trash2 className="h-4 w-4" /></Button>
-                </div>
-              ))}
-              <Button type="button" size="sm" variant="outline" className="mt-2" onClick={() => append('')}>Add Feature</Button>
-            </div>
+            
+            <Separator />
+
+             <FormField
+                control={form.control}
+                name="features"
+                render={() => (
+                    <FormItem>
+                    <div className="mb-4">
+                        <FormLabel className="text-base">Features</FormLabel>
+                        <FormDescription>
+                        Select the features to be included in this plan.
+                        </FormDescription>
+                    </div>
+                    <div className="space-y-4">
+                        {featureSections.map((section) => (
+                            <div key={section.name}>
+                                <h4 className="font-semibold text-muted-foreground">{section.name}</h4>
+                                <div className="space-y-2 mt-2 pl-2">
+                                {section.features.map((feature) => (
+                                    <FormField
+                                    key={feature.key}
+                                    control={form.control}
+                                    name="features"
+                                    render={({ field }) => {
+                                        return (
+                                        <FormItem
+                                            key={feature.key}
+                                            className="flex flex-row items-center space-x-3 space-y-0"
+                                        >
+                                            <FormControl>
+                                            <Checkbox
+                                                checked={field.value?.includes(feature.key)}
+                                                onCheckedChange={(checked) => {
+                                                return checked
+                                                    ? field.onChange([
+                                                        ...(field.value || []),
+                                                        feature.key,
+                                                    ])
+                                                    : field.onChange(
+                                                        field.value?.filter(
+                                                        (value) =>
+                                                            value !== feature.key
+                                                        )
+                                                    );
+                                                }}
+                                            />
+                                            </FormControl>
+                                            <FormLabel className="font-normal">
+                                            {feature.name}
+                                            </FormLabel>
+                                        </FormItem>
+                                        );
+                                    }}
+                                    />
+                                ))}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                    <FormMessage />
+                    </FormItem>
+                )}
+                />
+
             <FormField
                 control={form.control}
                 name="isPopular"
@@ -164,7 +219,7 @@ function PlanDialog({ plan, onSave }: { plan?: PlanFormValues; onSave: () => voi
                     </FormItem>
                 )}
             />
-            <DialogFooter>
+            <DialogFooter className="pt-4">
               <Button type="submit" disabled={isLoading}>
                 {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                 Save Plan
@@ -260,5 +315,3 @@ export default function PricingManagement() {
     </Card>
   );
 }
-
-    
