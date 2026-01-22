@@ -1,4 +1,3 @@
-
 'use client';
 
 import Link from 'next/link';
@@ -59,7 +58,7 @@ export default function Home() {
             <div>
               <h2 className="text-3xl md:text-4xl font-bold font-headline">Member value proposition</h2>
               <p className="mt-4 text-lg text-muted-foreground">
-                We're a community-driven ecosystem, not just another software company. Our members drive our community, and our software is purpose-built to break constraints and create lasting, meaningful change for your business. We believe in our model so much that we offer it to you for free for the first year.
+                We're a community-driven ecosystem, not just another software company. Our members drive our community, and our software is purpose-built to break <strong>your pain point</strong> and create lasting, meaningful change for your business. We believe in our model so much that we offer it to you for free for the first year.
               </p>
             </div>
              <Card>
