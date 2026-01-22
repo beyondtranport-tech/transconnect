@@ -145,7 +145,11 @@ export default function MembershipPage() {
                         )}
                       <CardHeader className="text-center">
                         <CardTitle className="text-2xl font-bold">{tier.name}</CardTitle>
-                        <CardDescription className="mt-2 text-base h-10">{tier.description}</CardDescription>
+                        <CardDescription className="mt-2 text-base h-12">
+                            {tier.id === 'free'
+                                ? "Get started by building your shop in draft mode. Upgrade to publish and start selling."
+                                : tier.description}
+                        </CardDescription>
                         <div className="pt-4">
                            {tier.id === 'free' ? (
                                 <span className="text-4xl font-extrabold tracking-tight">Free</span>
@@ -179,7 +183,7 @@ export default function MembershipPage() {
                       <CardFooter className="p-6">
                         <Button asChild className="w-full" size="lg" variant={tier.isPopular ? 'default' : 'outline'}>
                           <Link href={tier.id === 'free' ? (user ? '/account' : '/join') : `/checkout/${tier.id}?cycle=${billingCycle}`}>
-                            {tier.id === 'free' ? (user ? 'Go to Dashboard' : 'Get Started for Free') : `Choose ${tier.name}`}
+                            {tier.id === 'free' ? (user ? 'Go to Dashboard' : 'Create Free Shop') : `Choose ${tier.name}`}
                           </Link>
                         </Button>
                       </CardFooter>
