@@ -8,7 +8,6 @@ import { ArrowRight, Cpu, DollarSign, Handshake, Shield, ShoppingBasket, Store, 
 import data from '@/lib/placeholder-images.json';
 import * as React from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter, CardDescription } from '@/components/ui/card';
-import { divisions } from "@/lib/data";
 import { HomeIntentModal } from './home-intent-modal';
 import { useState } from 'react';
 
@@ -43,10 +42,10 @@ export default function Home() {
         <div className="absolute inset-0 bg-black/50" />
         <div className="relative z-10 px-4 max-w-4xl mx-auto">
           <h1 className="text-4xl md:text-6xl font-bold text-primary-foreground font-headline tracking-tight">
-            Your Business Should Flow.
+            Feeling the Squeeze of High Costs & Wasted Miles?
           </h1>
            <p className="mt-4 text-lg md:text-xl text-primary-foreground/90 max-w-3xl mx-auto">
-            Our platform is tailor-made to be an efficient, community-driven ecosystem. We provide innovative solutions and tools to help you build trust, create opportunity, and foster collaboration. Our members drive our community, and our software is purpose-built to break constraints and create lasting, meaningful change for your business.
+            The transport industry is tough—fuel costs are rising, finding profitable backloads is a constant battle, and getting fair prices on parts and services feels impossible. Logistics Flow is the answer. Become a member to tap into our community's collective buying power, unlocking exclusive rewards and deals that directly reduce your operational costs and boost your bottom line.
           </p>
           <Button size="lg" className="mt-8" onClick={() => setIsModalOpen(true)}>
             Get Started
@@ -56,122 +55,27 @@ export default function Home() {
 
       <section id="about" className="py-16 md:py-24 bg-background">
         <div className="container mx-auto px-4">
-          <div className="text-center max-w-3xl mx-auto mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold font-headline">How We Create Flow</h2>
-            <p className="mt-4 text-lg text-muted-foreground">
-              Every transport business faces constraints: cash flow bottlenecks, high costs, and missed opportunities. Logistics Flow is designed to break these constraints, creating a seamless flow of capital, savings, and work to fuel your growth.
-            </p>
-          </div>
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-7xl mx-auto">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-3">
-                  <DollarSign className="h-8 w-8 text-primary"/>
-                  Capital Flow
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                  <p className="font-semibold text-destructive">Constraint: Locked Capital</p>
-                  <p className="text-sm text-muted-foreground mt-1">
-                      Traditional financing doesn't understand your business, blocking access to vital funds.
-                  </p>
-                  <p className="font-semibold text-primary mt-3">Flow: Unlocked Funding</p>
-                  <p className="text-sm text-muted-foreground mt-1">
-                      We connect you with a network of funders, turning your assets and contracts into accessible cash flow.
-                  </p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-3">
-                  <Cpu className="h-8 w-8 text-primary"/>
-                  Opportunity Flow
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                  <p className="font-semibold text-destructive">Constraint: Wasted Capacity</p>
-                  <p className="text-sm text-muted-foreground mt-1">
-                      Empty return trips and inefficient routes drain your profitability every day.
-                  </p>
-                  <p className="font-semibold text-primary mt-3">Flow: Maximized Efficiency</p>
-                  <p className="text-sm text-muted-foreground mt-1">
-                      Our AI-powered tools help you find profitable backloads and optimize your routes, turning empty miles into revenue.
-                  </p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-3">
-                  <Handshake className="h-8 w-8 text-primary"/>
-                  Network Flow
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                  <p className="font-semibold text-destructive">Constraint: Limited Network</p>
-                  <p className="text-sm text-muted-foreground mt-1">
-                      Growth is difficult when you're operating in isolation.
-                  </p>
-                  <p className="font-semibold text-primary mt-3">Flow: Passive Income & Collaboration</p>
-                  <p className="text-sm text-muted-foreground mt-1">
-                      Activate the 'Actions' plan to earn recurring income by referring members. Collaborate and subcontract with trusted peers.
-                  </p>
-              </CardContent>
-            </Card>
+          <div className="grid md:grid-cols-2 gap-12 items-center">
+            <div>
+              <h2 className="text-3xl md:text-4xl font-bold font-headline">Member value proposition</h2>
+              <p className="mt-4 text-lg text-muted-foreground">
+                We're a community-driven ecosystem, not just another software company. Our members drive our community, and our software is purpose-built to break constraints and create lasting, meaningful change for your business. We believe in our model so much that we offer it to you for free for the first year.
+              </p>
+            </div>
              <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-3">
-                  <Shield className="h-8 w-8 text-primary"/>
-                  Savings Flow
+                  <Cpu className="h-8 w-8 text-primary"/>
+                  TECH-POWERED
                 </CardTitle>
+                 <CardDescription>Smarter, Faster, Further</CardDescription>
               </CardHeader>
               <CardContent>
-                  <p className="font-semibold text-destructive">Constraint: High Costs</p>
                   <p className="text-sm text-muted-foreground mt-1">
-                      Individual operators lack the leverage to get significant discounts on essential parts and services.
-                  </p>
-                  <p className="font-semibold text-primary mt-3">Flow: Collective Buying Power</p>
-                  <p className="text-sm text-muted-foreground mt-1">
-                      Our community's combined volume allows us to negotiate bulk discounts, passing the savings directly on to you.
+                      Our advanced technology suite, featuring an AI-powered freight matching system, helps you eliminate guesswork, reduce empty miles, and maximize your profitability. Find the perfect load in real-time.
                   </p>
               </CardContent>
             </Card>
-          </div>
-        </div>
-      </section>
-
-      <section className="py-16 md:py-24 bg-card">
-        <div className="container mx-auto px-4">
-          <div className="text-center max-w-3xl mx-auto mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold font-headline">Explore Our Divisions</h2>
-            <p className="mt-4 text-lg text-muted-foreground">
-              Each division is a specialized hub designed to address key areas of your business, from financing to sales.
-            </p>
-          </div>
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {divisions.map((division) => {
-              const IconComponent = iconComponents[division.icon];
-              const divisionHref = `/${division.id}`;
-              return (
-                <Card key={division.id} className="group relative flex flex-col shadow-lg hover:shadow-primary/20 transition-shadow h-full hover:border-primary">
-                    <CardHeader>
-                        {IconComponent && <IconComponent className="h-10 w-10 text-primary mx-auto mb-4" />}
-                        <CardTitle>{division.title}</CardTitle>
-                    </CardHeader>
-                    <CardContent className="flex-grow">
-                        <p className="text-muted-foreground">{division.description}</p>
-                    </CardContent>
-                    <CardFooter className="flex justify-between items-center pt-4">
-                       <Link href={`/faq#${division.id}`} className="text-sm font-semibold text-primary hover:underline z-20 relative">
-                            FAQ
-                        </Link>
-                        <div className="text-sm font-semibold text-primary flex items-center gap-1">
-                            Read More <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-                        </div>
-                    </CardFooter>
-                    <Link href={divisionHref} className="absolute inset-0 z-10" aria-label={`View ${division.title}`} />
-                </Card>
-              );
-            })}
           </div>
         </div>
       </section>
