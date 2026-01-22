@@ -1,43 +1,57 @@
 {
   "featureSections": [
     {
-      "name": "Online Shop",
+      "name": "Online Shop & Storefront",
       "features": [
         { "key": "shop:basic", "name": "Basic Shop with Core Features" },
         { "key": "shop:advanced", "name": "Advanced Shop Customization" },
         { "key": "shop:templates", "name": "Multiple Shop Templates" },
-        { "key": "shop:domain", "name": "Custom Domain Support" }
+        { "key": "shop:domain", "name": "Custom Domain Support" },
+        { "key": "shop:analytics", "name": "Shop Analytics Dashboard" }
       ]
     },
     {
-      "name": "Products & Services",
+      "name": "Product & Service Listings",
       "features": [
         { "key": "listings:5", "name": "Up to 5 Listings" },
         { "key": "listings:50", "name": "Up to 50 Listings" },
-        { "key": "listings:unlimited", "name": "Unlimited Listings" }
+        { "key": "listings:unlimited", "name": "Unlimited Listings" },
+        { "key": "listings:bulk_import", "name": "Bulk Product Import/Export" },
+        { "key": "listings:priority_delivery", "name": "Priority Delivery Options" }
       ]
     },
     {
-      "name": "Marketing & Growth",
+      "name": "AI Marketing & Content Studio",
       "features": [
-        { "key": "marketing:listing", "name": "Public Listing in Supplier Mall" },
-        { "key": "marketing:seo", "name": "AI SEO Booster" },
-        { "key": "marketing:ai_media", "name": "AI Image & Video Tools" }
+        { "key": "ai:seo_booster", "name": "AI SEO Booster" },
+        { "key": "ai:image_generation", "name": "AI Image Generation" },
+        { "key": "ai:banner_generation", "name": "AI Banner & Flyer Creator" },
+        { "key": "ai:video_ads", "name": "AI Video Ad Generator" },
+        { "key": "campaigns:special", "name": "Access to Special Marketing Campaigns" }
       ]
     },
     {
       "name": "Ecosystem & Funding",
       "features": [
-        { "key": "ecosystem:access", "name": "Mall & Marketplace Access" },
-        { "key": "ecosystem:funding", "name": "Funding Division Access" }
+        { "key": "ecosystem:access", "name": "Access to All Malls" },
+        { "key": "ecosystem:funding", "name": "Funding Division Access" },
+        { "key": "ecosystem:connect_plans", "name": "Ability to Activate Connect Plans" }
       ]
     },
     {
-      "name": "Support",
+        "name": "Advanced Tools & Integrations",
+        "features": [
+            { "key": "tools:dashboards", "name": "Advanced Performance Dashboards" },
+            { "key": "tools:extensions", "name": "Access to App Extensions" },
+            { "key": "tools:api_access", "name": "Developer API Access" }
+        ]
+    },
+    {
+      "name": "Support & Service",
       "features": [
         { "key": "support:community", "name": "Community Forum Support" },
-        { "key": "support:priority", "name": "Priority Email Support" },
-        { "key": "support:dedicated", "name": "Dedicated Account Manager" }
+        { "key": "support:priority_email", "name": "Priority Email Support" },
+        { "key": "support:dedicated_manager", "name": "Dedicated Account Manager" }
       ]
     }
   ]
