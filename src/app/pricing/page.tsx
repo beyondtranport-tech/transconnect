@@ -18,52 +18,43 @@ import { useMemoFirebase } from '@/hooks/use-config';
 
 const featureSections = [
     {
-        name: 'Core Platform',
+        name: 'Online Shop',
         features: [
-            { name: 'Community Forum Access', key: 'Community Forum Access' },
-            { name: 'Standard Support', key: 'Standard Support' },
+            { name: 'Basic Shop with Core Features', key: 'shop:basic' },
+            { name: 'Advanced Shop Customization', key: 'shop:advanced' },
+            { name: 'Multiple Shop Templates', key: 'shop:templates' },
+            { name: 'Custom Domain Support', key: 'shop:domain' },
         ]
     },
     {
-        name: 'Mall Division',
+        name: 'Products & Services',
         features: [
-             { name: 'Supplier Mall Access', key: 'Supplier Mall Access' },
-             { name: 'Transporter Mall Access', key: 'Transporter Mall Access' },
-             { name: 'Finance Mall Access', key: 'Finance Mall Access' },
-             { name: 'Buy & Sell Mall', key: 'Buy & Sell Mall' },
-             { name: 'Warehouse Mall', key: 'Warehouse Mall' },
-             { name: 'Repurpose Mall', key: 'Repurpose Mall' },
-             { name: 'Aftermarket Mall', key: 'Aftermarket Mall' },
-        ]
-    },
-     {
-        name: 'Marketplace Division',
-        features: [
-             { name: 'Access Partner Reseller Network', key: 'Access Partner Reseller Network' },
+            { name: 'Up to 5 Listings', key: 'listings:5' },
+            { name: 'Up to 50 Listings', key: 'listings:50' },
+            { name: 'Unlimited Listings', key: 'listings:unlimited' },
         ]
     },
     {
-        name: 'Tech Division',
+        name: 'Marketing & Growth',
         features: [
-            { name: 'AI Freight Matcher (Loads Mall)', key: 'AI Freight Matcher (Loads Mall)' },
-            { name: 'Real-time Analytics Dashboard', key: 'Real-time Analytics Dashboard' },
-            { name: 'API Access for Integrations', key: 'API Access for Integrations' },
+            { name: 'Public Listing in Supplier Mall', key: 'marketing:listing' },
+            { name: 'AI SEO Booster', key: 'marketing:seo' },
+            { name: 'AI Image & Video Tools', key: 'marketing:ai_media' },
         ]
     },
     {
-        name: 'Connect Plans',
+        name: 'Ecosystem & Funding',
         features: [
-            { name: 'Loyalty Plan Access', key: 'Loyalty Plan Access' },
-            { name: 'Rewards Plan Access', key: 'Rewards Plan Access' },
-            { name: 'Actions Plan Included', key: 'Actions Plan Included' },
+            { name: 'Mall & Marketplace Access', key: 'ecosystem:access' },
+            { name: 'Funding Division Access', key: 'ecosystem:funding' },
         ]
     },
     {
-        name: 'Service & Support',
+        name: 'Support',
         features: [
-            { name: 'Priority Support', key: 'Priority Support' },
-            { name: 'Dedicated Account Manager', key: 'Dedicated Account Manager' },
-            { name: '24/7 Premium Support', key: '24/7 Premium Support' },
+            { name: 'Community Forum Support', key: 'support:community' },
+            { name: 'Priority Email Support', key: 'support:priority' },
+            { name: 'Dedicated Account Manager', key: 'support:dedicated' },
         ]
     },
 ];
@@ -117,7 +108,7 @@ export default function MembershipPage() {
         <div className="text-center max-w-3xl mx-auto mb-12">
           <h1 className="text-4xl md:text-5xl font-bold font-headline">Choose Your Plan</h1>
           <p className="mt-4 text-lg md:text-xl text-muted-foreground">
-            Select the perfect plan to fuel your business growth. All plans come with a 30-day money-back guarantee.
+            Select the perfect plan to build your online shop and grow your business. All paid plans include a 30-day money-back guarantee.
           </p>
         </div>
 
@@ -173,12 +164,16 @@ export default function MembershipPage() {
                       </CardHeader>
                       <CardContent className="flex-grow">
                         <ul className="space-y-3">
-                          {tier.features.slice(0, 5).map((feature: string) => (
-                            <li key={feature} className="flex items-start">
-                              <Check className="h-5 w-5 text-green-500 mr-3 flex-shrink-0 mt-0.5" />
-                              <span className="text-muted-foreground">{feature}</span>
-                            </li>
-                          ))}
+                          {tier.features.slice(0, 5).map((featureKey: string) => {
+                            const featureSection = featureSections.find(s => s.features.some(f => f.key === featureKey));
+                            const feature = featureSection?.features.find(f => f.key === featureKey);
+                            return (
+                                <li key={featureKey} className="flex items-start">
+                                  <Check className="h-5 w-5 text-green-500 mr-3 flex-shrink-0 mt-0.5" />
+                                  <span className="text-muted-foreground">{feature?.name || featureKey}</span>
+                                </li>
+                            )
+                          })}
                         </ul>
                       </CardContent>
                       <CardFooter className="p-6">
@@ -199,7 +194,7 @@ export default function MembershipPage() {
           <div className="text-center max-w-3xl mx-auto mb-12">
             <h2 className="text-3xl md:text-4xl font-bold font-headline">Compare Features</h2>
             <p className="mt-4 text-lg text-muted-foreground">
-              Find the right set of tools for your business needs.
+              Find the right set of tools to build your online shop and grow your business.
             </p>
           </div>
           <div className="max-w-5xl mx-auto border rounded-lg overflow-hidden">

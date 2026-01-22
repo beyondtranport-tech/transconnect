@@ -78,17 +78,17 @@ export default function AboutPage() {
             )}
             <div className="absolute inset-0 bg-black/60" />
             <div className="relative h-full flex flex-col items-center justify-center text-center text-primary-foreground z-10 p-4">
-                <h1 className="text-4xl md:text-5xl font-bold font-headline">About Logistics Flow</h1>
-                <p className="mt-4 text-lg md:text-xl max-w-3xl">We are dedicated to revolutionizing the transport industry through connection and innovation.</p>
+                <h1 className="text-4xl md:text-5xl font-bold font-headline">About TransConnect</h1>
+                <p className="mt-4 text-lg md:text-xl max-w-3xl">We are dedicated to revolutionizing the logistics sector by empowering every business with the digital tools to compete and grow.</p>
             </div>
         </section>
 
         <section className="py-16 md:py-24 bg-background">
             <div className="container mx-auto px-4">
                 <div className="text-center max-w-3xl mx-auto">
-                    <h2 className="text-3xl md:text-4xl font-bold font-headline">Breaking Constraints, Creating Flow</h2>
+                    <h2 className="text-3xl md:text-4xl font-bold font-headline">Your Digital Branch for the Logistics Economy</h2>
                     <p className="mt-4 text-lg text-muted-foreground">
-                        Your business should flow. But the transport industry is full of constraints that block your progress—from accessing capital to finding work and managing high costs. We identify these blockages and build powerful solutions to restore the natural flow of capital, opportunity, and information, helping your business move forward.
+                       In today's digital world, every business needs a professional online presence. But for many in the logistics sector—from independent transporters to specialized suppliers—building and managing a digital storefront is complex and expensive. TransConnect was created to solve this. We provide the tools to build your own online shop, manage your sales, and connect with a network of buyers, sellers, and funders, all on one simple platform.
                     </p>
                 </div>
             </div>
@@ -131,7 +131,7 @@ export default function AboutPage() {
         <section className="py-16 md:py-24 bg-background">
             <div className="container mx-auto px-4">
                 <div className="text-center max-w-3xl mx-auto mb-16">
-                    <h2 className="text-3xl md:text-4xl font-bold font-headline">Who is Logistics Flow for?</h2>
+                    <h2 className="text-3xl md:text-4xl font-bold font-headline">Who is TransConnect for?</h2>
                     <p className="mt-4 text-lg text-muted-foreground">
                         Our ecosystem is designed for every participant in the transport industry. Find your place and start connecting.
                     </p>

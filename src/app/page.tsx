@@ -1,25 +1,19 @@
+
 'use client';
 
 import Link from 'next/link';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, Cpu, DollarSign, Handshake, Shield, ShoppingBasket, Store, ShieldCheck, Lock, DatabaseZap } from 'lucide-react';
+import { ArrowRight, ShoppingBasket, Store, DollarSign, ShieldCheck, Lock, DatabaseZap } from 'lucide-react';
 import data from '@/lib/placeholder-images.json';
 import * as React from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardFooter, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { HomeIntentModal } from './home-intent-modal';
 import { useState } from 'react';
 
 const { placeholderImages } = data;
 
 const heroImage = placeholderImages.find(p => p.id === "hero-home");
-
-const iconComponents: { [key: string]: React.ElementType } = {
-    DollarSign,
-    ShoppingBasket,
-    Store,
-    Cpu,
-};
 
 export default function Home() {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -38,44 +32,63 @@ export default function Home() {
             data-ai-hint={heroImage.imageHint}
           />
         )}
-        <div className="absolute inset-0 bg-black/50" />
+        <div className="absolute inset-0 bg-black/60" />
         <div className="relative z-10 px-4 max-w-4xl mx-auto">
           <h1 className="text-4xl md:text-6xl font-bold text-primary-foreground font-headline tracking-tight">
-            Feeling the Squeeze of High Costs & Wasted Miles?
+            Your Own Online Shop for the Logistics Sector
           </h1>
            <p className="mt-4 text-lg md:text-xl text-primary-foreground/90 max-w-3xl mx-auto">
-            The transport industry is tough—fuel costs are rising, finding profitable backloads is a constant battle, and getting fair prices on parts and services feels impossible. Logistics Flow is the answer. Become a member to tap into our community's collective buying power, unlocking exclusive rewards and deals that directly reduce your operational costs and boost your bottom line.
+            Launch a professional storefront to market your services, sell your products, and build a trusted profile to unlock funding. Get started for free.
           </p>
           <Button size="lg" className="mt-8" onClick={() => setIsModalOpen(true)}>
-            Get Started
+            Create Your Shop
           </Button>
         </div>
       </section>
 
-      <section id="about" className="py-16 md:py-24 bg-background">
+      <section id="how-it-works" className="py-16 md:py-24 bg-background">
         <div className="container mx-auto px-4">
-          <div className="grid md:grid-cols-2 gap-12 items-center">
-            <div>
-              <h2 className="text-3xl md:text-4xl font-bold font-headline">Member value proposition</h2>
-              <p className="mt-4 text-lg text-muted-foreground">
-                We're a community-driven ecosystem, not just another software company. Our members drive our community, and our software is purpose-built to break <strong>your pain point</strong> and create lasting, meaningful change for your business. We believe in our model so much that we offer it to you for free for the first year.
-              </p>
+            <div className="text-center max-w-3xl mx-auto mb-16">
+                <h2 className="text-3xl md:text-4xl font-bold font-headline">A Powerful, Simple Path to Growth</h2>
+                <p className="mt-4 text-lg text-muted-foreground">
+                    In three simple steps, you can establish your digital presence, open new sales channels, and access the capital you need to expand.
+                </p>
             </div>
-             <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-3">
-                  <Cpu className="h-8 w-8 text-primary"/>
-                  TECH-POWERED
-                </CardTitle>
-                 <CardDescription>Smarter, Faster, Further</CardDescription>
-              </CardHeader>
-              <CardContent>
-                  <p className="text-sm text-muted-foreground mt-1">
-                      Our advanced technology suite, featuring an AI-powered freight matching system, helps you eliminate guesswork, reduce empty miles, and maximize your profitability. Find the perfect load in real-time.
-                  </p>
-              </CardContent>
-            </Card>
-          </div>
+            <div className="grid md:grid-cols-3 gap-8 text-center max-w-6xl mx-auto">
+                <Card>
+                    <CardHeader>
+                        <div className="mx-auto bg-primary/10 p-4 rounded-full w-fit mb-2">
+                           <Store className="h-8 w-8 text-primary" />
+                        </div>
+                        <CardTitle>1. Build Your Digital Branch</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <p className="text-muted-foreground">Create a free, basic online shop in minutes. Showcase your business, list your core services, and establish your professional presence in the logistics ecosystem.</p>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader>
+                        <div className="mx-auto bg-primary/10 p-4 rounded-full w-fit mb-2">
+                           <ShoppingBasket className="h-8 w-8 text-primary" />
+                        </div>
+                        <CardTitle>2. Sell Your Goods & Services</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <p className="text-muted-foreground">Upgrade to a paid plan to list unlimited products. Whether selling parts, warehouse space, or freight capacity, your shop is your direct sales channel.</p>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader>
+                        <div className="mx-auto bg-primary/10 p-4 rounded-full w-fit mb-2">
+                           <DollarSign className="h-8 w-8 text-primary" />
+                        </div>
+                        <CardTitle>3. Unlock Funding</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <p className="text-muted-foreground">Your shop activity and business profile build a trusted operational record. This data-driven approach strengthens your case for accessing our network of funders.</p>
+                    </CardContent>
+                </Card>
+            </div>
         </div>
       </section>
 
