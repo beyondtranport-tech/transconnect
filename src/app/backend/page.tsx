@@ -27,6 +27,7 @@ import {
   Wrench,
   Star,
   ListTodo,
+  ListChecks,
   Wallet,
   FileText,
   Lock,
@@ -143,8 +144,8 @@ function BackendContent() {
       case 'permissions': return <PermissionsContent />;
       case 'loyalty': return <LoyaltySettings />;
       case 'pricing-memberships': return <PricingManagement />;
-      case 'pricing-tech': return <TechPricing />;
       case 'pricing-connect': return <ConnectPlanPricing />;
+      case 'pricing-tech': return <TechPricing />;
       case 'pricing-marketplace': return <MarketplaceFees />;
       case 'commissions-malls': return <MallCommissions />;
       case 'incentives-sales': return <SalesIncentives />;
@@ -215,6 +216,7 @@ function BackendContent() {
                     <SidebarMenuButton tooltip="Revenue & Pricing" isActive={isRevenueActive}><DollarSign /><span>Revenue & Pricing</span></SidebarMenuButton>
                     <SidebarMenuSub>
                         <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'pricing-memberships'} onClick={() => navigate('pricing-memberships')}><TicketPercent />Membership Pricing</SidebarMenuSubButton></SidebarMenuSubItem>
+                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'pricing-memberships'} onClick={() => navigate('pricing-memberships')}><ListChecks />Membership Features</SidebarMenuSubButton></SidebarMenuSubItem>
                         <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'pricing-connect'} onClick={() => navigate('pricing-connect')}><TicketPercent />Connect Plan Pricing</SidebarMenuSubButton></SidebarMenuSubItem>
                         <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'pricing-tech'} onClick={() => navigate('pricing-tech')}><TicketPercent />Tech SaaS Pricing</SidebarMenuSubButton></SidebarMenuSubItem>
                         <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'pricing-marketplace'} onClick={() => navigate('pricing-marketplace')}><TicketPercent />Marketplace Fees</SidebarMenuSubButton></SidebarMenuSubItem>
