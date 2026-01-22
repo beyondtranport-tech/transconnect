@@ -1,0 +1,44 @@
+{
+  "featureSections": [
+    {
+      "name": "Online Shop",
+      "features": [
+        { "key": "shop:basic", "name": "Basic Shop with Core Features" },
+        { "key": "shop:advanced", "name": "Advanced Shop Customization" },
+        { "key": "shop:templates", "name": "Multiple Shop Templates" },
+        { "key": "shop:domain", "name": "Custom Domain Support" }
+      ]
+    },
+    {
+      "name": "Products & Services",
+      "features": [
+        { "key": "listings:5", "name": "Up to 5 Listings" },
+        { "key": "listings:50", "name": "Up to 50 Listings" },
+        { "key": "listings:unlimited", "name": "Unlimited Listings" }
+      ]
+    },
+    {
+      "name": "Marketing & Growth",
+      "features": [
+        { "key": "marketing:listing", "name": "Public Listing in Supplier Mall" },
+        { "key": "marketing:seo", "name": "AI SEO Booster" },
+        { "key": "marketing:ai_media", "name": "AI Image & Video Tools" }
+      ]
+    },
+    {
+      "name": "Ecosystem & Funding",
+      "features": [
+        { "key": "ecosystem:access", "name": "Mall & Marketplace Access" },
+        { "key": "ecosystem:funding", "name": "Funding Division Access" }
+      ]
+    },
+    {
+      "name": "Support",
+      "features": [
+        { "key": "support:community", "name": "Community Forum Support" },
+        { "key": "support:priority", "name": "Priority Email Support" },
+        { "key": "support:dedicated", "name": "Dedicated Account Manager" }
+      ]
+    }
+  ]
+}

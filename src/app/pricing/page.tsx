@@ -15,49 +15,9 @@ import * as React from 'react';
 import { collection, query } from 'firebase/firestore';
 import { Loader2 } from 'lucide-react';
 import { useMemoFirebase } from '@/hooks/use-config';
+import featuresData from '@/lib/features.json';
 
-const featureSections = [
-    {
-        name: 'Online Shop',
-        features: [
-            { name: 'Basic Shop with Core Features', key: 'shop:basic' },
-            { name: 'Advanced Shop Customization', key: 'shop:advanced' },
-            { name: 'Multiple Shop Templates', key: 'shop:templates' },
-            { name: 'Custom Domain Support', key: 'shop:domain' },
-        ]
-    },
-    {
-        name: 'Products & Services',
-        features: [
-            { name: 'Up to 5 Listings', key: 'listings:5' },
-            { name: 'Up to 50 Listings', key: 'listings:50' },
-            { name: 'Unlimited Listings', key: 'listings:unlimited' },
-        ]
-    },
-    {
-        name: 'Marketing & Growth',
-        features: [
-            { name: 'Public Listing in Supplier Mall', key: 'marketing:listing' },
-            { name: 'AI SEO Booster', key: 'marketing:seo' },
-            { name: 'AI Image & Video Tools', key: 'marketing:ai_media' },
-        ]
-    },
-    {
-        name: 'Ecosystem & Funding',
-        features: [
-            { name: 'Mall & Marketplace Access', key: 'ecosystem:access' },
-            { name: 'Funding Division Access', key: 'ecosystem:funding' },
-        ]
-    },
-    {
-        name: 'Support',
-        features: [
-            { name: 'Community Forum Support', key: 'support:community' },
-            { name: 'Priority Email Support', key: 'support:priority' },
-            { name: 'Dedicated Account Manager', key: 'support:dedicated' },
-        ]
-    },
-];
+const { featureSections } = featuresData;
 
 const formatPrice = (price: number, perMonth = false) => {
     const formatted = new Intl.NumberFormat('en-ZA', {
@@ -101,6 +61,8 @@ export default function MembershipPage() {
           return aIndex - bIndex;
       });
   }, [tiers]);
+
+  const allFeatures = useMemo(() => featureSections.flatMap(s => s.features), []);
 
   return (
     <div className="bg-background">
@@ -169,8 +131,7 @@ export default function MembershipPage() {
                       <CardContent className="flex-grow">
                         <ul className="space-y-3">
                           {tier.features.slice(0, 5).map((featureKey: string) => {
-                            const featureSection = featureSections.find(s => s.features.some(f => f.key === featureKey));
-                            const feature = featureSection?.features.find(f => f.key === featureKey);
+                            const feature = allFeatures.find(f => f.key === featureKey);
                             return (
                                 <li key={featureKey} className="flex items-start">
                                   <Check className="h-5 w-5 text-green-500 mr-3 flex-shrink-0 mt-0.5" />
@@ -215,10 +176,10 @@ export default function MembershipPage() {
                 {featureSections.map((section) => (
                     <React.Fragment key={section.name}>
                         <TableRow className="bg-muted/50">
-                            <TableCell colSpan={sortedTiers.length + 1} className="font-semibold text-primary">{section.name}</TableCell>
+                            <TableCell colSpan={(sortedTiers?.length || 0) + 1} className="font-semibold text-primary">{section.name}</TableCell>
                         </TableRow>
                         {section.features.map((feature) => (
-                            <TableRow key={feature.name}>
+                            <TableRow key={feature.key}>
                                 <TableCell className="font-medium pl-8">{feature.name}</TableCell>
                                 {sortedTiers?.map((tier: any) => (
                                      <TableCell key={`${tier.id}-${feature.key}`} className="text-center">
