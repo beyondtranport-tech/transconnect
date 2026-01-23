@@ -8,7 +8,6 @@ import { ArrowRight, ShoppingBasket, Store, DollarSign, ShieldCheck, Lock, Datab
 import data from '@/lib/placeholder-images.json';
 import * as React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { HomeIntentModal } from './home-intent-modal';
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
@@ -57,12 +56,9 @@ function ShowcaseButton() {
 }
 
 export default function Home() {
-  const [isModalOpen, setIsModalOpen] = useState(false);
 
   return (
     <div className="flex flex-col">
-      <HomeIntentModal isOpen={isModalOpen} onOpenChange={setIsModalOpen} />
-      
       <section className="relative w-full h-[60vh] md:h-[70vh] flex items-center justify-center text-center">
         {newHeroImage && (
           <Image
@@ -95,8 +91,8 @@ export default function Home() {
                 Launch a professional storefront to market your services, sell your products, and build a trusted profile to unlock funding. Get started for free.
               </p>
               <div className="mt-8 flex justify-center items-center gap-4">
-                <Button size="lg" onClick={() => setIsModalOpen(true)}>
-                    Create Your Shop
+                <Button asChild size="lg">
+                    <Link href="/roles">Create Your Shop</Link>
                 </Button>
                 <ShowcaseButton />
               </div>
