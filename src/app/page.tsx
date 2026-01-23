@@ -37,7 +37,7 @@ export default function Home() {
         <div className="absolute inset-0 bg-black/60" />
         <div className="relative z-10 px-4 max-w-4xl mx-auto">
           <h1 className="text-4xl md:text-6xl font-bold text-primary-foreground font-headline tracking-tight">
-            Build Your Network, Grow Your Business
+            Build Your Network, Grow Your Business, Start Earning
           </h1>
            <p className="mt-4 text-lg md:text-xl text-primary-foreground/90 max-w-3xl mx-auto">
             Join a community of Logistics professionals. Contribute your knowledge, unlock collective savings, and create new revenue streams.
