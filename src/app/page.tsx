@@ -1,4 +1,3 @@
-
 'use client';
 
 import Link from 'next/link';
@@ -13,7 +12,7 @@ import { useState } from 'react';
 
 const { placeholderImages } = data;
 
-const heroImage = placeholderImages.find(p => p.id === "hero-home");
+const newHeroImage = placeholderImages.find(p => p.id === "value-integrity");
 
 export default function Home() {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -21,29 +20,44 @@ export default function Home() {
   return (
     <div className="flex flex-col">
       <HomeIntentModal isOpen={isModalOpen} onOpenChange={setIsModalOpen} />
+      
+      {/* New Hero Section */}
       <section className="relative w-full h-[60vh] md:h-[70vh] flex items-center justify-center text-center">
-        {heroImage && (
+        {newHeroImage && (
           <Image
-            src={heroImage.imageUrl}
-            alt={heroImage.description}
+            src={newHeroImage.imageUrl}
+            alt={newHeroImage.description}
             fill
             className="object-cover"
             priority
-            data-ai-hint={heroImage.imageHint}
+            data-ai-hint={newHeroImage.imageHint}
           />
         )}
         <div className="absolute inset-0 bg-black/60" />
         <div className="relative z-10 px-4 max-w-4xl mx-auto">
           <h1 className="text-4xl md:text-6xl font-bold text-primary-foreground font-headline tracking-tight">
-            Your Own Online Shop for the Logistics Sector
+            Build Your Network, Grow Your Business
           </h1>
            <p className="mt-4 text-lg md:text-xl text-primary-foreground/90 max-w-3xl mx-auto">
-            Launch a professional storefront to market your services, sell your products, and build a trusted profile to unlock funding. Get started for free.
+            Join a community of transport professionals. Contribute your knowledge, unlock collective savings, and create new revenue streams.
           </p>
-          <Button size="lg" className="mt-8" onClick={() => setIsModalOpen(true)}>
-            Create Your Shop
+          <Button asChild size="lg" className="mt-8">
+            <Link href="/join">Register for Free</Link>
           </Button>
         </div>
+      </section>
+
+      {/* Your Own Online Shop Section */}
+       <section className="py-16 md:py-24 bg-card">
+          <div className="container mx-auto px-4 text-center">
+              <h2 className="text-3xl md:text-4xl font-bold font-headline">Your Own Online Shop for the Logistics Sector</h2>
+              <p className="mt-4 text-lg text-muted-foreground max-w-3xl mx-auto">
+                Launch a professional storefront to market your services, sell your products, and build a trusted profile to unlock funding. Get started for free.
+              </p>
+              <Button size="lg" className="mt-8" onClick={() => setIsModalOpen(true)}>
+                Create Your Shop
+              </Button>
+          </div>
       </section>
 
       <section id="how-it-works" className="py-16 md:py-24 bg-background">
