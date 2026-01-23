@@ -54,20 +54,20 @@ export default function ActionsPlanPage() {
                     </CardHeader>
                     <CardContent className="p-6 space-y-6">
                         <p className="text-lg text-muted-foreground">
-                           The Actions Plan transforms you from a member into a partner. This plan is designed for the proactive transporter who wants to generate new revenue streams by leveraging their network and actively participating in the growth of the TransConnect ecosystem.
+                           The Actions Plan transforms you from a member into a partner. This plan is designed for the proactive transporter who wants to generate new revenue streams by leveraging their network and actively participating in the growth of the Logistics Flow ecosystem.
                         </p>
                         
                         <div>
                             <h3 className="text-xl font-semibold mb-3">Your Avenues for Earning:</h3>
                             <ul className="list-disc list-inside space-y-2 text-muted-foreground">
-                                <li><span className="font-semibold text-foreground">Earn Commission on Referrals:</span> Invite other transporters to join TransConnect. When they sign up for a paid membership, you earn a commission.</li>
+                                <li><span className="font-semibold text-foreground">Earn Commission on Referrals:</span> Invite other transporters to join Logistics Flow. When they sign up for a paid membership, you earn a commission.</li>
                                 <li><span className="font-semibold text-foreground">Share Supplier Discounts:</span> Share exclusive supplier discounts with your contacts outside of our network. You get paid for every successful referral or purchase made through your unique link.</li>
                                 <li><span className="font-semibold text-foreground">Dedicated Earnings Dashboard:</span> Your member account will include a dedicated dashboard to track your referrals, commissions, and total earnings in real-time.</li>
                             </ul>
                         </div>
                         
                         <p className="text-lg text-muted-foreground">
-                          If you have a strong network and want to be rewarded for sharing the benefits of TransConnect, the Actions Plan is your tool for growth.
+                          If you have a strong network and want to be rewarded for sharing the benefits of Logistics Flow, the Actions Plan is your tool for growth.
                         </p>
                         
                         <div className="text-center pt-6">

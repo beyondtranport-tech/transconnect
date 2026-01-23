@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { Button } from "@/components/ui/button";
@@ -110,7 +109,7 @@ export default function SupplierMallPage() {
                      <div className="text-center max-w-3xl mx-auto mb-12">
                         <h2 className="text-3xl md:text-4xl font-bold font-headline">Approved Suppliers</h2>
                         <p className="mt-4 text-lg text-muted-foreground">
-                            Top-rated suppliers trusted by the TransConnect community.
+                            Top-rated suppliers trusted by the Logistics Flow community.
                         </p>
                     </div>
 
@@ -124,7 +123,7 @@ export default function SupplierMallPage() {
                             <p className="mt-2 text-sm">{error.message}</p>
                         </div>
                     ) : suppliers && suppliers.length > 0 ? (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
                             {suppliers.map(supplier => (
                                 <Link key={supplier.id} href={`/mall/supplier/${supplier.id}`} className="block group" onClick={() => handleSupplierClick(supplier.id)}>
                                     <Card className="overflow-hidden shadow-md hover:shadow-lg transition-all h-full flex flex-col group-hover:border-primary">

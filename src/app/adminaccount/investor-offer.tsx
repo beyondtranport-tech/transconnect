@@ -31,7 +31,7 @@ export default function InvestorOffer() {
         <div className="space-y-8">
             <div>
                 <h1 className="text-3xl font-bold font-headline">Investor Pitch</h1>
-                <p className="text-lg text-muted-foreground mt-2">An overview of the TransConnect investment opportunity.</p>
+                <p className="text-lg text-muted-foreground mt-2">An overview of the Logistics Flow investment opportunity.</p>
             </div>
 
             <Card>

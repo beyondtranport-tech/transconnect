@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
@@ -162,7 +163,7 @@ export function ShopPreview({ shop, products }: { shop: any, products: any[] }) 
             <footer className="bg-white/80 border-t mt-12">
                 <div className="container mx-auto px-6 py-4 text-center text-sm text-gray-500">
                     <p>&copy; {new Date().getFullYear()} {shop.shopName}. All Rights Reserved.</p>
-                    <p className="mt-1">Powered by TransConnect</p>
+                    <p className="mt-1">Powered by Logistics Flow</p>
                 </div>
             </footer>
         </div>

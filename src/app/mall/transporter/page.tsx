@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { Button } from "@/components/ui/button";
@@ -127,7 +126,7 @@ export default function TransporterMallPage() {
                      <div className="text-center max-w-3xl mx-auto mb-12">
                         <h2 className="text-3xl md:text-4xl font-bold font-headline">Featured Transporters</h2>
                         <p className="mt-4 text-lg text-muted-foreground">
-                            Top-rated transport companies in the TransConnect network.
+                            Top-rated transport companies in the Logistics Flow network.
                         </p>
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
@@ -169,7 +168,7 @@ export default function TransporterMallPage() {
                         <Button asChild size="lg" variant="outline" onClick={handleGetFeaturedClick}>
                            <Link href="/join">
                              <Sparkles className="mr-2 h-5 w-5" />
-                             Want to get featured? Join TransConnect!
+                             Want to get featured? Join Logistics Flow!
                            </Link>
                         </Button>
                     </div>

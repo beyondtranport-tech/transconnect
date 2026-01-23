@@ -22,7 +22,7 @@
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Company",
       "type": "object",
-      "description": "Represents a member's business entity on the TransConnect platform.",
+      "description": "Represents a member's business entity on the Logistics Flow platform.",
       "properties": {
         "id": { "type": "string", "description": "Unique identifier for the company." },
         "ownerId": { "type": "string", "description": "The Firebase Auth UID of the user who owns and manages this company account." },
@@ -51,7 +51,7 @@
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Shop",
       "type": "object",
-      "description": "Represents a vendor's shop on the TransConnect platform.",
+      "description": "Represents a vendor's shop on the Logistics Flow platform.",
       "properties": {
         "id": { "type": "string", "description": "Unique identifier for the shop." },
         "ownerId": { "type": "string" },

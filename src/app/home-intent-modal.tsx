@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useRouter } from 'next/navigation';
@@ -38,7 +39,7 @@ export function HomeIntentModal({ isOpen, onOpenChange }: HomeIntentModalProps) 
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Welcome to TransConnect!</DialogTitle>
+          <DialogTitle>Welcome to Logistics Flow!</DialogTitle>
           <DialogDescription>
             To help you get started, tell us what you're looking for.
           </DialogDescription>
