@@ -24,7 +24,7 @@ const values = [
     {
         title: "Opportunity Flow",
         question: "Do you need to generate more income?",
-        answer: "We can help by connecting you to a network where you can earn passive income by referring members, find new loads with our AI matcher, and discover subcontracting opportunities.",
+        answer: "We give you the tools to open new sales channels. Create your own online shop to sell products and services to the entire network, and activate Connect plans to earn recurring income from referrals.",
         image: placeholderImages.find(p => p.id === 'incentives-hero'),
         icon: Handshake,
         link: "/connect",
