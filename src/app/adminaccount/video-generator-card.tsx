@@ -28,6 +28,7 @@ import { useStorage, useUser } from '@/firebase';
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { Progress } from '@/components/ui/progress';
 import { Input } from '@/components/ui/input';
+import Image from 'next/image';
 
 const defaultPrompt = `Create a short, professional marketing video that showcases how easy it is to create an online shop on the Logistics Flow platform. The video should visually represent these steps: 1. Sign up for a free account. 2. Use the simple Shop Wizard to add your business name, description, and products. 3. Publish your professional-looking online shop to the network. The video should be modern, clean, and use a color palette of green and charcoal.`;
 
@@ -35,6 +36,7 @@ export default function VideoGeneratorCard({ promptTemplate }: { promptTemplate?
   const [isOpen, setIsOpen] = useState(false);
   const [prompt, setPrompt] = useState(promptTemplate || defaultPrompt);
   const [isLoading, setIsLoading] = useState(false);
+  const [sourceImage, setSourceImage] = useState<string | null>(null);
   const [generatedVideo, setGeneratedVideo] = useState<string | null>(null);
   const { toast } = useToast();
   const { user } = useUser();
@@ -49,6 +51,18 @@ export default function VideoGeneratorCard({ promptTemplate }: { promptTemplate?
     setSavedVideoUrl(null);
     setUploadProgress(0);
     setIsSaving(false);
+  };
+  
+  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      setSourceImage(e.target?.result as string);
+      handleClear();
+    };
+    reader.readAsDataURL(file);
   };
 
 
@@ -66,7 +80,7 @@ export default function VideoGeneratorCard({ promptTemplate }: { promptTemplate?
     handleClear();
 
     try {
-      const result = await generateVideo({ prompt, durationSeconds: 8 });
+      const result = await generateVideo({ prompt, imageDataUri: sourceImage, durationSeconds: 8 });
       setGeneratedVideo(result.videoDataUri);
       toast({
         title: 'Video Generated!',
@@ -158,7 +172,7 @@ export default function VideoGeneratorCard({ promptTemplate }: { promptTemplate?
           <Video /> AI Video Generator
         </CardTitle>
         <CardDescription>
-          Create short marketing videos from a text prompt using Veo.
+          Create short marketing videos from a text prompt and an optional starting image using Veo.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -166,18 +180,27 @@ export default function VideoGeneratorCard({ promptTemplate }: { promptTemplate?
           <DialogTrigger asChild>
             <Button className="w-full">Start Generating</Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[725px] flex h-full max-h-[90vh] flex-col">
+          <DialogContent className="sm:max-w-4xl flex h-full max-h-[90vh] flex-col">
             <DialogHeader>
-              <DialogTitle>AI Video Generator (Text-to-Video)</DialogTitle>
+              <DialogTitle>AI Video Generator (Text/Image-to-Video)</DialogTitle>
               <DialogDescription>
-                Use the template below or write your own detailed prompt. Video generation may take a minute or two.
+                Provide a prompt and an optional starting image (like a screenshot). Video generation may take a minute or two.
               </DialogDescription>
             </DialogHeader>
             <div className="grid flex-1 grid-cols-1 gap-6 overflow-y-auto py-4 pr-4 md:grid-cols-2">
                 <div className="space-y-4">
                   <div className="space-y-2">
+                    <Label htmlFor="image-upload">Starting Image (Optional)</Label>
+                    <Input id="image-upload" type="file" accept="image/*" onChange={handleImageUpload} />
+                  </div>
+                  {sourceImage && (
+                    <div className="relative aspect-video w-full">
+                        <Image src={sourceImage} alt="Source" fill className="rounded-md object-contain border" />
+                    </div>
+                  )}
+                  <div className="space-y-2">
                     <Label htmlFor="generate-prompt">Your Prompt</Label>
-                    <Textarea id="generate-prompt" value={prompt} onChange={(e) => setPrompt(e.target.value)} rows={12} />
+                    <Textarea id="generate-prompt" value={prompt} onChange={(e) => setPrompt(e.target.value)} rows={sourceImage ? 8 : 16} />
                   </div>
                    <Button onClick={handleGenerate} disabled={isLoading} className="w-full">
                     {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}

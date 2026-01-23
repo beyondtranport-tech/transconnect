@@ -39,9 +39,15 @@ async function pollOperation(operationName: string) {
 }
 
 export async function generateVideo(input: VideoGenerateInput): Promise<VideoGenerateOutput> {
+  
+  const promptParts: (string | { text: string } | { media: { url: string } })[] = [{ text: input.prompt }];
+  if (input.imageDataUri) {
+      promptParts.unshift({ media: { url: input.imageDataUri } });
+  }
+
   let { operation } = await ai.generate({
     model: 'googleai/veo-2.0-generate-001',
-    prompt: input.prompt,
+    prompt: promptParts,
     config: {
       durationSeconds: input.durationSeconds,
       aspectRatio: '16:9',
@@ -88,7 +94,8 @@ export async function generateVideo(input: VideoGenerateInput): Promise<VideoGen
   };
 }
 
-const videoGenerateFlow = ai.defineFlow(
+// This defineFlow is kept for Genkit's internal registry but is not exported.
+ai.defineFlow(
   {
     name: 'videoGenerateFlow',
     inputSchema: VideoGenerateInputSchema,
