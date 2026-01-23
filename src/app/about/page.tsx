@@ -19,6 +19,7 @@ const values = [
         answer: "We can help by connecting you with a network of funders who understand the transport industry, turning your assets and contracts into accessible cash.",
         image: placeholderImages.find(p => p.id === 'funding-division'),
         icon: DollarSign,
+        link: "/funding",
     },
     {
         title: "Opportunity Flow",
@@ -26,6 +27,7 @@ const values = [
         answer: "We can help by connecting you to a network where you can earn passive income by referring members, find new loads with our AI matcher, and discover subcontracting opportunities.",
         image: placeholderImages.find(p => p.id === 'incentives-hero'),
         icon: Handshake,
+        link: "/connect",
     },
     {
         title: "Information Flow",
@@ -33,6 +35,7 @@ const values = [
         answer: "We can help by providing tech tools that streamline your operations, giving you data and insights to reduce empty miles and optimize your routes for maximum profitability.",
         image: placeholderImages.find(p => p.id === 'tech-division'),
         icon: Cpu,
+        link: "/tech",
     },
     {
         title: "Savings Flow",
@@ -40,6 +43,7 @@ const values = [
         answer: "We can help by uniting our members to create collective buying power, negotiating significant discounts on parts, tires, and services you use every day.",
         image: placeholderImages.find(p => p.id === 'mall-division'),
         icon: Shield,
+        link: "/mall",
     }
 ];
 
@@ -124,6 +128,11 @@ export default function AboutPage() {
                                     <p className="mt-4 text-lg text-muted-foreground">
                                         <span className="text-primary font-semibold">{value.question}</span> {value.answer}
                                     </p>
+                                    <Button asChild variant="link" className="p-0 h-auto mt-4 text-lg">
+                                        <Link href={value.link}>
+                                            Find out how <ArrowRight className="ml-2 h-4 w-4" />
+                                        </Link>
+                                    </Button>
                                 </div>
                             </div>
                         )
