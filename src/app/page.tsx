@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -10,7 +11,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { HomeIntentModal } from './home-intent-modal';
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { generateShowcaseVideo } from './showcaseActions';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 
 
@@ -19,40 +19,18 @@ const { placeholderImages } = data;
 const newHeroImage = placeholderImages.find(p => p.id === "value-integrity");
 
 function ShowcaseButton() {
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const { toast } = useToast();
-
-  const handleGenerateShowcase = async () => {
-    setIsGenerating(true);
-    setVideoUrl(null);
-    toast({ title: "Generating Showcase...", description: "The AI is creating your video. This may take a minute or two." });
-
-    try {
-      const result = await generateShowcaseVideo();
-      if (result.success && result.videoDataUri) {
-        setVideoUrl(result.videoDataUri);
-        setIsModalOpen(true);
-        toast({ title: "Showcase Ready!", description: "Your video has been generated." });
-      } else {
-        throw new Error(result.error || 'Video generation did not return a video.');
-      }
-    } catch (e: any) {
-      toast({
-        variant: 'destructive',
-        title: 'Showcase Generation Failed',
-        description: e.message,
-      });
-    } finally {
-      setIsGenerating(false);
-    }
-  };
+  
+  // TODO: Replace this placeholder with the actual video URL from your Asset Gallery
+  // 1. Go to Admin Account > Sales & Marketing > AI Marketing Studio
+  // 2. Use the Video Generator to create your desired video.
+  // 3. Click "Save to Cloud" and then go to the "Asset Gallery".
+  // 4. Copy the URL for your new video and paste it here.
+  const videoUrl = "https://storage.googleapis.com/your-bucket/your-video.mp4"; // <-- PASTE URL HERE
 
   return (
     <>
-      <Button size="lg" variant="outline" onClick={handleGenerateShowcase} disabled={isGenerating}>
-        {isGenerating ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : null}
+      <Button size="lg" variant="outline" onClick={() => setIsModalOpen(true)}>
         Showcase How
       </Button>
 
@@ -63,8 +41,13 @@ function ShowcaseButton() {
             <DialogDescription>A video demonstrating how to create your online shop.</DialogDescription>
           </DialogHeader>
           <div className="aspect-video bg-black rounded-md">
-            {videoUrl && (
-              <video src={videoUrl} controls autoPlay className="w-full h-full rounded-md" />
+            {videoUrl.includes('your-bucket') ? (
+                 <div className="flex flex-col items-center justify-center h-full text-center text-white p-4">
+                    <h3 className="text-lg font-semibold">Video Not Configured</h3>
+                    <p className="text-sm text-gray-400">Please generate a video in the admin panel and update the URL in `src/app/page.tsx`.</p>
+                </div>
+            ) : (
+                <video src={videoUrl} controls autoPlay className="w-full h-full rounded-md" />
             )}
           </div>
         </DialogContent>

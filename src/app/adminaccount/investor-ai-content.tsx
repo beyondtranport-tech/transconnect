@@ -12,6 +12,8 @@ Examples of other good prompts:
 - Change the color scheme of this chart to match our brand colors (forest green, charcoal).
 - Add the text 'Projected Y1 Revenue: R12M' to the top right of the image.`;
 
+const investorVideoPrompt = `Create a short, dynamic video for an investor pitch. Start with a problem statement: show fragmented and inefficient logistics (e.g., empty trucks, manual paperwork). Transition to the solution: show the Logistics Flow platform UI, data streams connecting trucks, and graphs showing growth. End with a powerful shot of a fleet of modern trucks driving into the sunset, symbolizing success. Use a professional, confident voiceover and an inspiring corporate soundtrack.`;
+
 
 export default function InvestorAiContent() {
     return (
@@ -20,6 +22,7 @@ export default function InvestorAiContent() {
             description="Use these tools to generate images and content for your investor presentations and documents."
             imageGeneratorPrompt={investorGeneratorPrompt}
             imageEditorPrompt={investorEditorPrompt}
+            videoGeneratorPrompt={investorVideoPrompt}
         />
     );
 }

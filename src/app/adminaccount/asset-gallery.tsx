@@ -3,16 +3,17 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useStorage, useUser } from '@/firebase';
-import { ref, listAll, getDownloadURL, type StorageReference } from 'firebase/storage';
+import { ref, listAll, getDownloadURL, getMetadata, type StorageReference } from 'firebase/storage';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, Copy, Image as ImageIcon } from 'lucide-react';
+import { Loader2, Copy, Image as ImageIcon, Video } from 'lucide-react';
 import Image from 'next/image';
 import { useToast } from '@/hooks/use-toast';
 
 interface ImageAsset {
     url: string;
     name: string;
+    contentType: string;
 }
 
 export default function AssetGallery() {
@@ -33,11 +34,11 @@ export default function AssetGallery() {
             const urls = await Promise.all(
                 res.items.map(async (itemRef: StorageReference) => {
                     const url = await getDownloadURL(itemRef);
-                    return { url, name: itemRef.name };
+                    const metadata = await getMetadata(itemRef);
+                    return { url, name: itemRef.name, contentType: metadata.contentType || 'application/octet-stream' };
                 })
             );
             
-            // Sort by name to get newest first (if name includes timestamp)
             urls.sort((a, b) => b.name.localeCompare(a.name));
             setAssets(urls);
 
@@ -65,7 +66,7 @@ export default function AssetGallery() {
         <Card>
             <CardHeader>
                 <CardTitle>AI Asset Gallery</CardTitle>
-                <CardDescription>A gallery of all images you have generated and saved to the cloud.</CardDescription>
+                <CardDescription>A gallery of all images and videos you have generated and saved to the cloud.</CardDescription>
             </CardHeader>
             <CardContent>
                 {isLoading ? (
@@ -76,8 +77,16 @@ export default function AssetGallery() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                         {assets.map((asset) => (
                             <Card key={asset.url} className="overflow-hidden">
-                                <div className="relative aspect-square">
-                                    <Image src={asset.url} alt={asset.name} fill className="object-cover" />
+                                <div className="relative aspect-square bg-muted">
+                                    {asset.contentType.startsWith('image/') ? (
+                                        <Image src={asset.url} alt={asset.name} fill className="object-cover" />
+                                    ) : asset.contentType.startsWith('video/') ? (
+                                        <video src={asset.url} controls className="w-full h-full object-cover" />
+                                    ) : (
+                                        <div className="flex items-center justify-center h-full text-muted-foreground">
+                                           <ImageIcon className="h-12 w-12" />
+                                        </div>
+                                    )}
                                 </div>
                                 <CardFooter className="p-2">
                                     <Button variant="outline" size="sm" className="w-full" onClick={() => copyUrlToClipboard(asset.url)}>
