@@ -27,12 +27,6 @@ import {
   Wallet,
   Gift,
   Activity,
-  Handshake,
-  TrendingUp,
-  Package,
-  DollarSign,
-  Presentation,
-  Mail,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -56,13 +50,6 @@ const WalletContent = dynamic(() => import('./wallet-content'), { loading: () =>
 const RewardsContent = dynamic(() => import('./rewards'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const ActivityFeed = dynamic(() => import('./activity-feed'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 
-// --- Sales Section ---
-const NetworkContent = dynamic(() => import('./network-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const NetworkOffer = dynamic(() => import('./network-offer'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const NetworkEmails = dynamic(() => import('./network-emails'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const PerformanceContent = dynamic(() => import('./performance-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-
-
 // Placeholder components for sections under construction
 function DocumentsContent() {
     return (
@@ -77,23 +64,6 @@ function SettingsContent() {
         <Card>
             <CardHeader><CardTitle>Settings</CardTitle></CardHeader>
             <CardContent><p className="text-muted-foreground">This section is under construction. Your account settings will appear here.</p></CardContent>
-        </Card>
-    )
-}
-
-function ProductSalesContent() {
-    return (
-        <Card>
-            <CardHeader><CardTitle>Product Sales</CardTitle></CardHeader>
-            <CardContent><p className="text-muted-foreground">This section is under construction. A breakdown of your sales per product will appear here.</p></CardContent>
-        </Card>
-    )
-}
-function EarningsContent() {
-     return (
-        <Card>
-            <CardHeader><CardTitle>My Earnings</CardTitle></CardHeader>
-            <CardContent><p className="text-muted-foreground">This section is under construction. Your detailed earnings and commission statements will appear here.</p></CardContent>
         </Card>
     )
 }
@@ -140,14 +110,6 @@ function AccountPageContent() {
       case 'billing': return <BillingContent />;
       case 'rewards': return <RewardsContent />;
       case 'activity': return <ActivityFeed />;
-
-      // Sales
-      case 'network': return <NetworkContent />;
-      case 'network-offer': return <NetworkOffer />;
-      case 'network-emails': return <NetworkEmails />;
-      case 'performance': return <PerformanceContent />;
-      case 'product-sales': return <ProductSalesContent />;
-      case 'earnings': return <EarningsContent />;
       
       // Placeholders
       case 'documents': return <DocumentsContent />;
@@ -170,9 +132,6 @@ function AccountPageContent() {
   const navigate = (view: string) => {
     router.push(`/account?view=${view}`, { scroll: false });
   };
-  
-  const isSalesActive = ['network', 'performance', 'product-sales', 'earnings', 'network-offer', 'network-emails'].includes(activeView);
-
 
   return (
     <SidebarProvider>
@@ -236,38 +195,6 @@ function AccountPageContent() {
                   <Activity />
                   <span>Activity</span>
                 </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Sales" isActive={isSalesActive}>
-                  <Handshake />
-                  <span>Sales</span>
-                </SidebarMenuButton>
-                <SidebarMenuSub>
-                    <SidebarMenuSubButton isActive={activeView === 'network'} onClick={() => navigate('network')}>
-                        <Users />
-                        <span>My Network</span>
-                    </SidebarMenuSubButton>
-                     <SidebarMenuSubButton isActive={activeView === 'network-offer'} onClick={() => navigate('network-offer')}>
-                        <Presentation />
-                        <span>Network Offer</span>
-                    </SidebarMenuSubButton>
-                    <SidebarMenuSubButton isActive={activeView === 'network-emails'} onClick={() => navigate('network-emails')}>
-                        <Mail />
-                        <span>Network Emails</span>
-                    </SidebarMenuSubButton>
-                    <SidebarMenuSubButton isActive={activeView === 'performance'} onClick={() => navigate('performance')}>
-                        <TrendingUp />
-                        <span>Performance</span>
-                    </SidebarMenuSubButton>
-                    <SidebarMenuSubButton isActive={activeView === 'product-sales'} onClick={() => navigate('product-sales')}>
-                        <Package />
-                        <span>Product Sales</span>
-                    </SidebarMenuSubButton>
-                     <SidebarMenuSubButton isActive={activeView === 'earnings'} onClick={() => navigate('earnings')}>
-                        <DollarSign />
-                        <span>Earnings</span>
-                    </SidebarMenuSubButton>
-                </SidebarMenuSub>
               </SidebarMenuItem>
               <SidebarMenuItem>
                 <SidebarMenuButton tooltip="Billing" isActive={activeView === 'billing'} onClick={() => navigate('billing')}>
