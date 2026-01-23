@@ -51,7 +51,7 @@ function ShowcaseButton() {
 
   return (
     <>
-      <Button size="lg" variant="outline" className="mt-8" onClick={handleGenerateShowcase} disabled={isGenerating}>
+      <Button size="lg" variant="outline" onClick={handleGenerateShowcase} disabled={isGenerating}>
         {isGenerating ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : null}
         Showcase How
       </Button>
@@ -107,12 +107,12 @@ export default function Home() {
 
        <section className="py-16 md:py-24 bg-card">
           <div className="container mx-auto px-4 text-center">
-              <h2 className="text-3xl md:text-4xl font-bold font-headline">Your Own Online Shop for the Logistics Sector</h2>
+              <h2 className="text-3xl md:text-4xl font-bold font-headline">The cornerstone of the offering is the ability to create a unified commercial structure in the form of your Own Online Shop for the Logistics Sector.</h2>
               <p className="mt-4 text-lg text-muted-foreground max-w-3xl mx-auto">
-                The cornerstone of the offering is the ability to create a unified commercial structure in the form of your Own Online Shop for the Logistics Sector. Launch a professional storefront to market your services, sell your products, and build a trusted profile to unlock funding. Get started for free.
+                Launch a professional storefront to market your services, sell your products, and build a trusted profile to unlock funding. Get started for free.
               </p>
-              <div className="flex justify-center items-center gap-4">
-                <Button size="lg" className="mt-8" onClick={() => setIsModalOpen(true)}>
+              <div className="mt-8 flex justify-center items-center gap-4">
+                <Button size="lg" onClick={() => setIsModalOpen(true)}>
                     Create Your Shop
                 </Button>
                 <ShowcaseButton />
