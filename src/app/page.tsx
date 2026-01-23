@@ -1,19 +1,77 @@
-
 'use client';
 
 import Link from 'next/link';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, ShoppingBasket, Store, DollarSign, ShieldCheck, Lock, DatabaseZap } from 'lucide-react';
+import { ArrowRight, ShoppingBasket, Store, DollarSign, ShieldCheck, Lock, DatabaseZap, Loader2 } from 'lucide-react';
 import data from '@/lib/placeholder-images.json';
 import * as React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { HomeIntentModal } from './home-intent-modal';
 import { useState } from 'react';
+import { useToast } from '@/hooks/use-toast';
+import { generateShowcaseVideo } from './showcaseActions';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+
 
 const { placeholderImages } = data;
 
 const newHeroImage = placeholderImages.find(p => p.id === "value-integrity");
+
+function ShowcaseButton() {
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [videoUrl, setVideoUrl] = useState<string | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const { toast } = useToast();
+
+  const handleGenerateShowcase = async () => {
+    setIsGenerating(true);
+    setVideoUrl(null);
+    toast({ title: "Generating Showcase...", description: "The AI is creating your video. This may take a minute or two." });
+
+    try {
+      const result = await generateShowcaseVideo();
+      if (result.success && result.videoDataUri) {
+        setVideoUrl(result.videoDataUri);
+        setIsModalOpen(true);
+        toast({ title: "Showcase Ready!", description: "Your video has been generated." });
+      } else {
+        throw new Error(result.error || 'Video generation did not return a video.');
+      }
+    } catch (e: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Showcase Generation Failed',
+        description: e.message,
+      });
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  return (
+    <>
+      <Button size="lg" variant="outline" className="mt-8" onClick={handleGenerateShowcase} disabled={isGenerating}>
+        {isGenerating ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : null}
+        Showcase How
+      </Button>
+
+      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Platform Showcase</DialogTitle>
+            <DialogDescription>A video demonstrating how to create your online shop.</DialogDescription>
+          </DialogHeader>
+          <div className="aspect-video bg-black rounded-md">
+            {videoUrl && (
+              <video src={videoUrl} controls autoPlay className="w-full h-full rounded-md" />
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
 
 export default function Home() {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -22,7 +80,6 @@ export default function Home() {
     <div className="flex flex-col">
       <HomeIntentModal isOpen={isModalOpen} onOpenChange={setIsModalOpen} />
       
-      {/* New Hero Section */}
       <section className="relative w-full h-[60vh] md:h-[70vh] flex items-center justify-center text-center">
         {newHeroImage && (
           <Image
@@ -48,16 +105,18 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Your Own Online Shop Section */}
        <section className="py-16 md:py-24 bg-card">
           <div className="container mx-auto px-4 text-center">
               <h2 className="text-3xl md:text-4xl font-bold font-headline">Your Own Online Shop for the Logistics Sector</h2>
               <p className="mt-4 text-lg text-muted-foreground max-w-3xl mx-auto">
                 The cornerstone of the offering is the ability to create a unified commercial structure in the form of your Own Online Shop for the Logistics Sector. Launch a professional storefront to market your services, sell your products, and build a trusted profile to unlock funding. Get started for free.
               </p>
-              <Button size="lg" className="mt-8" onClick={() => setIsModalOpen(true)}>
-                Create Your Shop
-              </Button>
+              <div className="flex justify-center items-center gap-4">
+                <Button size="lg" className="mt-8" onClick={() => setIsModalOpen(true)}>
+                    Create Your Shop
+                </Button>
+                <ShowcaseButton />
+              </div>
           </div>
       </section>
 
