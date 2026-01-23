@@ -24,7 +24,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Sparkles, Wand2, Download, Save, Copy } from 'lucide-react';
 import Image from 'next/image';
-import { imageEditFlow } from '@/ai/flows/image-edit-flow';
+import { imageEdit } from '@/ai/flows/image-edit-flow';
 import { Textarea } from '@/components/ui/textarea';
 import { useStorage, useUser } from '@/firebase';
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
@@ -94,7 +94,7 @@ export default function ImageEditorCard({ promptTemplate }: { promptTemplate?: s
     handleClear();
 
     try {
-      const result = await imageEditFlow({
+      const result = await imageEdit({
         photoDataUri: originalImage,
         prompt: prompt,
       });

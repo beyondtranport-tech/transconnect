@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -24,7 +25,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2, Sparkles, Wand2 } from 'lucide-react';
 import Image from 'next/image';
 import { getClientSideAuthToken } from '@/firebase';
-import { imageEditFlow } from '@/ai/flows/image-edit-flow';
+import { imageEdit } from '@/ai/flows/image-edit-flow';
 
 export default function ImageEditorCard() {
   const [isOpen, setIsOpen] = useState(false);
@@ -68,7 +69,7 @@ export default function ImageEditorCard() {
     setEditedImage(null);
 
     try {
-      const result = await imageEditFlow({
+      const result = await imageEdit({
         photoDataUri: originalImage,
         prompt: prompt,
       });

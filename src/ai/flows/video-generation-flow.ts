@@ -9,20 +9,7 @@
  */
 
 import { ai } from '@/ai/genkit';
-import { z } from 'zod';
-
-export const VideoGenerateInputSchema = z.object({
-  prompt: z.string().describe('The text prompt describing the desired video.'),
-  durationSeconds: z.number().optional().default(5).describe('The duration of the video in seconds.'),
-});
-export type VideoGenerateInput = z.infer<typeof VideoGenerateInputSchema>;
-
-export const VideoGenerateOutputSchema = z.object({
-  videoDataUri: z
-    .string()
-    .describe('The generated video as a data URI.'),
-});
-export type VideoGenerateOutput = z.infer<typeof VideoGenerateOutputSchema>;
+import { VideoGenerateInputSchema, VideoGenerateOutputSchema, type VideoGenerateInput, type VideoGenerateOutput } from '@/ai/schemas';
 
 async function pollOperation(operationName: string) {
     const { google } = require('googleapis');
@@ -109,6 +96,3 @@ const videoGenerateFlow = ai.defineFlow(
   },
   generateVideo
 );
-
-// We need to export this for the API route
-export { videoGenerateFlow };

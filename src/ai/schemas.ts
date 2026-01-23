@@ -89,3 +89,17 @@ export const LeadResearchOutputSchema = z.object({
     })).describe('A list of potential leads based on the research topic.')
 });
 export type LeadResearchOutput = z.infer<typeof LeadResearchOutputSchema>;
+
+// From video-generation-flow.ts
+export const VideoGenerateInputSchema = z.object({
+  prompt: z.string().describe('The text prompt describing the desired video.'),
+  durationSeconds: z.number().optional().default(5).describe('The duration of the video in seconds.'),
+});
+export type VideoGenerateInput = z.infer<typeof VideoGenerateInputSchema>;
+
+export const VideoGenerateOutputSchema = z.object({
+  videoDataUri: z
+    .string()
+    .describe('The generated video as a data URI.'),
+});
+export type VideoGenerateOutput = z.infer<typeof VideoGenerateOutputSchema>;

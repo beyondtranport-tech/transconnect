@@ -1,16 +1,21 @@
+
 'use server';
 /**
  * @fileOverview An AI-powered image editing flow.
  *
- * - imageEditFlow - A Genkit flow that edits an image based on a text prompt.
- * - ImageEditInput - The input type for the imageEditFlow function.
- * - ImageEditOutput - The return type for the imageEditFlow function.
+ * - imageEdit - A function that edits an image based on a text prompt.
+ * - ImageEditInput - The input type for the imageEdit function.
+ * - ImageEditOutput - The return type for the imageEdit function.
  */
 
 import { ai } from '@/ai/genkit';
-import { ImageEditInputSchema, ImageEditOutputSchema } from '@/ai/schemas';
+import { ImageEditInputSchema, ImageEditOutputSchema, type ImageEditInput, type ImageEditOutput } from '@/ai/schemas';
 
-export const imageEditFlow = ai.defineFlow(
+export async function imageEdit(input: ImageEditInput): Promise<ImageEditOutput> {
+  return imageEditFlow(input);
+}
+
+const imageEditFlow = ai.defineFlow(
   {
     name: 'imageEditFlow',
     inputSchema: ImageEditInputSchema,
