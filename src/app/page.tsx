@@ -1,10 +1,11 @@
 
+
 'use client';
 
 import Link from 'next/link';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, ShoppingBasket, Store, DollarSign, ShieldCheck, Lock, DatabaseZap, Loader2 } from 'lucide-react';
+import { ArrowRight, ShoppingBasket, Store, DollarSign, ShieldCheck, Lock, DatabaseZap, Loader2, BarChart, Fuel, TrendingUp } from 'lucide-react';
 import data from '@/lib/placeholder-images.json';
 import * as React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -78,9 +79,6 @@ export default function Home() {
            <p className="mt-4 text-lg md:text-xl text-primary-foreground/90 max-w-3xl mx-auto">
             Join a community of Logistics professionals. Contribute your knowledge, unlock collective savings, and create new revenue streams.
           </p>
-          <Button asChild size="lg" className="mt-8">
-            <Link href="/join">Register for Free</Link>
-          </Button>
         </div>
       </section>
 
@@ -109,7 +107,7 @@ export default function Home() {
             </div>
             <div className="grid md:grid-cols-3 gap-8 text-center max-w-6xl mx-auto">
                 <Card>
-                    <CardHeader>
+                    <CardHeader className="items-center">
                         <div className="mx-auto bg-primary/10 p-4 rounded-full w-fit mb-2">
                            <Store className="h-8 w-8 text-primary" />
                         </div>
@@ -120,7 +118,7 @@ export default function Home() {
                     </CardContent>
                 </Card>
                 <Card>
-                    <CardHeader>
+                    <CardHeader className="items-center">
                         <div className="mx-auto bg-primary/10 p-4 rounded-full w-fit mb-2">
                            <ShoppingBasket className="h-8 w-8 text-primary" />
                         </div>
@@ -131,7 +129,7 @@ export default function Home() {
                     </CardContent>
                 </Card>
                 <Card>
-                    <CardHeader>
+                    <CardHeader className="items-center">
                         <div className="mx-auto bg-primary/10 p-4 rounded-full w-fit mb-2">
                            <DollarSign className="h-8 w-8 text-primary" />
                         </div>
@@ -139,6 +137,52 @@ export default function Home() {
                     </CardHeader>
                     <CardContent>
                         <p className="text-muted-foreground">Your shop activity and business profile build a trusted operational record. This data-driven approach strengthens your case for accessing our network of funders.</p>
+                    </CardContent>
+                </Card>
+            </div>
+        </div>
+      </section>
+
+      <section className="py-16 md:py-24 bg-card">
+        <div className="container mx-auto px-4">
+            <div className="text-center max-w-3xl mx-auto mb-16">
+                <h2 className="text-3xl md:text-4xl font-bold font-headline">What Makes Us Unique: Commerce Meets Capital</h2>
+                <p className="mt-4 text-lg text-muted-foreground">
+                    We've broken the biggest constraint in transport: the disconnect between your business performance and your access to funding. Your online shop is more than a sales channel—it's the key to unlocking growth capital.
+                </p>
+            </div>
+            <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto text-center">
+                <Card>
+                    <CardHeader className="items-center">
+                        <div className="mx-auto bg-primary/10 p-4 rounded-full w-fit mb-2">
+                            <TrendingUp className="h-8 w-8 text-primary" />
+                        </div>
+                        <CardTitle>Build Your Track Record</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <p className="text-muted-foreground">Your shop is a living ledger of your business activity. Every sale and transaction builds a credible, data-driven profile of your operations.</p>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader className="items-center">
+                        <div className="mx-auto bg-primary/10 p-4 rounded-full w-fit mb-2">
+                           <BarChart className="h-8 w-8 text-primary" />
+                        </div>
+                        <CardTitle>Data-Driven Funding</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <p className="text-muted-foreground">We use your real-world operational data to assess funding applications, allowing funders to see the true health of your business beyond traditional credit scores.</p>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader className="items-center">
+                        <div className="mx-auto bg-primary/10 p-4 rounded-full w-fit mb-2">
+                           <Fuel className="h-8 w-8 text-primary" />
+                        </div>
+                        <CardTitle>Fuel Your Growth</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <p className="text-muted-foreground">This unique model means your sales success directly unlocks capital. More shop activity leads to better funding opportunities, creating a virtuous cycle of growth.</p>
                     </CardContent>
                 </Card>
             </div>
