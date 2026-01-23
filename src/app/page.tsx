@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -39,7 +40,7 @@ export default function Home() {
             Build Your Network, Grow Your Business
           </h1>
            <p className="mt-4 text-lg md:text-xl text-primary-foreground/90 max-w-3xl mx-auto">
-            Join a community of transport professionals. Contribute your knowledge, unlock collective savings, and create new revenue streams.
+            Join a community of Logistics professionals. Contribute your knowledge, unlock collective savings, and create new revenue streams.
           </p>
           <Button asChild size="lg" className="mt-8">
             <Link href="/join">Register for Free</Link>
