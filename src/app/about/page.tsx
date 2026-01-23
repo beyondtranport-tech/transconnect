@@ -16,7 +16,7 @@ const values = [
     {
         title: "Cash Flow",
         question: "Are you struggling to fund your business?",
-        answer: "We can help by connecting you with a network of funders who understand the transport industry, turning your assets and contracts into accessible cash.",
+        answer: "We can help by either providing our innovative in house finance solutions or connecting you with a network of funders who understand your business..",
         image: placeholderImages.find(p => p.id === 'funding-division'),
         icon: DollarSign,
         link: "/funding",
