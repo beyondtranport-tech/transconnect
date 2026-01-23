@@ -39,6 +39,7 @@ import {
   Sparkles,
   Settings,
   Users,
+  Mic,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -67,6 +68,7 @@ const NetworkOffer = dynamic(() => import('../account/network-offer'), { loading
 const NetworkEmails = dynamic(() => import('../account/network-emails'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const PerformanceContent = dynamic(() => import('../account/performance-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const CampaignContent = dynamic(() => import('./campaign-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const TTSStudio = dynamic(() => import('./tts-studio'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 
 
 // Strategy & Pitching
@@ -149,6 +151,7 @@ function AdminAccountContent() {
       />;
        case 'investor-studio': return <InvestorAiContent />;
       case 'partner-studio': return <PartnerAiContent />;
+      case 'audio-studio': return <TTSStudio />;
       case 'asset-gallery': return <AssetGallery />;
       case 'member-sales-offer': return <NetworkOffer />;
       case 'member-sales-emails': return <NetworkEmails />;
@@ -192,7 +195,7 @@ function AdminAccountContent() {
   }
 
   const navigate = (view: string) => router.push(`/adminaccount?view=${view}`, { scroll: false });
-  const isSalesActive = ['leads-agent', 'leads-database', 'marketing-studio', 'investor-studio', 'partner-studio', 'asset-gallery', 'member-sales-offer', 'member-sales-emails', 'member-sales-performance'].includes(activeView);
+  const isSalesActive = ['leads-agent', 'leads-database', 'marketing-studio', 'investor-studio', 'partner-studio', 'audio-studio', 'asset-gallery', 'member-sales-offer', 'member-sales-emails', 'member-sales-performance'].includes(activeView);
   const isStrategyActive = ['partner-offer', 'investor-offer', 'elevator-pitch', 'partner-pitch', 'partner-emails', 'investor-emails', 'commissions-isa'].includes(activeView);
   const isFinancialsActive = ['financial-setup', 'sales-roadmap', 'targets', 'member-projection', 'cost-calculator', 'budget', 'forecast'].includes(activeView);
 
@@ -224,6 +227,7 @@ function AdminAccountContent() {
                      <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'marketing-studio'} onClick={() => navigate('marketing-studio')}><Sparkles />Marketing Studio</SidebarMenuSubButton></SidebarMenuSubItem>
                      <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'investor-studio'} onClick={() => navigate('investor-studio')}><Sparkles />Investor Studio</SidebarMenuSubButton></SidebarMenuSubItem>
                      <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'partner-studio'} onClick={() => navigate('partner-studio')}><Sparkles />Partner Studio</SidebarMenuSubButton></SidebarMenuSubItem>
+                     <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'audio-studio'} onClick={() => navigate('audio-studio')}><Mic />Audio Studio</SidebarMenuSubButton></SidebarMenuSubItem>
                      <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'asset-gallery'} onClick={() => navigate('asset-gallery')}><ImageIcon />Asset Gallery</SidebarMenuSubButton></SidebarMenuSubItem>
                      <SidebarMenuSeparator />
                      <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'member-sales-offer'} onClick={() => navigate('member-sales-offer')}><Presentation />Network Offer</SidebarMenuSubButton></SidebarMenuSubItem>

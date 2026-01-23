@@ -14,3 +14,4 @@ import '@/ai/flows/image-generation-flow.ts';
 import '@/ai/flows/video-generation-flow.ts';
 import '@/ai/flows/seo-flow.ts';
 import '@/ai/flows/lead-research-flow.ts';
+import '@/ai/flows/tts-flow.ts';

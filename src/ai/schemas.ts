@@ -104,3 +104,15 @@ export const VideoGenerateOutputSchema = z.object({
     .describe('The generated video as a data URI.'),
 });
 export type VideoGenerateOutput = z.infer<typeof VideoGenerateOutputSchema>;
+
+// From tts-flow.ts
+export const TTSInputSchema = z.object({
+  script: z.string().min(1, 'Script cannot be empty.'),
+  voice: z.string().optional().default('Algenib'),
+});
+export type TTSInput = z.infer<typeof TTSInputSchema>;
+
+export const TTSOutputSchema = z.object({
+  audioDataUri: z.string().describe('The generated audio as a data URI.'),
+});
+export type TTSOutput = z.infer<typeof TTSOutputSchema>;
