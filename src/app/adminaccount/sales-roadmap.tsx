@@ -112,30 +112,34 @@ function SalesRoadmapComponent() {
     // Load settings and scenarios from local storage on mount
     useEffect(() => {
         if (typeof window !== 'undefined') {
+            let months = 36;
             try {
                 const savedSettings = localStorage.getItem(SETUP_KEY);
                 if (savedSettings) {
                     const parsed = JSON.parse(savedSettings);
-                    setForecastMonths(parsed.forecastMonths || 36);
+                    months = parsed.forecastMonths || 36;
+                    setForecastMonths(months);
                     setStartMonth(parsed.startMonth || new Date().getMonth());
                     setStartYear(parsed.startYear || new Date().getFullYear());
                 }
                 
                 const savedScenarios = localStorage.getItem(SALES_ROADMAP_KEY);
-                const parsedScenarios = savedScenarios ? JSON.parse(savedScenarios) : { scenarios: { 'Default': generateDefaultValues(forecastMonths) }, activeScenario: 'Default' };
+                const parsedScenarios = savedScenarios ? JSON.parse(savedScenarios) : { scenarios: { 'Default': generateDefaultValues(months) }, activeScenario: 'Default' };
                 setScenarios(parsedScenarios.scenarios);
                 setActiveScenarioName(parsedScenarios.activeScenario);
-                reset(parsedScenarios.scenarios[parsedScenarios.activeScenario] || generateDefaultValues(forecastMonths));
+                reset(parsedScenarios.scenarios[parsedScenarios.activeScenario] || generateDefaultValues(months));
 
             } catch (e) {
                 console.error("Could not parse saved data.");
-                setScenarios({ 'Default': generateDefaultValues(forecastMonths) });
-                reset(generateDefaultValues(forecastMonths));
+                const defaults = generateDefaultValues(months);
+                setScenarios({ 'Default': defaults });
+                reset(defaults);
             } finally {
                 setIsLoading(false);
             }
         }
-    }, [reset, forecastMonths]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [reset]);
     
     const saveScenariosToLocalStorage = (newScenarios: any, activeName: string) => {
         const dataToSave = { scenarios: newScenarios, activeScenario: activeName };
@@ -322,3 +326,5 @@ export default function SalesRoadmap() {
         </Suspense>
     );
 }
+
+    
