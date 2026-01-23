@@ -2,7 +2,7 @@
 import Image from "next/image";
 import data from "@/lib/placeholder-images.json";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { CheckCircle, ArrowRight, DollarSign, Handshake, Cpu, Shield, Lock, DatabaseZap, ShieldCheck } from "lucide-react";
+import { CheckCircle, ArrowRight, DollarSign, Handshake, Cpu, Shield, Lock, DatabaseZap, ShieldCheck, CreditCard, Building } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import React from "react";
@@ -140,8 +140,49 @@ export default function AboutPage() {
                  </div>
             </div>
         </section>
-
+        
         <section className="py-16 md:py-24 bg-background">
+            <div className="container mx-auto px-4">
+                <div className="text-center max-w-3xl mx-auto mb-16">
+                    <h2 className="text-3xl md:text-4xl font-bold font-headline">Innovative Financial Tools</h2>
+                    <p className="mt-4 text-lg text-muted-foreground">
+                        We are fundamentally redesigning how financing works in the transport sector, creating a more accessible and community-driven financial ecosystem.
+                    </p>
+                </div>
+                <div className="grid md:grid-cols-2 gap-12 items-start max-w-5xl mx-auto">
+                    <Card className="h-full">
+                        <CardHeader className="flex-row items-start gap-4">
+                             <CreditCard className="h-10 w-10 text-primary flex-shrink-0 mt-1" />
+                             <div>
+                                <CardTitle>Embedded Finance</CardTitle>
+                                <CardDescription>Instant credit at point of sale.</CardDescription>
+                             </div>
+                        </CardHeader>
+                        <CardContent>
+                            <p className="text-muted-foreground">
+                                Seamlessly finance your purchases directly within our marketplace. Our embedded finance solutions offer instant credit decisions at checkout, making it easier than ever to acquire the parts, products, and services you need without disrupting your cash flow.
+                            </p>
+                        </CardContent>
+                    </Card>
+                     <Card className="h-full">
+                        <CardHeader className="flex-row items-start gap-4">
+                              <Building className="h-10 w-10 text-primary flex-shrink-0 mt-1" />
+                             <div>
+                                <CardTitle>Embedded Facilities</CardTitle>
+                                <CardDescription>Peer-to-peer credit for larger purchases.</CardDescription>
+                             </div>
+                        </CardHeader>
+                        <CardContent>
+                             <p className="text-muted-foreground">
+                                Leverage the power of the community. Our platform enables established members to extend credit facilities to other trusted members for larger purchases, creating a peer-to-peer financing network built on industry relationships and real-world data.
+                            </p>
+                        </CardContent>
+                    </Card>
+                </div>
+            </div>
+        </section>
+
+        <section className="py-16 md:py-24 bg-card">
             <div className="container mx-auto px-4">
                 <div className="text-center max-w-3xl mx-auto mb-16">
                     <h2 className="text-3xl md:text-4xl font-bold font-headline">Who is Logistics Flow for?</h2>
@@ -178,7 +219,7 @@ export default function AboutPage() {
             </div>
         </section>
 
-        <section className="py-16 md:py-24 bg-card">
+        <section className="py-16 md:py-24 bg-background">
             <div className="container mx-auto px-4">
                 <div className="text-center max-w-3xl mx-auto mb-16">
                     <h2 className="text-3xl md:text-4xl font-bold font-headline">Our Valued Partners</h2>
@@ -204,7 +245,7 @@ export default function AboutPage() {
             </div>
         </section>
 
-        <section className="py-16 md:py-24 bg-background">
+        <section className="py-16 md:py-24 bg-card">
             <div className="container mx-auto px-4">
                 <div className="text-center max-w-3xl mx-auto mb-16">
                     <h2 className="text-3xl md:text-4xl font-bold font-headline">Your Security &amp; Data Protection: Our Priority</h2>
