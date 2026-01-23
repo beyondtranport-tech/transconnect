@@ -21,20 +21,22 @@ import {
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Sparkles, Video, Download, Save, Copy } from 'lucide-react';
+import { Loader2, Sparkles, Video, Download, Save, Copy, Film } from 'lucide-react';
 import { generateVideo } from '@/ai/flows/video-generation-flow';
 import { Textarea } from '@/components/ui/textarea';
 import { useStorage, useUser } from '@/firebase';
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { Progress } from '@/components/ui/progress';
 import { Input } from '@/components/ui/input';
+import Image from 'next/image';
 
-const defaultPrompt = `Create a short, professional marketing video that showcases how easy it is to create an online shop on the Logistics Flow platform. The video should visually represent these steps: 1. Sign up for a free account. 2. Use the simple Shop Wizard to add your business name, description, and products. 3. Publish your professional-looking online shop to the network. The video should be modern, clean, and use a color palette of green and charcoal.`;
+const defaultPrompt = `Animate this image. If it contains a vehicle, make its wheels spin and have it drive down the road. Add some subtle lens flare and a cinematic feel.`;
 
-export default function VideoGeneratorCard({ promptTemplate }: { promptTemplate?: string }) {
+export default function VideoAnimatorCard({ promptTemplate }: { promptTemplate?: string }) {
   const [isOpen, setIsOpen] = useState(false);
   const [prompt, setPrompt] = useState(promptTemplate || defaultPrompt);
   const [isLoading, setIsLoading] = useState(false);
+  const [sourceImage, setSourceImage] = useState<string | null>(null);
   const [generatedVideo, setGeneratedVideo] = useState<string | null>(null);
   const { toast } = useToast();
   const { user } = useUser();
@@ -50,13 +52,26 @@ export default function VideoGeneratorCard({ promptTemplate }: { promptTemplate?
     setUploadProgress(0);
     setIsSaving(false);
   };
+  
+  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      setSourceImage(e.target?.result as string);
+      handleClear();
+    };
+    reader.readAsDataURL(file);
+  };
+
 
   const handleGenerate = async () => {
-    if (!prompt) {
+    if (!prompt || !sourceImage) {
       toast({
         variant: 'destructive',
-        title: 'Prompt is required',
-        description: 'Please describe the video you want to create.',
+        title: 'Missing Information',
+        description: 'Please upload a starting image and provide a prompt.',
       });
       return;
     }
@@ -65,7 +80,7 @@ export default function VideoGeneratorCard({ promptTemplate }: { promptTemplate?
     handleClear();
 
     try {
-      const result = await generateVideo({ prompt, durationSeconds: 8 });
+      const result = await generateVideo({ prompt, imageDataUri: sourceImage, durationSeconds: 8 });
       setGeneratedVideo(result.videoDataUri);
       toast({
         title: 'Video Generated!',
@@ -154,37 +169,42 @@ export default function VideoGeneratorCard({ promptTemplate }: { promptTemplate?
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <Video /> AI Video Generator
+          <Film /> AI Video Animator
         </CardTitle>
         <CardDescription>
-          Create short marketing videos from a text prompt using Veo.
+          Bring static images and screenshots to life with a text prompt.
         </CardDescription>
       </CardHeader>
       <CardContent>
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
           <DialogTrigger asChild>
-            <Button className="w-full">Start Generating</Button>
+            <Button className="w-full">Start Animating</Button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-4xl flex h-full max-h-[90vh] flex-col">
             <DialogHeader>
-              <DialogTitle>AI Video Generator (Text-to-Video)</DialogTitle>
+              <DialogTitle>AI Video Animator (Image-to-Video)</DialogTitle>
               <DialogDescription>
-                Provide a detailed prompt to create your video. Generation may take a minute or two.
+                Upload a starting image and describe how you want to animate it. Video generation may take a minute or two.
               </DialogDescription>
             </DialogHeader>
             <div className="grid flex-1 grid-cols-1 gap-6 overflow-y-auto py-4 pr-4 md:grid-cols-2">
                 <div className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="generate-prompt-video">Your Prompt</Label>
-                    <Textarea id="generate-prompt-video" value={prompt} onChange={(e) => setPrompt(e.target.value)} rows={16} />
+                    <Label htmlFor="image-upload-animator">1. Upload Starting Image</Label>
+                    <Input id="image-upload-animator" type="file" accept="image/*" onChange={handleImageUpload} />
                   </div>
-                   <Button onClick={handleGenerate} disabled={isLoading} className="w-full">
-                    {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
-                    Generate Video
-                  </Button>
+                  {sourceImage && (
+                    <div className="relative aspect-video w-full">
+                        <Image src={sourceImage} alt="Source" fill className="rounded-md object-contain border" />
+                    </div>
+                  )}
+                  <div className="space-y-2">
+                    <Label htmlFor="animate-prompt">2. Describe Your Animation</Label>
+                    <Textarea id="animate-prompt" value={prompt} onChange={(e) => setPrompt(e.target.value)} rows={sourceImage ? 8 : 16} />
+                  </div>
                 </div>
                 <div className="space-y-4">
-                    <Label>Generated Video</Label>
+                    <Label>3. Generated Video</Label>
                     <div className="relative aspect-video w-full rounded-md border border-dashed flex items-center justify-center bg-muted">
                         {isLoading ? (
                             <div className="text-center">
@@ -194,7 +214,7 @@ export default function VideoGeneratorCard({ promptTemplate }: { promptTemplate?
                         ) : generatedVideo ? (
                             <video src={generatedVideo} controls autoPlay className="w-full h-full rounded-md" />
                         ) : (
-                            <p className="text-sm text-muted-foreground">Your generated video will appear here.</p>
+                            <p className="text-sm text-muted-foreground">Your animated video will appear here.</p>
                         )}
                     </div>
                      {isSaving && (
@@ -213,7 +233,7 @@ export default function VideoGeneratorCard({ promptTemplate }: { promptTemplate?
                     )}
                 </div>
             </div>
-            <DialogFooter className="mt-auto flex-shrink-0 pt-4">
+            <DialogFooter className="mt-auto flex-shrink-0 pt-4 sm:justify-between">
               <div className="flex w-full items-center justify-between gap-2">
                 {generatedVideo ? (
                     <div className="flex items-center gap-2">
@@ -225,7 +245,10 @@ export default function VideoGeneratorCard({ promptTemplate }: { promptTemplate?
                         </Button>
                     </div>
                 ) : <div />}
-                 <Button variant="ghost" onClick={handleClear} disabled={!generatedVideo}>Clear Video</Button>
+                 <Button onClick={handleGenerate} disabled={isLoading || !sourceImage}>
+                    {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+                    Generate Video
+                </Button>
               </div>
             </DialogFooter>
           </DialogContent>

@@ -14,6 +14,8 @@ Examples of other good prompts:
 
 const investorVideoPrompt = `Create a short, dynamic video for an investor pitch. Start with a problem statement: show fragmented and inefficient logistics (e.g., empty trucks, manual paperwork). Transition to the solution: show the Logistics Flow platform UI, data streams connecting trucks, and graphs showing growth. End with a powerful shot of a fleet of modern trucks driving into the sunset, symbolizing success. Use a professional, confident voiceover and an inspiring corporate soundtrack.`;
 
+const investorVideoAnimatorPrompt = `Take this screenshot of our financial forecast graph. Animate the chart lines moving upwards from left to right to show growth. As the lines move, make the corresponding revenue numbers tick upwards. End by zooming in on the final 'Net Profit' figure and making it glow subtly.`;
+
 
 export default function InvestorAiContent() {
     return (
@@ -23,6 +25,7 @@ export default function InvestorAiContent() {
             imageGeneratorPrompt={investorGeneratorPrompt}
             imageEditorPrompt={investorEditorPrompt}
             videoGeneratorPrompt={investorVideoPrompt}
+            videoAnimatorPrompt={investorVideoAnimatorPrompt}
         />
     );
 }
