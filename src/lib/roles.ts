@@ -45,12 +45,12 @@ export const roles = [
         image: roleImages.partner
     },
     {
-        id: "associate",
+        id: "affiliate",
         icon: Briefcase,
-        title: "Associates",
-        description: "Join as a professional offering specialized services like accounting, legal, or consulting.",
-        cta: "Become an Associate",
-        longDescription: "Associates are independent professionals who provide essential services to our members. If you are an accountant, lawyer, consultant, or offer another specialized service for the transport industry, join our network to connect with clients who need your expertise.",
+        title: "Affiliates",
+        description: "Join as a professional marketer and earn. Generate opportunities for our ecosystem and earn commission.",
+        cta: "Become an Affiliate",
+        longDescription: "Affiliates are marketing professionals who drive growth by generating opportunities for the Logistics Flow ecosystem. If you have a knack for digital marketing, content creation, or lead generation, this role is for you. You'll earn commissions for new members you bring in and for the activity they generate, turning your marketing skills into a revenue stream.",
         image: roleImages.associate
     },
     {
