@@ -15,25 +15,25 @@ const aboutHeroImage = placeholderImages.find(p => p.id === 'about-hero');
 const values = [
     {
         title: "Cash Flow",
-        description: "We break the constraint of locked capital by connecting you with a network of funders who understand the transport industry, turning your assets and contracts into accessible cash.",
+        description: "Are you struggling to fund your business? We can help by connecting you with a network of funders who understand the transport industry, turning your assets and contracts into accessible cash.",
         image: placeholderImages.find(p => p.id === 'funding-division'),
         icon: DollarSign,
     },
     {
         title: "Opportunity Flow",
-        description: "We break the constraint of isolation by connecting you to a network. Earn passive income by referring members, find new loads with our AI matcher, and discover subcontracting opportunities.",
+        description: "Do you need to generate more income? We can help by connecting you to a network where you can earn passive income by referring members, find new loads with our AI matcher, and discover subcontracting opportunities.",
         image: placeholderImages.find(p => p.id === 'incentives-hero'),
         icon: Handshake,
     },
     {
         title: "Information Flow",
-        description: "We break the constraint of inefficiency. Our tech tools streamline your operations, providing data and insights to reduce empty miles and optimize your routes for maximum profitability.",
+        description: "Want to make technology work for you? We can help by providing tech tools that streamline your operations, giving you data and insights to reduce empty miles and optimize your routes for maximum profitability.",
         image: placeholderImages.find(p => p.id === 'tech-division'),
         icon: Cpu,
     },
     {
         title: "Savings Flow",
-        description: "We break the constraint of high costs. By uniting our members, we create collective buying power to negotiate significant discounts on parts, tires, and services you use every day.",
+        description: "Are you looking to cut costs? We can help by uniting our members to create collective buying power, negotiating significant discounts on parts, tires, and services you use every day.",
         image: placeholderImages.find(p => p.id === 'mall-division'),
         icon: Shield,
     }
