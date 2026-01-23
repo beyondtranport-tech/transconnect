@@ -15,25 +15,29 @@ const aboutHeroImage = placeholderImages.find(p => p.id === 'about-hero');
 const values = [
     {
         title: "Cash Flow",
-        description: "Are you struggling to fund your business? We can help by connecting you with a network of funders who understand the transport industry, turning your assets and contracts into accessible cash.",
+        question: "Are you struggling to fund your business?",
+        answer: "We can help by connecting you with a network of funders who understand the transport industry, turning your assets and contracts into accessible cash.",
         image: placeholderImages.find(p => p.id === 'funding-division'),
         icon: DollarSign,
     },
     {
         title: "Opportunity Flow",
-        description: "Do you need to generate more income? We can help by connecting you to a network where you can earn passive income by referring members, find new loads with our AI matcher, and discover subcontracting opportunities.",
+        question: "Do you need to generate more income?",
+        answer: "We can help by connecting you to a network where you can earn passive income by referring members, find new loads with our AI matcher, and discover subcontracting opportunities.",
         image: placeholderImages.find(p => p.id === 'incentives-hero'),
         icon: Handshake,
     },
     {
         title: "Information Flow",
-        description: "Want to make technology work for you? We can help by providing tech tools that streamline your operations, giving you data and insights to reduce empty miles and optimize your routes for maximum profitability.",
+        question: "Are you tech savvy?",
+        answer: "We can help by providing tech tools that streamline your operations, giving you data and insights to reduce empty miles and optimize your routes for maximum profitability.",
         image: placeholderImages.find(p => p.id === 'tech-division'),
         icon: Cpu,
     },
     {
         title: "Savings Flow",
-        description: "Are you looking to cut costs? We can help by uniting our members to create collective buying power, negotiating significant discounts on parts, tires, and services you use every day.",
+        question: "Are you looking to cut costs?",
+        answer: "We can help by uniting our members to create collective buying power, negotiating significant discounts on parts, tires, and services you use every day.",
         image: placeholderImages.find(p => p.id === 'mall-division'),
         icon: Shield,
     }
@@ -118,7 +122,7 @@ export default function AboutPage() {
                                         <h3 className="text-3xl font-bold font-headline">{value.title}</h3>
                                     </div>
                                     <p className="mt-4 text-lg text-muted-foreground">
-                                        {value.description}
+                                        <span className="text-primary font-semibold">{value.question}</span> {value.answer}
                                     </p>
                                 </div>
                             </div>
