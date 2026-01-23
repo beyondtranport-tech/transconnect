@@ -30,12 +30,8 @@ const nextConfig = {
       },
     ],
   },
-  experimental: {
-    serverMinification: false,
-  },
   serverActions: {
     bodySizeLimit: '10mb',
-    serverActionTimeout: 120000, // 120 seconds
   },
 };
 
