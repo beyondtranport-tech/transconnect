@@ -21,7 +21,7 @@ interface HomeIntentModalProps {
 export function HomeIntentModal({ isOpen, onOpenChange }: HomeIntentModalProps) {
     const router = useRouter();
 
-    const handleNavigation = (path: string, intent: 'business_owner' | 'individual') => {
+    const handleNavigation = (role: string, intent: 'business_owner' | 'individual') => {
         if (process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS_ID) {
             gtag.event({
                 action: 'homepage_intent_selection',
@@ -30,7 +30,7 @@ export function HomeIntentModal({ isOpen, onOpenChange }: HomeIntentModalProps) 
                 value: 1
             });
         }
-        router.push(path);
+        router.push(`/join?role=${role}`);
         onOpenChange(false);
     }
 
@@ -38,18 +38,18 @@ export function HomeIntentModal({ isOpen, onOpenChange }: HomeIntentModalProps) 
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Welcome to Logistics Flow!</DialogTitle>
+          <DialogTitle>Welcome to TransConnect!</DialogTitle>
           <DialogDescription>
             To help you get started, tell us what you're looking for.
           </DialogDescription>
         </DialogHeader>
         <div className="flex flex-col sm:flex-row gap-4 py-4">
-            <Button onClick={() => handleNavigation('/about', 'business_owner')} className="w-full h-24 text-lg flex-col" variant="outline">
+            <Button onClick={() => handleNavigation('vendor', 'business_owner')} className="w-full h-24 text-lg flex-col" variant="outline">
                 <Building2 className="mb-2 h-6 w-6"/>
                 I'm a Business Owner
                 <span className="text-xs font-normal text-muted-foreground">Looking for funding, efficiency & growth.</span>
             </Button>
-            <Button onClick={() => handleNavigation('/incentives', 'individual')} className="w-full h-24 text-lg flex-col">
+            <Button onClick={() => handleNavigation('driver', 'individual')} className="w-full h-24 text-lg flex-col">
                 <User className="mb-2 h-6 w-6"/>
                 I'm an Individual
                 <span className="text-xs font-normal text-primary-foreground/80">Looking for driver benefits & deals.</span>
