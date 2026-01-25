@@ -1,3 +1,4 @@
+
 {
   "indexes": [
     {
@@ -49,6 +50,13 @@
     {
       "collectionGroup": "staff",
       "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        { "fieldPath": "email", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "partners",
+      "queryScope": "COLLECTION",
       "fields": [
         { "fieldPath": "email", "order": "ASCENDING" }
       ]
