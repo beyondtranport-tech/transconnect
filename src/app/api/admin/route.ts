@@ -211,7 +211,7 @@ export async function POST(req: NextRequest) {
                     await docRef.set(data, { merge: true });
                 } else { // Create
                     docRef = db.collection('partners').doc();
-                    data = { ...partner, id: docRef.id, createdAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp() };
+                    data = { ...partner, id: docRef.id, invitationStatus: 'pending', createdAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp() };
                     await docRef.set(data);
                 }
                 return NextResponse.json({ success: true, id: docRef.id });

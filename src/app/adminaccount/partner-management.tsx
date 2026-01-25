@@ -168,7 +168,21 @@ export default function PartnerManagement() {
 
   const [dialogState, setDialogState] = useState<{ type: 'add' | 'edit' | 'delete' | 'invite' | null, data?: any }>({ type: null, data: undefined });
 
-  const handleOpenDialog = (type: 'add' | 'edit' | 'delete' | 'invite', data?: any) => {
+  const handleOpenDialog = async (type: 'add' | 'edit' | 'delete' | 'invite', data?: any) => {
+    if (type === 'invite' && data) {
+        try {
+            const token = await getClientSideAuthToken();
+            if (!token) throw new Error("Authentication failed.");
+            await performAdminAction(token, 'savePartner', {
+                partner: { id: data.id, invitationStatus: 'invited' }
+            });
+            forceRefresh();
+            toast({ title: "Partner Invite Ready", description: "Status updated to 'invited'. You can now send the link." });
+        } catch (e: any) {
+            toast({ variant: 'destructive', title: 'Action Failed', description: `Could not update partner status: ${e.message}` });
+            return; // Don't open the dialog if the status update fails
+        }
+    }
     setDialogState({ type, data });
   };
   
@@ -202,6 +216,12 @@ export default function PartnerManagement() {
     if (!inviteLink) return;
     navigator.clipboard.writeText(inviteLink);
     toast({ title: 'Invite Link Copied!' });
+  };
+  
+  const invitationStatusColors: { [key: string]: 'default' | 'secondary' | 'destructive' | 'outline' } = {
+    pending: 'secondary',
+    invited: 'outline',
+    registered: 'default',
   };
 
   return (
@@ -258,7 +278,7 @@ export default function PartnerManagement() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Name</TableHead><TableHead>Email</TableHead><TableHead>Company</TableHead><TableHead>Status</TableHead><TableHead className="text-right">Actions</TableHead>
+                    <TableHead>Name</TableHead><TableHead>Email</TableHead><TableHead>Company</TableHead><TableHead>Status</TableHead><TableHead>Invite Status</TableHead><TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -268,6 +288,11 @@ export default function PartnerManagement() {
                       <TableCell><div>{partner.email}</div></TableCell>
                       <TableCell><div>{partner.companyName}</div></TableCell>
                       <TableCell><Badge className="capitalize">{partner.status}</Badge></TableCell>
+                      <TableCell>
+                          <Badge variant={invitationStatusColors[partner.invitationStatus] || 'secondary'} className="capitalize">
+                            {partner.invitationStatus?.replace(/_/g, ' ') || 'Pending'}
+                          </Badge>
+                      </TableCell>
                       <TableCell className="text-right">
                         <PartnerActionMenu
                             onInvite={() => handleOpenDialog('invite', partner)}
@@ -277,7 +302,7 @@ export default function PartnerManagement() {
                       </TableCell>
                     </TableRow>
                   )) : (
-                    <TableRow><TableCell colSpan={5} className="h-24 text-center">No partners found.</TableCell></TableRow>
+                    <TableRow><TableCell colSpan={6} className="h-24 text-center">No partners found.</TableCell></TableRow>
                   )}
                 </TableBody>
               </Table>

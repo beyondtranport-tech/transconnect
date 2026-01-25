@@ -41,7 +41,22 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ success: true, message: 'User document already exists.' });
     }
 
-    // --- NEW LOGIC: Check for pending staff invitation ---
+    const batch = db.batch();
+
+    // Check if this email corresponds to a partner invitation
+    const partnerQuery = db.collection('partners').where('email', '==', firebaseUser.email).limit(1);
+    const partnerSnap = await partnerQuery.get();
+    let isPartnerSignup = false;
+    let partnerData: any = {};
+    if (!partnerSnap.empty) {
+        isPartnerSignup = true;
+        const partnerDoc = partnerSnap.docs[0];
+        partnerData = partnerDoc.data();
+        batch.update(partnerDoc.ref, { invitationStatus: 'registered' });
+        console.log(`Found partner invite for ${firebaseUser.email}. Flagging for registration.`);
+    }
+
+    // Check for pending staff invitation
     const staffQuery = db.collectionGroup('staff').where('email', '==', firebaseUser.email).limit(1);
     const staffSnap = await staffQuery.get();
 
@@ -50,8 +65,6 @@ export async function POST(req: NextRequest) {
         const invitedStaffDoc = staffSnap.docs[0];
         const invitedStaffData = invitedStaffDoc.data();
         const companyId = invitedStaffData.companyId;
-
-        const batch = db.batch();
 
         // Create the new user document, linked to the correct company
         batch.set(userDocRef, {
@@ -79,23 +92,23 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ success: true, message: 'Staff member account created and linked to company.' });
     }
 
-    // --- ORIGINAL LOGIC: Create new user and company ---
+    // If not a staff member, proceed with standard user/company creation
     console.log(`Document for user ${firebaseUser.uid} not found. Creating user and company documents.`);
     
     const loyaltyConfigDoc = await db.collection('configuration').doc('loyaltySettings').get();
     const signupPoints = loyaltyConfigDoc.data()?.userSignupPoints || 50;
 
-    const displayName = firebaseUser.displayName || '';
+    const displayName = firebaseUser.displayName || (isPartnerSignup ? `${partnerData.firstName} ${partnerData.lastName}` : '');
     const nameParts = displayName.split(' ');
-    const firstName = nameParts[0] || 'New';
-    const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : 'User';
+    const firstName = (isPartnerSignup ? partnerData.firstName : '') || nameParts[0] || 'New';
+    const lastName = (isPartnerSignup ? partnerData.lastName : '') || (nameParts.length > 1 ? nameParts.slice(1).join(' ') : 'User');
 
     const companyRef = db.collection('companies').doc();
     
     const newCompanyData: any = {
         id: companyRef.id,
         ownerId: firebaseUser.uid,
-        companyName: firebaseUser.displayName ? `${firebaseUser.displayName}'s Company` : 'My Company',
+        companyName: (isPartnerSignup ? partnerData.companyName : '') || (firebaseUser.displayName ? `${firebaseUser.displayName}'s Company` : 'My Company'),
         membershipId: 'free',
         rewardPoints: signupPoints,
         walletBalance: 0,
@@ -120,7 +133,6 @@ export async function POST(req: NextRequest) {
         updatedAt: FieldValue.serverTimestamp(),
     };
     
-    const batch = db.batch();
     batch.set(companyRef, newCompanyData);
     batch.set(userDocRef, newUserData);
 
