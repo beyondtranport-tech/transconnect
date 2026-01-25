@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -41,7 +42,8 @@ import {
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { useCollection, useFirestore, getClientSideAuthToken, useMemoFirebase } from '@/firebase';
+import { useCollection, useFirestore, getClientSideAuthToken } from '@/firebase';
+import { useMemoFirebase } from '@/hooks/use-config';
 import { collection, query } from 'firebase/firestore';
 import { Loader2, PlusCircle, Handshake, Edit, Trash2, MoreVertical, Send, Copy } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
@@ -148,72 +150,35 @@ function PartnerDialog({ open, onOpenChange, partner, onSave }: { open: boolean;
 }
 
 // Action Menu for each row
-function PartnerActionMenu({ onInvite, onEdit, onDelete }: { onInvite: () => void, onEdit: () => void, onDelete: () => void }) {
-    return (
-        <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon">
-                    <MoreVertical className="h-4 w-4" />
-                </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-                <DropdownMenuItem onSelect={onInvite}><Send className="mr-2 h-4 w-4" /> Invite Partner</DropdownMenuItem>
-                <DropdownMenuItem onSelect={onEdit}><Edit className="mr-2 h-4 w-4" /> Edit</DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onSelect={onDelete} className="text-destructive"><Trash2 className="mr-2 h-4 w-4" /> Delete</DropdownMenuItem>
-            </DropdownMenuContent>
-        </DropdownMenu>
-    );
-}
-
-// Main Component
-export default function PartnerManagement() {
-  const firestore = useFirestore();
-  const partnersQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'partners')) : null, [firestore]);
-  const { data: partners, isLoading, forceRefresh } = useCollection(partnersQuery);
-  const { toast } = useToast();
-
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+function PartnerActionMenu({ partner, onUpdate }: { partner: any; onUpdate: () => void }) {
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [isAlertOpen, setIsAlertOpen] = useState(false);
   const [isInviteOpen, setIsInviteOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
-  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
-  const [selectedPartner, setSelectedPartner] = useState<any | null>(null);
-  const [isProcessing, setIsProcessing] = useState(false);
-  
-  const handleInviteClick = (partner: any) => {
-    setSelectedPartner(partner);
-    setIsInviteOpen(true);
-  };
-  
-  const handleEditClick = (partner: any) => {
-    setSelectedPartner(partner);
-    setIsEditOpen(true);
-  };
+  const [actionToConfirm, setActionToConfirm] = useState<'delete' | null>(null);
+  const { toast } = useToast();
 
-  const handleDeleteClick = (partner: any) => {
-    setSelectedPartner(partner);
-    setIsDeleteOpen(true);
-  };
-  
-  const handleDeletePartner = async () => {
-    if (!selectedPartner) return;
+  const handleAction = async () => {
+    if (!actionToConfirm) return;
     setIsProcessing(true);
+    setIsAlertOpen(false);
     try {
         const token = await getClientSideAuthToken();
         if (!token) throw new Error("Authentication failed.");
-        await performAdminAction(token, 'deletePartner', { partnerId: selectedPartner.id });
+        await performAdminAction(token, 'deletePartner', { partnerId: partner.id });
         toast({ title: 'Partner Deleted' });
-        forceRefresh();
+        onUpdate();
     } catch (e: any) {
         toast({ variant: 'destructive', title: 'Delete Failed', description: e.message });
     } finally {
         setIsProcessing(false);
-        setIsDeleteOpen(false);
-        setSelectedPartner(null);
+        setActionToConfirm(null);
     }
   };
-
-  const inviteLink = selectedPartner ? (typeof window !== 'undefined' ? `${window.location.origin}/join?email=${encodeURIComponent(selectedPartner.email)}` : '') : '';
+  
+  const inviteLink = isInviteOpen && typeof window !== 'undefined'
+    ? `${window.location.origin}/join?email=${encodeURIComponent(partner.email)}`
+    : '';
 
   const copyInviteLink = () => {
     navigator.clipboard.writeText(inviteLink);
@@ -222,27 +187,16 @@ export default function PartnerManagement() {
   
   return (
     <>
-      {/* DIALOGS ARE NOW HOISTED HERE, OUTSIDE THE RENDER LOOP */}
-      <PartnerDialog 
-        open={isAddDialogOpen} 
-        onOpenChange={setIsAddDialogOpen} 
-        onSave={forceRefresh} 
+       <PartnerDialog 
+        open={isEditOpen}
+        onOpenChange={setIsEditOpen}
+        partner={partner}
+        onSave={onUpdate}
       />
-      {selectedPartner && (
-        <PartnerDialog 
-            open={isEditOpen} 
-            onOpenChange={setIsEditOpen} 
-            partner={selectedPartner}
-            onSave={() => {
-                forceRefresh();
-                setIsEditOpen(false);
-            }}
-        />
-      )}
-       <Dialog open={isInviteOpen} onOpenChange={setIsInviteOpen}>
+      <Dialog open={isInviteOpen} onOpenChange={setIsInviteOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Invite {selectedPartner?.firstName}</DialogTitle>
+            <DialogTitle>Invite {partner.firstName}</DialogTitle>
             <DialogDescription>Send this unique sign-up link to the partner. They must use this email to register.</DialogDescription>
           </DialogHeader>
           <div className="py-4 space-y-2">
@@ -256,15 +210,15 @@ export default function PartnerManagement() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      <AlertDialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
+      <AlertDialog open={isAlertOpen} onOpenChange={setIsAlertOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-            <AlertDialogDescription>This will permanently delete partner "{selectedPartner?.firstName} {selectedPartner?.lastName}".</AlertDialogDescription>
+            <AlertDialogDescription>This will permanently delete partner "{partner.firstName} {partner.lastName}".</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeletePartner} variant="destructive" disabled={isProcessing}>
+            <AlertDialogAction onClick={handleAction} variant="destructive" disabled={isProcessing}>
                 {isProcessing && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
                 Yes, delete
             </AlertDialogAction>
@@ -272,6 +226,44 @@ export default function PartnerManagement() {
         </AlertDialogContent>
       </AlertDialog>
 
+        <div className="flex justify-end items-center gap-1">
+             <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" disabled={isProcessing}>
+                    {isProcessing ? <Loader2 className="h-4 w-4 animate-spin" /> : <MoreVertical className="h-4 w-4" />}
+                    </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                    <DropdownMenuItem onSelect={() => setIsInviteOpen(true)}><Send className="mr-2 h-4 w-4" /> Invite Partner</DropdownMenuItem>
+                    <DropdownMenuItem onSelect={() => setIsEditOpen(true)}><Edit className="mr-2 h-4 w-4" /> Edit</DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onSelect={() => { setActionToConfirm('delete'); setIsAlertOpen(true); }} className="text-destructive"><Trash2 className="mr-2 h-4 w-4" /> Delete</DropdownMenuItem>
+                </DropdownMenuContent>
+            </DropdownMenu>
+        </div>
+    </>
+  );
+}
+
+// Main Component
+export default function PartnerManagement() {
+  const firestore = useFirestore();
+  const partnersQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'partners')) : null, [firestore]);
+  const { data: partners, isLoading, forceRefresh } = useCollection(partnersQuery);
+  const { toast } = useToast();
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  
+  return (
+    <>
+      <PartnerDialog 
+        open={isAddDialogOpen} 
+        onOpenChange={setIsAddDialogOpen} 
+        onSave={() => {
+            forceRefresh();
+            setIsAddDialogOpen(false);
+        }}
+      />
+      
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <div>
@@ -309,9 +301,7 @@ export default function PartnerManagement() {
                       <TableCell className="text-right">
                         <PartnerActionMenu
                             partner={partner}
-                            onInvite={() => handleInviteClick(partner)}
-                            onEdit={() => handleEditClick(partner)}
-                            onDelete={() => handleDeleteClick(partner)}
+                            onUpdate={forceRefresh}
                         />
                       </TableCell>
                     </TableRow>
