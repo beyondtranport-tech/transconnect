@@ -25,10 +25,13 @@ export function getAdminApp(): { app: App | null; error: string | null } {
     if (!serviceAccount.project_id || !serviceAccount.client_email || !serviceAccount.private_key) {
         throw new Error('Parsed service account is missing essential properties (project_id, client_email, private_key).');
     }
+    
+    // Dynamically construct the storage bucket name from the project_id
+    const storageBucket = `${serviceAccount.project_id}.appspot.com`;
 
     const app = initializeApp({
       credential: cert(serviceAccount),
-      storageBucket: "transconnect-v1-39578841-2a857.appspot.com",
+      storageBucket: storageBucket,
     }, ADMIN_APP_NAME);
     return { app, error: null };
 
