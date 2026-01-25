@@ -144,7 +144,7 @@ function AddStaffDialog({ onStaffAdded, canCreate }: { onStaffAdded: () => void,
   }
 
   const copyInviteLink = () => {
-    const signupUrl = `${window.location.origin}/join`;
+    const signupUrl = `${window.location.origin}/join?email=${encodeURIComponent(newUserEmail)}`;
     navigator.clipboard.writeText(signupUrl);
     toast({
         title: 'Sign-up Link Copied!',
@@ -303,6 +303,8 @@ export default function PartnerManagement() {
         
         return staff.map(s => ({
             ...s,
+            docId: s.id, // Preserve the original document ID
+            id: `${s.companyId}-${s.id}`, // Create a unique ID for the row to prevent key conflicts
             companyName: companyMap.get(s.companyId) || 'Unknown Company',
         }));
     }, [staff, companies]);

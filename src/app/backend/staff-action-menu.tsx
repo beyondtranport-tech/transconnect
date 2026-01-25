@@ -66,7 +66,9 @@ export default function StaffActionMenu({ staffMember, onUpdate }: { staffMember
 
     try {
         let apiAction: string;
-        let payload: any = { companyId: staffMember.companyId, staffId: staffMember.id };
+        // Use the preserved original document ID for actions
+        const staffId = staffMember.docId || staffMember.id;
+        let payload: any = { companyId: staffMember.companyId, staffId: staffId };
         let successMessage = '';
 
         if (actionToConfirm === 'delete') {
