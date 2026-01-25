@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
@@ -23,6 +24,17 @@ import { cn } from '@/lib/utils';
 import { Label } from '@/components/ui/label';
 import { generateShopSeo } from '@/ai/flows/seo-flow';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import Image from 'next/image';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -287,7 +299,7 @@ function AIGenerateDialog({ onGenerate, children, canEdit }: { onGenerate: (newU
 }
 
 
-function ProductDialog({ shop, product, onSave, children, canEdit }: { shop: any, product?: any, onSave: () => void, children: React.ReactNode, canEdit: boolean }) {
+function ProductDialog({ shop, product, onComplete, children, canEdit }: { shop: any, product?: any, onComplete: () => void, children: React.ReactNode, canEdit: boolean }) {
   const { user } = useUser();
   const storage = useStorage();
   const { toast } = useToast();
@@ -326,33 +338,33 @@ function ProductDialog({ shop, product, onSave, children, canEdit }: { shop: any
         if (!token) throw new Error("Authentication token not found.");
 
         const path = product ? `companies/${shop.companyId}/shops/${shop.id}/products/${product.id}` : `companies/${shop.companyId}/shops/${shop.id}/products`;
+        const method = product ? 'updateUserDoc' : 'addUserDoc';
+        const body = product
+          ? { path, data: dataToUpdate }
+          : { collectionPath: path, data: dataToUpdate };
 
-        const response = await fetch('/api/updateUserDoc', {
+        const response = await fetch(product ? '/api/updateUserDoc' : '/api/addUserDoc', {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${token}`,
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({
-                path: path,
-                data: dataToUpdate,
-                isMerge: product !== undefined // Merge if it's an update
-            }),
+            body: JSON.stringify(body),
         });
 
         const result = await response.json();
 
         if (!response.ok) {
-            throw new Error(result.error || 'Failed to update product.');
+            throw new Error(result.error || 'Failed to save product.');
         }
 
         toast({ title: product ? 'Product Updated!' : 'Product Created!', description: 'Your product has been saved.' });
+        onComplete();
+        setIsOpen(false);
     } catch (error: any) {
-        toast({ variant: 'destructive', title: 'Update Failed', description: error.message });
+        toast({ variant: 'destructive', title: 'Save Failed', description: error.message });
     } finally {
         setIsSaving(false);
-        setIsOpen(false);
-        onSave();
     }
   };
 
@@ -368,8 +380,8 @@ function ProductDialog({ shop, product, onSave, children, canEdit }: { shop: any
       if (!file || !storage || !user || !shop.companyId || !shop.id) return;
 
       setUploading(true);
-      const storageRef = ref(storage, `companies/${shop.companyId}/shops/${shop.id}/products/${file.name}`);
-      const uploadTask = uploadBytesResumable(storageRef, file);
+      const storageRefVal = ref(storage, `companies/${shop.companyId}/shops/${shop.id}/products/${file.name}`);
+      const uploadTask = uploadBytesResumable(storageRefVal, file);
 
       uploadTask.on('state_changed',
         (snapshot) => {
@@ -394,7 +406,9 @@ function ProductDialog({ shop, product, onSave, children, canEdit }: { shop: any
       );
     };
 
-    uploadFile();
+    if (file) {
+      uploadFile();
+    }
   }, [file, storage, user, shop, form, toast]);
 
 
@@ -494,102 +508,134 @@ function ProductDialog({ shop, product, onSave, children, canEdit }: { shop: any
 
 
 function Step2Products({ shop, canEdit }: { shop: any, canEdit: boolean }) {
-    const { user } = useUser();
     const firestore = useFirestore();
     const { toast } = useToast();
-    const [isSaving, setIsSaving] = useState(false);
-    const [isLoading, setIsLoading] = useState(true);
-    const [products, setProducts] = useState<any[]>([]);
+    const [productToDelete, setProductToDelete] = useState<any>(null);
+    const [isDeleting, setIsDeleting] = useState(false);
 
-    const { hasPermission } = usePermissions();
-    const canManageProducts = useMemo(() => hasPermission('manageProducts', shop?.id), [hasPermission, shop?.id]);
+    const productsQuery = useMemoFirebase(() => {
+        if (!firestore || !shop?.companyId || !shop?.id) return null;
+        return collection(firestore, `companies/${shop.companyId}/shops/${shop.id}/products`);
+    }, [firestore, shop.companyId, shop.id]);
 
-
-    useEffect(() => {
-        if (!firestore || !shop?.companyId || !shop?.id) return;
-        setIsLoading(true);
-
-        const productsCollection = collection(firestore, `companies/${shop.companyId}/shops/${shop.id}/products`);
-
-        const unsubscribe = useMemoFirebase(() => productsCollection, 'collectionData', { idField: 'id' }, (data) => {
-            setProducts(data);
-            setIsLoading(false);
-        });
-
-        return () => unsubscribe();
-
-    }, [firestore, shop?.companyId, shop?.id]);
+    const { data: products, isLoading, forceRefresh } = useCollection(productsQuery);
     
-    const handleProductSaved = () => {
-      //  toast({ title: 'Products Saved!', description: 'Your product details have been updated.' });
+    const { can } = usePermissions();
+    const canManageProducts = can('manage', 'products');
+    const canDeleteProducts = can('delete', 'products');
+
+    const handleDeleteProduct = async () => {
+        if (!productToDelete) return;
+        setIsDeleting(true);
+        try {
+            const token = await getClientSideAuthToken();
+            if (!token) throw new Error("Authentication failed.");
+            
+            const response = await fetch('/api/deleteUserDoc', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ path: `companies/${shop.companyId}/shops/${shop.id}/products/${productToDelete.id}` }),
+            });
+            
+            if (!response.ok) {
+                const result = await response.json();
+                throw new Error(result.error || 'Failed to delete product.');
+            }
+            
+            toast({ title: "Product Deleted" });
+            forceRefresh();
+        } catch (e: any) {
+            toast({ variant: 'destructive', title: 'Delete Failed', description: e.message });
+        } finally {
+            setIsDeleting(false);
+            setProductToDelete(null);
+        }
     };
 
     return (
         <div className="space-y-4">
-            <div className="flex items-center justify-between">
-                <h3 className="text-xl font-semibold">Products</h3>
-                <ProductDialog shop={shop} onSave={handleProductSaved} canEdit={canEdit && canManageProducts}>
-                    <Button><PlusCircle className="mr-2 h-4 w-4"/> Add Product</Button>
-                </ProductDialog>
-            </div>
+             <AlertDialog>
+                <div className="flex items-center justify-between">
+                    <h3 className="text-xl font-semibold">Products</h3>
+                    <ProductDialog shop={shop} onComplete={forceRefresh} canEdit={canEdit && canManageProducts}>
+                        <Button><PlusCircle className="mr-2 h-4 w-4"/> Add Product</Button>
+                    </ProductDialog>
+                </div>
 
-            {isLoading ? (
-                <div className="flex justify-center items-center">
-                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                </div>
-            ) : products.length === 0 ? (
-                <Alert>
-                    <ShieldAlert className="h-4 w-4" />
-                    <AlertTitle>No products yet!</AlertTitle>
-                    <AlertDescription>Add your first product to start selling.</AlertDescription>
-                </Alert>
-            ) : (
-                <div className="rounded-md border">
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Image</TableHead>
-                                <TableHead>Name</TableHead>
-                                <TableHead>Price</TableHead>
-                                <TableHead>SKU</TableHead>
-                                <TableHead className="text-right">Actions</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {products.map((product) => (
-                                <TableRow key={product.id}>
-                                    <TableCell>
-                                        {product.imageUrl ? (
-                                            <div className="relative h-12 w-12">
-                                                <Image src={product.imageUrl} alt={product.name} fill className="object-contain" />
-                                            </div>
-                                        ) : (
-                                            <div className="h-12 w-12 rounded-md bg-muted flex items-center justify-center">
-                                                <ImageIcon className="h-6 w-6 text-muted-foreground" />
-                                            </div>
-                                        )}
-                                    </TableCell>
-                                    <TableCell>{product.name}</TableCell>
-                                    <TableCell>${product.price.toFixed(2)}</TableCell>
-                                    <TableCell>{product.sku || '-'}</TableCell>
-                                    <TableCell className="text-right">
-                                        <div className="flex justify-end gap-2">
-                                            <ProductDialog shop={shop} product={product} onSave={handleProductSaved} canEdit={canEdit && canManageProducts}>
-                                                <Button variant="ghost" size="icon">
-                                                    <Edit className="h-4 w-4" />
-                                                </Button>
-                                            </ProductDialog>
-                                            <Button variant="ghost" size="icon">
-                                                <Trash2 className="h-4 w-4" />
-                                            </Button>
-                                        </div>
-                                    </TableCell>
+                {isLoading ? (
+                    <div className="flex justify-center items-center py-10">
+                        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                    </div>
+                ) : products && products.length > 0 ? (
+                    <div className="rounded-md border">
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Image</TableHead>
+                                    <TableHead>Name</TableHead>
+                                    <TableHead>Price</TableHead>
+                                    <TableHead>SKU</TableHead>
+                                    <TableHead className="text-right">Actions</TableHead>
                                 </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
-                </div>
-            )}
+                            </TableHeader>
+                            <TableBody>
+                                {products.map((product) => (
+                                    <TableRow key={product.id}>
+                                        <TableCell>
+                                            {product.imageUrl ? (
+                                                <div className="relative h-12 w-12">
+                                                    <Image src={product.imageUrl} alt={product.name} fill className="object-contain" />
+                                                </div>
+                                            ) : (
+                                                <div className="h-12 w-12 rounded-md bg-muted flex items-center justify-center">
+                                                    <ImageIcon className="h-6 w-6 text-muted-foreground" />
+                                                </div>
+                                            )}
+                                        </TableCell>
+                                        <TableCell>{product.name}</TableCell>
+                                        <TableCell>${product.price.toFixed(2)}</TableCell>
+                                        <TableCell>{product.sku || '-'}</TableCell>
+                                        <TableCell className="text-right">
+                                            <div className="flex justify-end gap-2">
+                                                <ProductDialog shop={shop} product={product} onComplete={forceRefresh} canEdit={canEdit && canManageProducts}>
+                                                    <Button variant="ghost" size="icon">
+                                                        <Edit className="h-4 w-4" />
+                                                    </Button>
+                                                </ProductDialog>
+                                                <AlertDialogTrigger asChild>
+                                                    <Button variant="ghost" size="icon" onClick={() => setProductToDelete(product)} disabled={!canEdit || !canDeleteProducts}>
+                                                        <Trash2 className="h-4 w-4 text-destructive" />
+                                                    </Button>
+                                                </AlertDialogTrigger>
+                                            </div>
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </div>
+                ) : (
+                    <Alert>
+                        <ShoppingCart className="h-4 w-4" />
+                        <AlertTitle>No products yet!</AlertTitle>
+                        <AlertDescription>Add your first product to start selling.</AlertDescription>
+                    </Alert>
+                )}
+                 <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            This will permanently delete the product "{productToDelete?.name}". This action cannot be undone.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel onClick={() => setProductToDelete(null)}>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleDeleteProduct} disabled={isDeleting} variant="destructive">
+                           {isDeleting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : 'Delete'}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }
@@ -684,8 +730,8 @@ function Step3Appearance({ shop, onSave, canEdit }: { shop: any, onSave: (newDat
 
       if (type === 'logo') setUploadingLogo(true);
       if (type === 'cover') setUploadingCover(true);
-      const storageRef = ref(storage, `companies/${shop.companyId}/shops/${shop.id}/${type}/${file.name}`);
-      const uploadTask = uploadBytesResumable(storageRef, file);
+      const storageRefVal = ref(storage, `companies/${shop.companyId}/shops/${shop.id}/${type}/${file.name}`);
+      const uploadTask = uploadBytesResumable(storageRefVal, file);
 
       uploadTask.on('state_changed',
         (snapshot) => {
