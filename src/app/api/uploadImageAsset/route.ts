@@ -27,23 +27,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: 'Missing imageDataUri, folder, or fileName.' }, { status: 400 });
     }
 
-    // --- Definitive Fix ---
-    // Explicitly determine and use the bucket name to resolve the "Bucket not specified" error.
-    const encodedServiceAccount = process.env.FIREBASE_ADMIN_SDK_CONFIG_B64;
-    if (!encodedServiceAccount) {
-      throw new Error('Server configuration error: Firebase service account not found.');
-    }
-    const serviceAccountJson = Buffer.from(encodedServiceAccount, 'base64').toString('utf8');
-    const serviceAccount = JSON.parse(serviceAccountJson);
-    const bucketName = `${serviceAccount.project_id}.appspot.com`;
-
-    if (!bucketName) {
-        throw new Error('Could not determine storage bucket name from service account.');
-    }
-
-    // Get the storage service and explicitly specify the bucket.
-    const bucket = getStorage(app).bucket(bucketName);
-    // --- End of Fix ---
+    // Get the default bucket associated with the initialized Admin App.
+    // This is now configured correctly in `firebase-admin.ts`.
+    const bucket = getStorage(app).bucket();
 
     // Extract content type and base64 data from data URI
     const match = imageDataUri.match(/^data:(image\/\w+);base64,(.*)$/);
@@ -72,6 +58,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: true, url: publicUrl });
   } catch (error: any) {
     console.error('Error in uploadImageAsset:', error);
+    if (error.code === 404 || error.message?.includes('does not exist')) {
+        const helpfulError = `Firebase Storage Error: The bucket was not found. Please ensure that Cloud Storage is enabled for your Firebase project in the Firebase Console.`;
+        return NextResponse.json({ success: false, error: helpfulError }, { status: 500 });
+    }
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 }

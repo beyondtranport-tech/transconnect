@@ -1,6 +1,7 @@
 
 import { initializeApp, getApps, App, cert } from 'firebase-admin/app';
 import type { ServiceAccount } from 'firebase-admin/app';
+import { firebaseConfig } from '@/firebase/config';
 
 const ADMIN_APP_NAME = 'firebase-admin-app-transconnect-studio';
 
@@ -26,8 +27,8 @@ export function getAdminApp(): { app: App | null; error: string | null } {
         throw new Error('Parsed service account is missing essential properties (project_id, client_email, private_key).');
     }
     
-    // Dynamically construct the storage bucket name from the project_id
-    const storageBucket = `${serviceAccount.project_id}.appspot.com`;
+    // Use the storageBucket from the client-side config file. This is the source of truth.
+    const storageBucket = firebaseConfig.storageBucket; 
 
     const app = initializeApp({
       credential: cert(serviceAccount),
