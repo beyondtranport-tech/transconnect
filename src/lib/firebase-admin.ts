@@ -28,6 +28,7 @@ export function getAdminApp(): { app: App | null; error: string | null } {
 
     const app = initializeApp({
       credential: cert(serviceAccount),
+      storageBucket: "transconnect-v1-39578841-2a857.appspot.com",
     }, ADMIN_APP_NAME);
     return { app, error: null };
 
