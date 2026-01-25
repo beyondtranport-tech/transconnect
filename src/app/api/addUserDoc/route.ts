@@ -1,11 +1,31 @@
 
-import { getFirestore, FieldValue, increment } from 'firebase-admin/firestore';
+import { getFirestore, FieldValue, Timestamp } from 'firebase-admin/firestore';
 import { NextRequest, NextResponse } from 'next/server';
 import { headers } from 'next/headers';
 import { getAuth } from 'firebase-admin/auth';
 import { getAdminApp } from '@/lib/firebase-admin';
 
-// Helper function to convert serverTimestamp placeholders
+// Helper to convert server-side values to JSON-serializable strings for logging
+function serializeTimestamps(docData: any): any {
+    if (!docData) return docData;
+    const newDocData: { [key: string]: any } = {};
+    for (const key in docData) {
+        const value = docData[key];
+        if (value instanceof FieldValue) {
+            newDocData[key] = '(FieldValue: serverTimestamp)';
+        } else if (value instanceof Timestamp) {
+            newDocData[key] = value.toDate().toISOString();
+        } else if (value && typeof value === 'object' && !Array.isArray(value)) {
+            newDocData[key] = serializeTimestamps(value);
+        } else {
+            newDocData[key] = value;
+        }
+    }
+    return newDocData;
+}
+
+
+// Helper function to convert serverTimestamp placeholders from client
 function deserializeData(data: any): any {
     if (!data) return data;
     const newData: { [key: string]: any } = {};
@@ -54,27 +74,35 @@ export async function POST(req: NextRequest) {
     let isAuthorized = false;
 
     // Authorization logic
-    if (pathSegments.length >= 2 && pathSegments[0] === 'members' && pathSegments[1] === uid) {
+    const userDocSnap = await db.collection('users').doc(uid).get();
+    const userCompanyId = userDocSnap.data()?.companyId;
+
+    if (pathSegments.length >= 2 && pathSegments[0] === 'companies' && pathSegments[1] === userCompanyId) {
         isAuthorized = true;
-    } else if (pathSegments.length >= 2 && pathSegments[0] === 'companies') {
-        const companyId = pathSegments[1];
-        const userDocSnap = await db.collection('users').doc(uid).get();
-        if (userDocSnap.data()?.companyId === companyId) {
-             isAuthorized = true;
-        }
     }
     
+    // Allow admin to bypass ownership check
     if (!isAuthorized) {
-        return NextResponse.json({ success: false, error: 'Forbidden: You can only add documents to your own subcollections.' }, { status: 403 });
+        const isAdmin = decodedToken.email === 'beyondtransport@gmail.com';
+        if (!isAdmin) {
+          return NextResponse.json({ success: false, error: 'Forbidden: You can only add documents to your own subcollections.' }, { status: 403 });
+        }
     }
 
     const batch = db.batch();
     const collectionRef = db.collection(collectionPath);
     const newDocRef = collectionRef.doc();
+
+    // Add server-side timestamps and ID
     const deserializedData = deserializeData(data);
-    const finalData = { ...deserializedData, id: newDocRef.id };
+    const finalDataForDb = { 
+        ...deserializedData, 
+        id: newDocRef.id,
+        createdAt: FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp(),
+    };
     
-    batch.set(newDocRef, finalData);
+    batch.set(newDocRef, finalDataForDb);
     
     // Check if a product is being added and award points if so
     if (collectionPath.endsWith('/products')) {
@@ -90,11 +118,11 @@ export async function POST(req: NextRequest) {
       collectionPath,
       documentId: newDocRef.id,
       userId: uid,
-      companyId: pathSegments[1], // Assuming companyId is the second segment
+      companyId: userCompanyId || pathSegments[1], // Use user's companyId if available
       action: 'create',
       timestamp: FieldValue.serverTimestamp(),
       before: null,
-      after: finalData
+      after: serializeTimestamps(finalDataForDb) // Use the serialization helper
     });
 
     await batch.commit();
