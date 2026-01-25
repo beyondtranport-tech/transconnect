@@ -1,7 +1,6 @@
 
 import { initializeApp, getApps, App, cert } from 'firebase-admin/app';
 import type { ServiceAccount } from 'firebase-admin/app';
-import { firebaseConfig } from '@/firebase/config';
 
 const ADMIN_APP_NAME = 'firebase-admin-app-transconnect-studio';
 
@@ -27,10 +26,10 @@ export function getAdminApp(): { app: App | null; error: string | null } {
         throw new Error('Parsed service account is missing essential properties (project_id, client_email, private_key).');
     }
     
-    // Explicitly provide the storageBucket during initialization. This is the definitive fix.
+    // Explicitly provide the storageBucket from environment variables during initialization. This is the definitive fix.
     const app = initializeApp({
       credential: cert(serviceAccount),
-      storageBucket: firebaseConfig.storageBucket,
+      storageBucket: process.env.STORAGE_BUCKET,
     }, ADMIN_APP_NAME);
     return { app, error: null };
 
