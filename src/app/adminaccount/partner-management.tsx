@@ -16,6 +16,23 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import {
   Form,
   FormControl,
   FormField,
@@ -23,13 +40,6 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
@@ -37,12 +47,9 @@ import { useCollection, useFirestore, getClientSideAuthToken } from '@/firebase'
 import { collection, query } from 'firebase/firestore';
 import { Loader2, PlusCircle, Handshake, Edit, Trash2, MoreVertical, Send, Copy } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { DataTable } from '@/components/ui/data-table';
-import { type ColumnDef } from '@/hooks/use-data-table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useMemoFirebase } from '@/hooks/use-config';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 async function performAdminAction(token: string, action: string, payload: any) {
     const response = await fetch('/api/admin', {
@@ -160,8 +167,8 @@ function PartnerDialog({ partner, onSave, children }: { partner?: any; onSave: (
 
 function PartnerActions({ partner, onUpdate }: { partner: any, onUpdate: () => void }) {
     const [isAlertOpen, setIsAlertOpen] = useState(false);
-    const [actionToConfirm, setActionToConfirm] = useState<'delete' | null>(null);
     const [isInviteOpen, setIsInviteOpen] = useState(false);
+    const [actionToConfirm, setActionToConfirm] = useState<'delete' | null>(null);
     const [isProcessing, setIsProcessing] = useState(false);
     const { toast } = useToast();
 
@@ -249,60 +256,59 @@ function PartnerActions({ partner, onUpdate }: { partner: any, onUpdate: () => v
 }
 
 export default function PartnerManagement() {
-    const firestore = useFirestore();
-    const partnersQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'partners')) : null, [firestore]);
-    const { data: partners, isLoading, forceRefresh } = useCollection(partnersQuery);
+  const firestore = useFirestore();
+  const partnersQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'partners')) : null, [firestore]);
+  const { data: partners, isLoading, forceRefresh } = useCollection(partnersQuery);
 
-    const columns: ColumnDef<any>[] = useMemo(() => [
-        {
-          accessorKey: 'name',
-          header: 'Name',
-          cell: ({ row }) => <div>{row.original.firstName} {row.original.lastName}</div>
-        },
-        {
-          accessorKey: 'email',
-          header: 'Email',
-          cell: ({ row }) => <div>{row.original.email}</div>
-        },
-        {
-          accessorKey: 'companyName',
-          header: 'Company',
-          cell: ({ row }) => <div>{row.original.companyName}</div>
-        },
-        {
-          accessorKey: 'status',
-          header: 'Status',
-          cell: ({ row }) => <Badge className="capitalize">{row.original.status}</Badge>
-        },
-        {
-          id: 'actions',
-          header: () => <div className="text-right">Actions</div>,
-          cell: ({ row }) => <PartnerActions partner={row.original} onUpdate={forceRefresh} />
-        },
-    ], [forceRefresh]);
-
-    return (
-        <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-                <div>
-                    <CardTitle className="flex items-center gap-2">
-                        <Handshake /> Partner Management
-                    </CardTitle>
-                    <CardDescription>
-                        Manage your strategic ISA Partners and their status within the platform.
-                    </CardDescription>
-                </div>
-                <PartnerDialog onSave={forceRefresh}>
-                    <Button><PlusCircle className="mr-2 h-4 w-4"/>Add Partner</Button>
-                </PartnerDialog>
-            </CardHeader>
-            <CardContent>
-                {isLoading ? (
-                    <div className="flex justify-center items-center py-10"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
-                ) : (
-                    <DataTable columns={columns} data={partners || []} />
-                )}
-            </CardContent>
-        </Card>
-    );
+  return (
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between">
+        <div>
+          <CardTitle className="flex items-center gap-2"><Handshake /> Partner Management</CardTitle>
+          <CardDescription>
+            Manage your strategic ISA Partners.
+          </CardDescription>
+        </div>
+        <PartnerDialog onSave={forceRefresh}>
+          <Button><PlusCircle className="mr-2 h-4 w-4"/>Add Partner</Button>
+        </PartnerDialog>
+      </CardHeader>
+      <CardContent>
+        {isLoading ? (
+          <div className="flex justify-center items-center py-10"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
+        ) : (
+          <div className="rounded-md border">
+            <Table>
+                <TableHeader>
+                    <TableRow>
+                        <TableHead>Name</TableHead>
+                        <TableHead>Email</TableHead>
+                        <TableHead>Company</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                </TableHeader>
+                <TableBody>
+                    {(partners && partners.length > 0) ? partners.map(partner => (
+                        <TableRow key={partner.id}>
+                            <TableCell><div>{partner.firstName} {partner.lastName}</div></TableCell>
+                            <TableCell><div>{partner.email}</div></TableCell>
+                            <TableCell><div>{partner.companyName}</div></TableCell>
+                            <TableCell><Badge className="capitalize">{partner.status}</Badge></TableCell>
+                            <TableCell><PartnerActions partner={partner} onUpdate={forceRefresh} /></TableCell>
+                        </TableRow>
+                    )) : (
+                        <TableRow>
+                            <TableCell colSpan={5} className="h-24 text-center">
+                                No partners found.
+                            </TableCell>
+                        </TableRow>
+                    )}
+                </TableBody>
+            </Table>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
 }
