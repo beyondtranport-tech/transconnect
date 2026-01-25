@@ -12,11 +12,12 @@
         "lastName": { "type": "string" },
         "email": { "type": "string", "format": "email" },
         "phone": { "type": "string" },
-        "companyId": { "type": "string", "description": "The ID of the company this user belongs to in the /companies collection." },
+        "companyId": { "type": ["string", "null"], "description": "The ID of the company this user belongs to in the /companies collection. Null for partners." },
+        "role": { "type": "string", "enum": ["owner", "staff", "partner"], "description": "The user's role in the system." },
         "createdAt": { "type": "object" },
         "updatedAt": { "type": "object" }
       },
-      "required": ["id", "firstName", "lastName", "email", "companyId"]
+      "required": ["id", "firstName", "lastName", "email", "role"]
     },
     "Company": {
       "$schema": "http://json-schema.org/draft-07/schema#",
@@ -47,6 +48,24 @@
       },
       "required": ["id", "ownerId", "companyName", "membershipId"]
     },
+    "Partner": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Partner",
+      "type": "object",
+      "description": "Represents a strategic partner or Independent Sales Agent (ISA) in the system.",
+      "properties": {
+        "id": { "type": "string" },
+        "firstName": { "type": "string" },
+        "lastName": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "companyName": { "type": "string", "description": "The name of the partner's own company." },
+        "status": { "type": "string", "enum": ["active", "inactive"], "description": "The operational status of the partnership." },
+        "invitationStatus": { "type": "string", "enum": ["pending", "invited", "registered"], "description": "The status of their invitation to join the platform." },
+        "createdAt": { "type": "object" },
+        "updatedAt": { "type": "object" }
+      },
+      "required": ["firstName", "lastName", "email"]
+    },
     "Shop": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Shop",
@@ -62,8 +81,6 @@
         "contactEmail": { "type": "string", "format": "email" },
         "contactPhone": { "type": "string" },
         "status": { "type": "string", "enum": ["draft", "pending_review", "approved", "rejected"] },
-        "template": { "type": "string" },
-        "theme": { "type": "string" },
         "metaTitle": { "type": "string" },
         "metaDescription": { "type": "string" },
         "tags": { "type": "array", "items": { "type": "string" } },
@@ -96,7 +113,7 @@
         "description": { "type": "string" },
         "price": { "type": "number" },
         "sku": { "type": "string" },
-        "imageUrl": { "type": "string" },
+        "imageUrls": { "type": "array", "items": { "type": "string" } },
         "createdAt": { "type": "object" },
         "updatedAt": { "type": "object" }
       },
@@ -345,6 +362,14 @@
           "entityName": "Company",
           "schema": { "$ref": "#/entities/Company" },
           "description": "Stores company profiles. The owner of the company has full read/write access."
+        }
+      },
+      {
+        "path": "/partners/{partnerId}",
+        "definition": {
+          "entityName": "Partner",
+          "schema": { "$ref": "#/entities/Partner" },
+          "description": "Admin-managed collection of strategic partners and ISAs."
         }
       },
       {

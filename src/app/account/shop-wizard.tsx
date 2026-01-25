@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
@@ -13,7 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useFirestore, useUser, useStorage, useCollection, getClientSideAuthToken } from '@/firebase';
 import { useMemoFirebase } from '@/hooks/use-config';
 import { doc, collection } from 'firebase/firestore';
-import { ref as storageRef, uploadBytesResumable, getDownloadURL } from "firebase/storage";
+import { ref as storageRef, uploadBytes, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { Loader2, Save, CheckCircle, LayoutGrid, List, Image as ImageIcon, Sparkles, PlusCircle, Edit, Trash2, Send, Eye, ShoppingCart, Mail, Phone, UploadCloud, GalleryHorizontal, Wand2, Video, Search, ShieldAlert } from 'lucide-react';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -356,24 +355,44 @@ function ProductDialog({ shop, product, onComplete, children, canEdit }: { shop:
   };
 
   const onSubmit = async (values: ProductFormValues) => {
-    if (!user || !shop.companyId || !shop.id) return;
+    if (!user || !shop.companyId || !shop.id || !storage) return;
     setIsSaving(true);
     
     try {
         const token = await getClientSideAuthToken();
         if (!token) throw new Error("Authentication token not found.");
 
+        const finalImageUrls: string[] = [];
+        if (values.imageUrls && values.imageUrls.length > 0) {
+            for (const url of values.imageUrls) {
+                if (url.startsWith('data:')) { // Upload new base64 images
+                    const response = await fetch(url);
+                    const blob = await response.blob();
+                    const fileName = `product_${Date.now()}.png`;
+                    const storageRefVal = storageRef(storage, `companies/${shop.companyId}/shops/${shop.id}/products/${fileName}`);
+                    const uploadResult = await uploadBytes(storageRefVal, blob);
+                    const downloadURL = await getDownloadURL(uploadResult.ref);
+                    finalImageUrls.push(downloadURL);
+                } else {
+                    finalImageUrls.push(url); // Keep existing https URLs
+                }
+            }
+        }
+        
+        const dataToSave = {
+            ...values,
+            imageUrls: finalImageUrls,
+        };
+
         const path = product ? `companies/${shop.companyId}/shops/${shop.id}/products/${product.id}` : `companies/${shop.companyId}/shops/${shop.id}/products`;
         
-        const dataToUpdate = {
-            ...values,
-            updatedAt: { _methodName: 'serverTimestamp' },
-        };
         const body = product
-          ? { path, data: dataToUpdate }
-          : { collectionPath: path, data: dataToUpdate };
+          ? { path, data: { ...dataToSave, updatedAt: { _methodName: 'serverTimestamp' } } }
+          : { collectionPath: path, data: dataToSave };
 
-        const response = await fetch(product ? '/api/updateUserDoc' : '/api/addUserDoc', {
+        const apiEndpoint = product ? '/api/updateUserDoc' : '/api/addUserDoc';
+        
+        const response = await fetch(apiEndpoint, {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${token}`,
@@ -575,134 +594,134 @@ function ProductDialog({ shop, product, onComplete, children, canEdit }: { shop:
 
 
 function Step2Products({ shop, canEdit }: { shop: any, canEdit: boolean }) {
-    const firestore = useFirestore();
-    const { toast } = useToast();
-    const [productToDelete, setProductToDelete] = useState<any>(null);
-    const [isDeleting, setIsDeleting] = useState(false);
+  const firestore = useFirestore();
+  const { toast } = useToast();
+  const [productToDelete, setProductToDelete] = useState<any>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
-    const productsQuery = useMemoFirebase(() => {
-        if (!firestore || !shop?.companyId || !shop?.id) return null;
-        return collection(firestore, `companies/${shop.companyId}/shops/${shop.id}/products`);
-    }, [firestore, shop.companyId, shop.id]);
+  const productsQuery = useMemoFirebase(() => {
+    if (!firestore || !shop?.companyId || !shop?.id) return null;
+    return collection(firestore, `companies/${shop.companyId}/shops/${shop.id}/products`);
+  }, [firestore, shop.companyId, shop.id]);
 
-    const { data: products, isLoading, forceRefresh } = useCollection(productsQuery);
-    
-    const { can } = usePermissions();
-    const canManageProducts = can('manage', 'products');
-    const canDeleteProducts = can('delete', 'products');
+  const { data: products, isLoading, forceRefresh } = useCollection(productsQuery);
+  
+  const { can } = usePermissions();
+  const canManageProducts = can('manage', 'products');
+  const canDeleteProducts = can('delete', 'products');
 
-    const handleDeleteProduct = async () => {
-        if (!productToDelete) return;
-        setIsDeleting(true);
-        try {
-            const token = await getClientSideAuthToken();
-            if (!token) throw new Error("Authentication failed.");
-            
-            const response = await fetch('/api/deleteUserDoc', {
-                method: 'POST',
-                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ path: `companies/${shop.companyId}/shops/${shop.id}/products/${productToDelete.id}` }),
-            });
-            
-            if (!response.ok) {
-                const result = await response.json();
-                throw new Error(result.error || 'Failed to delete product.');
-            }
-            
-            toast({ title: "Product Deleted" });
-            forceRefresh();
-        } catch (e: any) {
-            toast({ variant: 'destructive', title: 'Delete Failed', description: e.message });
-        } finally {
-            setIsDeleting(false);
-            setProductToDelete(null);
+  const handleDeleteProduct = async () => {
+    if (!productToDelete) return;
+    setIsDeleting(true);
+    try {
+        const token = await getClientSideAuthToken();
+        if (!token) throw new Error("Authentication failed.");
+        
+        const response = await fetch('/api/deleteUserDoc', {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ path: `companies/${shop.companyId}/shops/${shop.id}/products/${productToDelete.id}` }),
+        });
+        
+        if (!response.ok) {
+            const result = await response.json();
+            throw new Error(result.error || 'Failed to delete product.');
         }
-    };
+        
+        toast({ title: "Product Deleted" });
+        forceRefresh();
+    } catch (e: any) {
+        toast({ variant: 'destructive', title: 'Delete Failed', description: e.message });
+    } finally {
+        setIsDeleting(false);
+        setProductToDelete(null);
+    }
+  };
 
-    return (
-        <div className="space-y-4">
-             <AlertDialog>
-                <div className="flex items-center justify-between">
-                    <h3 className="text-xl font-semibold">Products</h3>
-                    <ProductDialog shop={shop} onComplete={forceRefresh} canEdit={canEdit && canManageProducts}>
-                        <Button><PlusCircle className="mr-2 h-4 w-4"/> Add Product</Button>
-                    </ProductDialog>
-                </div>
+  return (
+    <div className="space-y-4">
+       <AlertDialog>
+          <div className="flex items-center justify-between">
+              <h3 className="text-xl font-semibold">Products</h3>
+              <ProductDialog shop={shop} onComplete={forceRefresh} canEdit={canEdit && canManageProducts}>
+                  <Button><PlusCircle className="mr-2 h-4 w-4"/> Add Product</Button>
+              </ProductDialog>
+          </div>
 
-                {isLoading ? (
-                    <div className="flex justify-center items-center py-10">
-                        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                    </div>
-                ) : products && products.length > 0 ? (
-                    <div className="rounded-md border">
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Image</TableHead>
-                                    <TableHead>Name</TableHead>
-                                    <TableHead>Price</TableHead>
-                                    <TableHead>SKU</TableHead>
-                                    <TableHead className="text-right">Actions</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {products.map((product) => (
-                                    <TableRow key={product.id}>
-                                        <TableCell>
-                                            <div className="relative h-12 w-12 rounded-md bg-muted flex items-center justify-center">
-                                                {(product.imageUrls && product.imageUrls[0]) ? (
-                                                    <Image src={product.imageUrls[0]} alt={product.name} fill className="object-contain" />
-                                                ) : (
-                                                    <ImageIcon className="h-6 w-6 text-muted-foreground" />
-                                                )}
-                                            </div>
-                                        </TableCell>
-                                        <TableCell>{product.name}</TableCell>
-                                        <TableCell>${product.price.toFixed(2)}</TableCell>
-                                        <TableCell>{product.sku || '-'}</TableCell>
-                                        <TableCell className="text-right">
-                                            <div className="flex justify-end gap-2">
-                                                <ProductDialog shop={shop} product={product} onComplete={forceRefresh} canEdit={canEdit && canManageProducts}>
-                                                    <Button variant="ghost" size="icon">
-                                                        <Edit className="h-4 w-4" />
-                                                    </Button>
-                                                </ProductDialog>
-                                                <AlertDialogTrigger asChild>
-                                                    <Button variant="ghost" size="icon" onClick={() => setProductToDelete(product)} disabled={!canEdit || !canDeleteProducts}>
-                                                        <Trash2 className="h-4 w-4 text-destructive" />
-                                                    </Button>
-                                                </AlertDialogTrigger>
-                                            </div>
-                                        </TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    </div>
-                ) : (
-                    <Alert>
-                        <ShoppingCart className="h-4 w-4" />
-                        <AlertTitle>No products yet!</AlertTitle>
-                        <AlertDescription>Add your first product to start selling.</AlertDescription>
-                    </Alert>
-                )}
-                 <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                            This will permanently delete the product "{productToDelete?.name}". This action cannot be undone.
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel onClick={() => setProductToDelete(null)}>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleDeleteProduct} disabled={isDeleting} variant="destructive">
-                           {isDeleting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : 'Delete'}
-                        </AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
-        </div>
-    );
+          {isLoading ? (
+              <div className="flex justify-center items-center py-10">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              </div>
+          ) : products && products.length > 0 ? (
+              <div className="rounded-md border">
+                  <Table>
+                      <TableHeader>
+                          <TableRow>
+                              <TableHead>Image</TableHead>
+                              <TableHead>Name</TableHead>
+                              <TableHead>Price</TableHead>
+                              <TableHead>SKU</TableHead>
+                              <TableHead className="text-right">Actions</TableHead>
+                          </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                          {products.map((product) => (
+                              <TableRow key={product.id}>
+                                  <TableCell>
+                                      <div className="relative h-12 w-12 rounded-md bg-muted flex items-center justify-center">
+                                          {(product.imageUrls && product.imageUrls[0]) ? (
+                                              <Image src={product.imageUrls[0]} alt={product.name} fill className="object-contain" />
+                                          ) : (
+                                              <ImageIcon className="h-6 w-6 text-muted-foreground" />
+                                          )}
+                                      </div>
+                                  </TableCell>
+                                  <TableCell>{product.name}</TableCell>
+                                  <TableCell>${product.price.toFixed(2)}</TableCell>
+                                  <TableCell>{product.sku || '-'}</TableCell>
+                                  <TableCell className="text-right">
+                                      <div className="flex justify-end gap-2">
+                                          <ProductDialog shop={shop} product={product} onComplete={forceRefresh} canEdit={canEdit && canManageProducts}>
+                                              <Button variant="ghost" size="icon">
+                                                  <Edit className="h-4 w-4" />
+                                              </Button>
+                                          </ProductDialog>
+                                          <AlertDialogTrigger asChild>
+                                              <Button variant="ghost" size="icon" onClick={() => setProductToDelete(product)} disabled={!canEdit || !canDeleteProducts}>
+                                                  <Trash2 className="h-4 w-4 text-destructive" />
+                                              </Button>
+                                          </AlertDialogTrigger>
+                                      </div>
+                                  </TableCell>
+                              </TableRow>
+                          ))}
+                      </TableBody>
+                  </Table>
+              </div>
+          ) : (
+              <Alert>
+                  <ShoppingCart className="h-4 w-4" />
+                  <AlertTitle>No products yet!</AlertTitle>
+                  <AlertDescription>Add your first product to start selling.</AlertDescription>
+              </Alert>
+          )}
+           <AlertDialogContent>
+              <AlertDialogHeader>
+                  <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                      This will permanently delete the product "{productToDelete?.name}". This action cannot be undone.
+                  </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                  <AlertDialogCancel onClick={() => setProductToDelete(null)}>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleDeleteProduct} disabled={isDeleting} variant="destructive">
+                     {isDeleting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : 'Delete'}
+                  </AlertDialogAction>
+              </AlertDialogFooter>
+          </AlertDialogContent>
+      </AlertDialog>
+    </div>
+  );
 }
 
 // ====== STEP 3: Appearance ======
@@ -730,13 +749,25 @@ function Step3Appearance({ shop, onSave, canEdit }: { shop: any, onSave: (newDat
   };
   
   const onSubmit = async (values: Step3FormValues) => {
-    if (!user || !shop.companyId) return;
+    if (!user || !shop.companyId || !storage) return;
     setIsSaving(true);
     
     try {
         const token = await getClientSideAuthToken();
         if (!token) throw new Error("Authentication token not found.");
         
+        let finalValues = { ...values };
+
+        if (values.heroBannerUrl && values.heroBannerUrl.startsWith('data:')) {
+            const response = await fetch(values.heroBannerUrl);
+            const blob = await response.blob();
+            const fileName = `hero-banner_${Date.now()}.png`;
+            const storageRefVal = storageRef(storage, `companies/${shop.companyId}/shops/${shop.id}/${fileName}`);
+            const uploadResult = await uploadBytes(storageRefVal, blob);
+            const downloadURL = await getDownloadURL(uploadResult.ref);
+            finalValues.heroBannerUrl = downloadURL;
+        }
+
         const response = await fetch('/api/updateUserDoc', {
             method: 'POST',
             headers: {
@@ -745,7 +776,7 @@ function Step3Appearance({ shop, onSave, canEdit }: { shop: any, onSave: (newDat
             },
             body: JSON.stringify({
                 path: `companies/${shop.companyId}/shops/${shop.id}`,
-                data: { ...values, updatedAt: { _methodName: 'serverTimestamp' } }
+                data: { ...finalValues, updatedAt: { _methodName: 'serverTimestamp' } }
             }),
         });
 
@@ -755,7 +786,7 @@ function Step3Appearance({ shop, onSave, canEdit }: { shop: any, onSave: (newDat
         }
 
         toast({ title: 'Step 3 Saved!', description: 'Your shop appearance details have been updated.' });
-        onSave(values);
+        onSave(finalValues);
     } catch (error: any) {
         toast({ variant: 'destructive', title: 'Update Failed', description: error.message });
     } finally {
@@ -1157,5 +1188,3 @@ export function ShopWizard({ shop: initialShop }: { shop: any }) {
     </div>
   );
 }
-
-    
