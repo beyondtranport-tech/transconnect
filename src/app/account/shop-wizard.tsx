@@ -280,7 +280,7 @@ function AIGenerateDialog({
       const imageResponse = await fetch(generatedImage);
       const blob = await imageResponse.blob();
       const fileName = `generated_${Date.now()}.png`;
-      const path = `generated-images/${user.uid}/assets/${fileName}`;
+      const path = `generated-images/${user.uid}/products/${fileName}`;
       const storageRefVal = storageRef(storage, path);
       
       const uploadResult = await uploadBytes(storageRefVal, blob);
@@ -480,7 +480,7 @@ function ProductDialog({ shop, product, onComplete, children, canEdit }: { shop:
     if (files) {
       uploadFiles();
     }
-  }, [files, storage, user, shop, form, toast]);
+  }, [files, storage, user, form, toast]);
 
 
   return (
