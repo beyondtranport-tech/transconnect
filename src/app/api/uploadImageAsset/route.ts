@@ -27,8 +27,23 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: 'Missing imageDataUri, folder, or fileName.' }, { status: 400 });
     }
 
-    // Get the default bucket configured during app initialization.
-    const bucket = getStorage(app).bucket();
+    // --- Definitive Fix ---
+    // Explicitly determine and use the bucket name to resolve the "Bucket not specified" error.
+    const encodedServiceAccount = process.env.FIREBASE_ADMIN_SDK_CONFIG_B64;
+    if (!encodedServiceAccount) {
+      throw new Error('Server configuration error: Firebase service account not found.');
+    }
+    const serviceAccountJson = Buffer.from(encodedServiceAccount, 'base64').toString('utf8');
+    const serviceAccount = JSON.parse(serviceAccountJson);
+    const bucketName = `${serviceAccount.project_id}.appspot.com`;
+
+    if (!bucketName) {
+        throw new Error('Could not determine storage bucket name from service account.');
+    }
+
+    // Get the storage service and explicitly specify the bucket.
+    const bucket = getStorage(app).bucket(bucketName);
+    // --- End of Fix ---
 
     // Extract content type and base64 data from data URI
     const match = imageDataUri.match(/^data:(image\/\w+);base64,(.*)$/);
