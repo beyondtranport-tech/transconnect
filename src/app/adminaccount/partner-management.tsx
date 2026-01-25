@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -23,6 +23,13 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
@@ -35,7 +42,24 @@ import { type ColumnDef } from '@/hooks/use-data-table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useMemoFirebase } from '@/hooks/use-config';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+
+
+async function performAdminAction(token: string, action: string, payload: any) {
+    const response = await fetch('/api/admin', {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ action, payload }),
+    });
+
+    const result = await response.json();
+    if (!response.ok || !result.success) {
+        throw new Error(result.error || `API Error for action: ${action}`);
+    }
+    return result;
+}
 
 const partnerSchema = z.object({
   firstName: z.string().min(1, 'First name is required'),
@@ -62,6 +86,20 @@ function PartnerDialog({ partner, onSave, children }: { partner?: any; onSave: (
         status: 'active',
     },
   });
+
+   useEffect(() => {
+    if (isOpen && partner) {
+      form.reset(partner);
+    } else if (isOpen && !partner) {
+      form.reset({
+        firstName: '',
+        lastName: '',
+        email: '',
+        companyName: '',
+        status: 'active',
+      });
+    }
+  }, [isOpen, partner, form]);
 
   const onSubmit = async (values: PartnerFormValues) => {
     setIsLoading(true);
@@ -120,118 +158,126 @@ function PartnerDialog({ partner, onSave, children }: { partner?: any; onSave: (
   );
 }
 
-
-export default function PartnerManagement() {
-    const firestore = useFirestore();
-    const partnersQuery = useMemoFirebase(() => {
-        if (!firestore) return null;
-        return query(collection(firestore, 'partners'));
-    }, [firestore]);
-    const { data: partners, isLoading, forceRefresh } = useCollection(partnersQuery);
+function PartnerActions({ partner, onUpdate }: { partner: any, onUpdate: () => void }) {
+    const [isAlertOpen, setIsAlertOpen] = useState(false);
+    const [actionToConfirm, setActionToConfirm] = useState<'delete' | null>(null);
+    const [isInviteOpen, setIsInviteOpen] = useState(false);
+    const [isProcessing, setIsProcessing] = useState(false);
     const { toast } = useToast();
 
-    const handleDelete = async (partnerId: string) => {
+    const inviteLink = (typeof window !== 'undefined') ? `${window.location.origin}/join?email=${encodeURIComponent(partner.email)}` : '';
+
+    const copyInviteLink = () => {
+        navigator.clipboard.writeText(inviteLink);
+        toast({ title: 'Invite Link Copied!' });
+    };
+
+    const handleDelete = async () => {
+        if (actionToConfirm !== 'delete') return;
+
+        setIsProcessing(true);
         try {
             const token = await getClientSideAuthToken();
             if (!token) throw new Error("Authentication failed.");
-            
-            const response = await fetch('/api/admin', {
-                method: 'POST',
-                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action: 'deletePartner', payload: { partnerId } }),
-            });
-            if (!response.ok) throw new Error((await response.json()).error || 'Failed to delete partner.');
-            
+            await performAdminAction(token, 'deletePartner', { partnerId: partner.id });
             toast({ title: 'Partner Deleted' });
-            forceRefresh();
-        } catch(e: any) {
+            onUpdate();
+        } catch (e: any) {
             toast({ variant: 'destructive', title: 'Delete Failed', description: e.message });
+        } finally {
+            setIsProcessing(false);
+            setIsAlertOpen(false);
         }
     };
-    
-    const columns: ColumnDef<any>[] = useMemo(() => [
-        { 
-            accessorKey: 'name', 
-            header: 'Name',
-            cell: ({row}) => <div>{row.original.firstName} {row.original.lastName}</div>
-        },
-        { accessorKey: 'email', header: 'Email', cell: ({row}) => <div>{row.original.email}</div> },
-        { accessorKey: 'companyName', header: 'Company', cell: ({row}) => <div>{row.original.companyName}</div> },
-        { accessorKey: 'status', header: 'Status', cell: ({row}) => <Badge className="capitalize">{row.original.status}</Badge>},
-        { 
-            id: 'actions', 
-            header: () => <div className="text-right">Actions</div>, 
-            cell: ({ row }) => {
-                const partner = row.original;
-                const [isAlertOpen, setIsAlertOpen] = useState(false);
-                const [isInviteOpen, setIsInviteOpen] = useState(false);
-                const { toast } = useToast();
 
-                // This check is important to prevent errors on the server during pre-rendering.
-                const inviteLink = (typeof window !== 'undefined') ? `${window.location.origin}/join?email=${encodeURIComponent(partner.email)}` : '';
-
-                const copyInviteLink = () => {
-                    navigator.clipboard.writeText(inviteLink);
-                    toast({ title: 'Invite Link Copied!' });
-                };
-
-                return (
-                    <div className="text-right">
-                         <Dialog open={isInviteOpen} onOpenChange={setIsInviteOpen}>
-                            <DialogContent>
-                                <DialogHeader>
-                                    <DialogTitle>Invite {partner.firstName}</DialogTitle>
-                                    <DialogDescription>
-                                        Send this unique sign-up link to the partner. They must use this email to register.
-                                    </DialogDescription>
-                                </DialogHeader>
-                                <div className="py-4 space-y-2">
-                                    <Input value={inviteLink} readOnly />
-                                    <Button onClick={copyInviteLink} className="w-full">
-                                        <Copy className="mr-2 h-4 w-4" /> Copy Link
-                                    </Button>
-                                </div>
-                                <DialogFooter>
-                                    <Button onClick={() => setIsInviteOpen(false)}>Done</Button>
-                                </DialogFooter>
-                            </DialogContent>
-                        </Dialog>
-                        <AlertDialog open={isAlertOpen} onOpenChange={setIsAlertOpen}>
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <Button variant="ghost" size="icon">
-                                        <MoreVertical className="h-4 w-4" />
-                                    </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                    <DropdownMenuItem onSelect={() => setIsInviteOpen(true)}>
-                                        <Send className="mr-2 h-4 w-4" /> Invite Partner
-                                    </DropdownMenuItem>
-                                     <PartnerDialog partner={partner} onSave={forceRefresh}>
-                                        <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                                            <Edit className="mr-2 h-4 w-4" /> Edit
-                                        </DropdownMenuItem>
-                                    </PartnerDialog>
-                                    <DropdownMenuSeparator />
-                                    <DropdownMenuItem className="text-destructive" onSelect={() => setIsAlertOpen(true)}>
-                                        <Trash2 className="mr-2 h-4 w-4" /> Delete
-                                    </DropdownMenuItem>
-                                </DropdownMenuContent>
-                            </DropdownMenu>
-                            <AlertDialogContent>
-                                <AlertDialogHeader>
-                                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                                    <AlertDialogDescription>This will permanently delete this partner.</AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                    <AlertDialogAction onClick={() => handleDelete(partner.id)} variant="destructive">Delete</AlertDialogAction>
-                                </AlertDialogFooter>
-                            </AlertDialogContent>
-                        </AlertDialog>
+    return (
+        <div className="text-right">
+            <Dialog open={isInviteOpen} onOpenChange={setIsInviteOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Invite {partner.firstName}</DialogTitle>
+                        <DialogDescription>
+                            Send this unique sign-up link to the partner. They must use this email to register.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="py-4 space-y-2">
+                        <Input value={inviteLink} readOnly />
+                        <Button onClick={copyInviteLink} className="w-full">
+                            <Copy className="mr-2 h-4 w-4" /> Copy Link
+                        </Button>
                     </div>
-                )
-            }
+                    <DialogFooter>
+                        <Button onClick={() => setIsInviteOpen(false)}>Done</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+            <AlertDialog open={isAlertOpen} onOpenChange={setIsAlertOpen}>
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" disabled={isProcessing}>
+                            {isProcessing ? <Loader2 className="h-4 w-4 animate-spin" /> : <MoreVertical className="h-4 w-4" />}
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                        <DropdownMenuItem onSelect={() => setIsInviteOpen(true)}>
+                            <Send className="mr-2 h-4 w-4" /> Invite Partner
+                        </DropdownMenuItem>
+                        <PartnerDialog partner={partner} onSave={onUpdate}>
+                            <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                                <Edit className="mr-2 h-4 w-4" /> Edit
+                            </DropdownMenuItem>
+                        </PartnerDialog>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem className="text-destructive" onSelect={() => { setActionToConfirm('delete'); setIsAlertOpen(true); }}>
+                            <Trash2 className="mr-2 h-4 w-4" /> Delete
+                        </DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                        <AlertDialogDescription>This will permanently delete this partner.</AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleDelete} variant="destructive">Delete</AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+        </div>
+    );
+}
+
+export default function PartnerManagement() {
+    const firestore = useFirestore();
+    const partnersQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'partners')) : null, [firestore]);
+    const { data: partners, isLoading, forceRefresh } = useCollection(partnersQuery);
+
+    const columns: ColumnDef<any>[] = useMemo(() => [
+        {
+          accessorKey: 'name',
+          header: 'Name',
+          cell: ({ row }) => <div>{row.original.firstName} {row.original.lastName}</div>
+        },
+        {
+          accessorKey: 'email',
+          header: 'Email',
+          cell: ({ row }) => <div>{row.original.email}</div>
+        },
+        {
+          accessorKey: 'companyName',
+          header: 'Company',
+          cell: ({ row }) => <div>{row.original.companyName}</div>
+        },
+        {
+          accessorKey: 'status',
+          header: 'Status',
+          cell: ({ row }) => <Badge className="capitalize">{row.original.status}</Badge>
+        },
+        {
+          id: 'actions',
+          header: () => <div className="text-right">Actions</div>,
+          cell: ({ row }) => <PartnerActions partner={row.original} onUpdate={forceRefresh} />
         },
     ], [forceRefresh]);
 
