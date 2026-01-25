@@ -27,12 +27,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: 'Missing imageDataUri, folder, or fileName.' }, { status: 400 });
     }
     
-    // Explicitly get the bucket name from environment variables to ensure it's always correct.
-    const bucketName = process.env.STORAGE_BUCKET;
-    if (!bucketName) {
-      throw new Error('Firebase Storage Error: The STORAGE_BUCKET environment variable is not configured on the server.');
-    }
-    const bucket = getStorage(app).bucket(bucketName);
+    // Get the default bucket associated with the initialized admin app.
+    // This is the most reliable method.
+    const bucket = getStorage(app).bucket();
 
     // Extract content type and base64 data from data URI
     const match = imageDataUri.match(/^data:(.+);base64,(.*)$/);
