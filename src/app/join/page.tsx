@@ -65,21 +65,11 @@ function JoinFormComponent() {
     defaultValues: {
       firstName: '',
       lastName: '',
-      email: '',
+      email: emailParam || '',
       phone: '',
       password: '',
     },
   });
-
-  useEffect(() => {
-    // This effect now handles both setting the email from the URL param
-    // and explicitly clearing it if the param is not present, which helps
-    // override aggressive browser autofill.
-    form.reset({
-      ...form.getValues(), // Preserve other fields a user might have typed
-      email: emailParam || '', // Set to param value or fall back to an empty string
-    });
-  }, [emailParam, form]);
 
   const handlePasswordReset = async () => {
     const email = form.getValues('email');
