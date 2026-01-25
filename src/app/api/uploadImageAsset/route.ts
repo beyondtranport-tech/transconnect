@@ -28,8 +28,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: 'Missing imageDataUri, folder, or fileName.' }, { status: 400 });
     }
     
-    // Explicitly specify the bucket name from the config. This is the definitive fix.
-    const bucket = getStorage(app).bucket(firebaseConfig.storageBucket);
+    // With the Admin SDK properly initialized, we can get the default bucket.
+    const bucket = getStorage(app).bucket();
 
     // Extract content type and base64 data from data URI
     const match = imageDataUri.match(/^data:(.+);base64,(.*)$/);

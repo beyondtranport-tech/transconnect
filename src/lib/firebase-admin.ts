@@ -27,8 +27,10 @@ export function getAdminApp(): { app: App | null; error: string | null } {
         throw new Error('Parsed service account is missing essential properties (project_id, client_email, private_key).');
     }
     
+    // Explicitly provide the storageBucket during initialization. This is the definitive fix.
     const app = initializeApp({
       credential: cert(serviceAccount),
+      storageBucket: firebaseConfig.storageBucket,
     }, ADMIN_APP_NAME);
     return { app, error: null };
 
