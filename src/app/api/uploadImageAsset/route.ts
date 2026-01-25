@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getAdminApp } from '@/lib/firebase-admin';
 import { getStorage } from 'firebase-admin/storage';
 import { getAuth } from 'firebase-admin/auth';
+import { firebaseConfig } from '@/firebase/config';
 
 export async function POST(req: NextRequest) {
   const { app, error: initError } = getAdminApp();
@@ -26,10 +27,9 @@ export async function POST(req: NextRequest) {
     if (!imageDataUri || !folder || !fileName) {
       return NextResponse.json({ success: false, error: 'Missing imageDataUri, folder, or fileName.' }, { status: 400 });
     }
-
-    // Get the default bucket associated with the initialized Admin App.
-    // This is now configured correctly in `firebase-admin.ts`.
-    const bucket = getStorage(app).bucket();
+    
+    // Explicitly specify the bucket name to resolve initialization issues.
+    const bucket = getStorage(app).bucket(firebaseConfig.storageBucket);
 
     // Extract content type and base64 data from data URI
     const match = imageDataUri.match(/^data:(image\/\w+);base64,(.*)$/);
