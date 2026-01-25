@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -27,8 +26,8 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { useCollection, useFirestore, getClientSideAuthToken } from '@/firebase';
-import { collection, query, collectionGroup } from 'firebase/firestore';
-import { Loader2, PlusCircle, UserPlus, Users } from 'lucide-react';
+import { collection, query, collectionGroup, where } from 'firebase/firestore';
+import { Loader2, PlusCircle, UserPlus, Handshake } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import StaffActionMenu from '../backend/staff-action-menu';
 import { DataTable } from '@/components/ui/data-table';
@@ -36,24 +35,20 @@ import { type ColumnDef } from '@/hooks/use-data-table';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useMemoFirebase } from '@/hooks/use-config';
-import { useRouter } from 'next/navigation';
 
-// Updated schema to include companyId
-const staffFormSchema = z.object({
+const partnerFormSchema = z.object({
   firstName: z.string().min(1, 'First name is required'),
   lastName: z.string().min(1, 'Last name is required'),
   email: z.string().email('Invalid email address'),
   title: z.string().min(1, 'Title is required'),
-  role: z.string().min(1, 'Role is required'),
   function: z.string().min(1, 'Function is required'),
   jobDescription: z.string().optional(),
   companyId: z.string().min(1, 'You must select a company.'),
 });
 
+type PartnerFormValues = z.infer<typeof partnerFormSchema>;
 
-type StaffFormValues = z.infer<typeof staffFormSchema>;
-
-function AddStaffDialog({ onStaffAdded, canCreate }: { onStaffAdded: () => void, canCreate: boolean }) {
+function AddPartnerDialog({ onPartnerAdded }: { onPartnerAdded: () => void }) {
   const [isOpen, setIsOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [inviteStep, setInviteStep] = useState(false);
@@ -64,36 +59,29 @@ function AddStaffDialog({ onStaffAdded, canCreate }: { onStaffAdded: () => void,
   const companiesQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'companies')) : null, [firestore]);
   const { data: companies, isLoading: areCompaniesLoading } = useCollection(companiesQuery);
 
-  const form = useForm<StaffFormValues>({
-    resolver: zodResolver(staffFormSchema),
+  const form = useForm<PartnerFormValues>({
+    resolver: zodResolver(partnerFormSchema),
     defaultValues: {
       companyId: '',
       firstName: '',
       lastName: '',
       email: '',
-      title: '',
-      role: '',
+      title: 'Partner',
       function: '',
       jobDescription: '',
     },
   });
 
-  const onSubmit = async (values: StaffFormValues) => {
+  const onSubmit = async (values: PartnerFormValues) => {
     setIsSubmitting(true);
     
     try {
       const token = await getClientSideAuthToken();
       if (!token) throw new Error("Authentication token not found.");
       
-      const staffData = {
-        firstName: values.firstName,
-        lastName: values.lastName,
-        email: values.email,
-        title: values.title,
-        role: values.role,
-        function: values.function,
-        jobDescription: values.jobDescription,
-        companyId: values.companyId,
+      const partnerData = {
+        ...values,
+        role: 'partner', // Hardcode the role to 'partner'
         status: 'unconfirmed',
         createdAt: { _methodName: 'serverTimestamp' },
       };
@@ -106,23 +94,23 @@ function AddStaffDialog({ onStaffAdded, canCreate }: { onStaffAdded: () => void,
         },
         body: JSON.stringify({
             collectionPath: `companies/${values.companyId}/staff`, 
-            data: staffData
+            data: partnerData
         }),
       });
       
       const result = await response.json();
       if (!response.ok) {
-        throw new Error(result.error || 'Failed to add staff member.');
+        throw new Error(result.error || 'Failed to add partner.');
       }
 
       toast({
-        title: 'Staff Profile Created',
+        title: 'Partner Profile Created',
         description: `A profile for ${values.firstName} has been created.`,
       });
       
       setNewUserEmail(values.email);
       setInviteStep(true);
-      onStaffAdded();
+      onPartnerAdded();
     } catch (error: any) {
       toast({
         variant: 'destructive',
@@ -148,24 +136,24 @@ function AddStaffDialog({ onStaffAdded, canCreate }: { onStaffAdded: () => void,
     navigator.clipboard.writeText(signupUrl);
     toast({
         title: 'Sign-up Link Copied!',
-        description: 'You can now send the link to the new staff member.'
+        description: 'You can now send the link to the new partner.'
     });
   }
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogTrigger asChild>
-        <Button disabled={!canCreate}>
-          <PlusCircle className="mr-2 h-4 w-4" /> Add Staff/Partner
+        <Button>
+          <PlusCircle className="mr-2 h-4 w-4" /> Add Partner
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[625px]">
          {inviteStep ? (
             <>
                 <DialogHeader>
-                    <DialogTitle>Step 2: Invite Your Staff Member</DialogTitle>
+                    <DialogTitle>Step 2: Invite Your Partner</DialogTitle>
                     <DialogDescription>
-                        The staff profile has been created. Now, instruct the user to sign up for their own account.
+                        The partner profile has been created. Now, instruct the user to sign up for their own account.
                     </DialogDescription>
                 </DialogHeader>
                 <div className="py-4 space-y-4">
@@ -179,9 +167,9 @@ function AddStaffDialog({ onStaffAdded, canCreate }: { onStaffAdded: () => void,
          ) : (
             <>
                 <DialogHeader>
-                <DialogTitle>Add New Staff Member or Partner</DialogTitle>
+                <DialogTitle>Add New Strategic Partner</DialogTitle>
                 <DialogDescription>
-                    Enter the details of the new person and select the company they belong to.
+                    Enter the details of the new partner and select the company they belong to.
                 </DialogDescription>
                 </DialogHeader>
                 <Form {...form}>
@@ -221,35 +209,13 @@ function AddStaffDialog({ onStaffAdded, canCreate }: { onStaffAdded: () => void,
                     <FormField control={form.control} name="email" render={({ field }) => (
                         <FormItem><FormLabel>Email</FormLabel><FormControl><Input placeholder="john.doe@example.com" {...field} /></FormControl><FormMessage /></FormItem>
                     )} />
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <FormField control={form.control} name="title" render={({ field }) => (
-                        <FormItem><FormLabel>Title</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select a title" /></SelectTrigger></FormControl><SelectContent>
-                            <SelectItem value="Executive Director">Executive Director</SelectItem>
-                            <SelectItem value="Non-Executive Director">Non-Executive Director</SelectItem>
-                            <SelectItem value="Manager">Manager</SelectItem>
-                            <SelectItem value="Admin">Admin</SelectItem>
-                        </SelectContent></Select><FormMessage /></FormItem>
-                    )} />
-                    <FormField control={form.control} name="role" render={({ field }) => (
-                        <FormItem><FormLabel>Role</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select a role" /></SelectTrigger></FormControl><SelectContent>
-                            <SelectItem value="operations">Operations</SelectItem>
-                            <SelectItem value="marketing">Marketing</SelectItem>
-                            <SelectItem value="IT">IT</SelectItem>
-                            <SelectItem value="logistics">Logistics</SelectItem>
-                            <SelectItem value="store">Store</SelectItem>
-                            <SelectItem value="sales">Sales</SelectItem>
-                        </SelectContent></Select><FormMessage /></FormItem>
-                    )} />
-                    <FormField control={form.control} name="function" render={({ field }) => (
-                        <FormItem><FormLabel>Function</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select a function" /></SelectTrigger></FormControl><SelectContent>
-                            <SelectItem value="Set Policy">Set Policy</SelectItem>
-                            <SelectItem value="Manage Staff">Manage Staff</SelectItem>
-                            <SelectItem value="Set Budgets">Set Budgets</SelectItem>
-                            <SelectItem value="Ensure Implementation">Ensure Implementation</SelectItem>
-                            <SelectItem value="Monitor Deliverables">Monitor Deliverables</SelectItem>
-                            <SelectItem value="Ensure Compliance">Ensure Compliance</SelectItem>
-                        </SelectContent></Select><FormMessage /></FormItem>
-                    )} />
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <FormField control={form.control} name="title" render={({ field }) => (
+                            <FormItem><FormLabel>Title</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                        )} />
+                        <FormField control={form.control} name="function" render={({ field }) => (
+                            <FormItem><FormLabel>Function</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                        )} />
                     </div>
                     <FormField control={form.control} name="jobDescription" render={({ field }) => (
                         <FormItem><FormLabel>Job Description (Optional)</FormLabel><FormControl><Textarea placeholder="Describe responsibilities..." {...field} /></FormControl><FormMessage /></FormItem>
@@ -257,7 +223,7 @@ function AddStaffDialog({ onStaffAdded, canCreate }: { onStaffAdded: () => void,
                     <DialogFooter>
                     <Button type="submit" disabled={isSubmitting}>
                         {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UserPlus className="mr-2 h-4 w-4" />}
-                        Create Staff Profile
+                        Create Partner Profile
                     </Button>
                     </DialogFooter>
                 </form>
@@ -271,6 +237,7 @@ function AddStaffDialog({ onStaffAdded, canCreate }: { onStaffAdded: () => void,
 
 interface StaffMember {
     id: string;
+    docId: string;
     firstName: string;
     lastName: string;
     email: string;
@@ -289,7 +256,7 @@ interface Company {
 export default function PartnerManagement() {
     const firestore = useFirestore();
 
-    const staffQuery = useMemoFirebase(() => firestore ? query(collectionGroup(firestore, 'staff')) : null, [firestore]);
+    const staffQuery = useMemoFirebase(() => firestore ? query(collectionGroup(firestore, 'staff'), where('role', '==', 'partner')) : null, [firestore]);
     const { data: staff, isLoading: isStaffLoading, forceRefresh } = useCollection<StaffMember>(staffQuery);
 
     const companiesQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'companies')) : null, [firestore]);
@@ -303,8 +270,8 @@ export default function PartnerManagement() {
         
         return staff.map(s => ({
             ...s,
-            docId: s.id, // Preserve the original document ID
-            id: `${s.companyId}-${s.id}`, // Create a unique ID for the row to prevent key conflicts
+            docId: s.id,
+            id: `${s.companyId}-${s.id}`,
             companyName: companyMap.get(s.companyId) || 'Unknown Company',
         }));
     }, [staff, companies]);
@@ -360,13 +327,13 @@ export default function PartnerManagement() {
             <CardHeader className="flex flex-row items-center justify-between">
                 <div>
                     <CardTitle className="flex items-center gap-2">
-                        <Users /> Partner & Staff Management
+                        <Handshake /> Partner Management
                     </CardTitle>
                     <CardDescription>
-                        A consolidated view of all staff and partners across all member companies.
+                        A dedicated view for managing your strategic ISA Partners across all member companies.
                     </CardDescription>
                 </div>
-                <AddStaffDialog onStaffAdded={forceRefresh} canCreate={true} />
+                <AddPartnerDialog onPartnerAdded={forceRefresh} />
             </CardHeader>
             <CardContent>
                 {isLoading ? (
