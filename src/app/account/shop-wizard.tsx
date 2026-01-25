@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
@@ -494,6 +495,7 @@ function ProductDialog({ shop, product, onComplete, children, canEdit }: { shop:
                 </div>
             </fieldset>
             <DialogFooter className="sm:justify-between">
+                 <Button type="button" variant="outline" onClick={() => setIsOpen(false)}>Cancel</Button>
                  <Button type="submit" disabled={isSaving || uploading || !canEdit}>
                     {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                     {product ? 'Update Product' : 'Create Product'}
@@ -928,11 +930,15 @@ function Step5ReviewAndSubmit({ shop, canEdit }: { shop: any, canEdit: boolean }
 export function ShopWizard({ shop }: { shop: any }) {
   const [activeStep, setActiveStep] = useState(1);
   const [shopData, setShopData] = useState(shop);
-  const { hasPermission } = usePermissions();
+  const { can } = usePermissions();
 
   const canEdit = useMemo(() => {
-      return shop.status === 'draft' || shop.status === 'rejected';
-  }, [shop.status]);
+      // Check if the user has general edit permissions for the shop resource
+      const hasPermission = can('edit', 'shop');
+      // Also check if the shop is in a state that allows editing
+      const isEditableStatus = shop.status === 'draft' || shop.status === 'rejected';
+      return hasPermission && isEditableStatus;
+  }, [shop.status, can]);
 
   const handleNext = () => {
     setActiveStep((step) => step + 1);

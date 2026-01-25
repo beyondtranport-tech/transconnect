@@ -65,26 +65,20 @@ export function usePermissions() {
     const permissions = useMemo(() => {
         if (!userData) return new Set<string>();
 
-        // The user is the account owner if their UID matches the ownerId on their company document.
-        const isOwner = user?.uid === userData?.companyId;
+        const isOwner = userData.role === 'owner';
 
         // Grant full permissions if the user is the admin or the company owner.
         if (isAdmin || isOwner) {
             return new Set<string>(['manage:all']);
         }
         
-        // Grant shop creation permissions if the user is part of a company
-        if (userData.companyId) {
-             return new Set<string>(['create:shop', 'edit:shop', 'view:shop']);
-        }
-
         // Staff members' permissions are loaded from their document for more granular control
         if (userData.role === 'staff' && staffData?.permissions) {
             return new Set<string>(staffData.permissions);
         }
 
         return new Set<string>();
-    }, [userData, staffData, isAdmin, user]);
+    }, [userData, staffData, isAdmin]);
 
     const can = (action: Action, resource: Resource) => {
         if (!userData) return false;
