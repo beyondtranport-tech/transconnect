@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
@@ -890,8 +889,8 @@ function Step4SocialLinks({ shop, onSave, canEdit }: { shop: any, onSave: (newDa
             }),
         });
 
-        const result = await response.json();
         if (!response.ok) {
+          const result = await response.json();
           throw new Error(result.error || 'Failed to update shop.');
         }
 

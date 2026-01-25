@@ -12,31 +12,29 @@ import { ai } from '@/ai/genkit';
 import { ImageEditInputSchema, ImageEditOutputSchema, type ImageEditInput, type ImageEditOutput } from '@/ai/schemas';
 
 export async function imageEdit(input: ImageEditInput): Promise<ImageEditOutput> {
-  return imageEditFlow(input);
+  const { media } = await ai.generate({
+    model: 'googleai/gemini-1.5-pro-latest',
+    prompt: [
+      { media: { url: input.photoDataUri } },
+      { text: input.prompt },
+    ],
+    config: {
+      responseModalities: ['TEXT', 'IMAGE'],
+    },
+  });
+
+  if (!media?.url) {
+    throw new Error('Image generation failed to return an image.');
+  }
+  
+  return { enhancedImageDataUri: media.url };
 }
 
-const imageEditFlow = ai.defineFlow(
+ai.defineFlow(
   {
     name: 'imageEditFlow',
     inputSchema: ImageEditInputSchema,
     outputSchema: ImageEditOutputSchema,
   },
-  async (input) => {
-    const { media } = await ai.generate({
-      model: 'googleai/gemini-1.5-pro-latest',
-      prompt: [
-        { media: { url: input.photoDataUri } },
-        { text: input.prompt },
-      ],
-      config: {
-        responseModalities: ['TEXT', 'IMAGE'],
-      },
-    });
-
-    if (!media?.url) {
-      throw new Error('Image generation failed to return an image.');
-    }
-    
-    return { enhancedImageDataUri: media.url };
-  }
+  imageEdit
 );
