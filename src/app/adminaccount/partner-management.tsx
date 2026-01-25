@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -28,14 +28,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useToast } from '@/hooks/use-toast';
 import { useCollection, useFirestore, getClientSideAuthToken } from '@/firebase';
 import { collection, query } from 'firebase/firestore';
-import { Loader2, PlusCircle, UserPlus, Handshake, Edit, Trash2 } from 'lucide-react';
+import { Loader2, PlusCircle, Handshake, Edit, Trash2, MoreVertical, Send, Copy } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
-import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useMemoFirebase } from '@/hooks/use-config';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
 const partnerSchema = z.object({
   firstName: z.string().min(1, 'First name is required'),
@@ -62,18 +62,6 @@ function PartnerDialog({ partner, onSave, children }: { partner?: any; onSave: (
         status: 'active',
     },
   });
-
-  useEffect(() => {
-    if (isOpen) {
-      form.reset(partner || {
-        firstName: '',
-        lastName: '',
-        email: '',
-        companyName: '',
-        status: 'active',
-      });
-    }
-  }, [isOpen, partner, form]);
 
   const onSubmit = async (values: PartnerFormValues) => {
     setIsLoading(true);
@@ -135,7 +123,10 @@ function PartnerDialog({ partner, onSave, children }: { partner?: any; onSave: (
 
 export default function PartnerManagement() {
     const firestore = useFirestore();
-    const partnersQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'partners')) : null, [firestore]);
+    const partnersQuery = useMemoFirebase(() => {
+        if (!firestore) return null;
+        return query(collection(firestore, 'partners'));
+    }, [firestore]);
     const { data: partners, isLoading, forceRefresh } = useCollection(partnersQuery);
     const { toast } = useToast();
 
@@ -159,23 +150,89 @@ export default function PartnerManagement() {
     };
     
     const columns: ColumnDef<any>[] = useMemo(() => [
-        { accessorKey: 'firstName', header: 'First Name', cell: ({ row }) => <div>{row.original.firstName}</div> },
-        { accessorKey: 'lastName', header: 'Last Name', cell: ({ row }) => <div>{row.original.lastName}</div> },
-        { accessorKey: 'email', header: 'Email', cell: ({ row }) => <div>{row.original.email}</div> },
-        { accessorKey: 'companyName', header: 'Company', cell: ({ row }) => <div>{row.original.companyName}</div> },
+        { 
+            accessorKey: 'name', 
+            header: 'Name',
+            cell: ({row}) => <div>{row.original.firstName} {row.original.lastName}</div>
+        },
+        { accessorKey: 'email', header: 'Email', cell: ({row}) => <div>{row.original.email}</div> },
+        { accessorKey: 'companyName', header: 'Company', cell: ({row}) => <div>{row.original.companyName}</div> },
         { accessorKey: 'status', header: 'Status', cell: ({row}) => <Badge className="capitalize">{row.original.status}</Badge>},
-        { id: 'actions', header: () => <div className="text-right">Actions</div>, cell: ({row}) => (
-            <div className="text-right flex items-center justify-end">
-                <PartnerDialog partner={row.original} onSave={forceRefresh}><Button variant="ghost" size="icon"><Edit className="h-4 w-4" /></Button></PartnerDialog>
-                <AlertDialog>
-                    <AlertDialogTrigger asChild><Button variant="ghost" size="icon"><Trash2 className="h-4 w-4 text-destructive" /></Button></AlertDialogTrigger>
-                    <AlertDialogContent>
-                        <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>This will permanently delete this partner.</AlertDialogDescription></AlertDialogHeader>
-                        <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => handleDelete(row.original.id)} variant="destructive">Delete</AlertDialogAction></AlertDialogFooter>
-                    </AlertDialogContent>
-                </AlertDialog>
-            </div>
-        )},
+        { 
+            id: 'actions', 
+            header: () => <div className="text-right">Actions</div>, 
+            cell: ({ row }) => {
+                const partner = row.original;
+                const [isAlertOpen, setIsAlertOpen] = useState(false);
+                const [isInviteOpen, setIsInviteOpen] = useState(false);
+                const { toast } = useToast();
+
+                // This check is important to prevent errors on the server during pre-rendering.
+                const inviteLink = (typeof window !== 'undefined') ? `${window.location.origin}/join?email=${encodeURIComponent(partner.email)}` : '';
+
+                const copyInviteLink = () => {
+                    navigator.clipboard.writeText(inviteLink);
+                    toast({ title: 'Invite Link Copied!' });
+                };
+
+                return (
+                    <div className="text-right">
+                         <Dialog open={isInviteOpen} onOpenChange={setIsInviteOpen}>
+                            <DialogContent>
+                                <DialogHeader>
+                                    <DialogTitle>Invite {partner.firstName}</DialogTitle>
+                                    <DialogDescription>
+                                        Send this unique sign-up link to the partner. They must use this email to register.
+                                    </DialogDescription>
+                                </DialogHeader>
+                                <div className="py-4 space-y-2">
+                                    <Input value={inviteLink} readOnly />
+                                    <Button onClick={copyInviteLink} className="w-full">
+                                        <Copy className="mr-2 h-4 w-4" /> Copy Link
+                                    </Button>
+                                </div>
+                                <DialogFooter>
+                                    <Button onClick={() => setIsInviteOpen(false)}>Done</Button>
+                                </DialogFooter>
+                            </DialogContent>
+                        </Dialog>
+                        <AlertDialog open={isAlertOpen} onOpenChange={setIsAlertOpen}>
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" size="icon">
+                                        <MoreVertical className="h-4 w-4" />
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                    <DropdownMenuItem onSelect={() => setIsInviteOpen(true)}>
+                                        <Send className="mr-2 h-4 w-4" /> Invite Partner
+                                    </DropdownMenuItem>
+                                     <PartnerDialog partner={partner} onSave={forceRefresh}>
+                                        <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                                            <Edit className="mr-2 h-4 w-4" /> Edit
+                                        </DropdownMenuItem>
+                                    </PartnerDialog>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem className="text-destructive" onSelect={() => setIsAlertOpen(true)}>
+                                        <Trash2 className="mr-2 h-4 w-4" /> Delete
+                                    </DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                            <AlertDialogContent>
+                                <AlertDialogHeader>
+                                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                    <AlertDialogDescription>This will permanently delete this partner.</AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                    <AlertDialogAction onClick={() => handleDelete(partner.id)} variant="destructive">Delete</AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
+                    </div>
+                )
+            }
+        },
     ], [forceRefresh]);
 
     return (
@@ -186,11 +243,11 @@ export default function PartnerManagement() {
                         <Handshake /> Partner Management
                     </CardTitle>
                     <CardDescription>
-                        Manage your strategic ISA Partners. This is a separate list from company staff.
+                        Manage your strategic ISA Partners and their status within the platform.
                     </CardDescription>
                 </div>
                 <PartnerDialog onSave={forceRefresh}>
-                    <Button><PlusCircle className="mr-2 h-4 w-4"/> Add Partner</Button>
+                    <Button><PlusCircle className="mr-2 h-4 w-4"/>Add Partner</Button>
                 </PartnerDialog>
             </CardHeader>
             <CardContent>
