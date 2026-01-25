@@ -26,7 +26,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { useCollection, useFirestore, getClientSideAuthToken } from '@/firebase';
-import { collection, query, collectionGroup, where } from 'firebase/firestore';
+import { collection, query, collectionGroup } from 'firebase/firestore';
 import { Loader2, PlusCircle, UserPlus, Handshake } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import StaffActionMenu from '../backend/staff-action-menu';
@@ -256,7 +256,7 @@ interface Company {
 export default function PartnerManagement() {
     const firestore = useFirestore();
 
-    const staffQuery = useMemoFirebase(() => firestore ? query(collectionGroup(firestore, 'staff'), where('role', '==', 'partner')) : null, [firestore]);
+    const staffQuery = useMemoFirebase(() => firestore ? query(collectionGroup(firestore, 'staff')) : null, [firestore]);
     const { data: staff, isLoading: isStaffLoading, forceRefresh } = useCollection<StaffMember>(staffQuery);
 
     const companiesQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'companies')) : null, [firestore]);
@@ -268,11 +268,13 @@ export default function PartnerManagement() {
         if (!staff || !companies) return [];
         const companyMap = new Map(companies.map(c => [c.id, c.companyName]));
         
-        return staff.map(s => ({
-            ...s,
-            docId: s.id,
-            id: `${s.companyId}-${s.id}`,
-            companyName: companyMap.get(s.companyId) || 'Unknown Company',
+        return staff
+            .filter(s => s.role === 'partner')
+            .map(s => ({
+                ...s,
+                docId: s.id,
+                id: `${s.companyId}-${s.id}`,
+                companyName: companyMap.get(s.companyId) || 'Unknown Company',
         }));
     }, [staff, companies]);
 
