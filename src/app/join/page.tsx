@@ -154,8 +154,8 @@ function JoinFormComponent() {
         description: "Welcome to Logistics Flow. Redirecting you now...",
       });
 
-      const isAdmin = user.email === 'beyondtransport@gmail.com';
-      const defaultRedirect = isAdmin ? '/backend' : '/account';
+      const isAdmin = user.email === 'beyondtransport@gmail.com' || user.email === 'mkoton100@gmail.com';
+      const defaultRedirect = isAdmin ? '/adminaccount' : '/account';
       router.push(redirectParam || defaultRedirect);
 
     } catch (error: any) {
