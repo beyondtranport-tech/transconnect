@@ -37,13 +37,13 @@ export async function POST(req: NextRequest) {
 
   const idToken = authorization.split('Bearer ')[1];
   
-  const { collectionPath, data } = await req.json();
-
-  if (!collectionPath || !data) {
-      return NextResponse.json({ success: false, error: 'Bad Request: "collectionPath" and "data" are required.' }, { status: 400 });
-  }
-
   try {
+    const { collectionPath, data } = await req.json();
+
+    if (!collectionPath || !data) {
+        return NextResponse.json({ success: false, error: 'Bad Request: "collectionPath" and "data" are required.' }, { status: 400 });
+    }
+    
     const adminAuth = getAuth(app);
     const decodedToken = await adminAuth.verifyIdToken(idToken);
     const uid = decodedToken.uid;
@@ -102,7 +102,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: true, id: newDocRef.id, message: 'Document created successfully.' });
 
   } catch (error: any) {
-    console.error(`Error in addUserDoc for path "${collectionPath}":`, error);
+    console.error(`Error in addUserDoc:`, error);
     if (error.code === 'auth/id-token-expired') {
        return NextResponse.json({ success: false, error: 'Authentication token has expired.' }, { status: 401 });
     }
