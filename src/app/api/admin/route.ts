@@ -1,3 +1,4 @@
+
 import { NextRequest, NextResponse } from 'next/server';
 import { getFirestore, Timestamp, FieldValue, FieldPath } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
@@ -195,6 +196,31 @@ export async function POST(req: NextRequest) {
                 });
                 await batch.commit();
                 return NextResponse.json({ success: true, message: `${leadIds.length} leads deleted.` });
+            }
+            case 'savePartner': {
+                const { partner } = payload;
+                if (!partner) throw new Error("Partner data is required.");
+
+                let docRef;
+                let data;
+
+                if (partner.id) { // Update
+                    docRef = db.collection('partners').doc(partner.id);
+                    data = { ...partner, updatedAt: FieldValue.serverTimestamp() };
+                    delete data.id;
+                    await docRef.set(data, { merge: true });
+                } else { // Create
+                    docRef = db.collection('partners').doc();
+                    data = { ...partner, id: docRef.id, createdAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp() };
+                    await docRef.set(data);
+                }
+                return NextResponse.json({ success: true, id: docRef.id });
+            }
+            case 'deletePartner': {
+                const { partnerId } = payload;
+                if (!partnerId) throw new Error("partnerId is required.");
+                await db.collection('partners').doc(partnerId).delete();
+                return NextResponse.json({ success: true });
             }
             // Admin-only actions below this point
             case 'getMembers': {
