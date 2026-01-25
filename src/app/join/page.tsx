@@ -62,7 +62,6 @@ function JoinFormComponent() {
 
   const form = useForm<JoinFormValues>({
     resolver: zodResolver(formSchema),
-    // Initialize with empty email; it will be set by the useEffect hook.
     defaultValues: {
       firstName: '',
       lastName: '',
@@ -72,16 +71,14 @@ function JoinFormComponent() {
     },
   });
 
-  // Use useEffect with form.reset to correctly set the email from the URL parameter.
-  // This is more robust against browser autofill than using defaultValues directly
-  // because it runs after the initial client-side render.
   useEffect(() => {
-    if (emailParam) {
-      form.reset({
-        ...form.getValues(), // Preserve other fields a user might have typed
-        email: emailParam,
-      });
-    }
+    // This effect now handles both setting the email from the URL param
+    // and explicitly clearing it if the param is not present, which helps
+    // override aggressive browser autofill.
+    form.reset({
+      ...form.getValues(), // Preserve other fields a user might have typed
+      email: emailParam || '', // Set to param value or fall back to an empty string
+    });
   }, [emailParam, form]);
 
   const handlePasswordReset = async () => {
