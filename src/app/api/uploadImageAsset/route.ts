@@ -28,8 +28,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: 'Missing imageDataUri, folder, or fileName.' }, { status: 400 });
     }
     
-    // Explicitly specify the bucket name to resolve initialization issues.
-    const bucket = getStorage(app).bucket(firebaseConfig.storageBucket);
+    // The admin app is initialized with the correct default bucket.
+    const bucket = getStorage(app).bucket();
 
     // Extract content type and base64 data from data URI
     const match = imageDataUri.match(/^data:(image\/\w+);base64,(.*)$/);
@@ -58,7 +58,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: true, url: publicUrl });
   } catch (error: any) {
     console.error('Error in uploadImageAsset:', error);
-    if (error.code === 404 || error.message?.includes('does not exist')) {
+    if (error.message?.includes('does not exist')) {
         const helpfulError = `Firebase Storage Error: The bucket was not found. Please ensure that Cloud Storage is enabled for your Firebase project in the Firebase Console.`;
         return NextResponse.json({ success: false, error: helpfulError }, { status: 500 });
     }
