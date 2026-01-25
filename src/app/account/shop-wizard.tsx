@@ -429,8 +429,8 @@ function ProductDialog({ shop, product, onComplete, children, canEdit }: { shop:
 
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files || files.length === 0) return;
+    const file = e.target.files?.[0];
+    if (!file) return;
 
     if (!storage || !user) {
         toast({ variant: 'destructive', title: 'Upload Failed', description: 'Not logged in or storage service unavailable.' });
@@ -438,24 +438,20 @@ function ProductDialog({ shop, product, onComplete, children, canEdit }: { shop:
     }
 
     setUploading(true);
-    const fileRef = fileInputRef.current;
+    const fileRefInput = fileInputRef.current;
 
     try {
-        const uploadPromises = Array.from(files).map(async (file) => {
-            const storagePath = `user-assets/${user.uid}/product-images/${Date.now()}_${file.name}`;
-            const fileRef = storageRef(storage, storagePath);
-            await uploadBytes(fileRef, file);
-            return getDownloadURL(fileRef);
-        });
-
-        const downloadURLs = await Promise.all(uploadPromises);
+        const storagePath = `user-assets/${user.uid}/product-images/${Date.now()}_${file.name}`;
+        const fileRef = storageRef(storage, storagePath);
+        await uploadBytes(fileRef, file);
+        const downloadURL = await getDownloadURL(fileRef);
 
         const currentUrls = form.getValues('imageUrls') || [];
-        form.setValue('imageUrls', [...currentUrls, ...downloadURLs], { shouldValidate: true });
+        form.setValue('imageUrls', [...currentUrls, downloadURL], { shouldValidate: true });
 
         toast({
             title: 'Upload Complete!',
-            description: `${downloadURLs.length} image(s) added.`
+            description: `Image "${file.name}" added.`
         });
     } catch (error: any) {
         toast({
@@ -465,8 +461,8 @@ function ProductDialog({ shop, product, onComplete, children, canEdit }: { shop:
         });
     } finally {
         setUploading(false);
-        if (fileRef) {
-            fileRef.value = '';
+        if (fileRefInput) {
+            fileRefInput.value = '';
         }
     }
   };
@@ -556,9 +552,9 @@ function ProductDialog({ shop, product, onComplete, children, canEdit }: { shop:
                         <div className="flex items-center justify-between mt-4">
                             <Button type="button" onClick={() => fileInputRef.current?.click()} disabled={uploading || !canEdit}>
                                 {uploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <UploadCloud className="mr-2 h-4 w-4"/>}
-                                Upload Image(s)
+                                Upload Image
                             </Button>
-                            <Input ref={fileInputRef} type="file" id="image-upload" className="hidden" onChange={handleFileChange} disabled={uploading || !canEdit} multiple />
+                            <Input ref={fileInputRef} type="file" id="image-upload" className="hidden" onChange={handleFileChange} disabled={uploading || !canEdit} />
                              <AIGenerateDialog 
                                 onGenerate={handleImageGenerated} 
                                 canEdit={canEdit}
@@ -1195,3 +1191,5 @@ export function ShopWizard({ shop: initialShop }: { shop: any }) {
     </div>
   );
 }
+
+    
