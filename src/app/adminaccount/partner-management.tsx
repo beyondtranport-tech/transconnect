@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -14,13 +14,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -45,7 +38,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useCollection, useFirestore, getClientSideAuthToken } from '@/firebase';
 import { useMemoFirebase } from '@/hooks/use-config';
 import { collection, query } from 'firebase/firestore';
-import { Loader2, PlusCircle, Handshake, Edit, Trash2, MoreVertical, Send, Copy } from 'lucide-react';
+import { Loader2, PlusCircle, Handshake, Edit, Trash2, Send, Copy } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -149,99 +142,20 @@ function PartnerDialog({ open, onOpenChange, partner, onSave }: { open: boolean;
   );
 }
 
-// Action Menu for each row
-function PartnerActionMenu({ partner, onUpdate }: { partner: any; onUpdate: () => void }) {
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [isAlertOpen, setIsAlertOpen] = useState(false);
-  const [isInviteOpen, setIsInviteOpen] = useState(false);
-  const [isEditOpen, setIsEditOpen] = useState(false);
-  const [actionToConfirm, setActionToConfirm] = useState<'delete' | null>(null);
-  const { toast } = useToast();
-
-  const handleAction = async () => {
-    if (!actionToConfirm) return;
-    setIsProcessing(true);
-    setIsAlertOpen(false);
-    try {
-        const token = await getClientSideAuthToken();
-        if (!token) throw new Error("Authentication failed.");
-        await performAdminAction(token, 'deletePartner', { partnerId: partner.id });
-        toast({ title: 'Partner Deleted' });
-        onUpdate();
-    } catch (e: any) {
-        toast({ variant: 'destructive', title: 'Delete Failed', description: e.message });
-    } finally {
-        setIsProcessing(false);
-        setActionToConfirm(null);
-    }
-  };
-  
-  const inviteLink = isInviteOpen && typeof window !== 'undefined'
-    ? `${window.location.origin}/join?email=${encodeURIComponent(partner.email)}`
-    : '';
-
-  const copyInviteLink = () => {
-    navigator.clipboard.writeText(inviteLink);
-    toast({ title: 'Invite Link Copied!' });
-  };
-  
+// **NEW** simplified, stateless action menu component
+function PartnerActionMenu({ onInvite, onEdit, onDelete }: { onInvite: () => void; onEdit: () => void; onDelete: () => void; }) {
   return (
-    <>
-       <PartnerDialog 
-        open={isEditOpen}
-        onOpenChange={setIsEditOpen}
-        partner={partner}
-        onSave={onUpdate}
-      />
-      <Dialog open={isInviteOpen} onOpenChange={setIsInviteOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Invite {partner.firstName}</DialogTitle>
-            <DialogDescription>Send this unique sign-up link to the partner. They must use this email to register.</DialogDescription>
-          </DialogHeader>
-          <div className="py-4 space-y-2">
-            <Input value={inviteLink} readOnly />
-            <Button onClick={copyInviteLink} className="w-full">
-              <Copy className="mr-2 h-4 w-4" /> Copy Link
-            </Button>
-          </div>
-          <DialogFooter>
-            <Button onClick={() => setIsInviteOpen(false)}>Done</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-      <AlertDialog open={isAlertOpen} onOpenChange={setIsAlertOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-            <AlertDialogDescription>This will permanently delete partner "{partner.firstName} {partner.lastName}".</AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleAction} variant="destructive" disabled={isProcessing}>
-                {isProcessing && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
-                Yes, delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-        <div className="flex justify-end items-center gap-1">
-             <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" disabled={isProcessing}>
-                    {isProcessing ? <Loader2 className="h-4 w-4 animate-spin" /> : <MoreVertical className="h-4 w-4" />}
-                    </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                    <DropdownMenuItem onSelect={() => setIsInviteOpen(true)}><Send className="mr-2 h-4 w-4" /> Invite Partner</DropdownMenuItem>
-                    <DropdownMenuItem onSelect={() => setIsEditOpen(true)}><Edit className="mr-2 h-4 w-4" /> Edit</DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onSelect={() => { setActionToConfirm('delete'); setIsAlertOpen(true); }} className="text-destructive"><Trash2 className="mr-2 h-4 w-4" /> Delete</DropdownMenuItem>
-                </DropdownMenuContent>
-            </DropdownMenu>
-        </div>
-    </>
+    <div className="flex justify-end items-center gap-1">
+      <Button variant="ghost" size="icon" onClick={onInvite} title="Invite Partner">
+        <Send className="h-4 w-4" />
+      </Button>
+      <Button variant="ghost" size="icon" onClick={onEdit} title="Edit Partner">
+        <Edit className="h-4 w-4" />
+      </Button>
+      <Button variant="ghost" size="icon" onClick={onDelete} title="Delete Partner">
+        <Trash2 className="h-4 w-4 text-destructive" />
+      </Button>
+    </div>
   );
 }
 
@@ -251,30 +165,90 @@ export default function PartnerManagement() {
   const partnersQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'partners')) : null, [firestore]);
   const { data: partners, isLoading, forceRefresh } = useCollection(partnersQuery);
   const { toast } = useToast();
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+
+  const [dialogState, setDialogState] = useState<{ type: 'add' | 'edit' | 'delete' | 'invite' | null, data?: any }>({ type: null, data: undefined });
+
+  const handleOpenDialog = (type: 'add' | 'edit' | 'delete' | 'invite', data?: any) => {
+    setDialogState({ type, data });
+  };
   
+  const handleCloseDialogs = () => {
+    setDialogState({ type: null, data: undefined });
+  };
+
+  const handleSave = () => {
+    forceRefresh();
+    handleCloseDialogs();
+  };
+  
+  const handleDelete = async () => {
+    if (dialogState.type !== 'delete' || !dialogState.data) return;
+    try {
+        const token = await getClientSideAuthToken();
+        if (!token) throw new Error("Authentication failed.");
+        await performAdminAction(token, 'deletePartner', { partnerId: dialogState.data.id });
+        toast({ title: 'Partner Deleted' });
+        handleSave(); // This will refresh and close dialog
+    } catch (e: any) {
+        toast({ variant: 'destructive', title: 'Delete Failed', description: e.message });
+    }
+  };
+  
+  const inviteLink = dialogState.type === 'invite' && dialogState.data && typeof window !== 'undefined'
+    ? `${window.location.origin}/join?email=${encodeURIComponent(dialogState.data.email)}`
+    : '';
+
+  const copyInviteLink = () => {
+    if (!inviteLink) return;
+    navigator.clipboard.writeText(inviteLink);
+    toast({ title: 'Invite Link Copied!' });
+  };
+
   return (
     <>
+      {/* DIALOGS - Hoisted out of the table render loop */}
       <PartnerDialog 
-        open={isAddDialogOpen} 
-        onOpenChange={setIsAddDialogOpen} 
-        onSave={() => {
-            forceRefresh();
-            setIsAddDialogOpen(false);
-        }}
+        open={dialogState.type === 'add' || dialogState.type === 'edit'}
+        onOpenChange={(isOpen) => !isOpen && handleCloseDialogs()}
+        partner={dialogState.type === 'edit' ? dialogState.data : undefined}
+        onSave={handleSave}
       />
+      <Dialog open={dialogState.type === 'invite'} onOpenChange={(isOpen) => !isOpen && handleCloseDialogs()}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Invite {dialogState.data?.firstName}</DialogTitle>
+            <DialogDescription>Send this unique sign-up link to the partner. They must use this email to register.</DialogDescription>
+          </DialogHeader>
+          <div className="py-4 space-y-2">
+            <Input value={inviteLink} readOnly />
+            <Button onClick={copyInviteLink} className="w-full">
+              <Copy className="mr-2 h-4 w-4" /> Copy Link
+            </Button>
+          </div>
+          <DialogFooter><Button onClick={handleCloseDialogs}>Done</Button></DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <AlertDialog open={dialogState.type === 'delete'} onOpenChange={(isOpen) => !isOpen && handleCloseDialogs()}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>This will permanently delete partner "{dialogState.data?.firstName} {dialogState.data?.lastName}".</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={handleCloseDialogs}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} variant="destructive">Yes, delete</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
       
+      {/* MAIN CARD AND TABLE */}
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <div>
             <CardTitle className="flex items-center gap-2"><Handshake /> Partner Management</CardTitle>
-            <CardDescription>
-              Manage your strategic ISA Partners.
-            </CardDescription>
+            <CardDescription>Manage your strategic ISA Partners.</CardDescription>
           </div>
-          <Button onClick={() => setIsAddDialogOpen(true)}>
-            <PlusCircle className="mr-2 h-4 w-4"/>Add Partner
-          </Button>
+          <Button onClick={() => handleOpenDialog('add')}><PlusCircle className="mr-2 h-4 w-4"/>Add Partner</Button>
         </CardHeader>
         <CardContent>
           {isLoading ? (
@@ -284,11 +258,7 @@ export default function PartnerManagement() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Company</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                    <TableHead>Name</TableHead><TableHead>Email</TableHead><TableHead>Company</TableHead><TableHead>Status</TableHead><TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -300,15 +270,14 @@ export default function PartnerManagement() {
                       <TableCell><Badge className="capitalize">{partner.status}</Badge></TableCell>
                       <TableCell className="text-right">
                         <PartnerActionMenu
-                            partner={partner}
-                            onUpdate={forceRefresh}
+                            onInvite={() => handleOpenDialog('invite', partner)}
+                            onEdit={() => handleOpenDialog('edit', partner)}
+                            onDelete={() => handleOpenDialog('delete', partner)}
                         />
                       </TableCell>
                     </TableRow>
                   )) : (
-                    <TableRow>
-                      <TableCell colSpan={5} className="h-24 text-center">No partners found.</TableCell>
-                    </TableRow>
+                    <TableRow><TableCell colSpan={5} className="h-24 text-center">No partners found.</TableCell></TableRow>
                   )}
                 </TableBody>
               </Table>
