@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
@@ -23,7 +22,7 @@ import { Separator } from '@/components/ui/separator';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { cn } from '@/lib/utils';
 import { Label } from '@/components/ui/label';
-import { generateShopSeo } from '@/ai/flows/seo-flow';
+import { generateImage } from '@/ai/flows/image-generation-flow';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import {
   AlertDialog,
@@ -43,7 +42,7 @@ import placeholderImageData from '@/lib/placeholder-images.json';
 import { ShopPreview } from '@/components/shop-preview';
 import { usePermissions } from '@/hooks/use-permissions';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { generateImage } from '@/ai/flows/image-generation-flow';
+import { generateShopSeo } from '@/ai/flows/seo-flow';
 const { placeholderImages } = placeholderImageData;
 
 
@@ -435,6 +434,8 @@ function ProductDialog({ shop, product, onComplete, children, canEdit }: { shop:
     }
   };
 
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+
   useEffect(() => {
     const uploadFiles = async () => {
       if (!files || !storage || !user) return;
@@ -442,26 +443,25 @@ function ProductDialog({ shop, product, onComplete, children, canEdit }: { shop:
       setUploading(true);
       setProgress(0);
       
-      const uploadPromises = Array.from(files).map(file => {
-          return new Promise<string>((resolve, reject) => {
-              const storageRefVal = storageRef(storage, `generated-images/${user.uid}/products/${Date.now()}_${file.name}`);
-              const uploadTask = uploadBytesResumable(storageRefVal, file);
-              
-              uploadTask.on('state_changed', 
-                (snapshot) => {
-                    const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-                    setProgress(progress);
-                },
-                (error) => reject(error),
-                async () => {
-                    const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-                    resolve(downloadURL);
-                }
-              );
-          });
-      });
-
       try {
+        const uploadPromises = Array.from(files).map(file => {
+            return new Promise<string>((resolve, reject) => {
+                const storageRefVal = storageRef(storage, `generated-images/${user.uid}/products/${Date.now()}_${file.name}`);
+                const uploadTask = uploadBytesResumable(storageRefVal, file);
+                
+                uploadTask.on('state_changed', 
+                  (snapshot) => {
+                      const currentProgress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                      setProgress(currentProgress);
+                  },
+                  (error) => reject(error),
+                  async () => {
+                      const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+                      resolve(downloadURL);
+                  }
+                );
+            });
+        });
           const downloadURLs = await Promise.all(uploadPromises);
           const currentUrls = form.getValues('imageUrls') || [];
           form.setValue('imageUrls', [...currentUrls, ...downloadURLs]);
@@ -471,8 +471,8 @@ function ProductDialog({ shop, product, onComplete, children, canEdit }: { shop:
       } finally {
           setUploading(false);
           setFiles(null);
-          if (document.getElementById('image-upload')) {
-            (document.getElementById('image-upload') as HTMLInputElement).value = '';
+          if (fileInputRef.current) {
+            fileInputRef.current.value = '';
           }
       }
     };
@@ -480,7 +480,7 @@ function ProductDialog({ shop, product, onComplete, children, canEdit }: { shop:
     if (files) {
       uploadFiles();
     }
-  }, [files, storage, user, form, toast]);
+  }, [files, storage, user, toast, form]);
 
 
   return (
@@ -569,7 +569,7 @@ function ProductDialog({ shop, product, onComplete, children, canEdit }: { shop:
                                 <Label htmlFor="image-upload" className={cn("text-sm font-medium leading-none", !canEdit && "text-muted-foreground")}>
                                    Upload Image(s)
                                 </Label>
-                                <Input type="file" id="image-upload" className="mt-2" onChange={handleFileChange} disabled={uploading || !canEdit} multiple />
+                                <Input ref={fileInputRef} type="file" id="image-upload" className="mt-2" onChange={handleFileChange} disabled={uploading || !canEdit} multiple />
                             </div>
                              <AIGenerateDialog 
                                 onGenerate={handleImageGenerated} 
@@ -783,8 +783,8 @@ function Step3Appearance({ shop, onSave, canEdit }: { shop: any, onSave: (newDat
             }),
         });
 
-        const result = await response.json();
         if (!response.ok) {
+          const result = await response.json();
           throw new Error(result.error || 'Failed to update shop.');
         }
 
