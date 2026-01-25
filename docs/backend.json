@@ -12,11 +12,12 @@
         "lastName": { "type": "string" },
         "email": { "type": "string", "format": "email" },
         "phone": { "type": "string" },
-        "companyId": { "type": "string", "description": "The ID of the company this user belongs to in the /companies collection." },
+        "companyId": { "type": ["string", "null"], "description": "The ID of the company this user belongs to in the /companies collection. Null for partners." },
+        "role": { "type": "string", "enum": ["owner", "staff", "partner"], "description": "The user's role in the system." },
         "createdAt": { "type": "object" },
         "updatedAt": { "type": "object" }
       },
-      "required": ["id", "firstName", "lastName", "email", "companyId"]
+      "required": ["id", "firstName", "lastName", "email"]
     },
     "Company": {
       "$schema": "http://json-schema.org/draft-07/schema#",

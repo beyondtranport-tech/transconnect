@@ -46,14 +46,32 @@ export async function POST(req: NextRequest) {
     // Check if this email corresponds to a partner invitation
     const partnerQuery = db.collection('partners').where('email', '==', firebaseUser.email).limit(1);
     const partnerSnap = await partnerQuery.get();
-    let isPartnerSignup = false;
-    let partnerData: any = {};
     if (!partnerSnap.empty) {
-        isPartnerSignup = true;
         const partnerDoc = partnerSnap.docs[0];
-        partnerData = partnerDoc.data();
+        const partnerData = partnerDoc.data();
+        
+        // This is a partner signing up.
+        // Update their status and create their user doc, but DO NOT create a company.
         batch.update(partnerDoc.ref, { invitationStatus: 'registered' });
-        console.log(`Found partner invite for ${firebaseUser.email}. Flagging for registration.`);
+
+        const displayName = firebaseUser.displayName || `${partnerData.firstName} ${partnerData.lastName}`;
+        const nameParts = displayName.split(' ');
+        
+        batch.set(userDocRef, {
+            id: firebaseUser.uid,
+            firstName: partnerData.firstName || nameParts[0] || 'Partner',
+            lastName: partnerData.lastName || (nameParts.length > 1 ? nameParts.slice(1).join(' ') : 'User'),
+            email: firebaseUser.email,
+            phone: firebaseUser.phoneNumber || '',
+            companyId: null, // Partners do not have a company ID
+            role: 'partner', // Assign a partner role
+            createdAt: FieldValue.serverTimestamp(),
+            updatedAt: FieldValue.serverTimestamp(),
+        });
+        
+        await batch.commit();
+        console.log(`Successfully converted partner invite for ${firebaseUser.email} to a user.`);
+        return NextResponse.json({ success: true, message: 'Partner account created successfully.' });
     }
 
     // Check for pending staff invitation
@@ -92,23 +110,23 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ success: true, message: 'Staff member account created and linked to company.' });
     }
 
-    // If not a staff member, proceed with standard user/company creation
+    // If not a staff or partner, proceed with standard user/company creation
     console.log(`Document for user ${firebaseUser.uid} not found. Creating user and company documents.`);
     
     const loyaltyConfigDoc = await db.collection('configuration').doc('loyaltySettings').get();
     const signupPoints = loyaltyConfigDoc.data()?.userSignupPoints || 50;
 
-    const displayName = firebaseUser.displayName || (isPartnerSignup ? `${partnerData.firstName} ${partnerData.lastName}` : '');
+    const displayName = firebaseUser.displayName || '';
     const nameParts = displayName.split(' ');
-    const firstName = (isPartnerSignup ? partnerData.firstName : '') || nameParts[0] || 'New';
-    const lastName = (isPartnerSignup ? partnerData.lastName : '') || (nameParts.length > 1 ? nameParts.slice(1).join(' ') : 'User');
+    const firstName = nameParts[0] || 'New';
+    const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : 'User';
 
     const companyRef = db.collection('companies').doc();
     
     const newCompanyData: any = {
         id: companyRef.id,
         ownerId: firebaseUser.uid,
-        companyName: (isPartnerSignup ? partnerData.companyName : '') || (firebaseUser.displayName ? `${firebaseUser.displayName}'s Company` : 'My Company'),
+        companyName: firebaseUser.displayName ? `${firebaseUser.displayName}'s Company` : 'My Company',
         membershipId: 'free',
         rewardPoints: signupPoints,
         walletBalance: 0,
@@ -129,6 +147,7 @@ export async function POST(req: NextRequest) {
         email: firebaseUser.email,
         phone: firebaseUser.phoneNumber || '',
         companyId: companyRef.id,
+        role: 'owner',
         createdAt: FieldValue.serverTimestamp(),
         updatedAt: FieldValue.serverTimestamp(),
     };
