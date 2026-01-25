@@ -74,7 +74,7 @@ export function DataTable<TData>({ columns, data }: DataTableProps<TData>) {
           <TableBody>
             {rows.length > 0 ? (
               rows.map((row, index) => (
-                <TableRow key={index}>
+                <TableRow key={(row.original as any).id || index}>
                   {columns.map(column => (
                     <TableCell key={(column.id || column.accessorKey) as string}>
                       {column.cell({ row })}
