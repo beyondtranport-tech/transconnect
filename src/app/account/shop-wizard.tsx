@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
@@ -12,7 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useFirestore, useUser, useStorage, useCollection, getClientSideAuthToken } from '@/firebase';
 import { useMemoFirebase } from '@/hooks/use-config';
 import { doc, collection } from 'firebase/firestore';
-import { ref as storageRef, uploadBytesResumable, getDownloadURL } from "firebase/storage";
+import { ref as storageRef, uploadBytes, getDownloadURL } from "firebase/storage";
 import { Loader2, Save, CheckCircle, LayoutGrid, List, Image as ImageIcon, Sparkles, PlusCircle, Edit, Trash2, Send, Eye, ShoppingCart, Mail, Phone, UploadCloud, Wand2, Video, Search, ShieldAlert } from 'lucide-react';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -241,7 +242,6 @@ function AIGenerateDialog({
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   const { toast } = useToast();
   const { user } = useUser();
-  const storage = useStorage();
   
   useEffect(() => {
     if (!isOpen) {
@@ -270,31 +270,38 @@ function AIGenerateDialog({
   };
 
   const handleApplyImage = async () => {
-    if (!generatedImage || !storage || !user) {
+    if (!generatedImage || !user) {
       toast({ variant: 'destructive', title: 'Error', description: 'Cannot apply image. Missing required info.' });
       return;
     }
     setIsApplying(true);
     try {
-      const imageResponse = await fetch(generatedImage);
-      const blob = await imageResponse.blob();
+      const token = await getClientSideAuthToken();
+      if (!token) throw new Error("Authentication failed.");
+
       const fileName = `generated_${Date.now()}.png`;
-      const path = `user-assets/${user.uid}/product-images/${fileName}`;
-      const storageRefVal = storageRef(storage, path);
-      
-      await new Promise<void>((resolve, reject) => {
-        const uploadTask = uploadBytesResumable(storageRefVal, blob);
-        uploadTask.on('state_changed',
-            null,
-            (error) => reject(error), // Error
-            () => { // Complete
-                getDownloadURL(uploadTask.snapshot.ref).then(downloadURL => {
-                    onGenerate(downloadURL);
-                    resolve();
-                }).catch(reject);
-            }
-        );
+      const isHeroBanner = title.toLowerCase().includes('hero');
+      const folder = isHeroBanner ? 'hero-images' : 'product-images';
+
+      const response = await fetch('/api/uploadImageAsset', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          imageDataUri: generatedImage,
+          folder: folder,
+          fileName: fileName
+        }),
       });
+
+      const result = await response.json();
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || 'Failed to upload image.');
+      }
+
+      onGenerate(result.url); // Use the URL from the backend
 
       toast({ title: 'Image Applied!', description: 'The new image has been added.'});
       setIsOpen(false);
@@ -355,7 +362,6 @@ function AIGenerateDialog({
 
 function ProductDialog({ shop, product, onComplete, children, canEdit }: { shop: any, product?: any, onComplete: () => void, children: React.ReactNode, canEdit: boolean }) {
   const { user } = useUser();
-  const storage = useStorage();
   const { toast } = useToast();
   const [isOpen, setIsOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -440,52 +446,58 @@ function ProductDialog({ shop, product, onComplete, children, canEdit }: { shop:
         const file = e.target.files?.[0];
         if (!file) return;
 
-        if (!storage || !user) {
-            toast({ variant: 'destructive', title: 'Upload Failed', description: 'Not logged in or storage service unavailable.' });
+        if (!user) {
+            toast({ variant: 'destructive', title: 'Upload Failed', description: 'Not logged in.' });
             return;
         }
 
-        setUploading(true);
-        const fileRefInput = fileInputRef.current;
-        
-        const storagePath = `user-assets/${user.uid}/product-images/${Date.now()}_${file.name}`;
-        const fileRef = storageRef(storage, storagePath);
-        const uploadTask = uploadBytesResumable(fileRef, file);
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = async () => {
+            const imageDataUri = reader.result as string;
+            setUploading(true);
+            const fileRefInput = fileInputRef.current;
+            
+            try {
+                const token = await getClientSideAuthToken();
+                if (!token) throw new Error("Authentication failed.");
 
-        uploadTask.on('state_changed',
-            (snapshot) => {
-                // Optional: Handle progress updates if needed
-            },
-            (error) => {
-                // Handle unsuccessful uploads
-                let description = "An unknown error occurred during upload.";
-                 switch (error.code) {
-                    case 'storage/unauthorized':
-                        description = "You do not have permission to upload files.";
-                        break;
-                    case 'storage/retry-limit-exceeded':
-                        description = "Network connection failed. Please check your internet and try again.";
-                        break;
-                 }
-                toast({ variant: 'destructive', title: 'Upload Failed', description });
+                const fileName = `${Date.now()}_${file.name}`;
+                const folder = 'product-images';
+
+                const response = await fetch('/api/uploadImageAsset', {
+                    method: 'POST',
+                    headers: {
+                      'Authorization': `Bearer ${token}`,
+                      'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                      imageDataUri: imageDataUri,
+                      folder: folder,
+                      fileName: fileName
+                    }),
+                });
+
+                const result = await response.json();
+                if (!response.ok || !result.success) {
+                  throw new Error(result.error || 'Failed to upload image.');
+                }
+                
+                const currentUrls = form.getValues('imageUrls') || [];
+                form.setValue('imageUrls', [...currentUrls, result.url], { shouldValidate: true });
+                toast({ title: 'Upload Complete!', description: `Image "${file.name}" added.` });
+
+            } catch (error: any) {
+                toast({ variant: 'destructive', title: 'Upload Failed', description: error.message });
+            } finally {
                 setUploading(false);
                 if (fileRefInput) fileRefInput.value = '';
-            },
-            () => {
-                // Handle successful uploads on complete
-                getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
-                    const currentUrls = form.getValues('imageUrls') || [];
-                    form.setValue('imageUrls', [...currentUrls, downloadURL], { shouldValidate: true });
-                    toast({ title: 'Upload Complete!', description: `Image "${file.name}" added.` });
-                    setUploading(false);
-                    if (fileRefInput) fileRefInput.value = '';
-                }).catch((error) => {
-                     toast({ variant: 'destructive', title: 'Upload Failed', description: 'Could not get image URL after upload.' });
-                     setUploading(false);
-                     if (fileRefInput) fileRefInput.value = '';
-                });
             }
-        );
+        };
+        reader.onerror = (error) => {
+            toast({ variant: 'destructive', title: 'File Read Error', description: 'Could not read file.' });
+            setUploading(false);
+        };
     };
 
 
@@ -575,7 +587,7 @@ function ProductDialog({ shop, product, onComplete, children, canEdit }: { shop:
                                 {uploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <UploadCloud className="mr-2 h-4 w-4"/>}
                                 Upload Image
                             </Button>
-                            <Input ref={fileInputRef} type="file" id="image-upload" className="hidden" onChange={handleFileChange} disabled={uploading || !canEdit} />
+                            <Input ref={fileInputRef} type="file" id="image-upload" className="hidden" onChange={handleFileChange} disabled={uploading || !canEdit} accept="image/*" />
                              <AIGenerateDialog 
                                 onGenerate={handleImageGenerated} 
                                 canEdit={canEdit}
@@ -684,7 +696,7 @@ function Step2Products({ shop, canEdit }: { shop: any, canEdit: boolean }) {
                                   <TableCell>
                                       <div className="relative h-12 w-12 rounded-md bg-muted flex items-center justify-center">
                                           {(product.imageUrls && product.imageUrls[0]) ? (
-                                              <Image src={product.imageUrls[0]} alt={product.name} fill className="object-contain" />
+                                              <Image src={product.imageUrls[0]} alt={product.name} fill className="object-contain border" />
                                           ) : (
                                               <ImageIcon className="h-6 w-6 text-muted-foreground" />
                                           )}
