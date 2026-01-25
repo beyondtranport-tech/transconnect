@@ -303,7 +303,6 @@ export default function PartnerManagement() {
         
         return staff.map(s => ({
             ...s,
-            id: `${s.companyId}-${s.id}`, // Create a truly unique key for the table
             companyName: companyMap.get(s.companyId) || 'Unknown Company',
         }));
     }, [staff, companies]);
