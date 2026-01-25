@@ -26,11 +26,12 @@ export function getAdminApp(): { app: App | null; error: string | null } {
         throw new Error('Parsed service account is missing essential properties (project_id, client_email, private_key).');
     }
     
-    // Initialize without explicitly setting storageBucket.
-    // The Admin SDK will automatically discover the default bucket for the project.
+    // Explicitly set the storageBucket during initialization as the definitive fix.
     const app = initializeApp({
       credential: cert(serviceAccount),
+      storageBucket: 'transconnect-v1-39578841-2a857.appspot.com',
     }, ADMIN_APP_NAME);
+
     return { app, error: null };
 
   } catch (error: any) {
