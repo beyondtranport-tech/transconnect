@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
@@ -117,7 +118,7 @@ function Step1CoreIdentity({ shop, onSave, onSeoGenerated, canEdit }: { shop: an
         const response = await fetch('/api/updateUserDoc', {
             method: 'POST',
             headers: {
-                'Authorization': `Bearer ${token}`,
+                'Authorization': `Bearer ${''token''}`,
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
@@ -347,7 +348,7 @@ function ProductDialog({ shop, product, onComplete, children, canEdit }: { shop:
         const response = await fetch(product ? '/api/updateUserDoc' : '/api/addUserDoc', {
             method: 'POST',
             headers: {
-                'Authorization': `Bearer ${token}`,
+                'Authorization': `Bearer ${''token''}`,
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify(body),
@@ -416,7 +417,7 @@ function ProductDialog({ shop, product, onComplete, children, canEdit }: { shop:
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-2xl flex flex-col max-h-[90vh]">
         <DialogHeader>
           <DialogTitle>{product ? 'Edit Product' : 'Add New Product'}</DialogTitle>
           <DialogDescription>
@@ -424,77 +425,79 @@ function ProductDialog({ shop, product, onComplete, children, canEdit }: { shop:
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <fieldset disabled={!canEdit} className="space-y-6">
-              <FormField control={form.control} name="name" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Product Name</FormLabel>
-                  <FormControl><Input placeholder="Product Name" {...field} /></FormControl>
-                  <FormMessage />
-                </FormItem>
-              )} />
-              <FormField control={form.control} name="description" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Description</FormLabel>
-                  <FormControl><Textarea placeholder="Describe the product..." {...field} /></FormControl>
-                  <FormMessage />
-                </FormItem>
-              )} />
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField control={form.control} name="price" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Price</FormLabel>
-                    <FormControl><Input type="number" placeholder="0.00" {...field} /></FormControl>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col flex-1 min-h-0">
+             <div className="flex-1 overflow-y-auto space-y-6 pr-4 py-4">
+                <fieldset disabled={!canEdit} className="space-y-6">
+                <FormField control={form.control} name="name" render={({ field }) => (
+                    <FormItem>
+                    <FormLabel>Product Name</FormLabel>
+                    <FormControl><Input placeholder="Product Name" {...field} /></FormControl>
                     <FormMessage />
-                  </FormItem>
+                    </FormItem>
                 )} />
-                <FormField control={form.control} name="sku" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>SKU (Optional)</FormLabel>
-                    <FormControl><Input placeholder="SKU123" {...field} /></FormControl>
+                <FormField control={form.control} name="description" render={({ field }) => (
+                    <FormItem>
+                    <FormLabel>Description</FormLabel>
+                    <FormControl><Textarea placeholder="Describe the product..." {...field} /></FormControl>
                     <FormMessage />
-                  </FormItem>
+                    </FormItem>
                 )} />
-              </div>
-
-                <div className="border rounded-md p-4 bg-muted/50">
-                    <FormField control={form.control} name="imageUrl" render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Product Image</FormLabel>
-                            <FormControl>
-                                <div className="relative aspect-square w-full rounded-md border border-dashed flex items-center justify-center bg-muted">
-                                    {field.value ? (
-                                        <Image src={field.value} alt="Product" fill className="rounded-md object-contain" />
-                                    ) : (
-                                        <p className="text-sm text-muted-foreground">No image selected.</p>
-                                    )}
-                                </div>
-                            </FormControl>
-                            <FormMessage />
-                        </FormItem>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField control={form.control} name="price" render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Price</FormLabel>
+                        <FormControl><Input type="number" placeholder="0.00" {...field} /></FormControl>
+                        <FormMessage />
+                    </FormItem>
                     )} />
+                    <FormField control={form.control} name="sku" render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>SKU (Optional)</FormLabel>
+                        <FormControl><Input placeholder="SKU123" {...field} /></FormControl>
+                        <FormMessage />
+                    </FormItem>
+                    )} />
+                </div>
 
-                   <div className="flex items-center justify-between mt-4">
-                        <div>
-                            <Label htmlFor="image-upload" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed">
-                                Upload Image
-                            </Label>
-                            <Input type="file" id="image-upload" className="hidden" onChange={handleFileChange} disabled={uploading || !canEdit} />
+                    <div className="border rounded-md p-4 bg-muted/50">
+                        <FormField control={form.control} name="imageUrl" render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Product Image</FormLabel>
+                                <FormControl>
+                                    <div className="relative aspect-square w-full rounded-md border border-dashed flex items-center justify-center bg-muted">
+                                        {field.value ? (
+                                            <Image src={field.value} alt="Product" fill className="rounded-md object-contain" />
+                                        ) : (
+                                            <p className="text-sm text-muted-foreground">No image selected.</p>
+                                        )}
+                                    </div>
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )} />
+
+                    <div className="flex items-center justify-between mt-4">
+                            <div>
+                                <Label htmlFor="image-upload" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed">
+                                    Upload Image
+                                </Label>
+                                <Input type="file" id="image-upload" className="hidden" onChange={handleFileChange} disabled={uploading || !canEdit} />
+                            </div>
+
+                            <AIGenerateDialog onGenerate={handleImageGenerated} canEdit={canEdit}>
+                                <Button type="button" variant="secondary" disabled={uploading || !canEdit}>
+                                    <Wand2 className="mr-2 h-4 w-4" /> Generate Image
+                                </Button>
+                            </AIGenerateDialog>
                         </div>
 
-                        <AIGenerateDialog onGenerate={handleImageGenerated} canEdit={canEdit}>
-                            <Button type="button" variant="secondary" disabled={uploading || !canEdit}>
-                                <Wand2 className="mr-2 h-4 w-4" /> Generate Image
-                            </Button>
-                        </AIGenerateDialog>
+                        {uploading && (
+                            <Progress value={progress} className="mt-2" />
+                        )}
                     </div>
-
-                    {uploading && (
-                        <Progress value={progress} className="mt-2" />
-                    )}
-                </div>
-            </fieldset>
-            <DialogFooter className="sm:justify-between">
+                </fieldset>
+            </div>
+            <DialogFooter className="sm:justify-between mt-auto flex-shrink-0 pt-4 border-t">
                  <Button type="button" variant="outline" onClick={() => setIsOpen(false)}>Cancel</Button>
                  <Button type="submit" disabled={isSaving || uploading || !canEdit}>
                     {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
@@ -535,7 +538,7 @@ function Step2Products({ shop, canEdit }: { shop: any, canEdit: boolean }) {
             
             const response = await fetch('/api/deleteUserDoc', {
                 method: 'POST',
-                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                headers: { 'Authorization': `Bearer ${''token''}`, 'Content-Type': 'application/json' },
                 body: JSON.stringify({ path: `companies/${shop.companyId}/shops/${shop.id}/products/${productToDelete.id}` }),
             });
             
@@ -682,7 +685,7 @@ function Step3Appearance({ shop, onSave, canEdit }: { shop: any, onSave: (newDat
         const response = await fetch('/api/updateUserDoc', {
             method: 'POST',
             headers: {
-                'Authorization': `Bearer ${token}`,
+                'Authorization': `Bearer ${''token''}`,
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
@@ -791,7 +794,7 @@ function Step4SocialLinks({ shop, onSave, canEdit }: { shop: any, onSave: (newDa
         const response = await fetch('/api/updateUserDoc', {
             method: 'POST',
             headers: {
-                'Authorization': `Bearer ${token}`,
+                'Authorization': `Bearer ${''token''}`,
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
@@ -888,7 +891,7 @@ function Step5ReviewAndSubmit({ shop, canEdit }: { shop: any, canEdit: boolean }
         const response = await fetch('/api/updateUserDoc', {
             method: 'POST',
             headers: {
-                'Authorization': `Bearer ${token}`,
+                'Authorization': `Bearer ${''token''}`,
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
