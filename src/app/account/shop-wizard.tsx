@@ -12,7 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useFirestore, useUser, useStorage, useCollection, getClientSideAuthToken } from '@/firebase';
 import { useMemoFirebase } from '@/hooks/use-config';
 import { doc, collection } from 'firebase/firestore';
-import { ref as storageRef, uploadBytes, uploadBytesResumable, getDownloadURL } from "firebase/storage";
+import { ref as storageRef, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { Loader2, Save, CheckCircle, LayoutGrid, List, Image as ImageIcon, Sparkles, PlusCircle, Edit, Trash2, Send, Eye, ShoppingCart, Mail, Phone, UploadCloud, GalleryHorizontal, Wand2, Video, Search, ShieldAlert } from 'lucide-react';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -282,7 +282,7 @@ function AIGenerateDialog({
       const path = `generated-images/${user.uid}/products/${fileName}`;
       const storageRefVal = storageRef(storage, path);
       
-      const uploadResult = await uploadBytes(storageRefVal, blob);
+      const uploadResult = await uploadBytesResumable(storageRefVal, blob);
       const downloadURL = await getDownloadURL(uploadResult.ref);
 
       onGenerate(downloadURL);
@@ -351,7 +351,7 @@ function ProductDialog({ shop, product, onComplete, children, canEdit }: { shop:
   const [isSaving, setIsSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
-  const [files, setFiles] = useState<FileList | null>(null);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   const form = useForm<ProductFormValues>({
     resolver: zodResolver(productSchema),
@@ -428,59 +428,52 @@ function ProductDialog({ shop, product, onComplete, children, canEdit }: { shop:
   };
 
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0) {
-      setFiles(e.target.files);
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || e.target.files.length === 0) {
+      return;
+    }
+    const selectedFiles = e.target.files;
+
+    if (!storage || !user) {
+        toast({ variant: 'destructive', title: 'Upload Failed', description: 'Not logged in or storage service unavailable.' });
+        return;
+    }
+
+    setUploading(true);
+    setProgress(0);
+    
+    try {
+      const uploadPromises = Array.from(selectedFiles).map(file => {
+          return new Promise<string>((resolve, reject) => {
+              const storageRefVal = storageRef(storage, `generated-images/${user.uid}/products/${Date.now()}_${file.name}`);
+              const uploadTask = uploadBytesResumable(storageRefVal, file);
+              
+              uploadTask.on('state_changed', 
+                (snapshot) => {
+                    const currentProgress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                    setProgress(currentProgress);
+                },
+                (error) => reject(error),
+                async () => {
+                    const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+                    resolve(downloadURL);
+                }
+              );
+          });
+      });
+        const downloadURLs = await Promise.all(uploadPromises);
+        const currentUrls = form.getValues('imageUrls') || [];
+        form.setValue('imageUrls', [...currentUrls, ...downloadURLs]);
+        toast({ title: 'Upload Complete!', description: `${selectedFiles.length} image(s) have been uploaded.` });
+    } catch (error: any) {
+        toast({ variant: 'destructive', title: 'Upload Failed', description: error.message });
+    } finally {
+        setUploading(false);
+        if (fileInputRef.current) {
+          fileInputRef.current.value = '';
+        }
     }
   };
-
-  const fileInputRef = React.useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    const uploadFiles = async () => {
-      if (!files || !storage || !user) return;
-
-      setUploading(true);
-      setProgress(0);
-      
-      try {
-        const uploadPromises = Array.from(files).map(file => {
-            return new Promise<string>((resolve, reject) => {
-                const storageRefVal = storageRef(storage, `generated-images/${user.uid}/products/${Date.now()}_${file.name}`);
-                const uploadTask = uploadBytesResumable(storageRefVal, file);
-                
-                uploadTask.on('state_changed', 
-                  (snapshot) => {
-                      const currentProgress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-                      setProgress(currentProgress);
-                  },
-                  (error) => reject(error),
-                  async () => {
-                      const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-                      resolve(downloadURL);
-                  }
-                );
-            });
-        });
-          const downloadURLs = await Promise.all(uploadPromises);
-          const currentUrls = form.getValues('imageUrls') || [];
-          form.setValue('imageUrls', [...currentUrls, ...downloadURLs]);
-          toast({ title: 'Upload Complete!', description: `${files.length} image(s) have been uploaded.` });
-      } catch (error: any) {
-          toast({ variant: 'destructive', title: 'Upload Failed', description: error.message });
-      } finally {
-          setUploading(false);
-          setFiles(null);
-          if (fileInputRef.current) {
-            fileInputRef.current.value = '';
-          }
-      }
-    };
-
-    if (files) {
-      uploadFiles();
-    }
-  }, [files, storage, user, toast, form]);
 
 
   return (
