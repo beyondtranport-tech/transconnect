@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
@@ -118,7 +117,7 @@ function Step1CoreIdentity({ shop, onSave, onSeoGenerated, canEdit }: { shop: an
         const response = await fetch('/api/updateUserDoc', {
             method: 'POST',
             headers: {
-                'Authorization': `Bearer ${''token''}`,
+                'Authorization': `Bearer ${token}`,
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
@@ -348,7 +347,7 @@ function ProductDialog({ shop, product, onComplete, children, canEdit }: { shop:
         const response = await fetch(product ? '/api/updateUserDoc' : '/api/addUserDoc', {
             method: 'POST',
             headers: {
-                'Authorization': `Bearer ${''token''}`,
+                'Authorization': `Bearer ${token}`,
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify(body),
@@ -538,7 +537,7 @@ function Step2Products({ shop, canEdit }: { shop: any, canEdit: boolean }) {
             
             const response = await fetch('/api/deleteUserDoc', {
                 method: 'POST',
-                headers: { 'Authorization': `Bearer ${''token''}`, 'Content-Type': 'application/json' },
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
                 body: JSON.stringify({ path: `companies/${shop.companyId}/shops/${shop.id}/products/${productToDelete.id}` }),
             });
             
@@ -685,7 +684,7 @@ function Step3Appearance({ shop, onSave, canEdit }: { shop: any, onSave: (newDat
         const response = await fetch('/api/updateUserDoc', {
             method: 'POST',
             headers: {
-                'Authorization': `Bearer ${''token''}`,
+                'Authorization': `Bearer ${token}`,
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
@@ -794,7 +793,7 @@ function Step4SocialLinks({ shop, onSave, canEdit }: { shop: any, onSave: (newDa
         const response = await fetch('/api/updateUserDoc', {
             method: 'POST',
             headers: {
-                'Authorization': `Bearer ${''token''}`,
+                'Authorization': `Bearer ${token}`,
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
@@ -891,7 +890,7 @@ function Step5ReviewAndSubmit({ shop, canEdit }: { shop: any, canEdit: boolean }
         const response = await fetch('/api/updateUserDoc', {
             method: 'POST',
             headers: {
-                'Authorization': `Bearer ${''token''}`,
+                'Authorization': `Bearer ${token}`,
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
@@ -920,7 +919,7 @@ function Step5ReviewAndSubmit({ shop, canEdit }: { shop: any, canEdit: boolean }
         Please review your shop details before submitting. Once submitted, your shop will be reviewed by our team.
       </p>
 
-      <ShopPreview shop={shop} />
+      <ShopPreview shop={shop} products={[]} />
 
       <Button onClick={handleSubmit} disabled={isSubmitting || !canEdit}>
         {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
