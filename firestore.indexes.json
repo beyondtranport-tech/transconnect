@@ -55,8 +55,7 @@
       ]
     },
     {
-      "collectionGroup": "partners",
-      "queryScope": "COLLECTION",
+      "collectionId": "partners",
       "fields": [
         { "fieldPath": "email", "order": "ASCENDING" }
       ]
