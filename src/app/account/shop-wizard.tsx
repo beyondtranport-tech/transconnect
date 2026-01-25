@@ -394,7 +394,7 @@ function ProductDialog({ shop, product, onComplete, children, canEdit }: { shop:
       
       const uploadPromises = Array.from(files).map(file => {
           return new Promise<string>((resolve, reject) => {
-              const storageRefVal = ref(storage, `companies/${shop.companyId}/shops/${shop.id}/products/${Date.now()}_${file.name}`);
+              const storageRefVal = storageRef(storage, `companies/${shop.companyId}/shops/${shop.id}/products/${Date.now()}_${file.name}`);
               const uploadTask = uploadBytesResumable(storageRefVal, file);
               
               uploadTask.on('state_changed', 
@@ -793,4 +793,337 @@ const shopStep4Schema = z.object({
 type Step4FormValues = z.infer<typeof shopStep4Schema>;
 
 function Step4SocialLinks({ shop, onSave, canEdit }: { shop: any, onSave: (newData: any) => void, canEdit: boolean }) {
-  const { user } }
+  const { user } = useUser();
+  const { toast } = useToast();
+  const [isSaving, setIsSaving] = useState(false);
+  
+  const form = useForm<Step4FormValues>({
+    resolver: zodResolver(shopStep4Schema),
+    defaultValues: {
+      facebookLink: shop.facebookLink || '',
+      instagramLink: shop.instagramLink || '',
+      twitterLink: shop.twitterLink || '',
+      linkedinLink: shop.linkedinLink || '',
+      youtubeLink: shop.youtubeLink || '',
+    }
+  });
+  
+  const onSubmit = async (values: Step4FormValues) => {
+    if (!user || !shop.companyId) return;
+    setIsSaving(true);
+    
+    try {
+        const token = await getClientSideAuthToken();
+        if (!token) throw new Error("Authentication token not found.");
+        
+        const response = await fetch('/api/updateUserDoc', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                path: `companies/${shop.companyId}/shops/${shop.id}`,
+                data: { ...values, updatedAt: { _methodName: 'serverTimestamp' } }
+            }),
+        });
+
+        const result = await response.json();
+        if (!response.ok) {
+          throw new Error(result.error || 'Failed to update shop.');
+        }
+
+        toast({ title: 'Step 4 Saved!', description: 'Your social links have been updated.' });
+        onSave(values);
+    } catch (error: any) {
+        toast({ variant: 'destructive', title: 'Update Failed', description: error.message });
+    } finally {
+        setIsSaving(false);
+    }
+  };
+
+  return (
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <fieldset disabled={!canEdit} className="space-y-6">
+          <FormField control={form.control} name="facebookLink" render={({ field }) => (
+              <FormItem>
+                  <FormLabel>Facebook</FormLabel>
+                  <FormControl><Input placeholder="https://facebook.com/yourshop" {...field} /></FormControl>
+                  <FormMessage />
+              </FormItem>
+          )} />
+          <FormField control={form.control} name="instagramLink" render={({ field }) => (
+              <FormItem>
+                  <FormLabel>Instagram</FormLabel>
+                  <FormControl><Input placeholder="https://instagram.com/yourshop" {...field} /></FormControl>
+                  <FormMessage />
+              </FormItem>
+          )} />
+          <FormField control={form.control} name="twitterLink" render={({ field }) => (
+              <FormItem>
+                  <FormLabel>Twitter (X)</FormLabel>
+                  <FormControl><Input placeholder="https://x.com/yourshop" {...field} /></FormControl>
+                  <FormMessage />
+              </FormItem>
+          )} />
+          <FormField control={form.control} name="linkedinLink" render={({ field }) => (
+              <FormItem>
+                  <FormLabel>LinkedIn</FormLabel>
+                  <FormControl><Input placeholder="https://linkedin.com/company/yourshop" {...field} /></FormControl>
+                  <FormMessage />
+              </FormItem>
+          )} />
+          <FormField control={form.control} name="youtubeLink" render={({ field }) => (
+              <FormItem>
+                  <FormLabel>YouTube</FormLabel>
+                  <FormControl><Input placeholder="https://youtube.com/yourshop" {...field} /></FormControl>
+                  <FormMessage />
+              </FormItem>
+          )} />
+        </fieldset>
+
+        <Button type="submit" disabled={isSaving || !canEdit}>
+          {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+          Save &amp; Continue
+        </Button>
+      </form>
+    </Form>
+  );
+}
+
+
+// ====== STEP 5: SEO & Publishing ======
+const shopStep5Schema = z.object({
+  metaTitle: z.string().optional(),
+  metaDescription: z.string().optional(),
+  tags: z.array(z.string()).optional(),
+});
+
+type Step5FormValues = z.infer<typeof shopStep5Schema>;
+
+function Step5SeoAndPublishing({ shop, onSave, canEdit }: { shop: any, onSave: (newData: any) => void, canEdit: boolean }) {
+  const { user } = useUser();
+  const { toast } = useToast();
+  const [isSaving, setIsSaving] = useState(false);
+  const [isPublishing, setIsPublishing] = useState(false);
+
+  const form = useForm<Step5FormValues>({
+    resolver: zodResolver(shopStep5Schema),
+    defaultValues: {
+      metaTitle: shop.metaTitle || '',
+      metaDescription: shop.metaDescription || '',
+      tags: shop.tags || [],
+    },
+  });
+
+  const onSubmit = async (values: Step5FormValues) => {
+    if (!user || !shop.companyId) return;
+    setIsSaving(true);
+    
+    try {
+        const token = await getClientSideAuthToken();
+        if (!token) throw new Error("Authentication token not found.");
+        
+        const response = await fetch('/api/updateUserDoc', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                path: `companies/${shop.companyId}/shops/${shop.id}`,
+                data: { ...values, updatedAt: { _methodName: 'serverTimestamp' } }
+            }),
+        });
+
+        const result = await response.json();
+        if (!response.ok) {
+          throw new Error(result.error || 'Failed to update shop.');
+        }
+
+        toast({ title: 'Step 5 Saved!', description: 'Your SEO details have been updated.' });
+        onSave(values);
+    } catch (error: any) {
+        toast({ variant: 'destructive', title: 'Update Failed', description: error.message });
+    } finally {
+        setIsSaving(false);
+    }
+  };
+
+  const handlePublish = async () => {
+    setIsPublishing(true);
+     try {
+        const token = await getClientSideAuthToken();
+        if (!token) throw new Error("Authentication token not found.");
+        
+        const response = await fetch('/api/updateUserDoc', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                path: `companies/${shop.companyId}/shops/${shop.id}`,
+                data: { status: 'pending_review', updatedAt: { _methodName: 'serverTimestamp' } }
+            }),
+        });
+        
+        if (!response.ok) throw new Error((await response.json()).error || 'Failed to submit for review.');
+
+        toast({ title: 'Shop Submitted!', description: 'Your shop is now pending review from our team.' });
+        onSave({ status: 'pending_review' }); // Update local state
+    } catch (error: any) {
+         toast({ variant: 'destructive', title: 'Submission Failed', description: error.message });
+    } finally {
+        setIsPublishing(false);
+    }
+  }
+
+  return (
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <fieldset disabled={!canEdit} className="space-y-6">
+            <div className="p-4 bg-primary/5 border border-primary/20 rounded-lg space-y-3">
+                <h3 className="font-semibold flex items-center gap-2"><Search className="h-5 w-5 text-primary"/> Search Engine Optimization</h3>
+                <p className="text-sm text-muted-foreground">
+                    This content was generated by the AI SEO Booster in Step 1. You can edit it here.
+                </p>
+                <div className="space-y-4 pt-2">
+                    <FormField control={form.control} name="metaTitle" render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Meta Title</FormLabel>
+                            <FormControl><Input placeholder="Your SEO Title" {...field} /></FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )} />
+                    <FormField control={form.control} name="metaDescription" render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Meta Description</FormLabel>
+                            <FormControl><Textarea placeholder="Your SEO Description" {...field} /></FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )} />
+                    <FormField control={form.control} name="tags" render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Keywords / Tags</FormLabel>
+                            <FormControl><Input placeholder="e.g. truck parts, diesel mechanic, scania" defaultValue={Array.isArray(field.value) ? field.value.join(', ') : ''} onChange={(e) => field.onChange(e.target.value.split(',').map(s => s.trim()))} /></FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )} />
+                </div>
+            </div>
+        </fieldset>
+
+        <div className="flex justify-between items-center">
+            <Button type="submit" disabled={isSaving || !canEdit}>
+                {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                Save SEO Settings
+            </Button>
+            {shop.status === 'draft' && (
+                 <Button onClick={handlePublish} disabled={isPublishing || !canEdit}>
+                    {isPublishing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
+                    Submit for Review
+                </Button>
+            )}
+        </div>
+      </form>
+    </Form>
+  );
+}
+
+
+// ====== MAIN WIZARD COMPONENT ======
+export function ShopWizard({ shop: initialShop }: { shop: any }) {
+  const [currentStep, setCurrentStep] = useState(0);
+  const [shopData, setShopData] = useState(initialShop);
+  const { can, isLoading: permissionsLoading } = usePermissions();
+
+  const handleSave = (newData: any) => {
+    setShopData({ ...shopData, ...newData });
+    if (currentStep < steps.length - 1) {
+      setCurrentStep(currentStep + 1);
+    }
+  };
+
+  const handleSeoGenerated = (seoData: any) => {
+    // This function will be called from Step 1.
+    // We update the local state which will be passed down to Step 5.
+    setShopData({
+      ...shopData,
+      metaTitle: seoData.metaTitle,
+      metaDescription: seoData.metaDescription,
+      tags: seoData.tags,
+    });
+  };
+  
+  const canEditShop = can('edit', 'shop');
+
+  const steps = useMemo(() => [
+    { name: 'Core Identity', component: <Step1CoreIdentity shop={shopData} onSave={handleSave} onSeoGenerated={handleSeoGenerated} canEdit={canEditShop} /> },
+    { name: 'Products', component: <Step2Products shop={shopData} canEdit={canEditShop} /> },
+    { name: 'Appearance', component: <Step3Appearance shop={shopData} onSave={handleSave} canEdit={canEditShop} /> },
+    { name: 'Social Links', component: <Step4SocialLinks shop={shopData} onSave={handleSave} canEdit={canEditShop} /> },
+    { name: 'Publishing', component: <Step5SeoAndPublishing shop={shopData} onSave={handleSave} canEdit={canEditShop} /> },
+    { name: 'Preview', component: <ShopPreview shop={shopData} products={[]} /> },
+  ], [shopData, canEditShop]); // Re-memoize if shopData changes
+
+  const completeness = useMemo(() => {
+    const totalFields = 7;
+    let completedFields = 0;
+    if (shopData.shopName && shopData.shopDescription && shopData.category) completedFields++;
+    if (shopData.heroBannerUrl) completedFields++;
+    if (shopData.metaTitle) completedFields++;
+    return (completedFields / totalFields) * 100;
+  }, [shopData]);
+  
+  const handleStepClick = (index: number) => {
+    setCurrentStep(index);
+  }
+
+  return (
+    <div className="space-y-6">
+        <div className="flex items-center justify-between">
+            <h3 className="text-xl font-semibold">Shop Status: <Badge variant={statusColors[shopData.status] || 'secondary'} className="capitalize text-base">{shopData.status.replace(/_/g, ' ')}</Badge></h3>
+            <div className="text-right">
+                <p className="text-sm font-medium">Profile Completeness</p>
+                <Progress value={completeness} className="w-40 mt-1" />
+            </div>
+        </div>
+        
+        {permissionsLoading && (
+            <div className="flex items-center justify-center py-10">
+                <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                <p className="ml-3">Loading permissions...</p>
+            </div>
+        )}
+        {!canEditShop && !permissionsLoading && (
+             <Alert variant="destructive">
+                <ShieldAlert className="h-4 w-4" />
+                <AlertTitle>Read-Only Mode</AlertTitle>
+                <AlertDescription>
+                    You do not have permission to edit this shop. The fields are disabled.
+                </AlertDescription>
+            </Alert>
+        )}
+        
+        <div className="grid grid-cols-1 md:grid-cols-[200px_1fr] gap-8">
+            <div className="flex flex-col gap-2">
+                 {steps.map((step, index) => (
+                    <Button 
+                        key={step.name} 
+                        variant={currentStep === index ? 'default' : 'ghost'}
+                        onClick={() => handleStepClick(index)}
+                        className="justify-start"
+                    >
+                        {step.name}
+                    </Button>
+                ))}
+            </div>
+            <div className="md:border-l md:pl-8">
+                {steps[currentStep].component}
+            </div>
+        </div>
+    </div>
+  );
+}
