@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
@@ -366,8 +367,8 @@ function ProductDialog({ shop, product, onComplete, children, canEdit }: { shop:
         if (values.imageUrls && values.imageUrls.length > 0) {
             for (const url of values.imageUrls) {
                 if (url.startsWith('data:')) { // Upload new base64 images
-                    const response = await fetch(url);
-                    const blob = await response.blob();
+                    const imageResponse = await fetch(url);
+                    const blob = await imageResponse.blob();
                     const fileName = `product_${Date.now()}.png`;
                     const storageRefVal = storageRef(storage, `companies/${shop.companyId}/shops/${shop.id}/products/${fileName}`);
                     const uploadResult = await uploadBytes(storageRefVal, blob);
@@ -759,8 +760,8 @@ function Step3Appearance({ shop, onSave, canEdit }: { shop: any, onSave: (newDat
         let finalValues = { ...values };
 
         if (values.heroBannerUrl && values.heroBannerUrl.startsWith('data:')) {
-            const response = await fetch(values.heroBannerUrl);
-            const blob = await response.blob();
+            const imageResponse = await fetch(values.heroBannerUrl);
+            const blob = await imageResponse.blob();
             const fileName = `hero-banner_${Date.now()}.png`;
             const storageRefVal = storageRef(storage, `companies/${shop.companyId}/shops/${shop.id}/${fileName}`);
             const uploadResult = await uploadBytes(storageRefVal, blob);
@@ -833,7 +834,7 @@ function Step3Appearance({ shop, onSave, canEdit }: { shop: any, onSave: (newDat
             </div>
         </fieldset>
 
-        <Button type="submit" disabled={isSaving}>
+        <Button type="submit" disabled={isSaving || !canEdit}>
           {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
           Save &amp; Continue
         </Button>
