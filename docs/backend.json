@@ -17,7 +17,7 @@
         "createdAt": { "type": "object" },
         "updatedAt": { "type": "object" }
       },
-      "required": ["id", "firstName", "lastName", "email"]
+      "required": ["id", "firstName", "lastName", "email", "role"]
     },
     "Company": {
       "$schema": "http://json-schema.org/draft-07/schema#",

@@ -53,7 +53,7 @@ export function usePermissions() {
         if (!firestore || !user) return null;
         return doc(firestore, 'users', user.uid);
     }, [firestore, user]);
-    const { data: userData, isLoading: isUserLoading } = useDoc<{ companyId: string, role: 'owner' | 'staff' }>(userDocRef);
+    const { data: userData, isLoading: isUserLoading } = useDoc<{ companyId: string, role: 'owner' | 'staff' | 'partner' }>(userDocRef);
 
     // 2. If the user is a staff member, get their specific staff document to find permissions
     const staffDocRef = useMemoFirebase(() => {
@@ -65,7 +65,9 @@ export function usePermissions() {
     const permissions = useMemo(() => {
         if (!userData) return new Set<string>();
 
-        const isOwner = userData.role === 'owner';
+        // If a user's role is not 'staff' or 'partner', they are considered an owner.
+        // This handles both new users with `role: 'owner'` and legacy users with no `role` field.
+        const isOwner = userData.role !== 'staff' && userData.role !== 'partner';
 
         // Grant full permissions if the user is the admin or the company owner.
         if (isAdmin || isOwner) {
