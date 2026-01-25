@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
@@ -13,7 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useFirestore, useUser, useStorage, useCollection, getClientSideAuthToken } from '@/firebase';
 import { useMemoFirebase } from '@/hooks/use-config';
 import { doc, collection } from 'firebase/firestore';
-import { ref as storageRef, uploadBytes, getDownloadURL } from "firebase/storage";
+import { ref as storageRef, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { Loader2, Save, CheckCircle, LayoutGrid, List, Image as ImageIcon, Sparkles, PlusCircle, Edit, Trash2, Send, Eye, ShoppingCart, Mail, Phone, UploadCloud, Wand2, Video, Search, ShieldAlert } from 'lucide-react';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -283,10 +282,20 @@ function AIGenerateDialog({
       const path = `user-assets/${user.uid}/product-images/${fileName}`;
       const storageRefVal = storageRef(storage, path);
       
-      await uploadBytes(storageRefVal, blob);
-      const downloadURL = await getDownloadURL(storageRefVal);
+      await new Promise<void>((resolve, reject) => {
+        const uploadTask = uploadBytesResumable(storageRefVal, blob);
+        uploadTask.on('state_changed',
+            null,
+            (error) => reject(error), // Error
+            () => { // Complete
+                getDownloadURL(uploadTask.snapshot.ref).then(downloadURL => {
+                    onGenerate(downloadURL);
+                    resolve();
+                }).catch(reject);
+            }
+        );
+      });
 
-      onGenerate(downloadURL);
       toast({ title: 'Image Applied!', description: 'The new image has been added.'});
       setIsOpen(false);
     } catch (e: any) {
@@ -427,45 +436,57 @@ function ProductDialog({ shop, product, onComplete, children, canEdit }: { shop:
     }
   };
 
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
 
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+        if (!storage || !user) {
+            toast({ variant: 'destructive', title: 'Upload Failed', description: 'Not logged in or storage service unavailable.' });
+            return;
+        }
 
-    if (!storage || !user) {
-        toast({ variant: 'destructive', title: 'Upload Failed', description: 'Not logged in or storage service unavailable.' });
-        return;
-    }
-
-    setUploading(true);
-    const fileRefInput = fileInputRef.current;
-
-    try {
+        setUploading(true);
+        const fileRefInput = fileInputRef.current;
+        
         const storagePath = `user-assets/${user.uid}/product-images/${Date.now()}_${file.name}`;
         const fileRef = storageRef(storage, storagePath);
-        await uploadBytes(fileRef, file);
-        const downloadURL = await getDownloadURL(fileRef);
+        const uploadTask = uploadBytesResumable(fileRef, file);
 
-        const currentUrls = form.getValues('imageUrls') || [];
-        form.setValue('imageUrls', [...currentUrls, downloadURL], { shouldValidate: true });
-
-        toast({
-            title: 'Upload Complete!',
-            description: `Image "${file.name}" added.`
-        });
-    } catch (error: any) {
-        toast({
-            variant: 'destructive',
-            title: 'Upload Failed',
-            description: `An error occurred during upload: ${error.message}`
-        });
-    } finally {
-        setUploading(false);
-        if (fileRefInput) {
-            fileRefInput.value = '';
-        }
-    }
-  };
+        uploadTask.on('state_changed',
+            (snapshot) => {
+                // Optional: Handle progress updates if needed
+            },
+            (error) => {
+                // Handle unsuccessful uploads
+                let description = "An unknown error occurred during upload.";
+                 switch (error.code) {
+                    case 'storage/unauthorized':
+                        description = "You do not have permission to upload files.";
+                        break;
+                    case 'storage/retry-limit-exceeded':
+                        description = "Network connection failed. Please check your internet and try again.";
+                        break;
+                 }
+                toast({ variant: 'destructive', title: 'Upload Failed', description });
+                setUploading(false);
+                if (fileRefInput) fileRefInput.value = '';
+            },
+            () => {
+                // Handle successful uploads on complete
+                getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
+                    const currentUrls = form.getValues('imageUrls') || [];
+                    form.setValue('imageUrls', [...currentUrls, downloadURL], { shouldValidate: true });
+                    toast({ title: 'Upload Complete!', description: `Image "${file.name}" added.` });
+                    setUploading(false);
+                    if (fileRefInput) fileRefInput.value = '';
+                }).catch((error) => {
+                     toast({ variant: 'destructive', title: 'Upload Failed', description: 'Could not get image URL after upload.' });
+                     setUploading(false);
+                     if (fileRefInput) fileRefInput.value = '';
+                });
+            }
+        );
+    };
 
 
   return (
@@ -1191,5 +1212,3 @@ export function ShopWizard({ shop: initialShop }: { shop: any }) {
     </div>
   );
 }
-
-    
