@@ -642,10 +642,7 @@ function Step2Products({ shop, canEdit }: { shop: any, canEdit: boolean }) {
 
 // ====== STEP 3: Appearance ======
 const shopStep3Schema = z.object({
-    primaryColor: z.string().optional(),
-    secondaryColor: z.string().optional(),
-    logoUrl: z.string().optional(),
-    coverImageUrl: z.string().optional(),
+    heroBannerUrl: z.string().optional(),
 });
 
 type Step3FormValues = z.infer<typeof shopStep3Schema>;
@@ -655,23 +652,18 @@ function Step3Appearance({ shop, onSave, canEdit }: { shop: any, onSave: (newDat
   const storage = useStorage();
   const { toast } = useToast();
   const [isSaving, setIsSaving] = useState(false);
-  const [uploadingLogo, setUploadingLogo] = useState(false);
-  const [uploadingCover, setUploadingCover] = useState(false);
-  const [progressLogo, setProgressLogo] = useState(0);
-  const [progressCover, setProgressCover] = useState(0);
-  const [fileLogo, setFileLogo] = useState<File | null>(null);
-  const [fileCover, setFileCover] = useState<File | null>(null);
-
+  
   const form = useForm<Step3FormValues>({
     resolver: zodResolver(shopStep3Schema),
     defaultValues: {
-      primaryColor: shop.primaryColor || '',
-      secondaryColor: shop.secondaryColor || '',
-      logoUrl: shop.logoUrl || '',
-      coverImageUrl: shop.coverImageUrl || '',
+      heroBannerUrl: shop.heroBannerUrl || '',
     }
   });
 
+  const handleImageGenerated = (newUrl: string) => {
+    form.setValue('heroBannerUrl', newUrl);
+  };
+  
   const onSubmit = async (values: Step3FormValues) => {
     if (!user || !shop.companyId) return;
     setIsSaving(true);
@@ -712,130 +704,40 @@ function Step3Appearance({ shop, onSave, canEdit }: { shop: any, onSave: (newDat
     }
   };
 
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, type: 'logo' | 'cover') => {
-    if (e.target.files && e.target.files.length > 0) {
-      if (type === 'logo') {
-        setFileLogo(e.target.files[0]);
-      } else {
-        setFileCover(e.target.files[0]);
-      }
-    }
-  };
-
-
-  useEffect(() => {
-    const uploadFile = async (file: File | null, type: 'logo' | 'cover') => {
-      if (!file || !storage || !user || !shop.companyId || !shop.id) return;
-
-      if (type === 'logo') setUploadingLogo(true);
-      if (type === 'cover') setUploadingCover(true);
-      const storageRefVal = ref(storage, `companies/${shop.companyId}/shops/${shop.id}/${type}/${file.name}`);
-      const uploadTask = uploadBytesResumable(storageRefVal, file);
-
-      uploadTask.on('state_changed',
-        (snapshot) => {
-          const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-          if (type === 'logo') setProgressLogo(progress);
-          if (type === 'cover') setProgressCover(progress);
-        },
-        (error) => {
-          toast({ variant: 'destructive', title: 'Upload Failed', description: error.message });
-          if (type === 'logo') setUploadingLogo(false);
-          if (type === 'cover') setUploadingCover(false);
-        },
-        async () => {
-          try {
-            const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-            form.setValue(type === 'logo' ? 'logoUrl' : 'coverImageUrl', downloadURL);
-            toast({ title: 'Upload Complete!', description: 'Your image has been uploaded.' });
-          } catch (error: any) {
-            toast({ variant: 'destructive', title: 'Failed to get URL', description: error.message });
-          } finally {
-            if (type === 'logo') setUploadingLogo(false);
-            if (type === 'cover') setUploadingCover(false);
-          }
-        }
-      );
-    };
-
-    if (fileLogo) uploadFile(fileLogo, 'logo');
-    if (fileCover) uploadFile(fileCover, 'cover');
-  }, [fileLogo, fileCover, storage, user, shop, form, toast]);
-
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         <fieldset disabled={!canEdit} className="space-y-6">
-             <div className="border rounded-md p-4 bg-muted/50">
-                <FormField control={form.control} name="logoUrl" render={({ field }) => (
+            <div className="p-4 bg-primary/5 border border-primary/20 rounded-lg space-y-4">
+                 <h3 className="font-semibold flex items-center gap-2"><ImageIcon className="h-5 w-5 text-primary"/> Hero Banner</h3>
+                <p className="text-sm text-muted-foreground">
+                   Generate a hero banner for your shop's landing page. Describe what you sell or the feeling you want to convey.
+                </p>
+                <FormField control={form.control} name="heroBannerUrl" render={({ field }) => (
                     <FormItem>
-                        <FormLabel>Logo Image</FormLabel>
-                        <FormControl>
-                            <div className="relative aspect-square w-32 rounded-md border border-dashed flex items-center justify-center bg-muted">
-                                {field.value ? (
-                                    <Image src={field.value} alt="Logo" fill className="rounded-md object-contain" />
-                                ) : (
-                                    <p className="text-sm text-muted-foreground">No logo selected.</p>
-                                )}
-                            </div>
-                        </FormControl>
-                        <FormMessage />
-                    </FormItem>
-                )} />
-                <Label htmlFor="logo-upload" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed">
-                    Upload Logo
-                </Label>
-                <Input type="file" id="logo-upload" className="hidden" onChange={(e) => handleFileChange(e, 'logo')} disabled={uploadingLogo} />
-                {uploadingLogo && (
-                    <Progress value={progressLogo} className="mt-2" />
-                )}
-            </div>
-
-             <div className="border rounded-md p-4 bg-muted/50">
-                <FormField control={form.control} name="coverImageUrl" render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>Cover Image</FormLabel>
+                        <FormLabel>Hero Banner Image</FormLabel>
                         <FormControl>
                             <div className="relative aspect-video w-full rounded-md border border-dashed flex items-center justify-center bg-muted">
                                 {field.value ? (
-                                    <Image src={field.value} alt="Cover" fill className="rounded-md object-contain" />
+                                    <Image src={field.value} alt="Hero Banner" fill className="rounded-md object-cover" />
                                 ) : (
-                                    <p className="text-sm text-muted-foreground">No cover image selected.</p>
+                                    <p className="text-sm text-muted-foreground">No hero banner generated yet.</p>
                                 )}
                             </div>
                         </FormControl>
                         <FormMessage />
                     </FormItem>
                 )} />
-                <Label htmlFor="cover-upload" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed">
-                    Upload Cover
-                </Label>
-                <Input type="file" id="cover-upload" className="hidden" onChange={(e) => handleFileChange(e, 'cover')} disabled={uploadingCover} />
-                {uploadingCover && (
-                    <Progress value={progressCover} className="mt-2" />
-                )}
-            </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <FormField control={form.control} name="primaryColor" render={({ field }) => (
-              <FormItem>
-                <FormLabel>Primary Color</FormLabel>
-                <FormControl><Input type="color" {...field} /></FormControl>
-                <FormMessage />
-              </FormItem>
-            )} />
-            <FormField control={form.control} name="secondaryColor" render={({ field }) => (
-              <FormItem>
-                <FormLabel>Secondary Color</FormLabel>
-                <FormControl><Input type="color" {...field} /></FormControl>
-                <FormMessage />
-              </FormItem>
-            )} />
-          </div>
+                <AIGenerateDialog onGenerate={handleImageGenerated} canEdit={canEdit}>
+                    <Button type="button" variant="secondary" disabled={!canEdit}>
+                        <Wand2 className="mr-2 h-4 w-4" /> Generate Hero Banner
+                    </Button>
+                </AIGenerateDialog>
+            </div>
         </fieldset>
 
-        <Button type="submit" disabled={isSaving || uploadingLogo || uploadingCover}>
+        <Button type="submit" disabled={isSaving}>
           {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
           Save &amp; Continue
         </Button>

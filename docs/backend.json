@@ -81,8 +81,6 @@
         "contactEmail": { "type": "string", "format": "email" },
         "contactPhone": { "type": "string" },
         "status": { "type": "string", "enum": ["draft", "pending_review", "approved", "rejected"] },
-        "template": { "type": "string" },
-        "theme": { "type": "string" },
         "metaTitle": { "type": "string" },
         "metaDescription": { "type": "string" },
         "tags": { "type": "array", "items": { "type": "string" } },
