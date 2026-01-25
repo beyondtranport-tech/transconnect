@@ -71,6 +71,12 @@ function JoinFormComponent() {
     },
   });
 
+  useEffect(() => {
+    if (emailParam) {
+      form.setValue('email', emailParam);
+    }
+  }, [emailParam, form]);
+
   const handlePasswordReset = async () => {
     const email = form.getValues('email');
     if (!email) {
