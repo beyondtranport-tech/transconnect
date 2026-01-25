@@ -24,8 +24,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2, Sparkles, Video, Download, Save, Copy, Film } from 'lucide-react';
 import { generateVideo } from '@/ai/flows/video-generation-flow';
 import { Textarea } from '@/components/ui/textarea';
-import { useStorage, useUser } from '@/firebase';
-import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { useUser, getClientSideAuthToken } from '@/firebase';
 import { Progress } from '@/components/ui/progress';
 import { Input } from '@/components/ui/input';
 import Image from 'next/image';
@@ -40,16 +39,13 @@ export default function VideoAnimatorCard({ promptTemplate }: { promptTemplate?:
   const [generatedVideo, setGeneratedVideo] = useState<string | null>(null);
   const { toast } = useToast();
   const { user } = useUser();
-  const storage = useStorage();
 
   const [isSaving, setIsSaving] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
   const [savedVideoUrl, setSavedVideoUrl] = useState<string | null>(null);
 
   const handleClear = () => {
     setGeneratedVideo(null);
     setSavedVideoUrl(null);
-    setUploadProgress(0);
     setIsSaving(false);
   };
   
@@ -112,25 +108,41 @@ export default function VideoAnimatorCard({ promptTemplate }: { promptTemplate?:
   };
 
   const handleSaveToCloud = async () => {
-    if (!generatedVideo || !user || !storage) {
-        toast({ variant: 'destructive', title: 'Error', description: 'No video, user, or storage service available.' });
+    if (!generatedVideo || !user) {
+        toast({ variant: 'destructive', title: 'Error', description: 'No video or user available.' });
         return;
     }
 
     setIsSaving(true);
-    setUploadProgress(0);
+    setSavedVideoUrl(null);
 
     try {
-        const response = await fetch(generatedVideo);
-        const blob = await response.blob();
-        const fileName = `video-${Date.now()}.mp4`;
-        const fileRef = storageRef(storage, `user-assets/${user.uid}/${fileName}`);
-        
-        await uploadBytes(fileRef, blob);
-        const downloadURL = await getDownloadURL(fileRef);
+        const token = await getClientSideAuthToken();
+        if (!token) throw new Error("Authentication failed.");
 
-        setSavedVideoUrl(downloadURL);
-        toast({ title: 'Video Saved!', description: 'Your video is now stored in the cloud.' });
+        const folder = 'animated-videos';
+        const fileName = `animated_${Date.now()}.mp4`;
+        
+        const response = await fetch('/api/uploadImageAsset', {
+            method: 'POST',
+            headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+            imageDataUri: generatedVideo,
+            folder: folder,
+            fileName: fileName
+            }),
+        });
+
+        const result = await response.json();
+        if (!response.ok || !result.success) {
+          throw new Error(result.error || 'Failed to upload video.');
+        }
+        
+        setSavedVideoUrl(result.url);
+        toast({ title: 'Video Saved!', description: 'Your animated video has been saved to your asset gallery.' });
     } catch (error: any) {
         toast({ variant: 'destructive', title: 'Save Failed', description: error.message });
     } finally {
@@ -199,7 +211,7 @@ export default function VideoAnimatorCard({ promptTemplate }: { promptTemplate?:
                         )}
                     </div>
                      {isSaving && (
-                        <Progress value={uploadProgress} className="w-full" />
+                        <Progress value={0} className="w-full" />
                     )}
                     {savedVideoUrl && (
                         <div className="space-y-2">

@@ -28,11 +28,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: 'Missing imageDataUri, folder, or fileName.' }, { status: 400 });
     }
     
-    // The admin app is initialized with the correct default bucket.
-    const bucket = getStorage(app).bucket();
+    // Explicitly specify the bucket name from the config.
+    const bucket = getStorage(app).bucket(firebaseConfig.storageBucket);
 
     // Extract content type and base64 data from data URI
-    const match = imageDataUri.match(/^data:(image\/\w+);base64,(.*)$/);
+    const match = imageDataUri.match(/^data:(.+);base64,(.*)$/);
     if (!match) {
         throw new Error('Invalid data URI format');
     }
