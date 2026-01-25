@@ -3,7 +3,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getAdminApp } from '@/lib/firebase-admin';
 import { getStorage } from 'firebase-admin/storage';
 import { getAuth } from 'firebase-admin/auth';
-import { firebaseConfig } from '@/firebase/config';
 
 export async function POST(req: NextRequest) {
   const { app, error: initError } = getAdminApp();
@@ -28,7 +27,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: 'Missing imageDataUri, folder, or fileName.' }, { status: 400 });
     }
     
-    // With the Admin SDK properly initialized, we can get the default bucket.
+    // With the Admin SDK properly initialized, we can now reliably get the default bucket.
     const bucket = getStorage(app).bucket();
 
     // Extract content type and base64 data from data URI
