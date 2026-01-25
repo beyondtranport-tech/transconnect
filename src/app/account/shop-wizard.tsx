@@ -14,7 +14,7 @@ import { useFirestore, useUser, useStorage, useCollection, getClientSideAuthToke
 import { useMemoFirebase } from '@/hooks/use-config';
 import { doc, collection } from 'firebase/firestore';
 import { ref as storageRef, uploadBytes, getDownloadURL } from "firebase/storage";
-import { Loader2, Save, CheckCircle, LayoutGrid, List, Image as ImageIcon, Sparkles, PlusCircle, Edit, Trash2, Send, Eye, ShoppingCart, Mail, Phone, UploadCloud, Wand2, Video, Search, ShieldAlert } from 'lucide-react';
+import { Loader2, Save, CheckCircle, LayoutGrid, List, Image as ImageIcon, Sparkles, PlusCircle, Edit, Trash2, Send, Eye, ShoppingCart, Mail, Phone, UploadCloud, Wand2, Video, Search, ShieldAlert, Download, Copy } from 'lucide-react';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -240,6 +240,8 @@ function AIGenerateDialog({
   const [isLoading, setIsLoading] = useState(false);
   const [isApplying, setIsApplying] = useState(false);
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [savedImageUrl, setSavedImageUrl] = useState<string | null>(null);
   const { toast } = useToast();
   const { user } = useUser();
   
@@ -247,6 +249,7 @@ function AIGenerateDialog({
     if (!isOpen) {
         setPrompt(promptTemplate || '');
         setGeneratedImage(null);
+        setSavedImageUrl(null);
     }
   }, [isOpen, promptTemplate]);
 
@@ -257,11 +260,12 @@ function AIGenerateDialog({
     }
     setIsLoading(true);
     setGeneratedImage(null);
+    setSavedImageUrl(null);
 
     try {
       const result = await generateImage({ prompt });
       setGeneratedImage(result.imageDataUri);
-      toast({ title: 'Image Generated!', description: 'Review the image below and click "Apply Image" to use it.' });
+      toast({ title: 'Image Generated!', description: 'Review the image below and choose an action.' });
     } catch (e: any) {
       toast({ variant: 'destructive', title: 'Generation Failed', description: e.message });
     } finally {
@@ -301,7 +305,7 @@ function AIGenerateDialog({
         throw new Error(result.error || 'Failed to upload image.');
       }
 
-      onGenerate(result.url); // Use the URL from the backend
+      onGenerate(result.url);
 
       toast({ title: 'Image Applied!', description: 'The new image has been added.'});
       setIsOpen(false);
@@ -311,6 +315,70 @@ function AIGenerateDialog({
       setIsApplying(false);
     }
   };
+  
+    const handleDownload = () => {
+        if (!generatedImage) return;
+        const link = document.createElement('a');
+        link.href = generatedImage;
+        link.download = `generated-image-${Date.now()}.png`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        toast({
+            title: 'Image Downloaded',
+            description: 'The image has been saved to your downloads folder.',
+        });
+    };
+
+    const handleSaveToCloud = async () => {
+        if (!generatedImage || !user) {
+            toast({ variant: 'destructive', title: 'Error', description: 'No image or user available.' });
+            return;
+        }
+
+        setIsSaving(true);
+        setSavedImageUrl(null);
+
+        try {
+            const token = await getClientSideAuthToken();
+            if (!token) throw new Error("Authentication failed.");
+
+            const isHeroBanner = title.toLowerCase().includes('hero');
+            const folder = isHeroBanner ? 'hero-images' : 'product-images';
+            const fileName = `generated_${Date.now()}.png`;
+            
+            const response = await fetch('/api/uploadImageAsset', {
+                method: 'POST',
+                headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                imageDataUri: generatedImage,
+                folder: folder,
+                fileName: fileName
+                }),
+            });
+
+            const result = await response.json();
+            if (!response.ok || !result.success) {
+            throw new Error(result.error || 'Failed to upload image.');
+            }
+            
+            setSavedImageUrl(result.url);
+            toast({ title: 'Image Saved!', description: 'Your image has been saved to your asset gallery.' });
+        } catch (error: any) {
+            toast({ variant: 'destructive', title: 'Save Failed', description: error.message });
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    const copyUrlToClipboard = () => {
+        if (!savedImageUrl) return;
+        navigator.clipboard.writeText(savedImageUrl);
+        toast({ title: 'URL Copied!' });
+    }
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -339,17 +407,37 @@ function AIGenerateDialog({
               <p className="text-sm text-muted-foreground">Generated image will appear here.</p>
             )}
           </div>
+           {savedImageUrl && (
+              <div className="space-y-2">
+                  <Label>Cloud URL</Label>
+                  <div className="flex items-center gap-2">
+                      <Input value={savedImageUrl} readOnly />
+                      <Button variant="outline" size="icon" onClick={copyUrlToClipboard}>
+                          <Copy className="h-4 w-4"/>
+                      </Button>
+                  </div>
+              </div>
+          )}
         </div>
         <DialogFooter className="sm:justify-between">
-           <div>
+           <div className="flex flex-wrap items-center gap-2">
                 {generatedImage && (
-                    <Button onClick={handleApplyImage} disabled={isApplying}>
-                        {isApplying ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle className="mr-2 h-4 w-4" />}
-                        Apply Image
-                    </Button>
+                    <>
+                        <Button onClick={handleApplyImage} disabled={isApplying || isSaving}>
+                            {isApplying ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle className="mr-2 h-4 w-4" />}
+                            Apply Image
+                        </Button>
+                        <Button variant="secondary" onClick={handleDownload} disabled={isApplying || isSaving}>
+                            <Download className="mr-2 h-4 w-4" /> Download
+                        </Button>
+                        <Button variant="outline" onClick={handleSaveToCloud} disabled={isApplying || isSaving || !!savedImageUrl}>
+                            {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                            {savedImageUrl ? 'Saved' : 'Save to Gallery'}
+                        </Button>
+                    </>
                 )}
            </div>
-           <Button onClick={handleGenerate} disabled={isLoading || isApplying || !canEdit}>
+           <Button onClick={handleGenerate} disabled={isLoading || isApplying || isSaving || !canEdit}>
                 {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
                 Generate New Image
             </Button>
@@ -442,26 +530,21 @@ function ProductDialog({ shop, product, onComplete, children, canEdit }: { shop:
     }
   };
 
-    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
 
-        if (!user) {
-            toast({ variant: 'destructive', title: 'Upload Failed', description: 'Not logged in.' });
-            return;
-        }
+        setUploading(true);
+        const fileRefInput = fileInputRef.current;
+        
+        try {
+            const token = await getClientSideAuthToken();
+            if (!token) throw new Error("Authentication failed.");
 
-        const reader = new FileReader();
-        reader.readAsDataURL(file);
-        reader.onload = async () => {
-            const imageDataUri = reader.result as string;
-            setUploading(true);
-            const fileRefInput = fileInputRef.current;
-            
-            try {
-                const token = await getClientSideAuthToken();
-                if (!token) throw new Error("Authentication failed.");
-
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = async () => {
+                const imageDataUri = reader.result as string;
                 const fileName = `${Date.now()}_${file.name}`;
                 const folder = 'product-images';
 
@@ -487,17 +570,18 @@ function ProductDialog({ shop, product, onComplete, children, canEdit }: { shop:
                 form.setValue('imageUrls', [...currentUrls, result.url], { shouldValidate: true });
                 toast({ title: 'Upload Complete!', description: `Image "${file.name}" added.` });
 
-            } catch (error: any) {
-                toast({ variant: 'destructive', title: 'Upload Failed', description: error.message });
-            } finally {
-                setUploading(false);
                 if (fileRefInput) fileRefInput.value = '';
+                setUploading(false);
+            };
+            reader.onerror = (error) => {
+                throw new Error("Could not read file for upload.");
             }
-        };
-        reader.onerror = (error) => {
-            toast({ variant: 'destructive', title: 'File Read Error', description: 'Could not read file.' });
+
+        } catch (error: any) {
+            toast({ variant: 'destructive', title: 'Upload Failed', description: error.message });
             setUploading(false);
-        };
+            if (fileRefInput) fileRefInput.value = '';
+        }
     };
 
 
