@@ -71,6 +71,24 @@ function JoinFormComponent() {
     },
   });
 
+  useEffect(() => {
+    // This effect runs after the component mounts to override aggressive browser autofill.
+    const timer = setTimeout(() => {
+      // If there's an email in the URL from an invite, force it into the form.
+      if (emailParam) {
+        form.setValue('email', emailParam, { shouldValidate: true });
+      }
+      // Check if the phone field has been incorrectly autofilled with an email.
+      const phoneValue = form.getValues('phone');
+      if (phoneValue && phoneValue.includes('@')) {
+        form.setValue('phone', '', { shouldValidate: true });
+      }
+    }, 100); // A small delay gives the browser time to autofill first.
+
+    return () => clearTimeout(timer);
+  }, [emailParam, form]);
+
+
   const handlePasswordReset = async () => {
     const email = form.getValues('email');
     if (!email) {
