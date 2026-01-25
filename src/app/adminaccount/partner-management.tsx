@@ -159,10 +159,10 @@ export default function PartnerManagement() {
     };
     
     const columns: ColumnDef<any>[] = useMemo(() => [
-        { accessorKey: 'firstName', header: 'First Name' },
-        { accessorKey: 'lastName', header: 'Last Name' },
-        { accessorKey: 'email', header: 'Email' },
-        { accessorKey: 'companyName', header: 'Company' },
+        { accessorKey: 'firstName', header: 'First Name', cell: ({ row }) => <div>{row.original.firstName}</div> },
+        { accessorKey: 'lastName', header: 'Last Name', cell: ({ row }) => <div>{row.original.lastName}</div> },
+        { accessorKey: 'email', header: 'Email', cell: ({ row }) => <div>{row.original.email}</div> },
+        { accessorKey: 'companyName', header: 'Company', cell: ({ row }) => <div>{row.original.companyName}</div> },
         { accessorKey: 'status', header: 'Status', cell: ({row}) => <Badge className="capitalize">{row.original.status}</Badge>},
         { id: 'actions', header: () => <div className="text-right">Actions</div>, cell: ({row}) => (
             <div className="text-right flex items-center justify-end">
@@ -203,6 +203,3 @@ export default function PartnerManagement() {
         </Card>
     );
 }
-
-
-    
