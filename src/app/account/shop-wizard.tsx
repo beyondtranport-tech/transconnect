@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
@@ -270,7 +271,7 @@ function AIGenerateDialog({
   };
 
   const handleApplyImage = async () => {
-    if (!generatedImage || !storage || !user || !shop.companyId) {
+    if (!generatedImage || !storage || !user) {
       toast({ variant: 'destructive', title: 'Error', description: 'Cannot apply image. Missing required info.' });
       return;
     }
@@ -279,7 +280,7 @@ function AIGenerateDialog({
       const imageResponse = await fetch(generatedImage);
       const blob = await imageResponse.blob();
       const fileName = `generated_${Date.now()}.png`;
-      const path = `companies/${shop.companyId}/shops/${shop.id}/generated_assets/${fileName}`;
+      const path = `generated-images/${user.uid}/assets/${fileName}`;
       const storageRefVal = storageRef(storage, path);
       
       const uploadResult = await uploadBytes(storageRefVal, blob);
@@ -436,14 +437,14 @@ function ProductDialog({ shop, product, onComplete, children, canEdit }: { shop:
 
   useEffect(() => {
     const uploadFiles = async () => {
-      if (!files || !storage || !user || !shop.companyId || !shop.id) return;
+      if (!files || !storage || !user) return;
 
       setUploading(true);
       setProgress(0);
       
       const uploadPromises = Array.from(files).map(file => {
           return new Promise<string>((resolve, reject) => {
-              const storageRefVal = storageRef(storage, `companies/${shop.companyId}/shops/${shop.id}/products/${Date.now()}_${file.name}`);
+              const storageRefVal = storageRef(storage, `generated-images/${user.uid}/products/${Date.now()}_${file.name}`);
               const uploadTask = uploadBytesResumable(storageRefVal, file);
               
               uploadTask.on('state_changed', 
