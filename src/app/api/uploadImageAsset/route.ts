@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: 'Missing imageDataUri, folder, or fileName.' }, { status: 400 });
     }
 
-    const bucket = getStorage(app).bucket();
+    const bucket = getStorage(app).bucket("transconnect-v1-39578841-2a857.appspot.com");
 
     // Extract content type and base64 data from data URI
     const match = imageDataUri.match(/^data:(image\/\w+);base64,(.*)$/);
