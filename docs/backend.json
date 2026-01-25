@@ -22,7 +22,7 @@
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Company",
       "type": "object",
-      "description": "Represents a member's business entity on the Logistics Flow platform.",
+      "description": "Represents a member's business entity on the TransConnect platform.",
       "properties": {
         "id": { "type": "string", "description": "Unique identifier for the company." },
         "ownerId": { "type": "string", "description": "The Firebase Auth UID of the user who owns and manages this company account." },
@@ -47,11 +47,28 @@
       },
       "required": ["id", "ownerId", "companyName", "membershipId"]
     },
+    "Partner": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Partner",
+      "type": "object",
+      "description": "Represents a strategic partner or Independent Sales Agent (ISA) in the system.",
+      "properties": {
+        "id": { "type": "string" },
+        "firstName": { "type": "string" },
+        "lastName": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "companyName": { "type": "string", "description": "The name of the partner's own company." },
+        "status": { "type": "string", "enum": ["active", "inactive"], "description": "The status of the partner." },
+        "createdAt": { "type": "object" },
+        "updatedAt": { "type": "object" }
+      },
+      "required": ["firstName", "lastName", "email"]
+    },
     "Shop": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Shop",
       "type": "object",
-      "description": "Represents a vendor's shop on the Logistics Flow platform.",
+      "description": "Represents a vendor's shop on the TransConnect platform.",
       "properties": {
         "id": { "type": "string", "description": "Unique identifier for the shop." },
         "ownerId": { "type": "string" },
@@ -348,6 +365,14 @@
         }
       },
       {
+        "path": "/partners/{partnerId}",
+        "definition": {
+          "entityName": "Partner",
+          "schema": { "$ref": "#/entities/Partner" },
+          "description": "Admin-managed collection of strategic partners and ISAs."
+        }
+      },
+      {
         "path": "/companies/{companyId}/staff/{staffId}",
         "definition": {
           "entityName": "Staff",
@@ -495,3 +520,5 @@
     "reasoning": "The data model is refactored to separate user identity from business entities. A new `/users` collection stores individual user profiles, linked via Firebase Auth UID. A new `/companies` collection stores business-related data, including wallet balance, membership status, and subcollections for transactions, staff, quotes, etc. This creates a cleaner, more scalable architecture where a user owns a company, rather than the user and company being the same entity. This prevents data duplication and clarifies ownership for security rules."
   }
 }
+
+    

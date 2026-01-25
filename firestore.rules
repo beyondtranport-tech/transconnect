@@ -126,5 +126,12 @@ service cloud.firestore {
     match /leads/{leadId} {
       allow read, write: if isAdmin();
     }
+
+    // Admin-managed collection for strategic partners.
+    match /partners/{partnerId} {
+        allow read, write: if isAdmin();
+    }
   }
 }
+
+    
