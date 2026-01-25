@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
@@ -27,8 +26,8 @@ export function ShopPreview({ shop, products }: { shop: any, products: any[] }) 
             {(products || []).map(product => (
                 <Card key={product.id} className="overflow-hidden bg-white">
                     <div className="relative aspect-square bg-gray-200">
-                        {product.imageUrl ? 
-                            <Image src={product.imageUrl} alt={product.name} fill className="object-cover" /> :
+                        {(product.imageUrls && product.imageUrls[0]) ? 
+                            <Image src={product.imageUrls[0]} alt={product.name} fill className="object-cover" /> :
                             <div className="w-full h-full flex items-center justify-center"><ShoppingCart className="h-12 w-12 text-gray-400"/></div>
                         }
                     </div>
@@ -52,8 +51,8 @@ export function ShopPreview({ shop, products }: { shop: any, products: any[] }) 
             {(products || []).map(product => (
                  <Card key={product.id} className="flex items-center bg-white">
                     <div className="relative h-24 w-24 flex-shrink-0 bg-gray-200">
-                       {product.imageUrl ? 
-                            <Image src={product.imageUrl} alt={product.name} fill className="object-cover rounded-l-lg" /> :
+                       {(product.imageUrls && product.imageUrls[0]) ? 
+                            <Image src={product.imageUrls[0]} alt={product.name} fill className="object-cover rounded-l-lg" /> :
                             <div className="w-full h-full flex items-center justify-center"><ShoppingCart className="h-8 w-8 text-gray-400"/></div>
                         }
                     </div>

@@ -105,15 +105,10 @@ function Step1CoreIdentity({ shop, onSave, onSeoGenerated, canEdit }: { shop: an
     if (!user || !shop.companyId) return;
     setIsSaving(true);
     
-    const dataToUpdate = {
-        ...values,
-        updatedAt: { _methodName: 'serverTimestamp' },
-    };
-
     try {
         const token = await getClientSideAuthToken();
         if (!token) throw new Error("Authentication token not found.");
-
+        
         const response = await fetch('/api/updateUserDoc', {
             method: 'POST',
             headers: {
@@ -122,14 +117,13 @@ function Step1CoreIdentity({ shop, onSave, onSeoGenerated, canEdit }: { shop: an
             },
             body: JSON.stringify({
                 path: `companies/${shop.companyId}/shops/${shop.id}`,
-                data: dataToUpdate
+                data: { ...values, updatedAt: { _methodName: 'serverTimestamp' } }
             }),
         });
 
         const result = await response.json();
-
         if (!response.ok) {
-            throw new Error(result.error || 'Failed to update shop.');
+          throw new Error(result.error || 'Failed to update shop.');
         }
 
         toast({ title: 'Step 1 Saved!', description: 'Your core shop details have been updated.' });
@@ -220,7 +214,7 @@ const productSchema = z.object({
   description: z.string().min(1, 'Description is required'),
   price: z.coerce.number().positive('Price must be a positive number'),
   sku: z.string().optional(),
-  imageUrl: z.string().optional(),
+  imageUrls: z.array(z.string()).optional(),
 });
 type ProductFormValues = z.infer<typeof productSchema>;
 
@@ -254,6 +248,8 @@ function AIGenerateDialog({ onGenerate, children, canEdit }: { onGenerate: (newU
     if (generatedImage) {
         onGenerate(generatedImage);
         setIsOpen(false);
+        setGeneratedImage(null);
+        setPrompt('');
     }
   }
 
@@ -308,7 +304,7 @@ function ProductDialog({ shop, product, onComplete, children, canEdit }: { shop:
   const [isSaving, setIsSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
-  const [file, setFile] = useState<File | null>(null);
+  const [files, setFiles] = useState<FileList | null>(null);
 
   const form = useForm<ProductFormValues>({
     resolver: zodResolver(productSchema),
@@ -317,29 +313,42 @@ function ProductDialog({ shop, product, onComplete, children, canEdit }: { shop:
       description: product?.description || '',
       price: product?.price || 0,
       sku: product?.sku || '',
-      imageUrl: product?.imageUrl || '',
+      imageUrls: product?.imageUrls || [],
     },
   });
+  
+  useEffect(() => {
+    if (isOpen) {
+        form.reset({
+            name: product?.name || '',
+            description: product?.description || '',
+            price: product?.price || 0,
+            sku: product?.sku || '',
+            imageUrls: product?.imageUrls || [],
+        })
+    }
+  }, [isOpen, product, form]);
 
   const handleImageGenerated = (newUrl: string) => {
-    form.setValue('imageUrl', newUrl);
+    const currentUrls = form.getValues('imageUrls') || [];
+    form.setValue('imageUrls', [...currentUrls, newUrl]);
   };
 
   const onSubmit = async (values: ProductFormValues) => {
     if (!user || !shop.companyId || !shop.id) return;
     setIsSaving(true);
-
-    const dataToUpdate = {
-        ...values,
-        updatedAt: { _methodName: 'serverTimestamp' },
-    };
-
+    
     try {
         const token = await getClientSideAuthToken();
         if (!token) throw new Error("Authentication token not found.");
 
         const path = product ? `companies/${shop.companyId}/shops/${shop.id}/products/${product.id}` : `companies/${shop.companyId}/shops/${shop.id}/products`;
         const method = product ? 'updateUserDoc' : 'addUserDoc';
+        
+        const dataToUpdate = {
+            ...values,
+            updatedAt: { _methodName: 'serverTimestamp' },
+        };
         const body = product
           ? { path, data: dataToUpdate }
           : { collectionPath: path, data: dataToUpdate };
@@ -372,45 +381,58 @@ function ProductDialog({ shop, product, onComplete, children, canEdit }: { shop:
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
-      setFile(e.target.files[0]);
+      setFiles(e.target.files);
     }
   };
 
   useEffect(() => {
-    const uploadFile = async () => {
-      if (!file || !storage || !user || !shop.companyId || !shop.id) return;
+    const uploadFiles = async () => {
+      if (!files || !storage || !user || !shop.companyId || !shop.id) return;
 
       setUploading(true);
-      const storageRefVal = ref(storage, `companies/${shop.companyId}/shops/${shop.id}/products/${file.name}`);
-      const uploadTask = uploadBytesResumable(storageRefVal, file);
+      setProgress(0);
+      
+      const uploadPromises = Array.from(files).map(file => {
+          return new Promise<string>((resolve, reject) => {
+              const storageRefVal = ref(storage, `companies/${shop.companyId}/shops/${shop.id}/products/${Date.now()}_${file.name}`);
+              const uploadTask = uploadBytesResumable(storageRefVal, file);
+              
+              uploadTask.on('state_changed', 
+                (snapshot) => {
+                    // Note: This progress will only reflect the last file in a multi-file upload.
+                    // A more complex implementation would be needed for aggregate progress.
+                    const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                    setProgress(progress);
+                },
+                (error) => reject(error),
+                async () => {
+                    const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+                    resolve(downloadURL);
+                }
+              );
+          });
+      });
 
-      uploadTask.on('state_changed',
-        (snapshot) => {
-          const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-          setProgress(progress);
-        },
-        (error) => {
+      try {
+          const downloadURLs = await Promise.all(uploadPromises);
+          const currentUrls = form.getValues('imageUrls') || [];
+          form.setValue('imageUrls', [...currentUrls, ...downloadURLs]);
+          toast({ title: 'Upload Complete!', description: `${files.length} image(s) have been uploaded.` });
+      } catch (error: any) {
           toast({ variant: 'destructive', title: 'Upload Failed', description: error.message });
+      } finally {
           setUploading(false);
-        },
-        async () => {
-          try {
-            const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-            form.setValue('imageUrl', downloadURL);
-            toast({ title: 'Upload Complete!', description: 'Your image has been uploaded.' });
-          } catch (error: any) {
-            toast({ variant: 'destructive', title: 'Failed to get URL', description: error.message });
-          } finally {
-            setUploading(false);
+          setFiles(null);
+          if (document.getElementById('image-upload')) {
+            (document.getElementById('image-upload') as HTMLInputElement).value = '';
           }
-        }
-      );
+      }
     };
 
-    if (file) {
-      uploadFile();
+    if (files) {
+      uploadFiles();
     }
-  }, [file, storage, user, shop, form, toast]);
+  }, [files, storage, user, shop, form, toast]);
 
 
   return (
@@ -427,47 +449,66 @@ function ProductDialog({ shop, product, onComplete, children, canEdit }: { shop:
           <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col flex-1 min-h-0">
              <div className="flex-1 overflow-y-auto space-y-6 pr-4 py-4">
                 <fieldset disabled={!canEdit} className="space-y-6">
-                <FormField control={form.control} name="name" render={({ field }) => (
-                    <FormItem>
-                    <FormLabel>Product Name</FormLabel>
-                    <FormControl><Input placeholder="Product Name" {...field} /></FormControl>
-                    <FormMessage />
-                    </FormItem>
-                )} />
-                <FormField control={form.control} name="description" render={({ field }) => (
-                    <FormItem>
-                    <FormLabel>Description</FormLabel>
-                    <FormControl><Textarea placeholder="Describe the product..." {...field} /></FormControl>
-                    <FormMessage />
-                    </FormItem>
-                )} />
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormField control={form.control} name="price" render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>Price</FormLabel>
-                        <FormControl><Input type="number" placeholder="0.00" {...field} /></FormControl>
+                    <FormField control={form.control} name="name" render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>Product Name</FormLabel>
+                        <FormControl><Input placeholder="Product Name" {...field} /></FormControl>
                         <FormMessage />
-                    </FormItem>
+                        </FormItem>
                     )} />
-                    <FormField control={form.control} name="sku" render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>SKU (Optional)</FormLabel>
-                        <FormControl><Input placeholder="SKU123" {...field} /></FormControl>
+                    <FormField control={form.control} name="description" render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>Description</FormLabel>
+                        <FormControl><Textarea placeholder="Describe the product..." {...field} /></FormControl>
                         <FormMessage />
-                    </FormItem>
+                        </FormItem>
                     )} />
-                </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <FormField control={form.control} name="price" render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Price</FormLabel>
+                            <FormControl><Input type="number" placeholder="0.00" {...field} /></FormControl>
+                            <FormMessage />
+                        </FormItem>
+                        )} />
+                        <FormField control={form.control} name="sku" render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>SKU (Optional)</FormLabel>
+                            <FormControl><Input placeholder="SKU123" {...field} /></FormControl>
+                            <FormMessage />
+                        </FormItem>
+                        )} />
+                    </div>
 
                     <div className="border rounded-md p-4 bg-muted/50">
-                        <FormField control={form.control} name="imageUrl" render={({ field }) => (
+                       <FormField control={form.control} name="imageUrls" render={({ field }) => (
                             <FormItem>
-                                <FormLabel>Product Image</FormLabel>
+                                <FormLabel>Product Images</FormLabel>
                                 <FormControl>
-                                    <div className="relative aspect-square w-full rounded-md border border-dashed flex items-center justify-center bg-muted">
-                                        {field.value ? (
-                                            <Image src={field.value} alt="Product" fill className="rounded-md object-contain" />
-                                        ) : (
-                                            <p className="text-sm text-muted-foreground">No image selected.</p>
+                                    <div className="grid grid-cols-3 gap-2">
+                                        {(field.value || []).map((url, index) => (
+                                            <div key={index} className="relative aspect-square">
+                                                <Image src={url} alt={`Product image ${index + 1}`} fill className="rounded-md object-contain border" />
+                                                <Button
+                                                    type="button"
+                                                    variant="destructive"
+                                                    size="icon"
+                                                    className="absolute -top-2 -right-2 h-6 w-6 rounded-full"
+                                                    onClick={() => {
+                                                        const newUrls = [...(field.value || [])];
+                                                        newUrls.splice(index, 1);
+                                                        form.setValue('imageUrls', newUrls);
+                                                    }}
+                                                    disabled={!canEdit}
+                                                >
+                                                    <Trash2 className="h-4 w-4" />
+                                                </Button>
+                                            </div>
+                                        ))}
+                                        {(!field.value || field.value.length === 0) && (
+                                            <div className="col-span-3 relative aspect-square w-full rounded-md border border-dashed flex items-center justify-center bg-muted">
+                                                <p className="text-sm text-muted-foreground">No images selected.</p>
+                                            </div>
                                         )}
                                     </div>
                                 </FormControl>
@@ -475,21 +516,19 @@ function ProductDialog({ shop, product, onComplete, children, canEdit }: { shop:
                             </FormItem>
                         )} />
 
-                    <div className="flex items-center justify-between mt-4">
+                        <div className="flex items-center justify-between mt-4">
                             <div>
-                                <Label htmlFor="image-upload" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed">
-                                    Upload Image
+                                <Label htmlFor="image-upload" className={cn("text-sm font-medium leading-none", !canEdit && "text-muted-foreground")}>
+                                   Upload Image(s)
                                 </Label>
-                                <Input type="file" id="image-upload" className="hidden" onChange={handleFileChange} disabled={uploading || !canEdit} />
+                                <Input type="file" id="image-upload" className="mt-2" onChange={handleFileChange} disabled={uploading || !canEdit} multiple />
                             </div>
-
-                            <AIGenerateDialog onGenerate={handleImageGenerated} canEdit={canEdit}>
+                             <AIGenerateDialog onGenerate={handleImageGenerated} canEdit={canEdit}>
                                 <Button type="button" variant="secondary" disabled={uploading || !canEdit}>
                                     <Wand2 className="mr-2 h-4 w-4" /> Generate Image
                                 </Button>
                             </AIGenerateDialog>
                         </div>
-
                         {uploading && (
                             <Progress value={progress} className="mt-2" />
                         )}
@@ -586,15 +625,13 @@ function Step2Products({ shop, canEdit }: { shop: any, canEdit: boolean }) {
                                 {products.map((product) => (
                                     <TableRow key={product.id}>
                                         <TableCell>
-                                            {product.imageUrl ? (
-                                                <div className="relative h-12 w-12">
-                                                    <Image src={product.imageUrl} alt={product.name} fill className="object-contain" />
-                                                </div>
-                                            ) : (
-                                                <div className="h-12 w-12 rounded-md bg-muted flex items-center justify-center">
+                                            <div className="relative h-12 w-12 rounded-md bg-muted flex items-center justify-center">
+                                                {(product.imageUrls && product.imageUrls[0]) ? (
+                                                    <Image src={product.imageUrls[0]} alt={product.name} fill className="object-contain" />
+                                                ) : (
                                                     <ImageIcon className="h-6 w-6 text-muted-foreground" />
-                                                </div>
-                                            )}
+                                                )}
+                                            </div>
                                         </TableCell>
                                         <TableCell>{product.name}</TableCell>
                                         <TableCell>${product.price.toFixed(2)}</TableCell>
@@ -671,16 +708,11 @@ function Step3Appearance({ shop, onSave, canEdit }: { shop: any, onSave: (newDat
   const onSubmit = async (values: Step3FormValues) => {
     if (!user || !shop.companyId) return;
     setIsSaving(true);
-
-    const dataToUpdate = {
-        ...values,
-        updatedAt: { _methodName: 'serverTimestamp' },
-    };
-
+    
     try {
         const token = await getClientSideAuthToken();
         if (!token) throw new Error("Authentication token not found.");
-
+        
         const response = await fetch('/api/updateUserDoc', {
             method: 'POST',
             headers: {
@@ -689,14 +721,13 @@ function Step3Appearance({ shop, onSave, canEdit }: { shop: any, onSave: (newDat
             },
             body: JSON.stringify({
                 path: `companies/${shop.companyId}/shops/${shop.id}`,
-                data: dataToUpdate
+                data: { ...values, updatedAt: { _methodName: 'serverTimestamp' } }
             }),
         });
 
         const result = await response.json();
-
         if (!response.ok) {
-            throw new Error(result.error || 'Failed to update shop.');
+          throw new Error(result.error || 'Failed to update shop.');
         }
 
         toast({ title: 'Step 3 Saved!', description: 'Your shop appearance details have been updated.' });
@@ -762,262 +793,4 @@ const shopStep4Schema = z.object({
 type Step4FormValues = z.infer<typeof shopStep4Schema>;
 
 function Step4SocialLinks({ shop, onSave, canEdit }: { shop: any, onSave: (newData: any) => void, canEdit: boolean }) {
-  const { user } = useUser();
-  const { toast } = useToast();
-  const [isSaving, setIsSaving] = useState(false);
-
-  const form = useForm<Step4FormValues>({
-    resolver: zodResolver(shopStep4Schema),
-    defaultValues: {
-      facebookLink: shop.facebookLink || '',
-      instagramLink: shop.instagramLink || '',
-      twitterLink: shop.twitterLink || '',
-      linkedinLink: shop.linkedinLink || '',
-      youtubeLink: shop.youtubeLink || '',
-    }
-  });
-
-  const onSubmit = async (values: Step4FormValues) => {
-    if (!user || !shop.companyId) return;
-    setIsSaving(true);
-
-    const dataToUpdate = {
-        ...values,
-        updatedAt: { _methodName: 'serverTimestamp' },
-    };
-
-    try {
-        const token = await getClientSideAuthToken();
-        if (!token) throw new Error("Authentication token not found.");
-
-        const response = await fetch('/api/updateUserDoc', {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                path: `companies/${shop.companyId}/shops/${shop.id}`,
-                data: dataToUpdate
-            }),
-        });
-
-        const result = await response.json();
-
-        if (!response.ok) {
-            throw new Error(result.error || 'Failed to update shop.');
-        }
-
-        toast({ title: 'Step 4 Saved!', description: 'Your social links have been updated.' });
-        onSave(values);
-    } catch (error: any) {
-        toast({ variant: 'destructive', title: 'Update Failed', description: error.message });
-    } finally {
-        setIsSaving(false);
-    }
-  };
-
-  return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        <fieldset disabled={!canEdit} className="space-y-6">
-          <FormField control={form.control} name="facebookLink" render={({ field }) => (
-            <FormItem>
-              <FormLabel>Facebook Link</FormLabel>
-              <FormControl><Input placeholder="https://facebook.com/yourshop" {...field} /></FormControl>
-              <FormMessage />
-            </FormItem>
-          )} />
-          <FormField control={form.control} name="instagramLink" render={({ field }) => (
-            <FormItem>
-              <FormLabel>Instagram Link</FormLabel>
-              <FormControl><Input placeholder="https://instagram.com/yourshop" {...field} /></FormControl>
-              <FormMessage />
-            </FormItem>
-          )} />
-          <FormField control={form.control} name="twitterLink" render={({ field }) => (
-            <FormItem>
-              <FormLabel>Twitter Link</FormLabel>
-              <FormControl><Input placeholder="https://twitter.com/yourshop" {...field} /></FormControl>
-              <FormMessage />
-            </FormItem>
-          )} />
-          <FormField control={form.control} name="linkedinLink" render={({ field }) => (
-            <FormItem>
-              <FormLabel>LinkedIn Link</FormLabel>
-              <FormControl><Input placeholder="https://linkedin.com/yourshop" {...field} /></FormControl>
-              <FormMessage />
-            </FormItem>
-          )} />
-          <FormField control={form.control} name="youtubeLink" render={({ field }) => (
-            <FormItem>
-              <FormLabel>YouTube Link</FormLabel>
-              <FormControl><Input placeholder="https://youtube.com/yourshop" {...field} /></FormControl>
-              <FormMessage />
-            </FormItem>
-          )} />
-        </fieldset>
-
-        <Button type="submit" disabled={isSaving}>
-          {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-          Save &amp; Continue
-        </Button>
-      </form>
-    </Form>
-  );
-}
-
-// ====== STEP 5: Review & Submit ======
-function Step5ReviewAndSubmit({ shop, canEdit }: { shop: any, canEdit: boolean }) {
-  const { user } = useUser();
-  const firestore = useFirestore();
-  const { toast } = useToast();
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const handleSubmit = async () => {
-    if (!user || !shop.companyId) return;
-    setIsSubmitting(true);
-
-    const dataToUpdate = {
-        status: 'pending_review',
-        updatedAt: { _methodName: 'serverTimestamp' },
-    };
-
-    try {
-        const token = await getClientSideAuthToken();
-        if (!token) throw new Error("Authentication token not found.");
-
-        const response = await fetch('/api/updateUserDoc', {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                path: `companies/${shop.companyId}/shops/${shop.id}`,
-                data: dataToUpdate
-            }),
-        });
-
-        const result = await response.json();
-
-        if (!response.ok) {
-            throw new Error(result.error || 'Failed to update shop.');
-        }
-        toast({ title: 'Shop Submitted!', description: 'Your shop has been submitted for review.' });
-    } catch (error: any) {
-        toast({ variant: 'destructive', title: 'Submission Failed', description: error.message });
-    } finally {
-        setIsSubmitting(false);
-    }
-  };
-
-  return (
-    <div className="space-y-4">
-      <h3 className="text-xl font-semibold">Review &amp; Submit</h3>
-      <p className="text-muted-foreground">
-        Please review your shop details before submitting. Once submitted, your shop will be reviewed by our team.
-      </p>
-
-      <ShopPreview shop={shop} products={[]} />
-
-      <Button onClick={handleSubmit} disabled={isSubmitting || !canEdit}>
-        {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
-        Submit for Review
-      </Button>
-    </div>
-  );
-}
-
-export function ShopWizard({ shop }: { shop: any }) {
-  const [activeStep, setActiveStep] = useState(1);
-  const [shopData, setShopData] = useState(shop);
-  const { can } = usePermissions();
-
-  const canEdit = useMemo(() => {
-      // Check if the user has general edit permissions for the shop resource
-      const hasPermission = can('edit', 'shop');
-      // Also check if the shop is in a state that allows editing
-      const isEditableStatus = shop.status === 'draft' || shop.status === 'rejected';
-      return hasPermission && isEditableStatus;
-  }, [shop.status, can]);
-
-  const handleNext = () => {
-    setActiveStep((step) => step + 1);
-  };
-
-  const handlePrevious = () => {
-    setActiveStep((step) => step - 1);
-  };
-
-  const handleSaveStep = (newData: any) => {
-    setShopData((prevData: any) => ({ ...prevData, ...newData }));
-    handleNext();
-  };
-
-   const handleSeoGenerated = (seoData: any) => {
-    setShopData((prevData: any) => ({ ...prevData, ...seoData }));
-  };
-
-  const steps = useMemo(() => [
-    {
-      id: 1,
-      label: 'Core Identity',
-      content: <Step1CoreIdentity shop={shopData} onSave={handleSaveStep} onSeoGenerated={handleSeoGenerated} canEdit={canEdit} />,
-    },
-    {
-      id: 2,
-      label: 'Products',
-      content: <Step2Products shop={shopData} canEdit={canEdit} />,
-    },
-    {
-      id: 3,
-      label: 'Appearance',
-      content: <Step3Appearance shop={shopData} onSave={handleSaveStep} canEdit={canEdit} />,
-    },
-    {
-      id: 4,
-      label: 'Social Links',
-      content: <Step4SocialLinks shop={shopData} onSave={handleSaveStep} canEdit={canEdit} />,
-    },
-    {
-      id: 5,
-      label: 'Review & Submit',
-      content: <Step5ReviewAndSubmit shop={shopData} canEdit={canEdit} />,
-    },
-  ], [shopData, canEdit]);
-
-  const currentStep = useMemo(() => steps.find((step) => step.id === activeStep), [activeStep, steps]);
-  
-  return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold">Shop Wizard</h2>
-        {shop.status && (
-          <Badge variant={statusColors[shop.status]}>{shop.status.replace(/_/g, ' ')}</Badge>
-        )}
-      </div>
-
-      <div className="space-y-2">
-        <Progress value={(activeStep / steps.length) * 100} />
-        <div className="flex justify-between text-sm text-muted-foreground">
-          <span>Step {activeStep} of {steps.length}</span>
-          <span>{currentStep?.label}</span>
-        </div>
-      </div>
-
-      {currentStep?.content}
-
-      <div className="flex justify-between">
-        <Button variant="outline" onClick={handlePrevious} disabled={activeStep === 1}>
-          Previous
-        </Button>
-        {activeStep < steps.length ? (
-          <div />
-        ) : (
-          <div />
-        )}
-      </div>
-    </div>
-  );
-}
+  const { user } }

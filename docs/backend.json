@@ -113,7 +113,7 @@
         "description": { "type": "string" },
         "price": { "type": "number" },
         "sku": { "type": "string" },
-        "imageUrl": { "type": "string" },
+        "imageUrls": { "type": "array", "items": { "type": "string" } },
         "createdAt": { "type": "object" },
         "updatedAt": { "type": "object" }
       },
