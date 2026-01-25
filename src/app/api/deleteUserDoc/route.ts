@@ -13,8 +13,9 @@ function serializeTimestamps(docData: any): any {
     for (const key in docData) {
         const value = docData[key];
         if (value instanceof FieldValue) {
-            // Cannot serialize FieldValue, so we represent it as a placeholder
-            newDocData[key] = { _type: 'FieldValue', _methodName: (value as any)._methodName };
+            // FieldValues are special objects and cannot be directly serialized to JSON.
+            // We'll represent them with a placeholder string for logging purposes.
+            newDocData[key] = `(FieldValue: serverTimestamp)`;
         } else if (value && typeof value.toDate === 'function') { // Check for Timestamp
             newDocData[key] = value.toDate().toISOString();
         } else if (value && typeof value === 'object' && !Array.isArray(value)) {
@@ -25,6 +26,7 @@ function serializeTimestamps(docData: any): any {
     }
     return newDocData;
 }
+
 
 export async function POST(req: NextRequest) {
   const { app, error: initError } = getAdminApp();
