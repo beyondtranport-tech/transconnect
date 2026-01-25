@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -27,7 +26,7 @@ import Image from 'next/image';
 import { imageEdit } from '@/ai/flows/image-edit-flow';
 import { Textarea } from '@/components/ui/textarea';
 import { useStorage, useUser } from '@/firebase';
-import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
+import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { Progress } from '@/components/ui/progress';
 
 const defaultEditPrompt = `Place the truck on a winding mountain pass at sunset.
@@ -48,7 +47,6 @@ export default function ImageEditorCard({ promptTemplate }: { promptTemplate?: s
   const storage = useStorage();
 
   const [isSaving, setIsSaving] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
   const [savedImageUrl, setSavedImageUrl] = useState<string | null>(null);
 
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -67,7 +65,6 @@ export default function ImageEditorCard({ promptTemplate }: { promptTemplate?: s
   const handleClear = () => {
     setEditedImage(null);
     setSavedImageUrl(null);
-    setUploadProgress(0);
     setIsSaving(false);
   }
 
@@ -136,38 +133,18 @@ export default function ImageEditorCard({ promptTemplate }: { promptTemplate?: s
     }
 
     setIsSaving(true);
-    setUploadProgress(0);
 
     try {
         const response = await fetch(editedImage);
         const blob = await response.blob();
         const fileName = `edited-image-${Date.now()}.png`;
-        const storageRef = ref(storage, `generated-images/${user.uid}/${fileName}`);
-        const uploadTask = uploadBytesResumable(storageRef, blob);
+        const fileRef = storageRef(storage, `generated-images/${user.uid}/${fileName}`);
+        
+        await uploadBytes(fileRef, blob);
+        const downloadURL = await getDownloadURL(fileRef);
 
-        await new Promise<void>((resolve, reject) => {
-            uploadTask.on('state_changed',
-                (snapshot) => {
-                    const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-                    setUploadProgress(progress);
-                },
-                (error) => {
-                    console.error("Upload failed:", error);
-                    reject(error);
-                },
-                async () => {
-                    try {
-                        const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-                        setSavedImageUrl(downloadURL);
-                        toast({ title: 'Image Saved!', description: 'Your image is now stored in the cloud.' });
-                        resolve();
-                    } catch (getUrlError) {
-                        console.error("Failed to get download URL:", getUrlError);
-                        reject(getUrlError);
-                    }
-                }
-            );
-        });
+        setSavedImageUrl(downloadURL);
+        toast({ title: 'Image Saved!', description: 'Your image is now stored in the cloud.' });
     } catch (error: any) {
         toast({ variant: 'destructive', title: 'Save Failed', description: error.message });
     } finally {
@@ -238,7 +215,7 @@ export default function ImageEditorCard({ promptTemplate }: { promptTemplate?: s
                     )}
                 </div>
                 {isSaving && (
-                    <Progress value={uploadProgress} className="w-full" />
+                    <Progress value={0} className="w-full" /> // Progress bar is not implemented for this simpler uploader
                 )}
                 {savedImageUrl && (
                     <div className="space-y-2">
@@ -277,3 +254,5 @@ export default function ImageEditorCard({ promptTemplate }: { promptTemplate?: s
     </Card>
   );
 }
+
+    

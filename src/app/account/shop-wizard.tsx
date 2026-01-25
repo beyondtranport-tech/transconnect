@@ -12,8 +12,8 @@ import { useToast } from '@/hooks/use-toast';
 import { useFirestore, useUser, useStorage, useCollection, getClientSideAuthToken } from '@/firebase';
 import { useMemoFirebase } from '@/hooks/use-config';
 import { doc, collection } from 'firebase/firestore';
-import { ref as storageRef, uploadBytesResumable, getDownloadURL } from "firebase/storage";
-import { Loader2, Save, CheckCircle, LayoutGrid, List, Image as ImageIcon, Sparkles, PlusCircle, Edit, Trash2, Send, Eye, ShoppingCart, Mail, Phone, UploadCloud, GalleryHorizontal, Wand2, Video, Search, ShieldAlert } from 'lucide-react';
+import { ref as storageRef, uploadBytes, getDownloadURL } from "firebase/storage";
+import { Loader2, Save, CheckCircle, LayoutGrid, List, Image as ImageIcon, Sparkles, PlusCircle, Edit, Trash2, Send, Eye, ShoppingCart, Mail, Phone, UploadCloud, Wand2, Video, Search, ShieldAlert } from 'lucide-react';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -282,8 +282,8 @@ function AIGenerateDialog({
       const path = `generated-images/${user.uid}/products/${fileName}`;
       const storageRefVal = storageRef(storage, path);
       
-      const uploadResult = await uploadBytesResumable(storageRefVal, blob);
-      const downloadURL = await getDownloadURL(uploadResult.ref);
+      await uploadBytes(storageRefVal, blob);
+      const downloadURL = await getDownloadURL(storageRefVal);
 
       onGenerate(downloadURL);
       toast({ title: 'Image Applied!', description: 'The new image has been added.'});
@@ -350,7 +350,6 @@ function ProductDialog({ shop, product, onComplete, children, canEdit }: { shop:
   const [isOpen, setIsOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [progress, setProgress] = useState(0);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   const form = useForm<ProductFormValues>({
@@ -429,10 +428,8 @@ function ProductDialog({ shop, product, onComplete, children, canEdit }: { shop:
 
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!e.target.files || e.target.files.length === 0) {
-      return;
-    }
-    const selectedFiles = e.target.files;
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
 
     if (!storage || !user) {
         toast({ variant: 'destructive', title: 'Upload Failed', description: 'Not logged in or storage service unavailable.' });
@@ -440,37 +437,34 @@ function ProductDialog({ shop, product, onComplete, children, canEdit }: { shop:
     }
 
     setUploading(true);
-    setProgress(0);
-    
+
     try {
-      const uploadPromises = Array.from(selectedFiles).map(file => {
-          return new Promise<string>((resolve, reject) => {
-              const storageRefVal = storageRef(storage, `generated-images/${user.uid}/products/${Date.now()}_${file.name}`);
-              const uploadTask = uploadBytesResumable(storageRefVal, file);
-              
-              uploadTask.on('state_changed', 
-                (snapshot) => {
-                    const currentProgress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-                    setProgress(currentProgress);
-                },
-                (error) => reject(error),
-                async () => {
-                    const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-                    resolve(downloadURL);
-                }
-              );
-          });
-      });
+        const uploadPromises = Array.from(files).map(async (file) => {
+            const storagePath = `generated-images/${user.uid}/products/${Date.now()}_${file.name}`;
+            const fileRef = storageRef(storage, storagePath);
+            await uploadBytes(fileRef, file);
+            return getDownloadURL(fileRef);
+        });
+
         const downloadURLs = await Promise.all(uploadPromises);
+
         const currentUrls = form.getValues('imageUrls') || [];
-        form.setValue('imageUrls', [...currentUrls, ...downloadURLs]);
-        toast({ title: 'Upload Complete!', description: `${selectedFiles.length} image(s) have been uploaded.` });
+        form.setValue('imageUrls', [...currentUrls, ...downloadURLs], { shouldValidate: true });
+
+        toast({
+            title: 'Upload Complete!',
+            description: `${downloadURLs.length} image(s) added.`
+        });
     } catch (error: any) {
-        toast({ variant: 'destructive', title: 'Upload Failed', description: error.message });
+        toast({
+            variant: 'destructive',
+            title: 'Upload Failed',
+            description: `An error occurred during upload: ${error.message}`
+        });
     } finally {
         setUploading(false);
         if (fileInputRef.current) {
-          fileInputRef.current.value = '';
+            fileInputRef.current.value = '';
         }
     }
   };
@@ -489,7 +483,7 @@ function ProductDialog({ shop, product, onComplete, children, canEdit }: { shop:
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col flex-1 min-h-0">
              <div className="flex-1 overflow-y-auto space-y-6 pr-4 py-4">
-                <fieldset disabled={!canEdit} className="space-y-6">
+                <fieldset disabled={!canEdit || uploading} className="space-y-6">
                     <FormField control={form.control} name="name" render={({ field }) => (
                         <FormItem>
                         <FormLabel>Product Name</FormLabel>
@@ -558,12 +552,11 @@ function ProductDialog({ shop, product, onComplete, children, canEdit }: { shop:
                         )} />
 
                         <div className="flex items-center justify-between mt-4">
-                            <div>
-                                <Label htmlFor="image-upload" className={cn("text-sm font-medium leading-none", !canEdit && "text-muted-foreground")}>
-                                   Upload Image(s)
-                                </Label>
-                                <Input ref={fileInputRef} type="file" id="image-upload" className="mt-2" onChange={handleFileChange} disabled={uploading || !canEdit} multiple />
-                            </div>
+                            <Button type="button" onClick={() => fileInputRef.current?.click()} disabled={uploading || !canEdit}>
+                                {uploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <UploadCloud className="mr-2 h-4 w-4"/>}
+                                Upload Image(s)
+                            </Button>
+                            <Input ref={fileInputRef} type="file" id="image-upload" className="hidden" onChange={handleFileChange} disabled={uploading || !canEdit} multiple />
                              <AIGenerateDialog 
                                 onGenerate={handleImageGenerated} 
                                 canEdit={canEdit}
@@ -577,9 +570,6 @@ function ProductDialog({ shop, product, onComplete, children, canEdit }: { shop:
                                 </Button>
                             </AIGenerateDialog>
                         </div>
-                        {uploading && (
-                            <Progress value={progress} className="mt-2" />
-                        )}
                     </div>
                 </fieldset>
             </div>
@@ -1203,3 +1193,5 @@ export function ShopWizard({ shop: initialShop }: { shop: any }) {
     </div>
   );
 }
+
+    
