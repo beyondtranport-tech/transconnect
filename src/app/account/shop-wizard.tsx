@@ -218,12 +218,33 @@ const productSchema = z.object({
 });
 type ProductFormValues = z.infer<typeof productSchema>;
 
-function AIGenerateDialog({ onGenerate, children, canEdit }: { onGenerate: (newUrl: string) => void, children: React.ReactNode, canEdit: boolean }) {
+function AIGenerateDialog({ 
+  onGenerate, 
+  children, 
+  canEdit,
+  title,
+  description,
+  promptTemplate
+}: { 
+  onGenerate: (newUrl: string) => void, 
+  children: React.ReactNode, 
+  canEdit: boolean,
+  title: string,
+  description: string,
+  promptTemplate: string,
+}) {
   const [isOpen, setIsOpen] = useState(false);
-  const [prompt, setPrompt] = useState('');
+  const [prompt, setPrompt] = useState(promptTemplate || '');
   const [isLoading, setIsLoading] = useState(false);
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   const { toast } = useToast();
+
+  useEffect(() => {
+    if (isOpen) {
+      setPrompt(promptTemplate || '');
+      setGeneratedImage(null);
+    }
+  }, [isOpen, promptTemplate]);
 
   const handleGenerate = async () => {
     if (!prompt) {
@@ -258,15 +279,15 @@ function AIGenerateDialog({ onGenerate, children, canEdit }: { onGenerate: (newU
       <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>AI Image Generator</DialogTitle>
+          <DialogTitle>{title}</DialogTitle>
           <DialogDescription>
-            Describe the product image you want to create.
+            {description}
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4 py-4">
           <div className="space-y-2">
             <Label htmlFor="generate-prompt">Prompt</Label>
-            <Input id="generate-prompt" value={prompt} onChange={(e) => setPrompt(e.target.value)} placeholder="e.g., A shiny chrome truck exhaust pipe" />
+            <Textarea id="generate-prompt" value={prompt} onChange={(e) => setPrompt(e.target.value)} placeholder="e.g., A shiny chrome truck exhaust pipe" rows={5}/>
           </div>
           <div className="relative aspect-square w-full rounded-md border border-dashed flex items-center justify-center bg-muted">
             {isLoading ? (
@@ -343,7 +364,6 @@ function ProductDialog({ shop, product, onComplete, children, canEdit }: { shop:
         if (!token) throw new Error("Authentication token not found.");
 
         const path = product ? `companies/${shop.companyId}/shops/${shop.id}/products/${product.id}` : `companies/${shop.companyId}/shops/${shop.id}/products`;
-        const method = product ? 'updateUserDoc' : 'addUserDoc';
         
         const dataToUpdate = {
             ...values,
@@ -399,8 +419,6 @@ function ProductDialog({ shop, product, onComplete, children, canEdit }: { shop:
               
               uploadTask.on('state_changed', 
                 (snapshot) => {
-                    // Note: This progress will only reflect the last file in a multi-file upload.
-                    // A more complex implementation would be needed for aggregate progress.
                     const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
                     setProgress(progress);
                 },
@@ -523,7 +541,13 @@ function ProductDialog({ shop, product, onComplete, children, canEdit }: { shop:
                                 </Label>
                                 <Input type="file" id="image-upload" className="mt-2" onChange={handleFileChange} disabled={uploading || !canEdit} multiple />
                             </div>
-                             <AIGenerateDialog onGenerate={handleImageGenerated} canEdit={canEdit}>
+                             <AIGenerateDialog 
+                                onGenerate={handleImageGenerated} 
+                                canEdit={canEdit}
+                                title="AI Product Image Generator"
+                                description="Describe the product image you want to create. Be specific for best results."
+                                promptTemplate="A clean, professional studio photograph of a [Your Product Name, e.g., chrome truck exhaust pipe] on a white background. The lighting should be bright and highlight the product's details."
+                            >
                                 <Button type="button" variant="secondary" disabled={uploading || !canEdit}>
                                     <Wand2 className="mr-2 h-4 w-4" /> Generate Image
                                 </Button>
@@ -764,7 +788,13 @@ function Step3Appearance({ shop, onSave, canEdit }: { shop: any, onSave: (newDat
                     </FormItem>
                 )} />
 
-                <AIGenerateDialog onGenerate={handleImageGenerated} canEdit={canEdit}>
+                <AIGenerateDialog 
+                    onGenerate={handleImageGenerated} 
+                    canEdit={canEdit}
+                    title="AI Hero Banner Generator"
+                    description="Describe the hero image you want for your shop. Be specific about the truck, setting, and mood."
+                    promptTemplate="A cinematic, wide-angle photograph of a [Your Truck Type, e.g., Scania R 560] truck driving on a scenic highway. The style should be professional, high-quality, and inspiring, with a beautiful sunset in the background."
+                >
                     <Button type="button" variant="secondary" disabled={!canEdit}>
                         <Wand2 className="mr-2 h-4 w-4" /> Generate Hero Banner
                     </Button>
@@ -1127,3 +1157,5 @@ export function ShopWizard({ shop: initialShop }: { shop: any }) {
     </div>
   );
 }
+
+    
