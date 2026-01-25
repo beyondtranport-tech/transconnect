@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -28,7 +27,7 @@ export default function AssetGallery() {
         setIsLoading(true);
 
         try {
-            const userFolderRef = ref(storage, `generated-images/${user.uid}`);
+            const userFolderRef = ref(storage, `user-assets/${user.uid}`);
             const res = await listAll(userFolderRef);
             
             const urls = await Promise.all(

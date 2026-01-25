@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -107,7 +108,7 @@ export default function ImageGeneratorCard({ promptTemplate }: { promptTemplate?
         const response = await fetch(generatedImage);
         const blob = await response.blob();
         const fileName = `generated-image-${Date.now()}.png`;
-        const fileRef = storageRef(storage, `generated-images/${user.uid}/${fileName}`);
+        const fileRef = storageRef(storage, `user-assets/${user.uid}/${fileName}`);
         
         await uploadBytes(fileRef, blob);
         const downloadURL = await getDownloadURL(fileRef);
@@ -213,5 +214,3 @@ export default function ImageGeneratorCard({ promptTemplate }: { promptTemplate?
     </Card>
   );
 }
-
-    

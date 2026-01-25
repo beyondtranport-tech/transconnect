@@ -10,7 +10,7 @@ service firebase.storage {
     }
 
     // Allow authenticated users to write only to their own designated folder.
-    match /generated-images/{userId}/{allPaths=**} {
+    match /user-assets/{userId}/{allPaths=**} {
       allow write: if request.auth != null && request.auth.uid == userId;
     }
   }

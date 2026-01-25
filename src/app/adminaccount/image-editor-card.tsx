@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -138,7 +139,7 @@ export default function ImageEditorCard({ promptTemplate }: { promptTemplate?: s
         const response = await fetch(editedImage);
         const blob = await response.blob();
         const fileName = `edited-image-${Date.now()}.png`;
-        const fileRef = storageRef(storage, `generated-images/${user.uid}/${fileName}`);
+        const fileRef = storageRef(storage, `user-assets/${user.uid}/${fileName}`);
         
         await uploadBytes(fileRef, blob);
         const downloadURL = await getDownloadURL(fileRef);
@@ -254,5 +255,3 @@ export default function ImageEditorCard({ promptTemplate }: { promptTemplate?: s
     </Card>
   );
 }
-
-    

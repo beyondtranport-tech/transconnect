@@ -25,7 +25,7 @@ import { Loader2, Sparkles, Video, Download, Save, Copy } from 'lucide-react';
 import { generateVideo } from '@/ai/flows/video-generation-flow';
 import { Textarea } from '@/components/ui/textarea';
 import { useStorage, useUser } from '@/firebase';
-import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
+import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { Progress } from '@/components/ui/progress';
 import { Input } from '@/components/ui/input';
 
@@ -41,13 +41,11 @@ export default function VideoGeneratorCard({ promptTemplate }: { promptTemplate?
   const storage = useStorage();
 
   const [isSaving, setIsSaving] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
   const [savedVideoUrl, setSavedVideoUrl] = useState<string | null>(null);
 
   const handleClear = () => {
     setGeneratedVideo(null);
     setSavedVideoUrl(null);
-    setUploadProgress(0);
     setIsSaving(false);
   };
 
@@ -103,38 +101,18 @@ export default function VideoGeneratorCard({ promptTemplate }: { promptTemplate?
     }
 
     setIsSaving(true);
-    setUploadProgress(0);
 
     try {
         const response = await fetch(generatedVideo);
         const blob = await response.blob();
         const fileName = `video-${Date.now()}.mp4`;
-        const storageRef = ref(storage, `generated-images/${user.uid}/${fileName}`);
-        const uploadTask = uploadBytesResumable(storageRef, blob, { contentType: 'video/mp4' });
+        const fileRef = storageRef(storage, `user-assets/${user.uid}/${fileName}`);
+        
+        await uploadBytes(fileRef, blob);
+        const downloadURL = await getDownloadURL(fileRef);
 
-        await new Promise<void>((resolve, reject) => {
-            uploadTask.on('state_changed',
-                (snapshot) => {
-                    const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-                    setUploadProgress(progress);
-                },
-                (error) => {
-                    console.error("Upload failed:", error);
-                    reject(error);
-                },
-                async () => {
-                    try {
-                        const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-                        setSavedVideoUrl(downloadURL);
-                        toast({ title: 'Video Saved!', description: 'Your video is now stored in the cloud.' });
-                        resolve();
-                    } catch (getUrlError) {
-                        console.error("Failed to get download URL:", getUrlError);
-                        reject(getUrlError);
-                    }
-                }
-            );
-        });
+        setSavedVideoUrl(downloadURL);
+        toast({ title: 'Video Saved!', description: 'Your video is now stored in the cloud.' });
     } catch (error: any) {
         toast({ variant: 'destructive', title: 'Save Failed', description: error.message });
     } finally {
@@ -198,7 +176,7 @@ export default function VideoGeneratorCard({ promptTemplate }: { promptTemplate?
                         )}
                     </div>
                      {isSaving && (
-                        <Progress value={uploadProgress} className="w-full" />
+                        <Progress value={0} className="w-full" />
                     )}
                     {savedVideoUrl && (
                         <div className="space-y-2">

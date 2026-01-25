@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
@@ -279,7 +280,7 @@ function AIGenerateDialog({
       const imageResponse = await fetch(generatedImage);
       const blob = await imageResponse.blob();
       const fileName = `generated_${Date.now()}.png`;
-      const path = `generated-images/${user.uid}/products/${fileName}`;
+      const path = `user-assets/${user.uid}/product-images/${fileName}`;
       const storageRefVal = storageRef(storage, path);
       
       await uploadBytes(storageRefVal, blob);
@@ -437,10 +438,11 @@ function ProductDialog({ shop, product, onComplete, children, canEdit }: { shop:
     }
 
     setUploading(true);
+    const fileRef = fileInputRef.current;
 
     try {
         const uploadPromises = Array.from(files).map(async (file) => {
-            const storagePath = `generated-images/${user.uid}/products/${Date.now()}_${file.name}`;
+            const storagePath = `user-assets/${user.uid}/product-images/${Date.now()}_${file.name}`;
             const fileRef = storageRef(storage, storagePath);
             await uploadBytes(fileRef, file);
             return getDownloadURL(fileRef);
@@ -463,8 +465,8 @@ function ProductDialog({ shop, product, onComplete, children, canEdit }: { shop:
         });
     } finally {
         setUploading(false);
-        if (fileInputRef.current) {
-            fileInputRef.current.value = '';
+        if (fileRef) {
+            fileRef.value = '';
         }
     }
   };
@@ -1193,5 +1195,3 @@ export function ShopWizard({ shop: initialShop }: { shop: any }) {
     </div>
   );
 }
-
-    
