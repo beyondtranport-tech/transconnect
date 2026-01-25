@@ -57,7 +57,6 @@ const ActivityFeed = dynamic(() => import('./activity-feed'), { loading: () => <
 
 // Operations
 const MembersList = dynamic(() => import('./members-list'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const StaffList = dynamic(() => import('./staff-list'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const MemberWallet = dynamic(() => import('./wallet/[memberId]/member-wallet'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const WalletTransactionsList = dynamic(() => import('./wallet-transactions-list'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const ShopsList = dynamic(() => import('./shops-list'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
@@ -133,7 +132,6 @@ function BackendContent() {
       
       // Operations
       case 'members': return <MembersList />;
-      case 'staff': return <StaffList />;
       case 'wallet': return memberId ? <MemberWallet memberId={memberId} /> : <WalletTransactionsList />;
       case 'shops': return <ShopsList />;
       case 'reconciliation': return <ReconciliationPage />;
@@ -170,7 +168,7 @@ function BackendContent() {
   }
 
   const navigate = (view: string) => router.push(`/backend?view=${view}`, { scroll: false });
-  const isOperationsActive = ['members', 'staff', 'wallet', 'shops', 'reconciliation', 'divisions-funding', 'contributions'].includes(activeView);
+  const isOperationsActive = ['members', 'wallet', 'shops', 'reconciliation', 'divisions-funding', 'contributions'].includes(activeView);
   
   const isRevenueActive = [
     'pricing-memberships', 'pricing-connect', 'pricing-tech', 'pricing-marketplace',
@@ -204,7 +202,6 @@ function BackendContent() {
                   <SidebarMenuButton tooltip="Operations" isActive={isOperationsActive}><Wrench /><span>Operations</span></SidebarMenuButton>
                   <SidebarMenuSub>
                     <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'members'} onClick={() => navigate('members')}><Users />Members</SidebarMenuSubButton></SidebarMenuSubItem>
-                    <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'staff'} onClick={() => navigate('staff')}><Users />Staff</SidebarMenuSubButton></SidebarMenuSubItem>
                     <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'wallet'} onClick={() => navigate('wallet')}><Wallet />Wallet Transactions</SidebarMenuSubButton></SidebarMenuSubItem>
                     <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'divisions-funding'} onClick={() => navigate('divisions-funding')}><FileText />Funding Records</SidebarMenuSubButton></SidebarMenuSubItem>
                     <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'contributions'} onClick={() => navigate('contributions')}><ListTodo />Contributions</SidebarMenuSubButton></SidebarMenuSubItem>

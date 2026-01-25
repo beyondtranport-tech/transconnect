@@ -30,12 +30,13 @@ import { useCollection, useFirestore, getClientSideAuthToken } from '@/firebase'
 import { collection, query, collectionGroup } from 'firebase/firestore';
 import { Loader2, PlusCircle, UserPlus, Users } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import StaffActionMenu from './staff-action-menu';
+import StaffActionMenu from '../backend/staff-action-menu';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useMemoFirebase } from '@/hooks/use-config';
+import { useRouter } from 'next/navigation';
 
 // Updated schema to include companyId
 const staffFormSchema = z.object({
@@ -143,7 +144,7 @@ function AddStaffDialog({ onStaffAdded, canCreate }: { onStaffAdded: () => void,
   }
 
   const copyInviteLink = () => {
-    const signupUrl = `${window.location.origin}/join?email=${encodeURIComponent(newUserEmail)}`;
+    const signupUrl = `${window.location.origin}/join`;
     navigator.clipboard.writeText(signupUrl);
     toast({
         title: 'Sign-up Link Copied!',
@@ -285,7 +286,7 @@ interface Company {
     companyName: string;
 }
 
-export default function StaffList() {
+export default function PartnerManagement() {
     const firestore = useFirestore();
 
     const staffQuery = useMemoFirebase(() => firestore ? query(collectionGroup(firestore, 'staff')) : null, [firestore]);
@@ -358,10 +359,10 @@ export default function StaffList() {
             <CardHeader className="flex flex-row items-center justify-between">
                 <div>
                     <CardTitle className="flex items-center gap-2">
-                        <Users /> All Staff Members
+                        <Users /> Partner & Staff Management
                     </CardTitle>
                     <CardDescription>
-                        A consolidated view of all staff across all member companies.
+                        A consolidated view of all staff and partners across all member companies.
                     </CardDescription>
                 </div>
                 <AddStaffDialog onStaffAdded={forceRefresh} canCreate={true} />
