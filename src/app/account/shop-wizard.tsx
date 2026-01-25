@@ -223,7 +223,8 @@ function AIGenerateDialog({
   canEdit,
   title,
   description,
-  promptTemplate
+  promptTemplate,
+  shop
 }: { 
   onGenerate: (newUrl: string) => void, 
   children: React.ReactNode, 
@@ -231,17 +232,21 @@ function AIGenerateDialog({
   title: string,
   description: string,
   promptTemplate: string,
+  shop: any,
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [prompt, setPrompt] = useState(promptTemplate || '');
   const [isLoading, setIsLoading] = useState(false);
+  const [isApplying, setIsApplying] = useState(false);
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   const { toast } = useToast();
-
+  const { user } = useUser();
+  const storage = useStorage();
+  
   useEffect(() => {
-    if (isOpen) {
-      setPrompt(promptTemplate || '');
-      setGeneratedImage(null);
+    if (!isOpen) {
+        setPrompt(promptTemplate || '');
+        setGeneratedImage(null);
     }
   }, [isOpen, promptTemplate]);
 
@@ -256,7 +261,7 @@ function AIGenerateDialog({
     try {
       const result = await generateImage({ prompt });
       setGeneratedImage(result.imageDataUri);
-      toast({ title: 'Image Generated!', description: 'Your new image is ready.' });
+      toast({ title: 'Image Generated!', description: 'Review the image below and click "Apply Image" to use it.' });
     } catch (e: any) {
       toast({ variant: 'destructive', title: 'Generation Failed', description: e.message });
     } finally {
@@ -264,14 +269,31 @@ function AIGenerateDialog({
     }
   };
 
-  const handleApplyImage = () => {
-    if (generatedImage) {
-        onGenerate(generatedImage);
-        setIsOpen(false);
-        setGeneratedImage(null);
-        setPrompt('');
+  const handleApplyImage = async () => {
+    if (!generatedImage || !storage || !user || !shop.companyId) {
+      toast({ variant: 'destructive', title: 'Error', description: 'Cannot apply image. Missing required info.' });
+      return;
     }
-  }
+    setIsApplying(true);
+    try {
+      const imageResponse = await fetch(generatedImage);
+      const blob = await imageResponse.blob();
+      const fileName = `generated_${Date.now()}.png`;
+      const path = `companies/${shop.companyId}/shops/${shop.id}/generated_assets/${fileName}`;
+      const storageRefVal = storageRef(storage, path);
+      
+      const uploadResult = await uploadBytes(storageRefVal, blob);
+      const downloadURL = await getDownloadURL(uploadResult.ref);
+
+      onGenerate(downloadURL);
+      toast({ title: 'Image Applied!', description: 'The new image has been added.'});
+      setIsOpen(false);
+    } catch (e: any) {
+      toast({ variant: 'destructive', title: 'Failed to apply image', description: e.message });
+    } finally {
+      setIsApplying(false);
+    }
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -302,10 +324,15 @@ function AIGenerateDialog({
           </div>
         </div>
         <DialogFooter className="sm:justify-between">
-           {generatedImage ? (
-                <Button onClick={handleApplyImage}>Use This Image</Button>
-           ) : <div />}
-           <Button onClick={handleGenerate} disabled={isLoading || !canEdit}>
+           <div>
+                {generatedImage && (
+                    <Button onClick={handleApplyImage} disabled={isApplying}>
+                        {isApplying ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle className="mr-2 h-4 w-4" />}
+                        Apply Image
+                    </Button>
+                )}
+           </div>
+           <Button onClick={handleGenerate} disabled={isLoading || isApplying || !canEdit}>
                 {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
                 Generate New Image
             </Button>
@@ -355,37 +382,20 @@ function ProductDialog({ shop, product, onComplete, children, canEdit }: { shop:
   };
 
   const onSubmit = async (values: ProductFormValues) => {
-    if (!user || !shop.companyId || !shop.id || !storage) return;
+    if (!user || !shop.companyId || !shop.id) return;
     setIsSaving(true);
     
     try {
         const token = await getClientSideAuthToken();
         if (!token) throw new Error("Authentication token not found.");
-
-        const finalImageUrls: string[] = [];
-        if (values.imageUrls && values.imageUrls.length > 0) {
-            for (const url of values.imageUrls) {
-                if (url.startsWith('data:')) { // Upload new base64 images
-                    const imageResponse = await fetch(url);
-                    const blob = await imageResponse.blob();
-                    const fileName = `product_${Date.now()}.png`;
-                    const storageRefVal = storageRef(storage, `companies/${shop.companyId}/shops/${shop.id}/products/${fileName}`);
-                    const uploadResult = await uploadBytes(storageRefVal, blob);
-                    const downloadURL = await getDownloadURL(uploadResult.ref);
-                    finalImageUrls.push(downloadURL);
-                } else {
-                    finalImageUrls.push(url); // Keep existing https URLs
-                }
-            }
-        }
+        
+        const path = product ? `companies/${shop.companyId}/shops/${shop.id}/products/${product.id}` : `companies/${shop.companyId}/shops/${shop.id}/products`;
         
         const dataToSave = {
             ...values,
-            imageUrls: finalImageUrls,
-        };
+            imageUrls: values.imageUrls || [],
+        }
 
-        const path = product ? `companies/${shop.companyId}/shops/${shop.id}/products/${product.id}` : `companies/${shop.companyId}/shops/${shop.id}/products`;
-        
         const body = product
           ? { path, data: { ...dataToSave, updatedAt: { _methodName: 'serverTimestamp' } } }
           : { collectionPath: path, data: dataToSave };
@@ -566,6 +576,7 @@ function ProductDialog({ shop, product, onComplete, children, canEdit }: { shop:
                                 title="AI Product Image Generator"
                                 description="Describe the product image you want to create. Be specific for best results."
                                 promptTemplate="A clean, professional studio photograph of a [Your Product Name, e.g., chrome truck exhaust pipe] on a white background. The lighting should be bright and highlight the product's details."
+                                shop={shop}
                             >
                                 <Button type="button" variant="secondary" disabled={uploading || !canEdit}>
                                     <Wand2 className="mr-2 h-4 w-4" /> Generate Image
@@ -733,7 +744,6 @@ type Step3FormValues = z.infer<typeof shopStep3Schema>;
 
 function Step3Appearance({ shop, onSave, canEdit }: { shop: any, onSave: (newData: any) => void, canEdit: boolean }) {
   const { user } = useUser();
-  const storage = useStorage();
   const { toast } = useToast();
   const [isSaving, setIsSaving] = useState(false);
   
@@ -743,31 +753,23 @@ function Step3Appearance({ shop, onSave, canEdit }: { shop: any, onSave: (newDat
       heroBannerUrl: shop.heroBannerUrl || '',
     }
   });
+  
+  useEffect(() => {
+    form.reset({ heroBannerUrl: shop.heroBannerUrl || '' });
+  }, [shop.heroBannerUrl, form]);
 
   const handleImageGenerated = (newUrl: string) => {
     form.setValue('heroBannerUrl', newUrl);
   };
   
   const onSubmit = async (values: Step3FormValues) => {
-    if (!user || !shop.companyId || !storage) return;
+    if (!user || !shop.companyId) return;
     setIsSaving(true);
     
     try {
         const token = await getClientSideAuthToken();
         if (!token) throw new Error("Authentication token not found.");
         
-        let finalValues = { ...values };
-
-        if (values.heroBannerUrl && values.heroBannerUrl.startsWith('data:')) {
-            const imageResponse = await fetch(values.heroBannerUrl);
-            const blob = await imageResponse.blob();
-            const fileName = `hero-banner_${Date.now()}.png`;
-            const storageRefVal = storageRef(storage, `companies/${shop.companyId}/shops/${shop.id}/${fileName}`);
-            const uploadResult = await uploadBytes(storageRefVal, blob);
-            const downloadURL = await getDownloadURL(uploadResult.ref);
-            finalValues.heroBannerUrl = downloadURL;
-        }
-
         const response = await fetch('/api/updateUserDoc', {
             method: 'POST',
             headers: {
@@ -776,7 +778,7 @@ function Step3Appearance({ shop, onSave, canEdit }: { shop: any, onSave: (newDat
             },
             body: JSON.stringify({
                 path: `companies/${shop.companyId}/shops/${shop.id}`,
-                data: { ...finalValues, updatedAt: { _methodName: 'serverTimestamp' } }
+                data: { ...values, updatedAt: { _methodName: 'serverTimestamp' } }
             }),
         });
 
@@ -786,7 +788,7 @@ function Step3Appearance({ shop, onSave, canEdit }: { shop: any, onSave: (newDat
         }
 
         toast({ title: 'Step 3 Saved!', description: 'Your shop appearance details have been updated.' });
-        onSave(finalValues);
+        onSave(values);
     } catch (error: any) {
         toast({ variant: 'destructive', title: 'Update Failed', description: error.message });
     } finally {
@@ -825,6 +827,7 @@ function Step3Appearance({ shop, onSave, canEdit }: { shop: any, onSave: (newDat
                     title="AI Hero Banner Generator"
                     description="Describe the hero image you want for your shop. Be specific about the truck, setting, and mood."
                     promptTemplate="A cinematic, wide-angle photograph of a [Your Truck Type, e.g., Scania R 560] truck driving on a scenic highway. The style should be professional, high-quality, and inspiring, with a beautiful sunset in the background."
+                    shop={shop}
                 >
                     <Button type="button" variant="secondary" disabled={!canEdit}>
                         <Wand2 className="mr-2 h-4 w-4" /> Generate Hero Banner
@@ -868,6 +871,16 @@ function Step4SocialLinks({ shop, onSave, canEdit }: { shop: any, onSave: (newDa
       youtubeLink: shop.youtubeLink || '',
     }
   });
+
+  useEffect(() => {
+    form.reset({
+      facebookLink: shop.facebookLink || '',
+      instagramLink: shop.instagramLink || '',
+      twitterLink: shop.twitterLink || '',
+      linkedinLink: shop.linkedinLink || '',
+      youtubeLink: shop.youtubeLink || '',
+    });
+  }, [shop, form]);
   
   const onSubmit = async (values: Step4FormValues) => {
     if (!user || !shop.companyId) return;
@@ -977,6 +990,14 @@ function Step5SeoAndPublishing({ shop, onSave, canEdit }: { shop: any, onSave: (
       tags: shop.tags || [],
     },
   });
+
+   useEffect(() => {
+    form.reset({
+      metaTitle: shop.metaTitle || '',
+      metaDescription: shop.metaDescription || '',
+      tags: shop.tags || [],
+    });
+  }, [shop, form]);
 
   const onSubmit = async (values: Step5FormValues) => {
     if (!user || !shop.companyId) return;
@@ -1120,14 +1141,14 @@ export function ShopWizard({ shop: initialShop }: { shop: any }) {
   
   const canEditShop = can('edit', 'shop');
 
-  const steps = useMemo(() => [
+  const steps = [
     { name: 'Core Identity', component: <Step1CoreIdentity shop={shopData} onSave={handleSave} onSeoGenerated={handleSeoGenerated} canEdit={canEditShop} /> },
     { name: 'Products', component: <Step2Products shop={shopData} canEdit={canEditShop} /> },
     { name: 'Appearance', component: <Step3Appearance shop={shopData} onSave={handleSave} canEdit={canEditShop} /> },
     { name: 'Social Links', component: <Step4SocialLinks shop={shopData} onSave={handleSave} canEdit={canEditShop} /> },
     { name: 'Publishing', component: <Step5SeoAndPublishing shop={shopData} onSave={handleSave} canEdit={canEditShop} /> },
     { name: 'Preview', component: <ShopPreview shop={shopData} products={[]} /> },
-  ], [shopData, canEditShop]); // Re-memoize if shopData changes
+  ];
 
   const completeness = useMemo(() => {
     const totalFields = 7;

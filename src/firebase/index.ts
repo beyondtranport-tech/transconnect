@@ -1,4 +1,3 @@
-
 'use client';
 
 export * from './init';
@@ -8,4 +7,5 @@ export * from './firestore/use-collection';
 export * from './firestore/use-doc';
 export * from './errors';
 export * from './error-emitter';
+export { useStorage } from './provider';
     
