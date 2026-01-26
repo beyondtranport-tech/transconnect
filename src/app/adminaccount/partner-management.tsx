@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect, useCallback } from 'react';
@@ -41,6 +42,7 @@ import { Loader2, PlusCircle, Handshake, Edit, Trash2, Send, Copy } from 'lucide
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { type ColumnDef } from '@/hooks/use-data-table';
 
 async function performAdminAction(token: string, action: string, payload: any) {
     const response = await fetch('/api/admin', {
@@ -63,6 +65,7 @@ const partnerSchema = z.object({
   firstName: z.string().min(1, 'First name is required'),
   lastName: z.string().min(1, 'Last name is required'),
   email: z.string().email('Invalid email address'),
+  phone: z.string().optional(),
   companyName: z.string().optional(),
   status: z.enum(['active', 'inactive']),
 });
@@ -86,6 +89,7 @@ function PartnerDialog({ open, onOpenChange, partner, onSave }: { open: boolean;
           firstName: '',
           lastName: '',
           email: '',
+          phone: '',
           companyName: '',
           status: 'active',
         });
@@ -126,7 +130,10 @@ function PartnerDialog({ open, onOpenChange, partner, onSave }: { open: boolean;
                         <FormField control={form.control} name="firstName" render={({ field }) => ( <FormItem><FormLabel>First Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
                         <FormField control={form.control} name="lastName" render={({ field }) => ( <FormItem><FormLabel>Last Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
                     </div>
-                    <FormField control={form.control} name="email" render={({ field }) => ( <FormItem><FormLabel>Email</FormLabel><FormControl><Input {...field} type="email"/></FormControl><FormMessage /></FormItem> )} />
+                     <div className="grid grid-cols-2 gap-4">
+                        <FormField control={form.control} name="email" render={({ field }) => ( <FormItem><FormLabel>Email</FormLabel><FormControl><Input {...field} type="email"/></FormControl><FormMessage /></FormItem> )} />
+                        <FormField control={form.control} name="phone" render={({ field }) => ( <FormItem><FormLabel>Mobile Number (Optional)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
+                    </div>
                     <FormField control={form.control} name="companyName" render={({ field }) => ( <FormItem><FormLabel>Company Name (Optional)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
                     <FormField control={form.control} name="status" render={({ field }) => ( <FormItem><FormLabel>Status</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="active">Active</SelectItem><SelectItem value="inactive">Inactive</SelectItem></SelectContent></Select><FormMessage /></FormItem> )} />
                      <DialogFooter className="pt-4">
@@ -220,8 +227,9 @@ export default function PartnerManagement() {
   };
   
   const columns: ColumnDef<any>[] = useMemo(() => [
-    { accessorKey: 'firstName', header: 'First Name', cell: ({row}) => <div>{row.original.firstName} {row.original.lastName}</div> },
+    { accessorKey: 'firstName', header: 'Name', cell: ({row}) => <div>{row.original.firstName} {row.original.lastName}</div> },
     { accessorKey: 'email', header: 'Email', cell: ({row}) => <div>{row.original.email}</div> },
+    { accessorKey: 'phone', header: 'Phone', cell: ({row}) => <div>{row.original.phone}</div> },
     { accessorKey: 'companyName', header: 'Company', cell: ({row}) => <div>{row.original.companyName}</div> },
     { accessorKey: 'status', header: 'Status', cell: ({row}) => <Badge className="capitalize">{row.original.status}</Badge>},
     { accessorKey: 'invitationStatus', header: 'Invite Status', cell: ({row}) => ( <Badge variant={invitationStatusColors[row.original.invitationStatus] || 'secondary'} className="capitalize"> {row.original.invitationStatus?.replace(/_/g, ' ') || 'Pending'} </Badge> ) },
@@ -281,7 +289,7 @@ export default function PartnerManagement() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Name</TableHead><TableHead>Email</TableHead><TableHead>Company</TableHead><TableHead>Status</TableHead><TableHead>Invite Status</TableHead><TableHead className="text-right">Actions</TableHead>
+                    <TableHead>Name</TableHead><TableHead>Email</TableHead><TableHead>Phone</TableHead><TableHead>Company</TableHead><TableHead>Status</TableHead><TableHead>Invite Status</TableHead><TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -289,6 +297,7 @@ export default function PartnerManagement() {
                     <TableRow key={partner.id}>
                       <TableCell><div>{partner.firstName} {partner.lastName}</div></TableCell>
                       <TableCell><div>{partner.email}</div></TableCell>
+                      <TableCell><div>{partner.phone}</div></TableCell>
                       <TableCell><div>{partner.companyName}</div></TableCell>
                       <TableCell><Badge className="capitalize">{partner.status}</Badge></TableCell>
                       <TableCell>
@@ -305,7 +314,7 @@ export default function PartnerManagement() {
                       </TableCell>
                     </TableRow>
                   )) : (
-                    <TableRow><TableCell colSpan={6} className="h-24 text-center">No strategic partners found.</TableCell></TableRow>
+                    <TableRow><TableCell colSpan={7} className="h-24 text-center">No strategic partners found.</TableCell></TableRow>
                   )}
                 </TableBody>
               </Table>
@@ -316,3 +325,5 @@ export default function PartnerManagement() {
     </>
   );
 }
+
+    
