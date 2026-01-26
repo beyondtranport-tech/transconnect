@@ -2,7 +2,6 @@
 
 import { getFirestore, Timestamp } from 'firebase-admin/firestore';
 import { NextRequest, NextResponse } from 'next/server';
-import { headers } from 'next/headers';
 import { getAuth } from 'firebase-admin/auth';
 import { getAdminApp } from '@/lib/firebase-admin';
 
@@ -36,8 +35,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ success: false, error: 'Bad Request: "path" and "type" are required.' }, { status: 400 });
     }
 
-    const headersList = headers();
-    const authorization = headersList.get('authorization');
+    const authorization = req.headers.get('authorization');
     const idToken = authorization?.split('Bearer ')[1];
 
     const publicPrefixes = ['memberships', 'configuration', 'shops'];

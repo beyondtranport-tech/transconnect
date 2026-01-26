@@ -1,7 +1,6 @@
 
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import { NextRequest, NextResponse } from 'next/server';
-import { headers } from 'next/headers';
 import { getAuth } from 'firebase-admin/auth';
 import { getAdminApp } from '@/lib/firebase-admin';
 
@@ -34,8 +33,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: false, error: `Internal Server Error: ${initError}` }, { status: 500 });
   }
 
-  const headersList = headers();
-  const authorization = headersList.get('authorization');
+  const authorization = req.headers.get('authorization');
   if (!authorization?.startsWith('Bearer ')) {
     return NextResponse.json({ success: false, error: 'Unauthorized: No token provided.' }, { status: 401 });
   }
