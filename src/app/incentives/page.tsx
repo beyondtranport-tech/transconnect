@@ -1,4 +1,5 @@
 
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import Image from "next/image";
@@ -6,6 +7,7 @@ import Link from "next/link";
 import data from "@/lib/placeholder-images.json";
 import { ArrowRight, Boxes, FileText, Heart, Shield, LifeBuoy, Gift, Handshake } from "lucide-react";
 import * as React from "react";
+import * as gtag from '@/lib/gtag';
 
 const { placeholderImages } = data;
 
@@ -63,6 +65,17 @@ const products = [
 ];
 
 export default function IncentivesPage() {
+    
+    const handleJoinClick = () => {
+        if (!process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS_ID) return;
+        gtag.event({
+            action: 'join_from_incentives',
+            category: 'Incentives',
+            label: 'Footer CTA',
+            value: 1
+        });
+    };
+
     return (
         <div>
             <section className="relative w-full h-80 bg-card">
@@ -137,7 +150,7 @@ export default function IncentivesPage() {
                     <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
                         Your referral dashboard is waiting in your account. Join Logistics Flow today to get your unique sharing links and start earning rewards.
                     </p>
-                    <Button asChild size="lg" className="mt-8">
+                    <Button asChild size="lg" className="mt-8" onClick={handleJoinClick}>
                         <Link href="/join">
                             Join Logistics Flow for Free <ArrowRight className="ml-2 h-4 w-4" />
                         </Link>

@@ -36,6 +36,7 @@ const featuredFacilities = [
 export default function WarehouseMallPage() {
 
     const handleFacilityClick = (facilityId: string) => {
+        if (!process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS_ID) return;
         gtag.event({
             action: 'view_warehouse_facility',
             category: 'Warehouse Mall',
@@ -108,7 +109,7 @@ export default function WarehouseMallPage() {
                         ))}
                     </div>
                      <div className="text-center mt-16">
-                        <Button size="lg" onClick={() => gtag.event({ action: 'list_warehouse_click', category: 'Warehouse Mall', label: 'Footer CTA', value: 0 })}>
+                        <Button size="lg" onClick={() => {if (!process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS_ID) return; gtag.event({ action: 'list_warehouse_click', category: 'Warehouse Mall', label: 'Footer CTA', value: 0 })}}>
                             List Your Warehouse Space
                         </Button>
                     </div>

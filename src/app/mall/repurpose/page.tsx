@@ -34,6 +34,7 @@ const featuredItems = [
 export default function RepurposeMallPage() {
 
     const handleItemClick = (itemId: string) => {
+        if (!process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS_ID) return;
         gtag.event({
             action: 'view_repurpose_item',
             category: 'Repurpose Mall',
@@ -102,7 +103,7 @@ export default function RepurposeMallPage() {
                         ))}
                     </div>
                     <div className="text-center mt-16">
-                        <Button size="lg" onClick={() => gtag.event({ action: 'list_asset_click', category: 'Repurpose Mall', label: 'Footer CTA', value: 0 })}>
+                        <Button size="lg" onClick={() => {if (!process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS_ID) return; gtag.event({ action: 'list_asset_click', category: 'Repurpose Mall', label: 'Footer CTA', value: 0 })}}>
                            List Your Decommissioned Assets
                         </Button>
                     </div>

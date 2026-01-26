@@ -34,6 +34,7 @@ const featuredPartners = [
 export default function DistributionMallPage() {
 
     const handlePartnerClick = (partnerId: string) => {
+        if (!process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS_ID) return;
         gtag.event({
             action: 'view_distribution_partner',
             category: 'Distribution Mall',
@@ -106,7 +107,7 @@ export default function DistributionMallPage() {
                         ))}
                     </div>
                     <div className="text-center mt-16">
-                        <Button size="lg" onClick={() => gtag.event({ action: 'join_distribution_click', category: 'Distribution Mall', label: 'Footer CTA', value: 0 })}>
+                        <Button size="lg" onClick={() => {if (!process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS_ID) return; gtag.event({ action: 'join_distribution_click', category: 'Distribution Mall', label: 'Footer CTA', value: 0 })}}>
                             Join Our Distribution Network
                         </Button>
                     </div>

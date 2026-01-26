@@ -12,6 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import * as gtag from '@/lib/gtag';
 
 
 const { placeholderImages } = data;
@@ -28,9 +29,21 @@ function ShowcaseButton() {
   // 4. Copy the URL for your new video and paste it here.
   const videoUrl = "https://storage.googleapis.com/your-bucket/your-video.mp4"; // <-- PASTE URL HERE
 
+  const handleShowcaseClick = () => {
+    if (process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS_ID) {
+      gtag.event({
+        action: 'click_showcase',
+        category: 'Homepage',
+        label: 'Showcase How Button',
+        value: 1
+      });
+    }
+    setIsModalOpen(true);
+  };
+
   return (
     <>
-      <Button size="lg" variant="outline" onClick={() => setIsModalOpen(true)}>
+      <Button size="lg" variant="outline" onClick={handleShowcaseClick}>
         Showcase How
       </Button>
 
@@ -57,6 +70,17 @@ function ShowcaseButton() {
 }
 
 export default function Home() {
+
+  const handleCreateShopClick = () => {
+    if (process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS_ID) {
+      gtag.event({
+        action: 'click_create_shop',
+        category: 'Homepage',
+        label: 'Create Your Shop CTA',
+        value: 1
+      });
+    }
+  };
 
   return (
     <div className="flex flex-col">
@@ -89,7 +113,7 @@ export default function Home() {
                 Launch a professional storefront to market your services, sell your products, and build a trusted profile to unlock funding. Get started for free.
               </p>
               <div className="mt-8 flex justify-center items-center gap-4">
-                <Button asChild size="lg">
+                <Button asChild size="lg" onClick={handleCreateShopClick}>
                     <Link href="/roles">Create Your Shop</Link>
                 </Button>
                 <ShowcaseButton />

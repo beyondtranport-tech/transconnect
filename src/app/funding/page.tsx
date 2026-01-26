@@ -11,6 +11,7 @@ import data from "@/lib/placeholder-images.json";
 import { useUser } from "@/firebase";
 import * as React from "react";
 import { useState, useEffect } from "react";
+import * as gtag from '@/lib/gtag';
 
 const { placeholderImages } = data;
 
@@ -50,6 +51,26 @@ export default function FundingPage() {
     useEffect(() => {
         setIsClient(true);
     }, []);
+
+    const handleApplyClick = () => {
+        if (!process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS_ID) return;
+        gtag.event({
+            action: 'start_application',
+            category: 'Funding',
+            label: 'Process Section CTA',
+            value: 1
+        });
+    }
+    
+    const handleCategoryClick = (categoryId: string) => {
+        if (!process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS_ID) return;
+        gtag.event({
+            action: 'select_funding_category',
+            category: 'Funding',
+            label: categoryId,
+            value: 0
+        });
+    }
 
     return (
         <div>
@@ -92,7 +113,7 @@ export default function FundingPage() {
                             <p className="text-lg">We see the opportunities that others miss. Our expertise lies in our ability to take something that seems 'un-financeable', structure it correctly, and convert it into a viable funding opportunity. We don’t want to run your business; we want to fuel it.</p>
                         </div>
                         <div className="mt-12">
-                             <Button asChild size="lg">
+                             <Button asChild size="lg" onClick={handleApplyClick}>
                                 <Link href={isClient && user ? '/funding/apply' : '/join?redirect=/funding/apply'}>
                                     Start Your Application <ArrowRight className="ml-2 h-5 w-5" />
                                 </Link>
@@ -115,7 +136,7 @@ export default function FundingPage() {
                        {agreementTypes.map((item) => {
                             const Icon = item.icon;
                             return (
-                               <Link href={`/funding/products?agreement=${item.id}`} key={item.title} className="block group">
+                               <Link href={`/funding/products?agreement=${item.id}`} key={item.title} className="block group" onClick={() => handleCategoryClick(item.id)}>
                                    <Card className="flex flex-col overflow-hidden shadow-lg hover:shadow-primary/20 transition-all h-full group-hover:border-primary">
                                         <CardHeader>
                                             <div className="flex items-center gap-4">

@@ -45,6 +45,7 @@ const serviceCategories = [
 export default function MarketplacePage() {
 
     const handleCategoryClick = (categoryId: string, userType: 'buyer' | 'seller') => {
+        if (!process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS_ID) return;
         gtag.event({
             action: userType === 'buyer' ? 'explore_service_category' : 'join_service_category',
             category: 'Marketplace',
@@ -99,7 +100,7 @@ export default function MarketplacePage() {
                                         </div>
                                     </CardHeader>
                                     <CardContent className="flex-grow">
-                                        {/* Content can be added here if needed */}
+                                        {/* Content can be added here if needed in the future */}
                                     </CardContent>
                                     <CardFooter className="flex flex-col sm:flex-row gap-2 pt-4">
                                         <Button asChild variant="outline" className="w-full" onClick={() => handleCategoryClick(category.id, 'buyer')}>

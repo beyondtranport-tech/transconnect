@@ -57,6 +57,7 @@ const formatCurrency = (price: number) => {
 export default function SA_AuctionMallPage() {
 
     const handleAuctionClick = (auctionId: string) => {
+        if (!process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS_ID) return;
         gtag.event({
             action: 'view_auction_item',
             category: 'SA Auction Mall',

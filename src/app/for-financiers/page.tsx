@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { Button } from "@/components/ui/button";
@@ -9,6 +10,8 @@ import data from "@/lib/placeholder-images.json";
 import Link from "next/link";
 import { useUser } from "@/firebase";
 import { useSearchParams } from "next/navigation";
+import * as gtag from '@/lib/gtag';
+
 
 const { placeholderImages } = data;
 
@@ -45,6 +48,16 @@ export default function ForFinanciersPage() {
     if (user) {
         ctaLink = "/account";
     }
+
+    const handleJoinClick = () => {
+        if (!process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS_ID) return;
+        gtag.event({
+            action: 'join_as_financier',
+            category: 'For Financiers',
+            label: financierType || 'generic',
+            value: 1
+        });
+    };
 
     return (
         <div>
@@ -127,7 +140,7 @@ export default function ForFinanciersPage() {
                             </Card>
                         </div>
                         
-                         <Button asChild size="lg" className="mt-12" disabled={isUserLoading}>
+                         <Button asChild size="lg" className="mt-12" disabled={isUserLoading} onClick={handleJoinClick}>
                             <Link href={ctaLink}>
                                 {user ? "Go to Your Dashboard" : "Join Our Network Today"}
                                 <ArrowRight className="ml-2 h-5 w-5" />

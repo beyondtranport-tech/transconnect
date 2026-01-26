@@ -36,6 +36,7 @@ const featuredBrands = [
 export default function AftermarketMallPage() {
 
     const handleBrandClick = (brandId: string) => {
+        if (!process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS_ID) return;
         gtag.event({
             action: 'view_aftermarket_brand',
             category: 'Aftermarket Mall',
@@ -141,7 +142,7 @@ export default function AftermarketMallPage() {
                         ))}
                     </div>
                     <div className="text-center mt-16">
-                        <Button size="lg" onClick={() => gtag.event({ action: 'feature_brand_click', category: 'Aftermarket Mall', label: 'Footer CTA', value: 0 })}>
+                        <Button size="lg" onClick={() => {if (!process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS_ID) return; gtag.event({ action: 'feature_brand_click', category: 'Aftermarket Mall', label: 'Footer CTA', value: 0 })}}>
                             Are you a brand? Get Featured!
                         </Button>
                     </div>
