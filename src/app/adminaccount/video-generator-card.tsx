@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -27,8 +26,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { useUser, useStorage } from '@/firebase';
 import { Progress } from '@/components/ui/progress';
 import { Input } from '@/components/ui/input';
-import { ref as storageRef, uploadString, getDownloadURL } from 'firebase/storage';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { getClientSideAuthToken } from '@/firebase/errors';
 
 const defaultPrompt = `Create a short, professional marketing video that showcases how easy it is to create an online shop on the Logistics Flow platform. The video should visually represent these steps: 1. Sign up for a free account. 2. Use the simple Shop Wizard to add your business name, description, and products. 3. Publish your professional-looking online shop to the network. The video should be modern, clean, and use a color palette of green and charcoal.`;
 
@@ -99,8 +98,8 @@ export default function VideoGeneratorCard({ promptTemplate }: { promptTemplate?
   };
 
   const handleSaveToCloud = async () => {
-    if (!generatedVideo || !user || !storage) {
-        toast({ variant: 'destructive', title: 'Error', description: 'No video or user/storage not available.' });
+    if (!generatedVideo || !user) {
+        toast({ variant: 'destructive', title: 'Error', description: 'No video generated to save or user not found.' });
         return;
     }
 
@@ -109,20 +108,36 @@ export default function VideoGeneratorCard({ promptTemplate }: { promptTemplate?
     setStorageError(null);
 
     try {
-        const folder = 'videos';
+        const token = await getClientSideAuthToken();
+        if (!token) throw new Error("Authentication failed.");
+        
         const fileName = `generated_${Date.now()}.mp4`;
-        const filePath = `user-assets/${user.uid}/${folder}/${fileName}`;
-        const videoRef = storageRef(storage, filePath);
-        
-        const base64Data = generatedVideo.split(',')[1];
-        await uploadString(videoRef, base64Data, 'base64', { contentType: 'video/mp4' });
-        const publicUrl = await getDownloadURL(videoRef);
-        
+
+        const response = await fetch('/api/uploadImageAsset', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                file: generatedVideo,
+                folder: 'videos',
+                fileName: fileName,
+            }),
+        });
+
+        const result = await response.json();
+        if (!response.ok || !result.success) {
+            throw new Error(result.error || 'Failed to save video.');
+        }
+
+        const publicUrl = result.url;
         setSavedVideoUrl(publicUrl);
         toast({ title: 'Video Saved!', description: 'Your video has been saved to your asset gallery.' });
     } catch (error: any) {
-        if (error.message.includes('bucket')) {
-            setStorageError("Firebase Storage not enabled. Please follow the setup guide.");
+        console.error("Save AI video error:", error);
+        if (error.message.includes('permission') || error.message.includes('bucket')) {
+            setStorageError(error.message);
         } else {
             toast({ variant: 'destructive', title: 'Save Failed', description: error.message });
         }
@@ -178,7 +193,7 @@ export default function VideoGeneratorCard({ promptTemplate }: { promptTemplate?
                       {storageError && (
                           <Alert variant="destructive">
                               <ShieldAlert className="h-4 w-4" />
-                              <AlertTitle>Firebase Storage Not Enabled</AlertTitle>
+                              <AlertTitle>Storage Access Error</AlertTitle>
                               <AlertDescription>
                                   {storageError}
                                   <Button variant="link" className="p-0 h-auto ml-1 font-semibold" onClick={() => setIsSetupGuideOpen(true)}>View the setup guide.</Button>
@@ -240,29 +255,34 @@ export default function VideoGeneratorCard({ promptTemplate }: { promptTemplate?
                     Follow these steps in the Firebase Console to enable file uploads.
                 </DialogDescription>
             </DialogHeader>
-            <div className="py-4 space-y-4 text-sm max-h-[70vh] overflow-y-auto pr-4">
-                <p>The application uses Firebase Storage to save and manage user-uploaded assets like shop images, product photos, and AI-generated content. For the upload functionality to work, you must first enable the Storage service in your Firebase project.</p>
-                <p className="font-semibold text-destructive">The error "The specified bucket does not exist" is a strong indicator that this step has not been completed.</p>
-                <h3 className="font-bold text-lg pt-2">Step 1: Go to the Firebase Console</h3>
-                <ol className="list-decimal list-inside space-y-1 pl-4">
-                    <li>Open the <a href="https://console.firebase.google.com/" target="_blank" rel="noopener noreferrer" className="text-primary underline">Firebase Console</a>.</li>
-                    <li>Select your project: <code className="bg-muted p-1 rounded font-mono text-xs">transconnect-v1-39578841-2a857</code>.</li>
+            <div className="py-4 space-y-4 text-sm max-h-[70vh] overflow-y-auto pr-4" dangerouslySetInnerHTML={{ __html: `
+                <p>The application uses Firebase Storage to save and manage user-uploaded assets. For this to work, you must first enable the Storage service in your Firebase project and ensure the backend service account has the necessary permissions.</p>
+                
+                <h3 class="font-bold text-lg pt-2">Step 1: Enable Firebase Storage</h3>
+                <ol class="list-decimal list-inside space-y-1 pl-4">
+                    <li>Open the <a href="https://console.firebase.google.com/" target="_blank" rel="noopener noreferrer" class="text-primary underline">Firebase Console</a> and select your project.</li>
+                    <li>In the left-hand navigation, under **Build**, click on **Storage**.</li>
+                    <li>If it's not enabled, click **"Get started"**.</li>
+                    <li>Choose **Production mode** for security rules and click **Next**.</li>
+                    <li>Choose your bucket location (the default is usually fine) and click **Done**.</li>
                 </ol>
-                <h3 className="font-bold text-lg pt-2">Step 2: Navigate to Storage</h3>
-                <ol className="list-decimal list-inside space-y-1 pl-4">
-                    <li>In the left-hand navigation menu, under the <strong>Build</strong> section, click on <strong>Storage</strong>.</li>
+
+                <h3 class="font-bold text-lg pt-4">Step 2: Grant Backend Permissions (Troubleshooting)</h3>
+                <p>If you still see errors after Step 1, you must grant permissions to the backend service account.</p>
+                <ol class="list-decimal list-inside space-y-1 pl-4">
+                    <li>Go to the <a href="https://console.cloud.google.com/iam-admin/iam" target="_blank" rel="noopener noreferrer" class="text-primary underline">Google Cloud IAM page</a> for your project.</li>
+                    <li>Find the principal with the name **"Firebase Admin SDK Administrator Service Agent"**.</li>
+                    <li>Copy its email address (it will end in <code class="bg-muted p-1 rounded font-mono text-xs">.iam.gserviceaccount.com</code>).</li>
+                    <li>Click the **+ GRANT ACCESS** button at the top of the page.</li>
+                    <li>In the **"New principals"** field, paste the service account email.</li>
+                    <li>In the **"Select a role"** dropdown, search for and select **"Storage Object Admin"**.</li>
+                    <li>Click **Save**.</li>
                 </ol>
-                <h3 className="font-bold text-lg pt-2">Step 3: Get Started with Storage</h3>
-                <ol className="list-decimal list-inside space-y-1 pl-4">
-                    <li>If Storage is not enabled, you will see a "Get started" button. Click it.</li>
-                    <li>A dialog will appear to guide you through setting up security rules. It is recommended to start in <strong>Production mode</strong>. Click <strong>Next</strong>.</li>
-                    <li className="pl-4 text-xs text-muted-foreground"><em>Production mode starts with all reads and writes disallowed, which is a secure default. The application's own security rules will grant the necessary permissions.</em></li>
-                    <li>You will then be asked to choose a location for your Storage bucket. The default location selected for you is usually the best choice. Click <strong>Done</strong>.</li>
-                </ol>
-                <p className="pt-4 font-semibold">Once this process is complete, the file upload functionality within your application should work correctly without any further changes.</p>
-            </div>
+            `}} />
         </DialogContent>
       </Dialog>
     </>
   );
 }
+
+    

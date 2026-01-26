@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
@@ -274,34 +273,51 @@ function AIGenerateDialog({
   };
 
   const handleApplyImage = async () => {
-    if (!generatedImage || !user || !storage) {
-      toast({ variant: 'destructive', title: 'Error', description: 'No image generated to apply.' });
-      return;
+    if (!generatedImage || !user) {
+        toast({ variant: 'destructive', title: 'Error', description: 'No image generated to apply or user not found.' });
+        return;
     }
     setIsApplying(true);
     setStorageError(null);
+
     try {
         const isHeroBanner = title.toLowerCase().includes('hero');
         const folder = isHeroBanner ? 'hero-images' : 'product-images';
         const fileName = `generated_${Date.now()}.png`;
-        const filePath = `user-assets/${user.uid}/${folder}/${fileName}`;
-        const imageRef = storageRef(storage, filePath);
+
+        const token = await getClientSideAuthToken();
+        if (!token) throw new Error("Authentication failed.");
+
+        const response = await fetch('/api/uploadImageAsset', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                file: generatedImage,
+                folder: folder,
+                fileName: fileName,
+            }),
+        });
         
-        const base64Data = generatedImage.split(',')[1];
-        await uploadString(imageRef, base64Data, 'base64', { contentType: 'image/png' });
-        const publicUrl = await getDownloadURL(imageRef);
-        
-        onGenerate(publicUrl);
-        toast({ title: 'Image Applied!', description: 'The new image has been added.'});
+        const result = await response.json();
+        if (!response.ok || !result.success) {
+            throw new Error(result.error || 'Failed to upload image.');
+        }
+
+        onGenerate(result.url);
+        toast({ title: 'Image Applied!', description: 'The new image has been added.' });
         setIsOpen(false);
     } catch (e: any) {
-        if (e.message.includes('bucket') || e.message.includes('permission')) {
-            setStorageError("An error occurred accessing Firebase Storage. This is usually because the backend service needs permission. Please review the setup guide.");
+        console.error("Save AI image error:", e);
+        if (e.message.includes('permission') || e.message.includes('bucket')) {
+            setStorageError(e.message);
         } else {
             toast({ variant: 'destructive', title: 'Failed to apply image', description: e.message });
         }
     } finally {
-      setIsApplying(false);
+        setIsApplying(false);
     }
   };
   
@@ -387,7 +403,7 @@ function AIGenerateDialog({
                     Follow these steps in the Firebase & Google Cloud Console to enable file uploads.
                 </DialogDescription>
             </DialogHeader>
-            <div className="py-4 space-y-4 text-sm max-h-[70vh] overflow-y-auto pr-4" dangerouslySetInnerHTML={{ __html: `
+             <div className="py-4 space-y-4 text-sm max-h-[70vh] overflow-y-auto pr-4" dangerouslySetInnerHTML={{ __html: `
                 <p>The application uses Firebase Storage to save and manage user-uploaded assets. For this to work, you must first enable the Storage service in your Firebase project and ensure the backend service account has the necessary permissions.</p>
                 
                 <h3 class="font-bold text-lg pt-2">Step 1: Enable Firebase Storage</h3>
@@ -400,7 +416,7 @@ function AIGenerateDialog({
                 </ol>
 
                 <h3 class="font-bold text-lg pt-4">Step 2: Grant Backend Permissions (Troubleshooting)</h3>
-                <p class="font-semibold text-destructive">If you still see errors after Step 1, you must grant permissions to the backend service account.</p>
+                <p>If you still see errors after Step 1, you must grant permissions to the backend service account.</p>
                 <ol class="list-decimal list-inside space-y-1 pl-4">
                     <li>Go to the <a href="https://console.cloud.google.com/iam-admin/iam" target="_blank" rel="noopener noreferrer" class="text-primary underline">Google Cloud IAM page</a> for your project.</li>
                     <li>Find the principal with the name **"Firebase Admin SDK Administrator Service Agent"**.</li>
@@ -506,35 +522,62 @@ function ProductDialog({ shop, product, onComplete, children, canEdit }: { shop:
 
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
-        if (!file || !user || !storage) return;
+        if (!file || !user) return;
 
         setUploading(true);
         setStorageError(null);
         const fileRefInput = fileInputRef.current;
 
-        try {
-            const fileName = `${Date.now()}_${file.name}`;
-            const filePath = `user-assets/${user.uid}/product-images/${fileName}`;
-            const imageRef = storageRef(storage, filePath);
-            
-            await uploadBytes(imageRef, file);
-            const downloadURL = await getDownloadURL(imageRef);
-            
-            const currentUrls = form.getValues('imageUrls') || [];
-            form.setValue('imageUrls', [...currentUrls, downloadURL], { shouldValidate: true });
-            toast({ title: 'Upload Complete!', description: `Image "${file.name}" added.` });
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = async () => {
+            try {
+                const base64File = reader.result as string;
+                const token = await getClientSideAuthToken();
+                if (!token) throw new Error("Authentication failed.");
 
-        } catch (error: any) {
-             console.error("Upload error:", error);
-            if (error.message.includes('bucket') || error.message.includes('permission')) {
-                setStorageError("An error occurred accessing Firebase Storage. This is usually because the backend service needs permission. Please review the setup guide.");
-            } else {
-                toast({ variant: 'destructive', title: 'Upload Failed', description: error.message });
+                const fileName = `${Date.now()}_${file.name}`;
+
+                const response = await fetch('/api/uploadImageAsset', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        file: base64File,
+                        folder: 'product-images',
+                        fileName: fileName,
+                    }),
+                });
+
+                const result = await response.json();
+                if (!response.ok || !result.success) {
+                    throw new Error(result.error || 'Failed to upload image.');
+                }
+                
+                const downloadURL = result.url;
+                const currentUrls = form.getValues('imageUrls') || [];
+                form.setValue('imageUrls', [...currentUrls, downloadURL], { shouldValidate: true });
+                toast({ title: 'Upload Complete!', description: `Image "${file.name}" added.` });
+
+            } catch (error: any) {
+                console.error("Upload error:", error);
+                if (error.message.includes('permission') || error.message.includes('bucket')) {
+                    setStorageError(error.message);
+                } else {
+                    toast({ variant: 'destructive', title: 'Upload Failed', description: error.message });
+                }
+            } finally {
+                setUploading(false);
+                if (fileRefInput) fileRefInput.value = '';
             }
-        } finally {
+        };
+        reader.onerror = (error) => {
+            console.error("Error reading file:", error);
+            toast({ variant: 'destructive', title: 'File Read Error', description: 'Could not process the selected file.' });
             setUploading(false);
-            if (fileRefInput) fileRefInput.value = '';
-        }
+        };
     };
 
 
@@ -685,7 +728,7 @@ function ProductDialog({ shop, product, onComplete, children, canEdit }: { shop:
                 </ol>
 
                 <h3 class="font-bold text-lg pt-4">Step 2: Grant Backend Permissions (Troubleshooting)</h3>
-                <p class="font-semibold text-destructive">If you still see errors after Step 1, you must grant permissions to the backend service account.</p>
+                <p>If you still see errors after Step 1, you must grant permissions to the backend service account.</p>
                 <ol class="list-decimal list-inside space-y-1 pl-4">
                     <li>Go to the <a href="https://console.cloud.google.com/iam-admin/iam" target="_blank" rel="noopener noreferrer" class="text-primary underline">Google Cloud IAM page</a> for your project.</li>
                     <li>Find the principal with the name **"Firebase Admin SDK Administrator Service Agent"**.</li>
@@ -1310,5 +1353,4 @@ export function ShopWizard({ shop: initialShop }: { shop: any }) {
     </div>
   );
 }
-
     

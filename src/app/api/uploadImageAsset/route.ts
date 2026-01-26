@@ -1,28 +1,30 @@
-
 import { NextRequest, NextResponse } from 'next/server';
 import { getStorage } from 'firebase-admin/storage';
+import { getAuth } from 'firebase-admin/auth';
 import { getAdminApp } from '@/lib/firebase-admin';
 
 export async function POST(req: NextRequest) {
   try {
     const { app, error: initError } = getAdminApp();
     if (initError || !app) {
-        throw new Error(`Admin SDK not initialized: ${initError}`);
+      throw new Error(`Admin SDK not initialized: ${initError}`);
     }
 
     const authorization = req.headers.get('authorization');
     if (!authorization?.startsWith('Bearer ')) {
-        return NextResponse.json({ success: false, error: 'Unauthorized: Missing or invalid token.' }, { status: 401 });
+      return NextResponse.json({ success: false, error: 'Unauthorized: Missing or invalid token.' }, { status: 401 });
     }
     const token = authorization.split('Bearer ')[1];
     
-    const { getAuth } = await import('firebase-admin/auth');
-    await getAuth(app).verifyIdToken(token);
-    
-    const { file, path } = await req.json();
+    // Verify token to get UID
+    const adminAuth = getAuth(app);
+    const decodedToken = await adminAuth.verifyIdToken(token);
+    const uid = decodedToken.uid;
 
-    if (!file || !path) {
-      return NextResponse.json({ success: false, error: 'Bad Request: "file" (base64) and "path" are required.' }, { status: 400 });
+    const { file, folder, fileName } = await req.json();
+
+    if (!file || !folder || !fileName) {
+      return NextResponse.json({ success: false, error: 'Bad Request: "file" (base64), "folder", and "fileName" are required.' }, { status: 400 });
     }
     
     const matches = file.match(/^data:(.+);base64,(.+)$/);
@@ -34,27 +36,33 @@ export async function POST(req: NextRequest) {
     const base64Data = matches[2];
     const buffer = Buffer.from(base64Data, 'base64');
     
-    // Explicitly specify the bucket name to resolve the "bucket not found" issue.
-    const bucket = getStorage(app).bucket('transconnect-v1-39578841-2a857.appspot.com');
-    const fileUpload = bucket.file(path);
+    // Explicitly get the default bucket from storage.
+    const bucket = getStorage(app).bucket();
+    const filePath = `user-assets/${uid}/${folder}/${fileName}`;
+    const fileUpload = bucket.file(filePath);
 
+    // Save the file to the bucket.
     await fileUpload.save(buffer, {
         metadata: {
             contentType: contentType,
         },
+        public: true, // Make the file publicly readable
     });
     
-    await fileUpload.makePublic();
-    const publicUrl = fileUpload.publicUrl();
+    // The public URL is what we need to return.
+    const publicUrl = `https://storage.googleapis.com/${bucket.name}/${filePath}`;
 
     return NextResponse.json({ success: true, url: publicUrl });
 
   } catch (error: any) {
     console.error(`Error in uploadImageAsset:`, error);
+    // Provide more specific error feedback if possible
     if (error.code === 403 || (error.message && (error.message.includes('permission') || error.message.includes('bucket')))) {
-        return NextResponse.json({ success: false, error: 'Permission Denied: This can happen if the backend service account does not have the "Storage Object Admin" role in Google Cloud IAM, or if Firebase Storage is not fully enabled. Please check your project setup.' }, { status: 403 });
+        return NextResponse.json({ success: false, error: 'Permission Denied on Server: This can happen if the backend service account does not have the "Storage Object Admin" role in Google Cloud IAM, or if Firebase Storage is not fully enabled. Please check the setup guide.' }, { status: 403 });
     }
-    const status = error.message.includes('Forbidden') ? 403 : error.message.includes('Unauthorized') ? 401 : 500;
+    const status = error.message.includes('Unauthorized') ? 401 : 500;
     return NextResponse.json({ success: false, error: error.message }, { status });
   }
 }
+
+    
