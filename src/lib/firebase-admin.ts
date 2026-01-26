@@ -29,11 +29,10 @@ export function getAdminApp(): { app: App | null; error: string | null } {
         throw new Error('Parsed service account is missing essential properties (project_id, client_email, private_key).');
     }
     
-    // Explicitly set the projectId and storageBucket to ensure correct initialization.
     const app = initializeApp({
       credential: cert(serviceAccount),
-      projectId: 'transconnect-v1-39578841-2a857',
-      storageBucket: `${'transconnect-v1-39578841-2a857'}.appspot.com`
+      projectId: serviceAccount.project_id,
+      storageBucket: `${serviceAccount.project_id}.appspot.com`
     }, ADMIN_APP_NAME);
 
     return { app, error: null };
@@ -70,3 +69,5 @@ export async function verifyAdmin(req: NextRequest) {
         adminUid: decodedToken.uid
     };
 }
+
+    
