@@ -314,7 +314,7 @@ function JoinFormComponent() {
                       <button
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
-                        className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground"
+                        className="absolute inset-y-0 right-0 z-10 flex items-center pr-3 text-muted-foreground"
                         aria-label={
                           showPassword ? 'Hide password' : 'Show password'
                         }
