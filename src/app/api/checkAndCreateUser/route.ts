@@ -31,7 +31,18 @@ export async function POST(req: NextRequest) {
   try {
     const adminAuth = getAuth(app);
     const decodedToken = await adminAuth.verifyIdToken(idToken);
-    const firebaseUser: UserRecord = await adminAuth.getUser(decodedToken.uid);
+    
+    // Use decodedToken directly to avoid extra API call that might cause permission issues.
+    const firebaseUser = {
+        uid: decodedToken.uid,
+        email: decodedToken.email,
+        displayName: decodedToken.name,
+        phoneNumber: decodedToken.phone_number,
+    };
+    
+    if (!firebaseUser.email) {
+        throw new Error("Token did not contain an email address.");
+    }
     
     const db = getFirestore(app);
     const userDocRef = db.collection('users').doc(firebaseUser.uid);
