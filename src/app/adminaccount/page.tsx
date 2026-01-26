@@ -109,12 +109,12 @@ function AdminAuthGuard({ children }: { children: React.ReactNode }) {
 
         if (!user) {
             router.replace('/signin?redirect=/adminaccount');
-        } else if (user.email !== 'beyondtransport@gmail.com' &amp;&amp; user.email !== 'mkoton100@gmail.com') {
+        } else if (user.email !== 'beyondtransport@gmail.com' && user.email !== 'mkoton100@gmail.com') {
             router.replace('/account'); 
         }
     }, [user, isUserLoading, router]);
 
-    if (isUserLoading || !user || (user.email !== 'beyondtransport@gmail.com' &amp;&amp; user.email !== 'mkoton100@gmail.com')) {
+    if (isUserLoading || !user || (user.email !== 'beyondtransport@gmail.com' && user.email !== 'mkoton100@gmail.com')) {
         return (
             <div className="flex flex-col justify-center items-center min-h-[calc(100vh-8rem)]">
                 <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -172,12 +172,19 @@ function AdminAccountContent() {
 
       // Strategy & Pitching
       case 'partner-offer': return <PartnerOffer />;
-      case 'investor-offer': return <InvestorOffer />;
-      case 'elevator-pitch': return <ElevatorPitch />;
+      case 'commissions-isa': return <ISAPitchSettings />;
+      case 'member-sales-offer': return <NetworkOffer />;
+      case 'member-sales-emails': return <NetworkEmails />;
+      case 'member-sales-performance': return <PerformanceContent />;
       case 'partner-pitch': return <PartnerElevatorPitch />;
       case 'partner-emails': return <PartnerEmailSequence />;
+      case 'elevator-pitch': return <ElevatorPitch />;
+      case 'investor-offer': return <InvestorOffer />;
       case 'investor-emails': return <InvestorEmailSequence />;
-      case 'commissions-isa': return <ISAPitchSettings />;
+      case 'isa-agents': return <ISAManagement />;
+      case 'members': return <MembersList />;
+      case 'partners': return <PartnerManagement />;
+      case 'staff-management': return <StaffManagement />;
       
       // Financials & Projections
       case 'financial-setup': return <FinancialSetup />;
@@ -211,7 +218,7 @@ function AdminAccountContent() {
   const isStrategyActive = [
     'partner-offer', 'commissions-isa', 'member-sales-offer', 'member-sales-emails', 
     'member-sales-performance', 'partner-pitch', 'partner-emails', 'elevator-pitch', 
-    'investor-offer', 'investor-emails', 'isa-agents', 'members', 'partners'
+    'investor-offer', 'investor-emails', 'isa-agents', 'members', 'partners', 'staff-management'
   ].includes(activeView);
   const isFinancialsActive = ['financial-setup', 'sales-roadmap', 'targets', 'member-projection', 'cost-calculator', 'budget', 'forecast'].includes(activeView);
 
@@ -235,7 +242,7 @@ function AdminAccountContent() {
                     </SidebarMenuButton>
                 </SidebarMenuItem>
                 <SidebarMenuItem>
-                  <SidebarMenuButton tooltip="Sales &amp; Marketing" isActive={isSalesActive}><Handshake /><span>Sales &amp; Marketing</span></SidebarMenuButton>
+                  <SidebarMenuButton tooltip="Sales & Marketing" isActive={isSalesActive}><Handshake /><span>Sales & Marketing</span></SidebarMenuButton>
                   <SidebarMenuSub>
                     <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'leads-agent'} onClick={() => navigate('leads-agent')}><Bot />AI Leads Agent</SidebarMenuSubButton></SidebarMenuSubItem>
                     <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'leads-database'} onClick={() => navigate('leads-database')}><Database />Leads Database</SidebarMenuSubButton></SidebarMenuSubItem>
@@ -248,7 +255,7 @@ function AdminAccountContent() {
                   </SidebarMenuSub>
                 </SidebarMenuItem>
                 <SidebarMenuItem>
-                  <SidebarMenuButton tooltip="Strategy &amp; Pitching" isActive={isStrategyActive}><Presentation /><span>Strategy &amp; Pitching</span></SidebarMenuButton>
+                  <SidebarMenuButton tooltip="Strategy & Pitching" isActive={isStrategyActive}><Presentation /><span>Strategy & Pitching</span></SidebarMenuButton>
                   <SidebarMenuSub>
                     <SidebarMenuSubItem><span className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">ISA Agents</span></SidebarMenuSubItem>
                     <SidebarMenuSubItem>
@@ -324,7 +331,7 @@ function AdminAccountContent() {
             </SidebarGroup>
           </SidebarContent>
           <SidebarFooter>
-          {user &amp;&amp; (
+          {user && (
               <div className="flex items-center gap-3 p-2 rounded-md bg-sidebar-accent">
               <Avatar className="h-10 w-10">
                   <AvatarFallback>{getInitials(user.displayName)}</AvatarFallback>
