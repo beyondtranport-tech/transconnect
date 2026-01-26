@@ -173,8 +173,8 @@ export default function PartnerManagement() {
         try {
             const token = await getClientSideAuthToken();
             if (!token) throw new Error("Authentication failed.");
-            await performAdminAction(token, 'savePartner', {
-                partner: { id: data.id, invitationStatus: 'invited' }
+            await performAdminAction(token, 'invitePartner', {
+                partnerId: data.id
             });
             forceRefresh();
             toast({ title: "Partner Invite Ready", description: "Status updated to 'invited'. You can now send the link." });

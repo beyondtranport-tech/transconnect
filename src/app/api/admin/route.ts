@@ -47,13 +47,13 @@ export async function POST(req: NextRequest) {
         const userDocForAuth = await db.collection('users').doc(requestorUid).get();
         const userCompanyIdForAuth = userDocForAuth.data()?.companyId;
 
-        if (action === 'saveCompanyLead' || action === 'inviteCompanyLead') {
+        if (action === 'saveCompanyLead') {
             if (payload.companyId !== userCompanyIdForAuth && !isAdmin) {
                  throw new Error("Forbidden: You can only manage leads for your own company.");
             }
         } else if (!isAdmin) {
             // Most other actions in this route are admin-only
-             const allowedUserActions = ['saveCompanyLead', 'inviteCompanyLead'];
+             const allowedUserActions = ['saveCompanyLead'];
              if (!allowedUserActions.includes(action)) {
                  throw new Error("Forbidden: Admin access required.");
              }
@@ -61,74 +61,28 @@ export async function POST(req: NextRequest) {
         // --- END AUTHORIZATION ---
 
         switch (action) {
-            case 'inviteLead': // For global /leads
-            case 'inviteCompanyLead': { // For /companies/{id}/leads
-                const { leadId, companyId } = payload;
-                if (!leadId) throw new Error("leadId is required.");
+            case 'invitePartner': {
+                 const { partnerId } = payload;
+                if (!partnerId) throw new Error("partnerId is required.");
 
-                let leadDocRef;
-                if (action === 'inviteCompanyLead') {
-                    if (!companyId) throw new Error("companyId is required for inviteCompanyLead.");
-                    leadDocRef = db.collection(`companies/${companyId}/leads`).doc(leadId);
-                } else {
-                    leadDocRef = db.collection('leads').doc(leadId);
-                }
-
-                const leadSnap = await leadDocRef.get();
-                if (!leadSnap.exists) throw new Error("Lead not found.");
+                const partnerDocRef = db.collection('partners').doc(partnerId);
+                const partnerSnap = await partnerDocRef.get();
+                if (!partnerSnap.exists) throw new Error("Partner not found.");
                 
-                const leadData = leadSnap.data()!;
-                const { email, contactPerson, companyName: leadCompanyName } = leadData;
+                const partnerData = partnerSnap.data()!;
+                const { email } = partnerData;
                 
-                if (!email) throw new Error("Lead does not have an email to invite.");
+                if (!email) throw new Error("Partner does not have an email to invite.");
                 
-                let authUid: string;
-                let userExists = false;
-
-                try {
-                    const userRecord = await getAuth(app).getUserByEmail(email);
-                    authUid = userRecord.uid;
-                    userExists = true;
-                } catch (error: any) {
-                    if (error.code !== 'auth/user-not-found') throw error;
-                    // User doesn't exist, create them
-                    const newUserRecord = await getAuth(app).createUser({
-                        email: email,
-                        displayName: contactPerson || leadCompanyName,
-                    });
-                    authUid = newUserRecord.uid;
-                    
-                    // Create a basic user profile
-                    await db.collection('users').doc(authUid).set({
-                        id: authUid,
-                        firstName: contactPerson?.split(' ')[0] || leadCompanyName,
-                        lastName: contactPerson?.split(' ').slice(1).join(' ') || '',
-                        email: email,
-                        role: 'owner', // Default role for a new user from a lead
-                        createdAt: FieldValue.serverTimestamp(),
-                        updatedAt: FieldValue.serverTimestamp(),
-                    });
-                }
-                
-                const origin = 'https://transconnect-v1-39578841-2a857.web.app';
-
-                const actionCodeSettings = {
-                    url: `${origin}/signin?email=${encodeURIComponent(email)}`,
-                    handleCodeInApp: false,
-                };
-                const link = await getAuth(app).generatePasswordResetLink(email, actionCodeSettings);
-
-                // Update lead status
-                await leadDocRef.update({
-                    status: 'invited',
-                    authUid: authUid,
+                // This action simply updates the status. User creation happens on the /join page.
+                await partnerDocRef.update({
+                    invitationStatus: 'invited',
                     updatedAt: FieldValue.serverTimestamp(),
                 });
 
                 return NextResponse.json({
                     success: true,
-                    inviteLink: link,
-                    message: userExists ? "User already exists. You can still send this new invite link." : "Account created and invite link generated."
+                    message: "Partner status updated to 'invited'."
                 });
             }
              case 'saveCompanyLead': {

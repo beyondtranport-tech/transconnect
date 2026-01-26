@@ -45,28 +45,35 @@ function InviteDialog({ lead, companyId, onInviteSent }: { lead: any, companyId:
 
     const onOpenChange = (open: boolean) => {
         if (!open) {
-            setInviteLink(''); // Reset on close
-            onInviteSent(); // Refresh the table after the dialog is closed
+            setInviteLink('');
         }
         setIsOpen(open);
     };
 
-    const handleInvite = async () => {
+    const handleGenerateLink = async () => {
         setIsLoading(true);
         try {
             const token = await getClientSideAuthToken();
             if (!token) throw new Error("Authentication failed.");
 
+            // Update lead status to 'invited'
             const response = await fetch('/api/admin', {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action: 'inviteCompanyLead', payload: { companyId, leadId: lead.id } }),
+                body: JSON.stringify({ 
+                    action: 'saveCompanyLead', 
+                    payload: { companyId, lead: { id: lead.id, status: 'invited' } } 
+                }),
             });
             const result = await response.json();
             if (!result.success) throw new Error(result.error);
 
-            setInviteLink(result.inviteLink);
+            // Construct simple join link
+            const link = `${window.location.origin}/join?email=${encodeURIComponent(lead.email)}`;
+            setInviteLink(link);
+            
             toast({ title: "Invite Link Generated", description: "You can now share the secure link." });
+            onInviteSent(); // Refresh table in the background
         } catch (e: any) {
             toast({ variant: 'destructive', title: 'Invite Failed', description: e.message });
             setIsOpen(false);
@@ -91,14 +98,18 @@ function InviteDialog({ lead, companyId, onInviteSent }: { lead: any, companyId:
             <DialogContent>
                 <DialogHeader>
                     <DialogTitle>Invite {lead.companyName}</DialogTitle>
-                    <DialogDescription>
-                        {isLoading ? "Generating secure sign-up link..." : inviteLink ? "Share this secure link with the lead to let them set their password." : `This will generate a secure, one-time sign-up link for ${lead.email}.`}
+                     <DialogDescription>
+                        {inviteLink
+                          ? "Share this secure sign-up link. It will pre-fill their email on the registration form."
+                          : `This will generate a sign-up link for ${lead.email || 'this lead'}.`}
                     </DialogDescription>
                 </DialogHeader>
                 
-                {isLoading ? (
+                {isLoading && (
                     <div className="flex justify-center p-8"><Loader2 className="animate-spin h-8 w-8 text-primary" /></div>
-                ) : inviteLink ? (
+                )}
+                
+                {inviteLink && (
                     <div className="flex items-center space-x-2 py-4">
                         <Input value={inviteLink} readOnly />
                         <Button onClick={copyToClipboard}>
@@ -106,7 +117,7 @@ function InviteDialog({ lead, companyId, onInviteSent }: { lead: any, companyId:
                            Copy Link
                         </Button>
                     </div>
-                ) : null }
+                )}
 
                 <DialogFooter>
                     {inviteLink ? (
@@ -114,7 +125,7 @@ function InviteDialog({ lead, companyId, onInviteSent }: { lead: any, companyId:
                     ) : (
                         <>
                             <Button variant="ghost" onClick={() => onOpenChange(false)} disabled={isLoading}>Cancel</Button>
-                            <Button onClick={handleInvite} disabled={isLoading}>
+                            <Button onClick={handleGenerateLink} disabled={isLoading}>
                                {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null}
                                Generate Invite Link
                             </Button>
@@ -350,3 +361,4 @@ export default function NetworkContent() {
     
 
     
+
