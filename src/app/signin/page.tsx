@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, Suspense, useEffect } from 'react';
@@ -46,6 +45,16 @@ function SignInFormComponent() {
   const auth = useAuth();
   const { user, isUserLoading } = useUser();
   const redirectParam = searchParams.get('redirect');
+
+  // Redirect if user is already logged in
+  useEffect(() => {
+    if (!isUserLoading && user) {
+      const isAdmin = user.email === 'beyondtransport@gmail.com' || user.email === 'mkoton100@gmail.com';
+      const defaultRedirect = isAdmin ? '/adminaccount' : '/account';
+      router.replace(redirectParam || defaultRedirect);
+    }
+  }, [user, isUserLoading, router, redirectParam]);
+
 
   const form = useForm<SignInFormValues>({
     resolver: zodResolver(formSchema),
@@ -114,8 +123,8 @@ function SignInFormComponent() {
       const isAdmin = loggedInUser.email === 'beyondtransport@gmail.com' || loggedInUser.email === 'mkoton100@gmail.com';
       const defaultRedirect = isAdmin ? '/adminaccount' : '/account';
       
-      // Use router.push to navigate immediately.
-      router.push(redirectParam || defaultRedirect);
+      // Use router.replace to navigate and remove sign-in from history.
+      router.replace(redirectParam || defaultRedirect);
 
       // Perform the user check in the background without blocking navigation.
       getIdToken(loggedInUser).then(token => {
@@ -231,5 +240,3 @@ export default function SignInPage() {
         </div>
     )
 }
-
-    
