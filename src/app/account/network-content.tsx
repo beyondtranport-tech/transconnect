@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect, useCallback } from 'react';
@@ -66,7 +67,7 @@ function InviteDialog({ lead, companyId, onInviteSent }: { lead: any, companyId:
 
             setInviteLink(result.inviteLink);
             onInviteSent();
-            toast({ title: "Invite Link Generated", description: "You can now share the secure sign-up link." });
+            toast({ title: "Invite Link Generated", description: "You can now share the secure link." });
         } catch (e: any) {
             toast({ variant: 'destructive', title: 'Invite Failed', description: e.message });
             setIsOpen(false);
@@ -92,7 +93,7 @@ function InviteDialog({ lead, companyId, onInviteSent }: { lead: any, companyId:
                 <DialogHeader>
                     <DialogTitle>Invite {lead.companyName}</DialogTitle>
                     <DialogDescription>
-                        {isLoading ? "Generating secure sign-up link..." : inviteLink ? "Share this secure link with the lead to let them set their password." : `This will create an account for ${lead.email} and generate a sign-up link. Are you sure?`}
+                        {isLoading ? "Generating secure sign-up link..." : inviteLink ? "Share this secure link with the lead to let them set their password." : `This will generate a secure, one-time sign-up link for ${lead.email}.`}
                     </DialogDescription>
                 </DialogHeader>
                 
@@ -101,7 +102,7 @@ function InviteDialog({ lead, companyId, onInviteSent }: { lead: any, companyId:
                 ) : inviteLink ? (
                     <div className="flex items-center space-x-2 py-4">
                         <Input value={inviteLink} readOnly />
-                        <Button onClick={copyToClipboard} className="w-full sm:w-auto">
+                        <Button onClick={copyToClipboard}>
                            <Copy className="mr-2 h-4 w-4" />
                            Copy Link
                         </Button>
