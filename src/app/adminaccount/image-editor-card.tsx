@@ -26,11 +26,9 @@ import { Loader2, Sparkles, Wand2, Download, Save, Copy, ShieldAlert } from 'luc
 import Image from 'next/image';
 import { imageEdit } from '@/ai/flows/image-edit-flow';
 import { Textarea } from '@/components/ui/textarea';
-import { useUser, useStorage } from '@/firebase';
-import { Progress } from '@/components/ui/progress';
+import { useUser } from '@/firebase';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { getClientSideAuthToken } from '@/firebase/errors';
-import { ref as storageRef, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 
 const defaultEditPrompt = `Place the truck on a winding mountain pass at sunset.
 
@@ -47,13 +45,11 @@ export default function ImageEditorCard({ promptTemplate }: { promptTemplate?: s
   const [editedImage, setEditedImage] = useState<string | null>(null);
   const { toast } = useToast();
   const { user } = useUser();
-  const storage = useStorage();
 
   const [isSaving, setIsSaving] = useState(false);
   const [savedImageUrl, setSavedImageUrl] = useState<string | null>(null);
   const [storageError, setStorageError] = useState<string | null>(null);
   const [isSetupGuideOpen, setIsSetupGuideOpen] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
 
 
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -74,7 +70,6 @@ export default function ImageEditorCard({ promptTemplate }: { promptTemplate?: s
     setSavedImageUrl(null);
     setIsSaving(false);
     setStorageError(null);
-    setUploadProgress(0);
   }
 
   const clearOriginalImage = () => {
@@ -136,49 +131,47 @@ export default function ImageEditorCard({ promptTemplate }: { promptTemplate?: s
   };
 
   const handleSaveToCloud = async () => {
-    if (!editedImage || !user || !storage) {
-        toast({ variant: 'destructive', title: 'Error', description: 'No image generated, user not found, or storage not available.' });
+    if (!editedImage || !user) {
+        toast({ variant: 'destructive', title: 'Error', description: 'No image generated or user not found.' });
         return;
     }
 
     setIsSaving(true);
     setSavedImageUrl(null);
     setStorageError(null);
-    setUploadProgress(0);
 
     try {
+        const token = await getClientSideAuthToken();
+        if (!token) throw new Error("Authentication token not found.");
+
         const fileName = `edited_${Date.now()}.png`;
-        const imageRef = storageRef(storage, `user-assets/${user.uid}/edited-images/${fileName}`);
+        const folder = `user-assets/${user.uid}/edited-images`;
 
-        const response = await fetch(editedImage);
-        const blob = await response.blob();
-        
-        const uploadTask = uploadBytesResumable(imageRef, blob);
+        const response = await fetch('/api/uploadImageAsset', {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                imageDataUri: editedImage, 
+                folder: folder, 
+                fileName: fileName 
+            }),
+        });
 
-        uploadTask.on('state_changed', 
-            (snapshot) => {
-                const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-                setUploadProgress(progress);
-            },
-            (error) => {
-                console.error("Save AI image error:", error);
-                if (error.code === 'storage/unauthorized') {
-                    setStorageError("Permission Denied: You may need to enable Firebase Storage and configure its security rules. Please check the setup guide.");
-                } else {
-                    toast({ variant: 'destructive', title: 'Save Failed', description: error.message });
-                }
-                setIsSaving(false);
-            },
-            async () => {
-                const publicUrl = await getDownloadURL(uploadTask.snapshot.ref);
-                setSavedImageUrl(publicUrl);
-                toast({ title: 'Image Saved!', description: 'Your image is now stored in the asset gallery.' });
-                setIsSaving(false);
+        const result = await response.json();
+        if (!response.ok || !result.success) {
+            if (result.error && result.error.includes('Permission Denied on Server')) {
+                setStorageError(result.error);
+            } else {
+                throw new Error(result.error || 'Failed to upload image.');
             }
-        );
+        } else {
+            setSavedImageUrl(result.url);
+            toast({ title: 'Image Saved!', description: 'Your image is now stored in the asset gallery.' });
+        }
     } catch (error: any) {
         console.error("Save AI image error:", error);
         toast({ variant: 'destructive', title: 'Save Failed', description: error.message });
+    } finally {
         setIsSaving(false);
     }
   };
@@ -256,7 +249,6 @@ export default function ImageEditorCard({ promptTemplate }: { promptTemplate?: s
                         <p className="text-sm text-muted-foreground">Your result will appear here.</p>
                     )}
                 </div>
-                {isSaving && <Progress value={uploadProgress} className="w-full" />}
                 {savedImageUrl && (
                     <div className="space-y-2">
                         <Label>Permanent URL</Label>
@@ -278,7 +270,8 @@ export default function ImageEditorCard({ promptTemplate }: { promptTemplate?: s
                         <Download className="mr-2 h-4 w-4" /> Download
                     </Button>
                      <Button variant="outline" onClick={handleSaveToCloud} disabled={isSaving || !!savedImageUrl}>
-                        <Save className="mr-2 h-4 w-4" /> {savedImageUrl ? 'Saved' : 'Save to Cloud'}
+                        {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Save className="mr-2 h-4 w-4" />}
+                        {savedImageUrl ? 'Saved' : 'Save to Cloud'}
                     </Button>
                   </div>
                 )}
@@ -329,5 +322,3 @@ export default function ImageEditorCard({ promptTemplate }: { promptTemplate?: s
     </>
   );
 }
-
-    

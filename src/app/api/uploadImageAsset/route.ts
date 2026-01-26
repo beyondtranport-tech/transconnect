@@ -2,6 +2,7 @@
 import { getStorage } from 'firebase-admin/storage';
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminApp } from '@/lib/firebase-admin';
+import { getAuth } from 'firebase-admin/auth';
 
 export async function POST(req: NextRequest) {
     try {
@@ -9,6 +10,17 @@ export async function POST(req: NextRequest) {
         if (initError || !app) {
             throw new Error(`Admin SDK not initialized: ${initError}`);
         }
+
+        // Authorization check
+        const authorization = req.headers.get('authorization');
+        if (!authorization?.startsWith('Bearer ')) {
+            return NextResponse.json({ success: false, error: 'Unauthorized: Missing or invalid token.' }, { status: 401 });
+        }
+        const token = authorization.split('Bearer ')[1];
+        
+        const adminAuth = getAuth(app);
+        // This verifies the token is valid, which is enough to prove the user is authenticated.
+        await adminAuth.verifyIdToken(token);
 
         const { imageDataUri, folder, fileName } = await req.json();
 
@@ -46,13 +58,15 @@ export async function POST(req: NextRequest) {
     } catch (error: any) {
         console.error('Error in /api/uploadImageAsset:', error);
         let errorMessage = 'An internal server error occurred.';
+        // This is a more specific check for the permission issue on the backend.
         if (error.code === 403 || (error.message && error.message.includes('does not have storage.objects.create access'))) {
              errorMessage = 'Permission Denied on Server: This can happen if the backend service account does not have the "Storage Object Admin" role in Google Cloud IAM, or if Firebase Storage is not fully enabled. Please check the setup guide.';
+        } else if (error.code?.startsWith('auth/')) {
+             errorMessage = 'Authentication error. Please sign in again.';
         } else if (error.message) {
             errorMessage = error.message;
         }
-        return NextResponse.json({ success: false, error: errorMessage }, { status: 500 });
+        const status = error.code === 'auth/id-token-expired' ? 401 : 500;
+        return NextResponse.json({ success: false, error: errorMessage }, { status });
     }
 }
-
-    

@@ -13,7 +13,6 @@ import { useToast } from '@/hooks/use-toast';
 import { useFirestore, useUser, useStorage, useCollection, getClientSideAuthToken } from '@/firebase';
 import { useMemoFirebase } from '@/hooks/use-config';
 import { doc, collection } from 'firebase/firestore';
-import { ref as storageRef, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { Loader2, Save, CheckCircle, LayoutGrid, List, Image as ImageIcon, Sparkles, PlusCircle, Edit, Trash2, Send, Eye, ShoppingCart, Mail, Phone, UploadCloud, Wand2, Video, Search, ShieldAlert, Download, Copy } from 'lucide-react';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -498,6 +497,9 @@ function ProductDialog({ shop, product, onComplete, children, canEdit }: { shop:
                 toast({ title: 'Upload Complete!', description: `Image "${file.name}" added.` });
                  if (fileInputRef.current) fileInputRef.current.value = '';
             };
+            reader.onerror = (error) => {
+                throw new Error("Error reading file: " + error);
+            }
 
         } catch (error: any) {
             console.error("Upload error:", error);
@@ -1235,7 +1237,3 @@ export function ShopWizard({ shop: initialShop }: { shop: any }) {
     </div>
   );
 }
-
-    
-
-    

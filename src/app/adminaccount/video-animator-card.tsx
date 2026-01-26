@@ -24,13 +24,11 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2, Sparkles, Video, Download, Save, Copy, Film, ShieldAlert } from 'lucide-react';
 import { generateVideo } from '@/ai/flows/video-generation-flow';
 import { Textarea } from '@/components/ui/textarea';
-import { useUser, useStorage } from '@/firebase';
-import { Progress } from '@/components/ui/progress';
+import { useUser } from '@/firebase';
 import { Input } from '@/components/ui/input';
 import Image from 'next/image';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { getClientSideAuthToken } from '@/firebase/errors';
-import { ref as storageRef, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 
 const defaultPrompt = `Animate this image. If it contains a vehicle, make its wheels spin and have it drive down the road. Add some subtle lens flare and a cinematic feel.`;
 
@@ -42,20 +40,17 @@ export default function VideoAnimatorCard({ promptTemplate }: { promptTemplate?:
   const [generatedVideo, setGeneratedVideo] = useState<string | null>(null);
   const { toast } = useToast();
   const { user } = useUser();
-  const storage = useStorage();
 
   const [isSaving, setIsSaving] = useState(false);
   const [savedVideoUrl, setSavedVideoUrl] = useState<string | null>(null);
   const [storageError, setStorageError] = useState<string | null>(null);
   const [isSetupGuideOpen, setIsSetupGuideOpen] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
 
   const handleClear = () => {
     setGeneratedVideo(null);
     setSavedVideoUrl(null);
     setIsSaving(false);
     setStorageError(null);
-    setUploadProgress(0);
   };
   
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -117,7 +112,7 @@ export default function VideoAnimatorCard({ promptTemplate }: { promptTemplate?:
   };
 
   const handleSaveToCloud = async () => {
-    if (!generatedVideo || !user || !storage) {
+    if (!generatedVideo || !user) {
         toast({ variant: 'destructive', title: 'Error', description: 'No video generated to save, user not found, or storage not available.' });
         return;
     }
@@ -125,41 +120,39 @@ export default function VideoAnimatorCard({ promptTemplate }: { promptTemplate?:
     setIsSaving(true);
     setSavedVideoUrl(null);
     setStorageError(null);
-    setUploadProgress(0);
 
     try {
+        const token = await getClientSideAuthToken();
+        if (!token) throw new Error("Authentication token not found.");
+        
         const fileName = `animated_${Date.now()}.mp4`;
-        const videoRef = storageRef(storage, `user-assets/${user.uid}/animated-videos/${fileName}`);
+        const folder = `user-assets/${user.uid}/animated-videos`;
         
-        const response = await fetch(generatedVideo);
-        const blob = await response.blob();
+        const response = await fetch('/api/uploadImageAsset', {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                imageDataUri: generatedVideo, 
+                folder: folder, 
+                fileName: fileName 
+            }),
+        });
         
-        const uploadTask = uploadBytesResumable(videoRef, blob);
-
-        uploadTask.on('state_changed',
-            (snapshot) => {
-                const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-                setUploadProgress(progress);
-            },
-            (error) => {
-                console.error("Save AI video error:", error);
-                if (error.code === 'storage/unauthorized') {
-                    setStorageError("Permission Denied: You may need to enable Firebase Storage and configure its security rules. Please check the setup guide.");
-                } else {
-                    toast({ variant: 'destructive', title: 'Save Failed', description: error.message });
-                }
-                setIsSaving(false);
-            },
-            async () => {
-                const publicUrl = await getDownloadURL(uploadTask.snapshot.ref);
-                setSavedVideoUrl(publicUrl);
-                toast({ title: 'Video Saved!', description: 'Your animated video has been saved to your asset gallery.' });
-                setIsSaving(false);
+        const result = await response.json();
+        if (!response.ok || !result.success) {
+             if (result.error && result.error.includes('Permission Denied on Server')) {
+                setStorageError(result.error);
+            } else {
+                throw new Error(result.error || 'Failed to upload video.');
             }
-        );
+        } else {
+            setSavedVideoUrl(result.url);
+            toast({ title: 'Video Saved!', description: 'Your animated video has been saved to your asset gallery.' });
+        }
     } catch (error: any) {
         console.error("Save AI video error:", error);
         toast({ variant: 'destructive', title: 'Save Failed', description: error.message });
+    } finally {
         setIsSaving(false);
     }
   };
@@ -235,7 +228,6 @@ export default function VideoAnimatorCard({ promptTemplate }: { promptTemplate?:
                               <p className="text-sm text-muted-foreground">Your animated video will appear here.</p>
                           )}
                       </div>
-                       {isSaving && <Progress value={uploadProgress} className="w-full" />}
                       {savedVideoUrl && (
                           <div className="space-y-2">
                               <Label>Permanent URL</Label>
@@ -257,7 +249,8 @@ export default function VideoAnimatorCard({ promptTemplate }: { promptTemplate?:
                               <Download className="mr-2 h-4 w-4" /> Download
                           </Button>
                           <Button variant="outline" onClick={handleSaveToCloud} disabled={isSaving || !!savedVideoUrl}>
-                              <Save className="mr-2 h-4 w-4" /> {savedVideoUrl ? 'Saved' : 'Save to Cloud'}
+                             {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Save className="mr-2 h-4 w-4" />}
+                             {savedVideoUrl ? 'Saved' : 'Save to Cloud'}
                           </Button>
                       </div>
                   ) : <div />}
@@ -308,5 +301,3 @@ export default function VideoAnimatorCard({ promptTemplate }: { promptTemplate?:
     </>
   );
 }
-
-    

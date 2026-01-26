@@ -25,12 +25,10 @@ import { Loader2, Sparkles, Image as ImageIcon, Download, Save, Copy, ShieldAler
 import Image from 'next/image';
 import { generateImage } from '@/ai/flows/image-generation-flow';
 import { Textarea } from '@/components/ui/textarea';
-import { useUser, useStorage } from '@/firebase';
-import { Progress } from '@/components/ui/progress';
+import { useUser } from '@/firebase';
 import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { getClientSideAuthToken } from '@/firebase/errors';
-import { ref as storageRef, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 
 const defaultPrompt = `A cinematic, professional photograph of a futuristic, gleaming white and green Scania truck driving on a high-tech highway at dusk. The road is illuminated with glowing data lines, and the sky has a vibrant sunset. The image should look modern, professional, and convey a sense of speed and efficiency.`;
 
@@ -41,20 +39,17 @@ export default function ImageGeneratorCard({ promptTemplate }: { promptTemplate?
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   const { toast } = useToast();
   const { user } = useUser();
-  const storage = useStorage();
 
   const [isSaving, setIsSaving] = useState(false);
   const [savedImageUrl, setSavedImageUrl] = useState<string | null>(null);
   const [storageError, setStorageError] = useState<string | null>(null);
   const [isSetupGuideOpen, setIsSetupGuideOpen] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
 
   const handleClear = () => {
     setGeneratedImage(null);
     setSavedImageUrl(null);
     setIsSaving(false);
     setStorageError(null);
-    setUploadProgress(0);
   };
 
 
@@ -104,7 +99,7 @@ export default function ImageGeneratorCard({ promptTemplate }: { promptTemplate?
   };
 
   const handleSaveToCloud = async () => {
-    if (!generatedImage || !user || !storage) {
+    if (!generatedImage || !user) {
         toast({ variant: 'destructive', title: 'Error', description: 'No image generated, user not found, or storage not available.' });
         return;
     }
@@ -112,41 +107,39 @@ export default function ImageGeneratorCard({ promptTemplate }: { promptTemplate?
     setIsSaving(true);
     setSavedImageUrl(null);
     setStorageError(null);
-    setUploadProgress(0);
 
     try {
+        const token = await getClientSideAuthToken();
+        if (!token) throw new Error("Authentication token not found.");
+
         const fileName = `generated_${Date.now()}.png`;
-        const imageRef = storageRef(storage, `user-assets/${user.uid}/generated-images/${fileName}`);
+        const folder = `user-assets/${user.uid}/generated-images`;
         
-        const response = await fetch(generatedImage);
-        const blob = await response.blob();
-
-        const uploadTask = uploadBytesResumable(imageRef, blob);
-
-        uploadTask.on('state_changed',
-            (snapshot) => {
-                const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-                setUploadProgress(progress);
-            },
-            (error) => {
-                console.error("Save AI image error:", error);
-                if (error.code === 'storage/unauthorized') {
-                    setStorageError("Permission Denied: You may need to enable Firebase Storage and configure its security rules. Please check the setup guide.");
-                } else {
-                    toast({ variant: 'destructive', title: 'Save Failed', description: error.message });
-                }
-                setIsSaving(false);
-            },
-            async () => {
-                const publicUrl = await getDownloadURL(uploadTask.snapshot.ref);
-                setSavedImageUrl(publicUrl);
-                toast({ title: 'Image Saved!', description: 'Your image is now stored in the asset gallery.' });
-                setIsSaving(false);
+        const response = await fetch('/api/uploadImageAsset', {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                imageDataUri: generatedImage, 
+                folder: folder, 
+                fileName: fileName 
+            }),
+        });
+        
+        const result = await response.json();
+        if (!response.ok || !result.success) {
+            if (result.error && result.error.includes('Permission Denied on Server')) {
+                setStorageError(result.error);
+            } else {
+                throw new Error(result.error || 'Failed to upload image.');
             }
-        );
+        } else {
+            setSavedImageUrl(result.url);
+            toast({ title: 'Image Saved!', description: 'Your image is now stored in the asset gallery.' });
+        }
     } catch (error: any) {
         console.error("Save AI image error:", error);
         toast({ variant: 'destructive', title: 'Save Failed', description: error.message });
+    } finally {
         setIsSaving(false);
     }
   };
@@ -217,7 +210,6 @@ export default function ImageGeneratorCard({ promptTemplate }: { promptTemplate?
                               <p className="text-sm text-muted-foreground">Your generated image will appear here.</p>
                           )}
                       </div>
-                       {isSaving && <Progress value={uploadProgress} className="w-full" />}
                       {savedImageUrl && (
                           <div className="space-y-2">
                               <Label>Permanent URL</Label>
@@ -239,7 +231,8 @@ export default function ImageGeneratorCard({ promptTemplate }: { promptTemplate?
                               <Download className="mr-2 h-4 w-4" /> Download
                           </Button>
                           <Button variant="outline" onClick={handleSaveToCloud} disabled={isSaving || !!savedImageUrl}>
-                              <Save className="mr-2 h-4 w-4" /> {savedImageUrl ? 'Saved' : 'Save to Cloud'}
+                             {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Save className="mr-2 h-4 w-4" />}
+                             {savedImageUrl ? 'Saved' : 'Save to Cloud'}
                           </Button>
                      </div>
                      <Button variant="ghost" onClick={handleClear}>Clear Image</Button>
@@ -287,5 +280,3 @@ export default function ImageGeneratorCard({ promptTemplate }: { promptTemplate?
     </>
   );
 }
-
-    
