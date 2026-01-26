@@ -163,7 +163,7 @@ export default function PartnerManagement() {
 
   const [dialogState, setDialogState] = useState<{ type: 'add' | 'edit' | 'delete' | 'invite' | null, data?: any }>({ type: null, data: undefined });
 
-  const handleOpenDialog = async (type: 'add' | 'edit' | 'delete' | 'invite', data?: any) => {
+  const handleOpenDialog = useCallback(async (type: 'add' | 'edit' | 'delete' | 'invite', data?: any) => {
     if (type === 'invite' && data) {
         try {
             const token = await getClientSideAuthToken();
@@ -179,16 +179,16 @@ export default function PartnerManagement() {
         }
     }
     setDialogState({ type, data });
-  };
+  }, [forceRefresh, toast]);
   
-  const handleCloseDialogs = () => {
+  const handleCloseDialogs = useCallback(() => {
     setDialogState({ type: null, data: undefined });
-  };
+  }, []);
 
-  const handleSave = () => {
+  const handleSave = useCallback(() => {
     forceRefresh();
     handleCloseDialogs();
-  };
+  }, [forceRefresh, handleCloseDialogs]);
   
   const handleDelete = async () => {
     if (dialogState.type !== 'delete' || !dialogState.data) return;
@@ -218,6 +218,16 @@ export default function PartnerManagement() {
     invited: 'outline',
     registered: 'default',
   };
+  
+  const columns: ColumnDef<any>[] = useMemo(() => [
+    { accessorKey: 'firstName', header: 'First Name', cell: ({row}) => <div>{row.original.firstName} {row.original.lastName}</div> },
+    { accessorKey: 'email', header: 'Email', cell: ({row}) => <div>{row.original.email}</div> },
+    { accessorKey: 'companyName', header: 'Company', cell: ({row}) => <div>{row.original.companyName}</div> },
+    { accessorKey: 'status', header: 'Status', cell: ({row}) => <Badge className="capitalize">{row.original.status}</Badge>},
+    { accessorKey: 'invitationStatus', header: 'Invite Status', cell: ({row}) => ( <Badge variant={invitationStatusColors[row.original.invitationStatus] || 'secondary'} className="capitalize"> {row.original.invitationStatus?.replace(/_/g, ' ') || 'Pending'} </Badge> ) },
+    { id: 'actions', header: () => <div className="text-right">Actions</div>, cell: ({ row }) => ( <PartnerActionMenu onInvite={() => handleOpenDialog('invite', row.original)} onEdit={() => handleOpenDialog('edit', row.original)} onDelete={() => handleOpenDialog('delete', row.original)} /> ) },
+  ], [handleOpenDialog]);
+
 
   return (
     <>
