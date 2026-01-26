@@ -1,4 +1,5 @@
 
+      
 import { NextRequest, NextResponse } from 'next/server';
 import { getFirestore, Timestamp, FieldValue, FieldPath } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
@@ -66,6 +67,7 @@ export async function POST(req: NextRequest) {
                     throw new Error("Lead data with email is required.");
                 }
 
+                // 1. Check if user already exists in Auth
                 try {
                     await getAuth(app).getUserByEmail(lead.email);
                     throw new Error("A user with this email already exists in Firebase Authentication.");
@@ -75,39 +77,44 @@ export async function POST(req: NextRequest) {
                     }
                 }
 
+                // 2. Create or find the lead document
+                const leadsCollectionRef = db.collection(`companies/${lead.companyId}/leads`);
+                let leadDocRef;
+                
+                if (lead.id) { // This is an edit/update of an unprovisioned lead
+                    leadDocRef = leadsCollectionRef.doc(lead.id);
+                } else { // This is a brand new lead
+                    leadDocRef = leadsCollectionRef.doc();
+                    lead.id = leadDocRef.id; // Assign the new ID to the lead object
+                }
+                
+                // Save the full lead document
+                await leadDocRef.set({
+                    ...lead,
+                    createdAt: lead.createdAt || FieldValue.serverTimestamp(),
+                    updatedAt: FieldValue.serverTimestamp(),
+                }, { merge: true });
+
+                // 3. Create the Auth user
                 const userRecord = await getAuth(app).createUser({
                     email: lead.email,
                     displayName: lead.contactPerson || lead.companyName,
                 });
-                
+
+                // 4. Generate the password reset/sign-up link
                 const actionCodeSettings = {
                     url: `${req.nextUrl.origin}/signin?email=${encodeURIComponent(lead.email)}`,
                     handleCodeInApp: true,
                 };
-
                 const resetLink = await getAuth(app).generatePasswordResetLink(lead.email, actionCodeSettings);
 
-                const leadDocRef = db.collection(`companies/${lead.companyId}/leads`).doc(lead.id);
-
-                // Update the lead and also the root leads collection if it exists there
-                const rootLeadDocRef = db.collection('leads').doc(lead.id);
-                const rootLeadDoc = await rootLeadDocRef.get();
-
-                const batch = db.batch();
-                
+                // 5. Update the lead document with the new auth info
                 const updateData = {
-                    status: 'contacted',
+                    status: 'invited',
                     authUid: userRecord.uid,
                     updatedAt: FieldValue.serverTimestamp(),
                 };
-
-                batch.set(leadDocRef, updateData, { merge: true });
-
-                if (rootLeadDoc.exists) {
-                    batch.set(rootLeadDocRef, updateData, { merge: true });
-                }
-
-                await batch.commit();
+                await leadDocRef.set(updateData, { merge: true });
 
                 return NextResponse.json({ success: true, resetLink });
             }
@@ -562,3 +569,5 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ success: false, error: error.message }, { status });
     }
 }
+      
+    
