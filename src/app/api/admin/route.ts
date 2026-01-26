@@ -42,7 +42,6 @@ export async function POST(req: NextRequest) {
         const { action, payload } = await req.json();
         const db = getFirestore(app);
         const isAdmin = decodedToken.email === 'beyondtransport@gmail.com' || decodedToken.email === 'mkoton100@gmail.com';
-        const origin = req.nextUrl.origin;
 
         // --- AUTHORIZATION ---
         const userDocForAuth = await db.collection('users').doc(requestorUid).get();
@@ -111,6 +110,8 @@ export async function POST(req: NextRequest) {
                     });
                 }
                 
+                const origin = 'https://transconnect-v1-39578841-2a857.web.app';
+
                 const actionCodeSettings = {
                     url: `${origin}/signin?email=${encodeURIComponent(email)}`,
                     handleCodeInApp: false,
