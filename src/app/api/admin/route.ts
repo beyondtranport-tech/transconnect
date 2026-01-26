@@ -44,93 +44,111 @@ export async function POST(req: NextRequest) {
         const isAdmin = decodedToken.email === 'beyondtransport@gmail.com' || decodedToken.email === 'mkoton100@gmail.com';
 
         // --- AUTHORIZATION ---
-        if (action === 'provisionLeadAccount') {
-            const { lead } = payload;
-            if (!lead || !lead.companyId) {
-                throw new Error("companyId is required for this action.");
-            }
-            const userDoc = await db.collection('users').doc(requestorUid).get();
-            if (userDoc.data()?.companyId !== lead.companyId) {
-                if (!isAdmin) {
-                    throw new Error("Forbidden: You can only provision leads for your own company.");
-                }
+        const userDocForAuth = await db.collection('users').doc(requestorUid).get();
+        const userCompanyIdForAuth = userDocForAuth.data()?.companyId;
+
+        if (action === 'saveCompanyLead' || action === 'inviteCompanyLead') {
+            if (payload.companyId !== userCompanyIdForAuth && !isAdmin) {
+                 throw new Error("Forbidden: You can only manage leads for your own company.");
             }
         } else if (!isAdmin) {
-            throw new Error("Forbidden: Admin access required.");
+            // Most other actions in this route are admin-only
+             const allowedUserActions = ['saveCompanyLead', 'inviteCompanyLead'];
+             if (!allowedUserActions.includes(action)) {
+                 throw new Error("Forbidden: Admin access required.");
+             }
         }
         // --- END AUTHORIZATION ---
 
         switch (action) {
-            case 'provisionLeadAccount': {
-                const { lead } = payload;
-                if (!lead || !lead.email) {
-                    throw new Error("Lead data with email is required.");
-                }
+            case 'inviteLead': // For global /leads
+            case 'inviteCompanyLead': { // For /companies/{id}/leads
+                const { leadId, companyId } = payload;
+                if (!leadId) throw new Error("leadId is required.");
 
-                // 1. Check if user already exists in Auth
-                try {
-                    await getAuth(app).getUserByEmail(lead.email);
-                    throw new Error("A user with this email already exists in Firebase Authentication.");
-                } catch (error: any) {
-                    if (error.code !== 'auth/user-not-found') {
-                        throw error;
-                    }
-                }
-
-                // 2. Create or find the lead document
-                const leadsCollectionRef = db.collection(`companies/${lead.companyId}/leads`);
                 let leadDocRef;
+                if (action === 'inviteCompanyLead') {
+                    if (!companyId) throw new Error("companyId is required for inviteCompanyLead.");
+                    leadDocRef = db.collection(`companies/${companyId}/leads`).doc(leadId);
+                } else {
+                    leadDocRef = db.collection('leads').doc(leadId);
+                }
+
+                const leadSnap = await leadDocRef.get();
+                if (!leadSnap.exists) throw new Error("Lead not found.");
                 
-                if (lead.id) { // This is an edit/update of an unprovisioned lead
-                    leadDocRef = leadsCollectionRef.doc(lead.id);
-                } else { // This is a brand new lead
-                    leadDocRef = leadsCollectionRef.doc();
-                    lead.id = leadDocRef.id; // Assign the new ID to the lead object
+                const leadData = leadSnap.data()!;
+                const { email, contactPerson, companyName: leadCompanyName } = leadData;
+                
+                if (!email) throw new Error("Lead does not have an email to invite.");
+                
+                let authUid: string;
+                let userExists = false;
+
+                try {
+                    const userRecord = await getAuth(app).getUserByEmail(email);
+                    authUid = userRecord.uid;
+                    userExists = true;
+                } catch (error: any) {
+                    if (error.code !== 'auth/user-not-found') throw error;
+                    // User doesn't exist, create them
+                    const newUserRecord = await getAuth(app).createUser({
+                        email: email,
+                        displayName: contactPerson || leadCompanyName,
+                    });
+                    authUid = newUserRecord.uid;
+                    
+                    // Create a basic user profile
+                    await db.collection('users').doc(authUid).set({
+                        id: authUid,
+                        firstName: contactPerson?.split(' ')[0] || leadCompanyName,
+                        lastName: contactPerson?.split(' ').slice(1).join(' ') || '',
+                        email: email,
+                        role: 'owner', // Default role for a new user from a lead
+                        createdAt: FieldValue.serverTimestamp(),
+                        updatedAt: FieldValue.serverTimestamp(),
+                    });
                 }
                 
-                // Save the full lead document
-                await leadDocRef.set({
-                    ...lead,
-                    createdAt: lead.createdAt || FieldValue.serverTimestamp(),
-                    updatedAt: FieldValue.serverTimestamp(),
-                }, { merge: true });
-
-                // 3. Create the Auth user
-                const userRecord = await getAuth(app).createUser({
-                    email: lead.email,
-                    displayName: lead.contactPerson || lead.companyName,
-                });
-                
-                // 4. Create the user's document in Firestore
-                await db.collection('users').doc(userRecord.uid).set({
-                    id: userRecord.uid,
-                    firstName: lead.contactPerson?.split(' ')[0] || lead.companyName,
-                    lastName: lead.contactPerson?.split(' ').slice(1).join(' ') || '',
-                    email: lead.email,
-                    phone: lead.phone || '',
-                    companyId: lead.companyId,
-                    role: 'staff',
-                    createdAt: FieldValue.serverTimestamp(),
-                    updatedAt: FieldValue.serverTimestamp(),
-                });
-
-                // 5. Generate a password reset link that redirects back to the sign-in page
+                // Generate password reset link that redirects to the app's signin page
                 const actionCodeSettings = {
-                    url: `https://transconnect-v1-39578841-2a857.web.app/signin?email=${encodeURIComponent(lead.email)}`,
+                    url: `https://transconnect-v1-39578841-2a857.web.app/signin?email=${encodeURIComponent(email)}`,
                     handleCodeInApp: false,
                 };
-                
-                const link = await getAuth(app).generatePasswordResetLink(lead.email, actionCodeSettings);
+                const link = await getAuth(app).generatePasswordResetLink(email, actionCodeSettings);
 
-                // 6. Update the lead document with the new auth info
-                const updateData = {
+                // Update lead status
+                await leadDocRef.update({
                     status: 'invited',
-                    authUid: userRecord.uid,
+                    authUid: authUid,
                     updatedAt: FieldValue.serverTimestamp(),
-                };
-                await leadDocRef.set(updateData, { merge: true });
+                });
 
-                return NextResponse.json({ success: true, inviteLink: link, email: lead.email });
+                return NextResponse.json({
+                    success: true,
+                    inviteLink: link,
+                    message: userExists ? "User already exists. You can still send this new invite link." : "Account created and invite link generated."
+                });
+            }
+             case 'saveCompanyLead': {
+                const { companyId, lead } = payload;
+                if (!companyId || !lead) throw new Error("companyId and lead data are required.");
+                
+                const leadsCollectionRef = db.collection(`companies/${companyId}/leads`);
+                let docRef;
+                let data;
+                
+                if (lead.id) { // Update
+                    docRef = leadsCollectionRef.doc(lead.id);
+                    data = { ...lead, updatedAt: FieldValue.serverTimestamp() };
+                    delete data.id;
+                    await docRef.set(data, { merge: true });
+                } else { // Create
+                    docRef = leadsCollectionRef.doc();
+                    data = { ...lead, id: docRef.id, createdAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp() };
+                    await docRef.set(data);
+                }
+                return NextResponse.json({ success: true, id: docRef.id });
             }
             case 'getUserDoc': {
                 const { uid } = payload;

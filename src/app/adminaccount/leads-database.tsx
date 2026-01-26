@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useMemo, useEffect, Suspense, useCallback } from 'react';
@@ -30,7 +31,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useCollection, useFirestore, getClientSideAuthToken } from '@/firebase';
 import { useMemoFirebase } from '@/hooks/use-config';
 import { collection, query } from 'firebase/firestore';
-import { Loader2, PlusCircle, Users, Edit, Trash2, Search, Check, AlertTriangle } from 'lucide-react';
+import { Loader2, PlusCircle, Users, Edit, Trash2, Search, Check, AlertTriangle, Send, Copy } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
@@ -47,7 +48,7 @@ const leadSchema = z.object({
   email: z.string().email('Invalid email address').optional().or(z.literal('')),
   phone: z.string().optional(),
   role: z.string().min(1, 'Role is required'),
-  status: z.enum(['new', 'contacted', 'qualified', 'unqualified']),
+  status: z.enum(['new', 'contacted', 'qualified', 'unqualified', 'invited', 'registered']),
   notes: z.string().optional(),
   website: z.string().url().optional().or(z.literal('')),
   address: z.string().optional(),
@@ -145,7 +146,7 @@ function LeadDialog({ lead, onSave, children, defaultValues }: { lead?: any, onS
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <FormField control={form.control} name="role" render={({ field }) => ( <FormItem><FormLabel>Potential Role</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select a role" /></SelectTrigger></FormControl><SelectContent>{roles.map(r => <SelectItem key={r.id} value={r.title}>{r.title}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )} />
-                        <FormField control={form.control} name="status" render={({ field }) => ( <FormItem><FormLabel>Status</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="new">New</SelectItem><SelectItem value="contacted">Contacted</SelectItem><SelectItem value="qualified">Qualified</SelectItem><SelectItem value="unqualified">Unqualified</SelectItem></SelectContent></Select><FormMessage /></FormItem> )} />
+                        <FormField control={form.control} name="status" render={({ field }) => ( <FormItem><FormLabel>Status</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="new">New</SelectItem><SelectItem value="contacted">Contacted</SelectItem><SelectItem value="qualified">Qualified</SelectItem><SelectItem value="unqualified">Unqualified</SelectItem><SelectItem value="invited">Invited</SelectItem><SelectItem value="registered">Registered</SelectItem></SelectContent></Select><FormMessage /></FormItem> )} />
                     </div>
                     <FormField control={form.control} name="notes" render={({ field }) => ( <FormItem><FormLabel>Notes</FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage /></FormItem> )} />
                      <DialogFooter className="pt-4">
@@ -156,6 +157,92 @@ function LeadDialog({ lead, onSave, children, defaultValues }: { lead?: any, onS
         </DialogContent>
     </Dialog>
   );
+}
+
+function InviteDialog({ lead, onInviteSent }: { lead: any; onInviteSent: () => void; }) {
+    const [isOpen, setIsOpen] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
+    const [inviteLink, setInviteLink] = useState('');
+    const { toast } = useToast();
+
+    const handleInvite = async () => {
+        setIsLoading(true);
+        setInviteLink('');
+        try {
+            const token = await getClientSideAuthToken();
+            if (!token) throw new Error("Authentication failed.");
+
+            const response = await fetch('/api/admin', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'inviteLead', payload: { leadId: lead.id } }),
+            });
+            const result = await response.json();
+            if (!result.success) throw new Error(result.error);
+            
+            setInviteLink(result.inviteLink);
+            onInviteSent();
+            toast({ title: "Invite Link Generated", description: result.message || "You can now share the secure link." });
+        } catch(e: any) {
+            toast({ variant: 'destructive', title: 'Invite Failed', description: e.message });
+            setIsOpen(false);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+    
+    const copyToClipboard = () => {
+        navigator.clipboard.writeText(inviteLink);
+        toast({ title: 'Link Copied!' });
+    }
+
+    const onOpenChange = (open: boolean) => {
+        if (!open) {
+            setInviteLink('');
+        }
+        setIsOpen(open);
+    }
+
+    return (
+        <Dialog open={isOpen} onOpenChange={onOpenChange}>
+            <DialogTrigger asChild>
+                <Button variant="ghost" size="icon" title="Invite Lead" disabled={lead.status === 'invited' || lead.status === 'registered'}>
+                    <Send className="h-4 w-4" />
+                </Button>
+            </DialogTrigger>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Invite {lead.companyName}</DialogTitle>
+                    <DialogDescription>
+                        {inviteLink ? "Share this secure sign-up link. It can be used once for the lead to set their password." : `This will create an account for ${lead.email} and generate a sign-up link. Are you sure?`}
+                    </DialogDescription>
+                </DialogHeader>
+
+                {isLoading && <div className="flex justify-center py-4"><Loader2 className="h-6 w-6 animate-spin"/></div>}
+
+                {inviteLink && (
+                     <div className="flex items-center space-x-2 py-4">
+                        <Input value={inviteLink} readOnly />
+                        <Button onClick={copyToClipboard} size="sm" className="px-3">
+                            <span className="sr-only">Copy</span>
+                            <Copy className="h-4 w-4" />
+                        </Button>
+                    </div>
+                )}
+                
+                <DialogFooter>
+                    {inviteLink ? (
+                        <Button onClick={() => onOpenChange(false)}>Done</Button>
+                    ) : (
+                        <>
+                            <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
+                            <Button onClick={handleInvite} disabled={isLoading}>Generate Link</Button>
+                        </>
+                    )}
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    )
 }
 
 function DuplicateCleaner({ onComplete }: { onComplete: () => void }) {
@@ -332,7 +419,10 @@ function LeadsDatabaseComponent() {
     { accessorKey: 'status', header: 'Status', cell: ({row}) => <Badge className="capitalize">{row.original.status}</Badge>},
     { id: 'actions', header: () => <div className="text-right">Actions</div>, cell: ({row}) => (
         <div className="text-right flex items-center justify-end">
-            <LeadDialog lead={row.original} onSave={forceRefresh}><Button variant="ghost" size="icon"><Edit className="h-4 w-4" /></Button></LeadDialog>
+             <InviteDialog lead={row.original} onInviteSent={forceRefresh} />
+            <LeadDialog lead={row.original} onSave={forceRefresh}>
+                <Button variant="ghost" size="icon"><Edit className="h-4 w-4" /></Button>
+            </LeadDialog>
             <AlertDialog>
                 <AlertDialogTrigger asChild><Button variant="ghost" size="icon"><Trash2 className="h-4 w-4 text-destructive" /></Button></AlertDialogTrigger>
                 <AlertDialogContent>
@@ -342,6 +432,7 @@ function LeadsDatabaseComponent() {
             </AlertDialog>
         </div>
     )},
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   ], [forceRefresh]);
 
   return (
@@ -376,6 +467,7 @@ export default function LeadsDatabase() {
         </Suspense>
     );
 }
+
 
 
 
