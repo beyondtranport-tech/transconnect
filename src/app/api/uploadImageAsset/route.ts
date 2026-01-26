@@ -27,9 +27,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: 'Missing imageDataUri, folder, or fileName.' }, { status: 400 });
     }
     
-    // Get the default bucket associated with the initialized admin app.
-    // This is the most reliable method.
-    const bucket = getStorage(app).bucket();
+    // Explicitly specify the bucket name to resolve "bucket not found" errors.
+    const bucket = getStorage(app).bucket('transconnect-v1-39578841-2a857.appspot.com');
 
     // Extract content type and base64 data from data URI
     const match = imageDataUri.match(/^data:(.+);base64,(.*)$/);
