@@ -40,6 +40,7 @@ import {
   Settings,
   Users,
   Mic,
+  LineChart,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -57,6 +58,8 @@ import React from 'react';
 
 // Dashboard
 const DashboardContent = dynamic(() => import('./dashboard-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const AnalyticsDashboard = dynamic(() => import('./analytics-dashboard'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+
 
 // User Management
 const MembersList = dynamic(() => import('./members-list'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
@@ -149,6 +152,8 @@ function AdminAccountContent() {
     switch (activeView) {
       // Dashboard
       case 'dashboard': return <DashboardContent />;
+      case 'analytics': return <AnalyticsDashboard />;
+
 
       // User Management moved into strategy section
       case 'members': return <MembersList />;
@@ -175,6 +180,9 @@ function AdminAccountContent() {
       // Strategy & Pitching
       case 'partner-offer': return <PartnerOffer />;
       case 'commissions-isa': return <ISAPitchSettings />;
+      case 'member-sales-offer': return <NetworkOffer />;
+      case 'member-sales-emails': return <NetworkEmails />;
+      case 'member-sales-performance': return <PerformanceContent />;
       case 'partner-pitch': return <PartnerElevatorPitch />;
       case 'partner-emails': return <PartnerEmailSequence />;
       case 'elevator-pitch': return <ElevatorPitch />;
@@ -235,6 +243,11 @@ function AdminAccountContent() {
                 <SidebarMenuItem>
                     <SidebarMenuButton tooltip="Dashboard" isActive={activeView === 'dashboard'} onClick={() => navigate('dashboard')}>
                         <LayoutDashboard /><span>Dashboard</span>
+                    </SidebarMenuButton>
+                </SidebarMenuItem>
+                 <SidebarMenuItem>
+                    <SidebarMenuButton tooltip="Analytics" isActive={activeView === 'analytics'} onClick={() => navigate('analytics')}>
+                        <LineChart /><span>Analytics</span>
                     </SidebarMenuButton>
                 </SidebarMenuItem>
                 <SidebarMenuItem>
