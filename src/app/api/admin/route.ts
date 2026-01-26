@@ -101,9 +101,9 @@ export async function POST(req: NextRequest) {
                     displayName: lead.contactPerson || lead.companyName,
                 });
 
-                // 4. Generate the password reset/sign-up link
+                // 4. Generate the password reset/sign-up link using the authorized Firebase domain
                 const actionCodeSettings = {
-                    url: `${req.nextUrl.origin}/signin?email=${encodeURIComponent(lead.email)}`,
+                    url: `https://transconnect-v1-39578841-2a857.web.app/signin?email=${encodeURIComponent(lead.email)}`,
                     handleCodeInApp: true,
                 };
                 const resetLink = await getAuth(app).generatePasswordResetLink(lead.email, actionCodeSettings);
