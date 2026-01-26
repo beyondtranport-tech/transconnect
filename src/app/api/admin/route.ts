@@ -1,3 +1,4 @@
+
 import { NextRequest, NextResponse } from 'next/server';
 import { getFirestore, Timestamp, FieldValue, FieldPath } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
@@ -78,15 +79,35 @@ export async function POST(req: NextRequest) {
                     email: lead.email,
                     displayName: lead.contactPerson || lead.companyName,
                 });
+                
+                const actionCodeSettings = {
+                    url: `${req.nextUrl.origin}/signin?email=${encodeURIComponent(lead.email)}`,
+                    handleCodeInApp: true,
+                };
 
-                const resetLink = await getAuth(app).generatePasswordResetLink(lead.email);
+                const resetLink = await getAuth(app).generatePasswordResetLink(lead.email, actionCodeSettings);
 
-                const leadRef = db.collection(`companies/${lead.companyId}/leads`).doc(lead.id);
-                await leadRef.set({
+                const leadDocRef = db.collection(`companies/${lead.companyId}/leads`).doc(lead.id);
+
+                // Update the lead and also the root leads collection if it exists there
+                const rootLeadDocRef = db.collection('leads').doc(lead.id);
+                const rootLeadDoc = await rootLeadDocRef.get();
+
+                const batch = db.batch();
+                
+                const updateData = {
                     status: 'contacted',
                     authUid: userRecord.uid,
                     updatedAt: FieldValue.serverTimestamp(),
-                }, { merge: true });
+                };
+
+                batch.set(leadDocRef, updateData, { merge: true });
+
+                if (rootLeadDoc.exists) {
+                    batch.set(rootLeadDocRef, updateData, { merge: true });
+                }
+
+                await batch.commit();
 
                 return NextResponse.json({ success: true, resetLink });
             }
@@ -540,4 +561,5 @@ export async function POST(req: NextRequest) {
         const status = error.message.includes('Forbidden') ? 403 : error.message.includes('Unauthorized') ? 401 : 500;
         return NextResponse.json({ success: false, error: error.message }, { status });
     }
-}
+
+    
