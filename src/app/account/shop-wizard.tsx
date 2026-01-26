@@ -511,7 +511,6 @@ function AIGenerateDialog({
 
 function ProductDialog({ shop, product, onComplete, children, canEdit }: { shop: any, product?: any, onComplete: () => void, children: React.ReactNode, canEdit: boolean }) {
   const { user } = useUser();
-  const storage = useStorage();
   const { toast } = useToast();
   const [isOpen, setIsOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -594,41 +593,60 @@ function ProductDialog({ shop, product, onComplete, children, canEdit }: { shop:
     }
   };
 
-    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
-
-        if (!storage || !user) {
-            toast({ variant: 'destructive', title: 'Upload Failed', description: 'Storage service or user not available.' });
-            return;
-        }
 
         setUploading(true);
         setStorageError(null);
         const fileRefInput = fileInputRef.current;
 
-        const fileName = `${Date.now()}_${file.name}`;
-        const filePath = `user-assets/${user.uid}/product-images/${fileName}`;
-        const fileStoreRef = storageRef(storage, filePath);
+        try {
+            const imageDataUri = await new Promise<string>((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result as string);
+                reader.onerror = (error) => reject(error);
+                reader.readAsDataURL(file);
+            });
+            
+            const token = await getClientSideAuthToken();
+            if (!token) throw new Error("Authentication failed.");
 
-        uploadBytes(fileStoreRef, file).then(async (snapshot) => {
-            const downloadURL = await getDownloadURL(snapshot.ref);
+            const fileName = `${Date.now()}_${file.name}`;
+            const response = await fetch('/api/uploadImageAsset', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    imageDataUri,
+                    folder: 'product-images',
+                    fileName,
+                }),
+            });
+
+            const result = await response.json();
+            if (!response.ok || !result.success) {
+                throw new Error(result.error || 'Failed to upload image.');
+            }
+            
+            const downloadURL = result.url;
             const currentUrls = form.getValues('imageUrls') || [];
             form.setValue('imageUrls', [...currentUrls, downloadURL], { shouldValidate: true });
             toast({ title: 'Upload Complete!', description: `Image "${file.name}" added.` });
-        }).catch((error) => {
-            console.error("Client-side upload error:", error);
-            if (error.code === 'storage/unauthorized') {
-                setStorageError("You do not have permission to upload files. Please ensure Storage Rules are configured correctly.");
-            } else if (error.message.includes('bucket was not found')) {
+
+        } catch (error: any) {
+            console.error("Upload error:", error);
+            if (error.message.includes('bucket was not found')) {
                 setStorageError(error.message);
             } else {
                 toast({ variant: 'destructive', title: 'Upload Failed', description: error.message });
             }
-        }).finally(() => {
+        } finally {
             setUploading(false);
             if (fileRefInput) fileRefInput.value = '';
-        });
+        }
     };
 
 
