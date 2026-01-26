@@ -59,12 +59,14 @@ function JoinFormComponent() {
   const redirectParam = searchParams.get('redirect');
   const referrerId = searchParams.get('ref');
   const emailParam = searchParams.get('email');
+  const firstNameParam = searchParams.get('firstName');
+  const lastNameParam = searchParams.get('lastName');
 
   const form = useForm<JoinFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      firstName: '',
-      lastName: '',
+      firstName: firstNameParam || '',
+      lastName: lastNameParam || '',
       email: emailParam || '',
       phone: '',
       password: '',
@@ -78,6 +80,13 @@ function JoinFormComponent() {
       if (emailParam) {
         form.setValue('email', emailParam, { shouldValidate: true });
       }
+      if (firstNameParam) {
+        form.setValue('firstName', firstNameParam, { shouldValidate: true });
+      }
+      if (lastNameParam) {
+        form.setValue('lastName', lastNameParam, { shouldValidate: true });
+      }
+
       // Check if the phone field has been incorrectly autofilled with an email.
       const phoneValue = form.getValues('phone');
       if (phoneValue && phoneValue.includes('@')) {
@@ -86,7 +95,7 @@ function JoinFormComponent() {
     }, 100); // A small delay gives the browser time to autofill first.
 
     return () => clearTimeout(timer);
-  }, [emailParam, form]);
+  }, [emailParam, firstNameParam, lastNameParam, form]);
 
 
   const handlePasswordReset = async () => {
@@ -298,6 +307,7 @@ function JoinFormComponent() {
                       <FormControl>
                         <Input
                           type={showPassword ? 'text' : 'password'}
+                          autoComplete="new-password"
                           {...field}
                         />
                       </FormControl>

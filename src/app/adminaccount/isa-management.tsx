@@ -211,7 +211,7 @@ export default function ISAManagement() {
   };
   
   const inviteLink = dialogState.type === 'invite' && dialogState.data && typeof window !== 'undefined'
-    ? `${window.location.origin}/join?email=${encodeURIComponent(dialogState.data.email)}`
+    ? `${window.location.origin}/join?email=${encodeURIComponent(dialogState.data.email)}&firstName=${encodeURIComponent(dialogState.data.firstName)}&lastName=${encodeURIComponent(dialogState.data.lastName)}`
     : '';
 
   const copyInviteLink = () => {
@@ -325,5 +325,3 @@ export default function ISAManagement() {
     </>
   );
 }
-
-    
