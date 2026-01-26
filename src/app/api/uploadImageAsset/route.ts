@@ -27,8 +27,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: 'Missing imageDataUri, folder, or fileName.' }, { status: 400 });
     }
     
-    // Explicitly specify the bucket name to resolve "bucket not found" errors.
-    const bucket = getStorage(app).bucket('transconnect-v1-39578841-2a857.appspot.com');
+    // Correctly get the default bucket configured during initialization.
+    const bucket = getStorage(app).bucket();
 
     // Extract content type and base64 data from data URI
     const match = imageDataUri.match(/^data:(.+);base64,(.*)$/);
