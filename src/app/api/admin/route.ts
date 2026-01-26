@@ -61,20 +61,6 @@ export async function POST(req: NextRequest) {
         // --- END AUTHORIZATION ---
 
         switch (action) {
-            case 'sendMemberPasswordReset': {
-                const { email } = payload;
-                if (!email) throw new Error("Email is required to send a password reset link.");
-
-                const link = await adminAuth.generatePasswordResetLink(email, {
-                    url: `https://transconnect-v1-39578841-2a857.web.app/signin`, // Use the canonical URL
-                });
-                
-                return NextResponse.json({
-                    success: true,
-                    inviteLink: link,
-                    message: "Password reset link generated successfully."
-                });
-            }
             case 'invitePartner': {
                  const { partnerId } = payload;
                 if (!partnerId) throw new Error("partnerId is required.");

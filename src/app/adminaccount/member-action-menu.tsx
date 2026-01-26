@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -5,7 +6,6 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
@@ -20,13 +20,11 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
-import { Loader2, MoreVertical, CheckCircle, XCircle, Trash2, Edit, Eye, Wallet, Send, Copy } from 'lucide-react';
+import { Loader2, MoreVertical, CheckCircle, XCircle, Trash2, Eye, Send } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken } from '@/firebase';
 import Link from 'next/link';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-
 
 async function performAdminAction(token: string, action: string, payload: any) {
     const response = await fetch('/api/admin', {
@@ -50,10 +48,7 @@ export default function MemberActionMenu({ member, onUpdate }: { member: any; on
   const [isProcessing, setIsProcessing] = useState(false);
   const [isAlertOpen, setIsAlertOpen] = useState(false);
   const [actionToConfirm, setActionToConfirm] = useState<'delete' | 'confirm' | 'unconfirm' | null>(null);
-
-  const [isInviteOpen, setIsInviteOpen] = useState(false);
-  const [isInviting, setIsInviting] = useState(false);
-  const [inviteLink, setInviteLink] = useState('');
+  const [isInstructionOpen, setIsInstructionOpen] = useState(false);
   
   const { toast } = useToast();
 
@@ -106,79 +101,27 @@ export default function MemberActionMenu({ member, onUpdate }: { member: any; on
       }
   }
 
-  const handleInvite = async () => {
-    if (!member.email) {
-        toast({ variant: 'destructive', title: 'Action Failed', description: 'Member does not have an email address.' });
-        return;
-    }
-    setIsInviting(true);
-    setInviteLink('');
-    try {
-        const token = await getClientSideAuthToken();
-        if (!token) throw new Error("Authentication failed.");
-
-        const result = await performAdminAction(token, 'sendMemberPasswordReset', { email: member.email });
-        
-        setInviteLink(result.inviteLink);
-        toast({ title: 'Password Reset Link Generated' });
-    } catch(e: any) {
-        toast({ variant: 'destructive', title: 'Invite Failed', description: e.message });
-        setIsInviteOpen(false); // Close dialog on failure
-    } finally {
-        setIsInviting(false);
-    }
-  };
-
-  const copyInviteLink = () => {
-      if (!inviteLink) return;
-      navigator.clipboard.writeText(inviteLink);
-      toast({ title: 'Link Copied!' });
-  };
-  
-  const onInviteOpenChange = (open: boolean) => {
-    if (!open) {
-        setInviteLink(''); // Reset when closing
-    }
-    setIsInviteOpen(open);
-  };
-
-  const triggerInviteFlow = () => {
-    setIsInviteOpen(true);
-    handleInvite();
-  }
-
-
   return (
     <>
-      <Dialog open={isInviteOpen} onOpenChange={onInviteOpenChange}>
+      <Dialog open={isInstructionOpen} onOpenChange={setIsInstructionOpen}>
         <DialogContent>
             <DialogHeader>
-                <DialogTitle>Send Password Reset Link</DialogTitle>
+                <DialogTitle>How to Invite or Reset Password</DialogTitle>
                 <DialogDescription>
-                    {isInviting 
-                        ? "Generating a secure password reset link..." 
-                        : "Share this one-time use link with the member to allow them to reset their password and access their account."
-                    }
+                    To ensure security, members must reset their own password.
                 </DialogDescription>
             </DialogHeader>
-            <div className="py-4">
-                {isInviting ? (
-                    <div className="flex justify-center items-center h-10">
-                        <Loader2 className="h-6 w-6 animate-spin" />
-                    </div>
-                ) : inviteLink ? (
-                    <div className="flex items-center space-x-2">
-                        <Input value={inviteLink} readOnly />
-                        <Button onClick={copyInviteLink}>
-                            <Copy className="mr-2 h-4 w-4" /> Copy
-                        </Button>
-                    </div>
-                ) : (
-                     <p className="text-destructive text-sm">Failed to generate link. Please try again.</p>
-                )}
+            <div className="py-4 space-y-4">
+                <p className="font-semibold">Please instruct the user to do the following:</p>
+                <ol className="list-decimal list-inside space-y-2 text-sm text-muted-foreground">
+                    <li>Go to the <Link href="/signin" className="text-primary underline">Sign In</Link> page.</li>
+                    <li>Enter their email address: <span className="font-mono bg-muted p-1 rounded">{member.email}</span></li>
+                    <li>Click the "Forgot password?" link.</li>
+                    <li>Follow the instructions sent to their email to set or reset their password.</li>
+                </ol>
             </div>
             <DialogFooter>
-                <Button variant="outline" onClick={() => onInviteOpenChange(false)}>Close</Button>
+                <Button variant="outline" onClick={() => setIsInstructionOpen(false)}>Close</Button>
             </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -197,7 +140,7 @@ export default function MemberActionMenu({ member, onUpdate }: { member: any; on
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onSelect={triggerInviteFlow}>
+              <DropdownMenuItem onSelect={() => setIsInstructionOpen(true)}>
                 <Send className="mr-2 h-4 w-4" /> Invite / Reset Password
               </DropdownMenuItem>
               <DropdownMenuSeparator />
