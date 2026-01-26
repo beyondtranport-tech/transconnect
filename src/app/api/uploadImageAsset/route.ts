@@ -16,9 +16,6 @@ export async function POST(req: NextRequest) {
     }
     const token = authorization.split('Bearer ')[1];
     
-    // We don't need to verify the token here if getAdminApp works, 
-    // because this route is protected in a sense that it only writes to a user-specific path.
-    // However, for good practice, let's keep it.
     const { getAuth } = await import('firebase-admin/auth');
     await getAuth(app).verifyIdToken(token);
     
@@ -46,7 +43,6 @@ export async function POST(req: NextRequest) {
         },
     });
     
-    // Make the file public to get a persistent URL
     await fileUpload.makePublic();
     const publicUrl = fileUpload.publicUrl();
 
@@ -54,12 +50,10 @@ export async function POST(req: NextRequest) {
 
   } catch (error: any) {
     console.error(`Error in uploadImageAsset:`, error);
-    if (error.code === 403 || (error.message && error.message.includes('permission'))) {
-        return NextResponse.json({ success: false, error: 'Permission denied. The backend service account may not have "Storage Object Admin" role in IAM.' }, { status: 403 });
+    if (error.code === 403 || (error.message && (error.message.includes('permission') || error.message.includes('bucket')))) {
+        return NextResponse.json({ success: false, error: 'Permission Denied: This can happen if the backend service account does not have the "Storage Object Admin" role in Google Cloud IAM, or if Firebase Storage is not fully enabled. Please check your project setup.' }, { status: 403 });
     }
     const status = error.message.includes('Forbidden') ? 403 : error.message.includes('Unauthorized') ? 401 : 500;
     return NextResponse.json({ success: false, error: error.message }, { status });
   }
 }
-
-    

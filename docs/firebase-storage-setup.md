@@ -1,8 +1,8 @@
 # Enabling Firebase Storage
 
-The application uses Firebase Storage to save and manage user-uploaded assets like shop images, product photos, and AI-generated content. For the upload functionality to work, you must first enable the Storage service in your Firebase project.
+The application uses Firebase Storage to save and manage user-uploaded assets like shop images, product photos, and AI-generated content. For the upload functionality to work, you must first enable the Storage service in your Firebase project and ensure the backend has the correct permissions.
 
-The error "The specified bucket does not exist" is a strong indicator that this step has not been completed.
+---
 
 ## Step 1: Go to the Firebase Console
 
@@ -22,4 +22,23 @@ The error "The specified bucket does not exist" is a strong indicator that this 
 
 It may take a moment for your Storage bucket to be created and provisioned.
 
-Once this process is complete, the file upload functionality within your application should work correctly. You do not need to make any further configuration changes.
+---
+
+## Step 4: Troubleshooting - "Bucket not found" Error
+
+**This is a critical step.** If you have enabled Storage but are still seeing errors like "The specified bucket does not exist" or "permission denied", it means the backend service account needs permission to access your storage bucket.
+
+### 4.1: Find Your Service Account Email
+
+1.  Go to the Google Cloud Console for your project: **[IAM & Admin](https://console.cloud.google.com/iam-admin/iam?project=transconnect-v1-39578841-2a857)**
+2.  Find the principal (member) that has the name **"Firebase Admin SDK Administrator Service Agent"**.
+3.  Copy its email address. It will look something like `firebase-adminsdk-xxxxx@transconnect-v1-39578841-2a857.iam.gserviceaccount.com`.
+
+### 4.2: Grant Storage Admin Role
+
+1.  On the same IAM page, click the **+ GRANT ACCESS** button at the top.
+2.  In the **"New principals"** field, paste the service account email you just copied.
+3.  In the **"Select a role"** dropdown, search for and select **"Storage Object Admin"**. This role provides the necessary permissions for the backend to manage files in your Storage bucket.
+4.  Click **Save**.
+
+After completing these steps, the file upload functionality within your application should work correctly. You do not need to make any further configuration changes.

@@ -34,7 +34,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+} from "@/components/ui/alert-dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import Image from 'next/image';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -241,6 +241,7 @@ function AIGenerateDialog({
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   const { toast } = useToast();
   const { user } = useUser();
+  const storage = useStorage();
   const [storageError, setStorageError] = useState<string | null>(null);
   const [isSetupGuideOpen, setIsSetupGuideOpen] = useState(false);
   
@@ -273,36 +274,29 @@ function AIGenerateDialog({
   };
 
   const handleApplyImage = async () => {
-    if (!generatedImage || !user) {
+    if (!generatedImage || !user || !storage) {
       toast({ variant: 'destructive', title: 'Error', description: 'No image generated to apply.' });
       return;
     }
     setIsApplying(true);
     setStorageError(null);
     try {
-        const token = await getClientSideAuthToken();
-        if (!token) throw new Error("Authentication token not found.");
-        
         const isHeroBanner = title.toLowerCase().includes('hero');
         const folder = isHeroBanner ? 'hero-images' : 'product-images';
         const fileName = `generated_${Date.now()}.png`;
         const filePath = `user-assets/${user.uid}/${folder}/${fileName}`;
-
-        const response = await fetch('/api/uploadImageAsset', {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ file: generatedImage, path: filePath }),
-        });
-
-        const result = await response.json();
-        if (!response.ok || !result.success) throw new Error(result.error);
+        const imageRef = storageRef(storage, filePath);
         
-        onGenerate(result.url);
+        const base64Data = generatedImage.split(',')[1];
+        await uploadString(imageRef, base64Data, 'base64', { contentType: 'image/png' });
+        const publicUrl = await getDownloadURL(imageRef);
+        
+        onGenerate(publicUrl);
         toast({ title: 'Image Applied!', description: 'The new image has been added.'});
         setIsOpen(false);
     } catch (e: any) {
-        if (e.message.includes('bucket')) {
-            setStorageError("Firebase Storage not enabled. Please follow the setup guide.");
+        if (e.message.includes('bucket') || e.message.includes('permission')) {
+            setStorageError("An error occurred accessing Firebase Storage. This is usually because the backend service needs permission. Please review the setup guide.");
         } else {
             toast({ variant: 'destructive', title: 'Failed to apply image', description: e.message });
         }
@@ -344,7 +338,7 @@ function AIGenerateDialog({
              {storageError && (
                   <Alert variant="destructive">
                       <ShieldAlert className="h-4 w-4" />
-                      <AlertTitle>Firebase Storage Not Enabled</AlertTitle>
+                      <AlertTitle>Storage Access Error</AlertTitle>
                       <AlertDescription>
                           {storageError}
                           <Button variant="link" className="p-0 h-auto ml-1 font-semibold" onClick={() => setIsSetupGuideOpen(true)}>View the setup guide.</Button>
@@ -388,36 +382,35 @@ function AIGenerateDialog({
       <Dialog open={isSetupGuideOpen} onOpenChange={setIsSetupGuideOpen}>
         <DialogContent className="sm:max-w-2xl">
             <DialogHeader>
-                <DialogTitle>Enabling Firebase Storage</DialogTitle>
+                <DialogTitle>Firebase Storage Setup Guide</DialogTitle>
                 <DialogDescription>
-                    Follow these steps in the Firebase Console to enable file uploads.
+                    Follow these steps in the Firebase & Google Cloud Console to enable file uploads.
                 </DialogDescription>
             </DialogHeader>
-            <div className="py-4 space-y-4 text-sm max-h-[70vh] overflow-y-auto pr-4">
-                <p>The application uses Firebase Storage to save and manage user-uploaded assets like shop images, product photos, and AI-generated content. For the upload functionality to work, you must first enable the Storage service in your Firebase project.</p>
-                <p className="font-semibold text-destructive">The error "The specified bucket does not exist" is a strong indicator that this step has not been completed.</p>
+            <div className="py-4 space-y-4 text-sm max-h-[70vh] overflow-y-auto pr-4" dangerouslySetInnerHTML={{ __html: `
+                <p>The application uses Firebase Storage to save and manage user-uploaded assets. For this to work, you must first enable the Storage service in your Firebase project and ensure the backend service account has the necessary permissions.</p>
                 
-                <h3 className="font-bold text-lg pt-2">Step 1: Go to the Firebase Console</h3>
-                <ol className="list-decimal list-inside space-y-1 pl-4">
-                    <li>Open the <a href="https://console.firebase.google.com/" target="_blank" rel="noopener noreferrer" className="text-primary underline">Firebase Console</a>.</li>
-                    <li>Select your project: <code className="bg-muted p-1 rounded font-mono text-xs">transconnect-v1-39578841-2a857</code>.</li>
+                <h3 class="font-bold text-lg pt-2">Step 1: Enable Firebase Storage</h3>
+                <ol class="list-decimal list-inside space-y-1 pl-4">
+                    <li>Open the <a href="https://console.firebase.google.com/" target="_blank" rel="noopener noreferrer" class="text-primary underline">Firebase Console</a> and select your project.</li>
+                    <li>In the left-hand navigation, under **Build**, click on **Storage**.</li>
+                    <li>If it's not enabled, click **"Get started"**.</li>
+                    <li>Choose **Production mode** for security rules and click **Next**.</li>
+                    <li>Choose your bucket location (the default is usually fine) and click **Done**.</li>
                 </ol>
 
-                <h3 className="font-bold text-lg pt-2">Step 2: Navigate to Storage</h3>
-                <ol className="list-decimal list-inside space-y-1 pl-4">
-                    <li>In the left-hand navigation menu, under the <strong>Build</strong> section, click on <strong>Storage</strong>.</li>
+                <h3 class="font-bold text-lg pt-4">Step 2: Grant Backend Permissions (Troubleshooting)</h3>
+                <p class="font-semibold text-destructive">If you still see errors after Step 1, you must grant permissions to the backend service account.</p>
+                <ol class="list-decimal list-inside space-y-1 pl-4">
+                    <li>Go to the <a href="https://console.cloud.google.com/iam-admin/iam" target="_blank" rel="noopener noreferrer" class="text-primary underline">Google Cloud IAM page</a> for your project.</li>
+                    <li>Find the principal with the name **"Firebase Admin SDK Administrator Service Agent"**.</li>
+                    <li>Copy its email address (it will end in <code class="bg-muted p-1 rounded font-mono text-xs">.iam.gserviceaccount.com</code>).</li>
+                    <li>Click the **+ GRANT ACCESS** button at the top of the page.</li>
+                    <li>In the **"New principals"** field, paste the service account email.</li>
+                    <li>In the **"Select a role"** dropdown, search for and select **"Storage Object Admin"**.</li>
+                    <li>Click **Save**.</li>
                 </ol>
-                
-                <h3 className="font-bold text-lg pt-2">Step 3: Get Started with Storage</h3>
-                <ol className="list-decimal list-inside space-y-1 pl-4">
-                    <li>If Storage is not enabled, you will see a "Get started" button. Click it.</li>
-                    <li>A dialog will appear to guide you through setting up security rules. It is recommended to start in <strong>Production mode</strong>. Click <strong>Next</strong>.</li>
-                    <li className="pl-4 text-xs text-muted-foreground"><em>Production mode starts with all reads and writes disallowed, which is a secure default. The application's own security rules will grant the necessary permissions.</em></li>
-                    <li>You will then be asked to choose a location for your Storage bucket. The default location selected for you is usually the best choice. Click <strong>Done</strong>.</li>
-                </ol>
-                
-                <p className="pt-4 font-semibold">Once this process is complete, the file upload functionality within your application should work correctly without any further changes.</p>
-            </div>
+            `}} />
         </DialogContent>
       </Dialog>
     </>
@@ -434,6 +427,7 @@ function ProductDialog({ shop, product, onComplete, children, canEdit }: { shop:
   const [storageError, setStorageError] = useState<string | null>(null);
   const [isSetupGuideOpen, setIsSetupGuideOpen] = useState(false);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const storage = useStorage();
 
   const form = useForm<ProductFormValues>({
     resolver: zodResolver(productSchema),
@@ -512,66 +506,34 @@ function ProductDialog({ shop, product, onComplete, children, canEdit }: { shop:
 
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
-        if (!file || !user) return;
+        if (!file || !user || !storage) return;
 
         setUploading(true);
         setStorageError(null);
         const fileRefInput = fileInputRef.current;
 
         try {
-            const reader = new FileReader();
-            reader.readAsDataURL(file);
-            reader.onload = async () => {
-                try {
-                    const base64File = reader.result as string;
-
-                    const token = await getClientSideAuthToken();
-                    if (!token) throw new Error("Authentication token not found.");
-                    
-                    const fileName = `${Date.now()}_${file.name}`;
-                    const filePath = `user-assets/${user.uid}/product-images/${fileName}`;
-
-                    const response = await fetch('/api/uploadImageAsset', {
-                        method: 'POST',
-                        headers: {
-                            'Authorization': `Bearer ${token}`,
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({ file: base64File, path: filePath }),
-                    });
-
-                    const result = await response.json();
-                    if (!response.ok || !result.success) {
-                        throw new Error(result.error || 'Failed to upload image.');
-                    }
-                    
-                    const downloadURL = result.url;
-                    
-                    const currentUrls = form.getValues('imageUrls') || [];
-                    form.setValue('imageUrls', [...currentUrls, downloadURL], { shouldValidate: true });
-                    toast({ title: 'Upload Complete!', description: `Image "${file.name}" added.` });
-                } catch(e: any) {
-                     console.error("Upload error:", e);
-                    if (e.message.includes('bucket')) {
-                        setStorageError("Firebase Storage not enabled. Please follow the setup guide.");
-                    } else {
-                        toast({ variant: 'destructive', title: 'Upload Failed', description: e.message });
-                    }
-                } finally {
-                    setUploading(false);
-                    if (fileRefInput) fileRefInput.value = '';
-                }
-            };
-
-            reader.onerror = (error) => {
-                throw new Error("Failed to read the file.");
-            }
+            const fileName = `${Date.now()}_${file.name}`;
+            const filePath = `user-assets/${user.uid}/product-images/${fileName}`;
+            const imageRef = storageRef(storage, filePath);
+            
+            await uploadBytes(imageRef, file);
+            const downloadURL = await getDownloadURL(imageRef);
+            
+            const currentUrls = form.getValues('imageUrls') || [];
+            form.setValue('imageUrls', [...currentUrls, downloadURL], { shouldValidate: true });
+            toast({ title: 'Upload Complete!', description: `Image "${file.name}" added.` });
 
         } catch (error: any) {
-             console.error("File Reader error:", error);
-             setStorageError(error.message || "An unknown error occurred during upload.");
-             setUploading(false);
-             if (fileRefInput) fileRefInput.value = '';
+             console.error("Upload error:", error);
+            if (error.message.includes('bucket') || error.message.includes('permission')) {
+                setStorageError("An error occurred accessing Firebase Storage. This is usually because the backend service needs permission. Please review the setup guide.");
+            } else {
+                toast({ variant: 'destructive', title: 'Upload Failed', description: error.message });
+            }
+        } finally {
+            setUploading(false);
+            if (fileRefInput) fileRefInput.value = '';
         }
     };
 
@@ -625,7 +587,7 @@ function ProductDialog({ shop, product, onComplete, children, canEdit }: { shop:
                       {storageError && (
                          <Alert variant="destructive">
                               <ShieldAlert className="h-4 w-4" />
-                              <AlertTitle>Firebase Storage Not Enabled</AlertTitle>
+                              <AlertTitle>Storage Access Error</AlertTitle>
                               <AlertDescription>
                                   {storageError}
                                   <Button variant="link" className="p-0 h-auto ml-1 font-semibold" onClick={() => setIsSetupGuideOpen(true)}>View the setup guide.</Button>
@@ -705,36 +667,35 @@ function ProductDialog({ shop, product, onComplete, children, canEdit }: { shop:
       <Dialog open={isSetupGuideOpen} onOpenChange={setIsSetupGuideOpen}>
         <DialogContent className="sm:max-w-2xl">
             <DialogHeader>
-                <DialogTitle>Enabling Firebase Storage</DialogTitle>
+                <DialogTitle>Firebase Storage Setup Guide</DialogTitle>
                 <DialogDescription>
-                    Follow these steps in the Firebase Console to enable file uploads.
+                    Follow these steps in the Firebase & Google Cloud Console to enable file uploads.
                 </DialogDescription>
             </DialogHeader>
-            <div className="py-4 space-y-4 text-sm max-h-[70vh] overflow-y-auto pr-4">
-                <p>The application uses Firebase Storage to save and manage user-uploaded assets like shop images, product photos, and AI-generated content. For the upload functionality to work, you must first enable the Storage service in your Firebase project.</p>
-                <p className="font-semibold text-destructive">The error "The specified bucket does not exist" is a strong indicator that this step has not been completed.</p>
+             <div className="py-4 space-y-4 text-sm max-h-[70vh] overflow-y-auto pr-4" dangerouslySetInnerHTML={{ __html: `
+                <p>The application uses Firebase Storage to save and manage user-uploaded assets. For this to work, you must first enable the Storage service in your Firebase project and ensure the backend service account has the necessary permissions.</p>
                 
-                <h3 className="font-bold text-lg pt-2">Step 1: Go to the Firebase Console</h3>
-                <ol className="list-decimal list-inside space-y-1 pl-4">
-                    <li>Open the <a href="https://console.firebase.google.com/" target="_blank" rel="noopener noreferrer" className="text-primary underline">Firebase Console</a>.</li>
-                    <li>Select your project: <code className="bg-muted p-1 rounded font-mono text-xs">transconnect-v1-39578841-2a857</code>.</li>
+                <h3 class="font-bold text-lg pt-2">Step 1: Enable Firebase Storage</h3>
+                <ol class="list-decimal list-inside space-y-1 pl-4">
+                    <li>Open the <a href="https://console.firebase.google.com/" target="_blank" rel="noopener noreferrer" class="text-primary underline">Firebase Console</a> and select your project.</li>
+                    <li>In the left-hand navigation, under **Build**, click on **Storage**.</li>
+                    <li>If it's not enabled, click **"Get started"**.</li>
+                    <li>Choose **Production mode** for security rules and click **Next**.</li>
+                    <li>Choose your bucket location (the default is usually fine) and click **Done**.</li>
                 </ol>
 
-                <h3 className="font-bold text-lg pt-2">Step 2: Navigate to Storage</h3>
-                <ol className="list-decimal list-inside space-y-1 pl-4">
-                    <li>In the left-hand navigation menu, under the <strong>Build</strong> section, click on <strong>Storage</strong>.</li>
+                <h3 class="font-bold text-lg pt-4">Step 2: Grant Backend Permissions (Troubleshooting)</h3>
+                <p class="font-semibold text-destructive">If you still see errors after Step 1, you must grant permissions to the backend service account.</p>
+                <ol class="list-decimal list-inside space-y-1 pl-4">
+                    <li>Go to the <a href="https://console.cloud.google.com/iam-admin/iam" target="_blank" rel="noopener noreferrer" class="text-primary underline">Google Cloud IAM page</a> for your project.</li>
+                    <li>Find the principal with the name **"Firebase Admin SDK Administrator Service Agent"**.</li>
+                    <li>Copy its email address (it will end in <code class="bg-muted p-1 rounded font-mono text-xs">.iam.gserviceaccount.com</code>).</li>
+                    <li>Click the **+ GRANT ACCESS** button at the top of the page.</li>
+                    <li>In the **"New principals"** field, paste the service account email.</li>
+                    <li>In the **"Select a role"** dropdown, search for and select **"Storage Object Admin"**.</li>
+                    <li>Click **Save**.</li>
                 </ol>
-                
-                <h3 className="font-bold text-lg pt-2">Step 3: Get Started with Storage</h3>
-                <ol className="list-decimal list-inside space-y-1 pl-4">
-                    <li>If Storage is not enabled, you will see a "Get started" button. Click it.</li>
-                    <li>A dialog will appear to guide you through setting up security rules. It is recommended to start in <strong>Production mode</strong>. Click <strong>Next</strong>.</li>
-                    <li className="pl-4 text-xs text-muted-foreground"><em>Production mode starts with all reads and writes disallowed, which is a secure default. The application's own security rules will grant the necessary permissions.</em></li>
-                    <li>You will then be asked to choose a location for your Storage bucket. The default location selected for you is usually the best choice. Click <strong>Done</strong>.</li>
-                </ol>
-                
-                <p className="pt-4 font-semibold">Once this process is complete, the file upload functionality within your application should work correctly without any further changes.</p>
-            </div>
+            `}} />
         </DialogContent>
       </Dialog>
     </>
