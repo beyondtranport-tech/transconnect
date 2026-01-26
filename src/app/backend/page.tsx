@@ -53,6 +53,7 @@ import React from 'react';
 // --- Dynamic Imports for ALL Backend Components ---
 
 // Dashboard
+const AdminDashboardContent = dynamic(() => import('../adminaccount/dashboard-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const ActivityFeed = dynamic(() => import('./activity-feed'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 
 // Operations
@@ -128,7 +129,8 @@ function BackendContent() {
   const renderContent = useCallback(() => {
     switch (activeView) {
       // Dashboard
-      case 'dashboard': return <ActivityFeed />;
+      case 'dashboard': return <AdminDashboardContent />;
+      case 'activity': return <ActivityFeed />;
       
       // Operations
       case 'members': return <MembersList />;
@@ -150,7 +152,7 @@ function BackendContent() {
       case 'tasks': return <PlatformTasks />;
       case 'settings-bank': return <PlatformSettingsContent />;
 
-      default: return <ActivityFeed />;
+      default: return <AdminDashboardContent />;
     }
   }, [activeView, memberId]);
   
@@ -196,6 +198,11 @@ function BackendContent() {
                 <SidebarMenuItem>
                     <SidebarMenuButton tooltip="Dashboard" isActive={activeView === 'dashboard'} onClick={() => navigate('dashboard')}>
                         <LayoutDashboard /><span>Dashboard</span>
+                    </SidebarMenuButton>
+                </SidebarMenuItem>
+                 <SidebarMenuItem>
+                    <SidebarMenuButton tooltip="Activity" isActive={activeView === 'activity'} onClick={() => navigate('activity')}>
+                        <Activity /><span>Activity Feed</span>
                     </SidebarMenuButton>
                 </SidebarMenuItem>
                 <SidebarMenuItem>
