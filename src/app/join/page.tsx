@@ -53,10 +53,21 @@ function JoinFormComponent() {
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const auth = useAuth();
+  const { user, isUserLoading } = useUser();
+  const redirectParam = searchParams.get('redirect');
+
+  // Redirect if user is already logged in
+  useEffect(() => {
+    if (!isUserLoading && user) {
+      const isAdmin = user.email === 'beyondtransport@gmail.com' || user.email === 'mkoton100@gmail.com';
+      const defaultRedirect = isAdmin ? '/adminaccount' : '/account';
+      router.replace(redirectParam || defaultRedirect);
+    }
+  }, [user, isUserLoading, router, redirectParam]);
+
 
   const userRole = searchParams.get('role');
   const financierType = searchParams.get('type');
-  const redirectParam = searchParams.get('redirect');
   const referrerId = searchParams.get('ref');
   const emailParam = searchParams.get('email');
   const firstNameParam = searchParams.get('firstName');
@@ -180,10 +191,9 @@ function JoinFormComponent() {
         title: 'Account Created!',
         description: "Welcome to Logistics Flow. Redirecting you now...",
       });
-
-      const isAdmin = user.email === 'beyondtransport@gmail.com' || user.email === 'mkoton100@gmail.com';
-      const defaultRedirect = isAdmin ? '/adminaccount' : '/account';
-      router.push(redirectParam || defaultRedirect);
+      
+      // The `useEffect` hook will now handle the redirect when the user state updates.
+      // The component will remain in a loading state until the redirect happens.
 
     } catch (error: any) {
       let title = 'An error occurred.';
@@ -199,7 +209,6 @@ function JoinFormComponent() {
         title,
         description,
       });
-    } finally {
       setIsLoading(false);
     }
   };
