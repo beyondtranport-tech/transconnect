@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { createContext, useContext, ReactNode, useMemo, useState, useEffect } from 'react';
@@ -8,6 +9,8 @@ import { FirebaseStorage } from 'firebase/storage';
 import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
 import { useDoc } from './firestore/use-doc';
 import { useMemoFirebase } from '@/hooks/use-config';
+import { ForcePasswordChangeDialog } from '@/app/account/force-password-change-dialog';
+
 
 interface FirebaseProviderProps {
   children: ReactNode;
@@ -19,6 +22,7 @@ interface FirebaseProviderProps {
 
 interface EnrichedUser extends User {
     companyId?: string;
+    passwordChangeRequired?: boolean;
 }
 
 interface UserAuthState {
@@ -56,20 +60,22 @@ function useEnrichedUser(baseUser: User | null, firestore: Firestore | null) {
         return doc(firestore, 'users', baseUser.uid);
     }, [firestore, baseUser]);
 
-    const { data: userData, isLoading: isUserDataLoading } = useDoc<{ companyId: string }>(userDocRef);
+    const { data: userData, isLoading: isUserDataLoading, forceRefresh } = useDoc<{ companyId: string; passwordChangeRequired?: boolean }>(userDocRef);
     
     return useMemo(() => {
-        if (!baseUser) return { enrichedUser: null, isEnriching: false };
-        if (isUserDataLoading) return { enrichedUser: baseUser as EnrichedUser, isEnriching: true };
+        if (!baseUser) return { enrichedUser: null, isEnriching: false, forceRefresh };
+        if (isUserDataLoading) return { enrichedUser: baseUser as EnrichedUser, isEnriching: true, forceRefresh };
         
         return {
             enrichedUser: {
                 ...baseUser,
-                companyId: userData?.companyId
+                companyId: userData?.companyId,
+                passwordChangeRequired: userData?.passwordChangeRequired
             } as EnrichedUser,
-            isEnriching: false
+            isEnriching: false,
+            forceRefresh
         };
-    }, [baseUser, userData, isUserDataLoading]);
+    }, [baseUser, userData, isUserDataLoading, forceRefresh]);
 }
 
 
@@ -84,7 +90,7 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
   const [isAuthLoading, setIsAuthLoading] = useState(true);
   const [authError, setAuthError] = useState<Error | null>(null);
 
-  const { enrichedUser, isEnriching } = useEnrichedUser(baseUser, firestore);
+  const { enrichedUser, isEnriching, forceRefresh } = useEnrichedUser(baseUser, firestore);
 
   useEffect(() => {
     const unsubscribe = onIdTokenChanged(
@@ -110,6 +116,11 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
     return () => unsubscribe();
   }, [auth]);
 
+  const handlePasswordChanged = () => {
+    // This will re-fetch the user document data which should now have passwordChangeRequired: false
+    forceRefresh();
+  };
+
   const contextValue = useMemo((): FirebaseContextState => ({
     firebaseApp,
     firestore,
@@ -123,6 +134,9 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
   return (
     <FirebaseContext.Provider value={contextValue}>
       <FirebaseErrorListener />
+      {enrichedUser?.passwordChangeRequired && (
+        <ForcePasswordChangeDialog onPasswordChanged={handlePasswordChanged} />
+      )}
       {children}
     </FirebaseContext.Provider>
   );

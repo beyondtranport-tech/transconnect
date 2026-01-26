@@ -51,7 +51,7 @@ function SignInFormComponent() {
     resolver: zodResolver(formSchema),
     defaultValues: {
       email: searchParams.get('email') || '',
-      password: '',
+      password: searchParams.get('password') || '',
     },
   });
 

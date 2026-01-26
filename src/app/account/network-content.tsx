@@ -1,8 +1,7 @@
 
-      
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -42,8 +41,7 @@ type LeadFormValues = z.infer<typeof leadSchema>;
 function LeadDialog({ lead, companyId, onSave, children }: { lead?: any, companyId: string, onSave: () => void, children: React.ReactNode }) {
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [generatedLink, setGeneratedLink] = useState<string | null>(null);
-  const [currentLeadEmail, setCurrentLeadEmail] = useState('');
+  const [generatedCredentials, setGeneratedCredentials] = useState<{ email: string; password?: string } | null>(null);
   const { toast } = useToast();
 
   const form = useForm<LeadFormValues>({
@@ -57,8 +55,7 @@ function LeadDialog({ lead, companyId, onSave, children }: { lead?: any, company
     } else {
       // Delay resetting generated link to avoid UI flicker on close
       setTimeout(() => {
-        setGeneratedLink(null);
-        setCurrentLeadEmail('');
+        setGeneratedCredentials(null);
       }, 300);
     }
   }, [isOpen, lead, form]);
@@ -86,8 +83,7 @@ function LeadDialog({ lead, companyId, onSave, children }: { lead?: any, company
       const result = await response.json();
       if (!response.ok) throw new Error(result.error);
       
-      setGeneratedLink(result.resetLink);
-      setCurrentLeadEmail(values.email || '');
+      setGeneratedCredentials({ email: result.email, password: result.temporaryPassword });
       toast({ title: 'Account Provisioned!', description: 'A sign-up link has been generated.' });
       onSave(); // Refresh the main table
     } catch(e: any) {
@@ -98,9 +94,12 @@ function LeadDialog({ lead, companyId, onSave, children }: { lead?: any, company
   };
 
   const copyInviteLink = () => {
-    if (generatedLink) {
-        navigator.clipboard.writeText(generatedLink);
-        toast({ title: 'Sign-up Link Copied!' });
+    if (generatedCredentials?.password) {
+        const url = new URL(`${window.location.origin}/signin`);
+        url.searchParams.set('email', generatedCredentials.email);
+        url.searchParams.set('password', generatedCredentials.password);
+        navigator.clipboard.writeText(url.toString());
+        toast({ title: 'Sign-in Link Copied!' });
     }
   };
 
@@ -110,16 +109,16 @@ function LeadDialog({ lead, companyId, onSave, children }: { lead?: any, company
       <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{generatedLink ? 'Account Provisioned!' : (lead ? 'Edit Lead' : 'Add New Lead')}</DialogTitle>
+          <DialogTitle>{generatedCredentials ? 'Account Provisioned!' : (lead ? 'Edit Lead' : 'Add New Lead')}</DialogTitle>
            <DialogDescription>
-            {generatedLink ? `Share the secure sign-up link with ${currentLeadEmail}.` : 'Enter the details for the potential member.'}
+            {generatedCredentials ? `Share the secure sign-in link with ${generatedCredentials.email}.` : 'Enter the details for the potential member.'}
           </DialogDescription>
         </DialogHeader>
-        {generatedLink ? (
+        {generatedCredentials ? (
              <div className="py-4 space-y-4">
                 <p>An account has been created. Send the following secure link for them to set their password and sign in.</p>
                 <div className="flex items-center space-x-2">
-                    <Input id="invite-link" value={generatedLink} readOnly />
+                    <Input id="invite-link" value={`${window.location.origin}/signin?email=${generatedCredentials.email}&password=${generatedCredentials.password}`} readOnly />
                     <Button type="button" size="sm" onClick={copyInviteLink}><Copy className="mr-2 h-4 w-4" /> Copy</Button>
                 </div>
             </div>
@@ -137,7 +136,7 @@ function LeadDialog({ lead, companyId, onSave, children }: { lead?: any, company
           </Form>
         )}
         <DialogFooter>
-            {generatedLink ? (
+            {generatedCredentials ? (
                 <Button onClick={() => setIsOpen(false)}>Done</Button>
             ) : (
               <>
