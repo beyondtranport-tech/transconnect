@@ -1,6 +1,9 @@
 
 import { initializeApp, getApps, App, cert } from 'firebase-admin/app';
 import type { ServiceAccount } from 'firebase-admin/app';
+import { NextRequest } from 'next/server';
+import { getAuth } from 'firebase-admin/auth';
+import { getFirestore } from 'firebase-admin/firestore';
 
 const ADMIN_APP_NAME = 'firebase-admin-app-transconnect-studio';
 
@@ -40,4 +43,30 @@ export function getAdminApp(): { app: App | null; error: string | null } {
     console.error(errorMessage, error);
     return { app: null, error: errorMessage };
   }
+}
+
+export async function verifyAdmin(req: NextRequest) {
+    const { app, error: initError } = getAdminApp();
+    if (initError || !app) {
+        throw new Error(`Admin SDK not initialized: ${initError}`);
+    }
+
+    const authorization = req.headers.get('authorization');
+    if (!authorization?.startsWith('Bearer ')) {
+        throw new Error('Unauthorized: Missing or invalid token.');
+    }
+    const token = authorization.split('Bearer ')[1];
+    
+    const adminAuth = getAuth(app);
+    const decodedToken = await adminAuth.verifyIdToken(token);
+    const isAdmin = decodedToken.email === 'beyondtransport@gmail.com' || decodedToken.email === 'mkoton100@gmail.com';
+
+    if (!isAdmin) {
+        throw new Error("Forbidden: Admin access required.");
+    }
+    
+    return {
+        db: getFirestore(app),
+        adminUid: decodedToken.uid
+    };
 }

@@ -1,7 +1,7 @@
 
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyAdmin } from '@/app/api/admin/route';
+import { verifyAdmin } from '@/lib/firebase-admin';
 
 function deserializeData(data: any): any {
     if (!data) return data;
@@ -48,4 +48,3 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: false, error: error.message }, { status });
   }
 }
-

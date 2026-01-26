@@ -1,7 +1,7 @@
 
 import { getFirestore } from 'firebase-admin/firestore';
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyAdmin } from '@/app/api/admin/route';
+import { verifyAdmin } from '@/lib/firebase-admin';
 
 export async function POST(req: NextRequest) {
   try {

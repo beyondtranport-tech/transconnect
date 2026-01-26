@@ -1,7 +1,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getFirestore, Timestamp, FieldValue } from 'firebase-admin/firestore';
-import { verifyAdmin } from '@/app/api/admin/route';
+import { verifyAdmin } from '@/lib/firebase-admin';
 
 export async function POST(req: NextRequest) {
     try {

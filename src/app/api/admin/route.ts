@@ -131,9 +131,7 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, data: serializeTimestamps(userDoc.data()) });
             }
             case 'getAuditLogs': {
-                let logsQuery;
-
-                logsQuery = db.collection('auditLogs').orderBy('timestamp', 'desc').limit(200);
+                let logsQuery = db.collection('auditLogs').orderBy('timestamp', 'desc').limit(200);
 
                 const logsSnap = await logsQuery.get();
                 if (logsSnap.empty) {
@@ -146,8 +144,11 @@ export async function POST(req: NextRequest) {
                     if (data.userId) userIds.add(data.userId);
                 });
                 
-                const userDocs = await db.collection('users').where(FieldPath.documentId(), 'in', Array.from(userIds)).get();
-                const userMap = new Map(userDocs.docs.map(doc => [doc.id, doc.data()]));
+                let userMap = new Map();
+                if (userIds.size > 0) {
+                    const userDocs = await db.collection('users').where(FieldPath.documentId(), 'in', Array.from(userIds)).get();
+                    userMap = new Map(userDocs.docs.map(doc => [doc.id, doc.data()]));
+                }
                 
                 const companyIds = new Set<string>();
                  logsSnap.docs.forEach(doc => {
@@ -404,7 +405,7 @@ export async function POST(req: NextRequest) {
             }
             case 'approveWalletPayment': {
                  const { companyId, paymentId, amount, description, reconciliationId } = payload;
-                 if (!companyId || !paymentId || !amount || !description) {
+                 if (!companyId || paymentId === undefined || typeof amount !== 'number' || !description) {
                     throw new Error("Missing required payload for approveWalletPayment.");
                  }
 
