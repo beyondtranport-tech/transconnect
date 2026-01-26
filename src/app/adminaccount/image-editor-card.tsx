@@ -26,9 +26,9 @@ import { Loader2, Sparkles, Wand2, Download, Save, Copy } from 'lucide-react';
 import Image from 'next/image';
 import { imageEdit } from '@/ai/flows/image-edit-flow';
 import { Textarea } from '@/components/ui/textarea';
-import { useUser, useStorage } from '@/firebase';
-import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
+import { useUser } from '@/firebase';
 import { Progress } from '@/components/ui/progress';
+import { getClientSideAuthToken } from '@/firebase/errors';
 
 const defaultEditPrompt = `Place the truck on a winding mountain pass at sunset.
 
@@ -45,8 +45,7 @@ export default function ImageEditorCard({ promptTemplate }: { promptTemplate?: s
   const [editedImage, setEditedImage] = useState<string | null>(null);
   const { toast } = useToast();
   const { user } = useUser();
-  const storage = useStorage();
-
+  
   const [isSaving, setIsSaving] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [savedImageUrl, setSavedImageUrl] = useState<string | null>(null);
@@ -131,49 +130,42 @@ export default function ImageEditorCard({ promptTemplate }: { promptTemplate?: s
   };
 
   const handleSaveToCloud = async () => {
-    if (!editedImage || !user || !storage) {
-        toast({ variant: 'destructive', title: 'Error', description: 'No image generated, user not found, or storage not available.' });
+    if (!editedImage || !user) {
+        toast({ variant: 'destructive', title: 'Error', description: 'No image edited or user not found.' });
         return;
     }
 
     setIsSaving(true);
-    setUploadProgress(0);
+    setUploadProgress(10);
     setSavedImageUrl(null);
 
     try {
-        const fileName = `edited_${Date.now()}.png`;
+        const token = await getClientSideAuthToken();
+        if (!token) throw new Error("Authentication failed.");
+        
         const folder = `user-assets/${user.uid}/edited-images`;
-        const storageRef = ref(storage, `${folder}/${fileName}`);
+        const fileName = `edited_${Date.now()}.png`;
+        setUploadProgress(30);
 
-        const response = await fetch(editedImage);
-        const blob = await response.blob();
+        const response = await fetch('/api/uploadImageAsset', {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ fileDataUri: editedImage, folder, fileName }),
+        });
+        
+        setUploadProgress(80);
+        const result = await response.json();
+        if (!response.ok || !result.success) {
+            throw new Error(result.error || 'Failed to upload image.');
+        }
 
-        const uploadTask = uploadBytesResumable(storageRef, blob);
-
-        uploadTask.on('state_changed',
-            (snapshot) => {
-                const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-                setUploadProgress(progress);
-            },
-            (error) => {
-                console.error("Upload failed:", error);
-                toast({ variant: 'destructive', title: 'Upload Failed', description: error.message });
-                setIsSaving(false);
-                setUploadProgress(0);
-            },
-            () => {
-                getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
-                    setSavedImageUrl(downloadURL);
-                    toast({ title: 'Image Saved!', description: 'Your image is now stored in the asset gallery.' });
-                    setIsSaving(false);
-                });
-            }
-        );
+        setSavedImageUrl(result.url);
+        setUploadProgress(100);
+        toast({ title: 'Image Saved!', description: 'Your image is now stored in the asset gallery.' });
     } catch (error: any) {
-        console.error("Save to cloud error:", error);
         toast({ variant: 'destructive', title: 'Save Failed', description: error.message });
+    } finally {
         setIsSaving(false);
-        setUploadProgress(0);
     }
   };
 

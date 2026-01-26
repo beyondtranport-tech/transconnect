@@ -217,6 +217,13 @@ const productSchema = z.object({
 });
 type ProductFormValues = z.infer<typeof productSchema>;
 
+const fileToDataUri = (file: File) => new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = error => reject(error);
+    reader.readAsDataURL(file);
+});
+
 function AIGenerateDialog({ 
   onGenerate, 
   children, 
@@ -242,7 +249,6 @@ function AIGenerateDialog({
   const { toast } = useToast();
   
   const { user } = useUser();
-  const storage = useStorage();
   const [uploadProgress, setUploadProgress] = useState(0);
 
   useEffect(() => {
@@ -274,51 +280,46 @@ function AIGenerateDialog({
   };
 
   const handleApplyImage = async () => {
-    if (!generatedImage || !user || !storage) {
-        toast({ variant: 'destructive', title: 'Could not apply image.', description: 'User or storage service not available.' });
-        return;
+    if (!generatedImage || !user) {
+      toast({ variant: 'destructive', title: 'Could not apply image.' });
+      return;
     }
     setIsApplying(true);
-    setUploadProgress(0);
+    setUploadProgress(10); // Initial progress
 
     try {
-        const isHeroBanner = title.toLowerCase().includes('hero');
-        const folder = `user-assets/${user.uid}/${isHeroBanner ? 'hero-images' : 'product-images'}`;
-        const fileName = `generated_${Date.now()}.png`;
-        const storageRef = ref(storage, `${folder}/${fileName}`);
-        
-        const response = await fetch(generatedImage);
-        const blob = await response.blob();
+      const token = await getClientSideAuthToken();
+      if (!token) throw new Error("Authentication failed.");
 
-        const uploadTask = uploadBytesResumable(storageRef, blob);
+      const isHeroBanner = title.toLowerCase().includes('hero');
+      const folder = `user-assets/${user.uid}/${isHeroBanner ? 'hero-images' : 'product-images'}`;
+      const fileName = `generated_${Date.now()}.png`;
 
-        uploadTask.on('state_changed',
-            (snapshot) => {
-                const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-                setUploadProgress(progress);
-            },
-            (error) => {
-                console.error("Upload failed:", error);
-                toast({ variant: 'destructive', title: 'Upload Failed', description: error.message });
-                setIsApplying(false);
-                setUploadProgress(0);
-            },
-            () => {
-                getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
-                    onGenerate(downloadURL);
-                    toast({ title: 'Image Applied!', description: 'The new image has been added.' });
-                    setIsOpen(false);
-                });
-            }
-        );
+      setUploadProgress(30);
+
+      const response = await fetch('/api/uploadImageAsset', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ fileDataUri: generatedImage, folder, fileName }),
+      });
+      
+      setUploadProgress(80);
+
+      const result = await response.json();
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || 'Failed to upload image.');
+      }
+
+      setUploadProgress(100);
+      onGenerate(result.url);
+      toast({ title: 'Image Applied!', description: 'The new image has been added.' });
+      setIsOpen(false);
     } catch (e: any) {
-         toast({
-            variant: 'destructive',
-            title: 'Failed to apply image',
-            description: e.message
-        });
-        setIsApplying(false);
-        setUploadProgress(0);
+      toast({ variant: 'destructive', title: 'Failed to apply image', description: e.message });
+      setIsApplying(false);
     }
   };
   
@@ -395,7 +396,6 @@ function AIGenerateDialog({
 function ProductDialog({ shop, product, onComplete, children, canEdit }: { shop: any, product?: any, onComplete: () => void, children: React.ReactNode, canEdit: boolean }) {
   const { user } = useUser();
   const { toast } = useToast();
-  const storage = useStorage();
   const [isOpen, setIsOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -476,41 +476,48 @@ function ProductDialog({ shop, product, onComplete, children, canEdit }: { shop:
     }
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file || !user || !storage) return;
+    if (!file || !user) return;
 
     setUploading(true);
-    setUploadProgress(0);
+    setUploadProgress(10); // Initial progress
 
-    const fileName = `${Date.now()}_${file.name}`;
-    const folder = `user-assets/${user.uid}/product-images`;
-    const storageRef = ref(storage, `${folder}/${fileName}`);
-    const uploadTask = uploadBytesResumable(storageRef, file);
+    try {
+        const token = await getClientSideAuthToken();
+        if (!token) throw new Error("Authentication failed.");
 
-    uploadTask.on('state_changed',
-        (snapshot) => {
-            const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-            setUploadProgress(progress);
-        },
-        (error) => {
-            console.error("Upload failed:", error);
-            toast({ variant: 'destructive', title: 'Upload Failed', description: error.message });
-            setUploading(false);
-            setUploadProgress(0);
-        },
-        () => {
-            getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
-                const currentUrls = form.getValues('imageUrls') || [];
-                form.setValue('imageUrls', [...currentUrls, downloadURL], { shouldValidate: true });
-                toast({ title: 'Upload Complete!', description: `Image "${file.name}" added.` });
-                if (fileInputRef.current) fileInputRef.current.value = '';
-                setUploading(false);
-                setUploadProgress(0);
-            });
+        const fileDataUri = await fileToDataUri(file);
+        setUploadProgress(30);
+
+        const folder = `user-assets/${user.uid}/product-images`;
+        const fileName = `${Date.now()}_${file.name}`;
+        
+        const response = await fetch('/api/uploadImageAsset', {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ fileDataUri, folder, fileName }),
+        });
+
+        setUploadProgress(80);
+        const result = await response.json();
+        if (!response.ok || !result.success) {
+            throw new Error(result.error || 'Failed to upload image.');
         }
-    );
-  };
+        
+        const currentUrls = form.getValues('imageUrls') || [];
+        form.setValue('imageUrls', [...currentUrls, result.url], { shouldValidate: true });
+        
+        setUploadProgress(100);
+        toast({ title: 'Upload Complete!', description: `Image "${file.name}" added.` });
+    } catch (error: any) {
+        toast({ variant: 'destructive', title: 'Upload Failed', description: error.message });
+    } finally {
+        if (fileInputRef.current) fileInputRef.current.value = '';
+        setUploading(false);
+        setUploadProgress(0);
+    }
+};
 
 
   return (

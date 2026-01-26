@@ -24,10 +24,10 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2, Sparkles, Video, Download, Save, Copy } from 'lucide-react';
 import { generateVideo } from '@/ai/flows/video-generation-flow';
 import { Textarea } from '@/components/ui/textarea';
-import { useUser, useStorage } from '@/firebase';
+import { useUser } from '@/firebase';
 import { Input } from '@/components/ui/input';
-import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { Progress } from '@/components/ui/progress';
+import { getClientSideAuthToken } from '@/firebase/errors';
 
 const defaultPrompt = `Create a short, professional marketing video that showcases how easy it is to create an online shop on the Logistics Flow platform. The video should visually represent these steps: 1. Sign up for a free account. 2. Use the simple Shop Wizard to add your business name, description, and products. 3. Publish your professional-looking online shop to the network. The video should be modern, clean, and use a color palette of green and charcoal.`;
 
@@ -38,8 +38,7 @@ export default function VideoGeneratorCard({ promptTemplate }: { promptTemplate?
   const [generatedVideo, setGeneratedVideo] = useState<string | null>(null);
   const { toast } = useToast();
   const { user } = useUser();
-  const storage = useStorage();
-
+  
   const [isSaving, setIsSaving] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [savedVideoUrl, setSavedVideoUrl] = useState<string | null>(null);
@@ -97,49 +96,42 @@ export default function VideoGeneratorCard({ promptTemplate }: { promptTemplate?
   };
 
   const handleSaveToCloud = async () => {
-    if (!generatedVideo || !user || !storage) {
-        toast({ variant: 'destructive', title: 'Error', description: 'No video generated, user not found, or storage not available.' });
+    if (!generatedVideo || !user) {
+        toast({ variant: 'destructive', title: 'Error', description: 'No video generated or user not found.' });
         return;
     }
 
     setIsSaving(true);
-    setUploadProgress(0);
+    setUploadProgress(10);
     setSavedVideoUrl(null);
 
     try {
-        const fileName = `generated_${Date.now()}.mp4`;
+        const token = await getClientSideAuthToken();
+        if (!token) throw new Error("Authentication failed.");
+        
         const folder = `user-assets/${user.uid}/videos`;
-        const storageRef = ref(storage, `${folder}/${fileName}`);
-        
-        const response = await fetch(generatedVideo);
-        const blob = await response.blob();
-        
-        const uploadTask = uploadBytesResumable(storageRef, blob);
+        const fileName = `generated_${Date.now()}.mp4`;
+        setUploadProgress(30);
 
-        uploadTask.on('state_changed',
-            (snapshot) => {
-                const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-                setUploadProgress(progress);
-            },
-            (error) => {
-                console.error("Upload failed:", error);
-                toast({ variant: 'destructive', title: 'Upload Failed', description: error.message });
-                setIsSaving(false);
-                setUploadProgress(0);
-            },
-            () => {
-                getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
-                    setSavedVideoUrl(downloadURL);
-                    toast({ title: 'Video Saved!', description: 'Your video has been saved to your asset gallery.' });
-                    setIsSaving(false);
-                });
-            }
-        );
+        const response = await fetch('/api/uploadImageAsset', {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ fileDataUri: generatedVideo, folder, fileName, contentType: 'video/mp4' }),
+        });
+
+        setUploadProgress(80);
+        const result = await response.json();
+        if (!response.ok || !result.success) {
+            throw new Error(result.error || 'Failed to upload video.');
+        }
+
+        setSavedVideoUrl(result.url);
+        setUploadProgress(100);
+        toast({ title: 'Video Saved!', description: 'Your video has been saved to your asset gallery.' });
     } catch (error: any) {
-        console.error("Save to cloud error:", error);
         toast({ variant: 'destructive', title: 'Save Failed', description: error.message });
+    } finally {
         setIsSaving(false);
-        setUploadProgress(0);
     }
   };
 

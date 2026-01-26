@@ -25,10 +25,10 @@ import { Loader2, Sparkles, Image as ImageIcon, Download, Save, Copy } from 'luc
 import Image from 'next/image';
 import { generateImage } from '@/ai/flows/image-generation-flow';
 import { Textarea } from '@/components/ui/textarea';
-import { useUser, useStorage } from '@/firebase';
+import { useUser } from '@/firebase';
 import { Input } from '@/components/ui/input';
-import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { Progress } from '@/components/ui/progress';
+import { getClientSideAuthToken } from '@/firebase/errors';
 
 const defaultPrompt = `A cinematic, professional photograph of a futuristic, gleaming white and green Scania truck driving on a high-tech highway at dusk. The road is illuminated with glowing data lines, and the sky has a vibrant sunset. The image should look modern, professional, and convey a sense of speed and efficiency.`;
 
@@ -39,8 +39,7 @@ export default function ImageGeneratorCard({ promptTemplate }: { promptTemplate?
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   const { toast } = useToast();
   const { user } = useUser();
-  const storage = useStorage();
-
+  
   const [isSaving, setIsSaving] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [savedImageUrl, setSavedImageUrl] = useState<string | null>(null);
@@ -99,49 +98,45 @@ export default function ImageGeneratorCard({ promptTemplate }: { promptTemplate?
   };
 
   const handleSaveToCloud = async () => {
-    if (!generatedImage || !user || !storage) {
-        toast({ variant: 'destructive', title: 'Error', description: 'No image generated, user not found, or storage not available.' });
+    if (!generatedImage || !user) {
+        toast({ variant: 'destructive', title: 'Error', description: 'No image generated or user not found.' });
         return;
     }
-
+    
     setIsSaving(true);
-    setUploadProgress(0);
+    setUploadProgress(10);
     setSavedImageUrl(null);
 
     try {
-        const fileName = `generated_${Date.now()}.png`;
-        const folder = `user-assets/${user.uid}/generated-images`;
-        const storageRef = ref(storage, `${folder}/${fileName}`);
-        
-        const response = await fetch(generatedImage);
-        const blob = await response.blob();
+      const token = await getClientSideAuthToken();
+      if (!token) throw new Error("Authentication failed.");
 
-        const uploadTask = uploadBytesResumable(storageRef, blob);
+      const folder = `user-assets/${user.uid}/generated-images`;
+      const fileName = `generated_${Date.now()}.png`;
+      setUploadProgress(30);
 
-        uploadTask.on('state_changed',
-            (snapshot) => {
-                const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-                setUploadProgress(progress);
-            },
-            (error) => {
-                console.error("Upload failed:", error);
-                toast({ variant: 'destructive', title: 'Upload Failed', description: error.message });
-                setIsSaving(false);
-                setUploadProgress(0);
-            },
-            () => {
-                getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
-                    setSavedImageUrl(downloadURL);
-                    toast({ title: 'Image Saved!', description: 'Your image is now stored in the asset gallery.' });
-                    setIsSaving(false);
-                });
-            }
-        );
+      const response = await fetch('/api/uploadImageAsset', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ fileDataUri: generatedImage, folder, fileName }),
+      });
+      
+      setUploadProgress(80);
+      const result = await response.json();
+      if (!response.ok || !result.success) {
+          throw new Error(result.error || 'Failed to upload image.');
+      }
+      
+      setSavedImageUrl(result.url);
+      setUploadProgress(100);
+      toast({ title: 'Image Saved!', description: 'Your image is now stored in the asset gallery.' });
     } catch (error: any) {
-        console.error("Save to cloud error:", error);
         toast({ variant: 'destructive', title: 'Save Failed', description: error.message });
+    } finally {
         setIsSaving(false);
-        setUploadProgress(0);
     }
   };
 
