@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useEffect, useCallback } from 'react';
@@ -47,6 +46,7 @@ function InviteDialog({ lead, companyId, onInviteSent }: { lead: any, companyId:
     const onOpenChange = (open: boolean) => {
         if (!open) {
             setInviteLink(''); // Reset on close
+            onInviteSent(); // Refresh the table after the dialog is closed
         }
         setIsOpen(open);
     };
@@ -66,7 +66,6 @@ function InviteDialog({ lead, companyId, onInviteSent }: { lead: any, companyId:
             if (!result.success) throw new Error(result.error);
 
             setInviteLink(result.inviteLink);
-            onInviteSent();
             toast({ title: "Invite Link Generated", description: "You can now share the secure link." });
         } catch (e: any) {
             toast({ variant: 'destructive', title: 'Invite Failed', description: e.message });
@@ -255,23 +254,51 @@ export default function NetworkContent() {
     };
 
     const columns: ColumnDef<any>[] = useMemo(() => [
-        { accessorKey: 'companyName', header: 'Company Name', cell: ({ row }) => <div>{row.original.companyName}</div> },
-        { accessorKey: 'contactPerson', header: 'Contact', cell: ({ row }) => <div>{row.original.contactPerson}</div> },
-        { accessorKey: 'email', header: 'Email', cell: ({ row }) => <div>{row.original.email}</div> },
-        { accessorKey: 'phone', header: 'Phone', cell: ({ row }) => <div>{row.original.phone}</div> },
-        { accessorKey: 'role', header: 'Role', cell: ({ row }) => <Badge variant="outline">{row.original.role}</Badge> },
-        { accessorKey: 'status', header: 'Status', cell: ({ row }) => <Badge className="capitalize">{row.original.status}</Badge> },
-        { id: 'actions', header: () => <div className="text-right">Actions</div>, cell: ({ row }) => (
+        {
+          accessorKey: 'companyName',
+          header: 'Company Name',
+          cell: ({ row }) => <div>{row.original.companyName}</div>
+        },
+        {
+          accessorKey: 'contactPerson',
+          header: 'Contact',
+          cell: ({ row }) => <div>{row.original.contactPerson}</div>
+        },
+        {
+          accessorKey: 'email',
+          header: 'Email',
+          cell: ({ row }) => <div>{row.original.email}</div>
+        },
+        {
+          accessorKey: 'phone',
+          header: 'Phone',
+          cell: ({ row }) => <div>{row.original.phone}</div>
+        },
+        {
+          accessorKey: 'role',
+          header: 'Role',
+          cell: ({ row }) => <Badge variant="outline">{row.original.role}</Badge>
+        },
+        {
+          accessorKey: 'status',
+          header: 'Status',
+          cell: ({ row }) => <Badge className="capitalize">{row.original.status}</Badge>
+        },
+        {
+          id: 'actions',
+          header: () => <div className="text-right">Actions</div>,
+          cell: ({ row }) => (
             <div className="flex items-center justify-end">
-                 <InviteDialog lead={row.original} companyId={companyId!} onInviteSent={forceRefresh} />
-                 <LeadDialog lead={row.original} companyId={companyId!} onSave={forceRefresh}>
-                    <Button variant="ghost" size="icon" title="Edit Lead"><Edit className="h-4 w-4" /></Button>
-                 </LeadDialog>
-                 <Button variant="ghost" size="icon" onClick={() => { setSelectedLead(row.original); setDeleteAlertOpen(true); }} title="Delete Lead">
-                    <Trash2 className="h-4 w-4 text-destructive" />
-                </Button>
+              <InviteDialog lead={row.original} companyId={companyId!} onInviteSent={forceRefresh} />
+              <LeadDialog lead={row.original} companyId={companyId!} onSave={forceRefresh}>
+                <Button variant="ghost" size="icon" title="Edit Lead"><Edit className="h-4 w-4" /></Button>
+              </LeadDialog>
+              <Button variant="ghost" size="icon" onClick={() => { setSelectedLead(row.original); setDeleteAlertOpen(true); }} title="Delete Lead">
+                <Trash2 className="h-4 w-4 text-destructive" />
+              </Button>
             </div>
-        )},
+          )
+        },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     ], [companyId, forceRefresh]);
     
