@@ -1,4 +1,3 @@
-
 import { NextRequest, NextResponse } from 'next/server';
 import { getFirestore, Timestamp, FieldValue, FieldPath } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
@@ -21,37 +20,76 @@ function serializeTimestamps(docData: any): any {
     return newDocData;
 }
 
-export async function verifyAdmin(request: NextRequest): Promise<{ db: FirebaseFirestore.Firestore, adminUid: string, isAdmin: boolean }> {
-    const { app, error: initError } = getAdminApp();
-    if (initError || !app) {
-        throw new Error(`Admin SDK not initialized: ${initError}`);
-    }
-
-    const authorization = request.headers.get('authorization');
-    if (!authorization?.startsWith('Bearer ')) {
-        throw new Error('Unauthorized: Missing or invalid token.');
-    }
-    const token = authorization.split('Bearer ')[1];
-    
-    const adminAuth = getAuth(app);
-    const decodedToken = await adminAuth.verifyIdToken(token);
-    
-    const isAdmin = decodedToken.email === 'beyondtransport@gmail.com' || decodedToken.email === 'mkoton100@gmail.com';
-
-    return { db: getFirestore(app), adminUid: decodedToken.uid, isAdmin };
-}
-
-
 export async function POST(req: NextRequest) {
     try {
-        const { db, adminUid, isAdmin } = await verifyAdmin(req);
-        const { action, payload } = await req.json();
-
-        if (!isAdmin) {
-             throw new Error("Forbidden: Admin access required.");
+        const { app, error: initError } = getAdminApp();
+        if (initError || !app) {
+            throw new Error(`Admin SDK not initialized: ${initError}`);
         }
 
+        const authorization = req.headers.get('authorization');
+        if (!authorization?.startsWith('Bearer ')) {
+            throw new Error('Unauthorized: Missing or invalid token.');
+        }
+        const token = authorization.split('Bearer ')[1];
+        
+        const adminAuth = getAuth(app);
+        const decodedToken = await adminAuth.verifyIdToken(token);
+        const requestorUid = decodedToken.uid;
+        
+        const { action, payload } = await req.json();
+        const db = getFirestore(app);
+        const isAdmin = decodedToken.email === 'beyondtransport@gmail.com' || decodedToken.email === 'mkoton100@gmail.com';
+
+        // --- AUTHORIZATION ---
+        if (action === 'provisionLeadAccount') {
+            const { lead } = payload;
+            if (!lead || !lead.companyId) {
+                throw new Error("companyId is required for this action.");
+            }
+            const userDoc = await db.collection('users').doc(requestorUid).get();
+            if (userDoc.data()?.companyId !== lead.companyId) {
+                if (!isAdmin) {
+                    throw new Error("Forbidden: You can only provision leads for your own company.");
+                }
+            }
+        } else if (!isAdmin) {
+            throw new Error("Forbidden: Admin access required.");
+        }
+        // --- END AUTHORIZATION ---
+
         switch (action) {
+            case 'provisionLeadAccount': {
+                const { lead } = payload;
+                if (!lead || !lead.email) {
+                    throw new Error("Lead data with email is required.");
+                }
+
+                try {
+                    await getAuth(app).getUserByEmail(lead.email);
+                    throw new Error("A user with this email already exists in Firebase Authentication.");
+                } catch (error: any) {
+                    if (error.code !== 'auth/user-not-found') {
+                        throw error;
+                    }
+                }
+
+                const userRecord = await getAuth(app).createUser({
+                    email: lead.email,
+                    displayName: lead.contactPerson || lead.companyName,
+                });
+
+                const resetLink = await getAuth(app).generatePasswordResetLink(lead.email);
+
+                const leadRef = db.collection(`companies/${lead.companyId}/leads`).doc(lead.id);
+                await leadRef.set({
+                    status: 'contacted',
+                    authUid: userRecord.uid,
+                    updatedAt: FieldValue.serverTimestamp(),
+                }, { merge: true });
+
+                return NextResponse.json({ success: true, resetLink });
+            }
             case 'getUserDoc': {
                 const { uid } = payload;
                 if (!uid) {
@@ -357,7 +395,7 @@ export async function POST(req: NextRequest) {
                     status: 'allocated',
                     isAdjustment: false,
                     chartOfAccountsCode: '4410',
-                    postedBy: adminUid,
+                    postedBy: requestorUid,
                     companyId: companyId,
                  });
 
@@ -394,7 +432,7 @@ export async function POST(req: NextRequest) {
                     transaction.set(auditLogRef, {
                         collectionPath: 'companies',
                         documentId: companyId,
-                        userId: adminUid,
+                        userId: requestorUid,
                         action: 'update',
                         timestamp: FieldValue.serverTimestamp(),
                         before: serializeTimestamps(beforeData),
@@ -421,7 +459,7 @@ export async function POST(req: NextRequest) {
                     transaction.set(auditLogRef, {
                         collectionPath: 'companies',
                         documentId: companyId,
-                        userId: adminUid,
+                        userId: requestorUid,
                         action: 'delete',
                         timestamp: FieldValue.serverTimestamp(),
                         before: serializeTimestamps(beforeData),
@@ -498,7 +536,7 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: false, error: 'Invalid action' }, { status: 400 });
         }
     } catch (error: any) {
-        console.error(`API Error in /api/admin for action:`, error);
+        console.error(`API Error in /api/admin route:`, error);
         const status = error.message.includes('Forbidden') ? 403 : error.message.includes('Unauthorized') ? 401 : 500;
         return NextResponse.json({ success: false, error: error.message }, { status });
     }

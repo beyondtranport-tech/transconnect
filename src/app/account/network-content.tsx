@@ -1,7 +1,6 @@
-
 'use client';
 
-import { useState, useMemo, useEffect, useCallback } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -130,44 +129,64 @@ export default function NetworkContent() {
 
     const { data: leads, isLoading: areLeadsLoading, forceRefresh } = useCollection(leadsQuery);
 
-    const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
+    const [inviteLead, setInviteLead] = useState<any | null>(null);
+    const [isProvisioning, setIsProvisioning] = useState(false);
+    const [generatedLink, setGeneratedLink] = useState<string | null>(null);
     const [deleteAlertOpen, setDeleteAlertOpen] = useState(false);
     const [selectedLead, setSelectedLead] = useState<any | null>(null);
 
-    const inviteLink = useMemo(() => {
-        if (typeof window === 'undefined' || !companyId || !selectedLead?.email) return '';
-        return `${window.location.origin}/join?ref=${companyId}&email=${encodeURIComponent(selectedLead.email)}`;
-    }, [companyId, selectedLead]);
-
-    const copyInviteLink = () => {
-        navigator.clipboard.writeText(inviteLink);
-        toast({ title: 'Invite Link Copied!' });
+    const handleInvite = (lead: any) => {
+        if (!lead.email) {
+            toast({
+                variant: 'destructive',
+                title: 'Missing Email',
+                description: 'Please edit the lead and add an email address before inviting.',
+            });
+            return;
+        }
+        setInviteLead(lead);
+        setGeneratedLink(null);
     };
 
-    const handleInviteClick = async (lead: any) => {
-        setSelectedLead(lead);
-        setInviteDialogOpen(true); // Open dialog immediately for better UX
-    
+    const provisionAccount = async () => {
+        if (!inviteLead) return;
+        setIsProvisioning(true);
         try {
             const token = await getClientSideAuthToken();
             if (!token) throw new Error("Authentication failed.");
             
-            await fetch('/api/updateUserDoc', {
+            const payload = { 
+                lead: { 
+                    ...inviteLead, 
+                    companyId: companyId // Ensure companyId is in the payload
+                }
+            };
+            
+            const response = await fetch('/api/admin', {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
-                    path: `companies/${companyId}/leads/${lead.id}`,
-                    data: { status: 'contacted' }
-                }),
+                body: JSON.stringify({ action: 'provisionLeadAccount', payload: payload }),
             });
-    
-            forceRefresh(); // Refresh the data table in the background
-            toast({ title: "Lead Status Updated", description: `Marked ${lead.companyName} as 'Contacted'.` });
-        } catch(e: any) {
-            toast({ variant: 'destructive', title: 'Could not update lead status', description: e.message });
+
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.error);
+            setGeneratedLink(result.resetLink);
+            toast({ title: 'Account Provisioned!', description: 'A sign-up link has been generated.' });
+            forceRefresh();
+        } catch (e: any) {
+            toast({ variant: 'destructive', title: 'Provisioning Failed', description: e.message });
+        } finally {
+            setIsProvisioning(false);
         }
     };
     
+    const copyInviteLink = () => {
+        if (generatedLink) {
+            navigator.clipboard.writeText(generatedLink);
+            toast({ title: 'Sign-up Link Copied!' });
+        }
+    };
+
     const handleDelete = async () => {
         if (!companyId || !selectedLead) return;
         
@@ -193,31 +212,32 @@ export default function NetworkContent() {
 
 
     const columns: ColumnDef<any>[] = useMemo(() => [
-        { accessorKey: 'companyName', header: 'Company Name', cell: ({ row }) => <div>{row.original.companyName}</div> },
-        { accessorKey: 'contactPerson', header: 'Contact', cell: ({ row }) => <div>{row.original.contactPerson}</div> },
-        { accessorKey: 'email', header: 'Email', cell: ({ row }) => <div>{row.original.email}</div> },
-        { accessorKey: 'phone', header: 'Phone', cell: ({ row }) => <div>{row.original.phone}</div> },
-        { accessorKey: 'role', header: 'Role', cell: ({ row }) => <Badge variant="outline">{row.original.role}</Badge> },
-        { accessorKey: 'status', header: 'Status', cell: ({ row }) => <Badge className="capitalize">{row.original.status}</Badge> },
+        { header: 'Company Name', cell: ({ row }) => <div>{row.original.companyName}</div> },
+        { header: 'Contact', cell: ({ row }) => <div>{row.original.contactPerson}</div> },
+        { header: 'Email', cell: ({ row }) => <div>{row.original.email}</div> },
+        { header: 'Phone', cell: ({ row }) => <div>{row.original.phone}</div> },
+        { header: 'Role', cell: ({ row }) => <Badge variant="outline">{row.original.role}</Badge> },
+        { header: 'Status', cell: ({ row }) => <Badge className="capitalize">{row.original.status}</Badge> },
         { id: 'actions', header: () => <div className="text-right">Actions</div>, cell: ({ row }) => (
             <div className="flex items-center justify-end">
-                <Button variant="ghost" size="icon" onClick={() => handleInviteClick(row.original)}>
+                <Button variant="ghost" size="icon" onClick={() => handleInvite(row.original)} title="Invite Lead">
                     <Send className="h-4 w-4" />
                 </Button>
                  <LeadDialog lead={row.original} companyId={companyId!} onSave={forceRefresh}>
-                    <Button variant="ghost" size="icon"><Edit className="h-4 w-4" /></Button>
+                    <Button variant="ghost" size="icon" title="Edit Lead"><Edit className="h-4 w-4" /></Button>
                  </LeadDialog>
-                 <Button variant="ghost" size="icon" onClick={() => { setSelectedLead(row.original); setDeleteAlertOpen(true); }}>
+                 <Button variant="ghost" size="icon" onClick={() => { setSelectedLead(row.original); setDeleteAlertOpen(true); }} title="Delete Lead">
                     <Trash2 className="h-4 w-4 text-destructive" />
                 </Button>
             </div>
         )},
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     ], [companyId, forceRefresh]);
     
     const isLoading = isUserLoading || isUserDocLoading || areLeadsLoading;
 
     return (
-      <div className="space-y-8">
+      <>
         {/* Main Card */}
         <Card>
             <CardHeader className="flex flex-row items-center justify-between">
@@ -243,18 +263,38 @@ export default function NetworkContent() {
         </Card>
 
         {/* Invite Dialog */}
-        <Dialog open={inviteDialogOpen} onOpenChange={setInviteDialogOpen}>
+         <Dialog open={!!inviteLead} onOpenChange={(open) => !open && setInviteLead(null)}>
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>Invite {selectedLead?.companyName}</DialogTitle>
-                    <DialogDescription>
-                        Copy this unique link and send it to your lead. When they sign up, they will be added to your network.
-                    </DialogDescription>
+                    <DialogTitle>Provision Account for {inviteLead?.companyName}</DialogTitle>
                 </DialogHeader>
-                <div className="flex items-center space-x-2 py-4">
-                    <Input id="invite-link" value={inviteLink} readOnly />
-                    <Button type="button" size="sm" onClick={copyInviteLink}><Copy className="mr-2 h-4 w-4" /> Copy</Button>
-                </div>
+                {generatedLink ? (
+                    <div className="py-4 space-y-4">
+                        <p>Account provisioned! Send the following secure link to <span className="font-semibold">{inviteLead?.email}</span> for them to set their password and sign in.</p>
+                        <div className="flex items-center space-x-2">
+                            <Input id="invite-link" value={generatedLink} readOnly />
+                            <Button type="button" size="sm" onClick={copyInviteLink}><Copy className="mr-2 h-4 w-4" /> Copy</Button>
+                        </div>
+                    </div>
+                ) : (
+                     <div className="py-4">
+                        <p>
+                            This will create a new user account for <span className="font-semibold">{inviteLead?.email}</span> and generate a secure sign-up link. Are you sure you want to continue?
+                        </p>
+                    </div>
+                )}
+                 <DialogFooter>
+                    {generatedLink ? (
+                         <Button onClick={() => setInviteLead(null)}>Done</Button>
+                    ) : (
+                        <>
+                            <Button variant="ghost" onClick={() => setInviteLead(null)}>Cancel</Button>
+                            <Button onClick={provisionAccount} disabled={isProvisioning}>
+                                {isProvisioning ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null} Confirm & Generate Link
+                            </Button>
+                        </>
+                    )}
+                </DialogFooter>
             </DialogContent>
         </Dialog>
         
@@ -271,7 +311,6 @@ export default function NetworkContent() {
                 </AlertDialogFooter>
             </AlertDialogContent>
         </AlertDialog>
-
-      </div>
+      </>
     );
 }
