@@ -1,4 +1,3 @@
-
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminApp } from '@/lib/firebase-admin';
 import { getStorage } from 'firebase-admin/storage';
@@ -58,7 +57,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: true, url: publicUrl });
   } catch (error: any) {
     console.error('Error in uploadImageAsset:', error);
-    if (error.message?.includes('does not exist')) {
+    if (error.message?.includes('does not exist') || error.message?.includes('bucket was not found')) {
         const helpfulError = `Firebase Storage Error: The bucket was not found. Please ensure that Cloud Storage is enabled for your Firebase project in the Firebase Console.`;
         return NextResponse.json({ success: false, error: helpfulError }, { status: 500 });
     }

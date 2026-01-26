@@ -242,6 +242,7 @@ function AIGenerateDialog({
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [savedImageUrl, setSavedImageUrl] = useState<string | null>(null);
+  const [storageError, setStorageError] = useState<string | null>(null);
   const { toast } = useToast();
   const { user } = useUser();
   
@@ -250,6 +251,7 @@ function AIGenerateDialog({
         setPrompt(promptTemplate || '');
         setGeneratedImage(null);
         setSavedImageUrl(null);
+        setStorageError(null);
     }
   }, [isOpen, promptTemplate]);
 
@@ -261,6 +263,7 @@ function AIGenerateDialog({
     setIsLoading(true);
     setGeneratedImage(null);
     setSavedImageUrl(null);
+    setStorageError(null);
 
     try {
       const result = await generateImage({ prompt });
@@ -279,6 +282,7 @@ function AIGenerateDialog({
       return;
     }
     setIsApplying(true);
+    setStorageError(null);
     try {
       const token = await getClientSideAuthToken();
       if (!token) throw new Error("Authentication failed.");
@@ -310,7 +314,11 @@ function AIGenerateDialog({
       toast({ title: 'Image Applied!', description: 'The new image has been added.'});
       setIsOpen(false);
     } catch (e: any) {
-      toast({ variant: 'destructive', title: 'Failed to apply image', description: e.message });
+        if (e.message.includes('bucket was not found')) {
+            setStorageError(e.message);
+        } else {
+            toast({ variant: 'destructive', title: 'Failed to apply image', description: e.message });
+        }
     } finally {
       setIsApplying(false);
     }
@@ -338,6 +346,7 @@ function AIGenerateDialog({
 
         setIsSaving(true);
         setSavedImageUrl(null);
+        setStorageError(null);
 
         try {
             const token = await getClientSideAuthToken();
@@ -368,7 +377,11 @@ function AIGenerateDialog({
             setSavedImageUrl(result.url);
             toast({ title: 'Image Saved!', description: 'Your image has been saved to your asset gallery.' });
         } catch (error: any) {
-            toast({ variant: 'destructive', title: 'Save Failed', description: error.message });
+             if (error.message.includes('bucket was not found')) {
+                setStorageError(error.message);
+            } else {
+                toast({ variant: 'destructive', title: 'Save Failed', description: error.message });
+            }
         } finally {
             setIsSaving(false);
         }
@@ -395,6 +408,16 @@ function AIGenerateDialog({
             <Label htmlFor="generate-prompt">Prompt</Label>
             <Textarea id="generate-prompt" value={prompt} onChange={(e) => setPrompt(e.target.value)} placeholder="e.g., A shiny chrome truck exhaust pipe" rows={5}/>
           </div>
+           {storageError && (
+              <Alert variant="destructive">
+                  <ShieldAlert className="h-4 w-4" />
+                  <AlertTitle>Firebase Storage Not Enabled</AlertTitle>
+                  <AlertDescription>
+                      Before you can save images, you must enable Firebase Storage. Please follow the instructions in{' '}
+                      <a href="/docs/firebase-storage-setup.md" target="_blank" className="underline font-semibold">this setup guide</a> to resolve the issue.
+                  </AlertDescription>
+              </Alert>
+          )}
           <div className="relative aspect-square w-full rounded-md border border-dashed flex items-center justify-center bg-muted">
             {isLoading ? (
               <div className="text-center">
@@ -432,7 +455,7 @@ function AIGenerateDialog({
                         </Button>
                         <Button variant="outline" onClick={handleSaveToCloud} disabled={isApplying || isSaving || !!savedImageUrl}>
                             {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                            {savedImageUrl ? 'Saved' : 'Save to Gallery'}
+                            {savedImageUrl ? 'Saved' : 'Save to Cloud'}
                         </Button>
                     </>
                 )}
@@ -454,6 +477,7 @@ function ProductDialog({ shop, product, onComplete, children, canEdit }: { shop:
   const [isOpen, setIsOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [storageError, setStorageError] = useState<string | null>(null);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   const form = useForm<ProductFormValues>({
@@ -475,7 +499,8 @@ function ProductDialog({ shop, product, onComplete, children, canEdit }: { shop:
             price: product?.price || 0,
             sku: product?.sku || '',
             imageUrls: product?.imageUrls || [],
-        })
+        });
+        setStorageError(null);
     }
   }, [isOpen, product, form]);
 
@@ -530,20 +555,22 @@ function ProductDialog({ shop, product, onComplete, children, canEdit }: { shop:
     }
   };
 
-    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
 
         setUploading(true);
+        setStorageError(null);
         const fileRefInput = fileInputRef.current;
         
-        try {
-            const token = await getClientSideAuthToken();
-            if (!token) throw new Error("Authentication failed.");
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
 
-            const reader = new FileReader();
-            reader.readAsDataURL(file);
-            reader.onload = async () => {
+        reader.onload = async () => {
+            try {
+                const token = await getClientSideAuthToken();
+                if (!token) throw new Error("Authentication failed.");
+
                 const imageDataUri = reader.result as string;
                 const fileName = `${Date.now()}_${file.name}`;
                 const folder = 'product-images';
@@ -570,15 +597,20 @@ function ProductDialog({ shop, product, onComplete, children, canEdit }: { shop:
                 form.setValue('imageUrls', [...currentUrls, result.url], { shouldValidate: true });
                 toast({ title: 'Upload Complete!', description: `Image "${file.name}" added.` });
 
-                if (fileRefInput) fileRefInput.value = '';
+            } catch (error: any) {
+                if (error.message.includes('bucket was not found')) {
+                    setStorageError(error.message);
+                } else {
+                    toast({ variant: 'destructive', title: 'Upload Failed', description: error.message });
+                }
+            } finally {
                 setUploading(false);
-            };
-            reader.onerror = (error) => {
-                throw new Error("Could not read file for upload.");
+                if (fileRefInput) fileRefInput.value = '';
             }
+        };
 
-        } catch (error: any) {
-            toast({ variant: 'destructive', title: 'Upload Failed', description: error.message });
+        reader.onerror = () => {
+            toast({ variant: 'destructive', title: 'File Read Error', description: 'Could not read the selected file.' });
             setUploading(false);
             if (fileRefInput) fileRefInput.value = '';
         }
@@ -629,6 +661,17 @@ function ProductDialog({ shop, product, onComplete, children, canEdit }: { shop:
                         </FormItem>
                         )} />
                     </div>
+
+                    {storageError && (
+                        <Alert variant="destructive">
+                            <ShieldAlert className="h-4 w-4" />
+                            <AlertTitle>Firebase Storage Not Enabled</AlertTitle>
+                            <AlertDescription>
+                                Before you can upload images, you must enable Firebase Storage. Please follow the instructions in{' '}
+                                <a href="/docs/firebase-storage-setup.md" target="_blank" className="underline font-semibold">this setup guide</a> to resolve the issue.
+                            </AlertDescription>
+                        </Alert>
+                    )}
 
                     <div className="border rounded-md p-4 bg-muted/50">
                        <FormField control={form.control} name="imageUrls" render={({ field }) => (
