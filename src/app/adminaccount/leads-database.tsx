@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, useMemo, useEffect, Suspense, useCallback } from 'react';
@@ -468,7 +467,4 @@ export default function LeadsDatabase() {
     );
 }
 
-
-
-
-
+    
