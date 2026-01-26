@@ -561,5 +561,4 @@ export async function POST(req: NextRequest) {
         const status = error.message.includes('Forbidden') ? 403 : error.message.includes('Unauthorized') ? 401 : 500;
         return NextResponse.json({ success: false, error: error.message }, { status });
     }
-
-    
+}
