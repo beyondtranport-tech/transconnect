@@ -13,6 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useFirestore, useUser, useStorage, useCollection, getClientSideAuthToken } from '@/firebase';
 import { useMemoFirebase } from '@/hooks/use-config';
 import { doc, collection } from 'firebase/firestore';
+import { ref, uploadString, getDownloadURL, deleteObject } from 'firebase/storage';
 import { Loader2, Save, CheckCircle, LayoutGrid, List, Image as ImageIcon, Sparkles, PlusCircle, Edit, Trash2, Send, Eye, ShoppingCart, Mail, Phone, UploadCloud, Wand2, Video, Search, ShieldAlert, Download, Copy } from 'lucide-react';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -240,6 +241,9 @@ function AIGenerateDialog({
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   const { toast } = useToast();
   
+  const { user } = useUser();
+  const storage = useStorage();
+  
   useEffect(() => {
     if (!isOpen) {
         setPrompt(promptTemplate || '');
@@ -267,33 +271,22 @@ function AIGenerateDialog({
   };
 
   const handleApplyImage = async () => {
-    if (!generatedImage) return;
+    if (!generatedImage || !user || !storage) {
+        toast({ variant: 'destructive', title: 'Could not apply image.', description: 'User or storage service not available.' });
+        return;
+    }
     setIsApplying(true);
 
     try {
         const isHeroBanner = title.toLowerCase().includes('hero');
         const folder = isHeroBanner ? 'hero-images' : 'product-images';
         const fileName = `generated_${Date.now()}.png`;
-
-        const token = await getClientSideAuthToken();
-        if (!token) throw new Error("Authentication token not found.");
+        const storageRef = ref(storage, `user-assets/${user.uid}/${folder}/${fileName}`);
         
-        const response = await fetch('/api/uploadImageAsset', {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-                imageDataUri: generatedImage, 
-                folder: folder, 
-                fileName: fileName 
-            }),
-        });
-
-        const result = await response.json();
-        if (!response.ok || !result.success) {
-            throw new Error(result.error || 'Failed to upload image.');
-        }
+        await uploadString(storageRef, generatedImage, 'data_url');
+        const downloadURL = await getDownloadURL(storageRef);
         
-        onGenerate(result.url);
+        onGenerate(downloadURL);
         toast({ title: 'Image Applied!', description: 'The new image has been added.' });
         setIsOpen(false);
     } catch (e: any) {
@@ -378,6 +371,7 @@ function AIGenerateDialog({
 
 function ProductDialog({ shop, product, onComplete, children, canEdit }: { shop: any, product?: any, onComplete: () => void, children: React.ReactNode, canEdit: boolean }) {
   const { user } = useUser();
+  const storage = useStorage();
   const { toast } = useToast();
   const [isOpen, setIsOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -460,13 +454,13 @@ function ProductDialog({ shop, product, onComplete, children, canEdit }: { shop:
 
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
-        if (!file || !user) return;
+        if (!file || !user || !storage) return;
 
         setUploading(true);
 
         try {
-            const token = await getClientSideAuthToken();
-            if (!token) throw new Error("Authentication token not found.");
+            const fileName = `${Date.now()}_${file.name}`;
+            const storageRef = ref(storage, `user-assets/${user.uid}/product-images/${fileName}`);
 
             const reader = new FileReader();
             reader.readAsDataURL(file);
@@ -476,35 +470,29 @@ function ProductDialog({ shop, product, onComplete, children, canEdit }: { shop:
                     throw new Error("Could not read file data.");
                 }
 
-                 const response = await fetch('/api/uploadImageAsset', {
-                    method: 'POST',
-                    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
-                        imageDataUri: imageDataUri, 
-                        folder: 'product-images', 
-                        fileName: `${Date.now()}_${file.name}`
-                    }),
-                });
+                try {
+                    await uploadString(storageRef, imageDataUri, 'data_url');
+                    const downloadURL = await getDownloadURL(storageRef);
 
-                const result = await response.json();
-                if (!response.ok || !result.success) {
-                    throw new Error(result.error || 'Failed to upload image.');
+                    const currentUrls = form.getValues('imageUrls') || [];
+                    form.setValue('imageUrls', [...currentUrls, downloadURL], { shouldValidate: true });
+                    toast({ title: 'Upload Complete!', description: `Image "${file.name}" added.` });
+                    if (fileInputRef.current) fileInputRef.current.value = '';
+                } catch (uploadError: any) {
+                     console.error("Upload error:", uploadError);
+                     toast({ variant: 'destructive', title: 'Upload Failed', description: uploadError.message });
+                } finally {
+                    setUploading(false);
                 }
-                
-                const downloadURL = result.url;
-                const currentUrls = form.getValues('imageUrls') || [];
-                form.setValue('imageUrls', [...currentUrls, downloadURL], { shouldValidate: true });
-                toast({ title: 'Upload Complete!', description: `Image "${file.name}" added.` });
-                 if (fileInputRef.current) fileInputRef.current.value = '';
             };
             reader.onerror = (error) => {
+                setUploading(false);
                 throw new Error("Error reading file: " + error);
             }
 
         } catch (error: any) {
-            console.error("Upload error:", error);
+            console.error("File selection error:", error);
             toast({ variant: 'destructive', title: 'Upload Failed', description: error.message });
-        } finally {
             setUploading(false);
         }
     };
@@ -1237,3 +1225,5 @@ export function ShopWizard({ shop: initialShop }: { shop: any }) {
     </div>
   );
 }
+
+    
