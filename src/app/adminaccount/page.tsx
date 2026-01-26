@@ -109,12 +109,12 @@ function AdminAuthGuard({ children }: { children: React.ReactNode }) {
 
         if (!user) {
             router.replace('/signin?redirect=/adminaccount');
-        } else if (user.email !== 'beyondtransport@gmail.com' && user.email !== 'mkoton100@gmail.com') {
+        } else if (user.email !== 'beyondtransport@gmail.com' &amp;&amp; user.email !== 'mkoton100@gmail.com') {
             router.replace('/account'); 
         }
     }, [user, isUserLoading, router]);
 
-    if (isUserLoading || !user || (user.email !== 'beyondtransport@gmail.com' && user.email !== 'mkoton100@gmail.com')) {
+    if (isUserLoading || !user || (user.email !== 'beyondtransport@gmail.com' &amp;&amp; user.email !== 'mkoton100@gmail.com')) {
         return (
             <div className="flex flex-col justify-center items-center min-h-[calc(100vh-8rem)]">
                 <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -149,7 +149,7 @@ function AdminAccountContent() {
       // Dashboard
       case 'dashboard': return <DashboardContent />;
 
-      // User Management
+      // User Management moved into strategy section
       case 'members': return <MembersList />;
       case 'staff-management': return <StaffManagement />;
       case 'partners': return <PartnerManagement />;
@@ -207,9 +207,12 @@ function AdminAccountContent() {
 
   const navigate = (view: string) => router.push(`/adminaccount?view=${view}`, { scroll: false });
   
-  const isUserManagementActive = ['members', 'staff-management', 'partners', 'isa-agents'].includes(activeView);
   const isSalesActive = ['leads-agent', 'leads-database', 'marketing-studio', 'investor-studio', 'partner-studio', 'audio-studio', 'asset-gallery'].includes(activeView);
-  const isStrategyActive = ['partner-offer', 'commissions-isa', 'member-sales-offer', 'member-sales-emails', 'member-sales-performance', 'partner-pitch', 'partner-emails', 'elevator-pitch', 'investor-offer', 'investor-emails'].includes(activeView);
+  const isStrategyActive = [
+    'partner-offer', 'commissions-isa', 'member-sales-offer', 'member-sales-emails', 
+    'member-sales-performance', 'partner-pitch', 'partner-emails', 'elevator-pitch', 
+    'investor-offer', 'investor-emails', 'isa-agents', 'members', 'partners'
+  ].includes(activeView);
   const isFinancialsActive = ['financial-setup', 'sales-roadmap', 'targets', 'member-projection', 'cost-calculator', 'budget', 'forecast'].includes(activeView);
 
   return (
@@ -231,17 +234,8 @@ function AdminAccountContent() {
                         <LayoutDashboard /><span>Dashboard</span>
                     </SidebarMenuButton>
                 </SidebarMenuItem>
-                 <SidebarMenuItem>
-                  <SidebarMenuButton tooltip="User Management" isActive={isUserManagementActive}><Users /><span>User Management</span></SidebarMenuButton>
-                  <SidebarMenuSub>
-                    <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'members'} onClick={() => navigate('members')}>Members</SidebarMenuSubButton></SidebarMenuSubItem>
-                    <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'staff-management'} onClick={() => navigate('staff-management')}>Staff</SidebarMenuSubButton></SidebarMenuSubItem>
-                    <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'partners'} onClick={() => navigate('partners')}>Partners</SidebarMenuSubButton></SidebarMenuSubItem>
-                    <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'isa-agents'} onClick={() => navigate('isa-agents')}>ISA Agents</SidebarMenuSubButton></SidebarMenuSubItem>
-                  </SidebarMenuSub>
-                </SidebarMenuItem>
                 <SidebarMenuItem>
-                  <SidebarMenuButton tooltip="Sales & Marketing" isActive={isSalesActive}><Handshake /><span>Sales & Marketing</span></SidebarMenuButton>
+                  <SidebarMenuButton tooltip="Sales &amp; Marketing" isActive={isSalesActive}><Handshake /><span>Sales &amp; Marketing</span></SidebarMenuButton>
                   <SidebarMenuSub>
                     <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'leads-agent'} onClick={() => navigate('leads-agent')}><Bot />AI Leads Agent</SidebarMenuSubButton></SidebarMenuSubItem>
                     <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'leads-database'} onClick={() => navigate('leads-database')}><Database />Leads Database</SidebarMenuSubButton></SidebarMenuSubItem>
@@ -254,9 +248,14 @@ function AdminAccountContent() {
                   </SidebarMenuSub>
                 </SidebarMenuItem>
                 <SidebarMenuItem>
-                  <SidebarMenuButton tooltip="Strategy & Pitching" isActive={isStrategyActive}><Presentation /><span>Strategy & Pitching</span></SidebarMenuButton>
+                  <SidebarMenuButton tooltip="Strategy &amp; Pitching" isActive={isStrategyActive}><Presentation /><span>Strategy &amp; Pitching</span></SidebarMenuButton>
                   <SidebarMenuSub>
                     <SidebarMenuSubItem><span className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">ISA Agents</span></SidebarMenuSubItem>
+                    <SidebarMenuSubItem>
+                        <SidebarMenuSubButton isActive={activeView === 'isa-agents'} onClick={() => navigate('isa-agents')}>
+                            <Bot /> ISA Management
+                        </SidebarMenuSubButton>
+                    </SidebarMenuSubItem>
                     <SidebarMenuSubItem>
                         <SidebarMenuSubButton isActive={activeView === 'partner-offer'} onClick={() => navigate('partner-offer')}>
                             <Presentation /> ISA Offer
@@ -269,6 +268,11 @@ function AdminAccountContent() {
                     </SidebarMenuSubItem>
                     <SidebarMenuSeparator />
                     <SidebarMenuSubItem><span className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">Network Members</span></SidebarMenuSubItem>
+                    <SidebarMenuSubItem>
+                        <SidebarMenuSubButton isActive={activeView === 'members'} onClick={() => navigate('members')}>
+                           <Users /> Member Roster
+                        </SidebarMenuSubButton>
+                    </SidebarMenuSubItem>
                     <SidebarMenuSubItem>
                         <SidebarMenuSubButton isActive={activeView === 'member-sales-offer'} onClick={() => navigate('member-sales-offer')}>
                             <Presentation /> Network Offer
@@ -286,6 +290,11 @@ function AdminAccountContent() {
                     </SidebarMenuSubItem>
                     <SidebarMenuSeparator />
                      <SidebarMenuSubItem><span className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">Strategic Partners</span></SidebarMenuSubItem>
+                      <SidebarMenuSubItem>
+                          <SidebarMenuSubButton isActive={activeView === 'partners'} onClick={() => navigate('partners')}>
+                              <Handshake /> Partner Management
+                          </SidebarMenuSubButton>
+                      </SidebarMenuSubItem>
                      <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'partner-pitch'} onClick={() => navigate('partner-pitch')}><Info />Partner Pitch</SidebarMenuSubButton></SidebarMenuSubItem>
                      <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'partner-emails'} onClick={() => navigate('partner-emails')}><Mail />Partner Emails</SidebarMenuSubButton></SidebarMenuSubItem>
                      <SidebarMenuSeparator />
@@ -294,6 +303,11 @@ function AdminAccountContent() {
                      <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'investor-offer'} onClick={() => navigate('investor-offer')}><Presentation />Investor Offer</SidebarMenuSubButton></SidebarMenuSubItem>
                      <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'investor-emails'} onClick={() => navigate('investor-emails')}><Mail />Investor Emails</SidebarMenuSubButton></SidebarMenuSubItem>
                   </SidebarMenuSub>
+                </SidebarMenuItem>
+                 <SidebarMenuItem>
+                    <SidebarMenuButton tooltip="Staff Management" isActive={activeView === 'staff-management'} onClick={() => navigate('staff-management')}>
+                        <Users /><span>All Staff</span>
+                    </SidebarMenuButton>
                 </SidebarMenuItem>
                 <SidebarMenuItem>
                   <SidebarMenuButton tooltip="Financials" isActive={isFinancialsActive}><DollarSign /><span>Financials</span></SidebarMenuButton>
@@ -310,7 +324,7 @@ function AdminAccountContent() {
             </SidebarGroup>
           </SidebarContent>
           <SidebarFooter>
-          {user && (
+          {user &amp;&amp; (
               <div className="flex items-center gap-3 p-2 rounded-md bg-sidebar-accent">
               <Avatar className="h-10 w-10">
                   <AvatarFallback>{getInitials(user.displayName)}</AvatarFallback>
