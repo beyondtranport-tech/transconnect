@@ -34,8 +34,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
+} from '@/components/ui/alert-dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import Image from 'next/image';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -240,19 +239,15 @@ function AIGenerateDialog({
   const [isLoading, setIsLoading] = useState(false);
   const [isApplying, setIsApplying] = useState(false);
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
-  const [isSaving, setIsSaving] = useState(false);
-  const [savedImageUrl, setSavedImageUrl] = useState<string | null>(null);
-  const [storageError, setStorageError] = useState<string | null>(null);
   const { toast } = useToast();
   const { user } = useUser();
-  const storage = useStorage();
+  const [storageError, setStorageError] = useState<string | null>(null);
   const [isSetupGuideOpen, setIsSetupGuideOpen] = useState(false);
   
   useEffect(() => {
     if (!isOpen) {
         setPrompt(promptTemplate || '');
         setGeneratedImage(null);
-        setSavedImageUrl(null);
         setStorageError(null);
     }
   }, [isOpen, promptTemplate]);
@@ -264,7 +259,6 @@ function AIGenerateDialog({
     }
     setIsLoading(true);
     setGeneratedImage(null);
-    setSavedImageUrl(null);
     setStorageError(null);
 
     try {
@@ -278,36 +272,34 @@ function AIGenerateDialog({
     }
   };
 
-  const saveToStorage = async (dataUri: string): Promise<string> => {
-    if (!user || !storage) {
-        throw new Error("User or storage service not available.");
-    }
-    
-    const isHeroBanner = title.toLowerCase().includes('hero');
-    const folder = isHeroBanner ? 'hero-images' : 'product-images';
-    const fileName = `generated_${Date.now()}.png`;
-    const filePath = `user-assets/${user.uid}/${folder}/${fileName}`;
-    const imageRef = storageRef(storage, filePath);
-    
-    const base64Data = dataUri.split(',')[1];
-    await uploadString(imageRef, base64Data, 'base64', { contentType: 'image/png' });
-    const publicUrl = await getDownloadURL(imageRef);
-    return publicUrl;
-  };
-
-
   const handleApplyImage = async () => {
-    if (!generatedImage) {
+    if (!generatedImage || !user) {
       toast({ variant: 'destructive', title: 'Error', description: 'No image generated to apply.' });
       return;
     }
     setIsApplying(true);
     setStorageError(null);
     try {
-      const url = await saveToStorage(generatedImage);
-      onGenerate(url);
-      toast({ title: 'Image Applied!', description: 'The new image has been added.'});
-      setIsOpen(false);
+        const token = await getClientSideAuthToken();
+        if (!token) throw new Error("Authentication token not found.");
+        
+        const isHeroBanner = title.toLowerCase().includes('hero');
+        const folder = isHeroBanner ? 'hero-images' : 'product-images';
+        const fileName = `generated_${Date.now()}.png`;
+        const filePath = `user-assets/${user.uid}/${folder}/${fileName}`;
+
+        const response = await fetch('/api/uploadImageAsset', {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ file: generatedImage, path: filePath }),
+        });
+
+        const result = await response.json();
+        if (!response.ok || !result.success) throw new Error(result.error);
+        
+        onGenerate(result.url);
+        toast({ title: 'Image Applied!', description: 'The new image has been added.'});
+        setIsOpen(false);
     } catch (e: any) {
         if (e.message.includes('bucket')) {
             setStorageError("Firebase Storage not enabled. Please follow the setup guide.");
@@ -332,37 +324,6 @@ function AIGenerateDialog({
             description: 'The image has been saved to your downloads folder.',
         });
     };
-
-    const handleSaveToCloud = async () => {
-        if (!generatedImage) {
-            toast({ variant: 'destructive', title: 'Error', description: 'No image to save.' });
-            return;
-        }
-
-        setIsSaving(true);
-        setSavedImageUrl(null);
-        setStorageError(null);
-
-        try {
-            const publicUrl = await saveToStorage(generatedImage);
-            setSavedImageUrl(publicUrl);
-            toast({ title: 'Image Saved!', description: 'Your image has been saved to your asset gallery.' });
-        } catch (error: any) {
-             if (error.message.includes('bucket')) {
-                setStorageError("Firebase Storage not enabled. Please follow the setup guide.");
-            } else {
-                toast({ variant: 'destructive', title: 'Save Failed', description: error.message });
-            }
-        } finally {
-            setIsSaving(false);
-        }
-    };
-
-    const copyUrlToClipboard = () => {
-        if (!savedImageUrl) return;
-        navigator.clipboard.writeText(savedImageUrl);
-        toast({ title: 'URL Copied!' });
-    }
 
   return (
     <>
@@ -402,37 +363,22 @@ function AIGenerateDialog({
                 <p className="text-sm text-muted-foreground">Generated image will appear here.</p>
               )}
             </div>
-             {savedImageUrl && (
-                <div className="space-y-2">
-                    <Label>Cloud URL</Label>
-                    <div className="flex items-center gap-2">
-                        <Input value={savedImageUrl} readOnly />
-                        <Button variant="outline" size="icon" onClick={copyUrlToClipboard}>
-                            <Copy className="h-4 w-4"/>
-                        </Button>
-                    </div>
-                </div>
-            )}
           </div>
           <DialogFooter className="sm:justify-between">
              <div className="flex flex-wrap items-center gap-2">
                   {generatedImage && (
                       <>
-                          <Button onClick={handleApplyImage} disabled={isApplying || isSaving}>
+                          <Button onClick={handleApplyImage} disabled={isApplying}>
                               {isApplying ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle className="mr-2 h-4 w-4" />}
                               Apply Image
                           </Button>
-                          <Button variant="secondary" onClick={handleDownload} disabled={isApplying || isSaving}>
+                          <Button variant="secondary" onClick={handleDownload} disabled={isApplying}>
                               <Download className="mr-2 h-4 w-4" /> Download
-                          </Button>
-                          <Button variant="outline" onClick={handleSaveToCloud} disabled={isApplying || isSaving || !!savedImageUrl}>
-                              {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                              {savedImageUrl ? 'Saved' : 'Save to Cloud'}
                           </Button>
                       </>
                   )}
              </div>
-             <Button onClick={handleGenerate} disabled={isLoading || isApplying || isSaving || !canEdit}>
+             <Button onClick={handleGenerate} disabled={isLoading || isApplying || !canEdit}>
                   {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
                   Generate New Image
               </Button>
@@ -481,7 +427,6 @@ function AIGenerateDialog({
 
 function ProductDialog({ shop, product, onComplete, children, canEdit }: { shop: any, product?: any, onComplete: () => void, children: React.ReactNode, canEdit: boolean }) {
   const { user } = useUser();
-  const storage = useStorage();
   const { toast } = useToast();
   const [isOpen, setIsOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -567,34 +512,66 @@ function ProductDialog({ shop, product, onComplete, children, canEdit }: { shop:
 
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
-        if (!file || !storage || !user) return;
+        if (!file || !user) return;
 
         setUploading(true);
         setStorageError(null);
         const fileRefInput = fileInputRef.current;
 
         try {
-            const fileName = `${Date.now()}_${file.name}`;
-            const filePath = `user-assets/${user.uid}/product-images/${fileName}`;
-            const fileRef = storageRef(storage, filePath);
-            
-            await uploadBytes(fileRef, file);
-            const downloadURL = await getDownloadURL(fileRef);
-            
-            const currentUrls = form.getValues('imageUrls') || [];
-            form.setValue('imageUrls', [...currentUrls, downloadURL], { shouldValidate: true });
-            toast({ title: 'Upload Complete!', description: `Image "${file.name}" added.` });
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = async () => {
+                try {
+                    const base64File = reader.result as string;
+
+                    const token = await getClientSideAuthToken();
+                    if (!token) throw new Error("Authentication token not found.");
+                    
+                    const fileName = `${Date.now()}_${file.name}`;
+                    const filePath = `user-assets/${user.uid}/product-images/${fileName}`;
+
+                    const response = await fetch('/api/uploadImageAsset', {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ file: base64File, path: filePath }),
+                    });
+
+                    const result = await response.json();
+                    if (!response.ok || !result.success) {
+                        throw new Error(result.error || 'Failed to upload image.');
+                    }
+                    
+                    const downloadURL = result.url;
+                    
+                    const currentUrls = form.getValues('imageUrls') || [];
+                    form.setValue('imageUrls', [...currentUrls, downloadURL], { shouldValidate: true });
+                    toast({ title: 'Upload Complete!', description: `Image "${file.name}" added.` });
+                } catch(e: any) {
+                     console.error("Upload error:", e);
+                    if (e.message.includes('bucket')) {
+                        setStorageError("Firebase Storage not enabled. Please follow the setup guide.");
+                    } else {
+                        toast({ variant: 'destructive', title: 'Upload Failed', description: e.message });
+                    }
+                } finally {
+                    setUploading(false);
+                    if (fileRefInput) fileRefInput.value = '';
+                }
+            };
+
+            reader.onerror = (error) => {
+                throw new Error("Failed to read the file.");
+            }
 
         } catch (error: any) {
-            console.error("Upload error:", error);
-            if (error.message.includes('bucket')) {
-                setStorageError("Firebase Storage not enabled. Please follow the setup guide.");
-            } else {
-                toast({ variant: 'destructive', title: 'Upload Failed', description: error.message });
-            }
-        } finally {
-            setUploading(false);
-            if (fileRefInput) fileRefInput.value = '';
+             console.error("File Reader error:", error);
+             setStorageError(error.message || "An unknown error occurred during upload.");
+             setUploading(false);
+             if (fileRefInput) fileRefInput.value = '';
         }
     };
 
@@ -770,6 +747,7 @@ function Step2Products({ shop, canEdit }: { shop: any, canEdit: boolean }) {
   const { toast } = useToast();
   const [productToDelete, setProductToDelete] = useState<any>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
 
   const productsQuery = useMemoFirebase(() => {
     if (!firestore || !shop?.companyId || !shop?.id) return null;
@@ -807,6 +785,7 @@ function Step2Products({ shop, canEdit }: { shop: any, canEdit: boolean }) {
     } finally {
         setIsDeleting(false);
         setProductToDelete(null);
+        setIsDeleteAlertOpen(false);
     }
   };
 
@@ -848,7 +827,7 @@ function Step2Products({ shop, canEdit }: { shop: any, canEdit: boolean }) {
                                     </div>
                                 </TableCell>
                                 <TableCell>{product.name}</TableCell>
-                                <TableCell>${product.price.toFixed(2)}</TableCell>
+                                <TableCell>R {product.price.toFixed(2)}</TableCell>
                                 <TableCell>{product.sku || '-'}</TableCell>
                                 <TableCell className="text-right">
                                     <div className="flex justify-end gap-2">
@@ -857,9 +836,9 @@ function Step2Products({ shop, canEdit }: { shop: any, canEdit: boolean }) {
                                                 <Edit className="h-4 w-4" />
                                             </Button>
                                         </ProductDialog>
-                                        <AlertDialog>
+                                        <AlertDialog open={isDeleteAlertOpen && productToDelete?.id === product.id} onOpenChange={(open) => {if(!open) setIsDeleteAlertOpen(false)}}>
                                             <AlertDialogTrigger asChild>
-                                                <Button variant="ghost" size="icon" onClick={() => setProductToDelete(product)} disabled={!canEdit || !canDeleteProducts}>
+                                                <Button variant="ghost" size="icon" onClick={() => {setProductToDelete(product); setIsDeleteAlertOpen(true);}} disabled={!canEdit || !canDeleteProducts}>
                                                     <Trash2 className="h-4 w-4 text-destructive" />
                                                 </Button>
                                             </AlertDialogTrigger>
@@ -1370,3 +1349,5 @@ export function ShopWizard({ shop: initialShop }: { shop: any }) {
     </div>
   );
 }
+
+    
