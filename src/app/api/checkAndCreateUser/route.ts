@@ -42,13 +42,12 @@ export async function POST(req: NextRequest) {
     }
 
     const batch = db.batch();
+    const loyaltyConfigDoc = await db.collection('configuration').doc('loyaltySettings').get();
 
     // Check for partner invitation FIRST
     const partnerQuery = db.collection('partners').where('email', '==', firebaseUser.email).limit(1);
     const partnerSnap = await partnerQuery.get();
-
     if (!partnerSnap.empty) {
-        // Handle Partner Registration
         console.log(`Found pending partner invitation for email: ${firebaseUser.email}`);
         const partnerDoc = partnerSnap.docs[0];
         const partnerData = partnerDoc.data();
@@ -64,8 +63,8 @@ export async function POST(req: NextRequest) {
             lastName: partnerData.lastName || (nameParts.length > 1 ? nameParts.slice(1).join(' ') : 'User'),
             email: firebaseUser.email,
             phone: firebaseUser.phoneNumber || '',
-            companyId: null, // Partners do not have a company ID
-            role: 'partner', // Assign a partner role
+            companyId: null,
+            role: 'partner',
             createdAt: FieldValue.serverTimestamp(),
             updatedAt: FieldValue.serverTimestamp(),
         });
@@ -76,13 +75,11 @@ export async function POST(req: NextRequest) {
         const staffSnap = await staffQuery.get();
 
         if (!staffSnap.empty) {
-            // Handle Staff Registration
             console.log(`Found pending staff invitation for email: ${firebaseUser.email}`);
             const invitedStaffDoc = staffSnap.docs[0];
             const invitedStaffData = invitedStaffDoc.data();
             const companyId = invitedStaffData.companyId;
 
-            // Create the new user document, linked to the correct company
             batch.set(userDocRef, {
                 id: firebaseUser.uid,
                 firstName: invitedStaffData.firstName,
@@ -90,22 +87,33 @@ export async function POST(req: NextRequest) {
                 email: firebaseUser.email,
                 phone: firebaseUser.phoneNumber || '',
                 companyId: companyId,
-                role: 'staff', // Assign the staff role
+                role: 'staff',
                 createdAt: FieldValue.serverTimestamp(),
                 updatedAt: FieldValue.serverTimestamp(),
             });
             
-            // Delete the original invitation document
-            batch.delete(invitedStaffDoc.ref);
-
-            // Re-create the staff document using the UID as the key for permissioning
+            // Re-create the staff document using the UID as the key for permissioning and update status
             const newStaffDocRef = db.collection(`companies/${companyId}/staff`).doc(firebaseUser.uid);
-            batch.set(newStaffDocRef, { ...invitedStaffData, id: firebaseUser.uid });
-        } else {
-            // Handle Standard User/Company Registration
-            console.log(`Document for user ${firebaseUser.uid} not found. Creating user and company documents.`);
+            batch.set(newStaffDocRef, { ...invitedStaffData, id: firebaseUser.uid, status: 'confirmed' });
+            batch.delete(invitedStaffDoc.ref);
             
-            const loyaltyConfigDoc = await db.collection('configuration').doc('loyaltySettings').get();
+        } else {
+            // Check for a lead invitation before standard signup
+            const leadQuery = db.collectionGroup('leads').where('email', '==', firebaseUser.email).limit(1);
+            const leadSnap = await leadQuery.get();
+            if (!leadSnap.empty) {
+                console.log(`Found lead for email: ${firebaseUser.email}`);
+                const leadDoc = leadSnap.docs[0];
+                batch.update(leadDoc.ref, { status: 'registered' });
+                // If the link didn't have a referrer, use the one from the lead.
+                if (!referrerId) {
+                    referrerId = leadDoc.data().companyId;
+                }
+            }
+
+            // Handle Standard User/Company Registration
+            console.log(`Creating standard user and company for ${firebaseUser.email}.`);
+            
             const signupPoints = loyaltyConfigDoc.data()?.userSignupPoints || 50;
 
             const displayName = firebaseUser.displayName || '';
@@ -155,7 +163,6 @@ export async function POST(req: NextRequest) {
         }
     }
     
-    // Single, safe commit for all code paths.
     await batch.commit();
 
     console.log(`Successfully processed registration for ${firebaseUser.email}.`);

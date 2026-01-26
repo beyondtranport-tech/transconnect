@@ -1,6 +1,7 @@
+
 'use client';
 
-import { useState, useMemo, useCallback, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -142,6 +143,30 @@ export default function NetworkContent() {
         navigator.clipboard.writeText(inviteLink);
         toast({ title: 'Invite Link Copied!' });
     };
+
+    const handleInviteClick = async (lead: any) => {
+        setSelectedLead(lead);
+        setInviteDialogOpen(true); // Open dialog immediately for better UX
+    
+        try {
+            const token = await getClientSideAuthToken();
+            if (!token) throw new Error("Authentication failed.");
+            
+            await fetch('/api/updateUserDoc', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    path: `companies/${companyId}/leads/${lead.id}`,
+                    data: { status: 'contacted' }
+                }),
+            });
+    
+            forceRefresh(); // Refresh the data table in the background
+            toast({ title: "Lead Status Updated", description: `Marked ${lead.companyName} as 'Contacted'.` });
+        } catch(e: any) {
+            toast({ variant: 'destructive', title: 'Could not update lead status', description: e.message });
+        }
+    };
     
     const handleDelete = async () => {
         if (!companyId || !selectedLead) return;
@@ -176,7 +201,7 @@ export default function NetworkContent() {
         { accessorKey: 'status', header: 'Status', cell: ({ row }) => <Badge className="capitalize">{row.original.status}</Badge> },
         { id: 'actions', header: () => <div className="text-right">Actions</div>, cell: ({ row }) => (
             <div className="flex items-center justify-end">
-                <Button variant="ghost" size="icon" onClick={() => { setSelectedLead(row.original); setInviteDialogOpen(true); }}>
+                <Button variant="ghost" size="icon" onClick={() => handleInviteClick(row.original)}>
                     <Send className="h-4 w-4" />
                 </Button>
                  <LeadDialog lead={row.original} companyId={companyId!} onSave={forceRefresh}>
