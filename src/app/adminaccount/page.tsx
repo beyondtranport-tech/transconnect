@@ -61,6 +61,7 @@ const DashboardContent = dynamic(() => import('./dashboard-content'), { loading:
 const MembersList = dynamic(() => import('./members-list'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const StaffManagement = dynamic(() => import('./staff-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const PartnerManagement = dynamic(() => import('./partner-management'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const ISAManagement = dynamic(() => import('./isa-management'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 
 
 // Sales & Marketing
@@ -150,7 +151,8 @@ function AdminAccountContent() {
       // User Management
       case 'members': return <MembersList />;
       case 'staff-management': return <StaffManagement />;
-      case 'partner-management': return <PartnerManagement />;
+      case 'partners': return <PartnerManagement />;
+      case 'isa-agents': return <ISAManagement />;
       
       // Sales & Marketing
       case 'leads-agent': return <LeadsAgent />;
@@ -206,7 +208,7 @@ function AdminAccountContent() {
 
   const navigate = (view: string) => router.push(`/adminaccount?view=${view}`, { scroll: false });
   
-  const isUserManagementActive = ['members', 'staff-management', 'partner-management'].includes(activeView);
+  const isUserManagementActive = ['members', 'staff-management', 'partners', 'isa-agents'].includes(activeView);
   const isSalesActive = ['leads-agent', 'leads-database', 'marketing-studio', 'investor-studio', 'partner-studio', 'audio-studio', 'asset-gallery', 'member-sales-offer', 'member-sales-emails', 'member-sales-performance'].includes(activeView);
   const isStrategyActive = ['partner-offer', 'investor-offer', 'elevator-pitch', 'partner-pitch', 'partner-emails', 'investor-emails', 'commissions-isa'].includes(activeView);
   const isFinancialsActive = ['financial-setup', 'sales-roadmap', 'targets', 'member-projection', 'cost-calculator', 'budget', 'forecast'].includes(activeView);
@@ -235,7 +237,8 @@ function AdminAccountContent() {
                   <SidebarMenuSub>
                     <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'members'} onClick={() => navigate('members')}>Members</SidebarMenuSubButton></SidebarMenuSubItem>
                     <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'staff-management'} onClick={() => navigate('staff-management')}>Staff</SidebarMenuSubButton></SidebarMenuSubItem>
-                    <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'partner-management'} onClick={() => navigate('partner-management')}>Partners & ISAs</SidebarMenuSubButton></SidebarMenuSubItem>
+                    <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'partners'} onClick={() => navigate('partners')}>Partners</SidebarMenuSubButton></SidebarMenuSubItem>
+                    <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'isa-agents'} onClick={() => navigate('isa-agents')}>ISA Agents</SidebarMenuSubButton></SidebarMenuSubItem>
                   </SidebarMenuSub>
                 </SidebarMenuItem>
                 <SidebarMenuItem>

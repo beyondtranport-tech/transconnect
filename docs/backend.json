@@ -1,4 +1,3 @@
-
 {
   "entities": {
     "User": {
@@ -14,6 +13,7 @@
         "phone": { "type": "string" },
         "companyId": { "type": ["string", "null"], "description": "The ID of the company this user belongs to in the /companies collection. Null for partners." },
         "role": { "type": "string", "enum": ["owner", "staff", "partner"], "description": "The user's role in the system." },
+        "passwordChangeRequired": { "type": "boolean", "description": "If true, the user must change their password on next login." },
         "createdAt": { "type": "object" },
         "updatedAt": { "type": "object" }
       },
@@ -61,6 +61,7 @@
         "companyName": { "type": "string", "description": "The name of the partner's own company." },
         "status": { "type": "string", "enum": ["active", "inactive"], "description": "The operational status of the partnership." },
         "invitationStatus": { "type": "string", "enum": ["pending", "invited", "registered"], "description": "The status of their invitation to join the platform." },
+        "type": { "type": "string", "enum": ["partner", "isa"], "description": "The type of partner, either a strategic Partner or an ISA." },
         "createdAt": { "type": "object" },
         "updatedAt": { "type": "object" }
       },

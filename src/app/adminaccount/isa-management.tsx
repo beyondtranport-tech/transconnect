@@ -37,7 +37,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useCollection, useFirestore, getClientSideAuthToken } from '@/firebase';
 import { useMemoFirebase } from '@/hooks/use-config';
 import { collection, query, where } from 'firebase/firestore';
-import { Loader2, PlusCircle, Handshake, Edit, Trash2, Send, Copy } from 'lucide-react';
+import { Loader2, PlusCircle, Bot, Edit, Trash2, Send, Copy } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -69,7 +69,7 @@ const partnerSchema = z.object({
 
 type PartnerFormValues = z.infer<typeof partnerSchema>;
 
-function PartnerDialog({ open, onOpenChange, partner, onSave }: { open: boolean; onOpenChange: (open: boolean) => void; partner?: any; onSave: () => void; }) {
+function ISADialog({ open, onOpenChange, partner, onSave }: { open: boolean; onOpenChange: (open: boolean) => void; partner?: any; onSave: () => void; }) {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
@@ -99,9 +99,9 @@ function PartnerDialog({ open, onOpenChange, partner, onSave }: { open: boolean;
         const token = await getClientSideAuthToken();
         if (!token) throw new Error("Authentication failed.");
         
-        await performAdminAction(token, 'savePartner', { partner: { id: partner?.id, ...values, type: 'partner' } });
+        await performAdminAction(token, 'savePartner', { partner: { id: partner?.id, ...values, type: 'isa' } });
 
-        toast({ title: partner ? 'Partner Updated' : 'Partner Added' });
+        toast({ title: partner ? 'ISA Updated' : 'ISA Added' });
         onSave();
         onOpenChange(false);
     } catch(e: any) {
@@ -115,9 +115,9 @@ function PartnerDialog({ open, onOpenChange, partner, onSave }: { open: boolean;
     <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="sm:max-w-lg">
             <DialogHeader>
-                <DialogTitle>{partner ? 'Edit Partner' : 'Add New Partner'}</DialogTitle>
+                <DialogTitle>{partner ? 'Edit ISA' : 'Add New ISA'}</DialogTitle>
                 <DialogDescription>
-                    Enter the details for the strategic partner.
+                    Enter the details for the Independent Sales Agent.
                 </DialogDescription>
             </DialogHeader>
             <Form {...form}>
@@ -130,7 +130,7 @@ function PartnerDialog({ open, onOpenChange, partner, onSave }: { open: boolean;
                     <FormField control={form.control} name="companyName" render={({ field }) => ( <FormItem><FormLabel>Company Name (Optional)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
                     <FormField control={form.control} name="status" render={({ field }) => ( <FormItem><FormLabel>Status</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="active">Active</SelectItem><SelectItem value="inactive">Inactive</SelectItem></SelectContent></Select><FormMessage /></FormItem> )} />
                      <DialogFooter className="pt-4">
-                        <Button type="submit" disabled={isLoading}>{isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null} Save Partner</Button>
+                        <Button type="submit" disabled={isLoading}>{isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null} Save ISA</Button>
                     </DialogFooter>
                 </form>
             </Form>
@@ -139,25 +139,25 @@ function PartnerDialog({ open, onOpenChange, partner, onSave }: { open: boolean;
   );
 }
 
-function PartnerActionMenu({ onInvite, onEdit, onDelete }: { onInvite: () => void; onEdit: () => void; onDelete: () => void; }) {
+function ISAActionMenu({ onInvite, onEdit, onDelete }: { onInvite: () => void; onEdit: () => void; onDelete: () => void; }) {
   return (
     <div className="flex justify-end items-center gap-1">
-      <Button variant="ghost" size="icon" onClick={onInvite} title="Invite Partner">
+      <Button variant="ghost" size="icon" onClick={onInvite} title="Invite ISA">
         <Send className="h-4 w-4" />
       </Button>
-      <Button variant="ghost" size="icon" onClick={onEdit} title="Edit Partner">
+      <Button variant="ghost" size="icon" onClick={onEdit} title="Edit ISA">
         <Edit className="h-4 w-4" />
       </Button>
-      <Button variant="ghost" size="icon" onClick={onDelete} title="Delete Partner">
+      <Button variant="ghost" size="icon" onClick={onDelete} title="Delete ISA">
         <Trash2 className="h-4 w-4 text-destructive" />
       </Button>
     </div>
   );
 }
 
-export default function PartnerManagement() {
+export default function ISAManagement() {
   const firestore = useFirestore();
-  const partnersQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'partners'), where('type', '==', 'partner')) : null, [firestore]);
+  const partnersQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'partners'), where('type', '==', 'isa')) : null, [firestore]);
   const { data: partners, isLoading, forceRefresh } = useCollection(partnersQuery);
   const { toast } = useToast();
 
@@ -172,9 +172,9 @@ export default function PartnerManagement() {
                 partnerId: data.id
             });
             forceRefresh();
-            toast({ title: "Partner Invite Ready", description: "Status updated to 'invited'. You can now send the link." });
+            toast({ title: "ISA Invite Ready", description: "Status updated to 'invited'. You can now send the link." });
         } catch (e: any) {
-            toast({ variant: 'destructive', title: 'Action Failed', description: `Could not update partner status: ${e.message}` });
+            toast({ variant: 'destructive', title: 'Action Failed', description: `Could not update ISA status: ${e.message}` });
             return;
         }
     }
@@ -196,7 +196,7 @@ export default function PartnerManagement() {
         const token = await getClientSideAuthToken();
         if (!token) throw new Error("Authentication failed.");
         await performAdminAction(token, 'deletePartner', { partnerId: dialogState.data.id });
-        toast({ title: 'Partner Deleted' });
+        toast({ title: 'ISA Deleted' });
         handleSave();
     } catch (e: any) {
         toast({ variant: 'destructive', title: 'Delete Failed', description: e.message });
@@ -221,7 +221,7 @@ export default function PartnerManagement() {
 
   return (
     <>
-      <PartnerDialog 
+      <ISADialog 
         open={dialogState.type === 'add' || dialogState.type === 'edit'}
         onOpenChange={(isOpen) => !isOpen && handleCloseDialogs()}
         partner={dialogState.type === 'edit' ? dialogState.data : undefined}
@@ -231,7 +231,7 @@ export default function PartnerManagement() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Invite {dialogState.data?.firstName}</DialogTitle>
-            <DialogDescription>Send this unique sign-up link to the partner. They must use this email to register.</DialogDescription>
+            <DialogDescription>Send this unique sign-up link to the ISA. They must use this email to register.</DialogDescription>
           </DialogHeader>
           <div className="py-4 space-y-2">
             <Input value={inviteLink} readOnly />
@@ -246,7 +246,7 @@ export default function PartnerManagement() {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-            <AlertDialogDescription>This will permanently delete partner "{dialogState.data?.firstName} {dialogState.data?.lastName}".</AlertDialogDescription>
+            <AlertDialogDescription>This will permanently delete ISA "{dialogState.data?.firstName} {dialogState.data?.lastName}".</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={handleCloseDialogs}>Cancel</AlertDialogCancel>
@@ -258,10 +258,10 @@ export default function PartnerManagement() {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <div>
-            <CardTitle className="flex items-center gap-2"><Handshake /> Strategic Partner Management</CardTitle>
-            <CardDescription>Manage your strategic business partners.</CardDescription>
+            <CardTitle className="flex items-center gap-2"><Bot /> ISA Management</CardTitle>
+            <CardDescription>Manage your Independent Sales Agents (ISAs).</CardDescription>
           </div>
-          <Button onClick={() => handleOpenDialog('add')}><PlusCircle className="mr-2 h-4 w-4"/>Add Partner</Button>
+          <Button onClick={() => handleOpenDialog('add')}><PlusCircle className="mr-2 h-4 w-4"/>Add ISA</Button>
         </CardHeader>
         <CardContent>
           {isLoading ? (
@@ -287,7 +287,7 @@ export default function PartnerManagement() {
                           </Badge>
                       </TableCell>
                       <TableCell className="text-right">
-                        <PartnerActionMenu
+                        <ISAActionMenu
                             onInvite={() => handleOpenDialog('invite', partner)}
                             onEdit={() => handleOpenDialog('edit', partner)}
                             onDelete={() => handleOpenDialog('delete', partner)}
@@ -295,7 +295,7 @@ export default function PartnerManagement() {
                       </TableCell>
                     </TableRow>
                   )) : (
-                    <TableRow><TableCell colSpan={6} className="h-24 text-center">No strategic partners found.</TableCell></TableRow>
+                    <TableRow><TableCell colSpan={6} className="h-24 text-center">No ISAs found.</TableCell></TableRow>
                   )}
                 </TableBody>
               </Table>

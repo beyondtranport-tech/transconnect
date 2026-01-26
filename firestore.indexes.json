@@ -1,4 +1,3 @@
-
 {
   "indexes": [
     {
@@ -58,6 +57,12 @@
       "collectionId": "partners",
       "fields": [
         { "fieldPath": "email", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionId": "partners",
+      "fields": [
+        { "fieldPath": "type", "order": "ASCENDING" }
       ]
     },
     {
