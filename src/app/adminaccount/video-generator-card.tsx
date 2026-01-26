@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -28,6 +29,7 @@ import { Progress } from '@/components/ui/progress';
 import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { getClientSideAuthToken } from '@/firebase/errors';
+import { ref as storageRef, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 
 const defaultPrompt = `Create a short, professional marketing video that showcases how easy it is to create an online shop on the Logistics Flow platform. The video should visually represent these steps: 1. Sign up for a free account. 2. Use the simple Shop Wizard to add your business name, description, and products. 3. Publish your professional-looking online shop to the network. The video should be modern, clean, and use a color palette of green and charcoal.`;
 
@@ -44,12 +46,14 @@ export default function VideoGeneratorCard({ promptTemplate }: { promptTemplate?
   const [savedVideoUrl, setSavedVideoUrl] = useState<string | null>(null);
   const [storageError, setStorageError] = useState<string | null>(null);
   const [isSetupGuideOpen, setIsSetupGuideOpen] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
 
   const handleClear = () => {
     setGeneratedVideo(null);
     setSavedVideoUrl(null);
     setIsSaving(false);
     setStorageError(null);
+    setUploadProgress(0);
   };
 
   const handleGenerate = async () => {
@@ -98,50 +102,49 @@ export default function VideoGeneratorCard({ promptTemplate }: { promptTemplate?
   };
 
   const handleSaveToCloud = async () => {
-    if (!generatedVideo || !user) {
-        toast({ variant: 'destructive', title: 'Error', description: 'No video generated to save or user not found.' });
+    if (!generatedVideo || !user || !storage) {
+        toast({ variant: 'destructive', title: 'Error', description: 'No video generated, user not found, or storage not available.' });
         return;
     }
 
     setIsSaving(true);
     setSavedVideoUrl(null);
     setStorageError(null);
+    setUploadProgress(0);
 
     try {
-        const token = await getClientSideAuthToken();
-        if (!token) throw new Error("Authentication failed.");
-        
         const fileName = `generated_${Date.now()}.mp4`;
+        const videoRef = storageRef(storage, `user-assets/${user.uid}/videos/${fileName}`);
+        
+        const response = await fetch(generatedVideo);
+        const blob = await response.blob();
+        
+        const uploadTask = uploadBytesResumable(videoRef, blob);
 
-        const response = await fetch('/api/uploadImageAsset', {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json',
+        uploadTask.on('state_changed',
+            (snapshot) => {
+                const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                setUploadProgress(progress);
             },
-            body: JSON.stringify({
-                file: generatedVideo,
-                folder: 'videos',
-                fileName: fileName,
-            }),
-        });
-
-        const result = await response.json();
-        if (!response.ok || !result.success) {
-            throw new Error(result.error || 'Failed to save video.');
-        }
-
-        const publicUrl = result.url;
-        setSavedVideoUrl(publicUrl);
-        toast({ title: 'Video Saved!', description: 'Your video has been saved to your asset gallery.' });
+            (error) => {
+                console.error("Save AI video error:", error);
+                if (error.code === 'storage/unauthorized') {
+                    setStorageError("Permission Denied: You may need to enable Firebase Storage and configure its security rules. Please check the setup guide.");
+                } else {
+                    toast({ variant: 'destructive', title: 'Save Failed', description: error.message });
+                }
+                setIsSaving(false);
+            },
+            async () => {
+                const publicUrl = await getDownloadURL(uploadTask.snapshot.ref);
+                setSavedVideoUrl(publicUrl);
+                toast({ title: 'Video Saved!', description: 'Your video has been saved to your asset gallery.' });
+                setIsSaving(false);
+            }
+        );
     } catch (error: any) {
         console.error("Save AI video error:", error);
-        if (error.message.includes('permission') || error.message.includes('bucket')) {
-            setStorageError(error.message);
-        } else {
-            toast({ variant: 'destructive', title: 'Save Failed', description: error.message });
-        }
-    } finally {
+        toast({ variant: 'destructive', title: 'Save Failed', description: error.message });
         setIsSaving(false);
     }
   };
@@ -212,9 +215,7 @@ export default function VideoGeneratorCard({ promptTemplate }: { promptTemplate?
                               <p className="text-sm text-muted-foreground">Your generated video will appear here.</p>
                           )}
                       </div>
-                       {isSaving && (
-                          <Progress value={0} className="w-full" />
-                      )}
+                       {isSaving && <Progress value={uploadProgress} className="w-full" />}
                       {savedVideoUrl && (
                           <div className="space-y-2">
                               <Label>Permanent URL</Label>

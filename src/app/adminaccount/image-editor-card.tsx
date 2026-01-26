@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -29,6 +30,7 @@ import { useUser, useStorage } from '@/firebase';
 import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { getClientSideAuthToken } from '@/firebase/errors';
+import { ref as storageRef, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 
 const defaultEditPrompt = `Place the truck on a winding mountain pass at sunset.
 
@@ -51,6 +53,8 @@ export default function ImageEditorCard({ promptTemplate }: { promptTemplate?: s
   const [savedImageUrl, setSavedImageUrl] = useState<string | null>(null);
   const [storageError, setStorageError] = useState<string | null>(null);
   const [isSetupGuideOpen, setIsSetupGuideOpen] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+
 
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -70,6 +74,7 @@ export default function ImageEditorCard({ promptTemplate }: { promptTemplate?: s
     setSavedImageUrl(null);
     setIsSaving(false);
     setStorageError(null);
+    setUploadProgress(0);
   }
 
   const clearOriginalImage = () => {
@@ -131,50 +136,49 @@ export default function ImageEditorCard({ promptTemplate }: { promptTemplate?: s
   };
 
   const handleSaveToCloud = async () => {
-    if (!editedImage || !user) {
-        toast({ variant: 'destructive', title: 'Error', description: 'No image generated to save or user not found.' });
+    if (!editedImage || !user || !storage) {
+        toast({ variant: 'destructive', title: 'Error', description: 'No image generated, user not found, or storage not available.' });
         return;
     }
 
     setIsSaving(true);
     setSavedImageUrl(null);
     setStorageError(null);
+    setUploadProgress(0);
 
     try {
-        const token = await getClientSideAuthToken();
-        if (!token) throw new Error("Authentication failed.");
-
         const fileName = `edited_${Date.now()}.png`;
+        const imageRef = storageRef(storage, `user-assets/${user.uid}/edited-images/${fileName}`);
 
-        const response = await fetch('/api/uploadImageAsset', {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json',
+        const response = await fetch(editedImage);
+        const blob = await response.blob();
+        
+        const uploadTask = uploadBytesResumable(imageRef, blob);
+
+        uploadTask.on('state_changed', 
+            (snapshot) => {
+                const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                setUploadProgress(progress);
             },
-            body: JSON.stringify({
-                file: editedImage,
-                folder: 'edited-images',
-                fileName: fileName,
-            }),
-        });
-
-        const result = await response.json();
-        if (!response.ok || !result.success) {
-            throw new Error(result.error || 'Failed to save image.');
-        }
-
-        const publicUrl = result.url;
-        setSavedImageUrl(publicUrl);
-        toast({ title: 'Image Saved!', description: 'Your image is now stored in the asset gallery.' });
+            (error) => {
+                console.error("Save AI image error:", error);
+                if (error.code === 'storage/unauthorized') {
+                    setStorageError("Permission Denied: You may need to enable Firebase Storage and configure its security rules. Please check the setup guide.");
+                } else {
+                    toast({ variant: 'destructive', title: 'Save Failed', description: error.message });
+                }
+                setIsSaving(false);
+            },
+            async () => {
+                const publicUrl = await getDownloadURL(uploadTask.snapshot.ref);
+                setSavedImageUrl(publicUrl);
+                toast({ title: 'Image Saved!', description: 'Your image is now stored in the asset gallery.' });
+                setIsSaving(false);
+            }
+        );
     } catch (error: any) {
         console.error("Save AI image error:", error);
-        if (error.message.includes('permission') || error.message.includes('bucket')) {
-            setStorageError(error.message);
-        } else {
-            toast({ variant: 'destructive', title: 'Save Failed', description: error.message });
-        }
-    } finally {
+        toast({ variant: 'destructive', title: 'Save Failed', description: error.message });
         setIsSaving(false);
     }
   };
@@ -252,9 +256,7 @@ export default function ImageEditorCard({ promptTemplate }: { promptTemplate?: s
                         <p className="text-sm text-muted-foreground">Your result will appear here.</p>
                     )}
                 </div>
-                {isSaving && (
-                    <Progress value={0} className="w-full" /> // Progress bar is not implemented for this simpler uploader
-                )}
+                {isSaving && <Progress value={uploadProgress} className="w-full" />}
                 {savedImageUrl && (
                     <div className="space-y-2">
                         <Label>Permanent URL</Label>

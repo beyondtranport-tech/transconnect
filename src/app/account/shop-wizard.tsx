@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
@@ -12,7 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useFirestore, useUser, useStorage, useCollection, getClientSideAuthToken } from '@/firebase';
 import { useMemoFirebase } from '@/hooks/use-config';
 import { doc, collection } from 'firebase/firestore';
-import { ref as storageRef, uploadBytes, getDownloadURL, uploadString } from "firebase/storage";
+import { ref as storageRef, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { Loader2, Save, CheckCircle, LayoutGrid, List, Image as ImageIcon, Sparkles, PlusCircle, Edit, Trash2, Send, Eye, ShoppingCart, Mail, Phone, UploadCloud, Wand2, Video, Search, ShieldAlert, Download, Copy } from 'lucide-react';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -243,12 +244,14 @@ function AIGenerateDialog({
   const storage = useStorage();
   const [storageError, setStorageError] = useState<string | null>(null);
   const [isSetupGuideOpen, setIsSetupGuideOpen] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   
   useEffect(() => {
     if (!isOpen) {
         setPrompt(promptTemplate || '');
         setGeneratedImage(null);
         setStorageError(null);
+        setUploadProgress(0);
     }
   }, [isOpen, promptTemplate]);
 
@@ -260,6 +263,7 @@ function AIGenerateDialog({
     setIsLoading(true);
     setGeneratedImage(null);
     setStorageError(null);
+    setUploadProgress(0);
 
     try {
       const result = await generateImage({ prompt });
@@ -273,50 +277,51 @@ function AIGenerateDialog({
   };
 
   const handleApplyImage = async () => {
-    if (!generatedImage || !user) {
-        toast({ variant: 'destructive', title: 'Error', description: 'No image generated to apply or user not found.' });
+    if (!generatedImage || !user || !storage) {
+        toast({ variant: 'destructive', title: 'Error', description: 'No image generated, user not found, or storage not available.' });
         return;
     }
     setIsApplying(true);
     setStorageError(null);
+    setUploadProgress(0);
 
     try {
         const isHeroBanner = title.toLowerCase().includes('hero');
         const folder = isHeroBanner ? 'hero-images' : 'product-images';
         const fileName = `generated_${Date.now()}.png`;
+        const imageRef = storageRef(storage, `user-assets/${user.uid}/${folder}/${fileName}`);
 
-        const token = await getClientSideAuthToken();
-        if (!token) throw new Error("Authentication failed.");
+        // Convert data URI to blob for resumable upload with progress
+        const response = await fetch(generatedImage);
+        const blob = await response.blob();
 
-        const response = await fetch('/api/uploadImageAsset', {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json',
+        const uploadTask = uploadBytesResumable(imageRef, blob);
+
+        uploadTask.on('state_changed',
+            (snapshot) => {
+                const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                setUploadProgress(progress);
             },
-            body: JSON.stringify({
-                file: generatedImage,
-                folder: folder,
-                fileName: fileName,
-            }),
-        });
-        
-        const result = await response.json();
-        if (!response.ok || !result.success) {
-            throw new Error(result.error || 'Failed to upload image.');
-        }
-
-        onGenerate(result.url);
-        toast({ title: 'Image Applied!', description: 'The new image has been added.' });
-        setIsOpen(false);
+            (error) => {
+                console.error("Client-side upload error:", error);
+                if (error.code === 'storage/unauthorized') {
+                    setStorageError("Permission Denied: You may need to enable Firebase Storage and configure its security rules. Please check the setup guide.");
+                } else {
+                    toast({ variant: 'destructive', title: 'Failed to apply image', description: error.message });
+                }
+                setIsApplying(false);
+            },
+            async () => {
+                const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+                onGenerate(downloadURL);
+                toast({ title: 'Image Applied!', description: 'The new image has been added.' });
+                setIsOpen(false);
+                setIsApplying(false);
+            }
+        );
     } catch (e: any) {
         console.error("Save AI image error:", e);
-        if (e.message.includes('permission') || e.message.includes('bucket')) {
-            setStorageError(e.message);
-        } else {
-            toast({ variant: 'destructive', title: 'Failed to apply image', description: e.message });
-        }
-    } finally {
+        toast({ variant: 'destructive', title: 'Failed to apply image', description: e.message });
         setIsApplying(false);
     }
   };
@@ -373,6 +378,7 @@ function AIGenerateDialog({
                 <p className="text-sm text-muted-foreground">Generated image will appear here.</p>
               )}
             </div>
+             {isApplying && <Progress value={uploadProgress} className="w-full" />}
           </div>
           <DialogFooter className="sm:justify-between">
              <div className="flex flex-wrap items-center gap-2">
@@ -440,6 +446,7 @@ function ProductDialog({ shop, product, onComplete, children, canEdit }: { shop:
   const [isOpen, setIsOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [storageError, setStorageError] = useState<string | null>(null);
   const [isSetupGuideOpen, setIsSetupGuideOpen] = useState(false);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
@@ -466,6 +473,7 @@ function ProductDialog({ shop, product, onComplete, children, canEdit }: { shop:
             imageUrls: product?.imageUrls || [],
         });
         setStorageError(null);
+        setUploadProgress(0);
     }
   }, [isOpen, product, form]);
 
@@ -522,62 +530,47 @@ function ProductDialog({ shop, product, onComplete, children, canEdit }: { shop:
 
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
-        if (!file || !user) return;
+        if (!file || !user || !storage) return;
 
         setUploading(true);
         setStorageError(null);
+        setUploadProgress(0);
         const fileRefInput = fileInputRef.current;
 
-        const reader = new FileReader();
-        reader.readAsDataURL(file);
-        reader.onload = async () => {
-            try {
-                const base64File = reader.result as string;
-                const token = await getClientSideAuthToken();
-                if (!token) throw new Error("Authentication failed.");
+        try {
+            const fileName = `${Date.now()}_${file.name}`;
+            const imageRef = storageRef(storage, `user-assets/${user.uid}/product-images/${fileName}`);
 
-                const fileName = `${Date.now()}_${file.name}`;
+            const uploadTask = uploadBytesResumable(imageRef, file);
 
-                const response = await fetch('/api/uploadImageAsset', {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        file: base64File,
-                        folder: 'product-images',
-                        fileName: fileName,
-                    }),
-                });
-
-                const result = await response.json();
-                if (!response.ok || !result.success) {
-                    throw new Error(result.error || 'Failed to upload image.');
+            uploadTask.on('state_changed',
+                (snapshot) => {
+                    const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                    setUploadProgress(progress);
+                },
+                (error) => {
+                    console.error("Upload error:", error);
+                    if (error.code === 'storage/unauthorized') {
+                        setStorageError("Permission Denied: You may need to enable Firebase Storage in the console and set up security rules. Please see the setup guide.");
+                    } else {
+                        toast({ variant: 'destructive', title: 'Upload Failed', description: error.message });
+                    }
+                    setUploading(false);
+                },
+                async () => {
+                    const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+                    const currentUrls = form.getValues('imageUrls') || [];
+                    form.setValue('imageUrls', [...currentUrls, downloadURL], { shouldValidate: true });
+                    toast({ title: 'Upload Complete!', description: `Image "${file.name}" added.` });
+                    setUploading(false);
+                    if (fileRefInput) fileRefInput.value = ''; // Reset file input
                 }
-                
-                const downloadURL = result.url;
-                const currentUrls = form.getValues('imageUrls') || [];
-                form.setValue('imageUrls', [...currentUrls, downloadURL], { shouldValidate: true });
-                toast({ title: 'Upload Complete!', description: `Image "${file.name}" added.` });
-
-            } catch (error: any) {
-                console.error("Upload error:", error);
-                if (error.message.includes('permission') || error.message.includes('bucket')) {
-                    setStorageError(error.message);
-                } else {
-                    toast({ variant: 'destructive', title: 'Upload Failed', description: error.message });
-                }
-            } finally {
-                setUploading(false);
-                if (fileRefInput) fileRefInput.value = '';
-            }
-        };
-        reader.onerror = (error) => {
-            console.error("Error reading file:", error);
-            toast({ variant: 'destructive', title: 'File Read Error', description: 'Could not process the selected file.' });
+            );
+        } catch (error: any) {
+            console.error("Upload error:", error);
+            toast({ variant: 'destructive', title: 'Upload Failed', description: error.message });
             setUploading(false);
-        };
+        }
     };
 
 
@@ -638,7 +631,7 @@ function ProductDialog({ shop, product, onComplete, children, canEdit }: { shop:
                           </Alert>
                       )}
 
-                      <div className="border rounded-md p-4 bg-muted/50">
+                      <div className="border rounded-md p-4 bg-muted/50 space-y-4">
                          <FormField control={form.control} name="imageUrls" render={({ field }) => (
                               <FormItem>
                                   <FormLabel>Product Images</FormLabel>
@@ -673,6 +666,8 @@ function ProductDialog({ shop, product, onComplete, children, canEdit }: { shop:
                                   <FormMessage />
                               </FormItem>
                           )} />
+                          
+                          {uploading && <Progress value={uploadProgress} className="w-full" />}
 
                           <div className="flex items-center justify-between mt-4">
                               <Button type="button" onClick={() => fileInputRef.current?.click()} disabled={uploading || !canEdit}>
@@ -1353,4 +1348,5 @@ export function ShopWizard({ shop: initialShop }: { shop: any }) {
     </div>
   );
 }
+
     

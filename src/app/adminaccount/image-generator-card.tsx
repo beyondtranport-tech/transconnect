@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -24,11 +25,12 @@ import { Loader2, Sparkles, Image as ImageIcon, Download, Save, Copy, ShieldAler
 import Image from 'next/image';
 import { generateImage } from '@/ai/flows/image-generation-flow';
 import { Textarea } from '@/components/ui/textarea';
-import { useUser } from '@/firebase';
+import { useUser, useStorage } from '@/firebase';
 import { Progress } from '@/components/ui/progress';
 import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { getClientSideAuthToken } from '@/firebase/errors';
+import { ref as storageRef, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 
 const defaultPrompt = `A cinematic, professional photograph of a futuristic, gleaming white and green Scania truck driving on a high-tech highway at dusk. The road is illuminated with glowing data lines, and the sky has a vibrant sunset. The image should look modern, professional, and convey a sense of speed and efficiency.`;
 
@@ -39,17 +41,20 @@ export default function ImageGeneratorCard({ promptTemplate }: { promptTemplate?
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   const { toast } = useToast();
   const { user } = useUser();
+  const storage = useStorage();
 
   const [isSaving, setIsSaving] = useState(false);
   const [savedImageUrl, setSavedImageUrl] = useState<string | null>(null);
   const [storageError, setStorageError] = useState<string | null>(null);
   const [isSetupGuideOpen, setIsSetupGuideOpen] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
 
   const handleClear = () => {
     setGeneratedImage(null);
     setSavedImageUrl(null);
     setIsSaving(false);
     setStorageError(null);
+    setUploadProgress(0);
   };
 
 
@@ -99,50 +104,49 @@ export default function ImageGeneratorCard({ promptTemplate }: { promptTemplate?
   };
 
   const handleSaveToCloud = async () => {
-    if (!generatedImage || !user) {
-        toast({ variant: 'destructive', title: 'Error', description: 'No image generated to save or user not found.' });
+    if (!generatedImage || !user || !storage) {
+        toast({ variant: 'destructive', title: 'Error', description: 'No image generated, user not found, or storage not available.' });
         return;
     }
 
     setIsSaving(true);
     setSavedImageUrl(null);
     setStorageError(null);
+    setUploadProgress(0);
 
     try {
-        const token = await getClientSideAuthToken();
-        if (!token) throw new Error("Authentication failed.");
-        
         const fileName = `generated_${Date.now()}.png`;
+        const imageRef = storageRef(storage, `user-assets/${user.uid}/generated-images/${fileName}`);
+        
+        const response = await fetch(generatedImage);
+        const blob = await response.blob();
 
-        const response = await fetch('/api/uploadImageAsset', {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json',
+        const uploadTask = uploadBytesResumable(imageRef, blob);
+
+        uploadTask.on('state_changed',
+            (snapshot) => {
+                const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                setUploadProgress(progress);
             },
-            body: JSON.stringify({
-                file: generatedImage,
-                folder: 'generated-images',
-                fileName: fileName,
-            }),
-        });
-
-        const result = await response.json();
-        if (!response.ok || !result.success) {
-            throw new Error(result.error || 'Failed to save image.');
-        }
-
-        const publicUrl = result.url;
-        setSavedImageUrl(publicUrl);
-        toast({ title: 'Image Saved!', description: 'Your image is now stored in the asset gallery.' });
+            (error) => {
+                console.error("Save AI image error:", error);
+                if (error.code === 'storage/unauthorized') {
+                    setStorageError("Permission Denied: You may need to enable Firebase Storage and configure its security rules. Please check the setup guide.");
+                } else {
+                    toast({ variant: 'destructive', title: 'Save Failed', description: error.message });
+                }
+                setIsSaving(false);
+            },
+            async () => {
+                const publicUrl = await getDownloadURL(uploadTask.snapshot.ref);
+                setSavedImageUrl(publicUrl);
+                toast({ title: 'Image Saved!', description: 'Your image is now stored in the asset gallery.' });
+                setIsSaving(false);
+            }
+        );
     } catch (error: any) {
         console.error("Save AI image error:", error);
-        if (error.message.includes('permission') || error.message.includes('bucket')) {
-            setStorageError(error.message);
-        } else {
-            toast({ variant: 'destructive', title: 'Save Failed', description: error.message });
-        }
-    } finally {
+        toast({ variant: 'destructive', title: 'Save Failed', description: error.message });
         setIsSaving(false);
     }
   };
@@ -213,9 +217,7 @@ export default function ImageGeneratorCard({ promptTemplate }: { promptTemplate?
                               <p className="text-sm text-muted-foreground">Your generated image will appear here.</p>
                           )}
                       </div>
-                       {isSaving && (
-                          <Progress value={0} className="w-full" />
-                      )}
+                       {isSaving && <Progress value={uploadProgress} className="w-full" />}
                       {savedImageUrl && (
                           <div className="space-y-2">
                               <Label>Permanent URL</Label>
@@ -253,7 +255,7 @@ export default function ImageGeneratorCard({ promptTemplate }: { promptTemplate?
             <DialogHeader>
                 <DialogTitle>Enabling Firebase Storage</DialogTitle>
                 <DialogDescription>
-                    Follow these steps in the Firebase & Google Cloud Console to enable file uploads.
+                    Follow these steps in the Firebase Console to enable file uploads.
                 </DialogDescription>
             </DialogHeader>
              <div className="py-4 space-y-4 text-sm max-h-[70vh] overflow-y-auto pr-4" dangerouslySetInnerHTML={{ __html: `
