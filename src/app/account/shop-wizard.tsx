@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
@@ -247,6 +246,7 @@ function AIGenerateDialog({
   const { toast } = useToast();
   const { user } = useUser();
   const storage = useStorage();
+  const [isSetupGuideOpen, setIsSetupGuideOpen] = useState(false);
   
   useEffect(() => {
     if (!isOpen) {
@@ -365,116 +365,116 @@ function AIGenerateDialog({
     }
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{title}</DialogTitle>
-          <DialogDescription>
-            {description}
-          </DialogDescription>
-        </DialogHeader>
-        <div className="space-y-4 py-4">
-          <div className="space-y-2">
-            <Label htmlFor="generate-prompt">Prompt</Label>
-            <Textarea id="generate-prompt" value={prompt} onChange={(e) => setPrompt(e.target.value)} placeholder="e.g., A shiny chrome truck exhaust pipe" rows={5}/>
+    <>
+      <Dialog open={isOpen} onOpenChange={setIsOpen}>
+        <DialogTrigger asChild>{children}</DialogTrigger>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{title}</DialogTitle>
+            <DialogDescription>
+              {description}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="generate-prompt">Prompt</Label>
+              <Textarea id="generate-prompt" value={prompt} onChange={(e) => setPrompt(e.target.value)} placeholder="e.g., A shiny chrome truck exhaust pipe" rows={5}/>
+            </div>
+             {storageError && (
+                  <Alert variant="destructive">
+                      <ShieldAlert className="h-4 w-4" />
+                      <AlertTitle>Firebase Storage Not Enabled</AlertTitle>
+                      <AlertDescription>
+                          {storageError}
+                          <Button variant="link" className="p-0 h-auto ml-1 font-semibold" onClick={() => setIsSetupGuideOpen(true)}>View the setup guide.</Button>
+                      </AlertDescription>
+                  </Alert>
+              )}
+            <div className="relative aspect-square w-full rounded-md border border-dashed flex items-center justify-center bg-muted">
+              {isLoading ? (
+                <div className="text-center">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto" />
+                  <p className="mt-2 text-sm text-muted-foreground">Generating...</p>
+                </div>
+              ) : generatedImage ? (
+                <Image src={generatedImage} alt="Generated" fill className="rounded-md object-contain" />
+              ) : (
+                <p className="text-sm text-muted-foreground">Generated image will appear here.</p>
+              )}
+            </div>
+             {savedImageUrl && (
+                <div className="space-y-2">
+                    <Label>Cloud URL</Label>
+                    <div className="flex items-center gap-2">
+                        <Input value={savedImageUrl} readOnly />
+                        <Button variant="outline" size="icon" onClick={copyUrlToClipboard}>
+                            <Copy className="h-4 w-4"/>
+                        </Button>
+                    </div>
+                </div>
+            )}
           </div>
-           {storageError && (
-                <Dialog>
-                    <Alert variant="destructive">
-                        <ShieldAlert className="h-4 w-4" />
-                        <AlertTitle>Firebase Storage Not Enabled</AlertTitle>
-                        <AlertDescription>
-                            {storageError}
-                            <DialogTrigger asChild>
-                                <Button variant="link" className="p-0 h-auto ml-1 font-semibold">View the setup guide.</Button>
-                            </DialogTrigger>
-                        </AlertDescription>
-                    </Alert>
-                    <DialogContent className="sm:max-w-2xl">
-                        <DialogHeader>
-                            <DialogTitle>Enabling Firebase Storage</DialogTitle>
-                            <DialogDescription>
-                                Follow these steps in the Firebase Console to enable file uploads.
-                            </DialogDescription>
-                        </DialogHeader>
-                        <div className="py-4 space-y-4 text-sm max-h-[70vh] overflow-y-auto pr-4">
-                            <p>The application uses Firebase Storage to save and manage user-uploaded assets like shop images, product photos, and AI-generated content. For the upload functionality to work, you must first enable the Storage service in your Firebase project.</p>
-                            <p className="font-semibold text-destructive">The error "The specified bucket does not exist" is a strong indicator that this step has not been completed.</p>
-                            
-                            <h3 className="font-bold text-lg pt-2">Step 1: Go to the Firebase Console</h3>
-                            <ol className="list-decimal list-inside space-y-1 pl-4">
-                                <li>Open the <a href="https://console.firebase.google.com/" target="_blank" rel="noopener noreferrer" className="text-primary underline">Firebase Console</a>.</li>
-                                <li>Select your project: <code className="bg-muted p-1 rounded font-mono text-xs">transconnect-v1-39578841-2a857</code>.</li>
-                            </ol>
+          <DialogFooter className="sm:justify-between">
+             <div className="flex flex-wrap items-center gap-2">
+                  {generatedImage && (
+                      <>
+                          <Button onClick={handleApplyImage} disabled={isApplying || isSaving}>
+                              {isApplying ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle className="mr-2 h-4 w-4" />}
+                              Apply Image
+                          </Button>
+                          <Button variant="secondary" onClick={handleDownload} disabled={isApplying || isSaving}>
+                              <Download className="mr-2 h-4 w-4" /> Download
+                          </Button>
+                          <Button variant="outline" onClick={handleSaveToCloud} disabled={isApplying || isSaving || !!savedImageUrl}>
+                              {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                              {savedImageUrl ? 'Saved' : 'Save to Cloud'}
+                          </Button>
+                      </>
+                  )}
+             </div>
+             <Button onClick={handleGenerate} disabled={isLoading || isApplying || isSaving || !canEdit}>
+                  {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+                  Generate New Image
+              </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={isSetupGuideOpen} onOpenChange={setIsSetupGuideOpen}>
+        <DialogContent className="sm:max-w-2xl">
+            <DialogHeader>
+                <DialogTitle>Enabling Firebase Storage</DialogTitle>
+                <DialogDescription>
+                    Follow these steps in the Firebase Console to enable file uploads.
+                </DialogDescription>
+            </DialogHeader>
+            <div className="py-4 space-y-4 text-sm max-h-[70vh] overflow-y-auto pr-4">
+                <p>The application uses Firebase Storage to save and manage user-uploaded assets like shop images, product photos, and AI-generated content. For the upload functionality to work, you must first enable the Storage service in your Firebase project.</p>
+                <p className="font-semibold text-destructive">The error "The specified bucket does not exist" is a strong indicator that this step has not been completed.</p>
+                
+                <h3 className="font-bold text-lg pt-2">Step 1: Go to the Firebase Console</h3>
+                <ol className="list-decimal list-inside space-y-1 pl-4">
+                    <li>Open the <a href="https://console.firebase.google.com/" target="_blank" rel="noopener noreferrer" className="text-primary underline">Firebase Console</a>.</li>
+                    <li>Select your project: <code className="bg-muted p-1 rounded font-mono text-xs">transconnect-v1-39578841-2a857</code>.</li>
+                </ol>
 
-                            <h3 className="font-bold text-lg pt-2">Step 2: Navigate to Storage</h3>
-                            <ol className="list-decimal list-inside space-y-1 pl-4">
-                                <li>In the left-hand navigation menu, under the <strong>Build</strong> section, click on <strong>Storage</strong>.</li>
-                            </ol>
-                            
-                            <h3 className="font-bold text-lg pt-2">Step 3: Get Started with Storage</h3>
-                            <ol className="list-decimal list-inside space-y-1 pl-4">
-                                <li>If Storage is not enabled, you will see a "Get started" button. Click it.</li>
-                                <li>A dialog will appear to guide you through setting up security rules. It is recommended to start in <strong>Production mode</strong>. Click <strong>Next</strong>.</li>
-                                <li className="pl-4 text-xs text-muted-foreground"><em>Production mode starts with all reads and writes disallowed, which is a secure default. The application's own security rules will grant the necessary permissions.</em></li>
-                                <li>You will then be asked to choose a location for your Storage bucket. The default location selected for you is usually the best choice. Click <strong>Done</strong>.</li>
-                            </ol>
-                            
-                            <p className="pt-4 font-semibold">Once this process is complete, the file upload functionality within your application should work correctly without any further changes.</p>
-                        </div>
-                    </DialogContent>
-                </Dialog>
-            )}
-          <div className="relative aspect-square w-full rounded-md border border-dashed flex items-center justify-center bg-muted">
-            {isLoading ? (
-              <div className="text-center">
-                <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto" />
-                <p className="mt-2 text-sm text-muted-foreground">Generating...</p>
-              </div>
-            ) : generatedImage ? (
-              <Image src={generatedImage} alt="Generated" fill className="rounded-md object-contain" />
-            ) : (
-              <p className="text-sm text-muted-foreground">Generated image will appear here.</p>
-            )}
-          </div>
-           {savedImageUrl && (
-              <div className="space-y-2">
-                  <Label>Cloud URL</Label>
-                  <div className="flex items-center gap-2">
-                      <Input value={savedImageUrl} readOnly />
-                      <Button variant="outline" size="icon" onClick={copyUrlToClipboard}>
-                          <Copy className="h-4 w-4"/>
-                      </Button>
-                  </div>
-              </div>
-          )}
-        </div>
-        <DialogFooter className="sm:justify-between">
-           <div className="flex flex-wrap items-center gap-2">
-                {generatedImage && (
-                    <>
-                        <Button onClick={handleApplyImage} disabled={isApplying || isSaving}>
-                            {isApplying ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle className="mr-2 h-4 w-4" />}
-                            Apply Image
-                        </Button>
-                        <Button variant="secondary" onClick={handleDownload} disabled={isApplying || isSaving}>
-                            <Download className="mr-2 h-4 w-4" /> Download
-                        </Button>
-                        <Button variant="outline" onClick={handleSaveToCloud} disabled={isApplying || isSaving || !!savedImageUrl}>
-                            {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                            {savedImageUrl ? 'Saved' : 'Save to Cloud'}
-                        </Button>
-                    </>
-                )}
-           </div>
-           <Button onClick={handleGenerate} disabled={isLoading || isApplying || isSaving || !canEdit}>
-                {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
-                Generate New Image
-            </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+                <h3 className="font-bold text-lg pt-2">Step 2: Navigate to Storage</h3>
+                <ol className="list-decimal list-inside space-y-1 pl-4">
+                    <li>In the left-hand navigation menu, under the <strong>Build</strong> section, click on <strong>Storage</strong>.</li>
+                </ol>
+                
+                <h3 className="font-bold text-lg pt-2">Step 3: Get Started with Storage</h3>
+                <ol className="list-decimal list-inside space-y-1 pl-4">
+                    <li>If Storage is not enabled, you will see a "Get started" button. Click it.</li>
+                    <li>A dialog will appear to guide you through setting up security rules. It is recommended to start in <strong>Production mode</strong>. Click <strong>Next</strong>.</li>
+                    <li className="pl-4 text-xs text-muted-foreground"><em>Production mode starts with all reads and writes disallowed, which is a secure default. The application's own security rules will grant the necessary permissions.</em></li>
+                    <li>You will then be asked to choose a location for your Storage bucket. The default location selected for you is usually the best choice. Click <strong>Done</strong>.</li>
+                </ol>
+                
+                <p className="pt-4 font-semibold">Once this process is complete, the file upload functionality within your application should work correctly without any further changes.</p>
+            </div>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
 
@@ -487,6 +487,7 @@ function ProductDialog({ shop, product, onComplete, children, canEdit }: { shop:
   const [isSaving, setIsSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [storageError, setStorageError] = useState<string | null>(null);
+  const [isSetupGuideOpen, setIsSetupGuideOpen] = useState(false);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   const form = useForm<ProductFormValues>({
@@ -577,8 +578,8 @@ function ProductDialog({ shop, product, onComplete, children, canEdit }: { shop:
             const filePath = `user-assets/${user.uid}/product-images/${fileName}`;
             const fileRef = storageRef(storage, filePath);
             
-            const uploadTask = await uploadBytes(fileRef, file);
-            const downloadURL = await getDownloadURL(uploadTask.ref);
+            await uploadBytes(fileRef, file);
+            const downloadURL = await getDownloadURL(fileRef);
             
             const currentUrls = form.getValues('imageUrls') || [];
             form.setValue('imageUrls', [...currentUrls, downloadURL], { shouldValidate: true });
@@ -599,167 +600,167 @@ function ProductDialog({ shop, product, onComplete, children, canEdit }: { shop:
 
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent className="max-w-2xl flex flex-col max-h-[90vh]">
-        <DialogHeader>
-          <DialogTitle>{product ? 'Edit Product' : 'Add New Product'}</DialogTitle>
-          <DialogDescription>
-            {product ? 'Update details for your product.' : 'Enter details for your new product.'}
-          </DialogDescription>
-        </DialogHeader>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col flex-1 min-h-0">
-             <div className="flex-1 overflow-y-auto space-y-6 pr-4 py-4">
-                <fieldset disabled={!canEdit || uploading} className="space-y-6">
-                    <FormField control={form.control} name="name" render={({ field }) => (
-                        <FormItem>
-                        <FormLabel>Product Name</FormLabel>
-                        <FormControl><Input placeholder="Product Name" {...field} /></FormControl>
-                        <FormMessage />
-                        </FormItem>
-                    )} />
-                    <FormField control={form.control} name="description" render={({ field }) => (
-                        <FormItem>
-                        <FormLabel>Description</FormLabel>
-                        <FormControl><Textarea placeholder="Describe the product..." {...field} /></FormControl>
-                        <FormMessage />
-                        </FormItem>
-                    )} />
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <FormField control={form.control} name="price" render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Price</FormLabel>
-                            <FormControl><Input type="number" placeholder="0.00" {...field} /></FormControl>
-                            <FormMessage />
-                        </FormItem>
-                        )} />
-                        <FormField control={form.control} name="sku" render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>SKU (Optional)</FormLabel>
-                            <FormControl><Input placeholder="SKU123" {...field} /></FormControl>
-                            <FormMessage />
-                        </FormItem>
-                        )} />
-                    </div>
+    <>
+      <Dialog open={isOpen} onOpenChange={setIsOpen}>
+        <DialogTrigger asChild>{children}</DialogTrigger>
+        <DialogContent className="max-w-2xl flex flex-col max-h-[90vh]">
+          <DialogHeader>
+            <DialogTitle>{product ? 'Edit Product' : 'Add New Product'}</DialogTitle>
+            <DialogDescription>
+              {product ? 'Update details for your product.' : 'Enter details for your new product.'}
+            </DialogDescription>
+          </DialogHeader>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col flex-1 min-h-0">
+               <div className="flex-1 overflow-y-auto space-y-6 pr-4 py-4">
+                  <fieldset disabled={!canEdit || uploading} className="space-y-6">
+                      <FormField control={form.control} name="name" render={({ field }) => (
+                          <FormItem>
+                          <FormLabel>Product Name</FormLabel>
+                          <FormControl><Input placeholder="Product Name" {...field} /></FormControl>
+                          <FormMessage />
+                          </FormItem>
+                      )} />
+                      <FormField control={form.control} name="description" render={({ field }) => (
+                          <FormItem>
+                          <FormLabel>Description</FormLabel>
+                          <FormControl><Textarea placeholder="Describe the product..." {...field} /></FormControl>
+                          <FormMessage />
+                          </FormItem>
+                      )} />
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <FormField control={form.control} name="price" render={({ field }) => (
+                          <FormItem>
+                              <FormLabel>Price</FormLabel>
+                              <FormControl><Input type="number" placeholder="0.00" {...field} /></FormControl>
+                              <FormMessage />
+                          </FormItem>
+                          )} />
+                          <FormField control={form.control} name="sku" render={({ field }) => (
+                          <FormItem>
+                              <FormLabel>SKU (Optional)</FormLabel>
+                              <FormControl><Input placeholder="SKU123" {...field} /></FormControl>
+                              <FormMessage />
+                          </FormItem>
+                          )} />
+                      </div>
 
-                    {storageError && (
-                       <Dialog>
-                            <Alert variant="destructive">
-                                <ShieldAlert className="h-4 w-4" />
-                                <AlertTitle>Firebase Storage Not Enabled</AlertTitle>
-                                <AlertDescription>
-                                    {storageError}
-                                    <DialogTrigger asChild>
-                                        <Button variant="link" className="p-0 h-auto ml-1 font-semibold">View the setup guide.</Button>
-                                    </DialogTrigger>
-                                </AlertDescription>
-                            </Alert>
-                            <DialogContent className="sm:max-w-2xl">
-                                <DialogHeader>
-                                    <DialogTitle>Enabling Firebase Storage</DialogTitle>
-                                    <DialogDescription>
-                                        Follow these steps in the Firebase Console to enable file uploads.
-                                    </DialogDescription>
-                                </DialogHeader>
-                                <div className="py-4 space-y-4 text-sm max-h-[70vh] overflow-y-auto pr-4">
-                                    <p>The application uses Firebase Storage to save and manage user-uploaded assets like shop images, product photos, and AI-generated content. For the upload functionality to work, you must first enable the Storage service in your Firebase project.</p>
-                                    <p className="font-semibold text-destructive">The error "The specified bucket does not exist" is a strong indicator that this step has not been completed.</p>
-                                    
-                                    <h3 className="font-bold text-lg pt-2">Step 1: Go to the Firebase Console</h3>
-                                    <ol className="list-decimal list-inside space-y-1 pl-4">
-                                        <li>Open the <a href="https://console.firebase.google.com/" target="_blank" rel="noopener noreferrer" className="text-primary underline">Firebase Console</a>.</li>
-                                        <li>Select your project: <code className="bg-muted p-1 rounded font-mono text-xs">transconnect-v1-39578841-2a857</code>.</li>
-                                    </ol>
+                      {storageError && (
+                         <Alert variant="destructive">
+                              <ShieldAlert className="h-4 w-4" />
+                              <AlertTitle>Firebase Storage Not Enabled</AlertTitle>
+                              <AlertDescription>
+                                  {storageError}
+                                  <Button variant="link" className="p-0 h-auto ml-1 font-semibold" onClick={() => setIsSetupGuideOpen(true)}>View the setup guide.</Button>
+                              </AlertDescription>
+                          </Alert>
+                      )}
 
-                                    <h3 className="font-bold text-lg pt-2">Step 2: Navigate to Storage</h3>
-                                    <ol className="list-decimal list-inside space-y-1 pl-4">
-                                        <li>In the left-hand navigation menu, under the <strong>Build</strong> section, click on <strong>Storage</strong>.</li>
-                                    </ol>
-                                    
-                                    <h3 className="font-bold text-lg pt-2">Step 3: Get Started with Storage</h3>
-                                    <ol className="list-decimal list-inside space-y-1 pl-4">
-                                        <li>If Storage is not enabled, you will see a "Get started" button. Click it.</li>
-                                        <li>A dialog will appear to guide you through setting up security rules. It is recommended to start in <strong>Production mode</strong>. Click <strong>Next</strong>.</li>
-                                        <li className="pl-4 text-xs text-muted-foreground"><em>Production mode starts with all reads and writes disallowed, which is a secure default. The application's own security rules will grant the necessary permissions.</em></li>
-                                        <li>You will then be asked to choose a location for your Storage bucket. The default location selected for you is usually the best choice. Click <strong>Done</strong>.</li>
-                                    </ol>
-                                    
-                                    <p className="pt-4 font-semibold">Once this process is complete, the file upload functionality within your application should work correctly without any further changes.</p>
-                                </div>
-                            </DialogContent>
-                        </Dialog>
-                    )}
+                      <div className="border rounded-md p-4 bg-muted/50">
+                         <FormField control={form.control} name="imageUrls" render={({ field }) => (
+                              <FormItem>
+                                  <FormLabel>Product Images</FormLabel>
+                                  <FormControl>
+                                      <div className="grid grid-cols-3 gap-2">
+                                          {(field.value || []).map((url, index) => (
+                                              <div key={index} className="relative aspect-square">
+                                                  <Image src={url} alt={`Product image ${index + 1}`} fill className="rounded-md object-contain border" />
+                                                  <Button
+                                                      type="button"
+                                                      variant="destructive"
+                                                      size="icon"
+                                                      className="absolute -top-2 -right-2 h-6 w-6 rounded-full"
+                                                      onClick={() => {
+                                                          const newUrls = [...(field.value || [])];
+                                                          newUrls.splice(index, 1);
+                                                          form.setValue('imageUrls', newUrls);
+                                                      }}
+                                                      disabled={!canEdit}
+                                                  >
+                                                      <Trash2 className="h-4 w-4" />
+                                                  </Button>
+                                              </div>
+                                          ))}
+                                          {(!field.value || field.value.length === 0) && (
+                                              <div className="col-span-3 relative aspect-square w-full rounded-md border border-dashed flex items-center justify-center bg-muted">
+                                                  <p className="text-sm text-muted-foreground">No images selected.</p>
+                                              </div>
+                                          )}
+                                      </div>
+                                  </FormControl>
+                                  <FormMessage />
+                              </FormItem>
+                          )} />
 
-                    <div className="border rounded-md p-4 bg-muted/50">
-                       <FormField control={form.control} name="imageUrls" render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Product Images</FormLabel>
-                                <FormControl>
-                                    <div className="grid grid-cols-3 gap-2">
-                                        {(field.value || []).map((url, index) => (
-                                            <div key={index} className="relative aspect-square">
-                                                <Image src={url} alt={`Product image ${index + 1}`} fill className="rounded-md object-contain border" />
-                                                <Button
-                                                    type="button"
-                                                    variant="destructive"
-                                                    size="icon"
-                                                    className="absolute -top-2 -right-2 h-6 w-6 rounded-full"
-                                                    onClick={() => {
-                                                        const newUrls = [...(field.value || [])];
-                                                        newUrls.splice(index, 1);
-                                                        form.setValue('imageUrls', newUrls);
-                                                    }}
-                                                    disabled={!canEdit}
-                                                >
-                                                    <Trash2 className="h-4 w-4" />
-                                                </Button>
-                                            </div>
-                                        ))}
-                                        {(!field.value || field.value.length === 0) && (
-                                            <div className="col-span-3 relative aspect-square w-full rounded-md border border-dashed flex items-center justify-center bg-muted">
-                                                <p className="text-sm text-muted-foreground">No images selected.</p>
-                                            </div>
-                                        )}
-                                    </div>
-                                </FormControl>
-                                <FormMessage />
-                            </FormItem>
-                        )} />
+                          <div className="flex items-center justify-between mt-4">
+                              <Button type="button" onClick={() => fileInputRef.current?.click()} disabled={uploading || !canEdit}>
+                                  {uploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <UploadCloud className="mr-2 h-4 w-4"/>}
+                                  Upload Image
+                              </Button>
+                              <Input ref={fileInputRef} type="file" id="image-upload" className="hidden" onChange={handleFileChange} disabled={uploading || !canEdit} accept="image/*" />
+                               <AIGenerateDialog 
+                                  onGenerate={handleImageGenerated} 
+                                  canEdit={canEdit}
+                                  title="AI Product Image Generator"
+                                  description="Describe the product image you want to create. Be specific for best results."
+                                  promptTemplate="A clean, professional studio photograph of a [Your Product Name, e.g., chrome truck exhaust pipe] on a white background. The lighting should be bright and highlight the product's details."
+                                  shop={shop}
+                              >
+                                  <Button type="button" variant="secondary" disabled={uploading || !canEdit}>
+                                      <Wand2 className="mr-2 h-4 w-4" /> Generate Image
+                                  </Button>
+                              </AIGenerateDialog>
+                          </div>
+                      </div>
+                  </fieldset>
+              </div>
+              <DialogFooter className="sm:justify-between mt-auto flex-shrink-0 pt-4 border-t">
+                   <Button type="button" variant="outline" onClick={() => setIsOpen(false)}>Cancel</Button>
+                   <Button type="submit" disabled={isSaving || uploading || !canEdit}>
+                      {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                      {product ? 'Update Product' : 'Create Product'}
+                  </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={isSetupGuideOpen} onOpenChange={setIsSetupGuideOpen}>
+        <DialogContent className="sm:max-w-2xl">
+            <DialogHeader>
+                <DialogTitle>Enabling Firebase Storage</DialogTitle>
+                <DialogDescription>
+                    Follow these steps in the Firebase Console to enable file uploads.
+                </DialogDescription>
+            </DialogHeader>
+            <div className="py-4 space-y-4 text-sm max-h-[70vh] overflow-y-auto pr-4">
+                <p>The application uses Firebase Storage to save and manage user-uploaded assets like shop images, product photos, and AI-generated content. For the upload functionality to work, you must first enable the Storage service in your Firebase project.</p>
+                <p className="font-semibold text-destructive">The error "The specified bucket does not exist" is a strong indicator that this step has not been completed.</p>
+                
+                <h3 className="font-bold text-lg pt-2">Step 1: Go to the Firebase Console</h3>
+                <ol className="list-decimal list-inside space-y-1 pl-4">
+                    <li>Open the <a href="https://console.firebase.google.com/" target="_blank" rel="noopener noreferrer" className="text-primary underline">Firebase Console</a>.</li>
+                    <li>Select your project: <code className="bg-muted p-1 rounded font-mono text-xs">transconnect-v1-39578841-2a857</code>.</li>
+                </ol>
 
-                        <div className="flex items-center justify-between mt-4">
-                            <Button type="button" onClick={() => fileInputRef.current?.click()} disabled={uploading || !canEdit}>
-                                {uploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <UploadCloud className="mr-2 h-4 w-4"/>}
-                                Upload Image
-                            </Button>
-                            <Input ref={fileInputRef} type="file" id="image-upload" className="hidden" onChange={handleFileChange} disabled={uploading || !canEdit} accept="image/*" />
-                             <AIGenerateDialog 
-                                onGenerate={handleImageGenerated} 
-                                canEdit={canEdit}
-                                title="AI Product Image Generator"
-                                description="Describe the product image you want to create. Be specific for best results."
-                                promptTemplate="A clean, professional studio photograph of a [Your Product Name, e.g., chrome truck exhaust pipe] on a white background. The lighting should be bright and highlight the product's details."
-                                shop={shop}
-                            >
-                                <Button type="button" variant="secondary" disabled={uploading || !canEdit}>
-                                    <Wand2 className="mr-2 h-4 w-4" /> Generate Image
-                                </Button>
-                            </AIGenerateDialog>
-                        </div>
-                    </div>
-                </fieldset>
+                <h3 className="font-bold text-lg pt-2">Step 2: Navigate to Storage</h3>
+                <ol className="list-decimal list-inside space-y-1 pl-4">
+                    <li>In the left-hand navigation menu, under the <strong>Build</strong> section, click on <strong>Storage</strong>.</li>
+                </ol>
+                
+                <h3 className="font-bold text-lg pt-2">Step 3: Get Started with Storage</h3>
+                <ol className="list-decimal list-inside space-y-1 pl-4">
+                    <li>If Storage is not enabled, you will see a "Get started" button. Click it.</li>
+                    <li>A dialog will appear to guide you through setting up security rules. It is recommended to start in <strong>Production mode</strong>. Click <strong>Next</strong>.</li>
+                    <li className="pl-4 text-xs text-muted-foreground"><em>Production mode starts with all reads and writes disallowed, which is a secure default. The application's own security rules will grant the necessary permissions.</em></li>
+                    <li>You will then be asked to choose a location for your Storage bucket. The default location selected for you is usually the best choice. Click <strong>Done</strong>.</li>
+                </ol>
+                
+                <p className="pt-4 font-semibold">Once this process is complete, the file upload functionality within your application should work correctly without any further changes.</p>
             </div>
-            <DialogFooter className="sm:justify-between mt-auto flex-shrink-0 pt-4 border-t">
-                 <Button type="button" variant="outline" onClick={() => setIsOpen(false)}>Cancel</Button>
-                 <Button type="submit" disabled={isSaving || uploading || !canEdit}>
-                    {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                    {product ? 'Update Product' : 'Create Product'}
-                </Button>
-            </DialogFooter>
-          </form>
-        </Form>
-      </DialogContent>
-    </Dialog>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
 
@@ -811,85 +812,86 @@ function Step2Products({ shop, canEdit }: { shop: any, canEdit: boolean }) {
 
   return (
     <div className="space-y-4">
-       <AlertDialog>
-          <div className="flex items-center justify-between">
-              <h3 className="text-xl font-semibold">Products</h3>
-              <ProductDialog shop={shop} onComplete={forceRefresh} canEdit={canEdit && canManageProducts}>
-                  <Button><PlusCircle className="mr-2 h-4 w-4"/> Add Product</Button>
-              </ProductDialog>
-          </div>
+        <div className="flex items-center justify-between">
+            <h3 className="text-xl font-semibold">Products</h3>
+            <ProductDialog shop={shop} onComplete={forceRefresh} canEdit={canEdit && canManageProducts}>
+                <Button><PlusCircle className="mr-2 h-4 w-4"/> Add Product</Button>
+            </ProductDialog>
+        </div>
 
-          {isLoading ? (
-              <div className="flex justify-center items-center py-10">
-                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
-              </div>
-          ) : products && products.length > 0 ? (
-              <div className="rounded-md border">
-                  <Table>
-                      <TableHeader>
-                          <TableRow>
-                              <TableHead>Image</TableHead>
-                              <TableHead>Name</TableHead>
-                              <TableHead>Price</TableHead>
-                              <TableHead>SKU</TableHead>
-                              <TableHead className="text-right">Actions</TableHead>
-                          </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                          {products.map((product) => (
-                              <TableRow key={product.id}>
-                                  <TableCell>
-                                      <div className="relative h-12 w-12 rounded-md bg-muted flex items-center justify-center">
-                                          {(product.imageUrls && product.imageUrls[0]) ? (
-                                              <Image src={product.imageUrls[0]} alt={product.name} fill className="object-contain border" />
-                                          ) : (
-                                              <ImageIcon className="h-6 w-6 text-muted-foreground" />
-                                          )}
-                                      </div>
-                                  </TableCell>
-                                  <TableCell>{product.name}</TableCell>
-                                  <TableCell>${product.price.toFixed(2)}</TableCell>
-                                  <TableCell>{product.sku || '-'}</TableCell>
-                                  <TableCell className="text-right">
-                                      <div className="flex justify-end gap-2">
-                                          <ProductDialog shop={shop} product={product} onComplete={forceRefresh} canEdit={canEdit && canManageProducts}>
-                                              <Button variant="ghost" size="icon">
-                                                  <Edit className="h-4 w-4" />
-                                              </Button>
-                                          </ProductDialog>
-                                          <AlertDialogTrigger asChild>
-                                              <Button variant="ghost" size="icon" onClick={() => setProductToDelete(product)} disabled={!canEdit || !canDeleteProducts}>
-                                                  <Trash2 className="h-4 w-4 text-destructive" />
-                                              </Button>
-                                          </AlertDialogTrigger>
-                                      </div>
-                                  </TableCell>
-                              </TableRow>
-                          ))}
-                      </TableBody>
-                  </Table>
-              </div>
-          ) : (
-              <Alert>
-                  <ShoppingCart className="h-4 w-4" />
-                  <AlertTitle>No products yet!</AlertTitle>
-                  <AlertDescription>Add your first product to start selling.</AlertDescription>
-              </Alert>
-          )}
-           <AlertDialogContent>
-              <AlertDialogHeader>
-                  <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                      This will permanently delete the product "{productToDelete?.name}". This action cannot be undone.
-                  </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                  <AlertDialogCancel onClick={() => setProductToDelete(null)}>Cancel</AlertDialogCancel>
-                  <AlertDialogAction onClick={handleDeleteProduct} disabled={isDeleting} variant="destructive">
-                     {isDeleting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : 'Delete'}
-                  </AlertDialogAction>
-              </AlertDialogFooter>
-          </AlertDialog>
+        {isLoading ? (
+            <div className="flex justify-center items-center py-10">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+        ) : products && products.length > 0 ? (
+            <div className="rounded-md border">
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead>Image</TableHead>
+                            <TableHead>Name</TableHead>
+                            <TableHead>Price</TableHead>
+                            <TableHead>SKU</TableHead>
+                            <TableHead className="text-right">Actions</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {products.map((product) => (
+                            <TableRow key={product.id}>
+                                <TableCell>
+                                    <div className="relative h-12 w-12 rounded-md bg-muted flex items-center justify-center">
+                                        {(product.imageUrls && product.imageUrls[0]) ? (
+                                            <Image src={product.imageUrls[0]} alt={product.name} fill className="object-contain border" />
+                                        ) : (
+                                            <ImageIcon className="h-6 w-6 text-muted-foreground" />
+                                        )}
+                                    </div>
+                                </TableCell>
+                                <TableCell>{product.name}</TableCell>
+                                <TableCell>${product.price.toFixed(2)}</TableCell>
+                                <TableCell>{product.sku || '-'}</TableCell>
+                                <TableCell className="text-right">
+                                    <div className="flex justify-end gap-2">
+                                        <ProductDialog shop={shop} product={product} onComplete={forceRefresh} canEdit={canEdit && canManageProducts}>
+                                            <Button variant="ghost" size="icon">
+                                                <Edit className="h-4 w-4" />
+                                            </Button>
+                                        </ProductDialog>
+                                        <AlertDialog>
+                                            <AlertDialogTrigger asChild>
+                                                <Button variant="ghost" size="icon" onClick={() => setProductToDelete(product)} disabled={!canEdit || !canDeleteProducts}>
+                                                    <Trash2 className="h-4 w-4 text-destructive" />
+                                                </Button>
+                                            </AlertDialogTrigger>
+                                            <AlertDialogContent>
+                                                <AlertDialogHeader>
+                                                    <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                                    <AlertDialogDescription>
+                                                        This will permanently delete the product "{productToDelete?.name}". This action cannot be undone.
+                                                    </AlertDialogDescription>
+                                                </AlertDialogHeader>
+                                                <AlertDialogFooter>
+                                                    <AlertDialogCancel onClick={() => setProductToDelete(null)}>Cancel</AlertDialogCancel>
+                                                    <AlertDialogAction onClick={handleDeleteProduct} disabled={isDeleting} variant="destructive">
+                                                        {isDeleting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : 'Delete'}
+                                                    </AlertDialogAction>
+                                                </AlertDialogFooter>
+                                            </AlertDialogContent>
+                                        </AlertDialog>
+                                    </div>
+                                </TableCell>
+                            </TableRow>
+                        ))}
+                    </TableBody>
+                </Table>
+            </div>
+        ) : (
+            <Alert>
+                <ShoppingCart className="h-4 w-4" />
+                <AlertTitle>No products yet!</AlertTitle>
+                <AlertDescription>Add your first product to start selling.</AlertDescription>
+            </Alert>
+        )}
     </div>
   );
 }
