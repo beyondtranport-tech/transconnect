@@ -511,6 +511,7 @@ function AIGenerateDialog({
 
 function ProductDialog({ shop, product, onComplete, children, canEdit }: { shop: any, product?: any, onComplete: () => void, children: React.ReactNode, canEdit: boolean }) {
   const { user } = useUser();
+  const storage = useStorage();
   const { toast } = useToast();
   const [isOpen, setIsOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -597,61 +598,37 @@ function ProductDialog({ shop, product, onComplete, children, canEdit }: { shop:
         const file = e.target.files?.[0];
         if (!file) return;
 
+        if (!storage || !user) {
+            toast({ variant: 'destructive', title: 'Upload Failed', description: 'Storage service or user not available.' });
+            return;
+        }
+
         setUploading(true);
         setStorageError(null);
         const fileRefInput = fileInputRef.current;
-        
-        const reader = new FileReader();
-        reader.readAsDataURL(file);
 
-        reader.onload = async () => {
-            try {
-                const token = await getClientSideAuthToken();
-                if (!token) throw new Error("Authentication failed.");
+        const fileName = `${Date.now()}_${file.name}`;
+        const filePath = `user-assets/${user.uid}/product-images/${fileName}`;
+        const fileStoreRef = storageRef(storage, filePath);
 
-                const imageDataUri = reader.result as string;
-                const fileName = `${Date.now()}_${file.name}`;
-                const folder = 'product-images';
-
-                const response = await fetch('/api/uploadImageAsset', {
-                    method: 'POST',
-                    headers: {
-                      'Authorization': `Bearer ${token}`,
-                      'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                      imageDataUri: imageDataUri,
-                      folder: folder,
-                      fileName: fileName
-                    }),
-                });
-
-                const result = await response.json();
-                if (!response.ok || !result.success) {
-                  throw new Error(result.error || 'Failed to upload image.');
-                }
-                
-                const currentUrls = form.getValues('imageUrls') || [];
-                form.setValue('imageUrls', [...currentUrls, result.url], { shouldValidate: true });
-                toast({ title: 'Upload Complete!', description: `Image "${file.name}" added.` });
-
-            } catch (error: any) {
-                if (error.message.includes('bucket was not found')) {
-                    setStorageError(error.message);
-                } else {
-                    toast({ variant: 'destructive', title: 'Upload Failed', description: error.message });
-                }
-            } finally {
-                setUploading(false);
-                if (fileRefInput) fileRefInput.value = '';
+        uploadBytes(fileStoreRef, file).then(async (snapshot) => {
+            const downloadURL = await getDownloadURL(snapshot.ref);
+            const currentUrls = form.getValues('imageUrls') || [];
+            form.setValue('imageUrls', [...currentUrls, downloadURL], { shouldValidate: true });
+            toast({ title: 'Upload Complete!', description: `Image "${file.name}" added.` });
+        }).catch((error) => {
+            console.error("Client-side upload error:", error);
+            if (error.code === 'storage/unauthorized') {
+                setStorageError("You do not have permission to upload files. Please ensure Storage Rules are configured correctly.");
+            } else if (error.message.includes('bucket was not found')) {
+                setStorageError(error.message);
+            } else {
+                toast({ variant: 'destructive', title: 'Upload Failed', description: error.message });
             }
-        };
-
-        reader.onerror = () => {
-            toast({ variant: 'destructive', title: 'File Read Error', description: 'Could not read the selected file.' });
+        }).finally(() => {
             setUploading(false);
             if (fileRefInput) fileRefInput.value = '';
-        }
+        });
     };
 
 
