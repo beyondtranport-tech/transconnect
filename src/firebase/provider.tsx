@@ -9,8 +9,6 @@ import { FirebaseStorage } from 'firebase/storage';
 import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
 import { useDoc } from './firestore/use-doc';
 import { useMemoFirebase } from '@/hooks/use-config';
-import { ForcePasswordChangeDialog } from '@/app/account/force-password-change-dialog';
-
 
 interface FirebaseProviderProps {
   children: ReactNode;
@@ -116,11 +114,6 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
     return () => unsubscribe();
   }, [auth]);
 
-  const handlePasswordChanged = () => {
-    // This will re-fetch the user document data which should now have passwordChangeRequired: false
-    forceRefresh();
-  };
-
   const contextValue = useMemo((): FirebaseContextState => ({
     firebaseApp,
     firestore,
@@ -134,9 +127,6 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
   return (
     <FirebaseContext.Provider value={contextValue}>
       <FirebaseErrorListener />
-      {enrichedUser?.passwordChangeRequired && (
-        <ForcePasswordChangeDialog onPasswordChanged={handlePasswordChanged} />
-      )}
       {children}
     </FirebaseContext.Provider>
   );

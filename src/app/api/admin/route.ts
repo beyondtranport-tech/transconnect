@@ -95,17 +95,13 @@ export async function POST(req: NextRequest) {
                     updatedAt: FieldValue.serverTimestamp(),
                 }, { merge: true });
 
-                // 3. Generate a temporary password
-                const tempPassword = Math.random().toString(36).slice(-8);
-
-                // 4. Create the Auth user
+                // 3. Create the Auth user
                 const userRecord = await getAuth(app).createUser({
                     email: lead.email,
-                    password: tempPassword,
                     displayName: lead.contactPerson || lead.companyName,
                 });
                 
-                // 5. Create the user's document in Firestore with passwordChangeRequired flag
+                // 4. Create the user's document in Firestore
                 await db.collection('users').doc(userRecord.uid).set({
                     id: userRecord.uid,
                     firstName: lead.contactPerson?.split(' ')[0] || lead.companyName,
@@ -113,11 +109,18 @@ export async function POST(req: NextRequest) {
                     email: lead.email,
                     phone: lead.phone || '',
                     companyId: lead.companyId,
-                    role: 'staff', // Assume invited leads are staff
-                    passwordChangeRequired: true, // IMPORTANT FLAG
+                    role: 'staff',
                     createdAt: FieldValue.serverTimestamp(),
                     updatedAt: FieldValue.serverTimestamp(),
                 });
+
+                // 5. Generate a password reset link that redirects back to the sign-in page
+                const actionCodeSettings = {
+                    url: `https://transconnect-v1-39578841-2a857.web.app/signin?email=${encodeURIComponent(lead.email)}`,
+                    handleCodeInApp: false,
+                };
+                
+                const link = await getAuth(app).generatePasswordResetLink(lead.email, actionCodeSettings);
 
                 // 6. Update the lead document with the new auth info
                 const updateData = {
@@ -127,7 +130,7 @@ export async function POST(req: NextRequest) {
                 };
                 await leadDocRef.set(updateData, { merge: true });
 
-                return NextResponse.json({ success: true, temporaryPassword: tempPassword, email: lead.email });
+                return NextResponse.json({ success: true, inviteLink: link, email: lead.email });
             }
             case 'getUserDoc': {
                 const { uid } = payload;
