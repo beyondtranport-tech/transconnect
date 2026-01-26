@@ -34,7 +34,8 @@ export async function POST(req: NextRequest) {
     const base64Data = matches[2];
     const buffer = Buffer.from(base64Data, 'base64');
     
-    const bucket = getStorage(app).bucket();
+    // Explicitly specify the bucket name to resolve the "bucket not found" issue.
+    const bucket = getStorage(app).bucket('transconnect-v1-39578841-2a857.appspot.com');
     const fileUpload = bucket.file(path);
 
     await fileUpload.save(buffer, {
