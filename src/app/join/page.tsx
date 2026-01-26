@@ -72,6 +72,7 @@ function JoinFormComponent() {
   const emailParam = searchParams.get('email');
   const firstNameParam = searchParams.get('firstName');
   const lastNameParam = searchParams.get('lastName');
+  const phoneParam = searchParams.get('phone');
 
   const form = useForm<JoinFormValues>({
     resolver: zodResolver(formSchema),
@@ -79,7 +80,7 @@ function JoinFormComponent() {
       firstName: firstNameParam || '',
       lastName: lastNameParam || '',
       email: emailParam || '',
-      phone: '',
+      phone: phoneParam || '',
       password: '',
     },
   });
@@ -87,7 +88,7 @@ function JoinFormComponent() {
   useEffect(() => {
     // This effect runs after the component mounts to override aggressive browser autofill.
     const timer = setTimeout(() => {
-      // If there's an email in the URL from an invite, force it into the form.
+      // If there are params in the URL from an invite, force them into the form.
       if (emailParam) {
         form.setValue('email', emailParam, { shouldValidate: true });
       }
@@ -97,16 +98,19 @@ function JoinFormComponent() {
       if (lastNameParam) {
         form.setValue('lastName', lastNameParam, { shouldValidate: true });
       }
+      if (phoneParam) {
+        form.setValue('phone', phoneParam, { shouldValidate: true });
+      }
 
       // Check if the phone field has been incorrectly autofilled with an email.
       const phoneValue = form.getValues('phone');
-      if (phoneValue && phoneValue.includes('@')) {
+      if (phoneValue && phoneValue.includes('@') && !phoneParam) {
         form.setValue('phone', '', { shouldValidate: true });
       }
     }, 100); // A small delay gives the browser time to autofill first.
 
     return () => clearTimeout(timer);
-  }, [emailParam, firstNameParam, lastNameParam, form]);
+  }, [emailParam, firstNameParam, lastNameParam, phoneParam, form]);
 
 
   const handlePasswordReset = async () => {

@@ -211,7 +211,7 @@ export default function ISAManagement() {
   };
   
   const inviteLink = dialogState.type === 'invite' && dialogState.data && typeof window !== 'undefined'
-    ? `${window.location.origin}/join?email=${encodeURIComponent(dialogState.data.email)}&firstName=${encodeURIComponent(dialogState.data.firstName)}&lastName=${encodeURIComponent(dialogState.data.lastName)}`
+    ? `${window.location.origin}/join?email=${encodeURIComponent(dialogState.data.email)}&firstName=${encodeURIComponent(dialogState.data.firstName)}&lastName=${encodeURIComponent(dialogState.data.lastName)}${dialogState.data.phone ? `&phone=${encodeURIComponent(dialogState.data.phone)}` : ''}`
     : '';
 
   const copyInviteLink = () => {
