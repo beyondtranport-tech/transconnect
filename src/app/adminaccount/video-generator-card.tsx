@@ -21,13 +21,13 @@ import {
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Sparkles, Video, Download, Save, Copy, ShieldAlert } from 'lucide-react';
+import { Loader2, Sparkles, Video, Download, Save, Copy } from 'lucide-react';
 import { generateVideo } from '@/ai/flows/video-generation-flow';
 import { Textarea } from '@/components/ui/textarea';
-import { useUser } from '@/firebase';
+import { useUser, useStorage } from '@/firebase';
 import { Input } from '@/components/ui/input';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { getClientSideAuthToken } from '@/firebase/errors';
+import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
+import { Progress } from '@/components/ui/progress';
 
 const defaultPrompt = `Create a short, professional marketing video that showcases how easy it is to create an online shop on the Logistics Flow platform. The video should visually represent these steps: 1. Sign up for a free account. 2. Use the simple Shop Wizard to add your business name, description, and products. 3. Publish your professional-looking online shop to the network. The video should be modern, clean, and use a color palette of green and charcoal.`;
 
@@ -38,17 +38,17 @@ export default function VideoGeneratorCard({ promptTemplate }: { promptTemplate?
   const [generatedVideo, setGeneratedVideo] = useState<string | null>(null);
   const { toast } = useToast();
   const { user } = useUser();
+  const storage = useStorage();
 
   const [isSaving, setIsSaving] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [savedVideoUrl, setSavedVideoUrl] = useState<string | null>(null);
-  const [storageError, setStorageError] = useState<string | null>(null);
-  const [isSetupGuideOpen, setIsSetupGuideOpen] = useState(false);
 
   const handleClear = () => {
     setGeneratedVideo(null);
     setSavedVideoUrl(null);
     setIsSaving(false);
-    setStorageError(null);
+    setUploadProgress(0);
   };
 
   const handleGenerate = async () => {
@@ -97,48 +97,49 @@ export default function VideoGeneratorCard({ promptTemplate }: { promptTemplate?
   };
 
   const handleSaveToCloud = async () => {
-    if (!generatedVideo || !user) {
+    if (!generatedVideo || !user || !storage) {
         toast({ variant: 'destructive', title: 'Error', description: 'No video generated, user not found, or storage not available.' });
         return;
     }
 
     setIsSaving(true);
+    setUploadProgress(0);
     setSavedVideoUrl(null);
-    setStorageError(null);
 
     try {
-        const token = await getClientSideAuthToken();
-        if (!token) throw new Error("Authentication token not found.");
-        
         const fileName = `generated_${Date.now()}.mp4`;
         const folder = `user-assets/${user.uid}/videos`;
+        const storageRef = ref(storage, `${folder}/${fileName}`);
         
-        const response = await fetch('/api/uploadImageAsset', {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-                imageDataUri: generatedVideo, 
-                folder: folder, 
-                fileName: fileName 
-            }),
-        });
+        const response = await fetch(generatedVideo);
+        const blob = await response.blob();
+        
+        const uploadTask = uploadBytesResumable(storageRef, blob);
 
-        const result = await response.json();
-        if (!response.ok || !result.success) {
-            if (result.error && result.error.includes('Permission Denied on Server')) {
-                setStorageError(result.error);
-            } else {
-                throw new Error(result.error || 'Failed to upload video.');
+        uploadTask.on('state_changed',
+            (snapshot) => {
+                const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                setUploadProgress(progress);
+            },
+            (error) => {
+                console.error("Upload failed:", error);
+                toast({ variant: 'destructive', title: 'Upload Failed', description: error.message });
+                setIsSaving(false);
+                setUploadProgress(0);
+            },
+            () => {
+                getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
+                    setSavedVideoUrl(downloadURL);
+                    toast({ title: 'Video Saved!', description: 'Your video has been saved to your asset gallery.' });
+                    setIsSaving(false);
+                });
             }
-        } else {
-            setSavedVideoUrl(result.url);
-            toast({ title: 'Video Saved!', description: 'Your video has been saved to your asset gallery.' });
-        }
+        );
     } catch (error: any) {
-        console.error("Save AI video error:", error);
+        console.error("Save to cloud error:", error);
         toast({ variant: 'destructive', title: 'Save Failed', description: error.message });
-    } finally {
         setIsSaving(false);
+        setUploadProgress(0);
     }
   };
 
@@ -186,16 +187,6 @@ export default function VideoGeneratorCard({ promptTemplate }: { promptTemplate?
                   </div>
                   <div className="space-y-4">
                       <Label>Generated Video</Label>
-                      {storageError && (
-                          <Alert variant="destructive">
-                              <ShieldAlert className="h-4 w-4" />
-                              <AlertTitle>Storage Access Error</AlertTitle>
-                              <AlertDescription>
-                                  {storageError}
-                                  <Button variant="link" className="p-0 h-auto ml-1 font-semibold" onClick={() => setIsSetupGuideOpen(true)}>View the setup guide.</Button>
-                              </AlertDescription>
-                          </Alert>
-                      )}
                       <div className="relative aspect-video w-full rounded-md border border-dashed flex items-center justify-center bg-muted">
                           {isLoading ? (
                               <div className="text-center">
@@ -208,6 +199,12 @@ export default function VideoGeneratorCard({ promptTemplate }: { promptTemplate?
                               <p className="text-sm text-muted-foreground">Your generated video will appear here.</p>
                           )}
                       </div>
+                      {isSaving && (
+                        <div className="space-y-2">
+                            <Label className="text-xs">Saving to Cloud...</Label>
+                            <Progress value={uploadProgress} />
+                        </div>
+                      )}
                       {savedVideoUrl && (
                           <div className="space-y-2">
                               <Label>Permanent URL</Label>
@@ -241,40 +238,6 @@ export default function VideoGeneratorCard({ promptTemplate }: { promptTemplate?
           </Dialog>
         </CardContent>
       </Card>
-      <Dialog open={isSetupGuideOpen} onOpenChange={setIsSetupGuideOpen}>
-        <DialogContent className="sm:max-w-2xl">
-            <DialogHeader>
-                <DialogTitle>Enabling Firebase Storage</DialogTitle>
-                <DialogDescription>
-                    Follow these steps in the Firebase Console to enable file uploads.
-                </DialogDescription>
-            </DialogHeader>
-            <div className="py-4 space-y-4 text-sm max-h-[70vh] overflow-y-auto pr-4" dangerouslySetInnerHTML={{ __html: `
-                <p>The application uses Firebase Storage to save and manage user-uploaded assets. For this to work, you must first enable the Storage service in your Firebase project and ensure the backend service account has the necessary permissions.</p>
-                
-                <h3 class="font-bold text-lg pt-2">Step 1: Enable Firebase Storage</h3>
-                <ol class="list-decimal list-inside space-y-1 pl-4">
-                    <li>Open the <a href="https://console.firebase.google.com/" target="_blank" rel="noopener noreferrer" class="text-primary underline">Firebase Console</a> and select your project.</li>
-                    <li>In the left-hand navigation, under **Build**, click on **Storage**.</li>
-                    <li>If it's not enabled, click **"Get started"**.</li>
-                    <li>Choose **Production mode** for security rules and click **Next**.</li>
-                    <li>Choose your bucket location (the default is usually fine) and click **Done**.</li>
-                </ol>
-
-                <h3 class="font-bold text-lg pt-4">Step 2: Grant Backend Permissions (Troubleshooting)</h3>
-                <p>If you still see errors after Step 1, you must grant permissions to the backend service account.</p>
-                <ol class="list-decimal list-inside space-y-1 pl-4">
-                    <li>Go to the <a href="https://console.cloud.google.com/iam-admin/iam" target="_blank" rel="noopener noreferrer" class="text-primary underline">Google Cloud IAM page</a> for your project.</li>
-                    <li>Find the principal with the name **"Firebase Admin SDK Administrator Service Agent"**.</li>
-                    <li>Copy its email address (it will end in <code class="bg-muted p-1 rounded font-mono text-xs">.iam.gserviceaccount.com</code>).</li>
-                    <li>Click the **+ GRANT ACCESS** button at the top of the page.</li>
-                    <li>In the **"New principals"** field, paste the service account email.</li>
-                    <li>In the **"Select a role"** dropdown, search for and select **"Storage Object Admin"**.</li>
-                    <li>Click **Save**.</li>
-                </ol>
-            `}} />
-        </DialogContent>
-      </Dialog>
     </>
   );
 }

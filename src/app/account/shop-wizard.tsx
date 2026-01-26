@@ -13,7 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useFirestore, useUser, useStorage, useCollection, getClientSideAuthToken } from '@/firebase';
 import { useMemoFirebase } from '@/hooks/use-config';
 import { doc, collection } from 'firebase/firestore';
-import { ref, uploadString, getDownloadURL, deleteObject } from 'firebase/storage';
+import { ref, uploadBytesResumable, getDownloadURL, deleteObject } from 'firebase/storage';
 import { Loader2, Save, CheckCircle, LayoutGrid, List, Image as ImageIcon, Sparkles, PlusCircle, Edit, Trash2, Send, Eye, ShoppingCart, Mail, Phone, UploadCloud, Wand2, Video, Search, ShieldAlert, Download, Copy } from 'lucide-react';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -242,12 +242,15 @@ function AIGenerateDialog({
   const { toast } = useToast();
   
   const { user } = useUser();
-  const [isSetupGuideOpen, setIsSetupGuideOpen] = useState(false);
-  
+  const storage = useStorage();
+  const [uploadProgress, setUploadProgress] = useState(0);
+
   useEffect(() => {
     if (!isOpen) {
         setPrompt(promptTemplate || '');
         setGeneratedImage(null);
+        setUploadProgress(0);
+        setIsApplying(false);
     }
   }, [isOpen, promptTemplate]);
 
@@ -271,45 +274,51 @@ function AIGenerateDialog({
   };
 
   const handleApplyImage = async () => {
-    if (!generatedImage || !user) {
-        toast({ variant: 'destructive', title: 'Could not apply image.', description: 'User or image data not available.' });
+    if (!generatedImage || !user || !storage) {
+        toast({ variant: 'destructive', title: 'Could not apply image.', description: 'User or storage service not available.' });
         return;
     }
     setIsApplying(true);
+    setUploadProgress(0);
 
     try {
-        const token = await getClientSideAuthToken();
-        if (!token) throw new Error("Authentication failed.");
-        
         const isHeroBanner = title.toLowerCase().includes('hero');
         const folder = `user-assets/${user.uid}/${isHeroBanner ? 'hero-images' : 'product-images'}`;
         const fileName = `generated_${Date.now()}.png`;
+        const storageRef = ref(storage, `${folder}/${fileName}`);
         
-        const response = await fetch('/api/uploadImageAsset', {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ imageDataUri: generatedImage, folder, fileName }),
-        });
+        const response = await fetch(generatedImage);
+        const blob = await response.blob();
 
-        const result = await response.json();
-        if (!response.ok || !result.success) {
-            if (result.error && result.error.includes('Permission Denied on Server')) {
-                setIsSetupGuideOpen(true);
+        const uploadTask = uploadBytesResumable(storageRef, blob);
+
+        uploadTask.on('state_changed',
+            (snapshot) => {
+                const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                setUploadProgress(progress);
+            },
+            (error) => {
+                console.error("Upload failed:", error);
+                toast({ variant: 'destructive', title: 'Upload Failed', description: error.message });
+                setIsApplying(false);
+                setUploadProgress(0);
+            },
+            () => {
+                getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
+                    onGenerate(downloadURL);
+                    toast({ title: 'Image Applied!', description: 'The new image has been added.' });
+                    setIsOpen(false);
+                });
             }
-            throw new Error(result.error || 'Failed to upload image.');
-        }
-
-        onGenerate(result.url);
-        toast({ title: 'Image Applied!', description: 'The new image has been added.' });
-        setIsOpen(false);
+        );
     } catch (e: any) {
          toast({
             variant: 'destructive',
             title: 'Failed to apply image',
             description: e.message
         });
-    } finally {
         setIsApplying(false);
+        setUploadProgress(0);
     }
   };
   
@@ -355,6 +364,7 @@ function AIGenerateDialog({
                 <p className="text-sm text-muted-foreground">Generated image will appear here.</p>
               )}
             </div>
+            {isApplying && <Progress value={uploadProgress} className="w-full" />}
           </div>
           <DialogFooter className="sm:justify-between">
              <div className="flex flex-wrap items-center gap-2">
@@ -377,40 +387,6 @@ function AIGenerateDialog({
           </DialogFooter>
         </DialogContent>
       </Dialog>
-        <Dialog open={isSetupGuideOpen} onOpenChange={setIsSetupGuideOpen}>
-            <DialogContent className="sm:max-w-2xl">
-                <DialogHeader>
-                    <DialogTitle>Enabling Firebase Storage</DialogTitle>
-                    <DialogDescription>
-                        Follow these steps in the Firebase Console to enable file uploads.
-                    </DialogDescription>
-                </DialogHeader>
-                 <div className="py-4 space-y-4 text-sm max-h-[70vh] overflow-y-auto pr-4" dangerouslySetInnerHTML={{ __html: `
-                    <p>The application uses Firebase Storage to save and manage user-uploaded assets. For this to work, you must first enable the Storage service in your Firebase project and ensure the backend service account has the necessary permissions.</p>
-                    
-                    <h3 class="font-bold text-lg pt-2">Step 1: Enable Firebase Storage</h3>
-                    <ol class="list-decimal list-inside space-y-1 pl-4">
-                        <li>Open the <a href="https://console.firebase.google.com/" target="_blank" rel="noopener noreferrer" class="text-primary underline">Firebase Console</a> and select your project.</li>
-                        <li>In the left-hand navigation, under **Build**, click on **Storage**.</li>
-                        <li>If it's not enabled, click **"Get started"**.</li>
-                        <li>Choose **Production mode** for security rules and click **Next**.</li>
-                        <li>Choose your bucket location (the default is usually fine) and click **Done**.</li>
-                    </ol>
-
-                    <h3 class="font-bold text-lg pt-4">Step 2: Grant Backend Permissions (Troubleshooting)</h3>
-                    <p>If you still see errors after Step 1, you must grant permissions to the backend service account.</p>
-                    <ol class="list-decimal list-inside space-y-1 pl-4">
-                        <li>Go to the <a href="https://console.cloud.google.com/iam-admin/iam" target="_blank" rel="noopener noreferrer" class="text-primary underline">Google Cloud IAM page</a> for your project.</li>
-                        <li>Find the principal with the name **"Firebase Admin SDK Administrator Service Agent"**.</li>
-                        <li>Copy its email address (it will end in <code class="bg-muted p-1 rounded font-mono text-xs">.iam.gserviceaccount.com</code>).</li>
-                        <li>Click the **+ GRANT ACCESS** button at the top of the page.</li>
-                        <li>In the **"New principals"** field, paste the service account email.</li>
-                        <li>In the **"Select a role"** dropdown, search for and select **"Storage Object Admin"**.</li>
-                        <li>Click **Save**.</li>
-                    </ol>
-                `}} />
-            </DialogContent>
-      </Dialog>
     </>
   );
 }
@@ -419,11 +395,12 @@ function AIGenerateDialog({
 function ProductDialog({ shop, product, onComplete, children, canEdit }: { shop: any, product?: any, onComplete: () => void, children: React.ReactNode, canEdit: boolean }) {
   const { user } = useUser();
   const { toast } = useToast();
+  const storage = useStorage();
   const [isOpen, setIsOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
-  const [isSetupGuideOpen, setIsSetupGuideOpen] = useState(false);
 
   const form = useForm<ProductFormValues>({
     resolver: zodResolver(productSchema),
@@ -499,59 +476,41 @@ function ProductDialog({ shop, product, onComplete, children, canEdit }: { shop:
     }
   };
 
-    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (!file || !user) return;
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user || !storage) return;
 
-        setUploading(true);
-        try {
-            const token = await getClientSideAuthToken();
-            if (!token) throw new Error("Authentication failed.");
+    setUploading(true);
+    setUploadProgress(0);
 
-            const reader = new FileReader();
-            reader.readAsDataURL(file);
-            reader.onload = async (event) => {
-                try {
-                    const imageDataUri = event.target?.result as string;
-                    if (!imageDataUri) throw new Error("Could not read file data.");
-                    
-                    const fileName = `${Date.now()}_${file.name}`;
-                    const folder = `user-assets/${user.uid}/product-images`;
+    const fileName = `${Date.now()}_${file.name}`;
+    const folder = `user-assets/${user.uid}/product-images`;
+    const storageRef = ref(storage, `${folder}/${fileName}`);
+    const uploadTask = uploadBytesResumable(storageRef, file);
 
-                    const response = await fetch('/api/uploadImageAsset', {
-                        method: 'POST',
-                        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ imageDataUri, folder, fileName }),
-                    });
-                    
-                    const result = await response.json();
-                    if (!response.ok || !result.success) {
-                        if (result.error && result.error.includes('Permission Denied on Server')) {
-                            setIsSetupGuideOpen(true);
-                        }
-                        throw new Error(result.error || 'Failed to upload image.');
-                    }
-                    
-                    const currentUrls = form.getValues('imageUrls') || [];
-                    form.setValue('imageUrls', [...currentUrls, result.url], { shouldValidate: true });
-                    toast({ title: 'Upload Complete!', description: `Image "${file.name}" added.` });
-                    if (fileInputRef.current) fileInputRef.current.value = '';
-
-                } catch (uploadError: any) {
-                    toast({ variant: 'destructive', title: 'Upload Failed', description: uploadError.message });
-                } finally {
-                    setUploading(false);
-                }
-            };
-            reader.onerror = (error) => {
-                setUploading(false);
-                throw new Error("Error reading file.");
-            }
-        } catch (error: any) {
+    uploadTask.on('state_changed',
+        (snapshot) => {
+            const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+            setUploadProgress(progress);
+        },
+        (error) => {
+            console.error("Upload failed:", error);
             toast({ variant: 'destructive', title: 'Upload Failed', description: error.message });
             setUploading(false);
+            setUploadProgress(0);
+        },
+        () => {
+            getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
+                const currentUrls = form.getValues('imageUrls') || [];
+                form.setValue('imageUrls', [...currentUrls, downloadURL], { shouldValidate: true });
+                toast({ title: 'Upload Complete!', description: `Image "${file.name}" added.` });
+                if (fileInputRef.current) fileInputRef.current.value = '';
+                setUploading(false);
+                setUploadProgress(0);
+            });
         }
-    };
+    );
+  };
 
 
   return (
@@ -636,6 +595,12 @@ function ProductDialog({ shop, product, onComplete, children, canEdit }: { shop:
                               </FormItem>
                           )} />
                           
+                          {uploading && (
+                                <div className="space-y-1">
+                                    <Label className="text-xs">Uploading...</Label>
+                                    <Progress value={uploadProgress} className="h-2"/>
+                                </div>
+                          )}
                           <div className="flex items-center justify-between mt-4">
                               <Button type="button" onClick={() => fileInputRef.current?.click()} disabled={uploading || !canEdit}>
                                   {uploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <UploadCloud className="mr-2 h-4 w-4"/>}
@@ -668,40 +633,6 @@ function ProductDialog({ shop, product, onComplete, children, canEdit }: { shop:
             </form>
           </Form>
         </DialogContent>
-      </Dialog>
-        <Dialog open={isSetupGuideOpen} onOpenChange={setIsSetupGuideOpen}>
-            <DialogContent className="sm:max-w-2xl">
-                <DialogHeader>
-                    <DialogTitle>Enabling Firebase Storage</DialogTitle>
-                    <DialogDescription>
-                        Follow these steps in the Firebase Console to enable file uploads.
-                    </DialogDescription>
-                </DialogHeader>
-                 <div className="py-4 space-y-4 text-sm max-h-[70vh] overflow-y-auto pr-4" dangerouslySetInnerHTML={{ __html: `
-                    <p>The application uses Firebase Storage to save and manage user-uploaded assets. For this to work, you must first enable the Storage service in your Firebase project and ensure the backend service account has the necessary permissions.</p>
-                    
-                    <h3 class="font-bold text-lg pt-2">Step 1: Enable Firebase Storage</h3>
-                    <ol class="list-decimal list-inside space-y-1 pl-4">
-                        <li>Open the <a href="https://console.firebase.google.com/" target="_blank" rel="noopener noreferrer" class="text-primary underline">Firebase Console</a> and select your project.</li>
-                        <li>In the left-hand navigation, under **Build**, click on **Storage**.</li>
-                        <li>If it's not enabled, click **"Get started"**.</li>
-                        <li>Choose **Production mode** for security rules and click **Next**.</li>
-                        <li>Choose your bucket location (the default is usually fine) and click **Done**.</li>
-                    </ol>
-
-                    <h3 class="font-bold text-lg pt-4">Step 2: Grant Backend Permissions (Troubleshooting)</h3>
-                    <p>If you still see errors after Step 1, you must grant permissions to the backend service account.</p>
-                    <ol class="list-decimal list-inside space-y-1 pl-4">
-                        <li>Go to the <a href="https://console.cloud.google.com/iam-admin/iam" target="_blank" rel="noopener noreferrer" class="text-primary underline">Google Cloud IAM page</a> for your project.</li>
-                        <li>Find the principal with the name **"Firebase Admin SDK Administrator Service Agent"**.</li>
-                        <li>Copy its email address (it will end in <code class="bg-muted p-1 rounded font-mono text-xs">.iam.gserviceaccount.com</code>).</li>
-                        <li>Click the **+ GRANT ACCESS** button at the top of the page.</li>
-                        <li>In the **"New principals"** field, paste the service account email.</li>
-                        <li>In the **"Select a role"** dropdown, search for and select **"Storage Object Admin"**.</li>
-                        <li>Click **Save**.</li>
-                    </ol>
-                `}} />
-            </DialogContent>
       </Dialog>
     </>
   );
