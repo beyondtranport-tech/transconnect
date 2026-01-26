@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useEffect, useCallback } from 'react';
@@ -45,7 +44,9 @@ function InviteDialog({ lead, companyId, onInviteSent }: { lead: any, companyId:
     const { toast } = useToast();
 
     const onOpenChange = (open: boolean) => {
-        if (!open) setInviteLink('');
+        if (!open) {
+            setInviteLink(''); // Reset on close
+        }
         setIsOpen(open);
     };
 
@@ -75,6 +76,7 @@ function InviteDialog({ lead, companyId, onInviteSent }: { lead: any, companyId:
     };
     
     const copyToClipboard = () => {
+        if (!inviteLink) return;
         navigator.clipboard.writeText(inviteLink);
         toast({ title: 'Link Copied!' });
     };
@@ -90,26 +92,32 @@ function InviteDialog({ lead, companyId, onInviteSent }: { lead: any, companyId:
                 <DialogHeader>
                     <DialogTitle>Invite {lead.companyName}</DialogTitle>
                     <DialogDescription>
-                        {inviteLink ? "Share this secure link with the lead to let them set their password." : `This will create an account for ${lead.email} and generate a sign-up link. Are you sure?`}
+                        {isLoading ? "Generating secure sign-up link..." : inviteLink ? "Share this secure link with the lead to let them set their password." : `This will create an account for ${lead.email} and generate a sign-up link. Are you sure?`}
                     </DialogDescription>
                 </DialogHeader>
-                {isLoading ? <div className="flex justify-center p-4"><Loader2 className="animate-spin" /></div> : null}
-                {inviteLink && (
+                
+                {isLoading ? (
+                    <div className="flex justify-center p-8"><Loader2 className="animate-spin h-8 w-8 text-primary" /></div>
+                ) : inviteLink ? (
                     <div className="flex items-center space-x-2 py-4">
                         <Input value={inviteLink} readOnly />
-                        <Button size="sm" onClick={copyToClipboard} className="px-3">
-                           <span className="sr-only">Copy</span>
-                           <Copy className="h-4 w-4" />
+                        <Button onClick={copyToClipboard} className="w-full sm:w-auto">
+                           <Copy className="mr-2 h-4 w-4" />
+                           Copy Link
                         </Button>
                     </div>
-                )}
+                ) : null }
+
                 <DialogFooter>
                     {inviteLink ? (
                         <Button onClick={() => onOpenChange(false)}>Done</Button>
                     ) : (
                         <>
-                            <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
-                            <Button onClick={handleInvite} disabled={isLoading}>Generate Invite Link</Button>
+                            <Button variant="ghost" onClick={() => onOpenChange(false)} disabled={isLoading}>Cancel</Button>
+                            <Button onClick={handleInvite} disabled={isLoading}>
+                               {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null}
+                               Generate Invite Link
+                            </Button>
                         </>
                     )}
                 </DialogFooter>
