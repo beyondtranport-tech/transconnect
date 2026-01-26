@@ -32,12 +32,14 @@ It may take a moment for your Storage bucket to be created and provisioned.
 
 1.  Go to the Google Cloud Console for your project: **[IAM & Admin](https://console.cloud.google.com/iam-admin/iam?project=transconnect-v1-39578841-2a857)**
 2.  Find the principal (member) that has the name **"Firebase Admin SDK Administrator Service Agent"**.
-3.  Copy its email address. It will look something like `firebase-adminsdk-xxxxx@transconnect-v1-39578841-2a857.iam.gserviceaccount.com`.
+3.  Copy its email address. It will look something like `firebase-adminsdk-fbsvc@transconnect-v1-39578841-2a857.iam.gserviceaccount.com`.
 
 ### 4.2: Grant Storage Admin Role
 
-1.  On the same IAM page, click the **+ GRANT ACCESS** button at the top.
-2.  In the **"New principals"** field, paste the service account email you just copied.
+**Important:** Make sure you are on the main **IAM** page, which lists all principals (members). The top of the page should say "IAM". The "+ GRANT ACCESS" button is located at the top of this main page.
+
+1.  On the **IAM** page, click the **+ GRANT ACCESS** button at the top.
+2.  In the **"New principals"** field that appears, paste the service account email you just copied.
 3.  In the **"Select a role"** dropdown, search for and select **"Storage Object Admin"**. This role provides the necessary permissions for the backend to manage files in your Storage bucket.
 4.  Click **Save**.
 
