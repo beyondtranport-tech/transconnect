@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
@@ -409,15 +410,52 @@ function AIGenerateDialog({
             <Textarea id="generate-prompt" value={prompt} onChange={(e) => setPrompt(e.target.value)} placeholder="e.g., A shiny chrome truck exhaust pipe" rows={5}/>
           </div>
            {storageError && (
-              <Alert variant="destructive">
-                  <ShieldAlert className="h-4 w-4" />
-                  <AlertTitle>Firebase Storage Not Enabled</AlertTitle>
-                  <AlertDescription>
-                      Before you can save images, you must enable Firebase Storage. Please follow the instructions in{' '}
-                      <a href="/docs/firebase-storage-setup.md" target="_blank" className="underline font-semibold">this setup guide</a> to resolve the issue.
-                  </AlertDescription>
-              </Alert>
-          )}
+                <Dialog>
+                    <Alert variant="destructive">
+                        <ShieldAlert className="h-4 w-4" />
+                        <AlertTitle>Firebase Storage Not Enabled</AlertTitle>
+                        <AlertDescription>
+                            Before you can upload images, you must enable Firebase Storage.
+                            <DialogTrigger asChild>
+                                <Button variant="link" className="p-0 h-auto ml-1 font-semibold">View the setup guide.</Button>
+                            </DialogTrigger>
+                        </AlertDescription>
+                    </Alert>
+                    <DialogContent className="sm:max-w-2xl">
+                        <DialogHeader>
+                            <DialogTitle>Enabling Firebase Storage</DialogTitle>
+                            <DialogDescription>
+                                Follow these steps in the Firebase Console to enable file uploads.
+                            </DialogDescription>
+                        </DialogHeader>
+                        <div className="py-4 space-y-4 text-sm max-h-[70vh] overflow-y-auto pr-4">
+                            <p>The application uses Firebase Storage to save and manage user-uploaded assets like shop images, product photos, and AI-generated content. For the upload functionality to work, you must first enable the Storage service in your Firebase project.</p>
+                            <p className="font-semibold text-destructive">The error "The specified bucket does not exist" is a strong indicator that this step has not been completed.</p>
+                            
+                            <h3 className="font-bold text-lg pt-2">Step 1: Go to the Firebase Console</h3>
+                            <ol className="list-decimal list-inside space-y-1 pl-4">
+                                <li>Open the <a href="https://console.firebase.google.com/" target="_blank" rel="noopener noreferrer" className="text-primary underline">Firebase Console</a>.</li>
+                                <li>Select your project: <code className="bg-muted p-1 rounded font-mono text-xs">transconnect-v1-39578841-2a857</code>.</li>
+                            </ol>
+
+                            <h3 className="font-bold text-lg pt-2">Step 2: Navigate to Storage</h3>
+                            <ol className="list-decimal list-inside space-y-1 pl-4">
+                                <li>In the left-hand navigation menu, under the <strong>Build</strong> section, click on <strong>Storage</strong>.</li>
+                            </ol>
+                            
+                            <h3 className="font-bold text-lg pt-2">Step 3: Get Started with Storage</h3>
+                            <ol className="list-decimal list-inside space-y-1 pl-4">
+                                <li>If Storage is not enabled, you will see a "Get started" button. Click it.</li>
+                                <li>A dialog will appear to guide you through setting up security rules. It is recommended to start in <strong>Production mode</strong>. Click <strong>Next</strong>.</li>
+                                <li className="pl-4 text-xs text-muted-foreground"><em>Production mode starts with all reads and writes disallowed, which is a secure default. The application's own security rules will grant the necessary permissions.</em></li>
+                                <li>You will then be asked to choose a location for your Storage bucket. The default location selected for you is usually the best choice. Click <strong>Done</strong>.</li>
+                            </ol>
+                            
+                            <p className="pt-4 font-semibold">Once this process is complete, the file upload functionality within your application should work correctly without any further changes.</p>
+                        </div>
+                    </DialogContent>
+                </Dialog>
+            )}
           <div className="relative aspect-square w-full rounded-md border border-dashed flex items-center justify-center bg-muted">
             {isLoading ? (
               <div className="text-center">
@@ -663,14 +701,51 @@ function ProductDialog({ shop, product, onComplete, children, canEdit }: { shop:
                     </div>
 
                     {storageError && (
-                        <Alert variant="destructive">
-                            <ShieldAlert className="h-4 w-4" />
-                            <AlertTitle>Firebase Storage Not Enabled</AlertTitle>
-                            <AlertDescription>
-                                Before you can upload images, you must enable Firebase Storage. Please follow the instructions in{' '}
-                                <a href="/docs/firebase-storage-setup.md" target="_blank" className="underline font-semibold">this setup guide</a> to resolve the issue.
-                            </AlertDescription>
-                        </Alert>
+                       <Dialog>
+                            <Alert variant="destructive">
+                                <ShieldAlert className="h-4 w-4" />
+                                <AlertTitle>Firebase Storage Not Enabled</AlertTitle>
+                                <AlertDescription>
+                                    Before you can upload images, you must enable Firebase Storage.
+                                    <DialogTrigger asChild>
+                                        <Button variant="link" className="p-0 h-auto ml-1 font-semibold">View the setup guide.</Button>
+                                    </DialogTrigger>
+                                </AlertDescription>
+                            </Alert>
+                            <DialogContent className="sm:max-w-2xl">
+                                <DialogHeader>
+                                    <DialogTitle>Enabling Firebase Storage</DialogTitle>
+                                    <DialogDescription>
+                                        Follow these steps in the Firebase Console to enable file uploads.
+                                    </DialogDescription>
+                                </DialogHeader>
+                                <div className="py-4 space-y-4 text-sm max-h-[70vh] overflow-y-auto pr-4">
+                                    <p>The application uses Firebase Storage to save and manage user-uploaded assets like shop images, product photos, and AI-generated content. For the upload functionality to work, you must first enable the Storage service in your Firebase project.</p>
+                                    <p className="font-semibold text-destructive">The error "The specified bucket does not exist" is a strong indicator that this step has not been completed.</p>
+                                    
+                                    <h3 className="font-bold text-lg pt-2">Step 1: Go to the Firebase Console</h3>
+                                    <ol className="list-decimal list-inside space-y-1 pl-4">
+                                        <li>Open the <a href="https://console.firebase.google.com/" target="_blank" rel="noopener noreferrer" className="text-primary underline">Firebase Console</a>.</li>
+                                        <li>Select your project: <code className="bg-muted p-1 rounded font-mono text-xs">transconnect-v1-39578841-2a857</code>.</li>
+                                    </ol>
+
+                                    <h3 className="font-bold text-lg pt-2">Step 2: Navigate to Storage</h3>
+                                    <ol className="list-decimal list-inside space-y-1 pl-4">
+                                        <li>In the left-hand navigation menu, under the <strong>Build</strong> section, click on <strong>Storage</strong>.</li>
+                                    </ol>
+                                    
+                                    <h3 className="font-bold text-lg pt-2">Step 3: Get Started with Storage</h3>
+                                    <ol className="list-decimal list-inside space-y-1 pl-4">
+                                        <li>If Storage is not enabled, you will see a "Get started" button. Click it.</li>
+                                        <li>A dialog will appear to guide you through setting up security rules. It is recommended to start in <strong>Production mode</strong>. Click <strong>Next</strong>.</li>
+                                        <li className="pl-4 text-xs text-muted-foreground"><em>Production mode starts with all reads and writes disallowed, which is a secure default. The application's own security rules will grant the necessary permissions.</em></li>
+                                        <li>You will then be asked to choose a location for your Storage bucket. The default location selected for you is usually the best choice. Click <strong>Done</strong>.</li>
+                                    </ol>
+                                    
+                                    <p className="pt-4 font-semibold">Once this process is complete, the file upload functionality within your application should work correctly without any further changes.</p>
+                                </div>
+                            </DialogContent>
+                        </Dialog>
                     )}
 
                     <div className="border rounded-md p-4 bg-muted/50">

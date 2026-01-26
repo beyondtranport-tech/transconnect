@@ -21,14 +21,15 @@ import {
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Sparkles, Image as ImageIcon, Download, Save, Copy } from 'lucide-react';
+import { Loader2, Sparkles, Image as ImageIcon, Download, Save, Copy, ShieldAlert } from 'lucide-react';
 import Image from 'next/image';
 import { generateImage } from '@/ai/flows/image-generation-flow';
 import { Textarea } from '@/components/ui/textarea';
-import { useStorage, useUser } from '@/firebase';
-import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { useUser } from '@/firebase';
 import { Progress } from '@/components/ui/progress';
 import { Input } from '@/components/ui/input';
+import { getClientSideAuthToken } from '@/firebase/errors';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 const defaultPrompt = `A cinematic, professional photograph of a futuristic, gleaming white and green Scania truck driving on a high-tech highway at dusk. The road is illuminated with glowing data lines, and the sky has a vibrant sunset. The image should look modern, professional, and convey a sense of speed and efficiency.`;
 
@@ -39,15 +40,16 @@ export default function ImageGeneratorCard({ promptTemplate }: { promptTemplate?
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   const { toast } = useToast();
   const { user } = useUser();
-  const storage = useStorage();
 
   const [isSaving, setIsSaving] = useState(false);
   const [savedImageUrl, setSavedImageUrl] = useState<string | null>(null);
+  const [storageError, setStorageError] = useState<string | null>(null);
 
   const handleClear = () => {
     setGeneratedImage(null);
     setSavedImageUrl(null);
     setIsSaving(false);
+    setStorageError(null);
   };
 
 
@@ -97,26 +99,38 @@ export default function ImageGeneratorCard({ promptTemplate }: { promptTemplate?
   };
 
   const handleSaveToCloud = async () => {
-    if (!generatedImage || !user || !storage) {
-        toast({ variant: 'destructive', title: 'Error', description: 'No image, user, or storage service available.' });
+    if (!generatedImage || !user) {
+        toast({ variant: 'destructive', title: 'Error', description: 'No image or user available.' });
         return;
     }
 
     setIsSaving(true);
+    setStorageError(null);
 
     try {
-        const response = await fetch(generatedImage);
-        const blob = await response.blob();
-        const fileName = `generated-image-${Date.now()}.png`;
-        const fileRef = storageRef(storage, `user-assets/${user.uid}/${fileName}`);
-        
-        await uploadBytes(fileRef, blob);
-        const downloadURL = await getDownloadURL(fileRef);
+        const token = await getClientSideAuthToken();
+        if (!token) throw new Error("Authentication failed.");
 
-        setSavedImageUrl(downloadURL);
-        toast({ title: 'Image Saved!', description: 'Your image is now stored in the cloud.' });
+        const response = await fetch('/api/uploadImageAsset', {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                imageDataUri: generatedImage,
+                folder: 'generated-images',
+                fileName: `generated_${Date.now()}.png`
+            })
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error);
+
+        setSavedImageUrl(result.url);
+        toast({ title: 'Image Saved!', description: 'Your image is now stored in the asset gallery.' });
     } catch (error: any) {
-        toast({ variant: 'destructive', title: 'Save Failed', description: error.message });
+        if (error.message.includes('bucket was not found')) {
+            setStorageError(error.message);
+        } else {
+            toast({ variant: 'destructive', title: 'Save Failed', description: error.message });
+        }
     } finally {
         setIsSaving(false);
     }
@@ -165,6 +179,49 @@ export default function ImageGeneratorCard({ promptTemplate }: { promptTemplate?
                 </div>
                 <div className="space-y-4">
                     <Label>Generated Image</Label>
+                    {storageError && (
+                        <Dialog>
+                            <Alert variant="destructive">
+                                <ShieldAlert className="h-4 w-4" />
+                                <AlertTitle>Firebase Storage Not Enabled</AlertTitle>
+                                <AlertDescription>
+                                    Before you can upload images, you must enable Firebase Storage.
+                                    <DialogTrigger asChild>
+                                        <Button variant="link" className="p-0 h-auto ml-1 font-semibold">View the setup guide.</Button>
+                                    </DialogTrigger>
+                                </AlertDescription>
+                            </Alert>
+                            <DialogContent className="sm:max-w-2xl">
+                                <DialogHeader>
+                                    <DialogTitle>Enabling Firebase Storage</DialogTitle>
+                                    <DialogDescription>
+                                        Follow these steps in the Firebase Console to enable file uploads.
+                                    </DialogDescription>
+                                </DialogHeader>
+                                <div className="py-4 space-y-4 text-sm max-h-[70vh] overflow-y-auto pr-4">
+                                    <p>The application uses Firebase Storage to save and manage user-uploaded assets like shop images, product photos, and AI-generated content. For the upload functionality to work, you must first enable the Storage service in your Firebase project.</p>
+                                    <p className="font-semibold text-destructive">The error "The specified bucket does not exist" is a strong indicator that this step has not been completed.</p>
+                                    <h3 className="font-bold text-lg pt-2">Step 1: Go to the Firebase Console</h3>
+                                    <ol className="list-decimal list-inside space-y-1 pl-4">
+                                        <li>Open the <a href="https://console.firebase.google.com/" target="_blank" rel="noopener noreferrer" className="text-primary underline">Firebase Console</a>.</li>
+                                        <li>Select your project: <code className="bg-muted p-1 rounded font-mono text-xs">transconnect-v1-39578841-2a857</code>.</li>
+                                    </ol>
+                                    <h3 className="font-bold text-lg pt-2">Step 2: Navigate to Storage</h3>
+                                    <ol className="list-decimal list-inside space-y-1 pl-4">
+                                        <li>In the left-hand navigation menu, under the <strong>Build</strong> section, click on <strong>Storage</strong>.</li>
+                                    </ol>
+                                    <h3 className="font-bold text-lg pt-2">Step 3: Get Started with Storage</h3>
+                                    <ol className="list-decimal list-inside space-y-1 pl-4">
+                                        <li>If Storage is not enabled, you will see a "Get started" button. Click it.</li>
+                                        <li>A dialog will appear to guide you through setting up security rules. It is recommended to start in <strong>Production mode</strong>. Click <strong>Next</strong>.</li>
+                                        <li className="pl-4 text-xs text-muted-foreground"><em>Production mode starts with all reads and writes disallowed, which is a secure default. The application's own security rules will grant the necessary permissions.</em></li>
+                                        <li>You will then be asked to choose a location for your Storage bucket. The default location selected for you is usually the best choice. Click <strong>Done</strong>.</li>
+                                    </ol>
+                                    <p className="pt-4 font-semibold">Once this process is complete, the file upload functionality within your application should work correctly without any further changes.</p>
+                                </div>
+                            </DialogContent>
+                        </Dialog>
+                    )}
                     <div className="relative aspect-square w-full rounded-md border border-dashed flex items-center justify-center bg-muted">
                         {isLoading ? (
                             <div className="text-center">
