@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -27,6 +26,10 @@ import {
   Wallet,
   Gift,
   Activity,
+  Handshake,
+  TrendingUp,
+  Presentation,
+  Mail,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -49,6 +52,10 @@ const BillingContent = dynamic(() => import('./billing-content'), { loading: () 
 const WalletContent = dynamic(() => import('./wallet-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const RewardsContent = dynamic(() => import('./rewards'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const ActivityFeed = dynamic(() => import('./activity-feed'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const NetworkContent = dynamic(() => import('./network-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const PerformanceContent = dynamic(() => import('./performance-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const NetworkOffer = dynamic(() => import('./network-offer'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const NetworkEmails = dynamic(() => import('./network-emails'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 
 // Placeholder components for sections under construction
 function DocumentsContent() {
@@ -111,6 +118,12 @@ function AccountPageContent() {
       case 'rewards': return <RewardsContent />;
       case 'activity': return <ActivityFeed />;
       
+      // Sales / Network
+      case 'network': return <NetworkContent />;
+      case 'performance': return <PerformanceContent />;
+      case 'offer': return <NetworkOffer />;
+      case 'emails': return <NetworkEmails />;
+      
       // Placeholders
       case 'documents': return <DocumentsContent />;
       case 'settings': return <SettingsContent />;
@@ -132,6 +145,8 @@ function AccountPageContent() {
   const navigate = (view: string) => {
     router.push(`/account?view=${view}`, { scroll: false });
   };
+  
+  const isSalesActive = ['network', 'performance', 'offer', 'emails'].includes(activeView);
 
   return (
     <SidebarProvider>
@@ -177,6 +192,33 @@ function AccountPageContent() {
                   <Store />
                   <span>My Shop</span>
                 </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton tooltip="Sales" isActive={isSalesActive}>
+                    <Handshake /><span>Sales</span>
+                </SidebarMenuButton>
+                <SidebarMenuSub>
+                    <SidebarMenuSubItem>
+                        <SidebarMenuSubButton isActive={activeView === 'network'} onClick={() => navigate('network')}>
+                            <Users />My Network
+                        </SidebarMenuSubButton>
+                    </SidebarMenuSubItem>
+                    <SidebarMenuSubItem>
+                        <SidebarMenuSubButton isActive={activeView === 'performance'} onClick={() => navigate('performance')}>
+                            <TrendingUp />Performance
+                        </SidebarMenuSubButton>
+                    </SidebarMenuSubItem>
+                    <SidebarMenuSubItem>
+                        <SidebarMenuSubButton isActive={activeView === 'offer'} onClick={() => navigate('offer')}>
+                            <Presentation />The Offer
+                        </SidebarMenuSubButton>
+                    </SidebarMenuSubItem>
+                    <SidebarMenuSubItem>
+                        <SidebarMenuSubButton isActive={activeView === 'emails'} onClick={() => navigate('emails')}>
+                            <Mail />Email Templates
+                        </SidebarMenuSubButton>
+                    </SidebarMenuSubItem>
+                </SidebarMenuSub>
               </SidebarMenuItem>
                <SidebarMenuItem>
                 <SidebarMenuButton tooltip="Wallet" isActive={activeView === 'wallet'} onClick={() => navigate('wallet')}>
