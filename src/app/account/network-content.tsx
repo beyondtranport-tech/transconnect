@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useCallback, useEffect } from 'react';
@@ -11,7 +12,7 @@ import { type ColumnDef } from '@/hooks/use-data-table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { useUser, getClientSideAuthToken, useDoc, useCollection } from '@/firebase';
+import { useUser, getClientSideAuthToken, useDoc, useCollection, useFirestore } from '@/firebase';
 import Link from 'next/link';
 import { useMemoFirebase } from '@/hooks/use-config';
 import { collection, doc } from 'firebase/firestore';
