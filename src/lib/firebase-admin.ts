@@ -32,8 +32,8 @@ export function getAdminApp(): { app: App | null; error: string | null } {
     // Explicitly set the projectId and storageBucket to ensure correct initialization.
     const app = initializeApp({
       credential: cert(serviceAccount),
-      storageBucket: 'transconnect-v1-39578841-2a857.appspot.com',
       projectId: 'transconnect-v1-39578841-2a857',
+      storageBucket: `${'transconnect-v1-39578841-2a857'}.appspot.com`
     }, ADMIN_APP_NAME);
 
     return { app, error: null };
