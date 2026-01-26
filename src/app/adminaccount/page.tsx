@@ -57,6 +57,12 @@ import React from 'react';
 // Dashboard
 const DashboardContent = dynamic(() => import('./dashboard-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 
+// User Management
+const MembersList = dynamic(() => import('./members-list'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const StaffManagement = dynamic(() => import('./staff-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const PartnerManagement = dynamic(() => import('./partner-management'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+
+
 // Sales & Marketing
 const LeadsAgent = dynamic(() => import('./leads-agent'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const LeadsDatabase = dynamic(() => import('./leads-database'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
@@ -71,8 +77,6 @@ const TTSStudio = dynamic(() => import('./tts-studio'), { loading: () => <Loader
 
 
 // Strategy & Pitching
-const PartnerManagement = dynamic(() => import('./partner-management'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const StaffManagement = dynamic(() => import('./staff-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const PartnerOffer = dynamic(() => import('./partner-offer'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const InvestorOffer = dynamic(() => import('./investor-offer'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const ElevatorPitch = dynamic(() => import('./elevator-pitch'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
@@ -142,6 +146,11 @@ function AdminAccountContent() {
     switch (activeView) {
       // Dashboard
       case 'dashboard': return <DashboardContent />;
+
+      // User Management
+      case 'members': return <MembersList />;
+      case 'staff-management': return <StaffManagement />;
+      case 'partner-management': return <PartnerManagement />;
       
       // Sales & Marketing
       case 'leads-agent': return <LeadsAgent />;
@@ -159,8 +168,6 @@ function AdminAccountContent() {
       case 'member-sales-performance': return <PerformanceContent />;
 
       // Strategy & Pitching
-      case 'staff-management': return <StaffManagement />;
-      case 'partner-management': return <PartnerManagement />;
       case 'partner-offer': return <PartnerOffer />;
       case 'investor-offer': return <InvestorOffer />;
       case 'elevator-pitch': return <ElevatorPitch />;
@@ -198,8 +205,10 @@ function AdminAccountContent() {
   }
 
   const navigate = (view: string) => router.push(`/adminaccount?view=${view}`, { scroll: false });
+  
+  const isUserManagementActive = ['members', 'staff-management', 'partner-management'].includes(activeView);
   const isSalesActive = ['leads-agent', 'leads-database', 'marketing-studio', 'investor-studio', 'partner-studio', 'audio-studio', 'asset-gallery', 'member-sales-offer', 'member-sales-emails', 'member-sales-performance'].includes(activeView);
-  const isStrategyActive = ['staff-management', 'partner-management', 'partner-offer', 'investor-offer', 'elevator-pitch', 'partner-pitch', 'partner-emails', 'investor-emails', 'commissions-isa'].includes(activeView);
+  const isStrategyActive = ['partner-offer', 'investor-offer', 'elevator-pitch', 'partner-pitch', 'partner-emails', 'investor-emails', 'commissions-isa'].includes(activeView);
   const isFinancialsActive = ['financial-setup', 'sales-roadmap', 'targets', 'member-projection', 'cost-calculator', 'budget', 'forecast'].includes(activeView);
 
   return (
@@ -221,6 +230,14 @@ function AdminAccountContent() {
                         <LayoutDashboard /><span>Dashboard</span>
                     </SidebarMenuButton>
                 </SidebarMenuItem>
+                 <SidebarMenuItem>
+                  <SidebarMenuButton tooltip="User Management" isActive={isUserManagementActive}><Users /><span>User Management</span></SidebarMenuButton>
+                  <SidebarMenuSub>
+                    <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'members'} onClick={() => navigate('members')}>Members</SidebarMenuSubButton></SidebarMenuSubItem>
+                    <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'staff-management'} onClick={() => navigate('staff-management')}>Staff</SidebarMenuSubButton></SidebarMenuSubItem>
+                    <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'partner-management'} onClick={() => navigate('partner-management')}>Partners & ISAs</SidebarMenuSubButton></SidebarMenuSubItem>
+                  </SidebarMenuSub>
+                </SidebarMenuItem>
                 <SidebarMenuItem>
                   <SidebarMenuButton tooltip="Sales & Marketing" isActive={isSalesActive}><Handshake /><span>Sales & Marketing</span></SidebarMenuButton>
                   <SidebarMenuSub>
@@ -241,8 +258,6 @@ function AdminAccountContent() {
                 <SidebarMenuItem>
                   <SidebarMenuButton tooltip="Strategy & Pitching" isActive={isStrategyActive}><Presentation /><span>Strategy & Pitching</span></SidebarMenuButton>
                   <SidebarMenuSub>
-                     <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'staff-management'} onClick={() => navigate('staff-management')}><Users />Staff Management</SidebarMenuSubButton></SidebarMenuSubItem>
-                     <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'partner-management'} onClick={() => navigate('partner-management')}><Users />Partner Management</SidebarMenuSubButton></SidebarMenuSubItem>
                      <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'partner-pitch'} onClick={() => navigate('partner-pitch')}><Info />Partner Pitch</SidebarMenuSubButton></SidebarMenuSubItem>
                      <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'partner-offer'} onClick={() => navigate('partner-offer')}><Presentation />Partner Offer</SidebarMenuSubButton></SidebarMenuSubItem>
                       <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'partner-emails'} onClick={() => navigate('partner-emails')}><Mail />Partner Emails</SidebarMenuSubButton></SidebarMenuSubItem>
