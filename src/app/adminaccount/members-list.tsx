@@ -1,14 +1,17 @@
+
 'use client';
 
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, Users } from 'lucide-react';
+import { Loader2, Users, PlusCircle } from 'lucide-react';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
 import { Badge } from '@/components/ui/badge';
 import { getClientSideAuthToken } from '@/firebase';
 import { cn } from '@/lib/utils';
 import MemberActionMenu from './member-action-menu';
+import { Button } from '@/components/ui/button';
+import Link from 'next/link';
 
 interface Member {
     id: string;
@@ -138,11 +141,18 @@ export default function MembersList() {
 
     return (
         <Card>
-            <CardHeader>
-                <CardTitle className="flex items-center gap-2"><Users /> Member Roster</CardTitle>
-                <CardDescription>
-                    A list of all registered member companies on the TransConnect platform.
-                </CardDescription>
+            <CardHeader className="flex flex-row items-center justify-between">
+                <div>
+                    <CardTitle className="flex items-center gap-2"><Users /> Member Roster</CardTitle>
+                    <CardDescription>
+                        A list of all registered member companies on the TransConnect platform.
+                    </CardDescription>
+                </div>
+                 <Button asChild>
+                    <Link href="/adminaccount?view=leads-database&action=add-member">
+                        <PlusCircle className="mr-2 h-4 w-4" /> Add Member
+                    </Link>
+                </Button>
             </CardHeader>
             <CardContent>
                  {isLoading ? (
@@ -152,7 +162,7 @@ export default function MembersList() {
                  ) : error ? (
                     <div className="text-center py-20 text-destructive bg-destructive/10 rounded-md">
                         <h3 className="font-semibold">Error loading members</h3>
-                        <p className="text-sm">{error.message}</p>
+                        <p className="text-sm">{error}</p>
                     </div>
                  ) : (
                     <DataTable columns={columns} data={members || []} />

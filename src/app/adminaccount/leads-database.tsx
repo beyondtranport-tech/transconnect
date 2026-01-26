@@ -14,7 +14,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@/components/ui/dialog';
 import {
   Form,
@@ -55,8 +54,7 @@ const leadSchema = z.object({
 
 type LeadFormValues = z.infer<typeof leadSchema>;
 
-function LeadDialog({ lead, onSave, children, defaultValues }: { lead?: any, onSave: () => void, children: React.ReactNode, defaultValues?: Partial<LeadFormValues> }) {
-  const [isOpen, setIsOpen] = useState(false);
+function LeadDialog({ open, onOpenChange, lead, onSave, defaultValues }: { open: boolean; onOpenChange: (open: boolean) => void; lead?: any; onSave: () => void; defaultValues?: Partial<LeadFormValues> }) {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
@@ -65,7 +63,7 @@ function LeadDialog({ lead, onSave, children, defaultValues }: { lead?: any, onS
   });
 
   useEffect(() => {
-    if (isOpen) {
+    if (open) {
         if (lead) {
              form.reset({
                 ...lead,
@@ -85,14 +83,7 @@ function LeadDialog({ lead, onSave, children, defaultValues }: { lead?: any, onS
             });
         }
     }
-  }, [isOpen, lead, form, defaultValues]);
-  
-  useEffect(() => {
-    // If defaultValues are provided (e.g. from URL), open the dialog
-    if(defaultValues?.companyName) {
-        setIsOpen(true);
-    }
-  }, [defaultValues]);
+  }, [open, lead, form, defaultValues]);
 
   const onSubmit = async (values: LeadFormValues) => {
     setIsLoading(true);
@@ -114,7 +105,7 @@ function LeadDialog({ lead, onSave, children, defaultValues }: { lead?: any, onS
 
         toast({ title: lead ? 'Lead Updated' : 'Lead Added' });
         onSave();
-        setIsOpen(false);
+        onOpenChange(false);
     } catch(e: any) {
         toast({ variant: 'destructive', title: 'Save Failed', description: e.message });
     } finally {
@@ -123,8 +114,7 @@ function LeadDialog({ lead, onSave, children, defaultValues }: { lead?: any, onS
   };
   
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-        <DialogTrigger asChild>{children}</DialogTrigger>
+    <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="sm:max-w-xl">
             <DialogHeader>
                 <DialogTitle>{lead ? 'Edit Lead' : 'Add New Lead'}</DialogTitle>
@@ -369,9 +359,16 @@ function DuplicateCleaner({ onComplete }: { onComplete: () => void }) {
 function LeadsDatabaseComponent() {
   const firestore = useFirestore();
   const searchParams = useSearchParams();
+  const router = useRouter();
   const leadsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'leads')) : null, [firestore]);
   const { data: leads, isLoading, forceRefresh } = useCollection(leadsQuery);
   const { toast } = useToast();
+  
+  const [isAddLeadOpen, setIsAddLeadOpen] = useState(false);
+  const [editLead, setEditLead] = useState<any | null>(null);
+  const [isEditLeadOpen, setIsEditLeadOpen] = useState(false);
+  const [deleteLead, setDeleteLead] = useState<any | null>(null);
+  const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
 
   const newLeadDefaults = useMemo(() => {
     const companyName = searchParams.get('newCompanyName');
@@ -389,7 +386,19 @@ function LeadsDatabaseComponent() {
     return undefined;
   }, [searchParams]);
 
-  const handleDelete = async (leadId: string) => {
+  useEffect(() => {
+    const action = searchParams.get('action');
+    if (action === 'add-member' || newLeadDefaults) {
+      setIsAddLeadOpen(true);
+      // Clean the URL to prevent re-triggering
+      const newPath = `${window.location.pathname}?view=leads-database`;
+      router.replace(newPath, { scroll: false });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams, newLeadDefaults]);
+
+  const handleDelete = async () => {
+    if (!deleteLead) return;
     try {
       const token = await getClientSideAuthToken();
       if (!token) throw new Error("Authentication failed.");
@@ -397,7 +406,7 @@ function LeadsDatabaseComponent() {
       const response = await fetch('/api/admin', {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'deleteLead', payload: { leadId } }),
+        body: JSON.stringify({ action: 'deleteLead', payload: { leadId: deleteLead.id } }),
       });
       if (!response.ok) throw new Error((await response.json()).error || 'Failed to delete lead.');
       
@@ -405,6 +414,9 @@ function LeadsDatabaseComponent() {
       forceRefresh();
     } catch(e: any) {
       toast({ variant: 'destructive', title: 'Delete Failed', description: e.message });
+    } finally {
+        setIsDeleteAlertOpen(false);
+        setDeleteLead(null);
     }
   };
 
@@ -419,43 +431,49 @@ function LeadsDatabaseComponent() {
     { id: 'actions', header: () => <div className="text-right">Actions</div>, cell: ({row}) => (
         <div className="text-right flex items-center justify-end">
              <InviteDialog lead={row.original} onInviteSent={forceRefresh} />
-            <LeadDialog lead={row.original} onSave={forceRefresh}>
-                <Button variant="ghost" size="icon"><Edit className="h-4 w-4" /></Button>
-            </LeadDialog>
-            <AlertDialog>
-                <AlertDialogTrigger asChild><Button variant="ghost" size="icon"><Trash2 className="h-4 w-4 text-destructive" /></Button></AlertDialogTrigger>
-                <AlertDialogContent>
-                    <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>This will permanently delete this lead.</AlertDialogDescription></AlertDialogHeader>
-                    <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => handleDelete(row.original.id)} variant="destructive">Delete</AlertDialogAction></AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
+            <Button variant="ghost" size="icon" onClick={() => { setEditLead(row.original); setIsEditLeadOpen(true); }}>
+                <Edit className="h-4 w-4" />
+            </Button>
+            <Button variant="ghost" size="icon" onClick={() => { setDeleteLead(row.original); setIsDeleteAlertOpen(true); }}>
+                <Trash2 className="h-4 w-4 text-destructive" />
+            </Button>
         </div>
     )},
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   ], [forceRefresh]);
 
   return (
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <div>
-            <CardTitle className="flex items-center gap-2"><Users /> Lead Database</CardTitle>
-            <CardDescription>Add, edit, and manage your sales leads to build your member database.</CardDescription>
-          </div>
-          <div className="flex items-center gap-2">
-            <DuplicateCleaner onComplete={forceRefresh} />
-            <LeadDialog onSave={forceRefresh} defaultValues={newLeadDefaults}>
-                <Button><PlusCircle className="mr-2 h-4 w-4"/>Add Lead</Button>
-            </LeadDialog>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className="flex justify-center items-center py-10"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
-          ) : (
-            <DataTable columns={columns} data={leads || []} />
-          )}
-        </CardContent>
-      </Card>
+      <>
+        <LeadDialog open={isAddLeadOpen} onOpenChange={setIsAddLeadOpen} onSave={forceRefresh} defaultValues={newLeadDefaults} />
+        {editLead && <LeadDialog open={isEditLeadOpen} onOpenChange={setIsEditLeadOpen} lead={editLead} onSave={forceRefresh} />}
+        <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
+            <AlertDialogContent>
+                <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>This will permanently delete the lead for {deleteLead?.companyName}.</AlertDialogDescription></AlertDialogHeader>
+                <AlertDialogFooter>
+                    <AlertDialogCancel onClick={() => setDeleteLead(null)}>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleDelete} variant="destructive">Delete</AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
+        <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+            <div>
+                <CardTitle className="flex items-center gap-2"><Users /> Lead Database</CardTitle>
+                <CardDescription>Add, edit, and manage your sales leads to build your member database.</CardDescription>
+            </div>
+            <div className="flex items-center gap-2">
+                <DuplicateCleaner onComplete={forceRefresh} />
+                <Button onClick={() => setIsAddLeadOpen(true)}><PlusCircle className="mr-2 h-4 w-4"/>Add Lead</Button>
+            </div>
+            </CardHeader>
+            <CardContent>
+            {isLoading ? (
+                <div className="flex justify-center items-center py-10"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
+            ) : (
+                <DataTable columns={columns} data={leads || []} />
+            )}
+            </CardContent>
+        </Card>
+      </>
   );
 }
 
@@ -466,5 +484,3 @@ export default function LeadsDatabase() {
         </Suspense>
     );
 }
-
-    
