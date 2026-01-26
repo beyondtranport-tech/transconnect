@@ -63,6 +63,7 @@ const MembersList = dynamic(() => import('./members-list'), { loading: () => <Lo
 const StaffManagement = dynamic(() => import('./staff-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const PartnerManagement = dynamic(() => import('./partner-management'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const ISAManagement = dynamic(() => import('./isa-management'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const InvestorManagement = dynamic(() => import('./investor-management'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 
 
 // Sales & Marketing
@@ -154,6 +155,7 @@ function AdminAccountContent() {
       case 'staff-management': return <StaffManagement />;
       case 'partners': return <PartnerManagement />;
       case 'isa-agents': return <ISAManagement />;
+      case 'investor-management': return <InvestorManagement />;
       
       // Sales & Marketing
       case 'leads-agent': return <LeadsAgent />;
@@ -173,18 +175,11 @@ function AdminAccountContent() {
       // Strategy & Pitching
       case 'partner-offer': return <PartnerOffer />;
       case 'commissions-isa': return <ISAPitchSettings />;
-      case 'member-sales-offer': return <NetworkOffer />;
-      case 'member-sales-emails': return <NetworkEmails />;
-      case 'member-sales-performance': return <PerformanceContent />;
       case 'partner-pitch': return <PartnerElevatorPitch />;
       case 'partner-emails': return <PartnerEmailSequence />;
       case 'elevator-pitch': return <ElevatorPitch />;
       case 'investor-offer': return <InvestorOffer />;
       case 'investor-emails': return <InvestorEmailSequence />;
-      case 'isa-agents': return <ISAManagement />;
-      case 'members': return <MembersList />;
-      case 'partners': return <PartnerManagement />;
-      case 'staff-management': return <StaffManagement />;
       
       // Financials & Projections
       case 'financial-setup': return <FinancialSetup />;
@@ -218,7 +213,8 @@ function AdminAccountContent() {
   const isStrategyActive = [
     'partner-offer', 'commissions-isa', 'member-sales-offer', 'member-sales-emails', 
     'member-sales-performance', 'partner-pitch', 'partner-emails', 'elevator-pitch', 
-    'investor-offer', 'investor-emails', 'isa-agents', 'members', 'partners', 'staff-management'
+    'investor-offer', 'investor-emails', 'isa-agents', 'members', 'partners', 'staff-management',
+    'investor-management'
   ].includes(activeView);
   const isFinancialsActive = ['financial-setup', 'sales-roadmap', 'targets', 'member-projection', 'cost-calculator', 'budget', 'forecast'].includes(activeView);
 
@@ -306,6 +302,7 @@ function AdminAccountContent() {
                      <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'partner-emails'} onClick={() => navigate('partner-emails')}><Mail />Partner Emails</SidebarMenuSubButton></SidebarMenuSubItem>
                      <SidebarMenuSeparator />
                      <SidebarMenuSubItem><span className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">Investors</span></SidebarMenuSubItem>
+                     <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'investor-management'} onClick={() => navigate('investor-management')}><Briefcase />Investor Management</SidebarMenuSubButton></SidebarMenuSubItem>
                      <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'elevator-pitch'} onClick={() => navigate('elevator-pitch')}><Info />Investor Pitch</SidebarMenuSubButton></SidebarMenuSubItem>
                      <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'investor-offer'} onClick={() => navigate('investor-offer')}><Presentation />Investor Offer</SidebarMenuSubButton></SidebarMenuSubItem>
                      <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'investor-emails'} onClick={() => navigate('investor-emails')}><Mail />Investor Emails</SidebarMenuSubButton></SidebarMenuSubItem>
