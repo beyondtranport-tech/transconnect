@@ -69,40 +69,27 @@ function LeadDialog({ lead, companyId, onSave, children }: { lead?: any, company
       const token = await getClientSideAuthToken();
       if (!token) throw new Error("Authentication failed.");
 
-      // If lead already has an authUid, it means they are registered. We just update the document.
-      if (lead?.authUid) {
-        const response = await fetch('/api/updateUserDoc', {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ path: `companies/${companyId}/leads/${lead.id}`, data: { ...values, updatedAt: { _methodName: 'serverTimestamp' } } }),
-        });
-        if (!response.ok) throw new Error((await response.json()).error || 'Failed to update lead.');
-        toast({ title: 'Lead Updated' });
-        onSave();
-        setIsOpen(false);
-      } else {
-        // For new leads or existing un-registered leads, provision an account.
-        const payload = { 
-            lead: { 
-                ...values,
-                id: lead?.id, // Pass existing ID if editing
-                companyId: companyId 
-            }
-        };
-        const response = await fetch('/api/admin', {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: 'provisionLeadAccount', payload }),
-        });
+      // For new leads or existing un-registered leads, provision an account.
+      const payload = { 
+          lead: { 
+              ...values,
+              id: lead?.id, // Pass existing ID if editing
+              companyId: companyId 
+          }
+      };
+      const response = await fetch('/api/admin', {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'provisionLeadAccount', payload }),
+      });
 
-        const result = await response.json();
-        if (!response.ok) throw new Error(result.error);
-        
-        setGeneratedLink(result.resetLink);
-        setCurrentLeadEmail(values.email || '');
-        toast({ title: 'Account Provisioned!', description: 'A sign-up link has been generated.' });
-        onSave(); // Refresh the main table
-      }
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error);
+      
+      setGeneratedLink(result.resetLink);
+      setCurrentLeadEmail(values.email || '');
+      toast({ title: 'Account Provisioned!', description: 'A sign-up link has been generated.' });
+      onSave(); // Refresh the main table
     } catch(e: any) {
       toast({ variant: 'destructive', title: 'Operation Failed', description: e.message });
     } finally {
@@ -213,10 +200,10 @@ export default function NetworkContent() {
 
 
     const columns: ColumnDef<any>[] = useMemo(() => [
-        { accessorKey: 'companyName', header: 'Company Name' },
-        { accessorKey: 'contactPerson', header: 'Contact' },
-        { accessorKey: 'email', header: 'Email' },
-        { accessorKey: 'phone', header: 'Phone' },
+        { accessorKey: 'companyName', header: 'Company Name', cell: ({ row }) => <div>{row.original.companyName}</div> },
+        { accessorKey: 'contactPerson', header: 'Contact', cell: ({ row }) => <div>{row.original.contactPerson}</div> },
+        { accessorKey: 'email', header: 'Email', cell: ({ row }) => <div>{row.original.email}</div> },
+        { accessorKey: 'phone', header: 'Phone', cell: ({ row }) => <div>{row.original.phone}</div> },
         { accessorKey: 'role', header: 'Role', cell: ({ row }) => <Badge variant="outline">{row.original.role}</Badge> },
         { accessorKey: 'status', header: 'Status', cell: ({ row }) => <Badge className="capitalize">{row.original.status}</Badge> },
         { id: 'actions', accessorKey: 'actions', header: () => <div className="text-right">Actions</div>, cell: ({ row }) => (
