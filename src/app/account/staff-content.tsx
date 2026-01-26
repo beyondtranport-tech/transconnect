@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useCallback } from 'react';
@@ -56,7 +57,7 @@ function AddStaffDialog({ companyId, onStaffAdded, canCreate }: { companyId: str
   const [isOpen, setIsOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [inviteStep, setInviteStep] = useState(false);
-  const [newUserEmail, setNewUserEmail] = useState('');
+  const [newUserInfo, setNewUserInfo] = useState({ email: '', firstName: '', lastName: '' });
   const { toast } = useToast();
 
   const form = useForm<StaffFormValues>({
@@ -108,7 +109,7 @@ function AddStaffDialog({ companyId, onStaffAdded, canCreate }: { companyId: str
         description: `A profile for ${values.firstName} has been created.`,
       });
 
-      setNewUserEmail(values.email);
+      setNewUserInfo({ email: values.email, firstName: values.firstName, lastName: values.lastName });
       setInviteStep(true);
       onStaffAdded();
     } catch (error: any) {
@@ -126,13 +127,13 @@ function AddStaffDialog({ companyId, onStaffAdded, canCreate }: { companyId: str
     if (!open) {
       form.reset();
       setInviteStep(false);
-      setNewUserEmail('');
+      setNewUserInfo({ email: '', firstName: '', lastName: '' });
     }
     setIsOpen(open);
   }
 
   const copyInviteLink = () => {
-    const signupUrl = `${window.location.origin}/join?email=${encodeURIComponent(newUserEmail)}`;
+    const signupUrl = `${window.location.origin}/join?email=${encodeURIComponent(newUserInfo.email)}&firstName=${encodeURIComponent(newUserInfo.firstName)}&lastName=${encodeURIComponent(newUserInfo.lastName)}`;
     navigator.clipboard.writeText(signupUrl);
     toast({
         title: 'Sign-up Link Copied!',
@@ -157,7 +158,7 @@ function AddStaffDialog({ companyId, onStaffAdded, canCreate }: { companyId: str
                     </DialogDescription>
                 </DialogHeader>
                 <div className="py-4 space-y-4">
-                    <p className="text-sm">Please copy the sign-up link and send it to <span className="font-semibold text-primary">{newUserEmail}</span>. They must create their account using this specific email address to be correctly linked to your company.</p>
+                    <p className="text-sm">Please copy the sign-up link and send it to <span className="font-semibold text-primary">{newUserInfo.email}</span>. They must create their account using this specific email address to be correctly linked to your company.</p>
                      <Button onClick={copyInviteLink} className="w-full">Copy Sign-up Link</Button>
                 </div>
                  <DialogFooter>
@@ -444,3 +445,5 @@ export default function StaffContent({ companyId: propCompanyId }: { companyId?:
     </>
   );
 }
+
+    
