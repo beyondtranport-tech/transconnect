@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, useMemo, useEffect, useCallback } from 'react';
@@ -96,9 +95,12 @@ function InviteDialog({ lead, companyId, onInviteSent }: { lead: any, companyId:
                 </DialogHeader>
                 {isLoading ? <div className="flex justify-center p-4"><Loader2 className="animate-spin" /></div> : null}
                 {inviteLink && (
-                    <div className="flex items-center space-x-2">
+                    <div className="flex items-center space-x-2 py-4">
                         <Input value={inviteLink} readOnly />
-                        <Button size="sm" onClick={copyToClipboard}><Copy className="h-4 w-4" /></Button>
+                        <Button size="sm" onClick={copyToClipboard} className="px-3">
+                           <span className="sr-only">Copy</span>
+                           <Copy className="h-4 w-4" />
+                        </Button>
                     </div>
                 )}
                 <DialogFooter>
@@ -244,10 +246,10 @@ export default function NetworkContent() {
     };
 
     const columns: ColumnDef<any>[] = useMemo(() => [
-        { accessorKey: 'companyName', header: 'Company Name', cell: ({ row }) => <div>{row.original.companyName}</div> },
-        { accessorKey: 'contactPerson', header: 'Contact', cell: ({ row }) => <div>{row.original.contactPerson}</div> },
-        { accessorKey: 'email', header: 'Email', cell: ({ row }) => <div>{row.original.email}</div> },
-        { accessorKey: 'phone', header: 'Phone', cell: ({ row }) => <div>{row.original.phone}</div> },
+        { accessorKey: 'companyName', header: 'Company Name' },
+        { accessorKey: 'contactPerson', header: 'Contact' },
+        { accessorKey: 'email', header: 'Email' },
+        { accessorKey: 'phone', header: 'Phone' },
         { accessorKey: 'role', header: 'Role', cell: ({ row }) => <Badge variant="outline">{row.original.role}</Badge> },
         { accessorKey: 'status', header: 'Status', cell: ({ row }) => <Badge className="capitalize">{row.original.status}</Badge> },
         { id: 'actions', header: () => <div className="text-right">Actions</div>, cell: ({ row }) => (
@@ -309,4 +311,6 @@ export default function NetworkContent() {
     );
 }
       
+    
+
     
