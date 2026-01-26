@@ -2,7 +2,7 @@
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import { NextRequest, NextResponse } from 'next/server';
 import { headers } from 'next/headers';
-import { getAuth, UserRecord } from 'firebase-admin/auth';
+import { getAuth } from 'firebase-admin/auth';
 import { getAdminApp } from '@/lib/firebase-admin';
 
 export async function POST(req: NextRequest) {
