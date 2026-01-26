@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -212,13 +213,13 @@ export default function NetworkContent() {
 
 
     const columns: ColumnDef<any>[] = useMemo(() => [
-        { header: 'Company Name', cell: ({ row }) => <div>{row.original.companyName}</div> },
-        { header: 'Contact', cell: ({ row }) => <div>{row.original.contactPerson}</div> },
-        { header: 'Email', cell: ({ row }) => <div>{row.original.email}</div> },
-        { header: 'Phone', cell: ({ row }) => <div>{row.original.phone}</div> },
-        { header: 'Role', cell: ({ row }) => <Badge variant="outline">{row.original.role}</Badge> },
-        { header: 'Status', cell: ({ row }) => <Badge className="capitalize">{row.original.status}</Badge> },
-        { id: 'actions', header: () => <div className="text-right">Actions</div>, cell: ({ row }) => (
+        { accessorKey: 'companyName', header: 'Company Name', cell: ({ row }) => <div>{row.original.companyName}</div> },
+        { accessorKey: 'contactPerson', header: 'Contact', cell: ({ row }) => <div>{row.original.contactPerson}</div> },
+        { accessorKey: 'email', header: 'Email', cell: ({ row }) => <div>{row.original.email}</div> },
+        { accessorKey: 'phone', header: 'Phone', cell: ({ row }) => <div>{row.original.phone}</div> },
+        { accessorKey: 'role', header: 'Role', cell: ({ row }) => <Badge variant="outline">{row.original.role}</Badge> },
+        { accessorKey: 'status', header: 'Status', cell: ({ row }) => <Badge className="capitalize">{row.original.status}</Badge> },
+        { id: 'actions', accessorKey: 'actions', header: () => <div className="text-right">Actions</div>, cell: ({ row }) => (
             <div className="flex items-center justify-end">
                 <Button variant="ghost" size="icon" onClick={() => handleInvite(row.original)} title="Invite Lead">
                     <Send className="h-4 w-4" />
