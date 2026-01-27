@@ -61,7 +61,7 @@ export async function POST(req: NextRequest) {
 
         switch (action) {
             case 'getDashboardQueues': {
-                const allShopsSnap = await db.collectionGroup('shops').get();
+                 const allShopsSnap = await db.collectionGroup('shops').get();
                 const shopMap = new Map();
                 allShopsSnap.forEach(doc => {
                     shopMap.set(doc.id, doc.data().shopName);
@@ -70,8 +70,12 @@ export async function POST(req: NextRequest) {
                 const pendingShops = allShopsSnap.docs
                     .map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }))
                     .filter((shop: any) => shop.status === 'pending_review')
-                    .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-
+                    .sort((a: any, b: any) => {
+                        const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+                        const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+                        return dateB - dateA;
+                    });
+                
                 const allAgreementsSnap = await db.collectionGroup('agreements').get();
 
                 const proposedAgreements = allAgreementsSnap.docs
@@ -84,7 +88,11 @@ export async function POST(req: NextRequest) {
                         };
                     })
                     .filter((agreement: any) => agreement.status === 'proposed')
-                    .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+                    .sort((a: any, b: any) => {
+                         const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+                        const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+                        return dateB - dateA;
+                    });
 
                 return NextResponse.json({ success: true, data: { pendingShops, proposedAgreements } });
             }
@@ -451,7 +459,21 @@ export async function POST(req: NextRequest) {
             }
             case 'getShops': {
                 const snapshot = await db.collectionGroup('shops').orderBy('createdAt', 'desc').get();
-                const data = snapshot.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
+                const data = snapshot.docs.map(doc => {
+                    const docData = doc.data();
+                    const pathSegments = doc.ref.path.split('/');
+                    let companyId = null;
+                    const companiesIndex = pathSegments.indexOf('companies');
+                    if (companiesIndex > -1 && companiesIndex < pathSegments.length - 1) {
+                        companyId = pathSegments[companiesIndex + 1];
+                    }
+                    
+                    return { 
+                        id: doc.id, 
+                        ...serializeTimestamps(docData),
+                        companyId: companyId || docData.companyId,
+                    };
+                });
                 return NextResponse.json({ success: true, data: data });
             }
             case 'getFinanceApplications': {
