@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, useMemo, useCallback, useEffect } from 'react';
@@ -12,7 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useCollection, useFirestore, getClientSideAuthToken } from '@/firebase';
 import { useMemoFirebase } from '@/hooks/use-config';
-import { collection, query, where, collectionGroup, orderBy } from 'firebase/firestore';
+import { collection, query, where, collectionGroup } from 'firebase/firestore';
 import { ShopPreview } from '@/components/shop-preview';
 import MemberCommercials from './wallet/[memberId]/member-commercials';
 import { format } from 'date-fns';
@@ -106,7 +105,7 @@ function ShopCommercialsDialog({ shop, onUpdate }: { shop: any; onUpdate: () => 
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-4xl">
-        <MemberCommercials companyId={shop.companyId} shopId={shop.shopId} onUpdate={onUpdate} />
+        <MemberCommercials companyId={shop.companyId} shopId={shop.shopId || shop.id} onUpdate={onUpdate} />
       </DialogContent>
     </Dialog>
   );
@@ -130,12 +129,12 @@ export default function ShopsList() {
 
     const pendingShopsQuery = useMemoFirebase(() => {
         if (!firestore) return null;
-        return query(collectionGroup(firestore, 'shops'), where('status', '==', 'pending_review'), orderBy('createdAt', 'desc'));
+        return query(collectionGroup(firestore, 'shops'), where('status', '==', 'pending_review'));
     }, [firestore]);
     
     const agreementsQuery = useMemoFirebase(() => {
         if (!firestore) return null;
-        return query(collectionGroup(firestore, 'agreements'), where('status', '==', 'proposed'), orderBy('createdAt', 'desc'));
+        return query(collectionGroup(firestore, 'agreements'), where('status', '==', 'proposed'));
     }, [firestore]);
     
     const { data: pendingShops, isLoading: isLoadingShops, error: shopsError, forceRefresh: refreshShops } = useCollection<Shop>(pendingShopsQuery);
@@ -261,7 +260,7 @@ export default function ShopsList() {
                     ) : (
                         <div className="text-center py-20 border-2 border-dashed rounded-lg">
                             <CheckCircle className="mx-auto h-12 w-12 text-green-500" />
-                            <h3 className="mt-4 text-xl font-semibold">All Shops Reviewed!</h3>
+                            <h3 className="mt-4 text-xl font-semibold">All Clear!</h3>
                             <p className="mt-2 text-muted-foreground">There are no new shops currently awaiting approval.</p>
                         </div>
                     )}
