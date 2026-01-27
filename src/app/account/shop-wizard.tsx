@@ -1288,6 +1288,8 @@ function NewAgreementDialog({ shop, onSave }: { shop: any, onSave: () => void })
                 volumeThreshold: values.volumeThreshold || null,
                 status: 'proposed',
                 proposedBy: user.uid,
+                shopId: shop.id,
+                companyId: shop.companyId,
             };
 
             await fetch('/api/addUserDoc', {
@@ -1670,5 +1672,3 @@ export function ShopWizard({ shop: initialShop }: { shop: any }) {
     </div>
   );
 }
-
-    
