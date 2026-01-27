@@ -55,6 +55,14 @@ const statusColors: { [key: string]: 'default' | 'secondary' | 'destructive' | '
   rejected: 'destructive',
 };
 
+const fileToDataUri = (file: File) => new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = error => reject(error);
+    reader.readAsDataURL(file);
+});
+
+
 // ====== STEP 1: Core Identity ======
 const shopStep1Schema = z.object({
   shopName: z.string().min(1, "Shop name is required."),
@@ -218,13 +226,6 @@ const productSchema = z.object({
   imageUrls: z.array(z.string()).optional(),
 });
 type ProductFormValues = z.infer<typeof productSchema>;
-
-const fileToDataUri = (file: File) => new Promise<string>((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = error => reject(error);
-    reader.readAsDataURL(file);
-});
 
 function AIGenerateDialog({ 
   onGenerate, 
@@ -634,7 +635,7 @@ function ProductDialog({ shop, product, onComplete, children, canEdit }: { shop:
               </div>
               <DialogFooter className="sm:justify-between mt-auto flex-shrink-0 pt-4 border-t">
                    <Button type="button" variant="outline" onClick={() => setIsOpen(false)}>Cancel</Button>
-                   <Button type="submit" disabled={isSaving || uploading || !canEdit}>
+                   <Button type="button" onClick={form.handleSubmit(onSubmit)} disabled={isSaving || uploading || !canEdit}>
                       {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                       {product ? 'Update Product' : 'Create Product'}
                   </Button>
@@ -792,6 +793,9 @@ function Step3Appearance({ shop, onSave, canEdit }: { shop: any, onSave: (newDat
   const { user } = useUser();
   const { toast } = useToast();
   const [isSaving, setIsSaving] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
   
   const form = useForm<Step3FormValues>({
     resolver: zodResolver(shopStep3Schema),
@@ -806,6 +810,48 @@ function Step3Appearance({ shop, onSave, canEdit }: { shop: any, onSave: (newDat
 
   const handleImageGenerated = (newUrl: string) => {
     form.setValue('heroBannerUrl', newUrl);
+  };
+  
+  const handleHeroImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+
+    setIsUploading(true);
+    setUploadProgress(10);
+
+    try {
+        const token = await getClientSideAuthToken();
+        if (!token) throw new Error("Authentication failed.");
+
+        const fileDataUri = await fileToDataUri(file);
+        setUploadProgress(30);
+
+        const folder = `user-assets/${user.uid}/hero-images`;
+        const fileName = `hero_${Date.now()}_${file.name}`;
+        
+        const response = await fetch('/api/uploadImageAsset', {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ fileDataUri, folder, fileName }),
+        });
+
+        setUploadProgress(80);
+        const result = await response.json();
+        if (!response.ok || !result.success) {
+            throw new Error(result.error || 'Failed to upload image.');
+        }
+        
+        form.setValue('heroBannerUrl', result.url, { shouldValidate: true });
+        
+        setUploadProgress(100);
+        toast({ title: 'Image Uploaded!' });
+    } catch (error: any) {
+        toast({ variant: 'destructive', title: 'Upload Failed', description: error.message });
+    } finally {
+        if (fileInputRef.current) fileInputRef.current.value = '';
+        setIsUploading(false);
+        setUploadProgress(0);
+    }
   };
   
   const onSubmit = async (values: Step3FormValues) => {
@@ -849,7 +895,7 @@ function Step3Appearance({ shop, onSave, canEdit }: { shop: any, onSave: (newDat
             <div className="p-4 bg-primary/5 border border-primary/20 rounded-lg space-y-4">
                  <h3 className="font-semibold flex items-center gap-2"><ImageIcon className="h-5 w-5 text-primary"/> Hero Banner</h3>
                 <p className="text-sm text-muted-foreground">
-                   Generate a hero banner for your shop's landing page. Describe what you sell or the feeling you want to convey.
+                   Upload your own hero banner image or generate one with AI. Recommended size: 1200x400 pixels.
                 </p>
                 <FormField control={form.control} name="heroBannerUrl" render={({ field }) => (
                     <FormItem>
@@ -867,7 +913,21 @@ function Step3Appearance({ shop, onSave, canEdit }: { shop: any, onSave: (newDat
                     </FormItem>
                 )} />
 
-                <AIGenerateDialog 
+                {isUploading && (
+                  <div className="space-y-1">
+                      <Label className="text-xs">Uploading...</Label>
+                      <Progress value={uploadProgress} className="h-2"/>
+                  </div>
+                )}
+                
+                <div className="flex items-center justify-between mt-4">
+                  <Button type="button" onClick={() => fileInputRef.current?.click()} disabled={isUploading || !canEdit}>
+                      {isUploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <UploadCloud className="mr-2 h-4 w-4"/>}
+                      Upload Image
+                  </Button>
+                  <Input ref={fileInputRef} type="file" id="hero-image-upload" className="hidden" onChange={handleHeroImageUpload} disabled={isUploading || !canEdit} accept="image/*" />
+
+                  <AIGenerateDialog 
                     onGenerate={handleImageGenerated} 
                     canEdit={canEdit}
                     title="AI Hero Banner Generator"
@@ -875,10 +935,11 @@ function Step3Appearance({ shop, onSave, canEdit }: { shop: any, onSave: (newDat
                     promptTemplate="A cinematic, wide-angle photograph of a [Your Truck Type, e.g., Scania R 560] truck driving on a scenic highway. The style should be professional, high-quality, and inspiring, with a beautiful sunset in the background."
                     shop={shop}
                 >
-                    <Button type="button" variant="secondary" disabled={!canEdit}>
-                        <Wand2 className="mr-2 h-4 w-4" /> Generate Hero Banner
+                    <Button type="button" variant="secondary" disabled={isUploading || !canEdit}>
+                        <Wand2 className="mr-2 h-4 w-4" /> Generate with AI
                     </Button>
-                </AIGenerateDialog>
+                  </AIGenerateDialog>
+                </div>
             </div>
         </fieldset>
 
