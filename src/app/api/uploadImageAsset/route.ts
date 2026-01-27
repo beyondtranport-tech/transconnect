@@ -5,53 +5,64 @@ import { getAdminApp } from '@/lib/firebase-admin';
 import { getAuth } from 'firebase-admin/auth';
 
 export async function POST(req: NextRequest) {
+    console.log("uploadImageAsset: API route started.");
     const { app, error: initError } = getAdminApp();
     if (initError || !app) {
+        console.error("uploadImageAsset: Admin SDK init error:", initError);
         return NextResponse.json({ success: false, error: `Server error: ${initError}` }, { status: 500 });
     }
     
     const authorization = req.headers.get('authorization');
     const token = authorization?.split('Bearer ')[1];
     if (!token) {
+        console.error("uploadImageAsset: Unauthorized, no token provided.");
         return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     }
 
     try {
         const adminAuth = getAuth(app);
         await adminAuth.verifyIdToken(token);
-        
+        console.log("uploadImageAsset: Token verified.");
+
         const { fileDataUri, folder, fileName, contentType: providedContentType } = await req.json();
+        console.log(`uploadImageAsset: Received request for folder '${folder}' and file '${fileName}'.`);
         
         if (!fileDataUri || !folder || !fileName) {
+            console.error("uploadImageAsset: Missing file data or path info.");
             return NextResponse.json({ success: false, error: 'Missing file data or path info.' }, { status: 400 });
         }
 
         const matches = fileDataUri.match(/^data:(.+);base64,(.+)$/);
         if (!matches || matches.length !== 3) {
+            console.error("uploadImageAsset: Invalid data URI format.");
             return NextResponse.json({ success: false, error: 'Invalid data URI format.' }, { status: 400 });
         }
+        console.log("uploadImageAsset: Data URI decoded.");
         
         const contentType = providedContentType || matches[1];
         const fileBuffer = Buffer.from(matches[2], 'base64');
         
-        // --- DEFINITIVE FIX ---
-        // Explicitly define and use the correct bucket name, bypassing any faulty auto-discovery.
         const bucketName = "transconnect-v1-39578841-2a857.firebasestorage.app";
+        console.log(`uploadImageAsset: Attempting to use bucket: ${bucketName}`);
         const bucket = getStorage(app).bucket(bucketName);
         const filePath = `${folder}/${fileName}`;
         const file = bucket.file(filePath);
+        console.log(`uploadImageAsset: File path set to: ${filePath}`);
         
+        console.log("uploadImageAsset: Calling file.save()...");
         await file.save(fileBuffer, {
             metadata: { contentType },
             public: true 
         });
+        console.log("uploadImageAsset: file.save() completed successfully.");
 
         const publicUrl = `https://storage.googleapis.com/${bucket.name}/${filePath}`;
+        console.log(`uploadImageAsset: Generated public URL: ${publicUrl}`);
         
         return NextResponse.json({ success: true, url: publicUrl });
 
     } catch (error: any) {
-        console.error("Error in /api/uploadImageAsset:", error);
+        console.error("CRITICAL ERROR in /api/uploadImageAsset:", error);
         
         if (error.code === 403 || error.message?.includes('does not have storage.objects.create access')) {
             return NextResponse.json({
@@ -61,7 +72,6 @@ export async function POST(req: NextRequest) {
         }
         
         if (error.message?.includes('The specified bucket does not exist')) {
-             // Hardcode the error message to avoid reflecting the SDK's incorrect discovery
              return NextResponse.json({
                 success: false,
                 error: `Bucket Not Found on Server: The backend tried to access the Storage bucket but it could not be found. Please ensure Firebase Storage is enabled and the bucket name in the code is correct.`

@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
@@ -110,7 +111,7 @@ function Step1CoreIdentity({ shop, onSave, onSeoGenerated, canEdit }: { shop: an
         const response = await fetch('/api/updateUserDoc', {
             method: 'POST',
             headers: {
-                'Authorization': `Bearer ${token}`,
+                'Authorization': `Bearer ${'\'\'\''}${token}'\'\'\'`,
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
@@ -299,7 +300,7 @@ function AIGenerateDialog({
       const response = await fetch('/api/uploadImageAsset', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`,
+          'Authorization': `Bearer ${'\'\'\''}${token}'\'\'\'`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ fileDataUri: generatedImage, folder, fileName }),
@@ -453,7 +454,7 @@ function ProductDialog({ shop, product, onComplete, children, canEdit }: { shop:
         const response = await fetch(apiEndpoint, {
             method: 'POST',
             headers: {
-                'Authorization': `Bearer ${token}`,
+                'Authorization': `Bearer ${'\'\'\''}${token}'\'\'\'`,
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify(body),
@@ -494,7 +495,7 @@ function ProductDialog({ shop, product, onComplete, children, canEdit }: { shop:
         
         const response = await fetch('/api/uploadImageAsset', {
             method: 'POST',
-            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+            headers: { 'Authorization': `Bearer ${'\'\'\''}${token}'\'\'\'`, 'Content-Type': 'application/json' },
             body: JSON.stringify({ fileDataUri, folder, fileName }),
         });
 
@@ -508,7 +509,7 @@ function ProductDialog({ shop, product, onComplete, children, canEdit }: { shop:
         form.setValue('imageUrls', [...currentUrls, result.url], { shouldValidate: true });
         
         setUploadProgress(100);
-        toast({ title: 'Upload Complete!', description: `Image "${file.name}" added.` });
+        toast({ title: 'Image Uploaded!', description: 'Image is ready. Fill out product details and click "Create Product" to save.' });
     } catch (error: any) {
         toast({ variant: 'destructive', title: 'Upload Failed', description: error.message });
     } finally {
@@ -672,7 +673,7 @@ function Step2Products({ shop, canEdit }: { shop: any, canEdit: boolean }) {
         
         const response = await fetch('/api/deleteUserDoc', {
             method: 'POST',
-            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+            headers: { 'Authorization': `Bearer ${'\'\'\''}${token}'\'\'\'`, 'Content-Type': 'application/json' },
             body: JSON.stringify({ path: `companies/${shop.companyId}/shops/${shop.id}/products/${productToDelete.id}` }),
         });
         
@@ -816,7 +817,7 @@ function Step3Appearance({ shop, onSave, canEdit }: { shop: any, onSave: (newDat
         const response = await fetch('/api/updateUserDoc', {
             method: 'POST',
             headers: {
-                'Authorization': `Bearer ${token}`,
+                'Authorization': `Bearer ${'\'\'\''}${token}'\'\'\'`,
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
@@ -936,7 +937,7 @@ function Step4SocialLinks({ shop, onSave, canEdit }: { shop: any, onSave: (newDa
         const response = await fetch('/api/updateUserDoc', {
             method: 'POST',
             headers: {
-                'Authorization': `Bearer ${token}`,
+                'Authorization': `Bearer ${'\'\'\''}${token}'\'\'\'`,
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
@@ -1053,7 +1054,7 @@ function Step5SeoAndPublishing({ shop, onSave, canEdit }: { shop: any, onSave: (
         const response = await fetch('/api/updateUserDoc', {
             method: 'POST',
             headers: {
-                'Authorization': `Bearer ${token}`,
+                'Authorization': `Bearer ${'\'\'\''}${token}'\'\'\'`,
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
@@ -1085,7 +1086,7 @@ function Step5SeoAndPublishing({ shop, onSave, canEdit }: { shop: any, onSave: (
         const response = await fetch('/api/updateUserDoc', {
             method: 'POST',
             headers: {
-                'Authorization': `Bearer ${token}`,
+                'Authorization': `Bearer ${'\'\'\''}${token}'\'\'\'`,
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
@@ -1170,13 +1171,14 @@ export function ShopWizard({ shop: initialShop }: { shop: any }) {
     return collection(firestore, `companies/${shopData.companyId}/shops/${shopData.id}/products`);
   }, [firestore, shopData.companyId, shopData.id]);
   
-  const { data: products } = useCollection(productsQuery);
+  const { data: products, forceRefresh: forceRefreshProducts } = useCollection(productsQuery);
 
   const handleSave = (newData: any) => {
     setShopData({ ...shopData, ...newData });
     if (currentStep < steps.length - 1) {
       setCurrentStep(currentStep + 1);
     }
+    forceRefreshProducts(); // Refresh products after any step saves
   };
 
   const handleSeoGenerated = (seoData: any) => {
