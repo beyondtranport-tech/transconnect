@@ -30,15 +30,11 @@ export function getAdminApp(): { app: App | null; error: string | null } {
         throw new Error('Parsed service account is invalid or missing essential properties (project_id, client_email, private_key). Please re-generate it following the backend-setup.md guide.');
     }
     
-    // Explicitly use the project_id from the service account for all configurations.
-    // This is the definitive fix to prevent cross-project credential mix-ups.
-    const projectId = serviceAccount.project_id;
-    const bucketName = `${projectId}.appspot.com`;
-
+    // The most robust way to initialize.
+    // The Admin SDK will automatically discover the project ID and default storage bucket
+    // from the provided service account credential. We no longer manually construct the bucket name.
     const app = initializeApp({
       credential: cert(serviceAccount),
-      projectId: projectId,
-      storageBucket: bucketName, 
     }, ADMIN_APP_NAME);
 
     return { app, error: null };

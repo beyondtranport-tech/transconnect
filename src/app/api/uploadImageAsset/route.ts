@@ -59,9 +59,10 @@ export async function POST(req: NextRequest) {
         }
         
         if (error.message?.includes('The specified bucket does not exist')) {
+             const configuredBucket = getStorage(app).bucket().name;
              return NextResponse.json({
                 success: false,
-                error: `Bucket Not Found on Server: The backend is configured to use '${getStorage(app).bucket().name}', but it could not be found. Please ensure this is the correct default bucket in your Firebase project.`
+                error: `Bucket Not Found on Server: The backend tried to access a bucket named '${configuredBucket}', but it could not be found. Please ensure this is the correct default bucket in your Firebase project. Note that bucket names can end in '.appspot.com' or '.firebasestorage.app'.`
             }, { status: 404 });
         }
         
