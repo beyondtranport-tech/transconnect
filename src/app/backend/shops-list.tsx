@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Loader2, Store, CheckCircle, Eye, Handshake } from 'lucide-react';
@@ -11,10 +11,9 @@ import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useCollection, useFirestore, getClientSideAuthToken } from '@/firebase';
 import { useMemoFirebase } from '@/hooks/use-config';
-import { collection, query, collectionGroup } from 'firebase/firestore';
+import { collection, query, where } from 'firebase/firestore';
 import { ShopPreview } from '@/components/shop-preview';
 import MemberCommercials from './wallet/[memberId]/member-commercials';
-import { format } from 'date-fns';
 import { DataTable } from '@/components/ui/data-table';
 import type { ColumnDef } from '@/hooks/use-data-table';
 import * as React from 'react';
@@ -70,8 +69,8 @@ function ShopPreviewDialog({ shop }: { shop: Shop }) {
     
     const productsQuery = useMemoFirebase(() => {
         if (!firestore) return null;
-        return query(collection(firestore, `companies/${shop.companyId}/shops/${shop.id}/products`));
-    }, [firestore, shop.id, shop.companyId]);
+        return query(collection(firestore, `shops/${shop.id}/products`));
+    }, [firestore, shop.id]);
 
     const { data: products, isLoading } = useCollection(productsQuery);
 
@@ -128,15 +127,14 @@ export default function ShopsList() {
     const [isApproving, setIsApproving] = useState<string | null>(null);
     const firestore = useFirestore();
 
-    // Fetch all shops and all agreements, then filter client-side to avoid index errors.
     const allShopsQuery = useMemoFirebase(() => {
         if (!firestore) return null;
-        return query(collectionGroup(firestore, 'shops'));
+        return query(collection(firestore, 'shops'));
     }, [firestore]);
     
     const allAgreementsQuery = useMemoFirebase(() => {
         if (!firestore) return null;
-        return query(collectionGroup(firestore, 'agreements'));
+        return query(collection(firestore, 'agreements'));
     }, [firestore]);
     
     const { data: allShops, isLoading: isLoadingShops, error: shopsError, forceRefresh: refreshShops } = useCollection<Shop>(allShopsQuery);
@@ -155,7 +153,6 @@ export default function ShopsList() {
             .filter(agreement => agreement.status === 'proposed')
             .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     }, [allAgreements]);
-
 
     const forceRefresh = useCallback(() => {
         refreshShops();
@@ -200,8 +197,8 @@ export default function ShopsList() {
 
     const shopColumns: ColumnDef<Shop>[] = useMemo(() => [
         { accessorKey: 'createdAt', header: 'Submitted', cell: ({row}) => formatDate(row.original.createdAt) },
-        { accessorKey: 'shopName', header: 'Shop Name' },
-        { accessorKey: 'category', header: 'Category' },
+        { accessorKey: 'shopName', header: 'Shop Name', cell: ({row}) => <div>{row.original.shopName}</div> },
+        { accessorKey: 'category', header: 'Category', cell: ({row}) => <div>{row.original.category}</div> },
         { accessorKey: 'companyId', header: 'Company ID', cell: ({row}) => <span className="font-mono text-xs">{row.original.companyId}</span> },
         {
             id: 'actions',
@@ -228,7 +225,7 @@ export default function ShopsList() {
     ], [isApproving, handleApprove]);
 
     const agreementColumns: ColumnDef<PendingAgreement>[] = useMemo(() => [
-        { accessorKey: 'shopName', header: 'Shop Name' },
+        { accessorKey: 'shopName', header: 'Shop Name', cell: ({row}) => <div>{row.original.shopName}</div> },
         { 
             accessorKey: 'percentage', 
             header: 'Proposed Commission',
