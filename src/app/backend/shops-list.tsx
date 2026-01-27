@@ -88,14 +88,26 @@ export default function ShopsList() {
 
 
     const columns: ColumnDef<Shop>[] = useMemo(() => [
-        { accessorKey: 'shopName', header: 'Shop Name' },
-        { accessorKey: 'category', header: 'Category' },
+        { 
+            accessorKey: 'shopName', 
+            header: 'Shop Name',
+            cell: ({ row }) => <div>{row.original.shopName}</div>,
+        },
+        { 
+            accessorKey: 'category', 
+            header: 'Category',
+            cell: ({ row }) => <div>{row.original.category}</div>,
+        },
         { 
           accessorKey: 'status', 
           header: 'Status',
           cell: ({ row }) => <Badge variant={statusColors[row.original.status] || 'secondary'} className="capitalize">{row.original.status?.replace(/_/g, ' ')}</Badge>
         },
-        { accessorKey: 'createdAt', header: 'Date', cell: ({row}) => formatDate(row.original.createdAt) },
+        { 
+            accessorKey: 'createdAt', 
+            header: 'Date', 
+            cell: ({row}) => formatDate(row.original.createdAt) 
+        },
         {
             id: 'actions',
             header: () => <div className="text-right">Actions</div>,
