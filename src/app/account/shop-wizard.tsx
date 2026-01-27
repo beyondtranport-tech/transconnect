@@ -45,9 +45,6 @@ import { usePermissions } from '@/hooks/use-permissions';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { generateShopSeo } from '@/ai/flows/seo-flow.ts';
 import { generateSocialLinks } from '@/ai/flows/social-link-generator-flow';
-import { format } from 'date-fns';
-import { DataTable } from '@/components/ui/data-table';
-import { type ColumnDef } from '@/hooks/use-data-table';
 
 const { placeholderImages } = placeholderImageData;
 
@@ -106,7 +103,7 @@ function Step1CoreIdentity({ shop, onSave, canEdit }: { shop: any, onSave: (newD
         const response = await fetch('/api/updateUserDoc', {
             method: 'POST',
             headers: {
-                'Authorization': `Bearer ${token}`,
+                'Authorization': `Bearer ${'${token}'}`,
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
@@ -275,7 +272,7 @@ function AIGenerateDialog({
       const response = await fetch('/api/uploadImageAsset', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`,
+          'Authorization': `Bearer ${'${token}'}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ fileDataUri: generatedImage, folder, fileName }),
@@ -429,7 +426,7 @@ function ProductDialog({ shop, product, onComplete, children, canEdit }: { shop:
         const response = await fetch(apiEndpoint, {
             method: 'POST',
             headers: {
-                'Authorization': `Bearer ${token}`,
+                'Authorization': `Bearer ${'${token}'}`,
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify(body),
@@ -470,7 +467,7 @@ function ProductDialog({ shop, product, onComplete, children, canEdit }: { shop:
         
         const response = await fetch('/api/uploadImageAsset', {
             method: 'POST',
-            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+            headers: { 'Authorization': `Bearer ${'${token}'}`, 'Content-Type': 'application/json' },
             body: JSON.stringify({ fileDataUri, folder, fileName }),
         });
 
@@ -549,7 +546,7 @@ function ProductDialog({ shop, product, onComplete, children, canEdit }: { shop:
                                       <div className="grid grid-cols-3 gap-2">
                                           {(field.value || []).map((url, index) => (
                                               <div key={index} className="relative aspect-square">
-                                                  <Image src={url} alt={`Product image ${index + 1}`} fill className="rounded-md object-contain border" />
+                                                  <Image src={url} alt={`Product image ${'${index + 1}'}`} fill className="rounded-md object-contain border" />
                                                   <Button
                                                       type="button"
                                                       variant="destructive"
@@ -648,7 +645,7 @@ function Step2Products({ shop, canEdit }: { shop: any, canEdit: boolean }) {
         
         const response = await fetch('/api/deleteUserDoc', {
             method: 'POST',
-            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+            headers: { 'Authorization': `Bearer ${'${token}'}`, 'Content-Type': 'application/json' },
             body: JSON.stringify({ path: `companies/${shop.companyId}/shops/${shop.id}/products/${productToDelete.id}` }),
         });
         
@@ -803,7 +800,7 @@ function Step3Appearance({ shop, onSave, canEdit }: { shop: any, onSave: (newDat
         
         const response = await fetch('/api/uploadImageAsset', {
             method: 'POST',
-            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+            headers: { 'Authorization': `Bearer ${'${token}'}`, 'Content-Type': 'application/json' },
             body: JSON.stringify({ fileDataUri, folder, fileName }),
         });
 
@@ -837,7 +834,7 @@ function Step3Appearance({ shop, onSave, canEdit }: { shop: any, onSave: (newDat
         const response = await fetch('/api/updateUserDoc', {
             method: 'POST',
             headers: {
-                'Authorization': `Bearer ${token}`,
+                'Authorization': `Bearer ${'${token}'}`,
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
@@ -990,7 +987,7 @@ function Step4SocialLinks({ shop, onSave, canEdit }: { shop: any, onSave: (newDa
         const response = await fetch('/api/updateUserDoc', {
             method: 'POST',
             headers: {
-                'Authorization': `Bearer ${token}`,
+                'Authorization': `Bearer ${'${token}'}`,
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
@@ -1130,7 +1127,7 @@ function Step5Legal({ shop, onSave, canEdit }: { shop: any, onSave: (newData: an
             
             const response = await fetch('/api/uploadImageAsset', {
                 method: 'POST',
-                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                headers: { 'Authorization': `Bearer ${'${token}'}`, 'Content-Type': 'application/json' },
                 body: JSON.stringify({ fileDataUri, folder, fileName, contentType: 'application/pdf' }),
             });
 
@@ -1162,7 +1159,7 @@ function Step5Legal({ shop, onSave, canEdit }: { shop: any, onSave: (newData: an
             
             await fetch('/api/updateUserDoc', {
                 method: 'POST',
-                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                headers: { 'Authorization': `Bearer ${'${token}'}`, 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     path: `companies/${shop.companyId}/shops/${shop.id}`,
                     data: { ...values, updatedAt: { _methodName: 'serverTimestamp' } }
@@ -1221,221 +1218,83 @@ function Step5Legal({ shop, onSave, canEdit }: { shop: any, onSave: (newData: an
 }
 
 // ====== STEP 6: Commercials ======
-const agreementSchema = z.object({
-    percentage: z.coerce.number().min(0, "Must be non-negative").max(100, "Cannot exceed 100"),
-    effectiveDate: z.coerce.date({ required_error: "An effective date is required." }),
-    expiryDate: z.coerce.date().optional().nullable(),
-    volumeThreshold: z.preprocess(
-        (val) => (val === "" ? undefined : val),
-        z.coerce.number().min(0, "Must be non-negative").optional()
-    ),
+const shopStep6Schema = z.object({
+  platformDiscount: z.coerce.number().min(0, "Must be non-negative").max(100, "Cannot exceed 100").optional(),
 });
 
-type NewAgreementValues = z.infer<typeof agreementSchema>;
-
-function NewAgreementDialog({ shop, onSave }: { shop: any, onSave: () => void }) {
-    const [isOpen, setIsOpen] = useState(false);
-    const [isLoading, setIsLoading] = useState(false);
-    const { toast } = useToast();
-    const { user } = useUser();
-    const form = useForm<NewAgreementValues>({
-        resolver: zodResolver(agreementSchema),
-        defaultValues: { percentage: 7.5, effectiveDate: new Date(), expiryDate: null, volumeThreshold: '' },
-    });
-
-    const onSubmit = async (values: NewAgreementValues) => {
-        setIsLoading(true);
-        try {
-            const token = await getClientSideAuthToken();
-            if (!token || !user) throw new Error("Authentication failed.");
-
-            const agreementData = {
-                percentage: values.percentage,
-                effectiveDate: values.effectiveDate.toISOString(),
-                expiryDate: values.expiryDate ? values.expiryDate.toISOString() : null,
-                volumeThreshold: values.volumeThreshold ?? null,
-                status: 'proposed',
-                proposedBy: user.uid,
-                shopId: shop.id,
-                companyId: shop.companyId,
-            };
-
-            const response = await fetch('/api/addUserDoc', {
-                method: 'POST',
-                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
-                    collectionPath: `companies/${shop.companyId}/shops/${shop.id}/agreements`,
-                    data: agreementData
-                })
-            });
-
-            if (!response.ok) {
-                const errorResult = await response.json();
-                throw new Error(errorResult.error || "Failed to propose agreement.");
-            }
-
-            toast({ title: 'New Agreement Proposed!', description: 'The agreement is now pending acceptance by an admin.' });
-            onSave();
-            setIsOpen(false);
-        } catch (e: any) {
-            toast({ variant: 'destructive', title: 'Proposal Failed', description: e.message });
-        } finally {
-            setIsLoading(false);
-        }
-    };
-    
-    return (
-        <Dialog open={isOpen} onOpenChange={setIsOpen}>
-            <DialogTrigger asChild><Button><PlusCircle className="mr-2" />Propose New Agreement</Button></DialogTrigger>
-            <DialogContent><DialogHeader><DialogTitle>Propose New Commercial Agreement</DialogTitle><DialogDescription>Set the platform commission percentage and other terms.</DialogDescription></DialogHeader>
-                <Form {...form}><form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
-                    <FormField control={form.control} name="percentage" render={({ field }) => (<FormItem><FormLabel>Platform Commission (%)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                    <div className="grid grid-cols-2 gap-4">
-                        <FormField
-                            control={form.control}
-                            name="effectiveDate"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Effective Date</FormLabel>
-                                    <FormControl>
-                                        <Input
-                                            type="date"
-                                            value={field.value instanceof Date ? format(field.value, 'yyyy-MM-dd') : ''}
-                                            onChange={e => field.onChange(e.target.valueAsDate)}
-                                        />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                        <FormField
-                            control={form.control}
-                            name="expiryDate"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Expiry Date (Optional)</FormLabel>
-                                    <FormControl>
-                                        <Input
-                                            type="date"
-                                            value={field.value ? (field.value instanceof Date ? format(field.value, 'yyyy-MM-dd') : '') : ''}
-                                            onChange={(e) => field.onChange(e.target.value ? e.target.valueAsDate : null)}
-                                        />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                    </div>
-                     <FormField control={form.control} name="volumeThreshold" render={({ field }) => (<FormItem><FormLabel>Volume Threshold (ZAR, Optional)</FormLabel><FormControl><Input type="number" placeholder="e.g., 100000" {...field} /></FormControl><FormDescription>Apply this rate only if monthly sales exceed this amount.</FormDescription><FormMessage /></FormItem>)} />
-                    <DialogFooter><Button type="submit" disabled={isLoading}>{isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null}Propose Agreement</Button></DialogFooter>
-                </form></Form>
-            </DialogContent>
-        </Dialog>
-    )
-}
-
-function AcceptAgreementButton({ agreement, shop, onUpdate }: { agreement: any, shop: any, onUpdate: () => void }) {
-    const [isLoading, setIsLoading] = useState(false);
-    const { toast } = useToast();
-    const { user } = useUser();
-
-    const handleAccept = async () => {
-        if (!user) return;
-        setIsLoading(true);
-        try {
-            const token = await getClientSideAuthToken();
-            if (!token) throw new Error("Authentication failed.");
-            
-            await fetch('/api/admin', {
-                method: 'POST',
-                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    action: 'acceptCommercialAgreement',
-                    payload: { companyId: shop.companyId, shopId: shop.id, agreementId: agreement.id, userId: user.uid }
-                })
-            });
-
-            toast({ title: "Agreement Accepted!", description: "The new commercial terms are now active." });
-            onUpdate();
-        } catch(e: any) {
-            toast({ variant: 'destructive', title: 'Acceptance Failed', description: e.message });
-        } finally {
-            setIsLoading(false);
-        }
-    };
-    
-    // Only show the accept button if the current user did NOT propose it.
-    if (agreement.status !== 'proposed' || agreement.proposedBy === user?.uid) return null;
-
-    return (
-        <Button size="sm" onClick={handleAccept} disabled={isLoading}>
-            {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle className="h-4 w-4" />}
-            Accept
-        </Button>
-    )
-}
+type Step6FormValues = z.infer<typeof shopStep6Schema>;
 
 function Step6Commercials({ shop, onSave, canEdit }: { shop: any, onSave: (newData: any) => void, canEdit: boolean }) {
-  const firestore = useFirestore();
   const { user } = useUser();
   const { toast } = useToast();
+  const [isSaving, setIsSaving] = useState(false);
 
-  const agreementsQuery = useMemoFirebase(() => {
-    if (!firestore || !shop?.companyId || !shop?.id) return null;
-    return query(collection(firestore, `companies/${shop.companyId}/shops/${shop.id}/agreements`), orderBy('createdAt', 'desc'));
-  }, [firestore, shop.companyId, shop.id]);
+  const form = useForm<Step6FormValues>({
+    resolver: zodResolver(shopStep6Schema),
+    defaultValues: {
+      platformDiscount: shop.platformDiscount || 7.5,
+    },
+  });
 
-  const { data: agreements, isLoading, forceRefresh } = useCollection(agreementsQuery);
+  useEffect(() => {
+    form.reset({ platformDiscount: shop.platformDiscount === undefined ? 7.5 : shop.platformDiscount });
+  }, [shop.platformDiscount, form]);
 
-  const handleDelete = async (agreementId: string) => {
-    if (!firestore) return;
+  const onSubmit = async (values: Step6FormValues) => {
+    if (!user || !shop.companyId) return;
+    setIsSaving(true);
+    
     try {
         const token = await getClientSideAuthToken();
-        if (!token) throw new Error("Authentication failed.");
+        if (!token) throw new Error("Authentication token not found.");
         
-        await deleteDoc(doc(firestore, `companies/${shop.companyId}/shops/${shop.id}/agreements`, agreementId));
-        toast({title: "Proposal Withdrawn", description: "Your proposed agreement has been deleted."});
-        forceRefresh();
-    } catch(e: any) {
-        toast({variant: 'destructive', title: "Delete Failed", description: "You may not have permission to delete this."});
+        const response = await fetch('/api/updateUserDoc', {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${'${token}'}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                path: `companies/${shop.companyId}/shops/${shop.id}`,
+                data: { ...values, updatedAt: { _methodName: 'serverTimestamp' } }
+            }),
+        });
+
+        if (!response.ok) {
+          const result = await response.json();
+          throw new Error(result.error || 'Failed to update shop.');
+        }
+
+        toast({ title: 'Step 6 Saved!', description: 'Your commercial settings have been updated.' });
+        onSave(values);
+    } catch (error: any) {
+        toast({ variant: 'destructive', title: 'Update Failed', description: error.message });
+    } finally {
+        setIsSaving(false);
     }
-  }
-
-  const columns: ColumnDef<any>[] = useMemo(() => [
-    { accessorKey: 'percentage', header: 'Commission %', cell: ({row}) => <div>{row.original.percentage}%</div> },
-    { accessorKey: 'status', header: 'Status', cell: ({row}) => <Badge variant={row.original.status === 'active' ? 'default' : row.original.status === 'proposed' ? 'secondary' : 'outline'} className="capitalize">{row.original.status}</Badge>},
-    { accessorKey: 'effectiveDate', header: 'Effective Date', cell: ({row}) => <div>{format(new Date(row.original.effectiveDate), 'PPP')}</div>},
-    { id: 'actions', cell: ({row}) => (
-        <div className="flex items-center gap-2 justify-end">
-            <AcceptAgreementButton agreement={row.original} shop={shop} onUpdate={forceRefresh} />
-            {row.original.status === 'proposed' && row.original.proposedBy === user?.uid && (
-                <Button variant="ghost" size="icon" onClick={() => handleDelete(row.original.id)}>
-                    <Trash2 className="h-4 w-4 text-destructive" />
-                </Button>
-            )}
-        </div>
-    ) },
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  ], [shop, forceRefresh, user]);
-
+  };
 
   return (
-    <div className="space-y-6">
-        <div className="flex items-center justify-between">
-             <h3 className="text-xl font-semibold">Commercial Agreements</h3>
-             <NewAgreementDialog shop={shop} onSave={forceRefresh} />
-        </div>
-        {isLoading ? (
-            <div className="flex justify-center py-10"><Loader2 className="h-8 w-8 animate-spin" /></div>
-        ) : (
-            <DataTable columns={columns} data={agreements || []} />
-        )}
-         <div className="flex justify-end pt-6">
-            <Button onClick={() => onSave({})}>Next <ArrowRight className="ml-2 h-4 w-4" /></Button>
-        </div>
-    </div>
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <fieldset disabled={!canEdit} className="space-y-6">
+            <FormField control={form.control} name="platformDiscount" render={({ field }) => (
+                <FormItem>
+                    <FormLabel>Platform Commission (%)</FormLabel>
+                    <FormControl><Input type="number" placeholder="e.g., 7.5" {...field} /></FormControl>
+                    <FormDescription>
+                        This is the percentage of each sale that the platform will earn as commission.
+                    </FormDescription>
+                    <FormMessage />
+                </FormItem>
+            )} />
+        </fieldset>
+        <Button type="submit" disabled={isSaving || !canEdit}>
+          {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+          Save & Continue
+        </Button>
+      </form>
+    </Form>
   );
 }
+
 
 
 // ====== STEP 7: SEO & Publishing ======
@@ -1500,7 +1359,7 @@ function Step7SeoAndPublishing({ shop, onSave, canEdit, onSeoGenerated }: { shop
         const response = await fetch('/api/updateUserDoc', {
             method: 'POST',
             headers: {
-                'Authorization': `Bearer ${token}`,
+                'Authorization': `Bearer ${'${token}'}`,
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
@@ -1532,7 +1391,7 @@ function Step7SeoAndPublishing({ shop, onSave, canEdit, onSeoGenerated }: { shop
         const response = await fetch('/api/updateUserDoc', {
             method: 'POST',
             headers: {
-                'Authorization': `Bearer ${token}`,
+                'Authorization': `Bearer ${'${token}'}`,
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
@@ -1715,3 +1574,5 @@ export function ShopWizard({ shop: initialShop }: { shop: any }) {
     </div>
   );
 }
+
+    
