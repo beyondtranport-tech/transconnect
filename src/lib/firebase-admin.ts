@@ -4,6 +4,7 @@ import type { ServiceAccount } from 'firebase-admin/app';
 import { NextRequest } from 'next/server';
 import { getAuth } from 'firebase-admin/auth';
 import { getFirestore } from 'firebase-admin/firestore';
+import { firebaseConfig } from '@/firebase/config';
 
 const ADMIN_APP_NAME = 'firebase-admin-app-transconnect-studio';
 
@@ -29,10 +30,11 @@ export function getAdminApp(): { app: App | null; error: string | null } {
         throw new Error('Parsed service account is missing essential properties (project_id, client_email, private_key).');
     }
     
+    // Explicitly add the storageBucket from the known-correct client config.
     const app = initializeApp({
       credential: cert(serviceAccount),
       projectId: serviceAccount.project_id,
-      storageBucket: `${serviceAccount.project_id}.appspot.com`
+      storageBucket: firebaseConfig.storageBucket, 
     }, ADMIN_APP_NAME);
 
     return { app, error: null };
