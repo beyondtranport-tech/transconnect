@@ -31,8 +31,9 @@ export function getAdminApp(): { app: App | null; error: string | null } {
     
     // Explicitly use the project_id from the service account for all configurations.
     const projectId = serviceAccount.project_id;
-    // Explicitly set the CORRECT bucket name to prevent discovery issues.
-    const bucketName = `${projectId}.firebasestorage.app`;
+    
+    // HARDCODED FIX: Directly specify the correct bucket name to override any faulty discovery logic.
+    const bucketName = "transconnect-v1-39578841-2a857.firebasestorage.app";
 
     const app = initializeApp({
       credential: cert(serviceAccount),
