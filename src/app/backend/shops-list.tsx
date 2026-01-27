@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useMemo, useCallback, useEffect } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Loader2, Store, CheckCircle, Eye, Handshake } from 'lucide-react';
@@ -17,6 +17,7 @@ import MemberCommercials from './wallet/[memberId]/member-commercials';
 import { format } from 'date-fns';
 import { DataTable } from '@/components/ui/data-table';
 import type { ColumnDef } from '@/hooks/use-data-table';
+import * as React from 'react';
 
 interface Shop {
     id: string;
@@ -36,6 +37,7 @@ interface PendingAgreement {
     shopName: string;
     percentage: number;
     effectiveDate: string;
+    createdAt: string; // Ensure createdAt is part of the type for sorting
     [key: string]: any;
 }
 
@@ -132,6 +134,7 @@ export default function ShopsList() {
         return query(collectionGroup(firestore, 'shops'), where('status', '==', 'pending_review'));
     }, [firestore]);
     
+    // Simplified query to fetch all proposed agreements without sorting on the backend
     const agreementsQuery = useMemoFirebase(() => {
         if (!firestore) return null;
         return query(collectionGroup(firestore, 'agreements'), where('status', '==', 'proposed'));
@@ -139,6 +142,13 @@ export default function ShopsList() {
     
     const { data: pendingShops, isLoading: isLoadingShops, error: shopsError, forceRefresh: refreshShops } = useCollection<Shop>(pendingShopsQuery);
     const { data: pendingAgreements, isLoading: isLoadingAgreements, error: agreementsError, forceRefresh: refreshAgreements } = useCollection<PendingAgreement>(agreementsQuery);
+
+    // Perform sorting on the client-side
+    const sortedAgreements = React.useMemo(() => {
+        if (!pendingAgreements) return [];
+        return [...pendingAgreements].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    }, [pendingAgreements]);
+
 
     const forceRefresh = useCallback(() => {
         refreshShops();
@@ -208,7 +218,7 @@ export default function ShopsList() {
                 </div>
             )
         }
-    ], [isApproving]);
+    ], [isApproving, handleApprove]);
 
     const agreementColumns: ColumnDef<PendingAgreement>[] = useMemo(() => [
         { accessorKey: 'shopName', header: 'Shop Name' },
@@ -275,8 +285,8 @@ export default function ShopsList() {
                 <CardContent>
                      {isLoadingAgreements ? (
                         <div className="flex justify-center items-center py-20"><Loader2 className="h-10 w-10 animate-spin text-primary" /></div>
-                     ) : pendingAgreements && pendingAgreements.length > 0 ? (
-                        <DataTable columns={agreementColumns} data={pendingAgreements} />
+                     ) : sortedAgreements && sortedAgreements.length > 0 ? (
+                        <DataTable columns={agreementColumns} data={sortedAgreements} />
                      ) : (
                         <div className="text-center py-20 border-2 border-dashed rounded-lg">
                             <CheckCircle className="mx-auto h-12 w-12 text-green-500" />
