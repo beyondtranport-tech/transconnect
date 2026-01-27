@@ -619,63 +619,63 @@ export async function POST(req: NextRequest) {
                 if (!shopId || !companyId) {
                     throw new Error("Missing shopId or companyId for approveShop action.");
                 }
-            
+
                 const memberShopRef = db.doc(`companies/${companyId}/shops/${shopId}`);
                 const publicShopRef = db.doc(`shops/${shopId}`);
-            
+
                 const shopDoc = await memberShopRef.get();
                 if (!shopDoc.exists) {
                     throw new Error(`Shop with ID ${shopId} not found for company ${companyId}.`);
                 }
-            
+
                 const shopData = shopDoc.data();
                 if (!shopData) {
                     throw new Error(`Shop data is empty for shop ${shopId}.`);
                 }
 
                 const wasAlreadyApproved = shopData.status === 'approved';
-            
-                // Get products from the member's shop subcollection
-                const memberProductsSnap = await memberShopRef.collection('products').get();
-            
+
+                // --- ROBUST SYNC LOGIC ---
                 const batch = db.batch();
 
-                // --- Robust Sync Logic ---
-                // 1. Delete all existing products in the public subcollection to ensure a clean slate.
-                const publicProductsSnap = await publicShopRef.collection('products').get();
-                if (!publicProductsSnap.empty) {
-                    console.log(`[approveShop] Deleting ${publicProductsSnap.size} old products from public shop...`);
-                    publicProductsSnap.forEach(doc => batch.delete(doc.ref));
-                }
-                
-                // 2. Create/Update the main public shop document with the latest data.
+                // 1. Update the main public shop document.
                 const publicShopData = { ...shopData, companyId, status: 'approved', updatedAt: FieldValue.serverTimestamp() };
                 batch.set(publicShopRef, publicShopData, { merge: true });
-            
-                // 3. Copy all products from the private draft to the public subcollection.
-                if (!memberProductsSnap.empty) {
-                    console.log(`[approveShop] Copying ${memberProductsSnap.size} products to public shop...`);
-                    memberProductsSnap.forEach(productDoc => {
-                        const publicProductRef = publicShopRef.collection('products').doc(productDoc.id);
-                        batch.set(publicProductRef, productDoc.data());
-                    });
-                }
-            
-                // 4. Update the member's private shop status if it wasn't already approved.
+
+                // 2. Fetch both private and public product sets.
+                const memberProductsSnap = await memberShopRef.collection('products').get();
+                const publicProductsSnap = await publicShopRef.collection('products').get();
+
+                const memberProductIds = new Set(memberProductsSnap.docs.map(doc => doc.id));
+
+                // 3. Upsert all member products into the public subcollection.
+                memberProductsSnap.forEach(productDoc => {
+                    const publicProductRef = publicShopRef.collection('products').doc(productDoc.id);
+                    batch.set(publicProductRef, productDoc.data());
+                });
+
+                // 4. Delete any public products that no longer exist in the private subcollection.
+                publicProductsSnap.forEach(publicProductDoc => {
+                    if (!memberProductIds.has(publicProductDoc.id)) {
+                        batch.delete(publicProductDoc.ref);
+                    }
+                });
+
+                // 5. Update the member's private shop status if it wasn't already approved.
                 if (!wasAlreadyApproved) {
                     batch.update(memberShopRef, { status: 'approved', updatedAt: FieldValue.serverTimestamp() });
                 }
-            
-                // 5. Award points for shop creation, ONLY if this is the first time it's being approved
+
+                // 6. Award points for shop creation, ONLY if this is the first time it's being approved
                 if (!wasAlreadyApproved) {
                     const loyaltyConfigDoc = await db.collection('configuration').doc('loyaltySettings').get();
                     const shopCreationPoints = loyaltyConfigDoc.data()?.shopCreationPoints || 100;
                     const companyRef = db.doc(`companies/${companyId}`);
                     batch.update(companyRef, { rewardPoints: FieldValue.increment(shopCreationPoints) });
                 }
-            
+
                 await batch.commit();
-            
+
                 const message = wasAlreadyApproved 
                     ? 'Shop products successfully re-synced.'
                     : 'Shop and its products have been approved and published.';
