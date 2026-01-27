@@ -49,7 +49,7 @@ This is the most critical step to solve upload errors. If your bucket exists but
 
 ### 4.2: Grant Storage Admin Role
 
-**Important:** Make sure you are on the main **IAM** page, which lists all principals (members). The top of the page should say "IAM". The "+ GRANT ACCESS" button is located at the top of this main page, **not** on the "Service Accounts" sub-page.
+**Important:** Make sure you are on the main **IAM** page, which lists all principals (members). The top of the page should say "IAM". The "+ GRANT ACCESS" button is located at the top of this main page, **not** on the "Service Accounts" sub-page or by clicking the three dots next to a bucket name.
 
 1.  On the main **IAM** page, click the **+ GRANT ACCESS** button at the top.
 2.  In the **"New principals"** field that appears, paste the service account email you just copied.
