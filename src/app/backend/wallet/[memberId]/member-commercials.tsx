@@ -5,7 +5,7 @@
 import { useMemo, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { useCollection, useFirestore, useUser, getClientSideAuthToken } from "@/firebase";
-import { useMemoFirebase } from "@/hooks/use-config";
+import { useMemoFirebase } from '@/hooks/use-memo-firebase';
 import { collection, query, orderBy } from 'firebase/firestore';
 import { Loader2, PlusCircle, CheckCircle } from 'lucide-react';
 import { DataTable } from '@/components/ui/data-table';

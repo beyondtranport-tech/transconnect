@@ -13,7 +13,8 @@ import { Label } from "@/components/ui/label";
 import { DataContributionModal } from "./data-contribution-modal";
 import React from "react";
 import * as gtag from '@/lib/gtag';
-import { useConfig, useMemoFirebase } from '@/hooks/use-config';
+import { useConfig } from '@/hooks/use-config';
+import { useMemoFirebase } from '@/hooks/use-memo-firebase';
 import { useCollection, useFirestore } from "@/firebase";
 import { collection, query } from "firebase/firestore";
 

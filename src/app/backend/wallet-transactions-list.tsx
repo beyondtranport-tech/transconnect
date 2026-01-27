@@ -8,7 +8,7 @@ import { Loader2, DollarSign, Clock, ArrowRight, CheckCircle } from 'lucide-reac
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { useCollection, useFirestore } from '@/firebase';
-import { useMemoFirebase } from '@/hooks/use-config';
+import { useMemoFirebase } from '@/hooks/use-memo-firebase';
 import { collection, query, collectionGroup } from 'firebase/firestore';
 
 interface Company {

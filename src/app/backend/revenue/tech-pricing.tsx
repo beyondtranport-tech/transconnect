@@ -20,7 +20,7 @@ import { Loader2, Save, Cpu } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { getClientSideAuthToken, useDoc, useFirestore } from '@/firebase';
 import { doc } from 'firebase/firestore';
-import { useMemoFirebase } from '@/hooks/use-config';
+import { useMemoFirebase } from '@/hooks/use-memo-firebase';
 
 const formSchema = z.object({
   seoBooster: z.coerce.number().min(0, 'Must be non-negative.'),

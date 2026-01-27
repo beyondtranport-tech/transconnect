@@ -14,7 +14,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import * as React from 'react';
 import { collection, query } from 'firebase/firestore';
 import { Loader2 } from 'lucide-react';
-import { useMemoFirebase } from '@/hooks/use-config';
+import { useMemoFirebase } from '@/hooks/use-memo-firebase';
 import featuresData from '@/lib/features.json';
 
 const { featureSections } = featuresData;

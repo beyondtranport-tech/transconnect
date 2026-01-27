@@ -2,7 +2,7 @@
 'use client';
 
 import { useDoc, useCollection, useFirestore } from '@/firebase';
-import { useMemoFirebase } from '@/hooks/use-config';
+import { useMemoFirebase } from '@/hooks/use-memo-firebase';
 import { collection, doc, query } from 'firebase/firestore';
 import { Loader2 } from "lucide-react";
 import { notFound, useParams } from "next/navigation";
