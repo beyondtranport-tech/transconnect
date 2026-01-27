@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
@@ -1164,6 +1163,14 @@ export function ShopWizard({ shop: initialShop }: { shop: any }) {
   const [currentStep, setCurrentStep] = useState(0);
   const [shopData, setShopData] = useState(initialShop);
   const { can, isLoading: permissionsLoading } = usePermissions();
+  const firestore = useFirestore();
+
+  const productsQuery = useMemoFirebase(() => {
+    if (!firestore || !shopData?.companyId || !shopData?.id) return null;
+    return collection(firestore, `companies/${shopData.companyId}/shops/${shopData.id}/products`);
+  }, [firestore, shopData.companyId, shopData.id]);
+  
+  const { data: products } = useCollection(productsQuery);
 
   const handleSave = (newData: any) => {
     setShopData({ ...shopData, ...newData });
@@ -1191,7 +1198,7 @@ export function ShopWizard({ shop: initialShop }: { shop: any }) {
     { name: 'Appearance', component: <Step3Appearance shop={shopData} onSave={handleSave} canEdit={canEditShop} /> },
     { name: 'Social Links', component: <Step4SocialLinks shop={shopData} onSave={handleSave} canEdit={canEditShop} /> },
     { name: 'Publishing', component: <Step5SeoAndPublishing shop={shopData} onSave={handleSave} canEdit={canEditShop} /> },
-    { name: 'Preview', component: <ShopPreview shop={shopData} products={[]} /> },
+    { name: 'Preview', component: <ShopPreview shop={shopData} products={products || []} /> },
   ];
 
   const completeness = useMemo(() => {
