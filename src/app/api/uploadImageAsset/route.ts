@@ -34,7 +34,10 @@ export async function POST(req: NextRequest) {
         const contentType = providedContentType || matches[1];
         const fileBuffer = Buffer.from(matches[2], 'base64');
         
-        const bucket = getStorage(app).bucket();
+        // --- DEFINITIVE FIX ---
+        // Explicitly define and use the correct bucket name, bypassing any faulty auto-discovery.
+        const bucketName = "transconnect-v1-39578841-2a857.firebasestorage.app";
+        const bucket = getStorage(app).bucket(bucketName);
         const filePath = `${folder}/${fileName}`;
         const file = bucket.file(filePath);
         
@@ -43,7 +46,6 @@ export async function POST(req: NextRequest) {
             public: true 
         });
 
-        // The publicUrl format is consistent for all GCS buckets.
         const publicUrl = `https://storage.googleapis.com/${bucket.name}/${filePath}`;
         
         return NextResponse.json({ success: true, url: publicUrl });
@@ -59,10 +61,10 @@ export async function POST(req: NextRequest) {
         }
         
         if (error.message?.includes('The specified bucket does not exist')) {
-             const configuredBucket = getStorage(app).bucket().name;
+             // Hardcode the error message to avoid reflecting the SDK's incorrect discovery
              return NextResponse.json({
                 success: false,
-                error: `Bucket Not Found on Server: The backend tried to access a bucket named '${configuredBucket}', but it could not be found. Please ensure this is the correct default bucket in your Firebase project. Note that bucket names can end in '.appspot.com' or '.firebasestorage.app'.`
+                error: `Bucket Not Found on Server: The backend tried to access the Storage bucket but it could not be found. Please ensure Firebase Storage is enabled and the bucket name in the code is correct.`
             }, { status: 404 });
         }
         
