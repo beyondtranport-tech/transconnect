@@ -1,27 +1,27 @@
-
 'use client';
 
 import { useDoc, useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, doc, query } from 'firebase/firestore';
-import { Building2, Loader2, Mail, Phone, ShoppingCart } from "lucide-react";
-import Image from "next/image";
-import { notFound } from "next/navigation";
+import { Loader2 } from "lucide-react";
+import { notFound, useParams } from "next/navigation";
 import { ShopPreview } from '@/components/shop-preview';
 
 
-function SupplierProfile({ params }: { params: { supplierId: string }}) {
+function SupplierProfile() {
+    const params = useParams();
+    const supplierId = params.supplierId as string;
     const firestore = useFirestore();
 
     const supplierRef = useMemoFirebase(() => {
-        if (!firestore) return null;
-        return doc(firestore, 'shops', params.supplierId);
-    }, [firestore, params.supplierId]);
+        if (!firestore || !supplierId) return null;
+        return doc(firestore, 'shops', supplierId);
+    }, [firestore, supplierId]);
     
     const productsQuery = useMemoFirebase(() => {
-        if (!firestore) return null;
+        if (!firestore || !supplierId) return null;
         // Correctly query the public subcollection
-        return query(collection(firestore, `shops/${params.supplierId}/products`));
-    }, [firestore, params.supplierId]);
+        return query(collection(firestore, `shops/${supplierId}/products`));
+    }, [firestore, supplierId]);
 
     const { data: supplier, isLoading: isShopLoading } = useDoc(supplierRef);
     const { data: products, isLoading: areProductsLoading } = useCollection(productsQuery);
@@ -44,6 +44,6 @@ function SupplierProfile({ params }: { params: { supplierId: string }}) {
     return <ShopPreview shop={supplier} products={products || []} />;
 }
 
-export default function SupplierProfilePage({ params }: { params: { supplierId: string } }) {
-    return <SupplierProfile params={params} />;
+export default function SupplierProfilePage() {
+    return <SupplierProfile />;
 }
