@@ -1,3 +1,4 @@
+
 import { NextRequest, NextResponse } from 'next/server';
 import { getFirestore, Timestamp, FieldValue, FieldPath } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
@@ -60,10 +61,12 @@ export async function POST(req: NextRequest) {
 
         switch (action) {
             case 'getDashboardQueues': {
-                const shopsSnap = await db.collectionGroup('shops').where('status', '==', 'pending_review').orderBy('createdAt', 'desc').get();
-                const pendingShops = shopsSnap.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
+                const shopsSnap = await db.collectionGroup('shops').where('status', '==', 'pending_review').get();
+                const pendingShops = shopsSnap.docs
+                    .map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }))
+                    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
-                const agreementsSnap = await db.collectionGroup('agreements').where('status', '==', 'proposed').orderBy('createdAt', 'desc').get();
+                const agreementsSnap = await db.collectionGroup('agreements').where('status', '==', 'proposed').get();
                 
                 // Efficiently fetch shop names for agreements
                 const shopIds = [...new Set(agreementsSnap.docs.map(doc => doc.data().shopId).filter(Boolean))];
@@ -73,14 +76,16 @@ export async function POST(req: NextRequest) {
                      shopsDataSnap.forEach(doc => shopMap.set(doc.id, doc.data().shopName));
                 }
                 
-                const proposedAgreements = agreementsSnap.docs.map(doc => {
-                    const data = doc.data();
-                    return {
-                        ...serializeTimestamps(data),
-                        id: doc.id,
-                        shopName: shopMap.get(data.shopId) || 'Unknown Shop',
-                    }
-                });
+                const proposedAgreements = agreementsSnap.docs
+                    .map(doc => {
+                        const data = doc.data();
+                        return {
+                            ...serializeTimestamps(data),
+                            id: doc.id,
+                            shopName: shopMap.get(data.shopId) || 'Unknown Shop',
+                        }
+                    })
+                    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
                 return NextResponse.json({ success: true, data: { pendingShops, proposedAgreements } });
             }
@@ -115,8 +120,10 @@ export async function POST(req: NextRequest) {
                         shopName: shopName,
                     };
                 }));
+                
+                const sortedAgreements = enrichedAgreements.sort((a,b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
-                return NextResponse.json({ success: true, data: enrichedAgreements });
+                return NextResponse.json({ success: true, data: sortedAgreements });
             }
             case 'acceptCommercialAgreement': {
                 const { companyId, shopId, agreementId, userId } = payload;
