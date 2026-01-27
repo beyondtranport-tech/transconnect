@@ -34,7 +34,7 @@ interface PendingAgreement {
     id: string;
     shopId: string;
     companyId: string;
-    shopName: string;
+    shopName?: string; // This will be added during enrichment
     percentage: number;
     effectiveDate: string;
     createdAt: string; 
@@ -135,7 +135,6 @@ export default function ShopsList() {
     
     const allAgreementsQuery = useMemoFirebase(() => {
         if (!firestore) return null;
-        // Corrected: Use collectionGroup to query across all subcollections
         return query(collectionGroup(firestore, 'agreements'));
     }, [firestore]);
     
@@ -150,11 +149,21 @@ export default function ShopsList() {
     }, [allShops]);
 
     const proposedAgreements = useMemo(() => {
-        if (!allAgreements) return [];
+        if (!allAgreements || !allShops) return [];
+
+        const shopMap = new Map(allShops.map(shop => [shop.id, shop]));
+
         return allAgreements
             .filter(agreement => agreement.status === 'proposed')
+            .map(agreement => {
+                const shop = shopMap.get(agreement.shopId);
+                return {
+                    ...agreement,
+                    shopName: shop ? shop.shopName : 'Unknown Shop',
+                };
+            })
             .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-    }, [allAgreements]);
+    }, [allAgreements, allShops]);
 
     const forceRefresh = useCallback(() => {
         refreshShops();
