@@ -93,13 +93,21 @@ export function useDoc<T = any>(
 
             if (!isMounted) return;
 
-            const result = await response.json();
-
             if (!response.ok) {
-                throw new Error(result.error || 'Failed to fetch document data.');
+                let errorMsg = `Failed to fetch document. Status: ${response.status}`;
+                try {
+                    const errorResult = await response.json();
+                    errorMsg = errorResult.error || errorMsg;
+                } catch (e) {
+                    // Response was not JSON, likely an HTML error page.
+                    errorMsg = `${errorMsg}. ${response.statusText}`;
+                }
+                throw new Error(errorMsg);
             }
 
+            const result = await response.json();
             setData(result.data as WithId<T> | null);
+
         } catch (e: any) {
             console.error("useDoc fetch error:", e);
              if (isMounted) {
