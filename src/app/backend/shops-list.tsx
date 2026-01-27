@@ -11,12 +11,13 @@ import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useCollection, useFirestore, getClientSideAuthToken } from '@/firebase';
 import { useMemoFirebase } from '@/hooks/use-config';
-import { collection, query, where } from 'firebase/firestore';
+import { collection, query, where, collectionGroup } from 'firebase/firestore';
 import { ShopPreview } from '@/components/shop-preview';
 import MemberCommercials from './wallet/[memberId]/member-commercials';
 import { DataTable } from '@/components/ui/data-table';
 import type { ColumnDef } from '@/hooks/use-data-table';
 import * as React from 'react';
+import Link from 'next/link';
 
 interface Shop {
     id: string;
@@ -129,12 +130,13 @@ export default function ShopsList() {
 
     const allShopsQuery = useMemoFirebase(() => {
         if (!firestore) return null;
-        return query(collection(firestore, 'shops'));
+        return query(collectionGroup(firestore, 'shops'));
     }, [firestore]);
     
     const allAgreementsQuery = useMemoFirebase(() => {
         if (!firestore) return null;
-        return query(collection(firestore, 'agreements'));
+        // Corrected: Use collectionGroup to query across all subcollections
+        return query(collectionGroup(firestore, 'agreements'));
     }, [firestore]);
     
     const { data: allShops, isLoading: isLoadingShops, error: shopsError, forceRefresh: refreshShops } = useCollection<Shop>(allShopsQuery);
