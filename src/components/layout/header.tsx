@@ -45,17 +45,12 @@ export function Header() {
   const { user, isUserLoading } = useUser();
   const auth = useAuth();
 
-  function deleteCookie(name: string) {
-    document.cookie = name + '=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
-  }
-
   const handleSignOut = async () => {
     if (!auth) return;
     try {
         await signOut(auth);
-        // Explicitly remove cookies on sign-out
-        deleteCookie('decodedToken');
-        router.push('/');
+        // The onIdTokenChanged listener will handle clearing the session cookie.
+        // The page's useEffect guard will redirect the user away from protected routes.
         setIsSheetOpen(false); // Close mobile menu on sign out
     } catch (error) {
         console.error("Error signing out: ", error);

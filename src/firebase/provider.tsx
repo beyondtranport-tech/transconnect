@@ -41,15 +41,18 @@ export interface FirebaseContextState {
 
 const FirebaseContext = createContext<FirebaseContextState | undefined>(undefined);
 
-// A non-async function to handle setting the session cookie.
-const setSessionCookie = (idToken: string | null) => {
-    fetch('/api/auth/session', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ idToken }),
-    }).catch(error => {
-        console.error("FirebaseProvider: Failed to set session cookie:", error);
-    });
+// A robust async function to handle setting the session cookie.
+const setSessionCookie = async (idToken: string | null) => {
+    try {
+        await fetch('/api/auth/session', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ idToken }),
+        });
+    } catch (error) {
+        // We don't want to throw an error here, as it's a background task. Just log it.
+        console.error("FirebaseProvider: Error calling session API:", error);
+    }
 };
 
 function useEnrichedUser(baseUser: User | null, firestore: Firestore | null) {
@@ -94,21 +97,22 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
     const unsubscribe = onIdTokenChanged(
       auth,
       async (firebaseUser) => {
+        // First, handle the session cookie logic.
+        const idToken = firebaseUser ? await getIdToken(firebaseUser) : null;
+        await setSessionCookie(idToken);
+        
+        // THEN, update the React state. This prevents race conditions.
         setBaseUser(firebaseUser);
         setIsAuthLoading(false);
         setAuthError(null);
-        
-        if (typeof window !== 'undefined') {
-            const idToken = firebaseUser ? await firebaseUser.getIdToken() : null;
-            setSessionCookie(idToken);
-        }
       },
       (error) => {
         console.error("FirebaseProvider: onIdTokenChanged error:", error);
+        // Ensure session cookie is cleared on error as well.
+        setSessionCookie(null);
         setBaseUser(null);
         setIsAuthLoading(false);
         setAuthError(error);
-        setSessionCookie(null);
       }
     );
     return () => unsubscribe();
