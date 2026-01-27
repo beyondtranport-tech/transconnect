@@ -42,7 +42,7 @@ export async function POST(req: NextRequest) {
         const contentType = providedContentType || matches[1];
         const fileBuffer = Buffer.from(matches[2], 'base64');
         
-        // Use the default bucket from the initialized app. No need to specify the name here.
+        // Use the default bucket that was configured during app initialization.
         const bucket = getStorage(app).bucket();
         
         console.log(`uploadImageAsset: Using default bucket: ${bucket.name}`);
