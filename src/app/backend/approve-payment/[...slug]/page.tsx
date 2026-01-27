@@ -4,7 +4,7 @@
 import { Suspense } from 'react';
 import { notFound, useParams, useRouter } from 'next/navigation';
 import { useDoc, useFirestore, getClientSideAuthToken } from '@/firebase';
-import { useMemoFirebase } from '@/hooks/use-config';
+import { useMemoFirebase } from '@/hooks/use-memo-firebase';
 import { doc } from 'firebase/firestore';
 import { useState } from 'react';
 import { Loader2, CheckCircle, FileCheck, ArrowLeft, Landmark } from 'lucide-react';

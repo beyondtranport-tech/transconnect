@@ -4,8 +4,13 @@
 import { useDoc, useCollection, useFirestore } from '@/firebase';
 import { useMemoFirebase } from '@/hooks/use-memo-firebase';
 import { collection, doc, query } from 'firebase/firestore';
-import { Loader2 } from "lucide-react";
-import { notFound, useParams } from "next/navigation";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { Loader2, Store, ShoppingCart } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import Link from 'next/link';
+import { notFound, useParams } from 'next/navigation';
+import Image from 'next/image';
+import { Badge } from '@/components/ui/badge';
 import { ShopPreview } from '@/components/shop-preview';
 
 

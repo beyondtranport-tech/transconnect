@@ -27,7 +27,7 @@ import { Loader2, MoreVertical, CheckCircle, Eye, XCircle } from 'lucide-react';
 import { ShopPreview } from '@/components/shop-preview';
 import { collection, query } from 'firebase/firestore';
 import { useCollection, useFirestore } from '@/firebase';
-import { useMemoFirebase } from '@/hooks/use-config';
+import { useMemoFirebase } from '@/hooks/use-memo-firebase';
 
 async function fetchFromAdminAPI(token: string, action: string, payload?: any) {
     const response = await fetch('/api/admin', {
