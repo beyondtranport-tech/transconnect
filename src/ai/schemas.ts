@@ -116,3 +116,18 @@ export const TTSOutputSchema = z.object({
   audioDataUri: z.string().describe('The generated audio as a data URI.'),
 });
 export type TTSOutput = z.infer<typeof TTSOutputSchema>;
+
+// From social-link-generator-flow.ts
+export const SocialLinkGeneratorInputSchema = z.object({
+  shopName: z.string().describe('The name of the shop.'),
+});
+export type SocialLinkGeneratorInput = z.infer<typeof SocialLinkGeneratorInputSchema>;
+
+export const SocialLinkGeneratorOutputSchema = z.object({
+  facebookLink: z.string().url().optional(),
+  instagramLink: z.string().url().optional(),
+  twitterLink: z.string().url().optional(),
+  linkedinLink: z.string().url().optional(),
+  youtubeLink: z.string().url().optional(),
+});
+export type SocialLinkGeneratorOutput = z.infer<typeof SocialLinkGeneratorOutputSchema>;

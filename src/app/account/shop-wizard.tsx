@@ -44,7 +44,8 @@ import placeholderImageData from '@/lib/placeholder-images.json';
 import { ShopPreview } from '@/components/shop-preview';
 import { usePermissions } from '@/hooks/use-permissions';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { generateShopSeo } from '@/ai/flows/seo-flow';
+import { generateShopSeo } from '@/ai/flows/seo-flow.ts';
+import { generateSocialLinks } from '@/ai/flows/social-link-generator-flow';
 const { placeholderImages } = placeholderImageData;
 
 
@@ -967,6 +968,7 @@ function Step4SocialLinks({ shop, onSave, canEdit }: { shop: any, onSave: (newDa
   const { user } = useUser();
   const { toast } = useToast();
   const [isSaving, setIsSaving] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
   
   const form = useForm<Step4FormValues>({
     resolver: zodResolver(shopStep4Schema),
@@ -989,6 +991,23 @@ function Step4SocialLinks({ shop, onSave, canEdit }: { shop: any, onSave: (newDa
     });
   }, [shop, form]);
   
+  const handleGenerateLinks = async () => {
+    setIsGenerating(true);
+    try {
+        const result = await generateSocialLinks({ shopName: shop.shopName });
+        if (result.facebookLink) form.setValue('facebookLink', result.facebookLink);
+        if (result.instagramLink) form.setValue('instagramLink', result.instagramLink);
+        if (result.twitterLink) form.setValue('twitterLink', result.twitterLink);
+        if (result.linkedinLink) form.setValue('linkedinLink', result.linkedinLink);
+        if (result.youtubeLink) form.setValue('youtubeLink', result.youtubeLink);
+        toast({ title: 'Suggestions Generated!', description: 'Review the suggested links and save.' });
+    } catch(e: any) {
+        toast({ variant: 'destructive', title: 'AI Generation Failed', description: e.message });
+    } finally {
+        setIsGenerating(false);
+    }
+  };
+
   const onSubmit = async (values: Step4FormValues) => {
     if (!user || !shop.companyId) return;
     setIsSaving(true);
@@ -1026,6 +1045,17 @@ function Step4SocialLinks({ shop, onSave, canEdit }: { shop: any, onSave: (newDa
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <div className="p-4 bg-primary/5 border border-primary/20 rounded-lg space-y-3">
+            <h3 className="font-semibold flex items-center gap-2"><Sparkles className="h-5 w-5 text-primary"/> AI Link Suggester</h3>
+            <p className="text-sm text-muted-foreground">
+                Let our AI assistant suggest conventional URLs for your social media pages based on your shop name. Note: This does not create the pages for you.
+            </p>
+            <Button type="button" onClick={handleGenerateLinks} disabled={isGenerating || !canEdit}>
+                {isGenerating ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Sparkles className="mr-2 h-4 w-4" />}
+                Generate AI Suggestions
+            </Button>
+        </div>
+
         <fieldset disabled={!canEdit} className="space-y-6">
           <FormField control={form.control} name="facebookLink" render={({ field }) => (
               <FormItem>
