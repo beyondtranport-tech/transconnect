@@ -12,7 +12,7 @@ Before granting permissions, it's crucial to ensure your Storage bucket exists a
 1.  **Go to Google Cloud Storage:** Open the Cloud Storage browser for your project by clicking this link: **[https://console.cloud.google.com/storage/browser?project=transconnect-v1-39578841-2a857](https://console.cloud.google.com/storage/browser?project=transconnect-v1-39578841-2a857)**
 
 2.  **Check for a Bucket:** You should see a single bucket listed, typically named `transconnect-v1-39578841-2a857.appspot.com`.
-    *   **If you see the bucket:** Your bucket is correctly provisioned. You can proceed to Step 1.
+    *   **If you see the bucket:** Your bucket is correctly provisioned. You can proceed to Step 4 to verify permissions.
     *   **If you DO NOT see a bucket:** This is the root of the problem. Your Storage is not enabled. Please proceed to Step 1 to enable it first.
 
 ---
@@ -33,7 +33,9 @@ Before granting permissions, it's crucial to ensure your Storage bucket exists a
     *   *Production mode* starts with all reads and writes disallowed, which is a secure default. The application's own security rules (`storage.rules`) will be applied automatically to grant the necessary permissions for users to upload their own files.
 3.  You will then be asked to choose a location for your Storage bucket. The default location selected for you is usually the best choice. Click **Done**.
 
-It may take a moment for your Storage bucket to be created and provisioned. After it's created, you can go back to the Google Cloud link from Step 0 to confirm you see the bucket listed.
+It may take a moment for your Storage bucket to be created.
+
+**After you click "Done", the setup is complete.** You will be taken to the file browser view. You will see your bucket name (e.g., `transconnect-v1-39578841-2a857.firebasestorage.app`) at the top, and there will be no more "Get Started" button. This means you are finished with this step.
 
 ---
 
