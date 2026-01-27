@@ -1,18 +1,18 @@
-
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Loader2, Store, CheckCircle, Eye } from 'lucide-react';
+import { Loader2, Store, CheckCircle, Eye, Handshake, ShieldAlert } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useCollection, useFirestore, getClientSideAuthToken } from '@/firebase';
 import { useMemoFirebase } from '@/hooks/use-config';
-import { collection, doc, query, collectionGroup, where } from 'firebase/firestore';
+import { collection, query, where } from 'firebase/firestore';
 import { ShopPreview } from '@/components/shop-preview';
+import MemberCommercials from './wallet/[memberId]/member-commercials';
 
 interface Shop {
     id: string;
@@ -37,9 +37,8 @@ function ShopPreviewDialog({ shop }: { shop: Shop }) {
     
     const productsQuery = useMemoFirebase(() => {
         if (!firestore) return null;
-        // Correctly query the public subcollection
-        return query(collection(firestore, `shops/${shop.id}/products`));
-    }, [firestore, shop.id]);
+        return query(collection(firestore, `companies/${shop.companyId}/shops/${shop.id}/products`));
+    }, [firestore, shop.id, shop.companyId]);
 
     const { data: products, isLoading } = useCollection(productsQuery);
 
@@ -65,16 +64,29 @@ function ShopPreviewDialog({ shop }: { shop: Shop }) {
     )
 }
 
+function ShopCommercialsDialog({ shop }: { shop: Shop }) {
+  return (
+    <Dialog>
+      <DialogTrigger asChild>
+        <Button variant="outline" size="sm">
+          <Handshake className="mr-2 h-4 w-4" /> Commercials
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-4xl">
+        <MemberCommercials companyId={shop.companyId} shopId={shop.id} />
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 export default function ShopsList() {
     const { toast } = useToast();
     const firestore = useFirestore();
     const [isApproving, setIsApproving] = useState<string | null>(null);
 
-    // MODIFIED: Changed collectionGroup to collection to simplify the query and avoid index issues.
-    // This will now only show publicly approved shops, but it will fix the error.
     const shopsQuery = useMemoFirebase(() => {
         if (!firestore) return null;
-        return query(collection(firestore, 'shops'), where('status', '==', 'approved'));
+        return query(collectionGroup(firestore, 'shops'), where('status', '==', 'pending_review'));
     }, [firestore]);
 
     const { data: shops, isLoading, error, forceRefresh } = useCollection<Shop>(shopsQuery);
@@ -129,8 +141,8 @@ export default function ShopsList() {
     return (
         <Card>
             <CardHeader>
-                <CardTitle className="flex items-center gap-2"><Store /> Shop Management</CardTitle>
-                <CardDescription>Review, approve, and manage all member shops on the platform. Showing approved shops for now.</CardDescription>
+                <CardTitle className="flex items-center gap-2"><Store /> Shop Approval Queue</CardTitle>
+                <CardDescription>Review and approve member shops submitted for publication.</CardDescription>
             </CardHeader>
             <CardContent>
                 {isLoading ? (
@@ -147,11 +159,10 @@ export default function ShopsList() {
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead>Created</TableHead>
+                                    <TableHead>Submitted</TableHead>
                                     <TableHead>Shop Name</TableHead>
                                     <TableHead>Category</TableHead>
                                     <TableHead>Company ID</TableHead>
-                                    <TableHead className="text-center">Status</TableHead>
                                     <TableHead className="text-right">Actions</TableHead>
                                 </TableRow>
                             </TableHeader>
@@ -162,28 +173,22 @@ export default function ShopsList() {
                                         <TableCell className="font-medium">{shop.shopName}</TableCell>
                                         <TableCell>{shop.category}</TableCell>
                                         <TableCell className="font-mono text-xs max-w-[150px] truncate">{shop.companyId}</TableCell>
-                                        <TableCell className="text-center">
-                                            <Badge variant={statusColors[shop.status] || 'secondary'} className="capitalize">
-                                                {shop.status?.replace(/_/g, ' ') || 'N/A'}
-                                            </Badge>
-                                        </TableCell>
                                         <TableCell className="text-right space-x-2">
                                             <ShopPreviewDialog shop={shop} />
-                                            {shop.status === 'pending_review' && (
-                                                <Button 
-                                                    variant="default" 
-                                                    size="sm"
-                                                    onClick={() => handleApprove(shop)}
-                                                    disabled={isApproving === shop.id}
-                                                >
-                                                    {isApproving === shop.id ? (
-                                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                                    ) : (
-                                                        <CheckCircle className="mr-2 h-4 w-4" />
-                                                    )}
-                                                    Approve
-                                                </Button>
-                                            )}
+                                            <ShopCommercialsDialog shop={shop} />
+                                            <Button 
+                                                variant="default" 
+                                                size="sm"
+                                                onClick={() => handleApprove(shop)}
+                                                disabled={isApproving === shop.id}
+                                            >
+                                                {isApproving === shop.id ? (
+                                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                                ) : (
+                                                    <CheckCircle className="mr-2 h-4 w-4" />
+                                                )}
+                                                Approve Shop
+                                            </Button>
                                         </TableCell>
                                     </TableRow>
                                 ))}
