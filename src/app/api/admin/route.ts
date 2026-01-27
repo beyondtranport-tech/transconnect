@@ -462,19 +462,22 @@ export async function POST(req: NextRequest) {
                 const data = snapshot.docs.map(doc => {
                     const docData = doc.data();
                     const pathSegments = doc.ref.path.split('/');
-                    let companyId = null;
-                    const companiesIndex = pathSegments.indexOf('companies');
-                    if (companiesIndex > -1 && companiesIndex < pathSegments.length - 1) {
-                        companyId = pathSegments[companiesIndex + 1];
+                    
+                    // This check ensures we only process shops nested under companies
+                    if (pathSegments.length < 4 || pathSegments[0] !== 'companies' || pathSegments[2] !== 'shops') {
+                        return null;
                     }
+                    
+                    const companyId = pathSegments[1];
                     
                     return { 
                         id: doc.id, 
                         ...serializeTimestamps(docData),
-                        companyId: companyId || docData.companyId,
+                        companyId: companyId, // Use the ID from the path for reliability
                     };
-                });
-                return NextResponse.json({ success: true, data: data });
+                }).filter(item => item !== null); // Filter out any ignored public shops
+
+                return NextResponse.json({ success: true, data });
             }
             case 'getFinanceApplications': {
                  const [quotesSnap, enquiriesSnap] = await Promise.all([
@@ -633,7 +636,7 @@ export async function POST(req: NextRequest) {
                 const batch = db.batch();
             
                 // 1. Create/Update the main public shop document
-                const publicShopData = { ...shopData, status: 'approved', updatedAt: FieldValue.serverTimestamp() };
+                const publicShopData = { ...shopData, companyId, status: 'approved', updatedAt: FieldValue.serverTimestamp() };
                 batch.set(publicShopRef, publicShopData, { merge: true });
             
                 // 2. Copy all products to the public shop's subcollection
