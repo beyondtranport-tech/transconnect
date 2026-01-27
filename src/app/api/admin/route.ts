@@ -1,6 +1,3 @@
-
-
-      
 import { NextRequest, NextResponse } from 'next/server';
 import { getFirestore, Timestamp, FieldValue, FieldPath } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
@@ -62,6 +59,31 @@ export async function POST(req: NextRequest) {
         // --- END AUTHORIZATION ---
 
         switch (action) {
+            case 'getDashboardQueues': {
+                const shopsSnap = await db.collectionGroup('shops').where('status', '==', 'pending_review').orderBy('createdAt', 'desc').get();
+                const pendingShops = shopsSnap.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
+
+                const agreementsSnap = await db.collectionGroup('agreements').where('status', '==', 'proposed').orderBy('createdAt', 'desc').get();
+                
+                // Efficiently fetch shop names for agreements
+                const shopIds = [...new Set(agreementsSnap.docs.map(doc => doc.data().shopId).filter(Boolean))];
+                let shopMap = new Map();
+                if (shopIds.length > 0) {
+                     const shopsDataSnap = await db.collection('shops').where(FieldPath.documentId(), 'in', shopIds).get();
+                     shopsDataSnap.forEach(doc => shopMap.set(doc.id, doc.data().shopName));
+                }
+                
+                const proposedAgreements = agreementsSnap.docs.map(doc => {
+                    const data = doc.data();
+                    return {
+                        ...serializeTimestamps(data),
+                        id: doc.id,
+                        shopName: shopMap.get(data.shopId) || 'Unknown Shop',
+                    }
+                });
+
+                return NextResponse.json({ success: true, data: { pendingShops, proposedAgreements } });
+            }
             case 'getPendingAgreements': {
                 const agreementsSnap = await db.collectionGroup('agreements').where('status', '==', 'proposed').get();
                 if (agreementsSnap.empty) {
@@ -620,5 +642,3 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ success: false, error: error.message }, { status });
     }
 }
-      
-    

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useCallback, useEffect } from 'react';
@@ -8,17 +7,15 @@ import { Loader2, Store, CheckCircle, Eye, Handshake } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { useCollection, useFirestore, getClientSideAuthToken } from '@/firebase';
-import { useMemoFirebase } from '@/hooks/use-config';
-import { collection, query, where, collectionGroup, orderBy, getDocs } from 'firebase/firestore';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { getClientSideAuthToken } from '@/firebase';
 import { ShopPreview } from '@/components/shop-preview';
 import MemberCommercials from './wallet/[memberId]/member-commercials';
 import { DataTable } from '@/components/ui/data-table';
 import type { ColumnDef } from '@/hooks/use-data-table';
 import * as React from 'react';
-import Link from 'next/link';
 
+// --- Interfaces & Helper Functions ---
 interface Shop {
     id: string;
     shopName: string;
@@ -34,7 +31,7 @@ interface PendingAgreement {
     id: string;
     shopId: string;
     companyId: string;
-    shopName?: string; // This will be added during enrichment
+    shopName?: string;
     percentage: number;
     effectiveDate: string;
     createdAt: string; 
@@ -48,18 +45,42 @@ const statusColors: { [key: string]: 'default' | 'secondary' | 'destructive' | '
   rejected: 'destructive',
 };
 
+const formatDate = (isoString: string | undefined) => {
+    if (!isoString) return 'N/A';
+    try {
+        const date = typeof isoString === 'string' ? new Date(isoString) : (isoString as any).toDate();
+        if (isNaN(date.getTime())) return 'Invalid Date';
+        return date.toLocaleString('en-ZA', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit'});
+    } catch (e) {
+        return 'Invalid Date';
+    }
+};
+
+// --- Dialog Components ---
 function ShopPreviewDialog({ shop }: { shop: Shop }) {
-    const firestore = useFirestore();
+    const [products, setProducts] = useState<any[]>([]);
+    const [isLoadingProducts, setIsLoadingProducts] = useState(false);
+
+    const handleOpenChange = (isOpen: boolean) => {
+        if (isOpen && products.length === 0) {
+            setIsLoadingProducts(true);
+            getClientSideAuthToken().then(token => {
+                 fetch('/api/getUserSubcollection', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ path: `shops/${shop.id}/products`, type: 'collection' }),
+                })
+                .then(res => res.json())
+                .then(result => {
+                    if (result.success) setProducts(result.data || []);
+                })
+                .finally(() => setIsLoadingProducts(false));
+            })
+        }
+    };
     
-    const productsQuery = useMemoFirebase(() => {
-        if (!firestore) return null;
-        return query(collection(firestore, `shops/${shop.id}/products`));
-    }, [firestore, shop.id]);
-
-    const { data: products, isLoading } = useCollection(productsQuery);
-
     return (
-        <Dialog>
+        <Dialog onOpenChange={handleOpenChange}>
             <DialogTrigger asChild>
                 <Button variant="ghost" size="sm"><Eye className="mr-2 h-4 w-4" /> Preview</Button>
             </DialogTrigger>
@@ -69,10 +90,10 @@ function ShopPreviewDialog({ shop }: { shop: Shop }) {
                     <DialogDescription>A preview of the shop as it will appear to customers.</DialogDescription>
                 </DialogHeader>
                 <div className="w-full h-full overflow-y-auto">
-                     {isLoading ? (
+                     {isLoadingProducts ? (
                         <div className="flex justify-center items-center h-full"><Loader2 className="animate-spin h-10 w-10" /></div>
                      ) : (
-                        <ShopPreview shop={shop} products={products || []} />
+                        <ShopPreview shop={shop} products={products} />
                      )}
                 </div>
             </DialogContent>
@@ -95,78 +116,45 @@ function ShopCommercialsDialog({ shop, onUpdate }: { shop: any; onUpdate: () => 
   );
 }
 
-const formatDate = (isoString: string | undefined) => {
-    if (!isoString) return 'N/A';
-    try {
-        const date = typeof isoString === 'string' ? new Date(isoString) : (isoString as any).toDate();
-        if (isNaN(date.getTime())) return 'Invalid Date';
-        return date.toLocaleString('en-ZA', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit'});
-    } catch (e) {
-        return 'Invalid Date';
-    }
-};
-
+// --- Main Component ---
 export default function ShopsList() {
     const { toast } = useToast();
     const [isApproving, setIsApproving] = useState<string | null>(null);
-    const firestore = useFirestore();
-    const [shopMap, setShopMap] = useState<Map<string, Shop>>(new Map());
+    const [pendingShops, setPendingShops] = useState<Shop[]>([]);
+    const [proposedAgreements, setProposedAgreements] = useState<PendingAgreement[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
-    const pendingShopsQuery = useMemoFirebase(() => {
-        if (!firestore) return null;
-        return query(
-            collectionGroup(firestore, 'shops'),
-            where('status', '==', 'pending_review'),
-            orderBy('createdAt', 'desc')
-        );
-    }, [firestore]);
-    
-    const proposedAgreementsQuery = useMemoFirebase(() => {
-        if (!firestore) return null;
-        return query(
-            collectionGroup(firestore, 'agreements'),
-            where('status', '==', 'proposed'),
-            orderBy('createdAt', 'desc')
-        );
-    }, [firestore]);
-    
-    const { data: pendingShops, isLoading: isLoadingShops, error: shopsError, forceRefresh: refreshShops } = useCollection<Shop>(pendingShopsQuery);
-    const { data: proposedAgreementsRaw, isLoading: isLoadingAgreements, error: agreementsError, forceRefresh: refreshAgreements } = useCollection<PendingAgreement>(proposedAgreementsQuery);
+    const loadData = useCallback(async () => {
+        setIsLoading(true);
+        setError(null);
+        try {
+            const token = await getClientSideAuthToken();
+            if (!token) throw new Error("Authentication failed.");
+
+            const response = await fetch('/api/admin', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'getDashboardQueues' }),
+            });
+
+            const result = await response.json();
+            if (!result.success) throw new Error(result.error || 'Failed to load queues.');
+            
+            setPendingShops(result.data.pendingShops || []);
+            setProposedAgreements(result.data.proposedAgreements || []);
+
+        } catch (e: any) {
+            setError(e.message);
+        } finally {
+            setIsLoading(false);
+        }
+    }, []);
 
     useEffect(() => {
-        async function fetchAllShops() {
-            if (!firestore) return;
-            try {
-                const shopsSnapshot = await getDocs(collectionGroup(firestore, 'shops'));
-                const newShopMap = new Map<string, Shop>();
-                shopsSnapshot.forEach(doc => {
-                    newShopMap.set(doc.id, { id: doc.id, ...doc.data() } as Shop);
-                });
-                setShopMap(newShopMap);
-            } catch (e) {
-                console.error("Failed to fetch all shops for enrichment:", e);
-                toast({ variant: 'destructive', title: 'Data Enrichment Failed', description: 'Could not load shop names for agreements.'});
-            }
-        }
-        fetchAllShops();
-    }, [firestore, toast]);
+        loadData();
+    }, [loadData]);
 
-
-    const proposedAgreements = useMemo(() => {
-        if (!proposedAgreementsRaw || shopMap.size === 0) return [];
-        return proposedAgreementsRaw.map(agreement => {
-            const shop = shopMap.get(agreement.shopId);
-            return {
-                ...agreement,
-                shopName: shop ? shop.shopName : 'Unknown Shop',
-            };
-        });
-    }, [proposedAgreementsRaw, shopMap]);
-
-    const forceRefresh = useCallback(() => {
-        refreshShops();
-        refreshAgreements();
-    }, [refreshShops, refreshAgreements]);
 
     const handleApprove = async (shop: Shop) => {
         setIsApproving(shop.id);
@@ -176,30 +164,17 @@ export default function ShopsList() {
 
             const response = await fetch('/api/admin', {
                 method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    action: 'approveShop',
-                    payload: { shopId: shop.id, companyId: shop.companyId }
-                })
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'approveShop', payload: { shopId: shop.id, companyId: shop.companyId } })
             });
 
              const result = await response.json();
              if (!response.ok) throw new Error(result.error || 'Failed to approve shop.');
             
-            toast({
-                title: 'Shop Approved!',
-                description: 'The shop is now public and live on the platform.',
-            });
-            forceRefresh();
+            toast({ title: 'Shop Approved!', description: 'The shop is now public and live on the platform.' });
+            loadData();
         } catch (e: any) {
-             toast({
-                variant: 'destructive',
-                title: 'Approval Failed',
-                description: e.message || 'An unexpected error occurred.',
-            });
+             toast({ variant: 'destructive', title: 'Approval Failed', description: e.message || 'An unexpected error occurred.' });
         }
         setIsApproving(null);
     };
@@ -231,7 +206,8 @@ export default function ShopsList() {
                 </div>
             )
         }
-    ], [isApproving, handleApprove]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    ], [isApproving]);
 
     const agreementColumns: ColumnDef<PendingAgreement>[] = useMemo(() => [
         { accessorKey: 'shopName', header: 'Shop Name', cell: ({row}) => <div>{row.original.shopName}</div> },
@@ -250,20 +226,17 @@ export default function ShopsList() {
             header: () => <div className="text-right">Actions</div>,
             cell: ({ row }) => (
                 <div className="text-right">
-                    <ShopCommercialsDialog shop={row.original} onUpdate={forceRefresh} />
+                    <ShopCommercialsDialog shop={row.original} onUpdate={loadData} />
                 </div>
             ),
         }
-    ], [forceRefresh]);
+    ], [loadData]);
     
-    const isLoading = isLoadingShops || isLoadingAgreements;
-    const error = shopsError || agreementsError;
-
     if (error) {
         return (
             <div className="text-destructive-foreground bg-destructive/90 p-4 rounded-md">
                 <h4 className="font-semibold">Error loading data</h4>
-                <p className="text-sm">{error.message}</p>
+                <p className="text-sm">{error}</p>
             </div>
         );
     }
