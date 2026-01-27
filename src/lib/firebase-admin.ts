@@ -27,14 +27,18 @@ export function getAdminApp(): { app: App | null; error: string | null } {
     const serviceAccount = JSON.parse(serviceAccountJson) as ServiceAccount;
 
     if (!serviceAccount.project_id || !serviceAccount.client_email || !serviceAccount.private_key) {
-        throw new Error('Parsed service account is missing essential properties (project_id, client_email, private_key).');
+        throw new Error('Parsed service account is invalid or missing essential properties (project_id, client_email, private_key). Please re-generate it following the backend-setup.md guide.');
     }
     
-    // Explicitly set the storageBucket using the project_id. This is the definitive fix.
+    // Explicitly use the project_id from the service account for all configurations.
+    // This is the definitive fix to prevent cross-project credential mix-ups.
+    const projectId = serviceAccount.project_id;
+    const bucketName = `${projectId}.appspot.com`;
+
     const app = initializeApp({
       credential: cert(serviceAccount),
-      projectId: serviceAccount.project_id,
-      storageBucket: `${serviceAccount.project_id}.appspot.com`, 
+      projectId: projectId,
+      storageBucket: bucketName, 
     }, ADMIN_APP_NAME);
 
     return { app, error: null };

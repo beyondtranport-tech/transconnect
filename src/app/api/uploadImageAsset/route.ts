@@ -3,7 +3,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getStorage } from 'firebase-admin/storage';
 import { getAdminApp } from '@/lib/firebase-admin';
 import { getAuth } from 'firebase-admin/auth';
-import { firebaseConfig } from '@/firebase/config';
 
 export async function POST(req: NextRequest) {
     const { app, error: initError } = getAdminApp();
@@ -21,7 +20,7 @@ export async function POST(req: NextRequest) {
         const adminAuth = getAuth(app);
         await adminAuth.verifyIdToken(token);
         
-        const { fileDataUri, folder, fileName } = await req.json();
+        const { fileDataUri, folder, fileName, contentType: providedContentType } = await req.json();
         
         if (!fileDataUri || !folder || !fileName) {
             return NextResponse.json({ success: false, error: 'Missing file data or path info.' }, { status: 400 });
@@ -32,10 +31,9 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ success: false, error: 'Invalid data URI format.' }, { status: 400 });
         }
         
-        const contentType = matches[1];
+        const contentType = providedContentType || matches[1];
         const fileBuffer = Buffer.from(matches[2], 'base64');
         
-        // Use the default bucket configured during Admin SDK initialization.
         const bucket = getStorage(app).bucket();
         const filePath = `${folder}/${fileName}`;
         const file = bucket.file(filePath);
@@ -45,6 +43,7 @@ export async function POST(req: NextRequest) {
             public: true 
         });
 
+        // The publicUrl format is consistent for all GCS buckets.
         const publicUrl = `https://storage.googleapis.com/${bucket.name}/${filePath}`;
         
         return NextResponse.json({ success: true, url: publicUrl });
@@ -62,7 +61,7 @@ export async function POST(req: NextRequest) {
         if (error.message?.includes('The specified bucket does not exist')) {
              return NextResponse.json({
                 success: false,
-                error: `Bucket Not Found on Server: The backend is configured to use '${firebaseConfig.storageBucket}', but it could not be found. Please ensure this is the correct default bucket in your Firebase project.`
+                error: `Bucket Not Found on Server: The backend is configured to use '${getStorage(app).bucket().name}', but it could not be found. Please ensure this is the correct default bucket in your Firebase project.`
             }, { status: 404 });
         }
         
