@@ -1,3 +1,4 @@
+
 'use client';
 
 export * from './init';
@@ -8,5 +9,5 @@ export * from './firestore/use-doc';
 export * from './errors';
 export * from './error-emitter';
 export { useStorage } from './provider';
-export { useMemoFirebase } from '@/hooks/use-config';
+export { useMemoFirebase } from '@/hooks/use-memo-firebase';
     

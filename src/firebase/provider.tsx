@@ -8,7 +8,7 @@ import { Auth, User, onIdTokenChanged, getIdToken } from 'firebase/auth';
 import { FirebaseStorage } from 'firebase/storage';
 import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
 import { useDoc } from './firestore/use-doc';
-import { useMemoFirebase } from '@/hooks/use-config';
+import { useMemoFirebase } from '@/hooks/use-memo-firebase';
 
 interface FirebaseProviderProps {
   children: ReactNode;

@@ -11,7 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Banknote, FileCheck, Scale, Loader2, PlusCircle, Trash2 } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import { useFirestore, useUser, useCollection } from '@/firebase';
-import { useMemoFirebase } from '@/hooks/use-config';
+import { useMemoFirebase } from '@/hooks/use-memo-firebase';
 import { writeBatch, doc, collection, increment, serverTimestamp, query, deleteDoc, addDoc } from 'firebase/firestore';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
