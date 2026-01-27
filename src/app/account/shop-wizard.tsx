@@ -111,7 +111,7 @@ function Step1CoreIdentity({ shop, onSave, onSeoGenerated, canEdit }: { shop: an
         const response = await fetch('/api/updateUserDoc', {
             method: 'POST',
             headers: {
-                'Authorization': `Bearer ${'\'\'\''}${token}'\'\'\'`,
+                'Authorization': `Bearer ${token}`,
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
@@ -300,7 +300,7 @@ function AIGenerateDialog({
       const response = await fetch('/api/uploadImageAsset', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${'\'\'\''}${token}'\'\'\'`,
+          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ fileDataUri: generatedImage, folder, fileName }),
@@ -454,7 +454,7 @@ function ProductDialog({ shop, product, onComplete, children, canEdit }: { shop:
         const response = await fetch(apiEndpoint, {
             method: 'POST',
             headers: {
-                'Authorization': `Bearer ${'\'\'\''}${token}'\'\'\'`,
+                'Authorization': `Bearer ${token}`,
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify(body),
@@ -495,7 +495,7 @@ function ProductDialog({ shop, product, onComplete, children, canEdit }: { shop:
         
         const response = await fetch('/api/uploadImageAsset', {
             method: 'POST',
-            headers: { 'Authorization': `Bearer ${'\'\'\''}${token}'\'\'\'`, 'Content-Type': 'application/json' },
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
             body: JSON.stringify({ fileDataUri, folder, fileName }),
         });
 
@@ -673,7 +673,7 @@ function Step2Products({ shop, canEdit }: { shop: any, canEdit: boolean }) {
         
         const response = await fetch('/api/deleteUserDoc', {
             method: 'POST',
-            headers: { 'Authorization': `Bearer ${'\'\'\''}${token}'\'\'\'`, 'Content-Type': 'application/json' },
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
             body: JSON.stringify({ path: `companies/${shop.companyId}/shops/${shop.id}/products/${productToDelete.id}` }),
         });
         
@@ -817,7 +817,7 @@ function Step3Appearance({ shop, onSave, canEdit }: { shop: any, onSave: (newDat
         const response = await fetch('/api/updateUserDoc', {
             method: 'POST',
             headers: {
-                'Authorization': `Bearer ${'\'\'\''}${token}'\'\'\'`,
+                'Authorization': `Bearer ${token}`,
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
@@ -937,7 +937,7 @@ function Step4SocialLinks({ shop, onSave, canEdit }: { shop: any, onSave: (newDa
         const response = await fetch('/api/updateUserDoc', {
             method: 'POST',
             headers: {
-                'Authorization': `Bearer ${'\'\'\''}${token}'\'\'\'`,
+                'Authorization': `Bearer ${token}`,
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
@@ -1054,7 +1054,7 @@ function Step5SeoAndPublishing({ shop, onSave, canEdit }: { shop: any, onSave: (
         const response = await fetch('/api/updateUserDoc', {
             method: 'POST',
             headers: {
-                'Authorization': `Bearer ${'\'\'\''}${token}'\'\'\'`,
+                'Authorization': `Bearer ${token}`,
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
@@ -1086,7 +1086,7 @@ function Step5SeoAndPublishing({ shop, onSave, canEdit }: { shop: any, onSave: (
         const response = await fetch('/api/updateUserDoc', {
             method: 'POST',
             headers: {
-                'Authorization': `Bearer ${'\'\'\''}${token}'\'\'\'`,
+                'Authorization': `Bearer ${token}`,
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
