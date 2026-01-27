@@ -458,7 +458,7 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, data });
             }
             case 'getShops': {
-                const snapshot = await db.collectionGroup('shops').orderBy('createdAt', 'desc').get();
+                const snapshot = await db.collectionGroup('shops').get();
                 const data = snapshot.docs.map(doc => {
                     const docData = doc.data();
                     const pathSegments = doc.ref.path.split('/');
@@ -476,6 +476,13 @@ export async function POST(req: NextRequest) {
                         companyId: companyId, // Use the ID from the path for reliability
                     };
                 }).filter(item => item !== null); // Filter out any ignored public shops
+
+                // Now sort in the backend code
+                data.sort((a, b) => {
+                    const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+                    const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+                    return dateB - dateA;
+                });
 
                 return NextResponse.json({ success: true, data });
             }
