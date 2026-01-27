@@ -1,7 +1,8 @@
 
+
 'use server';
 
-import { getFirestore, FieldValue, increment } from 'firebase-admin/firestore';
+import { getFirestore, FieldValue, increment, query, where, limit } from 'firebase-admin/firestore';
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuth } from 'firebase-admin/auth';
 import { getAdminApp } from '@/lib/firebase-admin';
@@ -40,14 +41,11 @@ export async function POST(req: NextRequest) {
     const buyerCompanyRef = db.collection('companies').doc(buyerCompanyId);
     const sellerCompanyRef = db.collection('companies').doc(sellerCompanyId);
     
-    // Fetch platform discount from the seller's shop
+    // Fetch the active commercial agreement for the seller's shop
     const shopRef = db.collection(`companies/${sellerCompanyId}/shops`).doc(items[0].shopId);
-    const shopDoc = await shopRef.get();
-    const platformDiscountPercent = shopDoc.data()?.platformDiscount || 0;
+    const agreementsRef = shopRef.collection('agreements');
+    const activeAgreementQuery = query(agreementsRef, where('status', '==', 'active'), limit(1));
     
-    const platformCommission = totalAmount * (platformDiscountPercent / 100);
-    const sellerAmount = totalAmount - platformCommission;
-
     await db.runTransaction(async (transaction) => {
       const buyerCompanyDoc = await transaction.get(buyerCompanyRef);
       if (!buyerCompanyDoc.exists || (buyerCompanyDoc.data()?.walletBalance || 0) < totalAmount) {
@@ -58,6 +56,16 @@ export async function POST(req: NextRequest) {
       if (!sellerCompanyDoc.exists) {
           throw new Error('Seller company not found.');
       }
+      
+      // Get the commission percentage from the active agreement
+      const activeAgreementSnap = await transaction.get(activeAgreementQuery);
+      let platformDiscountPercent = 0;
+      if (!activeAgreementSnap.empty) {
+        platformDiscountPercent = activeAgreementSnap.docs[0].data().percentage || 0;
+      }
+      
+      const platformCommission = totalAmount * (platformDiscountPercent / 100);
+      const sellerAmount = totalAmount - platformCommission;
 
       // 1. Debit buyer's wallet
       transaction.update(buyerCompanyRef, { walletBalance: increment(-totalAmount) });

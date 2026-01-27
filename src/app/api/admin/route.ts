@@ -1,4 +1,5 @@
 
+
 import { NextRequest, NextResponse } from 'next/server';
 import { getFirestore, Timestamp, FieldValue, FieldPath } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
@@ -50,7 +51,12 @@ export async function POST(req: NextRequest) {
             if (payload.companyId !== userCompanyIdForAuth && !isAdmin) {
                  throw new Error("Forbidden: You can only manage leads for your own company.");
             }
-        } else if (!isAdmin) {
+        } else if (action === 'acceptCommercialAgreement') {
+            if (payload.companyId !== userCompanyIdForAuth && !isAdmin) {
+                throw new Error("Forbidden: You can only accept agreements for your own company.");
+            }
+        }
+         else if (!isAdmin) {
             // Most other actions in this route are admin-only
              const allowedUserActions = ['saveCompanyLead', 'acceptCommercialAgreement'];
              if (!allowedUserActions.includes(action)) {
