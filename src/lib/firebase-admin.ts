@@ -69,5 +69,3 @@ export async function verifyAdmin(req: NextRequest) {
         adminUid: decodedToken.uid
     };
 }
-
-    
