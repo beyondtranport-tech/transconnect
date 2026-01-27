@@ -123,10 +123,13 @@
             "status": { "type": "string", "enum": ["proposed", "active", "archived"], "description": "The status of the agreement." },
             "effectiveDate": { "type": "string", "format": "date-time", "description": "The date this agreement becomes active." },
             "acceptedBy": { "type": "string", "description": "The UID of the user who accepted the agreement." },
+            "proposedBy": { "type": "string", "description": "The UID of the user who proposed the agreement." },
+            "expiryDate": { "type": "string", "format": "date-time", "description": "Optional: The date this agreement expires." },
+            "volumeThreshold": { "type": "number", "description": "Optional: The sales volume threshold for this agreement to apply." },
             "createdAt": { "type": "object" },
             "updatedAt": { "type": "object" }
         },
-        "required": ["id", "percentage", "status", "effectiveDate"]
+        "required": ["id", "percentage", "status", "effectiveDate", "proposedBy"]
     },
     "Product": {
       "$schema": "http://json-schema.org/draft-07/schema#",
@@ -564,3 +567,4 @@
   }
 }
 
+    

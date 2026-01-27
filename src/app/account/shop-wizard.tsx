@@ -1260,6 +1260,8 @@ function Step5Legal({ shop, onSave, canEdit }: { shop: any, onSave: (newData: an
 const agreementSchema = z.object({
     percentage: z.coerce.number().min(0, "Must be non-negative").max(100, "Cannot exceed 100"),
     effectiveDate: z.date({ required_error: "An effective date is required." }),
+    expiryDate: z.date().optional(),
+    volumeThreshold: z.coerce.number().min(0, "Must be non-negative").optional(),
 });
 type NewAgreementValues = z.infer<typeof agreementSchema>;
 
@@ -1267,6 +1269,7 @@ function NewAgreementDialog({ shop, onSave }: { shop: any, onSave: () => void })
     const [isOpen, setIsOpen] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const { toast } = useToast();
+    const { user } = useUser();
     const form = useForm<NewAgreementValues>({
         resolver: zodResolver(agreementSchema),
         defaultValues: { percentage: 7.5, effectiveDate: new Date() },
@@ -1276,12 +1279,15 @@ function NewAgreementDialog({ shop, onSave }: { shop: any, onSave: () => void })
         setIsLoading(true);
         try {
             const token = await getClientSideAuthToken();
-            if (!token) throw new Error("Authentication failed.");
+            if (!token || !user) throw new Error("Authentication failed.");
 
             const agreementData = {
                 percentage: values.percentage,
                 effectiveDate: values.effectiveDate.toISOString(),
+                expiryDate: values.expiryDate ? values.expiryDate.toISOString() : null,
+                volumeThreshold: values.volumeThreshold || null,
                 status: 'proposed',
+                proposedBy: user.uid,
             };
 
             await fetch('/api/addUserDoc', {
@@ -1293,7 +1299,7 @@ function NewAgreementDialog({ shop, onSave }: { shop: any, onSave: () => void })
                 })
             });
 
-            toast({ title: 'New Agreement Proposed!', description: 'The agreement is now pending acceptance.' });
+            toast({ title: 'New Agreement Proposed!', description: 'The agreement is now pending acceptance by an admin.' });
             onSave();
             setIsOpen(false);
         } catch (e: any) {
@@ -1306,16 +1312,26 @@ function NewAgreementDialog({ shop, onSave }: { shop: any, onSave: () => void })
     return (
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
             <DialogTrigger asChild><Button><PlusCircle className="mr-2" />Propose New Agreement</Button></DialogTrigger>
-            <DialogContent><DialogHeader><DialogTitle>Propose New Commercial Agreement</DialogTitle><DialogDescription>Set the platform commission percentage and effective date.</DialogDescription></DialogHeader>
+            <DialogContent><DialogHeader><DialogTitle>Propose New Commercial Agreement</DialogTitle><DialogDescription>Set the platform commission percentage and other terms.</DialogDescription></DialogHeader>
                 <Form {...form}><form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
                     <FormField control={form.control} name="percentage" render={({ field }) => (<FormItem><FormLabel>Platform Commission (%)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                    <FormField control={form.control} name="effectiveDate" render={({ field }) => (
-                        <FormItem className="flex flex-col"><FormLabel>Effective Date</FormLabel><Popover><PopoverTrigger asChild><FormControl><Button variant={"outline"} className={cn("pl-3 text-left font-normal",!field.value && "text-muted-foreground")}>
-                            {field.value ? (format(field.value, "PPP")) : (<span>Pick a date</span>)}
-                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger>
-                            <PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus /></PopoverContent>
-                        </Popover><FormMessage /></FormItem>
-                    )} />
+                    <div className="grid grid-cols-2 gap-4">
+                      <FormField control={form.control} name="effectiveDate" render={({ field }) => (
+                          <FormItem className="flex flex-col"><FormLabel>Effective Date</FormLabel><Popover><PopoverTrigger asChild><FormControl><Button variant={"outline"} className={cn("pl-3 text-left font-normal",!field.value && "text-muted-foreground")}>
+                              {field.value ? (format(field.value, "PPP")) : (<span>Pick a date</span>)}
+                              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger>
+                              <PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus /></PopoverContent>
+                          </Popover><FormMessage /></FormItem>
+                      )} />
+                       <FormField control={form.control} name="expiryDate" render={({ field }) => (
+                          <FormItem className="flex flex-col"><FormLabel>Expiry Date (Optional)</FormLabel><Popover><PopoverTrigger asChild><FormControl><Button variant={"outline"} className={cn("pl-3 text-left font-normal",!field.value && "text-muted-foreground")}>
+                              {field.value ? (format(field.value, "PPP")) : (<span>Pick a date</span>)}
+                              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger>
+                              <PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={field.onChange} /></PopoverContent>
+                          </Popover><FormMessage /></FormItem>
+                      )} />
+                    </div>
+                     <FormField control={form.control} name="volumeThreshold" render={({ field }) => (<FormItem><FormLabel>Volume Threshold (ZAR, Optional)</FormLabel><FormControl><Input type="number" placeholder="e.g., 100000" {...field} /></FormControl><FormDescription>Apply this rate only if monthly sales exceed this amount.</FormDescription><FormMessage /></FormItem>)} />
                     <DialogFooter><Button type="submit" disabled={isLoading}>{isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null}Propose Agreement</Button></DialogFooter>
                 </form></Form>
             </DialogContent>
@@ -1353,7 +1369,8 @@ function AcceptAgreementButton({ agreement, shop, onUpdate }: { agreement: any, 
         }
     };
     
-    if (agreement.status !== 'proposed') return null;
+    // Only show the accept button if the current user did NOT propose it.
+    if (agreement.status !== 'proposed' || agreement.proposedBy === user?.uid) return null;
 
     return (
         <Button size="sm" onClick={handleAccept} disabled={isLoading}>
@@ -1653,3 +1670,5 @@ export function ShopWizard({ shop: initialShop }: { shop: any }) {
     </div>
   );
 }
+
+    

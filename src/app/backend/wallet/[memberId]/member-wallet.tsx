@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect, useCallback } from 'react';
@@ -17,7 +18,7 @@ import MemberWalletPayments from './member-wallet-payments';
 import MemberTransactions from './member-transactions';
 import StaffContent from '@/app/account/staff-content';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-
+import MemberCommercials from './member-commercials';
 
 const formatCurrency = (amount: number) => new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(amount);
 const formatDate = (isoString: any) => {
@@ -214,8 +215,9 @@ export default function MemberWallet({ memberId }: { memberId: string }) {
             </Card>
             
             <Tabs defaultValue="wallet" className="w-full">
-                <TabsList className="grid w-full grid-cols-3">
+                <TabsList className="grid w-full grid-cols-4">
                     <TabsTrigger value="wallet">Wallet</TabsTrigger>
+                    <TabsTrigger value="commercials">Commercials</TabsTrigger>
                     <TabsTrigger value="staff">Staff</TabsTrigger>
                     <TabsTrigger value="funding">Funding Records</TabsTrigger>
                 </TabsList>
@@ -262,6 +264,16 @@ export default function MemberWallet({ memberId }: { memberId: string }) {
                         <MemberTransactions companyId={memberId} key={refreshTrigger} />
                     </div>
                 </TabsContent>
+                <TabsContent value="commercials" className="mt-6">
+                    {companyData.shopId ? (
+                        <MemberCommercials companyId={memberId} shopId={companyData.shopId} />
+                    ) : (
+                        <Card>
+                            <CardHeader><CardTitle>No Shop Found</CardTitle></CardHeader>
+                            <CardContent><p className="text-muted-foreground">This member has not created a shop yet. Commercial agreements can be set once a shop exists.</p></CardContent>
+                        </Card>
+                    )}
+                </TabsContent>
                  <TabsContent value="staff" className="mt-6">
                     <StaffContent companyId={memberId} />
                 </TabsContent>
@@ -272,3 +284,5 @@ export default function MemberWallet({ memberId }: { memberId: string }) {
         </div>
     );
 }
+
+    
