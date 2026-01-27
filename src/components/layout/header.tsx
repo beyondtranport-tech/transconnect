@@ -3,7 +3,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Truck, Menu, User, ChevronDown, ShieldCheck, Building, LogOut } from "lucide-react";
+import { Truck, Menu, User, ChevronDown, ShieldCheck, Building, LogOut, ShoppingCart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetFooter } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
@@ -19,6 +19,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useCart } from "@/context/CartContext";
+import { Badge } from "@/components/ui/badge";
 
 const mainNavLinks = [
   { href: "/", label: "Home" },
@@ -44,14 +46,13 @@ export function Header() {
   const [isSheetOpen, setIsSheetOpen] = React.useState(false);
   const { user, isUserLoading } = useUser();
   const auth = useAuth();
+  const { cartItems } = useCart();
 
   const handleSignOut = async () => {
     if (!auth) return;
     try {
         await signOut(auth);
-        // The onIdTokenChanged listener will handle clearing the session cookie.
-        // The page's useEffect guard will redirect the user away from protected routes.
-        setIsSheetOpen(false); // Close mobile menu on sign out
+        setIsSheetOpen(false);
     } catch (error) {
         console.error("Error signing out: ", error);
     }
@@ -125,7 +126,16 @@ export function Header() {
         </nav>
 
         <div className="flex items-center gap-4">
-          <div className="hidden md:flex items-center gap-2">
+          <div className="flex items-center gap-2">
+            <Button asChild variant="ghost" size="icon">
+                <Link href="/cart">
+                    <ShoppingCart className="h-5 w-5" />
+                    {cartItems.length > 0 && (
+                        <Badge variant="destructive" className="absolute -top-1 -right-1 h-5 w-5 justify-center p-0">{cartItems.length}</Badge>
+                    )}
+                    <span className="sr-only">Shopping Cart</span>
+                </Link>
+            </Button>
             {isUserLoading ? (
                <div className="flex items-center gap-2">
                  <div className="h-9 w-20 rounded-md bg-muted/50 animate-pulse" />
@@ -175,14 +185,14 @@ export function Header() {
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (
-              <>
+              <div className="hidden md:flex items-center gap-2">
                 <Button asChild variant="ghost">
                   <Link href="/signin">Sign In</Link>
                 </Button>
                 <Button asChild>
                   <Link href="/join">Join for Free</Link>
                 </Button>
-              </>
+              </div>
             )}
           </div>
           

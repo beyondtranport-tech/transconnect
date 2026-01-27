@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
 import { ShoppingCart, Mail, Phone, ImageIcon } from 'lucide-react';
+import { useCart } from '@/context/CartContext';
+import { useToast } from '@/hooks/use-toast';
 
 const formatPrice = (price: number) => {
     if (typeof price !== 'number') return 'N/A';
@@ -20,7 +22,26 @@ const themeColors: { [key: string]: { bg: string; text: string; primary: string 
 };
 
 export function ShopPreview({ shop, products }: { shop: any, products: any[] }) {
+    const { addToCart } = useCart();
+    const { toast } = useToast();
     const theme = themeColors[shop.theme] || themeColors['forest-green'];
+
+    const handleAddToCart = (product: any) => {
+        addToCart({
+            id: product.id,
+            name: product.name,
+            price: product.price,
+            quantity: 1,
+            shopId: shop.id,
+            shopName: shop.shopName,
+            sellerCompanyId: shop.companyId,
+            imageUrl: product.imageUrls?.[0]
+        });
+        toast({
+            title: "Item Added to Cart",
+            description: `${product.name} has been added to your cart.`,
+        });
+    };
 
     const renderProductGrid = () => (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -40,7 +61,7 @@ export function ShopPreview({ shop, products }: { shop: any, products: any[] }) 
                     </CardContent>
                     <CardFooter className="flex justify-between items-center">
                         <p className={cn("font-bold", theme.primary)}>{formatPrice(product.price)}</p>
-                        <Button size="sm" style={{ backgroundColor: `hsl(var(--primary))`, color: `hsl(var(--primary-foreground))` }}>Add to Cart</Button>
+                        <Button size="sm" onClick={() => handleAddToCart(product)}>Add to Cart</Button>
                     </CardFooter>
                 </Card>
             ))}
@@ -63,7 +84,7 @@ export function ShopPreview({ shop, products }: { shop: any, products: any[] }) 
                     </CardContent>
                     <div className="p-4 text-right">
                          <p className={cn("font-bold", theme.primary)}>{formatPrice(product.price)}</p>
-                         <Button size="sm" className="mt-1" style={{ backgroundColor: `hsl(var(--primary))`, color: `hsl(var(--primary-foreground))` }}>Add to Cart</Button>
+                         <Button size="sm" className="mt-1" onClick={() => handleAddToCart(product)}>Add to Cart</Button>
                     </div>
                 </Card>
             ))}
