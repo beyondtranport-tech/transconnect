@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useMemo, useCallback } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Loader2, Store, CheckCircle, Eye, Handshake } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
@@ -37,7 +37,7 @@ interface PendingAgreement {
     shopName: string;
     percentage: number;
     effectiveDate: string;
-    createdAt: string; // Ensure createdAt is part of the type for sorting
+    createdAt: string; 
     [key: string]: any;
 }
 
@@ -134,21 +134,22 @@ export default function ShopsList() {
         return query(collectionGroup(firestore, 'shops'), where('status', '==', 'pending_review'));
     }, [firestore]);
     
-    // Simplified query to fetch all proposed agreements without sorting on the backend
+    // Fetch ALL agreements and filter on the client to avoid index issues.
     const agreementsQuery = useMemoFirebase(() => {
         if (!firestore) return null;
-        return query(collectionGroup(firestore, 'agreements'), where('status', '==', 'proposed'));
+        return query(collectionGroup(firestore, 'agreements'));
     }, [firestore]);
     
     const { data: pendingShops, isLoading: isLoadingShops, error: shopsError, forceRefresh: refreshShops } = useCollection<Shop>(pendingShopsQuery);
-    const { data: pendingAgreements, isLoading: isLoadingAgreements, error: agreementsError, forceRefresh: refreshAgreements } = useCollection<PendingAgreement>(agreementsQuery);
+    const { data: allAgreements, isLoading: isLoadingAgreements, error: agreementsError, forceRefresh: refreshAgreements } = useCollection<PendingAgreement>(agreementsQuery);
 
-    // Perform sorting on the client-side
+    // Perform filtering and sorting on the client-side
     const sortedAgreements = React.useMemo(() => {
-        if (!pendingAgreements) return [];
-        return [...pendingAgreements].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-    }, [pendingAgreements]);
-
+        if (!allAgreements) return [];
+        return allAgreements
+            .filter(agreement => agreement.status === 'proposed')
+            .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    }, [allAgreements]);
 
     const forceRefresh = useCallback(() => {
         refreshShops();
