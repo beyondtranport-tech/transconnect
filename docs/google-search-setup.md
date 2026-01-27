@@ -52,5 +52,3 @@ GOOGLE_SEARCH_API_KEY=YOUR_API_KEY_HERE
 CUSTOM_SEARCH_ENGINE_ID=YOUR_SEARCH_ENGINE_ID_HERE
 ```
 The AI Lead Agent will now be fully functional.
-
-    
