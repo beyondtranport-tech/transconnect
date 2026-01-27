@@ -30,9 +30,10 @@ export function getAdminApp(): { app: App | null; error: string | null } {
     }
     
     // Explicitly use the project_id from the service account for all configurations.
-    // This is the definitive fix to prevent cross-project credential mix-ups.
     const projectId = serviceAccount.project_id;
-    const bucketName = `${projectId}.appspot.com`;
+    // Explicitly set the CORRECT bucket name to prevent discovery issues.
+    // The correct suffix is '.firebasestorage.app', not '.appspot.com'.
+    const bucketName = `${projectId}.firebasestorage.app`;
 
     const app = initializeApp({
       credential: cert(serviceAccount),
