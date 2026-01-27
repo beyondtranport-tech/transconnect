@@ -35,9 +35,8 @@ export async function POST(req: NextRequest) {
         const contentType = matches[1];
         const fileBuffer = Buffer.from(matches[2], 'base64');
         
-        // --- THE FIX ---
-        // Explicitly get the bucket by its correct name to avoid resolution issues.
-        const bucket = getStorage(app).bucket(firebaseConfig.storageBucket);
+        // Use the default bucket configured during Admin SDK initialization.
+        const bucket = getStorage(app).bucket();
         const filePath = `${folder}/${fileName}`;
         const file = bucket.file(filePath);
         
@@ -46,7 +45,6 @@ export async function POST(req: NextRequest) {
             public: true 
         });
 
-        // The public URL is still constructed the same way.
         const publicUrl = `https://storage.googleapis.com/${bucket.name}/${filePath}`;
         
         return NextResponse.json({ success: true, url: publicUrl });
