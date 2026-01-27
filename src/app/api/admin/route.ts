@@ -61,24 +61,19 @@ export async function POST(req: NextRequest) {
 
         switch (action) {
             case 'getDashboardQueues': {
-                // Fetch all shops and filter/sort in code to avoid composite index errors.
                 const allShopsSnap = await db.collectionGroup('shops').get();
+                const shopMap = new Map();
+                allShopsSnap.forEach(doc => {
+                    shopMap.set(doc.id, doc.data().shopName);
+                });
+
                 const pendingShops = allShopsSnap.docs
                     .map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }))
                     .filter(shop => shop.status === 'pending_review')
                     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
-                // Fetch all agreements and filter/sort in code.
                 const allAgreementsSnap = await db.collectionGroup('agreements').get();
-                
-                // Efficiently fetch shop names for agreements
-                const shopIds = [...new Set(allAgreementsSnap.docs.map(doc => doc.data().shopId).filter(Boolean))];
-                let shopMap = new Map();
-                if (shopIds.length > 0) {
-                     const shopsDataSnap = await db.collectionGroup('shops').where(FieldPath.documentId(), 'in', shopIds).get();
-                     shopsDataSnap.forEach(doc => shopMap.set(doc.id, doc.data().shopName));
-                }
-                
+
                 const proposedAgreements = allAgreementsSnap.docs
                     .map(doc => {
                         const data = doc.data();
@@ -86,7 +81,7 @@ export async function POST(req: NextRequest) {
                             ...serializeTimestamps(data),
                             id: doc.id,
                             shopName: shopMap.get(data.shopId) || 'Unknown Shop',
-                        }
+                        };
                     })
                     .filter((agreement: any) => agreement.status === 'proposed')
                     .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
@@ -653,5 +648,3 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ success: false, error: error.message }, { status });
     }
 }
-
-    
