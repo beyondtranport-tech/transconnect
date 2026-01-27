@@ -23,6 +23,14 @@ service cloud.firestore {
         return companyDoc.ownerId == request.auth.uid || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == companyId;
     }
 
+    // --- Public read for products subcollection ---
+    // This allows anyone to view products, solving the permission error for unauthenticated users on public shop pages.
+    // This rule is more specific, so it's checked before the general /companies/{companyId}/{subcollection} rule.
+    match /companies/{companyId}/shops/{shopId}/products/{productId} {
+        allow get, list: if true;
+        allow write: if isAdmin() || isCompanyOwner(companyId);
+    }
+
     // --- User Profiles ---
     // A user can read/update their own profile. Admins can read/list all profiles.
     match /users/{userId} {
@@ -44,6 +52,7 @@ service cloud.firestore {
 
       // --- Company Subcollections (Direct Access) ---
       // The company owner and admins have full access to all subcollections (staff, wallet, etc.).
+      // This rule will NOT apply to the 'products' subcollection because of the more specific rule above.
       match /{subcollection}/{docId=**} {
         allow read, write: if isAdmin() || isCompanyOwner(companyId);
       }
