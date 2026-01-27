@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getStorage } from 'firebase-admin/storage';
 import { getAdminApp } from '@/lib/firebase-admin';
 import { getAuth } from 'firebase-admin/auth';
+import { firebaseConfig } from '@/firebase/config';
 
 export async function POST(req: NextRequest) {
     const { app, error: initError } = getAdminApp();
@@ -34,7 +35,9 @@ export async function POST(req: NextRequest) {
         const contentType = matches[1];
         const fileBuffer = Buffer.from(matches[2], 'base64');
         
-        const bucket = getStorage(app).bucket();
+        // --- THE FIX ---
+        // Explicitly get the bucket by its correct name to avoid resolution issues.
+        const bucket = getStorage(app).bucket(firebaseConfig.storageBucket);
         const filePath = `${folder}/${fileName}`;
         const file = bucket.file(filePath);
         
@@ -43,6 +46,7 @@ export async function POST(req: NextRequest) {
             public: true 
         });
 
+        // The public URL is still constructed the same way.
         const publicUrl = `https://storage.googleapis.com/${bucket.name}/${filePath}`;
         
         return NextResponse.json({ success: true, url: publicUrl });
@@ -55,6 +59,13 @@ export async function POST(req: NextRequest) {
                 success: false,
                 error: 'Permission Denied on Server: This can happen if the backend service account does not have the "Storage Object Admin" role in Google Cloud IAM, or if Firebase Storage is not fully enabled. Please check the setup guide.'
             }, { status: 403 });
+        }
+        
+        if (error.message?.includes('The specified bucket does not exist')) {
+             return NextResponse.json({
+                success: false,
+                error: `Bucket Not Found on Server: The backend is configured to use '${firebaseConfig.storageBucket}', but it could not be found. Please ensure this is the correct default bucket in your Firebase project.`
+            }, { status: 404 });
         }
         
         return NextResponse.json({ success: false, error: error.message }, { status: 500 });
