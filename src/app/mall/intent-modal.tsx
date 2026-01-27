@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import { useState } from 'react';
@@ -104,7 +102,7 @@ export function IntentModal({ isOpen, onOpenChange, config, incentiveStep, showI
             </Button>
         </div>
         <DialogFooter>
-             <Button type="button" variant="ghost" size="sm" onClick={handleClose}>
+             <Button type="button" variant="ghost" size="sm" onClick={config.primary.action}>
                 Just browsing
             </Button>
         </DialogFooter>
