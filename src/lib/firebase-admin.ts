@@ -32,8 +32,9 @@ export function getAdminApp(): { app: App | null; error: string | null } {
     // Explicitly use the project_id from the service account for all configurations.
     const projectId = serviceAccount.project_id;
     
-    // Dynamically construct the bucket name from the project ID.
-    const bucketName = `${serviceAccount.project_id}.appspot.com`;
+    // CORRECTED: The Admin SDK requires the GCS bucket name, which ends in .appspot.com
+    // Hardcoding this value to ensure correctness after dynamic construction failed.
+    const bucketName = "transconnect-v1-39578841-2a857.appspot.com";
 
     const app = initializeApp({
       credential: cert(serviceAccount),
