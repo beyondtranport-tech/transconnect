@@ -1,7 +1,8 @@
 
+
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Loader2, Store, CheckCircle, Eye, Handshake } from 'lucide-react';
@@ -14,6 +15,9 @@ import { useMemoFirebase } from '@/hooks/use-config';
 import { collection, query, where, collectionGroup, orderBy } from 'firebase/firestore';
 import { ShopPreview } from '@/components/shop-preview';
 import MemberCommercials from './wallet/[memberId]/member-commercials';
+import { format } from 'date-fns';
+import { DataTable } from '@/components/ui/data-table';
+import type { ColumnDef } from '@/hooks/use-data-table';
 
 interface Shop {
     id: string;
@@ -24,6 +28,34 @@ interface Shop {
     status: 'draft' | 'pending_review' | 'approved' | 'rejected';
     createdAt: string;
     [key: string]: any; // Allow other properties
+}
+
+interface PendingAgreement {
+    id: string;
+    shopId: string;
+    companyId: string;
+    shopName: string;
+    percentage: number;
+    effectiveDate: string;
+    [key: string]: any;
+}
+
+
+async function fetchFromAdminAPI(token: string, action: string, payload?: any) {
+    const response = await fetch('/api/admin', {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ action, payload }),
+    });
+
+    const result = await response.json();
+    if (!response.ok || !result.success) {
+        throw new Error(result.error || `API Error for action: ${action}`);
+    }
+    return result;
 }
 
 const statusColors: { [key: string]: 'default' | 'secondary' | 'destructive' | 'outline' } = {
@@ -65,32 +97,80 @@ function ShopPreviewDialog({ shop }: { shop: Shop }) {
     )
 }
 
-function ShopCommercialsDialog({ shop }: { shop: Shop }) {
+function ShopCommercialsDialog({ shop, onUpdate }: { shop: any; onUpdate: () => void }) {
   return (
     <Dialog>
       <DialogTrigger asChild>
         <Button variant="outline" size="sm">
-          <Handshake className="mr-2 h-4 w-4" /> Commercials
+          <Handshake className="mr-2 h-4 w-4" /> Review
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-4xl">
-        <MemberCommercials companyId={shop.companyId} shopId={shop.id} />
+        <MemberCommercials companyId={shop.companyId} shopId={shop.shopId} onUpdate={onUpdate} />
       </DialogContent>
     </Dialog>
   );
 }
 
+const formatDate = (isoString: string | undefined) => {
+    if (!isoString) return 'N/A';
+    try {
+        const date = typeof isoString === 'string' ? new Date(isoString) : (isoString as any).toDate();
+        if (isNaN(date.getTime())) return 'Invalid Date';
+        return date.toLocaleString('en-ZA', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit'});
+    } catch (e) {
+        return 'Invalid Date';
+    }
+};
+
 export default function ShopsList() {
     const { toast } = useToast();
-    const firestore = useFirestore();
     const [isApproving, setIsApproving] = useState<string | null>(null);
 
-    const shopsQuery = useMemoFirebase(() => {
-        if (!firestore) return null;
-        return query(collectionGroup(firestore, 'shops'), where('status', '==', 'pending_review'), orderBy('createdAt', 'desc'));
-    }, [firestore]);
+    const [pendingShops, setPendingShops] = useState<Shop[]>([]);
+    const [pendingAgreements, setPendingAgreements] = useState<PendingAgreement[]>([]);
+    
+    const [isLoadingShops, setIsLoadingShops] = useState(true);
+    const [isLoadingAgreements, setIsLoadingAgreements] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
-    const { data: shops, isLoading, error, forceRefresh } = useCollection<Shop>(shopsQuery);
+    const forceRefresh = useCallback(async () => {
+        setIsLoadingShops(true);
+        setIsLoadingAgreements(true);
+        setError(null);
+        try {
+            const token = await getClientSideAuthToken();
+            if (!token) throw new Error("Authentication failed.");
+            
+            // Fetch shops pending review
+            const shopsResult = await fetchFromAdminAPI(token, 'getShops');
+            if (shopsResult.data) {
+                const pending = shopsResult.data.filter((s:any) => s.status === 'pending_review');
+                setPendingShops(pending);
+            } else {
+                throw new Error("Failed to load shop data.");
+            }
+
+            // Fetch agreements pending approval
+            const agreementsResult = await fetchFromAdminAPI(token, 'getPendingAgreements');
+            if (agreementsResult.data) {
+                setPendingAgreements(agreementsResult.data);
+            } else {
+                throw new Error("Failed to load agreement data.");
+            }
+
+        } catch(e: any) {
+            setError(e.message)
+        } finally {
+            setIsLoadingShops(false);
+            setIsLoadingAgreements(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        forceRefresh();
+    }, [forceRefresh]);
+
 
     const handleApprove = async (shop: Shop) => {
         setIsApproving(shop.id);
@@ -127,83 +207,111 @@ export default function ShopsList() {
         }
         setIsApproving(null);
     };
-    
-    const formatDate = (isoString: string | undefined) => {
-        if (!isoString) return 'N/A';
-        try {
-            const date = typeof isoString === 'string' ? new Date(isoString) : (isoString as any).toDate();
-            if (isNaN(date.getTime())) return 'Invalid Date';
-            return date.toLocaleString('en-ZA', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit'});
-        } catch (e) {
-            return 'Invalid Date';
-        }
-    };
 
+    const shopColumns: ColumnDef<Shop>[] = useMemo(() => [
+        { accessorKey: 'createdAt', header: 'Submitted', cell: ({row}) => formatDate(row.original.createdAt) },
+        { accessorKey: 'shopName', header: 'Shop Name' },
+        { accessorKey: 'category', header: 'Category' },
+        { accessorKey: 'companyId', header: 'Company ID', cell: ({row}) => <span className="font-mono text-xs">{row.original.companyId}</span> },
+        {
+            id: 'actions',
+            header: () => <div className="text-right">Actions</div>,
+            cell: ({ row }) => (
+                <div className="text-right space-x-2">
+                    <ShopPreviewDialog shop={row.original} />
+                    <Button 
+                        variant="default" 
+                        size="sm"
+                        onClick={() => handleApprove(row.original)}
+                        disabled={isApproving === row.original.id}
+                    >
+                        {isApproving === row.original.id ? (
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        ) : (
+                            <CheckCircle className="mr-2 h-4 w-4" />
+                        )}
+                        Approve Shop
+                    </Button>
+                </div>
+            )
+        }
+    ], [isApproving]);
+
+    const agreementColumns: ColumnDef<PendingAgreement>[] = useMemo(() => [
+        { accessorKey: 'shopName', header: 'Shop Name' },
+        { 
+            accessorKey: 'percentage', 
+            header: 'Proposed Commission',
+            cell: ({ row }) => <Badge variant="secondary">{row.original.percentage}%</Badge>
+        },
+        { 
+            accessorKey: 'effectiveDate', 
+            header: 'Effective Date',
+            cell: ({ row }) => formatDate(row.original.effectiveDate)
+        },
+        {
+            id: 'actions',
+            header: () => <div className="text-right">Actions</div>,
+            cell: ({ row }) => (
+                <div className="text-right">
+                    <ShopCommercialsDialog shop={row.original} onUpdate={forceRefresh} />
+                </div>
+            ),
+        }
+    ], [forceRefresh]);
+    
+    const isLoading = isLoadingShops || isLoadingAgreements;
+
+    if (error) {
+        return (
+            <div className="text-destructive-foreground bg-destructive/90 p-4 rounded-md">
+                <h4 className="font-semibold">Error loading data</h4>
+                <p className="text-sm">{error}</p>
+            </div>
+        );
+    }
+    
     return (
-        <Card>
-            <CardHeader>
-                <CardTitle className="flex items-center gap-2"><Store /> Shop Approval Queue</CardTitle>
-                <CardDescription>Review and approve member shops submitted for publication.</CardDescription>
-            </CardHeader>
-            <CardContent>
-                {isLoading ? (
-                    <div className="flex justify-center items-center py-20">
-                        <Loader2 className="h-12 w-12 animate-spin text-primary" />
-                    </div>
-                ) : error ? (
-                     <div className="text-destructive-foreground bg-destructive/90 p-4 rounded-md">
-                        <h4 className="font-semibold">Error loading shops</h4>
-                        <p className="text-sm">{error.message}</p>
-                    </div>
-                ) : shops && shops.length > 0 ? (
-                    <div className="overflow-x-auto">
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Submitted</TableHead>
-                                    <TableHead>Shop Name</TableHead>
-                                    <TableHead>Category</TableHead>
-                                    <TableHead>Company ID</TableHead>
-                                    <TableHead className="text-right">Actions</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {shops.map(shop => (
-                                    <TableRow key={`${shop.companyId}-${shop.id}`}>
-                                        <TableCell>{formatDate(shop.createdAt)}</TableCell>
-                                        <TableCell className="font-medium">{shop.shopName}</TableCell>
-                                        <TableCell>{shop.category}</TableCell>
-                                        <TableCell className="font-mono text-xs max-w-[150px] truncate">{shop.companyId}</TableCell>
-                                        <TableCell className="text-right space-x-2">
-                                            <ShopPreviewDialog shop={shop} />
-                                            <ShopCommercialsDialog shop={shop} />
-                                            <Button 
-                                                variant="default" 
-                                                size="sm"
-                                                onClick={() => handleApprove(shop)}
-                                                disabled={isApproving === shop.id}
-                                            >
-                                                {isApproving === shop.id ? (
-                                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                                ) : (
-                                                    <CheckCircle className="mr-2 h-4 w-4" />
-                                                )}
-                                                Approve Shop
-                                            </Button>
-                                        </TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    </div>
-                ) : (
-                    <div className="text-center py-20 border-2 border-dashed rounded-lg">
-                        <CheckCircle className="mx-auto h-12 w-12 text-green-500" />
-                        <h3 className="mt-4 text-xl font-semibold">All Clear!</h3>
-                        <p className="mt-2 text-muted-foreground">There are no shops currently awaiting review.</p>
-                    </div>
-                )}
-            </CardContent>
-        </Card>
+        <div className="space-y-8">
+            <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2"><Store /> New Shop Approval Queue</CardTitle>
+                    <CardDescription>Review and approve new member shops submitted for publication.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    {isLoadingShops ? (
+                        <div className="flex justify-center items-center py-20"><Loader2 className="h-10 w-10 animate-spin text-primary" /></div>
+                    ) : pendingShops.length > 0 ? (
+                        <DataTable columns={shopColumns} data={pendingShops} />
+                    ) : (
+                        <div className="text-center py-20 border-2 border-dashed rounded-lg">
+                            <CheckCircle className="mx-auto h-12 w-12 text-green-500" />
+                            <h3 className="mt-4 text-xl font-semibold">All Shops Reviewed!</h3>
+                            <p className="mt-2 text-muted-foreground">There are no new shops currently awaiting approval.</p>
+                        </div>
+                    )}
+                </CardContent>
+            </Card>
+
+            <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2"><Handshake /> Commercial Agreement Queue</CardTitle>
+                    <CardDescription>Review and accept new commercial terms proposed by shop owners.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                     {isLoadingAgreements ? (
+                        <div className="flex justify-center items-center py-20"><Loader2 className="h-10 w-10 animate-spin text-primary" /></div>
+                     ) : pendingAgreements.length > 0 ? (
+                        <DataTable columns={agreementColumns} data={pendingAgreements} />
+                     ) : (
+                        <div className="text-center py-20 border-2 border-dashed rounded-lg">
+                            <CheckCircle className="mx-auto h-12 w-12 text-green-500" />
+                            <h3 className="mt-4 text-xl font-semibold">No Pending Agreements!</h3>
+                            <p className="mt-2 text-muted-foreground">There are no new commercial terms awaiting acceptance.</p>
+                        </div>
+                    )}
+                </CardContent>
+            </Card>
+        </div>
     );
 }

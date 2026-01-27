@@ -62,6 +62,40 @@ export async function POST(req: NextRequest) {
         // --- END AUTHORIZATION ---
 
         switch (action) {
+            case 'getPendingAgreements': {
+                const agreementsSnap = await db.collectionGroup('agreements').where('status', '==', 'proposed').get();
+                if (agreementsSnap.empty) {
+                    return NextResponse.json({ success: true, data: [] });
+                }
+
+                const enrichedAgreements = await Promise.all(agreementsSnap.docs.map(async (doc) => {
+                    const agreementData = doc.data();
+                    const pathSegments = doc.ref.path.split('/');
+                    
+                    // Expected path: companies/{companyId}/shops/{shopId}/agreements/{agreementId}
+                    const companyId = pathSegments[1];
+                    const shopId = pathSegments[3];
+                    
+                    let shopName = 'Unknown Shop';
+                    if (companyId && shopId) {
+                        const shopRef = db.doc(`companies/${companyId}/shops/${shopId}`);
+                        const shopSnap = await shopRef.get();
+                        if (shopSnap.exists()) {
+                            shopName = shopSnap.data()?.shopName || shopName;
+                        }
+                    }
+                    
+                    return {
+                        ...serializeTimestamps(agreementData),
+                        id: doc.id,
+                        shopId: shopId,
+                        companyId: companyId,
+                        shopName: shopName,
+                    };
+                }));
+
+                return NextResponse.json({ success: true, data: enrichedAgreements });
+            }
             case 'acceptCommercialAgreement': {
                 const { companyId, shopId, agreementId, userId } = payload;
                 if (!companyId || !shopId || !agreementId || !userId) {
@@ -397,9 +431,9 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, data });
             }
             case 'getShops': {
-                const snapshot = await db.collectionGroup('shops').where('status', 'in', ['pending_review', 'approved', 'rejected']).orderBy('createdAt', 'desc').get();
+                const snapshot = await db.collectionGroup('shops').orderBy('createdAt', 'desc').get();
                 const data = snapshot.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
-                return NextResponse.json({ success: true, data });
+                return NextResponse.json({ success: true, data: data });
             }
             case 'getFinanceApplications': {
                  const [quotesSnap, enquiriesSnap] = await Promise.all([

@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useMemo, useState } from 'react';
@@ -56,7 +57,7 @@ function AdminAcceptAgreementButton({ agreement, shop, onUpdate }: { agreement: 
     );
 }
 
-export default function MemberCommercials({ companyId, shopId }: { companyId: string, shopId: string }) {
+export default function MemberCommercials({ companyId, shopId, onUpdate }: { companyId: string, shopId: string, onUpdate?: () => void }) {
     const firestore = useFirestore();
 
     const agreementsQuery = useMemoFirebase(() => {
@@ -65,6 +66,8 @@ export default function MemberCommercials({ companyId, shopId }: { companyId: st
     }, [firestore, companyId, shopId]);
 
     const { data: agreements, isLoading, forceRefresh } = useCollection(agreementsQuery);
+    
+    const finalOnUpdate = onUpdate || forceRefresh;
 
     const columns: ColumnDef<any>[] = useMemo(() => [
         { accessorKey: 'percentage', header: 'Commission %', cell: ({row}) => <div>{row.original.percentage}%</div> },
@@ -72,8 +75,8 @@ export default function MemberCommercials({ companyId, shopId }: { companyId: st
         { accessorKey: 'effectiveDate', header: 'Effective Date', cell: ({row}) => <div>{format(new Date(row.original.effectiveDate), 'PPP')}</div>},
         { accessorKey: 'expiryDate', header: 'Expiry Date', cell: ({row}) => row.original.expiryDate ? <div>{format(new Date(row.original.expiryDate), 'PPP')}</div> : <span className="text-muted-foreground">N/A</span>},
         { accessorKey: 'volumeThreshold', header: 'Volume Threshold', cell: ({row}) => row.original.volumeThreshold ? <span>R{row.original.volumeThreshold.toLocaleString()}</span> : <span className="text-muted-foreground">N/A</span>},
-        { id: 'actions', cell: ({row}) => <AdminAcceptAgreementButton agreement={row.original} shop={{id: shopId, companyId}} onUpdate={forceRefresh} /> },
-    ], [shopId, companyId, forceRefresh]);
+        { id: 'actions', cell: ({row}) => <AdminAcceptAgreementButton agreement={row.original} shop={{id: shopId, companyId}} onUpdate={finalOnUpdate} /> },
+    ], [shopId, companyId, finalOnUpdate]);
 
     return (
         <Card>
@@ -93,5 +96,3 @@ export default function MemberCommercials({ companyId, shopId }: { companyId: st
         </Card>
     );
 }
-
-    
