@@ -44,6 +44,16 @@
       ]
     },
     {
+      "collectionGroup": "shops",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        {
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
       "collectionGroup": "agreements",
       "queryScope": "COLLECTION_GROUP",
       "fields": [
