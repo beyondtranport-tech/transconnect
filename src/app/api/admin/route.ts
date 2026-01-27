@@ -602,15 +602,17 @@ export async function POST(req: NextRequest) {
                 if (!shopData) {
                     throw new Error(`Shop data is empty for shop ${shopId}.`);
                 }
+
+                const wasAlreadyApproved = shopData.status === 'approved';
             
                 // Get products from the member's shop subcollection
                 const memberProductsSnap = await memberShopRef.collection('products').get();
             
                 const batch = db.batch();
             
-                // 1. Create the main public shop document
+                // 1. Create/Update the main public shop document
                 const publicShopData = { ...shopData, status: 'approved', updatedAt: FieldValue.serverTimestamp() };
-                batch.set(publicShopRef, publicShopData);
+                batch.set(publicShopRef, publicShopData, { merge: true });
             
                 // 2. Copy all products to the public shop's subcollection
                 if (!memberProductsSnap.empty) {
@@ -620,18 +622,49 @@ export async function POST(req: NextRequest) {
                     });
                 }
             
-                // 3. Update the member's private shop status
-                batch.update(memberShopRef, { status: 'approved', updatedAt: FieldValue.serverTimestamp() });
+                // 3. Update the member's private shop status if it wasn't already approved
+                if (!wasAlreadyApproved) {
+                    batch.update(memberShopRef, { status: 'approved', updatedAt: FieldValue.serverTimestamp() });
+                }
             
-                // 4. Award points for shop approval
-                const loyaltyConfigDoc = await db.collection('configuration').doc('loyaltySettings').get();
-                const shopCreationPoints = loyaltyConfigDoc.data()?.shopCreationPoints || 100;
-                const companyRef = db.doc(`companies/${companyId}`);
-                batch.update(companyRef, { rewardPoints: FieldValue.increment(shopCreationPoints) });
+                // 4. Award points for shop creation, ONLY if this is the first time it's being approved
+                if (!wasAlreadyApproved) {
+                    const loyaltyConfigDoc = await db.collection('configuration').doc('loyaltySettings').get();
+                    const shopCreationPoints = loyaltyConfigDoc.data()?.shopCreationPoints || 100;
+                    const companyRef = db.doc(`companies/${companyId}`);
+                    batch.update(companyRef, { rewardPoints: FieldValue.increment(shopCreationPoints) });
+                }
             
                 await batch.commit();
             
-                return NextResponse.json({ success: true, message: 'Shop and its products have been approved and published.' });
+                const message = wasAlreadyApproved 
+                    ? 'Shop products successfully synced.'
+                    : 'Shop and its products have been approved and published.';
+
+                return NextResponse.json({ success: true, message });
+            }
+            case 'rejectShop': {
+                const { companyId, shopId } = payload;
+                if (!companyId || !shopId) {
+                    throw new Error("Missing companyId or shopId.");
+                }
+
+                const memberShopRef = db.doc(`companies/${companyId}/shops/${shopId}`);
+                const publicShopRef = db.doc(`shops/${shopId}`);
+                
+                const batch = db.batch();
+                
+                // Update private shop status
+                batch.update(memberShopRef, { status: 'rejected' });
+                // Delete public shop if it exists
+                batch.delete(publicShopRef);
+                // Note: Deleting a document does not delete its subcollections automatically in client/admin SDKs.
+                // For a full cleanup, a Cloud Function would be needed, but for this app's purpose,
+                // making the shop inaccessible is sufficient.
+
+                await batch.commit();
+
+                return NextResponse.json({ success: true, message: "Shop has been rejected." });
             }
             case 'updateStaffStatus': {
                 const { companyId, staffId, status } = payload;

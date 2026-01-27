@@ -1,19 +1,23 @@
+
 'use client';
 
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Loader2, Store, CheckCircle, Eye, Handshake } from 'lucide-react';
+import { Loader2, Store, CheckCircle, Eye, Hammer, RefreshCcw, XCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { getClientSideAuthToken } from '@/firebase';
 import { ShopPreview } from '@/components/shop-preview';
-import MemberCommercials from './wallet/[memberId]/member-commercials';
 import { DataTable } from '@/components/ui/data-table';
 import type { ColumnDef } from '@/hooks/use-data-table';
 import * as React from 'react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
+import { MoreVertical } from 'lucide-react';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+
 
 // --- Interfaces & Helper Functions ---
 interface Shop {
@@ -24,17 +28,6 @@ interface Shop {
     category: string;
     status: 'draft' | 'pending_review' | 'approved' | 'rejected';
     createdAt: string;
-    [key: string]: any;
-}
-
-interface PendingAgreement {
-    id: string;
-    shopId: string;
-    companyId: string;
-    shopName?: string;
-    percentage: number;
-    effectiveDate: string;
-    createdAt: string; 
     [key: string]: any;
 }
 
@@ -56,7 +49,25 @@ const formatDate = (isoString: string | undefined) => {
     }
 };
 
-// --- Dialog Components ---
+async function fetchFromAdminAPI(token: string, action: string, payload?: any) {
+    const response = await fetch('/api/admin', {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ action, payload }),
+    });
+
+    const result = await response.json();
+    if (!response.ok || !result.success) {
+        throw new Error(result.error || `API Error for action: ${action}`);
+    }
+    return result;
+}
+
+
+// --- Dialog Component ---
 function ShopPreviewDialog({ shop }: { shop: Shop }) {
     const [products, setProducts] = useState<any[]>([]);
     const [isLoadingProducts, setIsLoadingProducts] = useState(false);
@@ -68,7 +79,7 @@ function ShopPreviewDialog({ shop }: { shop: Shop }) {
                  fetch('/api/getUserSubcollection', {
                     method: 'POST',
                     headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ path: `shops/${shop.id}/products`, type: 'collection' }),
+                    body: JSON.stringify({ path: `companies/${shop.companyId}/shops/${shop.id}/products`, type: 'collection' }),
                 })
                 .then(res => res.json())
                 .then(result => {
@@ -82,7 +93,9 @@ function ShopPreviewDialog({ shop }: { shop: Shop }) {
     return (
         <Dialog onOpenChange={handleOpenChange}>
             <DialogTrigger asChild>
-                <Button variant="ghost" size="sm"><Eye className="mr-2 h-4 w-4" /> Preview</Button>
+                <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                    <Eye className="mr-2 h-4 w-4" /> Preview
+                </DropdownMenuItem>
             </DialogTrigger>
             <DialogContent className="max-w-6xl h-[90vh] p-0 border-0">
                  <DialogHeader className="sr-only">
@@ -101,27 +114,84 @@ function ShopPreviewDialog({ shop }: { shop: Shop }) {
     )
 }
 
-function ShopCommercialsDialog({ shop, onUpdate }: { shop: any; onUpdate: () => void }) {
-  return (
-    <Dialog>
-      <DialogTrigger asChild>
-        <Button variant="outline" size="sm">
-          <Handshake className="mr-2 h-4 w-4" /> Review
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="max-w-4xl">
-        <MemberCommercials companyId={shop.companyId} shopId={shop.shopId || shop.id} onUpdate={onUpdate} />
-      </DialogContent>
-    </Dialog>
-  );
+function ShopActionMenu({ shop, onUpdate }: { shop: Shop, onUpdate: () => void }) {
+    const { toast } = useToast();
+    const [isProcessing, setIsProcessing] = useState(false);
+    const [isAlertOpen, setIsAlertOpen] = useState(false);
+    const [actionToConfirm, setActionToConfirm] = useState<'approve' | 'reject' | null>(null);
+
+    const handleAction = async () => {
+        if (!actionToConfirm) return;
+
+        setIsProcessing(true);
+        try {
+            const token = await getClientSideAuthToken();
+            if (!token) throw new Error('Authentication failed.');
+
+            const payload = { shopId: shop.id, companyId: shop.companyId };
+            let toastTitle = '';
+            let toastDescription = '';
+
+            await fetchFromAdminAPI(token, actionToConfirm === 'approve' ? 'approveShop' : 'rejectShop', payload);
+
+            if (actionToConfirm === 'approve') {
+                toastTitle = shop.status === 'approved' ? 'Shop Synced' : 'Shop Approved!';
+                toastDescription = shop.status === 'approved' ? 'The products have been re-published.' : 'The shop is now public.';
+            } else {
+                toastTitle = 'Shop Rejected';
+                toastDescription = 'The shop has been marked as rejected.';
+            }
+            
+            toast({ title: toastTitle, description: toastDescription });
+            onUpdate();
+        } catch (e: any) {
+            toast({ variant: 'destructive', title: 'Action Failed', description: e.message });
+        } finally {
+            setIsProcessing(false);
+            setIsAlertOpen(false);
+        }
+    };
+    
+    return (
+        <AlertDialog open={isAlertOpen} onOpenChange={setIsAlertOpen}>
+            <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" disabled={isProcessing}>
+                        {isProcessing ? <Loader2 className="h-4 w-4 animate-spin"/> : <MoreVertical className="h-4 w-4"/>}
+                    </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                    <ShopPreviewDialog shop={shop} />
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => setActionToConfirm('approve')}>
+                        <CheckCircle className="mr-2 h-4 w-4" /> Approve / Sync
+                    </DropdownMenuItem>
+                    <DropdownMenuItem className="text-destructive" onClick={() => setActionToConfirm('reject')}>
+                        <XCircle className="mr-2 h-4 w-4" /> Reject
+                    </DropdownMenuItem>
+                </DropdownMenuContent>
+            </DropdownMenu>
+             <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                        {actionToConfirm === 'approve' ? `This will approve the shop and make it public. If already approved, it will re-sync all products.` : `This will reject the shop submission and remove it from public view.`}
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleAction} variant={actionToConfirm === 'reject' ? 'destructive' : 'default'}>
+                        Yes, Continue
+                    </AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
+    );
 }
 
 // --- Main Component ---
 export default function ShopsList() {
-    const { toast } = useToast();
-    const [isApproving, setIsApproving] = useState<string | null>(null);
-    const [pendingShops, setPendingShops] = useState<Shop[]>([]);
-    const [proposedAgreements, setProposedAgreements] = useState<PendingAgreement[]>([]);
+    const [shops, setShops] = useState<Shop[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
@@ -132,20 +202,10 @@ export default function ShopsList() {
             const token = await getClientSideAuthToken();
             if (!token) throw new Error("Authentication failed.");
 
-            const response = await fetch('/api/admin', {
-                method: 'POST',
-                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action: 'getDashboardQueues' }),
-            });
-
-            const result = await response.json();
-            if (!result.success) throw new Error(result.error || 'Failed to load queues.');
-            
-            setPendingShops(result.data.pendingShops || []);
-            setProposedAgreements(result.data.proposedAgreements || []);
-
-        } catch (e: any) {
-            setError(e.message);
+            const result = await fetchFromAdminAPI(token, 'getShops');
+            setShops(result.data || []);
+        } catch(e: any) {
+            setError(e.message)
         } finally {
             setIsLoading(false);
         }
@@ -156,79 +216,19 @@ export default function ShopsList() {
     }, [loadData]);
 
 
-    const handleApprove = async (shop: Shop) => {
-        setIsApproving(shop.id);
-        try {
-            const token = await getClientSideAuthToken();
-            if (!token) throw new Error('Authentication failed.');
-
-            const response = await fetch('/api/admin', {
-                method: 'POST',
-                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action: 'approveShop', payload: { shopId: shop.id, companyId: shop.companyId } })
-            });
-
-             const result = await response.json();
-             if (!response.ok) throw new Error(result.error || 'Failed to approve shop.');
-            
-            toast({ title: 'Shop Approved!', description: 'The shop is now public and live on the platform.' });
-            loadData();
-        } catch (e: any) {
-             toast({ variant: 'destructive', title: 'Approval Failed', description: e.message || 'An unexpected error occurred.' });
-        }
-        setIsApproving(null);
-    };
-
-    const shopColumns: ColumnDef<Shop>[] = useMemo(() => [
-        { accessorKey: 'createdAt', header: 'Submitted', cell: ({row}) => formatDate(row.original.createdAt) },
-        { accessorKey: 'shopName', header: 'Shop Name', cell: ({row}) => <div>{row.original.shopName}</div> },
-        { accessorKey: 'category', header: 'Category', cell: ({row}) => <div>{row.original.category}</div> },
-        { accessorKey: 'companyId', header: 'Company ID', cell: ({row}) => <span className="font-mono text-xs">{row.original.companyId}</span> },
+    const columns: ColumnDef<Shop>[] = useMemo(() => [
+        { accessorKey: 'shopName', header: 'Shop Name' },
+        { accessorKey: 'category', header: 'Category' },
+        { 
+          accessorKey: 'status', 
+          header: 'Status',
+          cell: ({ row }) => <Badge variant={statusColors[row.original.status] || 'secondary'} className="capitalize">{row.original.status?.replace(/_/g, ' ')}</Badge>
+        },
+        { accessorKey: 'createdAt', header: 'Date', cell: ({row}) => formatDate(row.original.createdAt) },
         {
             id: 'actions',
             header: () => <div className="text-right">Actions</div>,
-            cell: ({ row }) => (
-                <div className="text-right space-x-2">
-                    <ShopPreviewDialog shop={row.original} />
-                    <Button 
-                        variant="default" 
-                        size="sm"
-                        onClick={() => handleApprove(row.original)}
-                        disabled={isApproving === row.original.id}
-                    >
-                        {isApproving === row.original.id ? (
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        ) : (
-                            <CheckCircle className="mr-2 h-4 w-4" />
-                        )}
-                        Approve Shop
-                    </Button>
-                </div>
-            )
-        }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    ], [isApproving]);
-
-    const agreementColumns: ColumnDef<PendingAgreement>[] = useMemo(() => [
-        { accessorKey: 'shopName', header: 'Shop Name', cell: ({row}) => <div>{row.original.shopName}</div> },
-        { 
-            accessorKey: 'percentage', 
-            header: 'Proposed Commission',
-            cell: ({ row }) => <Badge variant="secondary">{row.original.percentage}%</Badge>
-        },
-        { 
-            accessorKey: 'effectiveDate', 
-            header: 'Effective Date',
-            cell: ({ row }) => formatDate(row.original.effectiveDate)
-        },
-        {
-            id: 'actions',
-            header: () => <div className="text-right">Actions</div>,
-            cell: ({ row }) => (
-                <div className="text-right">
-                    <ShopCommercialsDialog shop={row.original} onUpdate={loadData} />
-                </div>
-            ),
+            cell: ({ row }) => <ShopActionMenu shop={row.original} onUpdate={loadData} />
         }
     ], [loadData]);
     
@@ -237,51 +237,30 @@ export default function ShopsList() {
             <div className="text-destructive-foreground bg-destructive/90 p-4 rounded-md">
                 <h4 className="font-semibold">Error loading data</h4>
                 <p className="text-sm">{error}</p>
+                 <Button onClick={loadData} variant="destructive" className="mt-2">Try Again</Button>
             </div>
         );
     }
     
     return (
-        <div className="space-y-8">
-            <Card>
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2"><Store /> New Shop Approval Queue</CardTitle>
-                    <CardDescription>Review and approve new member shops submitted for publication.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    {isLoading ? (
-                        <div className="flex justify-center items-center py-20"><Loader2 className="h-10 w-10 animate-spin text-primary" /></div>
-                    ) : pendingShops && pendingShops.length > 0 ? (
-                        <DataTable columns={shopColumns} data={pendingShops} />
-                    ) : (
-                        <div className="text-center py-20 border-2 border-dashed rounded-lg">
-                            <CheckCircle className="mx-auto h-12 w-12 text-green-500" />
-                            <h3 className="mt-4 text-xl font-semibold">All Clear!</h3>
-                            <p className="mt-2 text-muted-foreground">There are no new shops currently awaiting approval.</p>
-                        </div>
-                    )}
-                </CardContent>
-            </Card>
-
-            <Card>
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2"><Handshake /> Commercial Agreement Queue</CardTitle>
-                    <CardDescription>Review and accept new commercial terms proposed by shop owners.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                     {isLoading ? (
-                        <div className="flex justify-center items-center py-20"><Loader2 className="h-10 w-10 animate-spin text-primary" /></div>
-                     ) : proposedAgreements && proposedAgreements.length > 0 ? (
-                        <DataTable columns={agreementColumns} data={proposedAgreements} />
-                     ) : (
-                        <div className="text-center py-20 border-2 border-dashed rounded-lg">
-                            <CheckCircle className="mx-auto h-12 w-12 text-green-500" />
-                            <h3 className="mt-4 text-xl font-semibold">No Pending Agreements!</h3>
-                            <p className="mt-2 text-muted-foreground">There are no new commercial terms awaiting acceptance.</p>
-                        </div>
-                    )}
-                </CardContent>
-            </Card>
-        </div>
+        <Card>
+            <CardHeader className="flex-row justify-between items-start">
+                 <div>
+                    <CardTitle className="flex items-center gap-2"><Store /> All Shops</CardTitle>
+                    <CardDescription>Review and manage all shops on the platform.</CardDescription>
+                </div>
+                <Button variant="outline" size="sm" onClick={loadData} disabled={isLoading}>
+                    <RefreshCcw className={cn("mr-2 h-4 w-4", isLoading && "animate-spin")} />
+                    Refresh
+                </Button>
+            </CardHeader>
+            <CardContent>
+                {isLoading ? (
+                    <div className="flex justify-center items-center py-20"><Loader2 className="h-10 w-10 animate-spin text-primary" /></div>
+                ) : (
+                    <DataTable columns={columns} data={shops} />
+                )}
+            </CardContent>
+        </Card>
     );
 }
