@@ -53,7 +53,7 @@ import React from 'react';
 // --- Dynamic Imports for ALL Backend Components ---
 
 // Dashboard
-const AdminDashboardContent = dynamic(() => import('../adminaccount/dashboard-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const AdminDashboardContent = dynamic(() => import('./dashboard-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const ActivityFeed = dynamic(() => import('./activity-feed'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 
 // Operations
@@ -286,3 +286,4 @@ export default function BackendPage() {
     </Suspense>
   );
 }
+    
