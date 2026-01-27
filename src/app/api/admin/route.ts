@@ -61,22 +61,25 @@ export async function POST(req: NextRequest) {
 
         switch (action) {
             case 'getDashboardQueues': {
-                const shopsSnap = await db.collectionGroup('shops').where('status', '==', 'pending_review').get();
-                const pendingShops = shopsSnap.docs
+                // Fetch all shops and filter/sort in code to avoid composite index errors.
+                const allShopsSnap = await db.collectionGroup('shops').get();
+                const pendingShops = allShopsSnap.docs
                     .map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }))
+                    .filter(shop => shop.status === 'pending_review')
                     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
-                const agreementsSnap = await db.collectionGroup('agreements').where('status', '==', 'proposed').get();
+                // Fetch all agreements and filter/sort in code.
+                const allAgreementsSnap = await db.collectionGroup('agreements').get();
                 
                 // Efficiently fetch shop names for agreements
-                const shopIds = [...new Set(agreementsSnap.docs.map(doc => doc.data().shopId).filter(Boolean))];
+                const shopIds = [...new Set(allAgreementsSnap.docs.map(doc => doc.data().shopId).filter(Boolean))];
                 let shopMap = new Map();
                 if (shopIds.length > 0) {
-                     const shopsDataSnap = await db.collection('shops').where(FieldPath.documentId(), 'in', shopIds).get();
+                     const shopsDataSnap = await db.collectionGroup('shops').where(FieldPath.documentId(), 'in', shopIds).get();
                      shopsDataSnap.forEach(doc => shopMap.set(doc.id, doc.data().shopName));
                 }
                 
-                const proposedAgreements = agreementsSnap.docs
+                const proposedAgreements = allAgreementsSnap.docs
                     .map(doc => {
                         const data = doc.data();
                         return {
@@ -85,7 +88,8 @@ export async function POST(req: NextRequest) {
                             shopName: shopMap.get(data.shopId) || 'Unknown Shop',
                         }
                     })
-                    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+                    .filter((agreement: any) => agreement.status === 'proposed')
+                    .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
                 return NextResponse.json({ success: true, data: { pendingShops, proposedAgreements } });
             }
@@ -649,3 +653,5 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ success: false, error: error.message }, { status });
     }
 }
+
+    
