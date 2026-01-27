@@ -54,7 +54,7 @@ export async function POST(req: NextRequest) {
             }
         } else if (!isAdmin) {
             // Most other actions in this route are admin-only
-             const allowedUserActions = ['saveCompanyLead'];
+             const allowedUserActions = ['saveCompanyLead', 'acceptCommercialAgreement'];
              if (!allowedUserActions.includes(action)) {
                  throw new Error("Forbidden: Admin access required.");
              }
@@ -62,6 +62,34 @@ export async function POST(req: NextRequest) {
         // --- END AUTHORIZATION ---
 
         switch (action) {
+            case 'acceptCommercialAgreement': {
+                const { companyId, shopId, agreementId, userId } = payload;
+                if (!companyId || !shopId || !agreementId || !userId) {
+                    throw new Error("Missing required data for accepting agreement.");
+                }
+
+                const agreementsRef = db.collection(`companies/${companyId}/shops/${shopId}/agreements`);
+                
+                await db.runTransaction(async (transaction) => {
+                    const agreementsSnap = await transaction.get(agreementsRef);
+                    let foundActive = false;
+                    agreementsSnap.forEach(doc => {
+                        if (doc.id !== agreementId && doc.data().status === 'active') {
+                            transaction.update(doc.ref, { status: 'archived' });
+                            foundActive = true;
+                        }
+                    });
+                    
+                    const newAgreementRef = agreementsRef.doc(agreementId);
+                    transaction.update(newAgreementRef, { 
+                        status: 'active',
+                        acceptedBy: userId,
+                        updatedAt: FieldValue.serverTimestamp() 
+                    });
+                });
+                
+                return NextResponse.json({ success: true, message: 'Agreement accepted.' });
+            }
             case 'invitePartner': {
                  const { partnerId } = payload;
                 if (!partnerId) throw new Error("partnerId is required.");

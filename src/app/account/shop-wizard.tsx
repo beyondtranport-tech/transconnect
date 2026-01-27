@@ -13,7 +13,7 @@ import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore, useUser, useStorage, useCollection, getClientSideAuthToken } from '@/firebase';
 import { useMemoFirebase } from '@/hooks/use-config';
-import { doc, collection } from 'firebase/firestore';
+import { doc, collection, orderBy } from 'firebase/firestore';
 import { ref, uploadBytesResumable, getDownloadURL, deleteObject } from 'firebase/storage';
 import { Loader2, Save, CheckCircle, LayoutGrid, List, Image as ImageIcon, Sparkles, PlusCircle, Edit, Trash2, Send, Eye, ShoppingCart, Mail, Phone, UploadCloud, Wand2, Video, Search, ShieldAlert, Download, Copy, FileText, View, DollarSign } from 'lucide-react';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
@@ -46,6 +46,13 @@ import { usePermissions } from '@/hooks/use-permissions';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { generateShopSeo } from '@/ai/flows/seo-flow.ts';
 import { generateSocialLinks } from '@/ai/flows/social-link-generator-flow';
+import { format } from 'date-fns';
+import { DataTable } from '@/components/ui/data-table';
+import { type ColumnDef } from '@/hooks/use-data-table';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { CalendarIcon } from 'lucide-react';
+import { Calendar } from '@/components/ui/calendar';
+
 const { placeholderImages } = placeholderImageData;
 
 
@@ -1250,93 +1257,145 @@ function Step5Legal({ shop, onSave, canEdit }: { shop: any, onSave: (newData: an
 }
 
 // ====== STEP 6: Commercials ======
-const shopStep6Schema = z.object({
-  platformDiscount: z.coerce.number().min(0, "Discount must be 0 or greater.").max(100, "Discount must be 100 or less.").optional(),
+const agreementSchema = z.object({
+    percentage: z.coerce.number().min(0, "Must be non-negative").max(100, "Cannot exceed 100"),
+    effectiveDate: z.date({ required_error: "An effective date is required." }),
 });
+type NewAgreementValues = z.infer<typeof agreementSchema>;
 
-type Step6FormValues = z.infer<typeof shopStep6Schema>;
+function NewAgreementDialog({ shop, onSave }: { shop: any, onSave: () => void }) {
+    const [isOpen, setIsOpen] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
+    const { toast } = useToast();
+    const form = useForm<NewAgreementValues>({
+        resolver: zodResolver(agreementSchema),
+        defaultValues: { percentage: 7.5, effectiveDate: new Date() },
+    });
+
+    const onSubmit = async (values: NewAgreementValues) => {
+        setIsLoading(true);
+        try {
+            const token = await getClientSideAuthToken();
+            if (!token) throw new Error("Authentication failed.");
+
+            const agreementData = {
+                percentage: values.percentage,
+                effectiveDate: values.effectiveDate.toISOString(),
+                status: 'proposed',
+            };
+
+            await fetch('/api/addUserDoc', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    collectionPath: `companies/${shop.companyId}/shops/${shop.id}/agreements`,
+                    data: agreementData
+                })
+            });
+
+            toast({ title: 'New Agreement Proposed!', description: 'The agreement is now pending acceptance.' });
+            onSave();
+            setIsOpen(false);
+        } catch (e: any) {
+            toast({ variant: 'destructive', title: 'Proposal Failed', description: e.message });
+        } finally {
+            setIsLoading(false);
+        }
+    };
+    
+    return (
+        <Dialog open={isOpen} onOpenChange={setIsOpen}>
+            <DialogTrigger asChild><Button><PlusCircle className="mr-2" />Propose New Agreement</Button></DialogTrigger>
+            <DialogContent><DialogHeader><DialogTitle>Propose New Commercial Agreement</DialogTitle><DialogDescription>Set the platform commission percentage and effective date.</DialogDescription></DialogHeader>
+                <Form {...form}><form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
+                    <FormField control={form.control} name="percentage" render={({ field }) => (<FormItem><FormLabel>Platform Commission (%)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                    <FormField control={form.control} name="effectiveDate" render={({ field }) => (
+                        <FormItem className="flex flex-col"><FormLabel>Effective Date</FormLabel><Popover><PopoverTrigger asChild><FormControl><Button variant={"outline"} className={cn("pl-3 text-left font-normal",!field.value && "text-muted-foreground")}>
+                            {field.value ? (format(field.value, "PPP")) : (<span>Pick a date</span>)}
+                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus /></PopoverContent>
+                        </Popover><FormMessage /></FormItem>
+                    )} />
+                    <DialogFooter><Button type="submit" disabled={isLoading}>{isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null}Propose Agreement</Button></DialogFooter>
+                </form></Form>
+            </DialogContent>
+        </Dialog>
+    )
+}
+
+function AcceptAgreementButton({ agreement, shop, onUpdate }: { agreement: any, shop: any, onUpdate: () => void }) {
+    const [isLoading, setIsLoading] = useState(false);
+    const { toast } = useToast();
+    const { user } = useUser();
+
+    const handleAccept = async () => {
+        if (!user) return;
+        setIsLoading(true);
+        try {
+            const token = await getClientSideAuthToken();
+            if (!token) throw new Error("Authentication failed.");
+            
+            await fetch('/api/admin', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'acceptCommercialAgreement',
+                    payload: { companyId: shop.companyId, shopId: shop.id, agreementId: agreement.id, userId: user.uid }
+                })
+            });
+
+            toast({ title: "Agreement Accepted!", description: "The new commercial terms are now active." });
+            onUpdate();
+        } catch(e: any) {
+            toast({ variant: 'destructive', title: 'Acceptance Failed', description: e.message });
+        } finally {
+            setIsLoading(false);
+        }
+    };
+    
+    if (agreement.status !== 'proposed') return null;
+
+    return (
+        <Button size="sm" onClick={handleAccept} disabled={isLoading}>
+            {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle className="h-4 w-4" />}
+            Accept
+        </Button>
+    )
+}
 
 function Step6Commercials({ shop, onSave, canEdit }: { shop: any, onSave: (newData: any) => void, canEdit: boolean }) {
-  const { user } = useUser();
-  const { toast } = useToast();
-  const [isSaving, setIsSaving] = useState(false);
+  const firestore = useFirestore();
 
-  const form = useForm<Step6FormValues>({
-    resolver: zodResolver(shopStep6Schema),
-    defaultValues: {
-      platformDiscount: shop.platformDiscount || 0,
-    }
-  });
+  const agreementsQuery = useMemoFirebase(() => {
+    if (!firestore || !shop?.companyId || !shop?.id) return null;
+    return query(collection(firestore, `companies/${shop.companyId}/shops/${shop.id}/agreements`), orderBy('createdAt', 'desc'));
+  }, [firestore, shop.companyId, shop.id]);
 
-  useEffect(() => {
-    form.reset({ platformDiscount: shop.platformDiscount || 0 });
-  }, [shop.platformDiscount, form]);
+  const { data: agreements, isLoading, forceRefresh } = useCollection(agreementsQuery);
 
-  const onSubmit = async (values: Step6FormValues) => {
-    if (!user || !shop.companyId) return;
-    setIsSaving(true);
-    
-    try {
-        const token = await getClientSideAuthToken();
-        if (!token) throw new Error("Authentication token not found.");
-        
-        const response = await fetch('/api/updateUserDoc', {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                path: `companies/${shop.companyId}/shops/${shop.id}`,
-                data: { ...values, updatedAt: { _methodName: 'serverTimestamp' } }
-            }),
-        });
+  const columns: ColumnDef<any>[] = useMemo(() => [
+    { accessorKey: 'percentage', header: 'Commission %', cell: ({row}) => <div>{row.original.percentage}%</div> },
+    { accessorKey: 'status', header: 'Status', cell: ({row}) => <Badge variant={row.original.status === 'active' ? 'default' : row.original.status === 'proposed' ? 'secondary' : 'outline'} className="capitalize">{row.original.status}</Badge>},
+    { accessorKey: 'effectiveDate', header: 'Effective Date', cell: ({row}) => <div>{format(new Date(row.original.effectiveDate), 'PPP')}</div>},
+    { id: 'actions', cell: ({row}) => <AcceptAgreementButton agreement={row.original} shop={shop} onUpdate={forceRefresh} /> },
+  ], [shop, forceRefresh]);
 
-        if (!response.ok) {
-          const result = await response.json();
-          throw new Error(result.error || 'Failed to update shop commercials.');
-        }
-
-        toast({ title: 'Step 6 Saved!', description: 'Your commercial settings have been updated.' });
-        onSave(values);
-    } catch (error: any) {
-        toast({ variant: 'destructive', title: 'Update Failed', description: error.message });
-    } finally {
-        setIsSaving(false);
-    }
-  };
 
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        <fieldset disabled={!canEdit} className="space-y-6">
-          <FormField
-            control={form.control}
-            name="platformDiscount"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Negotiated Platform Discount (%)</FormLabel>
-                <FormControl>
-                  <Input 
-                    type="number" 
-                    placeholder="e.g., 7.5" 
-                    {...field}
-                  />
-                </FormControl>
-                <FormDescription>
-                  This is the percentage of each sale that Logistics Flow retains as a platform fee. The remainder is disbursed to the shop owner.
-                </FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </fieldset>
-        <Button type="submit" disabled={isSaving || !canEdit}>
-          {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-          Save & Continue
-        </Button>
-      </form>
-    </Form>
+    <div className="space-y-6">
+        <div className="flex items-center justify-between">
+             <h3 className="text-xl font-semibold">Commercial Agreements</h3>
+             <NewAgreementDialog shop={shop} onSave={forceRefresh} />
+        </div>
+        {isLoading ? (
+            <div className="flex justify-center py-10"><Loader2 className="h-8 w-8 animate-spin" /></div>
+        ) : (
+            <DataTable columns={columns} data={agreements || []} />
+        )}
+         <div className="flex justify-end pt-6">
+            <Button onClick={() => onSave({})}>Next <ArrowRight className="ml-2 h-4 w-4" /></Button>
+        </div>
+    </div>
   );
 }
 
@@ -1594,3 +1653,4 @@ export function ShopWizard({ shop: initialShop }: { shop: any }) {
     </div>
   );
 }
+
