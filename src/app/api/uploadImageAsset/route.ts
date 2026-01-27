@@ -42,10 +42,9 @@ export async function POST(req: NextRequest) {
         const contentType = providedContentType || matches[1];
         const fileBuffer = Buffer.from(matches[2], 'base64');
         
-        // CORRECTED: Use the .appspot.com bucket name for the Admin SDK.
-        const bucketName = "transconnect-v1-39578841-2a857.appspot.com";
-        console.log(`uploadImageAsset: Attempting to use bucket: ${bucketName}`);
-        const bucket = getStorage(app).bucket(bucketName);
+        // CORRECTED: Use the default bucket from the initialized admin app.
+        const bucket = getStorage(app).bucket();
+        console.log(`uploadImageAsset: Using default bucket: ${bucket.name}`);
         const filePath = `${folder}/${fileName}`;
         const file = bucket.file(filePath);
         console.log(`uploadImageAsset: File path set to: ${filePath}`);
@@ -72,10 +71,10 @@ export async function POST(req: NextRequest) {
             }, { status: 403 });
         }
         
-        if (error.message?.includes('The specified bucket does not exist')) {
+        if (error.message?.includes('The specified bucket does not exist') || error.code === 404) {
              return NextResponse.json({
                 success: false,
-                error: `Bucket Not Found on Server: The backend tried to access the Storage bucket but it could not be found. Please ensure Firebase Storage is enabled and the bucket name in the code is correct.`
+                error: `Bucket Not Found on Server. The backend tried to access the Storage bucket but it could not be found. Please ensure Firebase Storage is enabled and the bucket name in the code is correct.`
             }, { status: 404 });
         }
         
