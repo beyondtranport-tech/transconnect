@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
@@ -1226,8 +1225,12 @@ const agreementSchema = z.object({
     percentage: z.coerce.number().min(0, "Must be non-negative").max(100, "Cannot exceed 100"),
     effectiveDate: z.coerce.date({ required_error: "An effective date is required." }),
     expiryDate: z.coerce.date().optional().nullable(),
-    volumeThreshold: z.coerce.number().min(0, "Must be non-negative").optional(),
+    volumeThreshold: z.preprocess(
+        (val) => (val === "" ? undefined : val),
+        z.coerce.number().min(0, "Must be non-negative").optional()
+    ),
 });
+
 type NewAgreementValues = z.infer<typeof agreementSchema>;
 
 function NewAgreementDialog({ shop, onSave }: { shop: any, onSave: () => void }) {
@@ -1237,7 +1240,7 @@ function NewAgreementDialog({ shop, onSave }: { shop: any, onSave: () => void })
     const { user } = useUser();
     const form = useForm<NewAgreementValues>({
         resolver: zodResolver(agreementSchema),
-        defaultValues: { percentage: 7.5, effectiveDate: new Date(), expiryDate: null },
+        defaultValues: { percentage: 7.5, effectiveDate: new Date(), expiryDate: null, volumeThreshold: '' },
     });
 
     const onSubmit = async (values: NewAgreementValues) => {
@@ -1250,7 +1253,7 @@ function NewAgreementDialog({ shop, onSave }: { shop: any, onSave: () => void })
                 percentage: values.percentage,
                 effectiveDate: values.effectiveDate.toISOString(),
                 expiryDate: values.expiryDate ? values.expiryDate.toISOString() : null,
-                volumeThreshold: values.volumeThreshold || null,
+                volumeThreshold: values.volumeThreshold ?? null,
                 status: 'proposed',
                 proposedBy: user.uid,
                 shopId: shop.id,
@@ -1712,3 +1715,5 @@ export function ShopWizard({ shop: initialShop }: { shop: any }) {
     </div>
   );
 }
+
+    
