@@ -79,11 +79,10 @@ const shopStep1Schema = z.object({
 
 type Step1FormValues = z.infer<typeof shopStep1Schema>;
 
-function Step1CoreIdentity({ shop, onSave, onSeoGenerated, canEdit }: { shop: any, onSave: (newData: any) => void, onSeoGenerated: (seoData: any) => void, canEdit: boolean }) {
+function Step1CoreIdentity({ shop, onSave, canEdit }: { shop: any, onSave: (newData: any) => void, canEdit: boolean }) {
   const { user } = useUser();
   const { toast } = useToast();
   const [isSaving, setIsSaving] = useState(false);
-  const [isGeneratingSeo, setIsGeneratingSeo] = useState(false);
 
   const form = useForm<Step1FormValues>({
     resolver: zodResolver(shopStep1Schema),
@@ -95,24 +94,6 @@ function Step1CoreIdentity({ shop, onSave, onSeoGenerated, canEdit }: { shop: an
       contactPhone: shop.contactPhone || '',
     }
   });
-
-  const handleGenerateSeo = async () => {
-    setIsGeneratingSeo(true);
-    try {
-        const result = await generateShopSeo({
-            shopName: form.getValues('shopName'),
-            shopDescription: form.getValues('shopDescription'),
-        });
-        if (result) {
-            onSeoGenerated(result);
-            toast({ title: 'SEO Content Generated!', description: 'Your new meta title, description, and tags have been populated.' });
-        }
-    } catch(e: any) {
-        toast({ variant: 'destructive', title: 'AI Generation Failed', description: e.message });
-    } finally {
-        setIsGeneratingSeo(false);
-    }
-  };
 
 
   const onSubmit = async (values: Step1FormValues) => {
@@ -197,19 +178,6 @@ function Step1CoreIdentity({ shop, onSave, onSeoGenerated, canEdit }: { shop: an
                         <FormMessage />
                     </FormItem>
                 )} />
-            </div>
-
-            <Separator />
-
-            <div className="p-4 bg-primary/5 border border-primary/20 rounded-lg space-y-3">
-                <h3 className="font-semibold flex items-center gap-2"><Search className="h-5 w-5 text-primary"/> AI SEO Booster</h3>
-                <p className="text-sm text-muted-foreground">
-                    Let our AI assistant generate an SEO-friendly title, description, and tags for your shop based on the name and description you provided above. This will help customers find you on search engines.
-                </p>
-                <Button type="button" onClick={handleGenerateSeo} disabled={isGeneratingSeo || !canEdit}>
-                    {isGeneratingSeo ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Sparkles className="mr-2 h-4 w-4" />}
-                    Generate SEO Content
-                </Button>
             </div>
         </fieldset>
 
@@ -1330,7 +1298,7 @@ function NewAgreementDialog({ shop, onSave }: { shop: any, onSave: () => void })
                                         <Input
                                             type="date"
                                             value={field.value instanceof Date ? format(field.value, 'yyyy-MM-dd') : ''}
-                                            onChange={field.onChange}
+                                            onChange={e => field.onChange(e.target.valueAsDate)}
                                         />
                                     </FormControl>
                                     <FormMessage />
@@ -1346,8 +1314,8 @@ function NewAgreementDialog({ shop, onSave }: { shop: any, onSave: () => void })
                                     <FormControl>
                                         <Input
                                             type="date"
-                                            value={field.value instanceof Date ? format(field.value, 'yyyy-MM-dd') : ''}
-                                            onChange={(e) => field.onChange(e.target.value ? e.target.value : null)}
+                                            value={field.value ? (field.value instanceof Date ? format(field.value, 'yyyy-MM-dd') : '') : ''}
+                                            onChange={(e) => field.onChange(e.target.value ? e.target.valueAsDate : null)}
                                         />
                                     </FormControl>
                                     <FormMessage />
@@ -1476,11 +1444,12 @@ const shopStep7Schema = z.object({
 
 type Step7FormValues = z.infer<typeof shopStep7Schema>;
 
-function Step7SeoAndPublishing({ shop, onSave, canEdit }: { shop: any, onSave: (newData: any) => void, canEdit: boolean }) {
+function Step7SeoAndPublishing({ shop, onSave, canEdit, onSeoGenerated }: { shop: any, onSave: (newData: any) => void, canEdit: boolean, onSeoGenerated: (seoData: any) => void }) {
   const { user } = useUser();
   const { toast } = useToast();
   const [isSaving, setIsSaving] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
+  const [isGeneratingSeo, setIsGeneratingSeo] = useState(false);
 
   const form = useForm<Step7FormValues>({
     resolver: zodResolver(shopStep7Schema),
@@ -1498,6 +1467,24 @@ function Step7SeoAndPublishing({ shop, onSave, canEdit }: { shop: any, onSave: (
       tags: shop.tags || [],
     });
   }, [shop, form]);
+
+   const handleGenerateSeo = async () => {
+    setIsGeneratingSeo(true);
+    try {
+        const result = await generateShopSeo({
+            shopName: shop.shopName,
+            shopDescription: shop.shopDescription,
+        });
+        if (result) {
+            onSeoGenerated(result);
+            toast({ title: 'SEO Content Generated!', description: 'Your new meta title, description, and tags have been populated.' });
+        }
+    } catch(e: any) {
+        toast({ variant: 'destructive', title: 'AI Generation Failed', description: e.message });
+    } finally {
+        setIsGeneratingSeo(false);
+    }
+  };
 
   const onSubmit = async (values: Step7FormValues) => {
     if (!user || !shop.companyId) return;
@@ -1566,11 +1553,16 @@ function Step7SeoAndPublishing({ shop, onSave, canEdit }: { shop: any, onSave: (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         <fieldset disabled={!canEdit} className="space-y-6">
-            <div className="p-4 bg-primary/5 border border-primary/20 rounded-lg space-y-3">
-                <h3 className="font-semibold flex items-center gap-2"><Search className="h-5 w-5 text-primary"/> Search Engine Optimization</h3>
+             <div className="p-4 bg-primary/5 border border-primary/20 rounded-lg space-y-4">
+                <h3 className="font-semibold flex items-center gap-2"><Search className="h-5 w-5 text-primary"/> AI SEO Booster</h3>
                 <p className="text-sm text-muted-foreground">
-                    This content was generated by the AI SEO Booster in Step 1. You can edit it here.
+                   Let our AI assistant generate an SEO-friendly title, description, and tags for your shop based on the name and description from Step 1.
                 </p>
+                <Button type="button" onClick={handleGenerateSeo} disabled={isGeneratingSeo || !canEdit}>
+                    {isGeneratingSeo ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Sparkles className="mr-2 h-4 w-4" />}
+                    Generate SEO Content
+                </Button>
+                <Separator />
                 <div className="space-y-4 pt-2">
                     <FormField control={form.control} name="metaTitle" render={({ field }) => (
                         <FormItem>
@@ -1649,13 +1641,13 @@ export function ShopWizard({ shop: initialShop }: { shop: any }) {
   const canEditShop = can('edit', 'shop');
 
   const steps = [
-    { name: 'Core Identity', component: <Step1CoreIdentity shop={shopData} onSave={handleSave} onSeoGenerated={handleSeoGenerated} canEdit={canEditShop} /> },
+    { name: 'Core Identity', component: <Step1CoreIdentity shop={shopData} onSave={handleSave} canEdit={canEditShop} /> },
     { name: 'Products', component: <Step2Products shop={shopData} canEdit={canEditShop} /> },
     { name: 'Appearance', component: <Step3Appearance shop={shopData} onSave={handleSave} canEdit={canEditShop} /> },
     { name: 'Social Links', component: <Step4SocialLinks shop={shopData} onSave={handleSave} canEdit={canEditShop} /> },
     { name: 'Legal Docs', component: <Step5Legal shop={shopData} onSave={handleSave} canEdit={canEditShop} /> },
     { name: 'Commercials', component: <Step6Commercials shop={shopData} onSave={handleSave} canEdit={canEditShop} /> },
-    { name: 'Publishing', component: <Step7SeoAndPublishing shop={shopData} onSave={handleSave} canEdit={canEditShop} /> },
+    { name: 'Publishing', component: <Step7SeoAndPublishing shop={shopData} onSave={handleSave} canEdit={canEditShop} onSeoGenerated={handleSeoGenerated} /> },
     { name: 'Preview', component: <ShopPreview shop={shopData} products={products || []} /> },
   ];
 
