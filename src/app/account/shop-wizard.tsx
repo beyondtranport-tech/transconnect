@@ -13,7 +13,7 @@ import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore, useUser, useStorage, useCollection, getClientSideAuthToken } from '@/firebase';
 import { useMemoFirebase } from '@/hooks/use-config';
-import { doc, collection, query, orderBy } from 'firebase/firestore';
+import { doc, collection, query, orderBy, deleteDoc } from 'firebase/firestore';
 import { ref, uploadBytesResumable, getDownloadURL, deleteObject } from 'firebase/storage';
 import { Loader2, Save, CheckCircle, LayoutGrid, List, Image as ImageIcon, Sparkles, PlusCircle, Edit, Trash2, Send, Eye, ShoppingCart, Mail, Phone, UploadCloud, Wand2, Video, Search, ShieldAlert, Download, Copy, FileText, View, DollarSign, ArrowRight } from 'lucide-react';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
@@ -49,9 +49,6 @@ import { generateSocialLinks } from '@/ai/flows/social-link-generator-flow';
 import { format } from 'date-fns';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { CalendarIcon } from 'lucide-react';
-import { Calendar } from '@/components/ui/calendar';
 
 const { placeholderImages } = placeholderImageData;
 
@@ -1259,8 +1256,8 @@ function Step5Legal({ shop, onSave, canEdit }: { shop: any, onSave: (newData: an
 // ====== STEP 6: Commercials ======
 const agreementSchema = z.object({
     percentage: z.coerce.number().min(0, "Must be non-negative").max(100, "Cannot exceed 100"),
-    effectiveDate: z.date({ required_error: "An effective date is required." }),
-    expiryDate: z.date().optional(),
+    effectiveDate: z.coerce.date({ required_error: "An effective date is required." }),
+    expiryDate: z.coerce.date().optional().nullable(),
     volumeThreshold: z.coerce.number().min(0, "Must be non-negative").optional(),
 });
 type NewAgreementValues = z.infer<typeof agreementSchema>;
@@ -1318,20 +1315,40 @@ function NewAgreementDialog({ shop, onSave }: { shop: any, onSave: () => void })
                 <Form {...form}><form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
                     <FormField control={form.control} name="percentage" render={({ field }) => (<FormItem><FormLabel>Platform Commission (%)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
                     <div className="grid grid-cols-2 gap-4">
-                      <FormField control={form.control} name="effectiveDate" render={({ field }) => (
-                          <FormItem className="flex flex-col"><FormLabel>Effective Date</FormLabel><Popover><PopoverTrigger asChild><FormControl><Button variant={"outline"} className={cn("pl-3 text-left font-normal",!field.value && "text-muted-foreground")}>
-                              {field.value ? (format(field.value, "PPP")) : (<span>Pick a date</span>)}
-                              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger>
-                              <PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus /></PopoverContent>
-                          </Popover><FormMessage /></FormItem>
-                      )} />
-                       <FormField control={form.control} name="expiryDate" render={({ field }) => (
-                          <FormItem className="flex flex-col"><FormLabel>Expiry Date (Optional)</FormLabel><Popover><PopoverTrigger asChild><FormControl><Button variant={"outline"} className={cn("pl-3 text-left font-normal",!field.value && "text-muted-foreground")}>
-                              {field.value ? (format(field.value, "PPP")) : (<span>Pick a date</span>)}
-                              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger>
-                              <PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={field.onChange} /></PopoverContent>
-                          </Popover><FormMessage /></FormItem>
-                      )} />
+                        <FormField
+                            control={form.control}
+                            name="effectiveDate"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Effective Date</FormLabel>
+                                    <FormControl>
+                                        <Input
+                                            type="date"
+                                            value={field.value ? format(new Date(field.value), 'yyyy-MM-dd') : ''}
+                                            onChange={field.onChange}
+                                        />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        <FormField
+                            control={form.control}
+                            name="expiryDate"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Expiry Date (Optional)</FormLabel>
+                                    <FormControl>
+                                        <Input
+                                            type="date"
+                                            value={field.value ? format(new Date(field.value), 'yyyy-MM-dd') : ''}
+                                            onChange={(e) => field.onChange(e.target.value || null)}
+                                        />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
                     </div>
                      <FormField control={form.control} name="volumeThreshold" render={({ field }) => (<FormItem><FormLabel>Volume Threshold (ZAR, Optional)</FormLabel><FormControl><Input type="number" placeholder="e.g., 100000" {...field} /></FormControl><FormDescription>Apply this rate only if monthly sales exceed this amount.</FormDescription><FormMessage /></FormItem>)} />
                     <DialogFooter><Button type="submit" disabled={isLoading}>{isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null}Propose Agreement</Button></DialogFooter>
@@ -1384,6 +1401,8 @@ function AcceptAgreementButton({ agreement, shop, onUpdate }: { agreement: any, 
 
 function Step6Commercials({ shop, onSave, canEdit }: { shop: any, onSave: (newData: any) => void, canEdit: boolean }) {
   const firestore = useFirestore();
+  const { user } = useUser();
+  const { toast } = useToast();
 
   const agreementsQuery = useMemoFirebase(() => {
     if (!firestore || !shop?.companyId || !shop?.id) return null;
@@ -1392,12 +1411,34 @@ function Step6Commercials({ shop, onSave, canEdit }: { shop: any, onSave: (newDa
 
   const { data: agreements, isLoading, forceRefresh } = useCollection(agreementsQuery);
 
+  const handleDelete = async (agreementId: string) => {
+    try {
+        const token = await getClientSideAuthToken();
+        if (!token) throw new Error("Authentication failed.");
+        
+        await deleteDoc(doc(firestore, `companies/${shop.companyId}/shops/${shop.id}/agreements`, agreementId));
+        toast({title: "Proposal Withdrawn", description: "Your proposed agreement has been deleted."});
+        forceRefresh();
+    } catch(e: any) {
+        toast({variant: 'destructive', title: "Delete Failed", description: "You may not have permission to delete this."});
+    }
+  }
+
   const columns: ColumnDef<any>[] = useMemo(() => [
     { accessorKey: 'percentage', header: 'Commission %', cell: ({row}) => <div>{row.original.percentage}%</div> },
     { accessorKey: 'status', header: 'Status', cell: ({row}) => <Badge variant={row.original.status === 'active' ? 'default' : row.original.status === 'proposed' ? 'secondary' : 'outline'} className="capitalize">{row.original.status}</Badge>},
     { accessorKey: 'effectiveDate', header: 'Effective Date', cell: ({row}) => <div>{format(new Date(row.original.effectiveDate), 'PPP')}</div>},
-    { id: 'actions', cell: ({row}) => <AcceptAgreementButton agreement={row.original} shop={shop} onUpdate={forceRefresh} /> },
-  ], [shop, forceRefresh]);
+    { id: 'actions', cell: ({row}) => (
+        <div className="flex items-center gap-2 justify-end">
+            <AcceptAgreementButton agreement={row.original} shop={shop} onUpdate={forceRefresh} />
+            {row.original.status === 'proposed' && row.original.proposedBy === user?.uid && (
+                <Button variant="ghost" size="icon" onClick={() => handleDelete(row.original.id)}>
+                    <Trash2 className="h-4 w-4 text-destructive" />
+                </Button>
+            )}
+        </div>
+    ) },
+  ], [shop, forceRefresh, user, handleDelete]);
 
 
   return (
