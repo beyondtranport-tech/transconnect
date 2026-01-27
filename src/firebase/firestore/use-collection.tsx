@@ -81,10 +81,15 @@ export function useCollection<T = any>(
         
         // This check is important. We only create a rich error if it's a permissions issue.
         if (err.code === 'permission-denied') {
+             // For collection group queries, the 'path' property doesn't exist on the query object.
+             // This is a small improvement to make the error message clearer.
+             const isCollectionGroup = !('path' in memoizedTargetRefOrQuery);
              errorEmitter.emit(
                 'permission-error',
                 new FirestorePermissionError({
-                    path: 'path' in memoizedTargetRefOrQuery ? memoizedTargetRefOrQuery.path : 'unknown collection group',
+                    path: isCollectionGroup
+                      ? `a collection group (ensure security rules allow 'list' on this group)`
+                      : memoizedTargetRefOrQuery.path,
                     operation: 'list',
                 })
             );

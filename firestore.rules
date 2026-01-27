@@ -68,6 +68,9 @@ service cloud.firestore {
     match /{path=**}/shops/{shopId} {
       allow get, list: if isAdmin();
     }
+     match /{path=**}/agreements/{agreementId} {
+      allow get, list: if isAdmin();
+    }
     match /{path=**}/auditLogs/{logId} {
       allow get, list: if isAdmin();
     }
