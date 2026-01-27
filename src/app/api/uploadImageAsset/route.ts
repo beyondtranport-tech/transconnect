@@ -42,7 +42,8 @@ export async function POST(req: NextRequest) {
         const contentType = providedContentType || matches[1];
         const fileBuffer = Buffer.from(matches[2], 'base64');
         
-        const bucketName = "transconnect-v1-39578841-2a857.firebasestorage.app";
+        // CORRECTED: Use the .appspot.com bucket name for the Admin SDK.
+        const bucketName = "transconnect-v1-39578841-2a857.appspot.com";
         console.log(`uploadImageAsset: Attempting to use bucket: ${bucketName}`);
         const bucket = getStorage(app).bucket(bucketName);
         const filePath = `${folder}/${fileName}`;
