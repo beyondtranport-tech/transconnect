@@ -2,16 +2,16 @@
 'use client';
 
 import { useState, useMemo, useCallback } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Loader2, Store, CheckCircle, Eye, Handshake } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useCollection, useFirestore, getClientSideAuthToken } from '@/firebase';
 import { useMemoFirebase } from '@/hooks/use-config';
-import { collection, query, where, collectionGroup } from 'firebase/firestore';
+import { collection, query, where, collectionGroup, orderBy } from 'firebase/firestore';
 import { ShopPreview } from '@/components/shop-preview';
 import MemberCommercials from './wallet/[memberId]/member-commercials';
 import { format } from 'date-fns';
@@ -131,25 +131,17 @@ export default function ShopsList() {
 
     const pendingShopsQuery = useMemoFirebase(() => {
         if (!firestore) return null;
-        return query(collectionGroup(firestore, 'shops'), where('status', '==', 'pending_review'));
+        return query(collectionGroup(firestore, 'shops'), where('status', '==', 'pending_review'), orderBy('createdAt', 'desc'));
     }, [firestore]);
     
     // Fetch ALL agreements and filter on the client to avoid index issues.
     const agreementsQuery = useMemoFirebase(() => {
         if (!firestore) return null;
-        return query(collectionGroup(firestore, 'agreements'));
+        return query(collectionGroup(firestore, 'agreements'), where('status', '==', 'proposed'), orderBy('createdAt', 'desc'));
     }, [firestore]);
     
     const { data: pendingShops, isLoading: isLoadingShops, error: shopsError, forceRefresh: refreshShops } = useCollection<Shop>(pendingShopsQuery);
-    const { data: allAgreements, isLoading: isLoadingAgreements, error: agreementsError, forceRefresh: refreshAgreements } = useCollection<PendingAgreement>(agreementsQuery);
-
-    // Perform filtering and sorting on the client-side
-    const sortedAgreements = React.useMemo(() => {
-        if (!allAgreements) return [];
-        return allAgreements
-            .filter(agreement => agreement.status === 'proposed')
-            .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-    }, [allAgreements]);
+    const { data: proposedAgreements, isLoading: isLoadingAgreements, error: agreementsError, forceRefresh: refreshAgreements } = useCollection<PendingAgreement>(agreementsQuery);
 
     const forceRefresh = useCallback(() => {
         refreshShops();
@@ -286,8 +278,8 @@ export default function ShopsList() {
                 <CardContent>
                      {isLoadingAgreements ? (
                         <div className="flex justify-center items-center py-20"><Loader2 className="h-10 w-10 animate-spin text-primary" /></div>
-                     ) : sortedAgreements && sortedAgreements.length > 0 ? (
-                        <DataTable columns={agreementColumns} data={sortedAgreements} />
+                     ) : proposedAgreements && proposedAgreements.length > 0 ? (
+                        <DataTable columns={agreementColumns} data={proposedAgreements} />
                      ) : (
                         <div className="text-center py-20 border-2 border-dashed rounded-lg">
                             <CheckCircle className="mx-auto h-12 w-12 text-green-500" />
