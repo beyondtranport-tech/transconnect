@@ -21,7 +21,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useUser, useFirestore, getClientSideAuthToken, useDoc } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import { Separator } from '@/components/ui/separator';
-import { useMemoFirebase } from '@/hooks/use-config';
+import { useMemoFirebase } from '@/hooks/use-memo-firebase';
 
 const companyFormSchema = z.object({
   companyName: z.string().min(1, 'Company name is required'),

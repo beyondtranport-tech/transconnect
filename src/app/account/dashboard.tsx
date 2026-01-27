@@ -11,7 +11,7 @@ import { useEffect, useState } from 'react';
 import EnquiriesCard from './enquiries-card';
 import QuotesCard from './quotes-card';
 import { cn } from '@/lib/utils';
-import { useMemoFirebase } from '@/hooks/use-config';
+import { useMemoFirebase } from '@/hooks/use-memo-firebase';
 
 export default function AccountDashboard() {
     const { user, isUserLoading } = useUser();

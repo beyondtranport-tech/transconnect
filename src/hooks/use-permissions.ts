@@ -5,7 +5,7 @@ import { useUser, useFirestore } from '@/firebase';
 import { useDoc } from '@/firebase/firestore/use-doc';
 import { doc } from 'firebase/firestore';
 import { useMemo } from 'react';
-import { useMemoFirebase } from './use-config';
+import { useMemoFirebase } from './use-memo-firebase';
 
 export type Action = 'create' | 'view' | 'edit' | 'delete' | 'manage';
 export type Resource = 
