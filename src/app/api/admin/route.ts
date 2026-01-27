@@ -638,48 +638,47 @@ export async function POST(req: NextRequest) {
                 if (!shopData) {
                     throw new Error(`Shop data is empty for shop ${shopId}.`);
                 }
-
+                
                 const wasAlreadyApproved = shopData.status === 'approved';
 
-                // --- ROBUST SYNC LOGIC ---
+                // Get all products from the private draft shop
+                const memberProductsCollectionRef = memberShopRef.collection('products');
+                const memberProductsSnap = await memberProductsCollectionRef.get();
+                const memberProducts = memberProductsSnap.docs.map(doc => ({ id: doc.id, data: doc.data() }));
+
                 const batch = db.batch();
 
-                // 1. Update the main public shop document.
+                // 1. Update the main public shop document. This also creates it if it doesn't exist.
                 const publicShopData = { ...shopData, companyId, status: 'approved', updatedAt: FieldValue.serverTimestamp() };
                 batch.set(publicShopRef, publicShopData, { merge: true });
 
-                // 2. Fetch both private and public product sets.
-                const memberProductsSnap = await memberShopRef.collection('products').get();
-                const publicProductsSnap = await publicShopRef.collection('products').get();
-
-                const memberProductIds = new Set(memberProductsSnap.docs.map(doc => doc.id));
-
-                // 3. Upsert all member products into the public subcollection.
-                memberProductsSnap.forEach(productDoc => {
-                    const publicProductRef = publicShopRef.collection('products').doc(productDoc.id);
-                    batch.set(publicProductRef, productDoc.data());
+                // 2. Clear out all old products in the public shop to ensure a clean sync.
+                const publicProductsCollectionRef = publicShopRef.collection('products');
+                const publicProductsSnap = await publicProductsCollectionRef.get();
+                publicProductsSnap.docs.forEach(doc => {
+                    batch.delete(doc.ref);
+                });
+                
+                // 3. Add all current products from the draft to the public shop.
+                memberProducts.forEach(product => {
+                    const publicProductRef = publicProductsCollectionRef.doc(product.id);
+                    batch.set(publicProductRef, product.data);
                 });
 
-                // 4. Delete any public products that no longer exist in the private subcollection.
-                publicProductsSnap.forEach(publicProductDoc => {
-                    if (!memberProductIds.has(publicProductDoc.id)) {
-                        batch.delete(publicProductDoc.ref);
-                    }
-                });
-
-                // 5. Update the member's private shop status if it wasn't already approved.
+                // 4. Update the member's private shop status if it wasn't already approved
                 if (!wasAlreadyApproved) {
                     batch.update(memberShopRef, { status: 'approved', updatedAt: FieldValue.serverTimestamp() });
                 }
 
-                // 6. Award points for shop creation, ONLY if this is the first time it's being approved
+                // 5. Award points for shop creation, ONLY if this is the first time it's being approved
                 if (!wasAlreadyApproved) {
                     const loyaltyConfigDoc = await db.collection('configuration').doc('loyaltySettings').get();
                     const shopCreationPoints = loyaltyConfigDoc.data()?.shopCreationPoints || 100;
                     const companyRef = db.doc(`companies/${companyId}`);
                     batch.update(companyRef, { rewardPoints: FieldValue.increment(shopCreationPoints) });
                 }
-
+                
+                // Commit all operations at once
                 await batch.commit();
 
                 const message = wasAlreadyApproved 
