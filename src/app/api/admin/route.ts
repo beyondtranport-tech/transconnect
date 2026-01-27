@@ -463,7 +463,6 @@ export async function POST(req: NextRequest) {
                     const docData = doc.data();
                     const pathSegments = doc.ref.path.split('/');
                     
-                    // This check ensures we only process shops nested under companies
                     if (pathSegments.length < 4 || pathSegments[0] !== 'companies' || pathSegments[2] !== 'shops') {
                         return null;
                     }
@@ -473,11 +472,10 @@ export async function POST(req: NextRequest) {
                     return { 
                         id: doc.id, 
                         ...serializeTimestamps(docData),
-                        companyId: companyId, // Use the ID from the path for reliability
+                        companyId: companyId,
                     };
-                }).filter(item => item !== null); // Filter out any ignored public shops
+                }).filter(item => item !== null); 
 
-                // Now sort in the backend code
                 data.sort((a, b) => {
                     const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
                     const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
@@ -641,6 +639,13 @@ export async function POST(req: NextRequest) {
                 const memberProductsSnap = await memberShopRef.collection('products').get();
             
                 const batch = db.batch();
+
+                // --- NEW LOGIC: Delete existing public products first to ensure a clean sync ---
+                const publicProductsSnap = await publicShopRef.collection('products').get();
+                if (!publicProductsSnap.empty) {
+                    publicProductsSnap.forEach(doc => batch.delete(doc.ref));
+                }
+                // --- END NEW LOGIC ---
             
                 // 1. Create/Update the main public shop document
                 const publicShopData = { ...shopData, companyId, status: 'approved', updatedAt: FieldValue.serverTimestamp() };
