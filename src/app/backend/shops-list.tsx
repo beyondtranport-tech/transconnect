@@ -3,7 +3,7 @@
 'use client';
 
 import { useState, useMemo, useCallback, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Loader2, Store, CheckCircle, Eye, Handshake } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
@@ -126,51 +126,25 @@ const formatDate = (isoString: string | undefined) => {
 export default function ShopsList() {
     const { toast } = useToast();
     const [isApproving, setIsApproving] = useState<string | null>(null);
+    const firestore = useFirestore();
 
-    const [pendingShops, setPendingShops] = useState<Shop[]>([]);
-    const [pendingAgreements, setPendingAgreements] = useState<PendingAgreement[]>([]);
+    const pendingShopsQuery = useMemoFirebase(() => {
+        if (!firestore) return null;
+        return query(collectionGroup(firestore, 'shops'), where('status', '==', 'pending_review'), orderBy('createdAt', 'desc'));
+    }, [firestore]);
     
-    const [isLoadingShops, setIsLoadingShops] = useState(true);
-    const [isLoadingAgreements, setIsLoadingAgreements] = useState(true);
-    const [error, setError] = useState<string | null>(null);
+    const agreementsQuery = useMemoFirebase(() => {
+        if (!firestore) return null;
+        return query(collectionGroup(firestore, 'agreements'), where('status', '==', 'proposed'), orderBy('createdAt', 'desc'));
+    }, [firestore]);
+    
+    const { data: pendingShops, isLoading: isLoadingShops, error: shopsError, forceRefresh: refreshShops } = useCollection<Shop>(pendingShopsQuery);
+    const { data: pendingAgreements, isLoading: isLoadingAgreements, error: agreementsError, forceRefresh: refreshAgreements } = useCollection<PendingAgreement>(agreementsQuery);
 
-    const forceRefresh = useCallback(async () => {
-        setIsLoadingShops(true);
-        setIsLoadingAgreements(true);
-        setError(null);
-        try {
-            const token = await getClientSideAuthToken();
-            if (!token) throw new Error("Authentication failed.");
-            
-            // Fetch shops pending review
-            const shopsResult = await fetchFromAdminAPI(token, 'getShops');
-            if (shopsResult.data) {
-                const pending = shopsResult.data.filter((s:any) => s.status === 'pending_review');
-                setPendingShops(pending);
-            } else {
-                throw new Error("Failed to load shop data.");
-            }
-
-            // Fetch agreements pending approval
-            const agreementsResult = await fetchFromAdminAPI(token, 'getPendingAgreements');
-            if (agreementsResult.data) {
-                setPendingAgreements(agreementsResult.data);
-            } else {
-                throw new Error("Failed to load agreement data.");
-            }
-
-        } catch(e: any) {
-            setError(e.message)
-        } finally {
-            setIsLoadingShops(false);
-            setIsLoadingAgreements(false);
-        }
-    }, []);
-
-    useEffect(() => {
-        forceRefresh();
-    }, [forceRefresh]);
-
+    const forceRefresh = useCallback(() => {
+        refreshShops();
+        refreshAgreements();
+    }, [refreshShops, refreshAgreements]);
 
     const handleApprove = async (shop: Shop) => {
         setIsApproving(shop.id);
@@ -261,12 +235,13 @@ export default function ShopsList() {
     ], [forceRefresh]);
     
     const isLoading = isLoadingShops || isLoadingAgreements;
+    const error = shopsError || agreementsError;
 
     if (error) {
         return (
             <div className="text-destructive-foreground bg-destructive/90 p-4 rounded-md">
                 <h4 className="font-semibold">Error loading data</h4>
-                <p className="text-sm">{error}</p>
+                <p className="text-sm">{error.message}</p>
             </div>
         );
     }
@@ -281,7 +256,7 @@ export default function ShopsList() {
                 <CardContent>
                     {isLoadingShops ? (
                         <div className="flex justify-center items-center py-20"><Loader2 className="h-10 w-10 animate-spin text-primary" /></div>
-                    ) : pendingShops.length > 0 ? (
+                    ) : pendingShops && pendingShops.length > 0 ? (
                         <DataTable columns={shopColumns} data={pendingShops} />
                     ) : (
                         <div className="text-center py-20 border-2 border-dashed rounded-lg">
@@ -301,7 +276,7 @@ export default function ShopsList() {
                 <CardContent>
                      {isLoadingAgreements ? (
                         <div className="flex justify-center items-center py-20"><Loader2 className="h-10 w-10 animate-spin text-primary" /></div>
-                     ) : pendingAgreements.length > 0 ? (
+                     ) : pendingAgreements && pendingAgreements.length > 0 ? (
                         <DataTable columns={agreementColumns} data={pendingAgreements} />
                      ) : (
                         <div className="text-center py-20 border-2 border-dashed rounded-lg">
