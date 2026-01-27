@@ -15,7 +15,7 @@ import { useFirestore, useUser, useStorage, useCollection, getClientSideAuthToke
 import { useMemoFirebase } from '@/hooks/use-config';
 import { doc, collection } from 'firebase/firestore';
 import { ref, uploadBytesResumable, getDownloadURL, deleteObject } from 'firebase/storage';
-import { Loader2, Save, CheckCircle, LayoutGrid, List, Image as ImageIcon, Sparkles, PlusCircle, Edit, Trash2, Send, Eye, ShoppingCart, Mail, Phone, UploadCloud, Wand2, Video, Search, ShieldAlert, Download, Copy } from 'lucide-react';
+import { Loader2, Save, CheckCircle, LayoutGrid, List, Image as ImageIcon, Sparkles, PlusCircle, Edit, Trash2, Send, Eye, ShoppingCart, Mail, Phone, UploadCloud, Wand2, Video, Search, ShieldAlert, Download, Copy, FileText, View } from 'lucide-react';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -1103,24 +1103,169 @@ function Step4SocialLinks({ shop, onSave, canEdit }: { shop: any, onSave: (newDa
   );
 }
 
-
-// ====== STEP 5: SEO & Publishing ======
+// ====== STEP 5: Legal Documents ======
 const shopStep5Schema = z.object({
+    termsUrl: z.string().url().optional().or(z.literal('')),
+    returnsPolicyUrl: z.string().url().optional().or(z.literal('')),
+    privacyPolicyUrl: z.string().url().optional().or(z.literal('')),
+});
+
+type Step5FormValues = z.infer<typeof shopStep5Schema>;
+
+function Step5Legal({ shop, onSave, canEdit }: { shop: any, onSave: (newData: any) => void, canEdit: boolean }) {
+    const { user } = useUser();
+    const { toast } = useToast();
+    const [isSaving, setIsSaving] = useState(false);
+    const [uploading, setUploading] = useState<string | null>(null);
+    const [progress, setProgress] = useState(0);
+
+    const form = useForm<Step5FormValues>({
+        resolver: zodResolver(shopStep5Schema),
+        defaultValues: {
+            termsUrl: shop.termsUrl || '',
+            returnsPolicyUrl: shop.returnsPolicyUrl || '',
+            privacyPolicyUrl: shop.privacyPolicyUrl || '',
+        }
+    });
+
+    useEffect(() => {
+        form.reset({
+            termsUrl: shop.termsUrl || '',
+            returnsPolicyUrl: shop.returnsPolicyUrl || '',
+            privacyPolicyUrl: shop.privacyPolicyUrl || '',
+        });
+    }, [shop, form]);
+
+    const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, fieldName: keyof Step5FormValues) => {
+        const file = e.target.files?.[0];
+        if (!file || !user) return;
+        if (file.type !== 'application/pdf') {
+            toast({ variant: 'destructive', title: 'Invalid File Type', description: 'Please upload a PDF document.' });
+            return;
+        }
+
+        setUploading(fieldName);
+        setProgress(10);
+        
+        try {
+            const token = await getClientSideAuthToken();
+            if (!token) throw new Error("Authentication failed.");
+
+            const fileDataUri = await fileToDataUri(file);
+            setProgress(30);
+
+            const folder = `user-assets/${user.uid}/shop-documents`;
+            const fileName = `${fieldName}_${Date.now()}.pdf`;
+            
+            const response = await fetch('/api/uploadImageAsset', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ fileDataUri, folder, fileName, contentType: 'application/pdf' }),
+            });
+
+            setProgress(80);
+            const result = await response.json();
+            if (!response.ok || !result.success) {
+                throw new Error(result.error || 'Failed to upload document.');
+            }
+            
+            form.setValue(fieldName, result.url);
+            setProgress(100);
+            toast({ title: 'Document Uploaded!', description: 'Remember to save your changes.' });
+        } catch (error: any) {
+            toast({ variant: 'destructive', title: 'Upload Failed', description: error.message });
+        } finally {
+            setUploading(null);
+            setProgress(0);
+            if (e.target) e.target.value = ''; // Reset file input
+        }
+    };
+    
+    const onSubmit = async (values: Step5FormValues) => {
+        if (!user || !shop.companyId) return;
+        setIsSaving(true);
+        
+        try {
+            const token = await getClientSideAuthToken();
+            if (!token) throw new Error("Authentication token not found.");
+            
+            await fetch('/api/updateUserDoc', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    path: `companies/${shop.companyId}/shops/${shop.id}`,
+                    data: { ...values, updatedAt: { _methodName: 'serverTimestamp' } }
+                }),
+            });
+
+            toast({ title: 'Step 5 Saved!', description: 'Your legal documents have been linked.' });
+            onSave(values);
+        } catch (error: any) {
+            toast({ variant: 'destructive', title: 'Update Failed', description: error.message });
+        } finally {
+            setIsSaving(false);
+        }
+    };
+    
+    const DocumentField = ({ fieldName, label }: { fieldName: keyof Step5FormValues; label: string; }) => {
+        const fileInputRef = React.useRef<HTMLInputElement>(null);
+        const url = form.watch(fieldName);
+
+        return (
+            <div className="space-y-2">
+                <FormLabel>{label}</FormLabel>
+                {url ? (
+                    <div className="flex items-center gap-2">
+                        <Input value={url} readOnly />
+                        <Button asChild variant="secondary"><a href={url} target="_blank" rel="noopener noreferrer"><View className="h-4 w-4" /></a></Button>
+                    </div>
+                ) : (
+                    <p className="text-sm text-muted-foreground">No document uploaded.</p>
+                )}
+                {uploading === fieldName && <Progress value={progress} className="h-2 w-full" />}
+                <Button type="button" variant="outline" onClick={() => fileInputRef.current?.click()} disabled={!!uploading || !canEdit}>
+                    {uploading === fieldName ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <UploadCloud className="mr-2 h-4 w-4" />}
+                    {url ? 'Upload New' : 'Upload PDF'}
+                </Button>
+                <Input ref={fileInputRef} type="file" className="hidden" onChange={(e) => handleFileUpload(e, fieldName)} accept=".pdf" />
+            </div>
+        );
+    };
+
+    return (
+        <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+                 <div className="space-y-6">
+                    <DocumentField fieldName="termsUrl" label="Terms &amp; Conditions" />
+                    <DocumentField fieldName="returnsPolicyUrl" label="Returns Policy" />
+                    <DocumentField fieldName="privacyPolicyUrl" label="Privacy Policy" />
+                </div>
+                <Button type="submit" disabled={isSaving || !!uploading || !canEdit}>
+                  {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                  Save & Continue
+                </Button>
+            </form>
+        </Form>
+    );
+}
+
+// ====== STEP 6: SEO & Publishing ======
+const shopStep6Schema = z.object({
   metaTitle: z.string().optional(),
   metaDescription: z.string().optional(),
   tags: z.array(z.string()).optional(),
 });
 
-type Step5FormValues = z.infer<typeof shopStep5Schema>;
+type Step6FormValues = z.infer<typeof shopStep6Schema>;
 
-function Step5SeoAndPublishing({ shop, onSave, canEdit }: { shop: any, onSave: (newData: any) => void, canEdit: boolean }) {
+function Step6SeoAndPublishing({ shop, onSave, canEdit }: { shop: any, onSave: (newData: any) => void, canEdit: boolean }) {
   const { user } = useUser();
   const { toast } = useToast();
   const [isSaving, setIsSaving] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
 
-  const form = useForm<Step5FormValues>({
-    resolver: zodResolver(shopStep5Schema),
+  const form = useForm<Step6FormValues>({
+    resolver: zodResolver(shopStep6Schema),
     defaultValues: {
       metaTitle: shop.metaTitle || '',
       metaDescription: shop.metaDescription || '',
@@ -1136,7 +1281,7 @@ function Step5SeoAndPublishing({ shop, onSave, canEdit }: { shop: any, onSave: (
     });
   }, [shop, form]);
 
-  const onSubmit = async (values: Step5FormValues) => {
+  const onSubmit = async (values: Step6FormValues) => {
     if (!user || !shop.companyId) return;
     setIsSaving(true);
     
@@ -1161,7 +1306,7 @@ function Step5SeoAndPublishing({ shop, onSave, canEdit }: { shop: any, onSave: (
           throw new Error(result.error || 'Failed to update shop.');
         }
 
-        toast({ title: 'Step 5 Saved!', description: 'Your SEO details have been updated.' });
+        toast({ title: 'Step 6 Saved!', description: 'Your SEO details have been updated.' });
         onSave(values);
     } catch (error: any) {
         toast({ variant: 'destructive', title: 'Update Failed', description: error.message });
@@ -1292,7 +1437,8 @@ export function ShopWizard({ shop: initialShop }: { shop: any }) {
     { name: 'Products', component: <Step2Products shop={shopData} canEdit={canEditShop} /> },
     { name: 'Appearance', component: <Step3Appearance shop={shopData} onSave={handleSave} canEdit={canEditShop} /> },
     { name: 'Social Links', component: <Step4SocialLinks shop={shopData} onSave={handleSave} canEdit={canEditShop} /> },
-    { name: 'Publishing', component: <Step5SeoAndPublishing shop={shopData} onSave={handleSave} canEdit={canEditShop} /> },
+    { name: 'Legal Docs', component: <Step5Legal shop={shopData} onSave={handleSave} canEdit={canEditShop} /> },
+    { name: 'Publishing', component: <Step6SeoAndPublishing shop={shopData} onSave={handleSave} canEdit={canEditShop} /> },
     { name: 'Preview', component: <ShopPreview shop={shopData} products={products || []} /> },
   ];
 

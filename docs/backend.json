@@ -53,7 +53,7 @@
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Partner",
       "type": "object",
-      "description": "Represents a strategic partner or Independent Sales Agent (ISA) in the system.",
+      "description": "Represents a strategic partner, Independent Sales Agent (ISA), or Investor in the system.",
       "properties": {
         "id": { "type": "string" },
         "firstName": { "type": "string" },
@@ -63,7 +63,7 @@
         "companyName": { "type": "string", "description": "The name of the partner's own company." },
         "status": { "type": "string", "enum": ["active", "inactive"], "description": "The operational status of the partnership." },
         "invitationStatus": { "type": "string", "enum": ["pending", "invited", "registered"], "description": "The status of their invitation to join the platform." },
-        "type": { "type": "string", "enum": ["partner", "isa"], "description": "The type of partner, either a strategic Partner or an ISA." },
+        "type": { "type": "string", "enum": ["partner", "isa", "investor"], "description": "The type of partner, e.g., a strategic Partner, ISA, or Investor." },
         "createdAt": { "type": "object" },
         "updatedAt": { "type": "object" }
       },
@@ -88,6 +88,9 @@
         "metaDescription": { "type": "string" },
         "tags": { "type": "array", "items": { "type": "string" } },
         "heroBannerUrl": { "type": "string" },
+        "termsUrl": { "type": "string", "description": "URL to the shop's terms and conditions PDF." },
+        "returnsPolicyUrl": { "type": "string", "description": "URL to the shop's return policy PDF." },
+        "privacyPolicyUrl": { "type": "string", "description": "URL to the shop's privacy policy PDF." },
         "promotions": {
           "type": "array",
           "items": {
@@ -531,5 +534,3 @@
     "reasoning": "The data model is refactored to separate user identity from business entities. A new `/users` collection stores individual user profiles, linked via Firebase Auth UID. A new `/companies` collection stores business-related data, including wallet balance, membership status, and subcollections for transactions, staff, quotes, etc. This creates a cleaner, more scalable architecture where a user owns a company, rather than the user and company being the same entity. This prevents data duplication and clarifies ownership for security rules."
   }
 }
-
-    

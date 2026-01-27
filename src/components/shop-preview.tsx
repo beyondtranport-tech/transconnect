@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
@@ -161,6 +162,11 @@ export function ShopPreview({ shop, products }: { shop: any, products: any[] }) 
             
             <footer className="bg-white/80 border-t mt-12">
                 <div className="container mx-auto px-6 py-4 text-center text-sm text-gray-500">
+                    <div className="flex justify-center gap-4 mb-2">
+                        {shop.termsUrl && <a href={shop.termsUrl} target="_blank" rel="noopener noreferrer" className="hover:underline">Terms &amp; Conditions</a>}
+                        {shop.returnsPolicyUrl && <a href={shop.returnsPolicyUrl} target="_blank" rel="noopener noreferrer" className="hover:underline">Return Policy</a>}
+                        {shop.privacyPolicyUrl && <a href={shop.privacyPolicyUrl} target="_blank" rel="noopener noreferrer" className="hover:underline">Privacy Policy</a>}
+                    </div>
                     <p>&copy; {new Date().getFullYear()} {shop.shopName}. All Rights Reserved.</p>
                     <p className="mt-1">Powered by Logistics Flow</p>
                 </div>
