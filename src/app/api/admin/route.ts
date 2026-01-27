@@ -69,8 +69,8 @@ export async function POST(req: NextRequest) {
 
                 const pendingShops = allShopsSnap.docs
                     .map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }))
-                    .filter(shop => shop.status === 'pending_review')
-                    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+                    .filter((shop: any) => shop.status === 'pending_review')
+                    .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
                 const allAgreementsSnap = await db.collectionGroup('agreements').get();
 
@@ -89,40 +89,31 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, data: { pendingShops, proposedAgreements } });
             }
             case 'getPendingAgreements': {
-                const agreementsSnap = await db.collectionGroup('agreements').where('status', '==', 'proposed').get();
-                if (agreementsSnap.empty) {
-                    return NextResponse.json({ success: true, data: [] });
-                }
+                 const allShopsSnap = await db.collectionGroup('shops').get();
+                const shopMap = new Map();
+                allShopsSnap.forEach(doc => {
+                    shopMap.set(doc.id, doc.data().shopName);
+                });
 
-                const enrichedAgreements = await Promise.all(agreementsSnap.docs.map(async (doc) => {
-                    const agreementData = doc.data();
-                    const pathSegments = doc.ref.path.split('/');
-                    
-                    // Expected path: companies/{companyId}/shops/{shopId}/agreements/{agreementId}
-                    const companyId = pathSegments[1];
-                    const shopId = pathSegments[3];
-                    
-                    let shopName = 'Unknown Shop';
-                    if (companyId && shopId) {
-                        const shopRef = db.doc(`companies/${companyId}/shops/${shopId}`);
-                        const shopSnap = await shopRef.get();
-                        if (shopSnap.exists()) {
-                            shopName = shopSnap.data()?.shopName || shopName;
-                        }
-                    }
-                    
-                    return {
-                        ...serializeTimestamps(agreementData),
-                        id: doc.id,
-                        shopId: shopId,
-                        companyId: companyId,
-                        shopName: shopName,
-                    };
-                }));
+                const allAgreementsSnap = await db.collectionGroup('agreements').get();
+
+                const proposedAgreements = allAgreementsSnap.docs
+                    .map(doc => {
+                        const data = doc.data();
+                        const pathSegments = doc.ref.path.split('/');
+                        const companyId = pathSegments.length > 1 ? pathSegments[1] : null;
+
+                        return {
+                            ...serializeTimestamps(data),
+                            id: doc.id,
+                            shopName: shopMap.get(data.shopId) || 'Unknown Shop',
+                            companyId: companyId,
+                        };
+                    })
+                    .filter((agreement: any) => agreement.status === 'proposed')
+                    .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
                 
-                const sortedAgreements = enrichedAgreements.sort((a,b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-
-                return NextResponse.json({ success: true, data: sortedAgreements });
+                return NextResponse.json({ success: true, data: proposedAgreements });
             }
             case 'acceptCommercialAgreement': {
                 const { companyId, shopId, agreementId, userId } = payload;
@@ -594,40 +585,53 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, message: "Staff member deleted." });
             }
             case 'approveShop': {
-                 const { shopId, companyId } = payload;
+                const { shopId, companyId } = payload;
                 if (!shopId || !companyId) {
                     throw new Error("Missing shopId or companyId for approveShop action.");
                 }
-                
+            
                 const memberShopRef = db.doc(`companies/${companyId}/shops/${shopId}`);
                 const publicShopRef = db.doc(`shops/${shopId}`);
-                
+            
                 const shopDoc = await memberShopRef.get();
                 if (!shopDoc.exists) {
                     throw new Error(`Shop with ID ${shopId} not found for company ${companyId}.`);
                 }
-                
+            
                 const shopData = shopDoc.data();
                 if (!shopData) {
                     throw new Error(`Shop data is empty for shop ${shopId}.`);
                 }
-                
+            
+                // Get products from the member's shop subcollection
+                const memberProductsSnap = await memberShopRef.collection('products').get();
+            
                 const batch = db.batch();
-
+            
+                // 1. Create the main public shop document
                 const publicShopData = { ...shopData, status: 'approved', updatedAt: FieldValue.serverTimestamp() };
-                
                 batch.set(publicShopRef, publicShopData);
+            
+                // 2. Copy all products to the public shop's subcollection
+                if (!memberProductsSnap.empty) {
+                    memberProductsSnap.forEach(productDoc => {
+                        const publicProductRef = publicShopRef.collection('products').doc(productDoc.id);
+                        batch.set(publicProductRef, productDoc.data());
+                    });
+                }
+            
+                // 3. Update the member's private shop status
                 batch.update(memberShopRef, { status: 'approved', updatedAt: FieldValue.serverTimestamp() });
-                
-                 // Award points for shop approval if applicable
+            
+                // 4. Award points for shop approval
                 const loyaltyConfigDoc = await db.collection('configuration').doc('loyaltySettings').get();
                 const shopCreationPoints = loyaltyConfigDoc.data()?.shopCreationPoints || 100;
                 const companyRef = db.doc(`companies/${companyId}`);
                 batch.update(companyRef, { rewardPoints: FieldValue.increment(shopCreationPoints) });
-                
+            
                 await batch.commit();
-
-                return NextResponse.json({ success: true, message: 'Shop approved and published.' });
+            
+                return NextResponse.json({ success: true, message: 'Shop and its products have been approved and published.' });
             }
             case 'updateStaffStatus': {
                 const { companyId, staffId, status } = payload;
