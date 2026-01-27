@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useMemo, useCallback, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Loader2, Store, CheckCircle, Eye, Handshake } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
@@ -11,7 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useCollection, useFirestore, getClientSideAuthToken } from '@/firebase';
 import { useMemoFirebase } from '@/hooks/use-config';
-import { collection, query, where, collectionGroup } from 'firebase/firestore';
+import { collection, query, where, collectionGroup, orderBy, getDocs } from 'firebase/firestore';
 import { ShopPreview } from '@/components/shop-preview';
 import MemberCommercials from './wallet/[memberId]/member-commercials';
 import { DataTable } from '@/components/ui/data-table';
@@ -39,23 +39,6 @@ interface PendingAgreement {
     effectiveDate: string;
     createdAt: string; 
     [key: string]: any;
-}
-
-async function fetchFromAdminAPI(token: string, action: string, payload?: any) {
-    const response = await fetch('/api/admin', {
-        method: 'POST',
-        headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ action, payload }),
-    });
-
-    const result = await response.json();
-    if (!response.ok || !result.success) {
-        throw new Error(result.error || `API Error for action: ${action}`);
-    }
-    return result;
 }
 
 const statusColors: { [key: string]: 'default' | 'secondary' | 'destructive' | 'outline' } = {
@@ -127,43 +110,58 @@ export default function ShopsList() {
     const { toast } = useToast();
     const [isApproving, setIsApproving] = useState<string | null>(null);
     const firestore = useFirestore();
+    const [shopMap, setShopMap] = useState<Map<string, Shop>>(new Map());
 
-    const allShopsQuery = useMemoFirebase(() => {
+    const pendingShopsQuery = useMemoFirebase(() => {
         if (!firestore) return null;
-        return query(collectionGroup(firestore, 'shops'));
+        return query(
+            collectionGroup(firestore, 'shops'),
+            where('status', '==', 'pending_review'),
+            orderBy('createdAt', 'desc')
+        );
     }, [firestore]);
     
-    const allAgreementsQuery = useMemoFirebase(() => {
+    const proposedAgreementsQuery = useMemoFirebase(() => {
         if (!firestore) return null;
-        return query(collectionGroup(firestore, 'agreements'));
+        return query(
+            collectionGroup(firestore, 'agreements'),
+            where('status', '==', 'proposed'),
+            orderBy('createdAt', 'desc')
+        );
     }, [firestore]);
     
-    const { data: allShops, isLoading: isLoadingShops, error: shopsError, forceRefresh: refreshShops } = useCollection<Shop>(allShopsQuery);
-    const { data: allAgreements, isLoading: isLoadingAgreements, error: agreementsError, forceRefresh: refreshAgreements } = useCollection<PendingAgreement>(allAgreementsQuery);
+    const { data: pendingShops, isLoading: isLoadingShops, error: shopsError, forceRefresh: refreshShops } = useCollection<Shop>(pendingShopsQuery);
+    const { data: proposedAgreementsRaw, isLoading: isLoadingAgreements, error: agreementsError, forceRefresh: refreshAgreements } = useCollection<PendingAgreement>(proposedAgreementsQuery);
 
-    const pendingShops = useMemo(() => {
-        if (!allShops) return [];
-        return allShops
-            .filter(shop => shop.status === 'pending_review')
-            .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-    }, [allShops]);
+    useEffect(() => {
+        async function fetchAllShops() {
+            if (!firestore) return;
+            try {
+                const shopsSnapshot = await getDocs(collectionGroup(firestore, 'shops'));
+                const newShopMap = new Map<string, Shop>();
+                shopsSnapshot.forEach(doc => {
+                    newShopMap.set(doc.id, { id: doc.id, ...doc.data() } as Shop);
+                });
+                setShopMap(newShopMap);
+            } catch (e) {
+                console.error("Failed to fetch all shops for enrichment:", e);
+                toast({ variant: 'destructive', title: 'Data Enrichment Failed', description: 'Could not load shop names for agreements.'});
+            }
+        }
+        fetchAllShops();
+    }, [firestore, toast]);
+
 
     const proposedAgreements = useMemo(() => {
-        if (!allAgreements || !allShops) return [];
-
-        const shopMap = new Map(allShops.map(shop => [shop.id, shop]));
-
-        return allAgreements
-            .filter(agreement => agreement.status === 'proposed')
-            .map(agreement => {
-                const shop = shopMap.get(agreement.shopId);
-                return {
-                    ...agreement,
-                    shopName: shop ? shop.shopName : 'Unknown Shop',
-                };
-            })
-            .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-    }, [allAgreements, allShops]);
+        if (!proposedAgreementsRaw || shopMap.size === 0) return [];
+        return proposedAgreementsRaw.map(agreement => {
+            const shop = shopMap.get(agreement.shopId);
+            return {
+                ...agreement,
+                shopName: shop ? shop.shopName : 'Unknown Shop',
+            };
+        });
+    }, [proposedAgreementsRaw, shopMap]);
 
     const forceRefresh = useCallback(() => {
         refreshShops();
