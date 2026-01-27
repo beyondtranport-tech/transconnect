@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { Button } from "@/components/ui/button";
@@ -11,23 +10,38 @@ import { Building2, Search, ArrowRight, Sparkles, Loader2 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import * as gtag from '@/lib/gtag';
-import { useCollection, useFirestore } from '@/firebase';
-import { collection, query, where } from 'firebase/firestore';
-import { useMemoFirebase } from '@/hooks/use-config';
+import React, { useState, useEffect } from 'react';
 
 const { placeholderImages } = data;
 
 const supplierMallImage = placeholderImages.find(p => p.id === 'mall-division');
 
 export default function SupplierMallPage() {
-    const firestore = useFirestore();
-    
-    const approvedShopsQuery = useMemoFirebase(() => {
-        if (!firestore) return null;
-        return query(collection(firestore, 'shops'), where('status', '==', 'approved'));
-    }, [firestore]);
+    const [suppliers, setSuppliers] = useState<any[] | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
-    const { data: suppliers, isLoading, error } = useCollection(approvedShopsQuery);
+    useEffect(() => {
+        const fetchApprovedShops = async () => {
+            setIsLoading(true);
+            setError(null);
+            try {
+                const response = await fetch('/api/getApprovedShops');
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Failed to fetch approved shops.');
+                }
+                const result = await response.json();
+                setSuppliers(result.data);
+            } catch (err: any) {
+                setError(err.message);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchApprovedShops();
+    }, []);
 
 
     const handleSupplierClick = (supplierId: string) => {
@@ -121,7 +135,7 @@ export default function SupplierMallPage() {
                     ) : error ? (
                         <div className="text-center py-20 text-destructive border-2 border-destructive/50 rounded-lg bg-destructive/10">
                             <h3 className="text-xl font-semibold">Error Loading Suppliers</h3>
-                            <p className="mt-2 text-sm">{error.message}</p>
+                            <p className="mt-2 text-sm">{error}</p>
                         </div>
                     ) : suppliers && suppliers.length > 0 ? (
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
