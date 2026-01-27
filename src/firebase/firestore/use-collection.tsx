@@ -1,14 +1,12 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   Query,
   DocumentData,
   CollectionReference,
-  onSnapshot,
 } from 'firebase/firestore';
-import { errorEmitter } from '@/firebase/error-emitter';
-import { FirestorePermissionError } from '@/firebase/errors';
+import { getClientSideAuthToken } from '@/firebase/errors';
 
 /** Utility type to add an 'id' field to a given type T. */
 export type WithId<T> = T & { id: string };
@@ -25,8 +23,10 @@ export interface UseCollectionResult<T> {
 }
 
 /**
- * React hook to fetch a Firestore collection in real-time.
- * It provides live updates when the data changes in Firestore.
+ * React hook to fetch a Firestore collection via a secure API route.
+ * This hook is designed to bypass client-side security rule issues by fetching
+ * data through a backend endpoint that uses the Firebase Admin SDK.
+ * It does NOT provide real-time updates.
  *
  * IMPORTANT! YOU MUST MEMOIZE the inputted memoizedTargetRefOrQuery or BAD THINGS WILL HAPPEN
  *
@@ -50,56 +50,99 @@ export function useCollection<T = any>(
     setRefreshKey(oldKey => oldKey + 1);
   }, []);
 
+  const path = useMemo(() => {
+    if (!memoizedTargetRefOrQuery || !('path' in memoizedTargetRefOrQuery)) return null;
+    return (memoizedTargetRefOrQuery as CollectionReference).path;
+  }, [memoizedTargetRefOrQuery]);
+  
+  const isCollectionGroup = useMemo(() => {
+    return memoizedTargetRefOrQuery && !('path' in memoizedTargetRefOrQuery);
+  }, [memoizedTargetRefOrQuery]);
+
+  const collectionId = useMemo(() => {
+    if(!isCollectionGroup || !memoizedTargetRefOrQuery) return null;
+    // Access internal property to get collection group ID.
+    return (memoizedTargetRefOrQuery as any)._query.collectionGroup;
+  }, [memoizedTargetRefOrQuery, isCollectionGroup]);
+
+  const isPublicPath = useMemo(() => {
+    if (!path) return false;
+    const publicPrefixes = ['memberships', 'configuration', 'shops'];
+    return publicPrefixes.some(prefix => path.startsWith(prefix));
+  }, [path]);
+
   useEffect(() => {
-    // If the query is null or undefined, do nothing.
-    if (!memoizedTargetRefOrQuery) {
-      setData(null);
-      setIsLoading(false);
-      return;
-    }
-
-    setIsLoading(true);
-
-    const unsubscribe = onSnapshot(
-      memoizedTargetRefOrQuery,
-      (querySnapshot) => {
-        const documents = querySnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data() as T,
-        }));
-        setData(documents);
+    const apiPath = path || collectionId;
+    if (!apiPath) {
+        setData(null);
         setIsLoading(false);
         setError(null);
-      },
-      (err) => {
-        // Instead of directly throwing, we set the error state
-        // and emit a global event for debugging, which is more robust.
-        console.error("useCollection onSnapshot error:", err);
-        setError(err); 
-        setIsLoading(false);
-        setData(null);
+        return;
+    }
+    
+    let isMounted = true;
+    const fetchData = async () => {
+        if (!isMounted) return;
+        setIsLoading(true);
+        setError(null);
         
-        // This check is important. We only create a rich error if it's a permissions issue.
-        if (err.code === 'permission-denied') {
-             // For collection group queries, the 'path' property doesn't exist on the query object.
-             // This is a small improvement to make the error message clearer.
-             const isCollectionGroup = !('path' in memoizedTargetRefOrQuery);
-             errorEmitter.emit(
-                'permission-error',
-                new FirestorePermissionError({
-                    path: isCollectionGroup
-                      ? `a collection group (ensure security rules allow 'list' on this group)`
-                      : memoizedTargetRefOrQuery.path,
-                    operation: 'list',
-                })
-            );
-        }
-      }
-    );
+        try {
+            let token: string | null = null;
+            if (!isPublicPath) {
+                token = await getClientSideAuthToken();
+                if (!token) {
+                    if (isMounted) setIsLoading(false);
+                    return;
+                }
+            }
+            
+            const apiType = isCollectionGroup ? 'collection-group' : 'collection';
 
-    // Unsubscribe from the listener when the component unmounts or the query changes.
-    return () => unsubscribe();
-  }, [memoizedTargetRefOrQuery, refreshKey]); // Now correctly depends on refreshKey
+            const response = await fetch('/api/getUserSubcollection', {
+                method: 'POST',
+                headers: {
+                    ...(token && { 'Authorization': `Bearer ${token}` }),
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ path: apiPath, type: apiType }),
+            });
+
+            if (!isMounted) return;
+
+            if (!response.ok) {
+                let errorMsg = `Failed to fetch collection. Status: ${response.status}`;
+                 try {
+                    const errorResult = await response.json();
+                    errorMsg = errorResult.error || errorMsg;
+                } catch (e) {
+                    errorMsg = `${errorMsg}. ${response.statusText}`;
+                }
+                throw new Error(errorMsg);
+            }
+            
+            const result = await response.json();
+            setData(result.data as StateDataType);
+
+        } catch (e: any) {
+             console.error("useCollection fetch error:", e);
+             if (isMounted) {
+                setError(e);
+                setData(null);
+            }
+        } finally {
+             if (isMounted) {
+              setIsLoading(false);
+            }
+        }
+    };
+    
+    fetchData();
+
+    return () => {
+        isMounted = false;
+    };
+
+  }, [path, collectionId, isCollectionGroup, isPublicPath, refreshKey]);
 
   return { data, isLoading, error, forceRefresh };
 }
