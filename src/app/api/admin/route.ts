@@ -640,31 +640,33 @@ export async function POST(req: NextRequest) {
             
                 const batch = db.batch();
 
-                // --- NEW LOGIC: Delete existing public products first to ensure a clean sync ---
+                // --- Robust Sync Logic ---
+                // 1. Delete all existing products in the public subcollection to ensure a clean slate.
                 const publicProductsSnap = await publicShopRef.collection('products').get();
                 if (!publicProductsSnap.empty) {
+                    console.log(`[approveShop] Deleting ${publicProductsSnap.size} old products from public shop...`);
                     publicProductsSnap.forEach(doc => batch.delete(doc.ref));
                 }
-                // --- END NEW LOGIC ---
-            
-                // 1. Create/Update the main public shop document
+                
+                // 2. Create/Update the main public shop document with the latest data.
                 const publicShopData = { ...shopData, companyId, status: 'approved', updatedAt: FieldValue.serverTimestamp() };
                 batch.set(publicShopRef, publicShopData, { merge: true });
             
-                // 2. Copy all products to the public shop's subcollection
+                // 3. Copy all products from the private draft to the public subcollection.
                 if (!memberProductsSnap.empty) {
+                    console.log(`[approveShop] Copying ${memberProductsSnap.size} products to public shop...`);
                     memberProductsSnap.forEach(productDoc => {
                         const publicProductRef = publicShopRef.collection('products').doc(productDoc.id);
                         batch.set(publicProductRef, productDoc.data());
                     });
                 }
             
-                // 3. Update the member's private shop status if it wasn't already approved
+                // 4. Update the member's private shop status if it wasn't already approved.
                 if (!wasAlreadyApproved) {
                     batch.update(memberShopRef, { status: 'approved', updatedAt: FieldValue.serverTimestamp() });
                 }
             
-                // 4. Award points for shop creation, ONLY if this is the first time it's being approved
+                // 5. Award points for shop creation, ONLY if this is the first time it's being approved
                 if (!wasAlreadyApproved) {
                     const loyaltyConfigDoc = await db.collection('configuration').doc('loyaltySettings').get();
                     const shopCreationPoints = loyaltyConfigDoc.data()?.shopCreationPoints || 100;
@@ -675,7 +677,7 @@ export async function POST(req: NextRequest) {
                 await batch.commit();
             
                 const message = wasAlreadyApproved 
-                    ? 'Shop products successfully synced.'
+                    ? 'Shop products successfully re-synced.'
                     : 'Shop and its products have been approved and published.';
 
                 return NextResponse.json({ success: true, message });
