@@ -1269,7 +1269,7 @@ function NewAgreementDialog({ shop, onSave }: { shop: any, onSave: () => void })
     const { user } = useUser();
     const form = useForm<NewAgreementValues>({
         resolver: zodResolver(agreementSchema),
-        defaultValues: { percentage: 7.5, effectiveDate: new Date() },
+        defaultValues: { percentage: 7.5, effectiveDate: new Date(), expiryDate: null },
     });
 
     const onSubmit = async (values: NewAgreementValues) => {
@@ -1289,7 +1289,7 @@ function NewAgreementDialog({ shop, onSave }: { shop: any, onSave: () => void })
                 companyId: shop.companyId,
             };
 
-            await fetch('/api/addUserDoc', {
+            const response = await fetch('/api/addUserDoc', {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
                 body: JSON.stringify({ 
@@ -1297,6 +1297,11 @@ function NewAgreementDialog({ shop, onSave }: { shop: any, onSave: () => void })
                     data: agreementData
                 })
             });
+
+            if (!response.ok) {
+                const errorResult = await response.json();
+                throw new Error(errorResult.error || "Failed to propose agreement.");
+            }
 
             toast({ title: 'New Agreement Proposed!', description: 'The agreement is now pending acceptance by an admin.' });
             onSave();
@@ -1324,7 +1329,7 @@ function NewAgreementDialog({ shop, onSave }: { shop: any, onSave: () => void })
                                     <FormControl>
                                         <Input
                                             type="date"
-                                            value={field.value ? format(new Date(field.value), 'yyyy-MM-dd') : ''}
+                                            value={field.value instanceof Date ? format(field.value, 'yyyy-MM-dd') : ''}
                                             onChange={field.onChange}
                                         />
                                     </FormControl>
@@ -1341,8 +1346,8 @@ function NewAgreementDialog({ shop, onSave }: { shop: any, onSave: () => void })
                                     <FormControl>
                                         <Input
                                             type="date"
-                                            value={field.value ? format(new Date(field.value), 'yyyy-MM-dd') : ''}
-                                            onChange={(e) => field.onChange(e.target.value || null)}
+                                            value={field.value instanceof Date ? format(field.value, 'yyyy-MM-dd') : ''}
+                                            onChange={(e) => field.onChange(e.target.value ? e.target.value : null)}
                                         />
                                     </FormControl>
                                     <FormMessage />
@@ -1412,6 +1417,7 @@ function Step6Commercials({ shop, onSave, canEdit }: { shop: any, onSave: (newDa
   const { data: agreements, isLoading, forceRefresh } = useCollection(agreementsQuery);
 
   const handleDelete = async (agreementId: string) => {
+    if (!firestore) return;
     try {
         const token = await getClientSideAuthToken();
         if (!token) throw new Error("Authentication failed.");
@@ -1438,7 +1444,8 @@ function Step6Commercials({ shop, onSave, canEdit }: { shop: any, onSave: (newDa
             )}
         </div>
     ) },
-  ], [shop, forceRefresh, user, handleDelete]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  ], [shop, forceRefresh, user]);
 
 
   return (
