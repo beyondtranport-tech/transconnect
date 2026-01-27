@@ -15,8 +15,8 @@ import { useFirestore, useUser, useStorage, useCollection, getClientSideAuthToke
 import { useMemoFirebase } from '@/hooks/use-config';
 import { doc, collection } from 'firebase/firestore';
 import { ref, uploadBytesResumable, getDownloadURL, deleteObject } from 'firebase/storage';
-import { Loader2, Save, CheckCircle, LayoutGrid, List, Image as ImageIcon, Sparkles, PlusCircle, Edit, Trash2, Send, Eye, ShoppingCart, Mail, Phone, UploadCloud, Wand2, Video, Search, ShieldAlert, Download, Copy, FileText, View } from 'lucide-react';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Loader2, Save, CheckCircle, LayoutGrid, List, Image as ImageIcon, Sparkles, PlusCircle, Edit, Trash2, Send, Eye, ShoppingCart, Mail, Phone, UploadCloud, Wand2, Video, Search, ShieldAlert, Download, Copy, FileText, View, DollarSign } from 'lucide-react';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -1249,23 +1249,115 @@ function Step5Legal({ shop, onSave, canEdit }: { shop: any, onSave: (newData: an
     );
 }
 
-// ====== STEP 6: SEO & Publishing ======
+// ====== STEP 6: Commercials ======
 const shopStep6Schema = z.object({
+  platformDiscount: z.coerce.number().min(0, "Discount must be 0 or greater.").max(100, "Discount must be 100 or less.").optional(),
+});
+
+type Step6FormValues = z.infer<typeof shopStep6Schema>;
+
+function Step6Commercials({ shop, onSave, canEdit }: { shop: any, onSave: (newData: any) => void, canEdit: boolean }) {
+  const { user } = useUser();
+  const { toast } = useToast();
+  const [isSaving, setIsSaving] = useState(false);
+
+  const form = useForm<Step6FormValues>({
+    resolver: zodResolver(shopStep6Schema),
+    defaultValues: {
+      platformDiscount: shop.platformDiscount || 0,
+    }
+  });
+
+  useEffect(() => {
+    form.reset({ platformDiscount: shop.platformDiscount || 0 });
+  }, [shop.platformDiscount, form]);
+
+  const onSubmit = async (values: Step6FormValues) => {
+    if (!user || !shop.companyId) return;
+    setIsSaving(true);
+    
+    try {
+        const token = await getClientSideAuthToken();
+        if (!token) throw new Error("Authentication token not found.");
+        
+        const response = await fetch('/api/updateUserDoc', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                path: `companies/${shop.companyId}/shops/${shop.id}`,
+                data: { ...values, updatedAt: { _methodName: 'serverTimestamp' } }
+            }),
+        });
+
+        if (!response.ok) {
+          const result = await response.json();
+          throw new Error(result.error || 'Failed to update shop commercials.');
+        }
+
+        toast({ title: 'Step 6 Saved!', description: 'Your commercial settings have been updated.' });
+        onSave(values);
+    } catch (error: any) {
+        toast({ variant: 'destructive', title: 'Update Failed', description: error.message });
+    } finally {
+        setIsSaving(false);
+    }
+  };
+
+  return (
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <fieldset disabled={!canEdit} className="space-y-6">
+          <FormField
+            control={form.control}
+            name="platformDiscount"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Negotiated Platform Discount (%)</FormLabel>
+                <FormControl>
+                  <Input 
+                    type="number" 
+                    placeholder="e.g., 7.5" 
+                    {...field}
+                  />
+                </FormControl>
+                <FormDescription>
+                  This is the percentage of each sale that Logistics Flow retains as a platform fee. The remainder is disbursed to the shop owner.
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </fieldset>
+        <Button type="submit" disabled={isSaving || !canEdit}>
+          {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+          Save & Continue
+        </Button>
+      </form>
+    </Form>
+  );
+}
+
+
+// ====== STEP 7: SEO & Publishing ======
+const shopStep7Schema = z.object({
   metaTitle: z.string().optional(),
   metaDescription: z.string().optional(),
   tags: z.array(z.string()).optional(),
 });
 
-type Step6FormValues = z.infer<typeof shopStep6Schema>;
+type Step7FormValues = z.infer<typeof shopStep7Schema>;
 
-function Step6SeoAndPublishing({ shop, onSave, canEdit }: { shop: any, onSave: (newData: any) => void, canEdit: boolean }) {
+function Step7SeoAndPublishing({ shop, onSave, canEdit }: { shop: any, onSave: (newData: any) => void, canEdit: boolean }) {
   const { user } = useUser();
   const { toast } = useToast();
   const [isSaving, setIsSaving] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
 
-  const form = useForm<Step6FormValues>({
-    resolver: zodResolver(shopStep6Schema),
+  const form = useForm<Step7FormValues>({
+    resolver: zodResolver(shopStep7Schema),
     defaultValues: {
       metaTitle: shop.metaTitle || '',
       metaDescription: shop.metaDescription || '',
@@ -1281,7 +1373,7 @@ function Step6SeoAndPublishing({ shop, onSave, canEdit }: { shop: any, onSave: (
     });
   }, [shop, form]);
 
-  const onSubmit = async (values: Step6FormValues) => {
+  const onSubmit = async (values: Step7FormValues) => {
     if (!user || !shop.companyId) return;
     setIsSaving(true);
     
@@ -1306,7 +1398,7 @@ function Step6SeoAndPublishing({ shop, onSave, canEdit }: { shop: any, onSave: (
           throw new Error(result.error || 'Failed to update shop.');
         }
 
-        toast({ title: 'Step 6 Saved!', description: 'Your SEO details have been updated.' });
+        toast({ title: 'Step 7 Saved!', description: 'Your SEO details have been updated.' });
         onSave(values);
     } catch (error: any) {
         toast({ variant: 'destructive', title: 'Update Failed', description: error.message });
@@ -1420,8 +1512,6 @@ export function ShopWizard({ shop: initialShop }: { shop: any }) {
   };
 
   const handleSeoGenerated = (seoData: any) => {
-    // This function will be called from Step 1.
-    // We update the local state which will be passed down to Step 5.
     setShopData({
       ...shopData,
       metaTitle: seoData.metaTitle,
@@ -1438,16 +1528,19 @@ export function ShopWizard({ shop: initialShop }: { shop: any }) {
     { name: 'Appearance', component: <Step3Appearance shop={shopData} onSave={handleSave} canEdit={canEditShop} /> },
     { name: 'Social Links', component: <Step4SocialLinks shop={shopData} onSave={handleSave} canEdit={canEditShop} /> },
     { name: 'Legal Docs', component: <Step5Legal shop={shopData} onSave={handleSave} canEdit={canEditShop} /> },
-    { name: 'Publishing', component: <Step6SeoAndPublishing shop={shopData} onSave={handleSave} canEdit={canEditShop} /> },
+    { name: 'Commercials', component: <Step6Commercials shop={shopData} onSave={handleSave} canEdit={canEditShop} /> },
+    { name: 'Publishing', component: <Step7SeoAndPublishing shop={shopData} onSave={handleSave} canEdit={canEditShop} /> },
     { name: 'Preview', component: <ShopPreview shop={shopData} products={products || []} /> },
   ];
 
   const completeness = useMemo(() => {
-    const totalFields = 7;
+    const totalFields = 8; // Increased from 7
     let completedFields = 0;
     if (shopData.shopName && shopData.shopDescription && shopData.category) completedFields++;
     if (shopData.heroBannerUrl) completedFields++;
     if (shopData.metaTitle) completedFields++;
+    if (shopData.termsUrl) completedFields++; // Rough check
+    if (typeof shopData.platformDiscount === 'number') completedFields++;
     return (completedFields / totalFields) * 100;
   }, [shopData]);
   

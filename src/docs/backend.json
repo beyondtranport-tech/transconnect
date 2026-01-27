@@ -88,6 +88,15 @@
         "metaDescription": { "type": "string" },
         "tags": { "type": "array", "items": { "type": "string" } },
         "heroBannerUrl": { "type": "string" },
+        "facebookLink": { "type": "string", "format": "uri", "description": "URL to the shop's Facebook page." },
+        "instagramLink": { "type": "string", "format": "uri", "description": "URL to the shop's Instagram profile." },
+        "twitterLink": { "type": "string", "format": "uri", "description": "URL to the shop's Twitter (X) profile." },
+        "linkedinLink": { "type": "string", "format": "uri", "description": "URL to the shop's LinkedIn page." },
+        "youtubeLink": { "type": "string", "format": "uri", "description": "URL to the shop's YouTube channel." },
+        "termsUrl": { "type": "string", "description": "URL to the shop's terms and conditions PDF." },
+        "returnsPolicyUrl": { "type": "string", "description": "URL to the shop's return policy PDF." },
+        "privacyPolicyUrl": { "type": "string", "description": "URL to the shop's privacy policy PDF." },
+        "platformDiscount": { "type": "number", "description": "The negotiated discount percentage (e.g., 7.5 for 7.5%) that the platform earns from each sale." },
         "promotions": {
           "type": "array",
           "items": {
