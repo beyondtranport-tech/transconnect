@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useMemo, useCallback } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Loader2, Store, CheckCircle, Eye, Handshake } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
@@ -11,7 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useCollection, useFirestore, getClientSideAuthToken } from '@/firebase';
 import { useMemoFirebase } from '@/hooks/use-config';
-import { collection, query, where, collectionGroup, orderBy } from 'firebase/firestore';
+import { collection, query, collectionGroup } from 'firebase/firestore';
 import { ShopPreview } from '@/components/shop-preview';
 import MemberCommercials from './wallet/[memberId]/member-commercials';
 import { format } from 'date-fns';
@@ -27,7 +27,7 @@ interface Shop {
     category: string;
     status: 'draft' | 'pending_review' | 'approved' | 'rejected';
     createdAt: string;
-    [key: string]: any; // Allow other properties
+    [key: string]: any;
 }
 
 interface PendingAgreement {
@@ -40,7 +40,6 @@ interface PendingAgreement {
     createdAt: string; 
     [key: string]: any;
 }
-
 
 async function fetchFromAdminAPI(token: string, action: string, payload?: any) {
     const response = await fetch('/api/admin', {
@@ -129,19 +128,34 @@ export default function ShopsList() {
     const [isApproving, setIsApproving] = useState<string | null>(null);
     const firestore = useFirestore();
 
-    const pendingShopsQuery = useMemoFirebase(() => {
+    // Fetch all shops and all agreements, then filter client-side to avoid index errors.
+    const allShopsQuery = useMemoFirebase(() => {
         if (!firestore) return null;
-        return query(collectionGroup(firestore, 'shops'), where('status', '==', 'pending_review'), orderBy('createdAt', 'desc'));
+        return query(collectionGroup(firestore, 'shops'));
     }, [firestore]);
     
-    // Fetch ALL agreements and filter on the client to avoid index issues.
-    const agreementsQuery = useMemoFirebase(() => {
+    const allAgreementsQuery = useMemoFirebase(() => {
         if (!firestore) return null;
-        return query(collectionGroup(firestore, 'agreements'), where('status', '==', 'proposed'), orderBy('createdAt', 'desc'));
+        return query(collectionGroup(firestore, 'agreements'));
     }, [firestore]);
     
-    const { data: pendingShops, isLoading: isLoadingShops, error: shopsError, forceRefresh: refreshShops } = useCollection<Shop>(pendingShopsQuery);
-    const { data: proposedAgreements, isLoading: isLoadingAgreements, error: agreementsError, forceRefresh: refreshAgreements } = useCollection<PendingAgreement>(agreementsQuery);
+    const { data: allShops, isLoading: isLoadingShops, error: shopsError, forceRefresh: refreshShops } = useCollection<Shop>(allShopsQuery);
+    const { data: allAgreements, isLoading: isLoadingAgreements, error: agreementsError, forceRefresh: refreshAgreements } = useCollection<PendingAgreement>(allAgreementsQuery);
+
+    const pendingShops = useMemo(() => {
+        if (!allShops) return [];
+        return allShops
+            .filter(shop => shop.status === 'pending_review')
+            .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    }, [allShops]);
+
+    const proposedAgreements = useMemo(() => {
+        if (!allAgreements) return [];
+        return allAgreements
+            .filter(agreement => agreement.status === 'proposed')
+            .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    }, [allAgreements]);
+
 
     const forceRefresh = useCallback(() => {
         refreshShops();
@@ -256,7 +270,7 @@ export default function ShopsList() {
                     <CardDescription>Review and approve new member shops submitted for publication.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    {isLoadingShops ? (
+                    {isLoading ? (
                         <div className="flex justify-center items-center py-20"><Loader2 className="h-10 w-10 animate-spin text-primary" /></div>
                     ) : pendingShops && pendingShops.length > 0 ? (
                         <DataTable columns={shopColumns} data={pendingShops} />
@@ -276,7 +290,7 @@ export default function ShopsList() {
                     <CardDescription>Review and accept new commercial terms proposed by shop owners.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                     {isLoadingAgreements ? (
+                     {isLoading ? (
                         <div className="flex justify-center items-center py-20"><Loader2 className="h-10 w-10 animate-spin text-primary" /></div>
                      ) : proposedAgreements && proposedAgreements.length > 0 ? (
                         <DataTable columns={agreementColumns} data={proposedAgreements} />
