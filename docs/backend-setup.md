@@ -19,6 +19,8 @@ This guide provides the definitive steps to generate the correct credentials (ca
 
 ## Step 3: Create a New JSON Key
 
+This is the most important step to fix authentication issues.
+
 1.  Click on the **"KEYS"** tab at the top of the page.
 2.  Click the **"ADD KEY"** button, then select **"Create new key"** from the dropdown menu.
 3.  A dialog will appear. Make sure **JSON** is selected as the key type.
