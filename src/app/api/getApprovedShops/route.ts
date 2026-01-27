@@ -42,8 +42,24 @@ export async function GET() {
             const serializedData = serializeTimestamps(data);
             return { id: doc.id, ...serializedData };
         });
+
+        // De-duplication logic: If multiple shops exist for the same company, only keep the most recently updated one.
+        const uniqueShopsMap = new Map();
+        approvedShops.forEach(shop => {
+            if (!shop.companyId) return; // Ignore shops without a companyId
+
+            const existing = uniqueShopsMap.get(shop.companyId);
+            const shopUpdatedAt = shop.updatedAt ? new Date(shop.updatedAt).getTime() : 0;
+            const existingUpdatedAt = existing?.updatedAt ? new Date(existing.updatedAt).getTime() : 0;
+
+            if (!existing || shopUpdatedAt > existingUpdatedAt) {
+                uniqueShopsMap.set(shop.companyId, shop);
+            }
+        });
+
+        const uniqueApprovedShops = Array.from(uniqueShopsMap.values());
         
-        return NextResponse.json({ success: true, data: approvedShops });
+        return NextResponse.json({ success: true, data: uniqueApprovedShops });
 
     } catch (error: any) {
         console.error('Error fetching approved shops:', error);
