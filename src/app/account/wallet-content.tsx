@@ -18,7 +18,7 @@ import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import PayServicesDialog from '../backend/pay-services-dialog';
+import PayServicesDialog from './pay-services-dialog';
 
 
 const formatCurrency = (amount: number) => {
@@ -133,7 +133,9 @@ function PayoutRequestDialog({ companyData, availableBalance, onPayoutRequested 
                         <AlertTitle>Bank Details Required</AlertTitle>
                         <AlertDescription>
                             Please add your company's bank details on your profile page to enable payouts.
-                            <Button asChild variant="link" className="p-0 h-auto ml-1"><Link href="/account?view=company">Go to Company Profile</Link></Button>
+                            <Button asChild variant="link" className="p-0 h-auto ml-1">
+                                <Link href="/account?view=company&from=wallet"><Edit className="mr-1 h-3 w-3"/>Add or change bank details</Link>
+                            </Button>
                         </AlertDescription>
                     </Alert>
                 )}
@@ -462,3 +464,4 @@ export default function WalletContent() {
         </Card>
     );
 }
+

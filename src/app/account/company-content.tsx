@@ -16,11 +16,12 @@ import {
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { useState, useEffect } from 'react';
-import { Loader2, Building, Save, Banknote } from 'lucide-react';
+import { Loader2, Building, Save, Banknote, ArrowLeft } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useUser, useFirestore, getClientSideAuthToken, useDoc, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import { Separator } from '@/components/ui/separator';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 const companyFormSchema = z.object({
   companyName: z.string().min(1, 'Company name is required'),
@@ -43,6 +44,9 @@ export default function CompanyContent() {
   const firestore = useFirestore();
   const { toast } = useToast();
   const [isSaving, setIsSaving] = useState(false);
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const fromWallet = searchParams.get('from') === 'wallet';
 
   const userDocRef = useMemoFirebase(() => {
     if (!firestore || !user) return null;
@@ -54,7 +58,7 @@ export default function CompanyContent() {
     if (!firestore || !userData?.companyId) return null;
     return doc(firestore, 'companies', userData.companyId);
   }, [firestore, userData]);
-  const { data: companyData, isLoading: isCompanyLoading } = useDoc(companyDocRef);
+  const { data: companyData, isLoading: isCompanyLoading, forceRefresh } = useDoc(companyDocRef);
 
   const form = useForm<CompanyFormValues>({
     resolver: zodResolver(companyFormSchema),
@@ -127,6 +131,8 @@ export default function CompanyContent() {
         if (!response.ok) {
             throw new Error(result.error || 'Failed to update company information.');
         }
+
+        forceRefresh(); // Force a refetch of the company data to ensure UI is up to date
 
         toast({
             title: 'Company Info Updated',
@@ -221,11 +227,18 @@ export default function CompanyContent() {
                  </div>
               </div>
 
-
-              <Button type="submit" disabled={isSaving}>
-                {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                Save Changes
-              </Button>
+              <div className="flex items-center gap-4">
+                <Button type="submit" disabled={isSaving}>
+                    {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                    Save Changes
+                </Button>
+                {fromWallet && (
+                    <Button variant="outline" type="button" onClick={() => router.push('/account?view=wallet')}>
+                        <ArrowLeft className="mr-2 h-4 w-4" />
+                        Return to Wallet
+                    </Button>
+                )}
+              </div>
             </form>
           </Form>
         )}
