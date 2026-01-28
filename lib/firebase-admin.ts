@@ -5,8 +5,8 @@ import { NextRequest } from 'next/server';
 import { getAuth } from 'firebase-admin/auth';
 import { getFirestore } from 'firebase-admin/firestore';
 
-// v6 - Reverting bucket name to .appspot.com as it appears to be the correct format for the Admin SDK.
-const ADMIN_APP_NAME = 'firebase-admin-app-transconnect-studio-v6';
+// v7 - Decoupling storage bucket from main init to prevent hangs.
+const ADMIN_APP_NAME = 'firebase-admin-app-transconnect-studio-v7';
 
 export function getAdminApp(): { app: App | null; error: string | null } {
   const existingApp = getApps().find(app => app.name === ADMIN_APP_NAME);
@@ -31,14 +31,13 @@ export function getAdminApp(): { app: App | null; error: string | null } {
     }
     
     const projectId = serviceAccount.project_id;
-    
-    // REVERTED: The Admin SDK requires the .appspot.com domain for the storageBucket property.
-    const bucketName = "transconnect-v1-39578841-2a857.appspot.com";
 
+    // The storageBucket property is removed from here to prevent the main app initialization from
+    // hanging if there's a problem connecting to the bucket. This makes Auth and Firestore
+    // operations more reliable. Storage will be handled specifically in the upload route.
     const app = initializeApp({
       credential: cert(serviceAccount),
       projectId: projectId,
-      storageBucket: bucketName, 
     }, ADMIN_APP_NAME);
 
     return { app, error: null };
