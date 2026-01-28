@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -77,7 +76,6 @@ const MallCommissions = dynamic(() => import('./revenue/mall-commissions'), { lo
 const ConnectPlanPricing = dynamic(() => import('./revenue/connect-plan-pricing'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const MarketplaceFees = dynamic(() => import('./revenue/marketplace-fees'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const SalesIncentives = dynamic(() => import('./revenue/sales-incentives'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const PlatformTransactions = dynamic(() => import('./revenue/platform-transactions'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 
 
 function AdminAuthGuard({ children }: { children: React.ReactNode }) {
@@ -150,7 +148,6 @@ function BackendContent() {
       case 'pricing-marketplace': return <MarketplaceFees />;
       case 'commissions-malls': return <MallCommissions />;
       case 'incentives-sales': return <SalesIncentives />;
-      case 'revenue-ledger': return <PlatformTransactions />;
       case 'tasks': return <PlatformTasks />;
       case 'settings-bank': return <PlatformSettingsContent />;
 
@@ -172,13 +169,12 @@ function BackendContent() {
   }
 
   const navigate = (view: string) => router.push(`/backend?view=${view}`, { scroll: false });
-  const isOperationsActive = ['members', 'wallet', 'shops', 'reconciliation', 'divisions-funding', 'contributions'].includes(activeView);
   
+  const isOperationsActive = ['members', 'wallet', 'shops', 'reconciliation', 'divisions-funding', 'contributions'].includes(activeView);
   const isRevenueActive = [
     'pricing-memberships', 'pricing-connect', 'pricing-tech', 'pricing-marketplace',
-    'commissions-malls', 'incentives-sales', 'revenue-ledger'
+    'commissions-malls', 'incentives-sales'
   ].includes(activeView);
-
   const isPlatformSettingsActive = [
     'permissions', 'loyalty', 'tasks', 'settings-bank'
   ].includes(activeView);
@@ -221,7 +217,6 @@ function BackendContent() {
                 <SidebarMenuItem>
                     <SidebarMenuButton tooltip="Revenue & Pricing" isActive={isRevenueActive}><DollarSign /><span>Revenue & Pricing</span></SidebarMenuButton>
                     <SidebarMenuSub>
-                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'revenue-ledger'} onClick={() => navigate('revenue-ledger')}><DollarSign />Platform Revenue</SidebarMenuSubButton></SidebarMenuSubItem>
                         <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'pricing-memberships'} onClick={() => navigate('pricing-memberships')}><TicketPercent />Membership Pricing</SidebarMenuSubButton></SidebarMenuSubItem>
                         <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'pricing-memberships'} onClick={() => navigate('pricing-memberships')}><ListChecks />Membership Features</SidebarMenuSubButton></SidebarMenuSubItem>
                         <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'pricing-connect'} onClick={() => navigate('pricing-connect')}><TicketPercent />Connect Plan Pricing</SidebarMenuSubButton></SidebarMenuSubItem>
@@ -289,6 +284,3 @@ export default function BackendPage() {
     </Suspense>
   );
 }
-    
-
-    
