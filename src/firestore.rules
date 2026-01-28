@@ -10,8 +10,11 @@ service cloud.firestore {
     }
 
     function isAdmin() {
-      // In a real app, this would check a custom claim.
-      return request.auth != null && (request.auth.token.email == 'beyondtransport@gmail.com' || request.auth.token.email == 'mkoton100@gmail.com');
+      // It's recommended to use custom claims for security and scalability.
+      // To set a custom claim, use the Firebase Admin SDK to set {'admin': true} on a user's token.
+      let isSuperAdminByEmail = request.auth != null && (request.auth.token.email == 'beyondtransport@gmail.com' || request.auth.token.email == 'mkoton100@gmail.com');
+      let hasAdminClaim = request.auth != null && request.auth.token.admin == true;
+      return isSuperAdminByEmail || hasAdminClaim;
     }
     
     function isCompanyOwner(companyId) {
@@ -19,6 +22,9 @@ service cloud.firestore {
         // Check both the new ownerId field and the user's own profile for legacy data.
         return companyDoc.ownerId == request.auth.uid || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == companyId;
     }
+
+    // Public read for products is handled by the /shops/{shopId} rule.
+    // Private write access is handled by the generic company subcollection rule.
 
     // --- User Profiles ---
     // A user can read/update their own profile. Admins can read/list all profiles.
@@ -63,6 +69,9 @@ service cloud.firestore {
       allow get, list: if isAdmin();
     }
     match /{path=**}/shops/{shopId} {
+      allow get, list: if isAdmin();
+    }
+     match /{path=**}/agreements/{agreementId} {
       allow get, list: if isAdmin();
     }
     match /{path=**}/auditLogs/{logId} {

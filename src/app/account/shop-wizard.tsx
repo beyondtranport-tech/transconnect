@@ -15,7 +15,7 @@ import { useFirestore, useUser, useStorage, useCollection, getClientSideAuthToke
 import { useMemoFirebase } from '@/hooks/use-memo-firebase';
 import { doc, collection, query, orderBy, deleteDoc } from 'firebase/firestore';
 import { ref, uploadBytesResumable, getDownloadURL, deleteObject } from 'firebase/storage';
-import { Loader2, Save, CheckCircle, LayoutGrid, List, Image as ImageIcon, Sparkles, PlusCircle, Edit, Trash2, Send, Eye, ShoppingCart, Mail, Phone, UploadCloud, Wand2, Video, Search, ShieldAlert, Download, Copy, FileText, View, DollarSign, ArrowRight } from 'lucide-react';
+import { Loader2, Save, CheckCircle, LayoutGrid, List, Image as ImageIcon, Sparkles, PlusCircle, Edit, Trash2, Send, Eye, ShoppingCart, Mail, Phone, UploadCloud, Wand2, Video, Search, ShieldAlert, Download, Copy, FileText, View, DollarSign, ArrowRight, RefreshCcw } from 'lucide-react';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -1340,6 +1340,7 @@ function Step7SeoAndPublishing({ shop, onSave, canEdit, onSeoGenerated }: { shop
   const [isSaving, setIsSaving] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
   const [isGeneratingSeo, setIsGeneratingSeo] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
 
   const form = useForm<Step7FormValues>({
     resolver: zodResolver(shopStep7Schema),
@@ -1373,6 +1374,30 @@ function Step7SeoAndPublishing({ shop, onSave, canEdit, onSeoGenerated }: { shop
         toast({ variant: 'destructive', title: 'AI Generation Failed', description: e.message });
     } finally {
         setIsGeneratingSeo(false);
+    }
+  };
+
+  const handleSyncProducts = async () => {
+    if (!shop.id || !shop.companyId) return;
+    setIsSyncing(true);
+    try {
+        const token = await getClientSideAuthToken();
+        if (!token) throw new Error("Authentication failed.");
+
+        const response = await fetch('/api/syncShopProducts', {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ shopId: shop.id, companyId: shop.companyId })
+        });
+
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || 'Failed to re-sync products.');
+
+        toast({ title: 'Products Re-synced!', description: 'Your public shop has been updated with your latest products.' });
+    } catch (error: any) {
+        toast({ variant: 'destructive', title: 'Sync Failed', description: error.message });
+    } finally {
+        setIsSyncing(false);
     }
   };
 
@@ -1479,11 +1504,19 @@ function Step7SeoAndPublishing({ shop, onSave, canEdit, onSeoGenerated }: { shop
             </div>
         </fieldset>
 
-        <div className="flex justify-between items-center">
+        <div className="flex justify-between items-center flex-wrap gap-4">
             <Button type="submit" disabled={isSaving || !canEdit}>
                 {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                 Save SEO Settings
             </Button>
+            
+            {shop.status === 'approved' && (
+                <Button type="button" onClick={handleSyncProducts} disabled={isSyncing || !canEdit} variant="secondary">
+                    {isSyncing ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <RefreshCcw className="mr-2 h-4 w-4" />}
+                    Re-sync Live Products
+                </Button>
+            )}
+
             {shop.status === 'draft' && (
                  <Button onClick={handlePublish} disabled={isPublishing || !canEdit}>
                     {isPublishing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
