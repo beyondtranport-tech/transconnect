@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
@@ -51,9 +52,18 @@ export function useCollection<T = any>(
   }, []);
 
   const path = useMemo(() => {
-    if (memoizedTargetRefOrQuery && 'path' in memoizedTargetRefOrQuery) {
+    if (!memoizedTargetRefOrQuery) return null;
+    
+    // For CollectionReference
+    if ('path' in memoizedTargetRefOrQuery) {
         return (memoizedTargetRefOrQuery as CollectionReference).path;
     }
+
+    // For Query - accessing internal property to get path
+    if ((memoizedTargetRefOrQuery as any)._query?.path?.segments) {
+        return (memoizedTargetRefOrQuery as any)._query.path.segments.join('/');
+    }
+    
     return null;
   }, [memoizedTargetRefOrQuery]);
   
