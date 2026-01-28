@@ -98,7 +98,12 @@ export default function WalletTransactionsList() {
                 const result = await response.json();
                 if (!result.success) throw new Error(result.error);
                 if (isMounted) {
-                    setPendingPayouts(result.data);
+                    const sortedData = (result.data || []).sort((a: any, b: any) => {
+                        const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+                        const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+                        return dateB - dateA;
+                    });
+                    setPendingPayouts(sortedData);
                 }
             } catch (e: any) {
                 if (isMounted) {
