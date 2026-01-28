@@ -20,22 +20,38 @@ function serializeTimestamps(docData: any): any {
     return newDocData;
 }
 
-// Changed from GET to POST to avoid potential caching issues.
 export async function POST(req: NextRequest) {
     try {
         const { db } = await verifyAdmin(req);
         
-        // CORRECTED: Removed the .orderBy() clause to avoid needing a complex index.
-        // Sorting will be handled on the client side where the data is consumed.
-        const payoutsSnap = await db.collectionGroup('payoutRequests').where('status', '==', 'pending').get();
-        
-        if (payoutsSnap.empty) {
+        // New Strategy: Avoid collection group query to bypass indexing issues.
+        // 1. Get all companies.
+        const companiesSnap = await db.collection('companies').get();
+        if (companiesSnap.empty) {
             return NextResponse.json({ success: true, data: [] });
         }
 
-        const data = payoutsSnap.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
+        // 2. Create a promise for each company to fetch its pending payout requests.
+        const promises = companiesSnap.docs.map(companyDoc => {
+            return db.collection(`companies/${companyDoc.id}/payoutRequests`)
+                     .where('status', '==', 'pending')
+                     .get();
+        });
+
+        // 3. Execute all fetches in parallel.
+        const results = await Promise.all(promises);
+
+        // 4. Flatten the results into a single array.
+        const allPayouts: any[] = [];
+        results.forEach(querySnapshot => {
+            if (!querySnapshot.empty) {
+                querySnapshot.docs.forEach(doc => {
+                    allPayouts.push({ id: doc.id, ...serializeTimestamps(doc.data()) });
+                });
+            }
+        });
         
-        return NextResponse.json({ success: true, data });
+        return NextResponse.json({ success: true, data: allPayouts });
 
     } catch (error: any) {
         console.error(`API Error in /api/getPendingPayouts:`, error);
