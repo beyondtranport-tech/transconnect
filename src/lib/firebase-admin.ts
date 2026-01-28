@@ -5,8 +5,8 @@ import { NextRequest } from 'next/server';
 import { getAuth } from 'firebase-admin/auth';
 import { getFirestore } from 'firebase-admin/firestore';
 
-// V2 of the app name to force re-initialization and bypass any cached, broken instances.
-const ADMIN_APP_NAME = 'firebase-admin-app-transconnect-studio-v2';
+// v3 of the app name to force a full re-initialization on the server.
+const ADMIN_APP_NAME = 'firebase-admin-app-transconnect-studio-v3';
 
 export function getAdminApp(): { app: App | null; error: string | null } {
   const existingApp = getApps().find(app => app.name === ADMIN_APP_NAME);
@@ -30,14 +30,13 @@ export function getAdminApp(): { app: App | null; error: string | null } {
         throw new Error('Parsed service account is invalid or missing essential properties (project_id, client_email, private_key). Please re-generate it following the backend-setup.md guide.');
     }
     
-    // FINAL, HARDCODED FIX: This explicitly sets the project ID and bucket name,
-    // overriding any potential environmental conflicts.
-    const projectId = "transconnect-v1-39578841-2a857";
-    const bucketName = "transconnect-v1-39578841-2a857.appspot.com";
+    // Dynamically construct the bucket name from the service account's project ID.
+    // This is the most robust way to ensure the correct bucket is used.
+    const bucketName = `${serviceAccount.project_id}.appspot.com`;
 
     const app = initializeApp({
       credential: cert(serviceAccount),
-      projectId: projectId,
+      projectId: serviceAccount.project_id, // Explicitly use project ID from service account
       storageBucket: bucketName, 
     }, ADMIN_APP_NAME);
 
