@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from "@/components/ui/button";
 import { useUser, getClientSideAuthToken, useFirestore, useMemoFirebase } from '@/firebase';
 import { doc, writeBatch, collection, increment, serverTimestamp } from 'firebase/firestore';
-import { Loader2, User, Wallet, Calendar, Mail, FileCheck, Users, AlertTriangle } from 'lucide-react';
+import { Loader2, User, Wallet, Calendar, Mail, FileCheck, Users, AlertTriangle, Check } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
 import { Input } from '@/components/ui/input';
@@ -41,6 +41,7 @@ export default function MemberWallet({ memberId }: { memberId: string }) {
     const [newRecordDescription, setNewRecordDescription] = useState('');
     const [isResetting, setIsResetting] = useState(false);
     const [resetAmount, setResetAmount] = useState<number | string>('');
+    const [isClearing, setIsClearing] = useState(false);
 
     const [companyData, setCompanyData] = useState<any | null>(null);
     const [isLoading, setIsLoading] = useState(true);
@@ -184,6 +185,33 @@ export default function MemberWallet({ memberId }: { memberId: string }) {
             setIsResetting(false);
         }
     }
+    
+    const handleClearPending = async () => {
+        if (!companyData || (companyData.pendingBalance || 0) <= 0) {
+            toast({ variant: 'default', title: 'No Action Needed', description: 'There is no pending balance to clear.'});
+            return;
+        }
+        setIsClearing(true);
+        try {
+            const token = await getClientSideAuthToken();
+            if (!token) throw new Error("Authentication failed.");
+    
+            const response = await fetch('/api/clearPendingBalance', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ companyId: memberId }),
+            });
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.error);
+    
+            toast({ title: 'Success!', description: result.message });
+            setRefreshTrigger(prev => prev + 1); // Trigger a re-fetch
+        } catch(e: any) {
+            toast({ variant: 'destructive', title: 'Clearing Failed', description: e.message });
+        } finally {
+            setIsClearing(false);
+        }
+    }
 
     if (isLoading || isAdminLoading) {
         return <div className="flex justify-center items-center min-h-[calc(100vh-8rem)]"><Loader2 className="h-12 w-12 animate-spin text-primary" /></div>;
@@ -284,6 +312,24 @@ export default function MemberWallet({ memberId }: { memberId: string }) {
                                 <Button onClick={handleAddRecord} disabled={isPosting}>
                                     {isPosting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <FileCheck className="mr-2 h-4 w-4" />}
                                     Add Record & Update Wallet
+                                </Button>
+                            </CardFooter>
+                        </Card>
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Clear Pending Balance</CardTitle>
+                                <CardDescription>
+                                    Move all funds from the "Pending Balance" to the "Available Balance". This action is typically performed after a return/dispute period has passed.
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <p className="text-lg font-bold text-orange-600">{formatCurrency(companyData?.pendingBalance || 0)}</p>
+                                <p className="text-sm text-muted-foreground">Currently pending</p>
+                            </CardContent>
+                            <CardFooter>
+                                <Button onClick={handleClearPending} disabled={isClearing || (companyData?.pendingBalance || 0) <= 0}>
+                                    {isClearing ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Check className="mr-2 h-4 w-4" />}
+                                    Clear Pending Funds
                                 </Button>
                             </CardFooter>
                         </Card>
