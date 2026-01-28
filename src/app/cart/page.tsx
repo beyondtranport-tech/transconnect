@@ -7,12 +7,11 @@ import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/componen
 import { Loader2, ShoppingCart, Trash2, Wallet } from 'lucide-react';
 import Image from 'next/image';
 import { Input } from '@/components/ui/input';
-import { useUser, getClientSideAuthToken, useFirestore, useDoc } from '@/firebase';
+import { useUser, getClientSideAuthToken, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { useState } from 'react';
 import Link from 'next/link';
 import { doc } from 'firebase/firestore';
-import { useMemoFirebase } from '@/hooks/use-config';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 const formatCurrency = (amount: number) => new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(amount);

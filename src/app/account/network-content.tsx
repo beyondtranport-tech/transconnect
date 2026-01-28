@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect, useCallback } from 'react';
@@ -11,9 +12,8 @@ import { type ColumnDef } from '@/hooks/use-data-table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { useUser, getClientSideAuthToken, useDoc, useCollection, useFirestore } from '@/firebase';
+import { useUser, getClientSideAuthToken, useDoc, useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import Link from 'next/link';
-import { useMemoFirebase } from '@/hooks/use-config';
 import { collection, doc } from 'firebase/firestore';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -361,4 +361,5 @@ export default function NetworkContent() {
     
 
     
+
 
