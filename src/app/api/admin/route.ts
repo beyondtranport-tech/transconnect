@@ -78,14 +78,17 @@ export async function POST(req: NextRequest) {
                     const companyDoc = await transaction.get(companyRef);
                     if (!companyDoc.exists) throw new Error("Company not found.");
 
-                    const currentBalance = Number(companyDoc.data()?.walletBalance || 0);
-                    if (isNaN(currentBalance) || currentBalance < amount) {
-                        throw new Error(`Insufficient funds for payout. Wallet Balance: ${currentBalance}, Requested Amount: ${amount}.`);
+                    const companyData = companyDoc.data()!;
+                    const currentAvailableBalance = companyData.availableBalance || 0;
+
+                    if (isNaN(currentAvailableBalance) || currentAvailableBalance < amount) {
+                         throw new Error(`Insufficient available funds for payout. Available Balance: ${currentAvailableBalance}, Requested Amount: ${amount}.`);
                     }
 
-                    // Debit wallet
+                    // Debit both total wallet and available balance
                     transaction.update(companyRef, {
                         walletBalance: FieldValue.increment(-amount),
+                        availableBalance: FieldValue.increment(-amount),
                         updatedAt: FieldValue.serverTimestamp()
                     });
 
