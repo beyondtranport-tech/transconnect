@@ -1,23 +1,21 @@
 
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Loader2, Lock, Edit } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { useCollection, useFirestore, getClientSideAuthToken } from '@/firebase';
-import { useMemoFirebase } from '@/hooks/use-config';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { useCollection, useFirestore, getClientSideAuthToken, useMemoFirebase } from '@/firebase';
+import { Table, TableBody, TableCell, TableHead, TableHeader } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
-import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
 import { collection, query, collectionGroup } from 'firebase/firestore';
 
@@ -294,11 +292,11 @@ export default function PermissionsContent() {
             header: () => <div className="text-right">Actions</div>,
             cell: ({ row }) => (
                 <div className="text-right">
-                    <PermissionsDialog staffMember={row.original} onSave={refreshStaff} />
+                    <PermissionsDialog staffMember={row.original} onSave={forceRefresh} />
                 </div>
             ),
         }
-    ], [refreshStaff]);
+    ], [forceRefresh]);
     
     const isLoading = isLoadingStaff || isLoadingCompanies;
 

@@ -7,8 +7,7 @@ import { PlusCircle, Loader2, DownloadCloud, Upload, ListChecks, ArrowRight } fr
 import { useState, useRef, useEffect, Suspense, useCallback } from "react";
 import { useToast } from "@/hooks/use-toast";
 import TransactionAllocation from "./transaction-allocation";
-import { getClientSideAuthToken, useCollection, useFirestore } from "@/firebase";
-import { useMemoFirebase } from '@/hooks/use-config';
+import { getClientSideAuthToken, useCollection, useFirestore, useMemoFirebase } from "@/firebase";
 import demoStatementData from '@/lib/demo-statement.json';
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
