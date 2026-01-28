@@ -1,8 +1,7 @@
 
-
 'use server';
 
-import { getFirestore, FieldValue, increment, query, where, limit } from 'firebase-admin/firestore';
+import { getFirestore, FieldValue, increment } from 'firebase-admin/firestore';
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuth } from 'firebase-admin/auth';
 import { getAdminApp } from '@/lib/firebase-admin';
@@ -44,7 +43,7 @@ export async function POST(req: NextRequest) {
     // Fetch the active commercial agreement for the seller's shop
     const shopRef = db.collection(`companies/${sellerCompanyId}/shops`).doc(items[0].shopId);
     const agreementsRef = shopRef.collection('agreements');
-    const activeAgreementQuery = query(agreementsRef, where('status', '==', 'active'), limit(1));
+    const activeAgreementQuery = agreementsRef.where('status', '==', 'active').limit(1);
     
     await db.runTransaction(async (transaction) => {
       const buyerCompanyDoc = await transaction.get(buyerCompanyRef);
@@ -68,12 +67,12 @@ export async function POST(req: NextRequest) {
       const sellerAmount = totalAmount - platformCommission;
 
       // 1. Debit buyer's wallet
-      transaction.update(buyerCompanyRef, { walletBalance: increment(-totalAmount) });
+      transaction.update(buyerCompanyRef, { walletBalance: FieldValue.increment(-totalAmount) });
 
       // 2. Credit seller's wallet
-      transaction.update(sellerCompanyRef, { walletBalance: increment(sellerAmount) });
+      transaction.update(sellerCompanyRef, { walletBalance: FieldValue.increment(sellerAmount) });
       
-      const productNames = items.map(item => `${item.name} (x${item.quantity})`).join(', ');
+      const productNames = items.map((item:any) => `${item.name} (x${item.quantity})`).join(', ');
 
       // 3. Create debit transaction log for buyer
       const buyerTxRef = db.collection('companies').doc(buyerCompanyId).collection('transactions').doc();
