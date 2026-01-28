@@ -166,11 +166,11 @@ export default function AccountDashboard() {
                 </Card>
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between pb-2">
-                        <CardTitle className="text-sm font-medium">Wallet Balance</CardTitle>
+                        <CardTitle className="text-sm font-medium">Available Balance</CardTitle>
                          <Wallet className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">{formatCurrency(companyData?.walletBalance || 0)}</div>
+                        <div className="text-2xl font-bold">{formatCurrency(companyData?.availableBalance || 0)}</div>
                          <Button asChild variant="link" size="sm" className="p-0 h-auto">
                             <Link href="/account?view=wallet">Manage Wallet</Link>
                         </Button>
@@ -215,3 +215,5 @@ export default function AccountDashboard() {
         </div>
     );
 }
+
+    

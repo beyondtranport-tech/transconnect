@@ -37,8 +37,8 @@ export default function CartPage() {
   const { data: companyData, isLoading: isCompanyLoading } = useDoc(companyDocRef);
 
   const isLoading = isUserLoading || isUserDocLoading || isCompanyLoading;
-  const walletBalance = companyData?.walletBalance ?? 0;
-  const hasSufficientFunds = walletBalance >= totalPrice;
+  const availableBalance = companyData?.availableBalance ?? 0;
+  const hasSufficientFunds = availableBalance >= totalPrice;
 
   const handleProcessPurchase = async () => {
     if (!user || !companyId || cartItems.length === 0) {
@@ -146,14 +146,14 @@ export default function CartPage() {
                 ) : user ? (
                     <>
                          <div className="w-full text-sm flex justify-between p-3 bg-muted rounded-md">
-                            <span>Your Wallet Balance:</span>
-                            <span className="font-bold">{formatCurrency(walletBalance)}</span>
+                            <span>Available to Spend:</span>
+                            <span className="font-bold">{formatCurrency(availableBalance)}</span>
                         </div>
                         {!hasSufficientFunds && (
                             <Alert variant="destructive" className="w-full">
                                 <AlertTitle>Insufficient Funds</AlertTitle>
                                 <AlertDescription>
-                                    Please <Link href="/account?view=wallet" className="underline">top-up your wallet</Link> to proceed.
+                                    Your available balance is too low. Please <Link href="/account?view=wallet" className="underline">top-up your wallet</Link>.
                                 </AlertDescription>
                             </Alert>
                         )}
@@ -176,3 +176,5 @@ export default function CartPage() {
     </div>
   );
 }
+
+    

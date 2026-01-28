@@ -187,29 +187,24 @@ export default function WalletContent() {
         );
     }, [firestore, userData]);
 
-    const pendingPayoutsQuery = useMemoFirebase(() => {
-        if (!firestore || !userData?.companyId) return null;
-        return query(
-            collection(firestore, `companies/${userData.companyId}/payoutRequests`),
-            where('status', '==', 'pending')
-        );
-    }, [firestore, userData]);
     
     const { data: techPricing, isLoading: isTechPricingLoading } = useConfig<{ eftTopUpFee?: number }>('techPricing');
     const { data: bankDetails, isLoading: isBankDetailsLoading } = useConfig<any>('bankDetails');
 
     const { data: transactions, isLoading: isLoadingTransactions, error: transactionsError } = useCollection(transactionsQuery);
     const { data: pendingPayments, isLoading: isLoadingPayments, error: paymentsError, forceRefresh: forceRefreshPayments } = useCollection(pendingPaymentsQuery);
-    const { data: pendingPayouts, isLoading: isLoadingPayouts, forceRefresh: forceRefreshPayouts } = useCollection(pendingPayoutsQuery);
     
-    const pendingPayoutsTotal = useMemo(() => {
-        if (!pendingPayouts) return 0;
-        return pendingPayouts.reduce((sum, p) => sum + p.amount, 0);
-    }, [pendingPayouts]);
+    const { forceRefresh: forceRefreshPayouts } = useCollection(useMemoFirebase(() => {
+        if (!firestore || !userData?.companyId) return null;
+        return query(
+            collection(firestore, `companies/${userData.companyId}/payoutRequests`),
+            where('status', '==', 'pending')
+        );
+    }, [firestore, userData]));
+    
+    const availableBalance = companyData?.availableBalance || 0;
 
-    const availableBalance = (companyData?.walletBalance || 0) - pendingPayoutsTotal;
-
-    const isLoading = isUserLoading || isUserDocLoading || isCompanyLoading || isLoadingTransactions || isLoadingPayments || isTechPricingLoading || isBankDetailsLoading || isLoadingPayouts;
+    const isLoading = isUserLoading || isUserDocLoading || isCompanyLoading || isLoadingTransactions || isLoadingPayments || isTechPricingLoading || isBankDetailsLoading;
     const error = transactionsError || paymentsError;
     
     const handlePayoutRequestSuccess = () => {
@@ -277,19 +272,17 @@ export default function WalletContent() {
                 <div className="p-4 bg-muted/50 rounded-lg">
                     <div className="space-y-2">
                         <div className="flex justify-between items-baseline">
-                            <p className="text-sm text-muted-foreground">Current Wallet Balance</p>
+                            <p className="text-sm text-muted-foreground">Total Balance</p>
                             {isCompanyLoading ? (
                                 <Loader2 className="h-6 w-6 animate-spin mt-1" />
                             ) : (
                                 <p className="text-3xl font-bold">{formatCurrency(companyData?.walletBalance || 0)}</p>
                             )}
                         </div>
-                        {pendingPayoutsTotal > 0 && (
-                             <div className="flex justify-between items-baseline text-destructive">
-                                <p className="text-sm">(-) Pending Withdrawals</p>
-                                <p className="font-semibold">({formatCurrency(pendingPayoutsTotal)})</p>
-                            </div>
-                        )}
+                        <div className="flex justify-between items-baseline text-orange-600">
+                            <p className="text-sm">(-) Pending Balance</p>
+                            <p className="font-semibold">({formatCurrency(companyData?.pendingBalance || 0)})</p>
+                        </div>
                         <div className="flex justify-between items-baseline border-t pt-2 mt-2">
                             <p className="text-lg font-bold text-primary">Available Balance</p>
                             <p className="text-2xl font-bold text-primary">{formatCurrency(availableBalance)}</p>
@@ -469,3 +462,5 @@ export default function WalletContent() {
         </Card>
     );
 }
+
+    
