@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, useMemo, useEffect, useCallback } from 'react';
@@ -7,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from "@/components/ui/button";
 import { useUser, getClientSideAuthToken, useFirestore, useMemoFirebase } from '@/firebase';
 import { doc, writeBatch, collection, increment, serverTimestamp } from 'firebase/firestore';
-import { Loader2, User, Wallet, Calendar, Mail, FileCheck, Users } from 'lucide-react';
+import { Loader2, User, Wallet, Calendar, Mail, FileCheck, Users, AlertTriangle } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
 import { Input } from '@/components/ui/input';
@@ -40,7 +39,8 @@ export default function MemberWallet({ memberId }: { memberId: string }) {
     const [isPosting, setIsPosting] = useState(false);
     const [newRecordAmount, setNewRecordAmount] = useState<number | string>('');
     const [newRecordDescription, setNewRecordDescription] = useState('');
-    const [formattedBalance, setFormattedBalance] = useState<string | null>(null);
+    const [isResetting, setIsResetting] = useState(false);
+    const [resetAmount, setResetAmount] = useState<number | string>('');
 
     const [companyData, setCompanyData] = useState<any | null>(null);
     const [isLoading, setIsLoading] = useState(true);
@@ -96,15 +96,6 @@ export default function MemberWallet({ memberId }: { memberId: string }) {
         fetchMemberData();
     }, [fetchMemberData, refreshTrigger]);
 
-
-    useEffect(() => {
-        if (companyData !== null && companyData !== undefined) {
-            setFormattedBalance(formatCurrency(companyData.walletBalance ?? 0));
-        } else {
-            setFormattedBalance(formatCurrency(0));
-        }
-    }, [companyData]);
-
     const getInitials = (fName?: string, lName?: string) => {
         if (!fName || !lName) return "U";
         return (fName[0] + lName[0]).toUpperCase();
@@ -142,7 +133,7 @@ export default function MemberWallet({ memberId }: { memberId: string }) {
             transactionId: transactionRef.id
         };
 
-        batch.update(companyDocRef, { walletBalance: increment(amount) });
+        batch.update(companyDocRef, { walletBalance: increment(amount), availableBalance: increment(amount) });
         batch.set(transactionRef, transactionData);
         
         try {
@@ -165,6 +156,34 @@ export default function MemberWallet({ memberId }: { memberId: string }) {
             setIsPosting(false);
         }
     };
+    
+    const handleResetWallet = async () => {
+        if (!resetAmount) {
+            toast({ variant: 'destructive', title: 'Amount Required', description: 'Please enter a new opening balance.' });
+            return;
+        }
+        setIsResetting(true);
+        try {
+            const token = await getClientSideAuthToken();
+            if (!token) throw new Error("Authentication failed.");
+
+            const response = await fetch('/api/resetWallet', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ companyId: memberId, newBalance: Number(resetAmount) }),
+            });
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.error);
+
+            toast({ title: 'Wallet Reset Successfully', description: 'All transactions have been cleared and the new balance is set.' });
+            setResetAmount('');
+            setRefreshTrigger(prev => prev + 1);
+        } catch (e: any) {
+            toast({ variant: 'destructive', title: 'Reset Failed', description: e.message });
+        } finally {
+            setIsResetting(false);
+        }
+    }
 
     if (isLoading || isAdminLoading) {
         return <div className="flex justify-center items-center min-h-[calc(100vh-8rem)]"><Loader2 className="h-12 w-12 animate-spin text-primary" /></div>;
@@ -207,10 +226,18 @@ export default function MemberWallet({ memberId }: { memberId: string }) {
                         </div>
                     </div>
                 </CardHeader>
-                <CardContent>
-                    <div className="flex items-baseline gap-2">
-                         <h3 className="text-sm font-medium text-muted-foreground">Current Balance:</h3>
-                         <p className="text-3xl font-bold">{formattedBalance ?? 'R 0.00'}</p>
+                <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                     <div className="p-4 bg-muted/50 rounded-lg">
+                        <p className="text-sm text-muted-foreground">Total Balance</p>
+                        <p className="text-2xl font-bold">{formatCurrency(companyData?.walletBalance || 0)}</p>
+                    </div>
+                    <div className="p-4 bg-muted/50 rounded-lg">
+                        <p className="text-sm text-muted-foreground">Pending Balance</p>
+                        <p className="text-2xl font-bold">{formatCurrency(companyData?.pendingBalance || 0)}</p>
+                    </div>
+                    <div className="p-4 bg-primary/10 rounded-lg">
+                        <p className="text-sm text-primary">Available for Payout</p>
+                        <p className="text-2xl font-bold text-primary">{formatCurrency(companyData?.availableBalance || 0)}</p>
                     </div>
                 </CardContent>
             </Card>
@@ -257,6 +284,32 @@ export default function MemberWallet({ memberId }: { memberId: string }) {
                                 <Button onClick={handleAddRecord} disabled={isPosting}>
                                     {isPosting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <FileCheck className="mr-2 h-4 w-4" />}
                                     Add Record & Update Wallet
+                                </Button>
+                            </CardFooter>
+                        </Card>
+                         <Card>
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2 text-destructive"><AlertTriangle />Danger Zone</CardTitle>
+                                <CardDescription>
+                                   Reset this member's wallet. This will permanently delete all existing transactions and set a new opening balance. This action cannot be undone.
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="max-w-xs">
+                                     <Label htmlFor="reset-amount">New Opening Balance (R)</Label>
+                                     <Input 
+                                        id="reset-amount"
+                                        type="number"
+                                        placeholder="e.g., 5000"
+                                        value={resetAmount}
+                                        onChange={(e) => setResetAmount(e.target.value)}
+                                    />
+                                </div>
+                            </CardContent>
+                            <CardFooter>
+                                <Button variant="destructive" onClick={handleResetWallet} disabled={isResetting}>
+                                    {isResetting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null}
+                                    Clear & Set Balance
                                 </Button>
                             </CardFooter>
                         </Card>
