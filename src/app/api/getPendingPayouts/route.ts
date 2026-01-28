@@ -25,8 +25,8 @@ export async function POST(req: NextRequest) {
     try {
         const { db } = await verifyAdmin(req);
         
-        // REMOVED: .orderBy('createdAt', 'desc') to avoid the complex index requirement.
-        // Sorting will be handled on the client side.
+        // CORRECTED: Removed the .orderBy() clause to avoid needing a complex index.
+        // Sorting will be handled on the client side where the data is consumed.
         const payoutsSnap = await db.collectionGroup('payoutRequests').where('status', '==', 'pending').get();
         
         if (payoutsSnap.empty) {
