@@ -56,11 +56,20 @@ export async function POST(req: NextRequest) {
           throw new Error('Seller company not found.');
       }
       
-      // Get the commission percentage from the active agreement
+      // Get the commission percentage from the active agreement or fallback to global config
       const activeAgreementSnap = await transaction.get(activeAgreementQuery);
       let platformDiscountPercent = 0;
-      if (!activeAgreementSnap.empty) {
-        platformDiscountPercent = activeAgreementSnap.docs[0].data().percentage || 0;
+      
+      if (!activeAgreementSnap.empty && activeAgreementSnap.docs[0].data().percentage > 0) {
+        platformDiscountPercent = activeAgreementSnap.docs[0].data().percentage;
+      } else {
+        const mallCommissionsDoc = await transaction.get(db.doc('configuration/mallCommissions'));
+        if (mallCommissionsDoc.exists && mallCommissionsDoc.data()?.supplierMall > 0) {
+            platformDiscountPercent = mallCommissionsDoc.data()?.supplierMall;
+        } else {
+            // Hardcoded fallback if nothing is configured, to ensure revenue is tracked.
+            platformDiscountPercent = 2.5; 
+        }
       }
       
       const platformCommission = totalAmount * (platformDiscountPercent / 100);
