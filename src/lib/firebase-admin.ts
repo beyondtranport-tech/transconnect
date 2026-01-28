@@ -5,7 +5,8 @@ import { NextRequest } from 'next/server';
 import { getAuth } from 'firebase-admin/auth';
 import { getFirestore } from 'firebase-admin/firestore';
 
-const ADMIN_APP_NAME = 'firebase-admin-app-transconnect-studio';
+// V2 of the app name to force re-initialization and bypass any cached, broken instances.
+const ADMIN_APP_NAME = 'firebase-admin-app-transconnect-studio-v2';
 
 export function getAdminApp(): { app: App | null; error: string | null } {
   const existingApp = getApps().find(app => app.name === ADMIN_APP_NAME);
