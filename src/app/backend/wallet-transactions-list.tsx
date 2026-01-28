@@ -68,43 +68,55 @@ export default function WalletTransactionsList() {
     const { toast } = useToast();
     const [isProcessing, setIsProcessing] = useState<string | null>(null);
 
-    const companiesQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'companies')) : null, [firestore]);
-    const paymentsQuery = useMemoFirebase(() => firestore ? query(collectionGroup(firestore, 'walletPayments')) : null, [firestore]);
-    const transactionsQuery = useMemoFirebase(() => firestore ? query(collectionGroup(firestore, 'transactions')) : null, [firestore]);
-    
-    // NEW state and fetch for payouts
     const [pendingPayouts, setPendingPayouts] = useState<any[]>([]);
     const [isLoadingPayouts, setIsLoadingPayouts] = useState(true);
     const [payoutsError, setPayoutsError] = useState<string | null>(null);
 
+    const companiesQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'companies')) : null, [firestore]);
+    const paymentsQuery = useMemoFirebase(() => firestore ? query(collectionGroup(firestore, 'walletPayments')) : null, [firestore]);
+    const transactionsQuery = useMemoFirebase(() => firestore ? query(collectionGroup(firestore, 'transactions')) : null, [firestore]);
+    
     const { data: companies, isLoading: isLoadingCompanies } = useCollection<Company>(companiesQuery);
     const { data: pendingPayments, isLoading: isLoadingPayments } = useCollection<Payment>(paymentsQuery);
     const { data: allocatedTransactions, isLoading: isLoadingTransactions } = useCollection<Transaction>(transactionsQuery);
 
-    const refreshPayouts = useCallback(async () => {
-        setIsLoadingPayouts(true);
-        setPayoutsError(null);
-        try {
-            const token = await getClientSideAuthToken();
-            if (!token) throw new Error("Authentication failed.");
-            
-            const response = await fetch('/api/getPendingPayouts', {
-                method: 'POST', // Changed from GET to avoid caching
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
+    const refreshPayouts = useCallback(() => {
+        let isMounted = true;
+        const fetchData = async () => {
+            if (!isMounted) return;
+            setIsLoadingPayouts(true);
+            setPayoutsError(null);
+            try {
+                const token = await getClientSideAuthToken();
+                if (!token) throw new Error("Authentication failed.");
+                
+                const response = await fetch('/api/getPendingPayouts', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
 
-            const result = await response.json();
-            if (!result.success) throw new Error(result.error);
-            setPendingPayouts(result.data);
-        } catch (e: any) {
-            setPayoutsError(e.message);
-        } finally {
-            setIsLoadingPayouts(false);
-        }
+                const result = await response.json();
+                if (!result.success) throw new Error(result.error);
+                if (isMounted) {
+                    setPendingPayouts(result.data);
+                }
+            } catch (e: any) {
+                if (isMounted) {
+                    setPayoutsError(e.message);
+                }
+            } finally {
+                if (isMounted) {
+                    setIsLoadingPayouts(false);
+                }
+            }
+        };
+        fetchData();
+        return () => { isMounted = false };
     }, []);
 
     useEffect(() => {
-        refreshPayouts();
+        const cleanup = refreshPayouts();
+        return cleanup;
     }, [refreshPayouts]);
 
     const isLoading = isLoadingCompanies || isLoadingPayments || isLoadingTransactions || isLoadingPayouts;
