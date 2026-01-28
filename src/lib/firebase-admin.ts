@@ -5,8 +5,8 @@ import { NextRequest } from 'next/server';
 import { getAuth } from 'firebase-admin/auth';
 import { getFirestore } from 'firebase-admin/firestore';
 
-// v4 of the app name to force a full re-initialization on the server.
-const ADMIN_APP_NAME = 'firebase-admin-app-transconnect-studio-v4';
+// v5 of the app name to force a final, correct re-initialization on the server.
+const ADMIN_APP_NAME = 'firebase-admin-app-transconnect-studio-v5';
 
 export function getAdminApp(): { app: App | null; error: string | null } {
   const existingApp = getApps().find(app => app.name === ADMIN_APP_NAME);
@@ -30,11 +30,10 @@ export function getAdminApp(): { app: App | null; error: string | null } {
         throw new Error('Parsed service account is invalid or missing essential properties (project_id, client_email, private_key). Please re-generate it following the backend-setup.md guide.');
     }
     
-    // Explicitly use the project_id from the service account for all configurations.
     const projectId = serviceAccount.project_id;
     
-    // CORRECTED: The Admin SDK requires the GCS bucket name, which ends in .appspot.com
-    const bucketName = "transconnect-v1-39578841-2a857.appspot.com";
+    // CORRECTED BUCKET NAME: Using the '.firebasestorage.app' domain as provided by the user's console.
+    const bucketName = "transconnect-v1-39578841-2a857.firebasestorage.app";
 
     const app = initializeApp({
       credential: cert(serviceAccount),
