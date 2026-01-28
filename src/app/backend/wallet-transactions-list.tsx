@@ -89,7 +89,7 @@ export default function WalletTransactionsList() {
             if (!token) throw new Error("Authentication failed.");
             
             const response = await fetch('/api/getPendingPayouts', {
-                method: 'GET',
+                method: 'POST', // Changed from GET to avoid caching
                 headers: { 'Authorization': `Bearer ${token}` }
             });
 
@@ -185,6 +185,8 @@ export default function WalletTransactionsList() {
                 <CardContent>
                      {isLoadingPayouts ? (
                         <div className="flex justify-center items-center py-10"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
+                    ) : payoutsError ? (
+                         <div className="text-destructive-foreground bg-destructive/90 p-4 rounded-md"><p>{payoutsError}</p></div>
                     ) : enhancedPayouts && enhancedPayouts.length > 0 ? (
                         <Table>
                             <TableHeader>

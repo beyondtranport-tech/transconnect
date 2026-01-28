@@ -20,7 +20,8 @@ function serializeTimestamps(docData: any): any {
     return newDocData;
 }
 
-export async function GET(req: NextRequest) {
+// Changed from GET to POST to avoid potential caching issues.
+export async function POST(req: NextRequest) {
     try {
         const { db } = await verifyAdmin(req);
         

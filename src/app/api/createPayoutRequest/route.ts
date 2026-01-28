@@ -32,7 +32,10 @@ export async function POST(req: NextRequest) {
     // Authorization check
     const userDoc = await db.collection('users').doc(uid).get();
     if (userDoc.data()?.companyId !== companyId) {
-        return NextResponse.json({ success: false, error: 'Forbidden: You can only request payouts for your own company.' }, { status: 403 });
+        const isAdmin = decodedToken.email === 'beyondtransport@gmail.com';
+        if (!isAdmin) {
+            return NextResponse.json({ success: false, error: 'Forbidden: You can only request payouts for your own company.' }, { status: 403 });
+        }
     }
     
     // Transactional logic to ensure data integrity
@@ -55,7 +58,7 @@ export async function POST(req: NextRequest) {
         const availableBalance = walletBalance - pendingTotal;
 
         if (amount > availableBalance) {
-            throw new Error(`Insufficient available funds. Your current balance is ${walletBalance}, but ${pendingTotal} is already pending withdrawal, leaving ${availableBalance} available.`);
+            throw new Error(`Insufficient available funds. Your current balance is R${walletBalance.toFixed(2)}, but R${pendingTotal.toFixed(2)} is already pending withdrawal, leaving R${availableBalance.toFixed(2)} available.`);
         }
 
         const payoutDocRef = db.collection(`companies/${companyId}/payoutRequests`).doc();
