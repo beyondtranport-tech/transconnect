@@ -44,6 +44,7 @@ export default function MemberWallet({ memberId }: { memberId: string }) {
     const [isResetting, setIsResetting] = useState(false);
     const [resetAmount, setResetAmount] = useState<number | string>('');
     const [isClearing, setIsClearing] = useState(false);
+    const [refreshTrigger, setRefreshTrigger] = useState(0);
     
     // --- SAFE DATA FETCHING ---
     const companyDocRef = useMemoFirebase(() => {
@@ -68,6 +69,11 @@ export default function MemberWallet({ memberId }: { memberId: string }) {
         if (!fName || !lName) return "U";
         return (fName[0] + lName[0]).toUpperCase();
     }
+    
+    const onDataUpdate = useCallback(() => {
+        forceRefreshCompany();
+        setRefreshTrigger(key => key + 1);
+    }, [forceRefreshCompany]);
     
     const handleAddRecord = async () => {
         if (!firestore || !adminUser) {
@@ -109,7 +115,7 @@ export default function MemberWallet({ memberId }: { memberId: string }) {
             toast({ title: 'Success!', description: `Wallet updated and transaction recorded for ${ownerData?.firstName}.` });
             setNewRecordAmount('');
             setNewRecordDescription('');
-            forceRefreshCompany();
+            onDataUpdate();
         } catch (error: any) {
             errorEmitter.emit(
                 'permission-error',
@@ -145,7 +151,7 @@ export default function MemberWallet({ memberId }: { memberId: string }) {
 
             toast({ title: 'Wallet Reset Successfully', description: 'All transactions have been cleared and the new balance is set.' });
             setResetAmount('');
-            forceRefreshCompany();
+            onDataUpdate();
         } catch (e: any) {
             toast({ variant: 'destructive', title: 'Reset Failed', description: e.message });
         } finally {
@@ -172,7 +178,7 @@ export default function MemberWallet({ memberId }: { memberId: string }) {
             if (!response.ok) throw new Error(result.error);
     
             toast({ title: 'Success!', description: result.message });
-            forceRefreshCompany();
+            onDataUpdate();
         } catch(e: any) {
             toast({ variant: 'destructive', title: 'Clearing Failed', description: e.message });
         } finally {
@@ -326,8 +332,8 @@ export default function MemberWallet({ memberId }: { memberId: string }) {
                                 </Button>
                             </CardFooter>
                         </Card>
-                        <MemberPayoutRequests companyId={memberId} onUpdate={() => forceRefreshCompany()} />
-                        <MemberWalletPayments companyId={memberId} onUpdate={() => forceRefreshCompany()} />
+                        <MemberPayoutRequests companyId={memberId} onUpdate={onDataUpdate} />
+                        <MemberWalletPayments companyId={memberId} onUpdate={onDataUpdate} />
                         <MemberTransactions companyId={memberId} key={refreshTrigger} />
                     </div>
                 </TabsContent>
@@ -341,4 +347,3 @@ export default function MemberWallet({ memberId }: { memberId: string }) {
         </div>
     );
 }
-

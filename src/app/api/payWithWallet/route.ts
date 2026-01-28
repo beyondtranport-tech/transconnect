@@ -19,18 +19,20 @@ async function handleServicePayment(db: FirebaseFirestore.Firestore, adminUid: s
         const companySnap = await transaction.get(companyRef);
         const companyData = companySnap.data();
 
-        const currentBalance = Number(companyData?.walletBalance || 0);
+        // Check against AVAILABLE balance, not total balance
+        const currentBalance = Number(companyData?.availableBalance || 0);
 
         if (!companySnap.exists || isNaN(currentBalance) || currentBalance < amount) {
-            throw new Error(`Insufficient funds. Available balance is less than the required amount.`);
+            throw new Error(`Insufficient available funds. Available balance is less than the required amount.`);
         }
         
         const userDoc = await transaction.get(db.collection('users').doc(companyData.ownerId));
         const memberName = `${userDoc.data()?.firstName || ''} ${userDoc.data()?.lastName || ''}`.trim();
 
-        // 1. Debit company's wallet balance
+        // 1. Debit company's wallet and available balance
         transaction.update(companyRef, {
             walletBalance: FieldValue.increment(-amount),
+            availableBalance: FieldValue.increment(-amount),
             updatedAt: FieldValue.serverTimestamp(),
         });
 
@@ -117,7 +119,7 @@ async function handleServicePayment(db: FirebaseFirestore.Firestore, adminUid: s
                 }
             }
         } else if (paymentId) { // Only delete if it's a standard service payment
-            const paymentRef = db.doc(`companies/${companyId}/walletPayments/${paymentId}`);
+            const paymentRef = doc(firestore, `companies/${companyId}/walletPayments/${paymentId}`);
             transaction.delete(paymentRef);
         }
     });
