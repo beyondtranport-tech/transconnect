@@ -284,7 +284,7 @@ export default function WalletContent() {
                             <p className="font-semibold">({formatCurrency(companyData?.pendingBalance || 0)})</p>
                         </div>
                         <div className="flex justify-between items-baseline border-t pt-2 mt-2">
-                            <p className="text-lg font-bold text-primary">Available Balance</p>
+                            <p className="text-lg font-bold text-primary">Available to Spend</p>
                             <p className="text-2xl font-bold text-primary">{formatCurrency(availableBalance)}</p>
                         </div>
                     </div>
@@ -462,5 +462,3 @@ export default function WalletContent() {
         </Card>
     );
 }
-
-    
