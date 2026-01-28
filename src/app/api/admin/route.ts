@@ -112,6 +112,21 @@ export async function POST(req: NextRequest) {
 
                 return NextResponse.json({ success: true, message: "Payout approved and processed." });
             }
+            case 'rejectPayout': {
+                const { companyId, payoutId, reason } = payload;
+                if (!companyId || !payoutId) {
+                    throw new Error("Missing companyId or payoutId for rejecting payout.");
+                }
+                const payoutRef = db.doc(`companies/${companyId}/payoutRequests/${payoutId}`);
+                
+                await payoutRef.update({
+                    status: 'rejected',
+                    processedAt: FieldValue.serverTimestamp(),
+                    rejectionReason: reason || 'Rejected by admin.',
+                });
+
+                return NextResponse.json({ success: true, message: "Payout request has been rejected." });
+            }
             case 'getDashboardQueues': {
                  const allShopsSnap = await db.collectionGroup('shops').get();
                 const shopMap = new Map();

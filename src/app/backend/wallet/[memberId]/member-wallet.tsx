@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useMemo, useEffect, useCallback } from 'react';
@@ -18,6 +19,7 @@ import MemberWalletPayments from './member-wallet-payments';
 import MemberTransactions from './member-transactions';
 import StaffContent from '@/app/account/staff-content';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import MemberPayoutRequests from './member-payout-requests';
 
 const formatCurrency = (amount: number) => new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(amount);
 const formatDate = (isoString: any) => {
@@ -258,6 +260,7 @@ export default function MemberWallet({ memberId }: { memberId: string }) {
                                 </Button>
                             </CardFooter>
                         </Card>
+                        <MemberPayoutRequests companyId={memberId} onUpdate={() => setRefreshTrigger(prev => prev + 1)} />
                         <MemberWalletPayments companyId={memberId} onUpdate={() => setRefreshTrigger(prev => prev + 1)} />
                         <MemberTransactions companyId={memberId} key={refreshTrigger} />
                     </div>
