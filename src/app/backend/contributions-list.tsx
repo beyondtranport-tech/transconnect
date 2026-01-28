@@ -2,12 +2,11 @@
 'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Loader2, Truck, Warehouse, Building } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, query } from 'firebase/firestore';
+import { getClientSideAuthToken } from '@/firebase';
 
 interface Contribution {
     id: string;
@@ -17,6 +16,24 @@ interface Contribution {
     data: any;
 }
 
+// Add this helper function
+async function fetchFromAdminAPI(token: string, action: string, payload?: any) {
+    const response = await fetch('/api/admin', {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ action, payload }),
+    });
+
+    const result = await response.json();
+    if (!response.ok || !result.success) {
+        throw new Error(result.error || `API Error for action: ${action}`);
+    }
+    return result;
+}
+
 const typeConfig = {
     truck: { icon: Truck, color: 'default' as const, label: 'Truck' },
     trailer: { icon: Warehouse, color: 'secondary' as const, label: 'Trailer' },
@@ -24,9 +41,29 @@ const typeConfig = {
 }
 
 export default function ContributionsList() {
-    const firestore = useFirestore();
-    const contributionsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'contributions')) : null, [firestore]);
-    const { data: contributions, isLoading, error } = useCollection<Contribution>(contributionsQuery);
+    const [contributions, setContributions] = useState<Contribution[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    const loadContributions = useCallback(async () => {
+        setIsLoading(true);
+        setError(null);
+        try {
+            const token = await getClientSideAuthToken();
+            if (!token) throw new Error("Authentication failed.");
+            
+            const result = await fetchFromAdminAPI(token, 'getContributions');
+            setContributions(result.data || []);
+        } catch (e: any) {
+            setError(e.message)
+        } finally {
+            setIsLoading(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        loadContributions();
+    }, [loadContributions]);
 
     const sortedContributions = useMemo(() => {
         if (!contributions) return [];

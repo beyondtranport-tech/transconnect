@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -9,18 +9,29 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Loader2, Lock, Edit } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { useCollection, useFirestore, getClientSideAuthToken, useMemoFirebase } from '@/firebase';
-import { Table, TableBody, TableCell, TableHead, TableHeader } from '@/components/ui/table';
+import { getClientSideAuthToken } from '@/firebase';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { type ColumnDef } from '@/hooks/use-data-table';
-import { collection, query, collectionGroup } from 'firebase/firestore';
 
 
 // --- Helper Functions and Data ---
+async function fetchFromAdminAPI(token: string, action: string, payload?: any) {
+    const response = await fetch('/api/admin', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action, payload }),
+    });
+    const result = await response.json();
+    if (!response.ok || !result.success) {
+        throw new Error(result.error || `API Error for action: ${action}`);
+    }
+    return result;
+}
 
 const resources = [
     { id: 'shop', label: 'Shop Management' },
@@ -226,13 +237,38 @@ function PermissionsDialog({ staffMember, onSave }: { staffMember: any, onSave: 
 }
 
 export default function PermissionsContent() {
-    const firestore = useFirestore();
-    
-    const staffQuery = useMemoFirebase(() => firestore ? query(collectionGroup(firestore, 'staff')) : null, [firestore]);
-    const companiesQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'companies')) : null, [firestore]);
-    
-    const { data: staff, isLoading: isLoadingStaff, forceRefresh } = useCollection(staffQuery);
-    const { data: companies, isLoading: isLoadingCompanies } = useCollection(companiesQuery);
+    const { toast } = useToast();
+    const [staff, setStaff] = useState<any[]>([]);
+    const [companies, setCompanies] = useState<any[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    const forceRefresh = useCallback(async () => {
+        setIsLoading(true);
+        setError(null);
+        try {
+            const token = await getClientSideAuthToken();
+            if (!token) throw new Error("Auth failed");
+            
+            const [staffRes, companiesRes] = await Promise.all([
+                fetchFromAdminAPI(token, 'getStaff'),
+                fetchFromAdminAPI(token, 'getMembers')
+            ]);
+
+            setStaff(staffRes.data || []);
+            setCompanies(companiesRes.data || []);
+
+        } catch (e: any) {
+            setError(e.message);
+            toast({ variant: 'destructive', title: 'Error Loading Data', description: e.message });
+        } finally {
+            setIsLoading(false);
+        }
+    }, [toast]);
+
+    useEffect(() => {
+        forceRefresh();
+    }, [forceRefresh]);
 
     const enrichedStaff = useMemo(() => {
         if (!staff || !companies) return [];
@@ -298,8 +334,6 @@ export default function PermissionsContent() {
         }
     ], [forceRefresh]);
     
-    const isLoading = isLoadingStaff || isLoadingCompanies;
-
 
     return (
         <Card>
@@ -315,6 +349,8 @@ export default function PermissionsContent() {
             <CardContent>
                {isLoading ? (
                     <div className="flex justify-center items-center py-20"><Loader2 className="h-10 w-10 animate-spin text-primary" /></div>
+               ) : error ? (
+                    <div className="text-destructive text-center py-10">{error}</div>
                ) : (
                     <DataTable columns={columns} data={enrichedStaff} />
                )}
