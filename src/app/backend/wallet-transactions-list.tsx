@@ -1,15 +1,27 @@
 
+
 'use client';
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
-import { Loader2, DollarSign, Clock, ArrowRight, CheckCircle, Send } from 'lucide-react';
+import { Loader2, DollarSign, Clock, ArrowRight, CheckCircle, Send, XCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { useCollection, useFirestore, useMemoFirebase, getClientSideAuthToken } from '@/firebase';
 import { collection, query, collectionGroup } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 interface Company {
     id: string;
@@ -150,29 +162,60 @@ export default function WalletTransactionsList() {
         });
     }, [pendingPayouts, companyMap]);
     
+    async function performAdminAction(token: string, action: string, payload: any) {
+        const response = await fetch('/api/admin', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ action, payload }),
+        });
+
+        const result = await response.json();
+        if (!response.ok || !result.success) {
+            throw new Error(result.error || `API Error for action: ${action}`);
+        }
+        return result;
+    }
+
     const handleApprovePayout = async (payout: any) => {
         setIsProcessing(payout.id);
         try {
             const token = await getClientSideAuthToken();
             if (!token) throw new Error("Authentication failed.");
 
-            const response = await fetch('/api/admin', {
-                method: 'POST',
-                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    action: 'approvePayout',
-                    payload: { companyId: payout.companyId, payoutId: payout.id, amount: payout.amount }
-                }),
+            await performAdminAction(token, 'approvePayout', {
+                companyId: payout.companyId,
+                payoutId: payout.id,
+                amount: payout.amount
             });
-
-            const result = await response.json();
-            if (!response.ok) throw new Error(result.error);
 
             toast({ title: "Payout Approved", description: `Wallet for ${payout.company?.companyName} has been debited.` });
             refreshPayouts();
 
         } catch (e: any) {
             toast({ variant: 'destructive', title: 'Approval Failed', description: e.message });
+        } finally {
+            setIsProcessing(null);
+        }
+    };
+    
+    const handleRejectPayout = async (payout: any) => {
+        setIsProcessing(payout.id);
+        try {
+            const token = await getClientSideAuthToken();
+            if (!token) throw new Error("Authentication failed.");
+    
+            await performAdminAction(token, 'rejectPayout', {
+                companyId: payout.companyId,
+                payoutId: payout.id
+            });
+    
+            toast({ title: 'Payout Rejected', description: `Request for ${payout.company?.companyName} was rejected.` });
+            refreshPayouts();
+        } catch (e: any) {
+            toast({ variant: 'destructive', title: 'Rejection Failed', description: e.message });
         } finally {
             setIsProcessing(null);
         }
@@ -226,10 +269,32 @@ export default function WalletTransactionsList() {
                                             {p.company?.accountNumber}<br/>
                                             {p.company?.branchCode}
                                         </TableCell>
-                                        <TableCell className="text-right">
-                                            <Button onClick={() => handleApprovePayout(p)} disabled={isProcessing === p.id}>
-                                                {isProcessing === p.id ? <Loader2 className="h-4 w-4 animate-spin"/> : <CheckCircle className="h-4 w-4"/>}
+                                        <TableCell className="text-right space-x-1">
+                                            <Button size="sm" onClick={() => handleApprovePayout(p)} disabled={isProcessing === p.id}>
+                                                {isProcessing === p.id && <Loader2 className="h-4 w-4 animate-spin"/>}
+                                                {isProcessing !== p.id && <CheckCircle className="h-4 w-4"/>}
                                             </Button>
+                                            <AlertDialog>
+                                                <AlertDialogTrigger asChild>
+                                                    <Button size="sm" variant="destructive" disabled={!!isProcessing}>
+                                                        <XCircle className="h-4 w-4" />
+                                                    </Button>
+                                                </AlertDialogTrigger>
+                                                <AlertDialogContent>
+                                                    <AlertDialogHeader>
+                                                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                                        <AlertDialogDescription>
+                                                            This will reject the payout request of {formatCurrency(p.amount)} for {p.company?.companyName}. This action cannot be undone.
+                                                        </AlertDialogDescription>
+                                                    </AlertDialogHeader>
+                                                    <AlertDialogFooter>
+                                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                        <AlertDialogAction onClick={() => handleRejectPayout(p)} variant="destructive">
+                                                            Yes, Reject Payout
+                                                        </AlertDialogAction>
+                                                    </AlertDialogFooter>
+                                                </AlertDialogContent>
+                                            </AlertDialog>
                                         </TableCell>
                                      </TableRow>
                                 ))}
