@@ -33,7 +33,7 @@ export function getAdminApp(): { app: App | null; error: string | null } {
     const projectId = serviceAccount.project_id;
     
     // DEFINITIVE FIX: The Admin SDK requires the GCS bucket name, which ends in .appspot.com
-    const bucketName = "transconnect-v1-39578841-2a857.appspot.com";
+    const bucketName = `${projectId}.appspot.com`;
 
     const app = initializeApp({
       credential: cert(serviceAccount),
