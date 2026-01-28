@@ -48,17 +48,19 @@ export async function POST(req: NextRequest) {
             throw new Error("Company not found.");
         }
 
-        const walletBalance = companyData.walletBalance || 0;
+        // Use the pre-calculated availableBalance from the document, not the total walletBalance.
+        const availableBalanceFromDoc = companyData.availableBalance || 0;
 
         // Fetch existing pending payouts for this company within the transaction
         const pendingPayoutsQuery = db.collection(`companies/${companyId}/payoutRequests`).where('status', '==', 'pending');
         const pendingPayoutsSnap = await transaction.get(pendingPayoutsQuery);
         const pendingTotal = pendingPayoutsSnap.docs.reduce((sum, doc) => sum + doc.data().amount, 0);
         
-        const availableBalance = walletBalance - pendingTotal;
+        // Calculate the amount that is *truly* available for a new payout.
+        const effectivelyAvailable = availableBalanceFromDoc - pendingTotal;
 
-        if (amount > availableBalance) {
-            throw new Error(`Insufficient available funds. Your current balance is R${walletBalance.toFixed(2)}, but R${pendingTotal.toFixed(2)} is already pending withdrawal, leaving R${availableBalance.toFixed(2)} available.`);
+        if (amount > effectivelyAvailable) {
+            throw new Error(`Insufficient available funds. Your available balance is R${availableBalanceFromDoc.toFixed(2)}, but R${pendingTotal.toFixed(2)} is already pending withdrawal, leaving R${effectivelyAvailable.toFixed(2)} for this request.`);
         }
 
         const payoutDocRef = db.collection(`companies/${companyId}/payoutRequests`).doc();
