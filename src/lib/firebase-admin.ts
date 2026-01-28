@@ -30,13 +30,15 @@ export function getAdminApp(): { app: App | null; error: string | null } {
         throw new Error('Parsed service account is invalid or missing essential properties (project_id, client_email, private_key). Please re-generate it following the backend-setup.md guide.');
     }
     
-    // Dynamically construct the bucket name from the service account's project ID.
-    // This is the most robust way to ensure the correct bucket is used.
-    const bucketName = `${serviceAccount.project_id}.appspot.com`;
+    // Explicitly use the project_id from the service account for all configurations.
+    const projectId = serviceAccount.project_id;
+    
+    // CORRECTED: The Admin SDK was using the wrong bucket name. This uses the correct one from your project console.
+    const bucketName = "transconnect-v1-39578841-2a857.firebasestorage.app";
 
     const app = initializeApp({
       credential: cert(serviceAccount),
-      projectId: serviceAccount.project_id, // Explicitly use project ID from service account
+      projectId: projectId,
       storageBucket: bucketName, 
     }, ADMIN_APP_NAME);
 
