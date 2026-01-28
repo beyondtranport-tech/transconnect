@@ -4,8 +4,8 @@
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useUser, getClientSideAuthToken, useFirestore, useMemoFirebase } from '@/firebase';
-import { doc, writeBatch, collection, increment, serverTimestamp, query, deleteDoc, addDoc } from 'firebase/firestore';
+import { useUser, getClientSideAuthToken, useFirestore, useMemoFirebase, useDoc } from '@/firebase';
+import { doc, writeBatch, collection, increment, serverTimestamp } from 'firebase/firestore';
 import { Loader2, User, Wallet, Calendar, Mail, FileCheck, Users, AlertTriangle, Check } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
@@ -44,60 +44,25 @@ export default function MemberWallet({ memberId }: { memberId: string }) {
     const [isResetting, setIsResetting] = useState(false);
     const [resetAmount, setResetAmount] = useState<number | string>('');
     const [isClearing, setIsClearing] = useState(false);
+    
+    // --- SAFE DATA FETCHING ---
+    const companyDocRef = useMemoFirebase(() => {
+        if (!firestore || !memberId) return null;
+        return doc(firestore, 'companies', memberId);
+    }, [firestore, memberId]);
+    
+    const { data: companyData, isLoading: isCompanyLoading, error: companyError, forceRefresh: forceRefreshCompany } = useDoc(companyDocRef);
 
-    const [companyData, setCompanyData] = useState<any | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
-    const [refreshTrigger, setRefreshTrigger] = useState(0);
+    const userDocRef = useMemoFirebase(() => {
+        if (!firestore || !companyData?.ownerId) return null;
+        return doc(firestore, 'users', companyData.ownerId);
+    }, [firestore, companyData]);
+    
+    const { data: ownerData, isLoading: isOwnerLoading, error: ownerError } = useDoc(userDocRef);
+    // --- END SAFE DATA FETCHING ---
 
-    const fetchMemberData = useCallback(async () => {
-        if (isAdminLoading) return;
-        setIsLoading(true);
-        setError(null);
-        try {
-            const token = await getClientSideAuthToken();
-            if (!token) throw new Error("Authentication token not found.");
-            
-            const response = await fetch('/api/getUserSubcollection', {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ path: `companies/${memberId}`, type: 'document' }),
-            });
-
-            const result = await response.json();
-            if (result.success) {
-                // Fetch user data separately
-                const userResponse = await fetch('/api/getUserSubcollection', {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ path: `users/${result.data.ownerId}`, type: 'document' }),
-                });
-                const userResult = await userResponse.json();
-                if(userResult.success) {
-                    setCompanyData({...result.data, ...userResult.data});
-                } else {
-                     setCompanyData(result.data);
-                }
-
-            } else {
-                setError(result.error || 'Failed to load member data.');
-            }
-        } catch (e: any) {
-            setError(e.message);
-        } finally {
-            setIsLoading(false);
-        }
-    }, [memberId, isAdminLoading]);
-
-    useEffect(() => {
-        fetchMemberData();
-    }, [fetchMemberData, refreshTrigger]);
+    const isLoading = isAdminLoading || isCompanyLoading || isOwnerLoading;
+    const error = companyError || ownerError;
 
     const getInitials = (fName?: string, lName?: string) => {
         if (!fName || !lName) return "U";
@@ -141,10 +106,10 @@ export default function MemberWallet({ memberId }: { memberId: string }) {
         
         try {
             await batch.commit();
-            toast({ title: 'Success!', description: `Wallet updated and transaction recorded for ${companyData?.firstName}.` });
+            toast({ title: 'Success!', description: `Wallet updated and transaction recorded for ${ownerData?.firstName}.` });
             setNewRecordAmount('');
             setNewRecordDescription('');
-            setRefreshTrigger(prev => prev + 1); // Trigger a re-fetch
+            forceRefreshCompany();
         } catch (error: any) {
             errorEmitter.emit(
                 'permission-error',
@@ -180,7 +145,7 @@ export default function MemberWallet({ memberId }: { memberId: string }) {
 
             toast({ title: 'Wallet Reset Successfully', description: 'All transactions have been cleared and the new balance is set.' });
             setResetAmount('');
-            setRefreshTrigger(prev => prev + 1);
+            forceRefreshCompany();
         } catch (e: any) {
             toast({ variant: 'destructive', title: 'Reset Failed', description: e.message });
         } finally {
@@ -207,7 +172,7 @@ export default function MemberWallet({ memberId }: { memberId: string }) {
             if (!response.ok) throw new Error(result.error);
     
             toast({ title: 'Success!', description: result.message });
-            setRefreshTrigger(prev => prev + 1); // Trigger a re-fetch
+            forceRefreshCompany();
         } catch(e: any) {
             toast({ variant: 'destructive', title: 'Clearing Failed', description: e.message });
         } finally {
@@ -215,7 +180,7 @@ export default function MemberWallet({ memberId }: { memberId: string }) {
         }
     }
 
-    if (isLoading || isAdminLoading) {
+    if (isLoading) {
         return <div className="flex justify-center items-center min-h-[calc(100vh-8rem)]"><Loader2 className="h-12 w-12 animate-spin text-primary" /></div>;
     }
 
@@ -223,7 +188,7 @@ export default function MemberWallet({ memberId }: { memberId: string }) {
          return (
             <Card>
                 <CardHeader><CardTitle className="text-destructive">Error</CardTitle></CardHeader>
-                <CardContent><p>{error}</p></CardContent>
+                <CardContent><p>{error.message}</p></CardContent>
             </Card>
          );
     }
@@ -243,12 +208,12 @@ export default function MemberWallet({ memberId }: { memberId: string }) {
                 <CardHeader>
                     <div className="flex items-center gap-4">
                         <Avatar className="h-16 w-16">
-                            <AvatarFallback>{getInitials(companyData?.firstName, companyData?.lastName)}</AvatarFallback>
+                            <AvatarFallback>{getInitials(ownerData?.firstName, ownerData?.lastName)}</AvatarFallback>
                         </Avatar>
                         <div>
-                             <CardTitle className="text-3xl">{companyData?.firstName} {companyData?.lastName}</CardTitle>
+                             <CardTitle className="text-3xl">{ownerData?.firstName} {ownerData?.lastName}</CardTitle>
                              <CardDescription className="flex items-center gap-2 mt-1">
-                                <Mail className="h-4 w-4" /> {companyData?.email}
+                                <Mail className="h-4 w-4" /> {ownerData?.email}
                              </CardDescription>
                              <CardDescription className="flex items-center gap-2">
                                 <Calendar className="h-4 w-4" /> Joined: {formatDate(companyData?.createdAt)}
@@ -361,8 +326,8 @@ export default function MemberWallet({ memberId }: { memberId: string }) {
                                 </Button>
                             </CardFooter>
                         </Card>
-                        <MemberPayoutRequests companyId={memberId} onUpdate={() => setRefreshTrigger(prev => prev + 1)} />
-                        <MemberWalletPayments companyId={memberId} onUpdate={() => setRefreshTrigger(prev => prev + 1)} />
+                        <MemberPayoutRequests companyId={memberId} onUpdate={() => forceRefreshCompany()} />
+                        <MemberWalletPayments companyId={memberId} onUpdate={() => forceRefreshCompany()} />
                         <MemberTransactions companyId={memberId} key={refreshTrigger} />
                     </div>
                 </TabsContent>
@@ -376,3 +341,4 @@ export default function MemberWallet({ memberId }: { memberId: string }) {
         </div>
     );
 }
+

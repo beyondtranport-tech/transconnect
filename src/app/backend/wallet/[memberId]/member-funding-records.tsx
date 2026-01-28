@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Loader2, FileText, Trash2, ShieldAlert } from 'lucide-react';
@@ -19,7 +19,8 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { getClientSideAuthToken, useUser } from '@/firebase';
+import { getClientSideAuthToken, useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { collection, query } from 'firebase/firestore';
 
 const statusColors: { [key: string]: 'default' | 'secondary' | 'destructive' | 'outline' } = {
   pending: 'secondary',
@@ -35,65 +36,46 @@ const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(amount);
 };
 
-const formatDate = (isoString: string | undefined) => {
+const formatDate = (isoString: any) => {
     if (!isoString) return 'N/A';
-    return new Date(isoString).toLocaleString('en-ZA', { dateStyle: 'short', timeStyle: 'short' });
+    const date = isoString.toDate ? isoString.toDate() : new Date(isoString);
+    if (isNaN(date.getTime())) return 'Invalid Date';
+    return date.toLocaleString('en-ZA', { dateStyle: 'short', timeStyle: 'short' });
 };
 
 
 export default function MemberFundingRecords({ companyId }: { companyId: string }) {
     const { user, isUserLoading: isAdminLoading } = useUser();
-    const [records, setRecords] = useState<any[] | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
+    const firestore = useFirestore();
     const [isDeleting, setIsDeleting] = useState<string | null>(null);
     const { toast } = useToast();
 
-    const fetchRecords = useCallback(async () => {
-        if (isAdminLoading) return; // Don't fetch if admin user isn't loaded
-        setIsLoading(true);
-        setError(null);
-        try {
-            const token = await getClientSideAuthToken();
-            if (!token) throw new Error("Authentication token not found.");
-            
-            const [quotesRes, enquiriesRes] = await Promise.all([
-                 fetch('/api/getUserSubcollection', {
-                    method: 'POST',
-                    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ path: `companies/${companyId}/quotes`, type: 'collection' }),
-                }),
-                 fetch('/api/getUserSubcollection', {
-                    method: 'POST',
-                    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ path: `companies/${companyId}/enquiries`, type: 'collection' }),
-                })
-            ]);
-            
-            const quotesResult = await quotesRes.json();
-            const enquiriesResult = await enquiriesRes.json();
-            
-            if (!quotesResult.success || !enquiriesResult.success) {
-                throw new Error(quotesResult.error || enquiriesResult.error || 'Failed to fetch funding records.');
-            }
+    // --- SAFE DATA FETCHING ---
+    const quotesQuery = useMemoFirebase(() => {
+        if (!firestore || !companyId) return null;
+        return query(collection(firestore, `companies/${companyId}/quotes`));
+    }, [firestore, companyId]);
+    const { data: quotesData, isLoading: isLoadingQuotes, error: quotesError, forceRefresh: forceRefreshQuotes } = useCollection(quotesQuery);
 
-            const combinedRecords = [
-                ...(quotesResult.data || []).map((q: any) => ({ ...q, recordType: 'Quote' })),
-                ...(enquiriesResult.data || []).map((e: any) => ({ ...e, recordType: 'Enquiry' })),
-            ];
+    const enquiriesQuery = useMemoFirebase(() => {
+        if (!firestore || !companyId) return null;
+        return query(collection(firestore, `companies/${companyId}/enquiries`));
+    }, [firestore, companyId]);
+    const { data: enquiriesData, isLoading: isLoadingEnquiries, error: enquiriesError, forceRefresh: forceRefreshEnquiries } = useCollection(enquiriesQuery);
 
-            combinedRecords.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    const isLoading = isLoadingQuotes || isLoadingEnquiries || isAdminLoading;
+    const error = quotesError || enquiriesError;
 
-            setRecords(combinedRecords);
-        } catch (e: any) {
-            setError(e.message);
-        }
-        setIsLoading(false);
-    }, [companyId, isAdminLoading]);
-
-    useEffect(() => {
-        fetchRecords();
-    }, [fetchRecords]);
+    const records = useMemo(() => {
+        if (!quotesData && !enquiriesData) return [];
+        const combinedRecords = [
+            ...(quotesData || []).map((q: any) => ({ ...q, recordType: 'Quote' })),
+            ...(enquiriesData || []).map((e: any) => ({ ...e, recordType: 'Enquiry' })),
+        ];
+        combinedRecords.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        return combinedRecords;
+    }, [quotesData, enquiriesData]);
+    // --- END SAFE DATA FETCHING ---
 
     const handleDelete = async (recordId: string, recordType: string) => {
         setIsDeleting(recordId);
@@ -117,7 +99,11 @@ export default function MemberFundingRecords({ companyId }: { companyId: string 
             }
 
             toast({ title: 'Record Deleted', description: 'The record has been permanently removed.' });
-            fetchRecords();
+            if (subcollection === 'quotes') {
+                forceRefreshQuotes();
+            } else {
+                forceRefreshEnquiries();
+            }
         } catch (e: any) {
             toast({ variant: 'destructive', title: 'Deletion Failed', description: e.message });
         } finally {
@@ -125,7 +111,7 @@ export default function MemberFundingRecords({ companyId }: { companyId: string 
         }
     };
     
-    if (isLoading || isAdminLoading) {
+    if (isLoading) {
         return (
             <Card>
                 <CardHeader>
@@ -150,10 +136,10 @@ export default function MemberFundingRecords({ companyId }: { companyId: string 
                  {error && (
                     <div className="text-destructive-foreground bg-destructive/90 p-4 rounded-md">
                         <h4 className="font-semibold">Error</h4>
-                        <p className="text-sm">{error}</p>
+                        <p className="text-sm">{error.message}</p>
                     </div>
                 )}
-                {!isLoading && !error && records && (
+                {!isLoading && !error && (
                     records.length > 0 ? (
                         <div className="overflow-x-auto">
                         <Table>
