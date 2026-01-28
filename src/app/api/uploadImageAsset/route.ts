@@ -37,15 +37,18 @@ export async function POST(req: NextRequest) {
             console.error("uploadImageAsset: Invalid data URI format.");
             return NextResponse.json({ success: false, error: 'Invalid data URI format.' }, { status: 400 });
         }
-        console.log("uploadImageAsset: Data URI decoded.");
         
         const contentType = providedContentType || matches[1];
         const fileBuffer = Buffer.from(matches[2], 'base64');
         
-        // Use the default bucket that was configured during app initialization.
         const bucket = getStorage(app).bucket();
         
-        console.log(`uploadImageAsset: Using default bucket: ${bucket.name}`);
+        if (!bucket) {
+            console.error("uploadImageAsset: Storage bucket could not be determined. The service account may be missing permissions or the bucket doesn't exist.");
+            return NextResponse.json({ success: false, error: 'Storage bucket could not be determined on the server. Please ensure Firebase Storage is enabled and your service account has "Storage Admin" permissions.' }, { status: 500 });
+        }
+
+        console.log(`uploadImageAsset: Using bucket: ${bucket.name}`);
         const filePath = `${folder}/${fileName}`;
         const file = bucket.file(filePath);
         console.log(`uploadImageAsset: File path set to: ${filePath}`);
