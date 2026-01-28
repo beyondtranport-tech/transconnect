@@ -1,12 +1,13 @@
+
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Loader2, DollarSign } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
-import { useFirestore } from '@/firebase/provider';
+import { collection, query, orderBy } from 'firebase/firestore';
+import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { format } from 'date-fns';
 
 const statusColors: { [key: string]: 'default' | 'secondary' | 'destructive' | 'outline' } = {
   pending_allocation: 'secondary',
@@ -23,37 +24,24 @@ const formatDate = (dateValue: any) => {
     if (dateValue && typeof dateValue.toDate === 'function') {
         return new Date(dateValue.toDate()).toLocaleString('en-ZA', { dateStyle: 'short', timeStyle: 'short' });
     }
+     if (typeof dateValue === 'string') {
+        const date = new Date(dateValue);
+        if (!isNaN(date.getTime())) {
+            return new Date(dateValue).toLocaleString('en-ZA', { dateStyle: 'short', timeStyle: 'short' });
+        }
+    }
     return 'N/A';
 };
 
 export default function MemberTransactions({ companyId }: { companyId: string }) {
-    const [transactions, setTransactions] = useState<any[] | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState<Error | null>(null);
     const firestore = useFirestore();
 
-    useEffect(() => {
-        if (!firestore) return;
-        setIsLoading(true);
-
-        const transactionsRef = collection(firestore, `companies/${companyId}/transactions`);
-        const q = query(transactionsRef, orderBy('date', 'desc'));
-
-        const unsubscribe = onSnapshot(q, 
-            (querySnapshot) => {
-                const txs = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                setTransactions(txs);
-                setIsLoading(false);
-            },
-            (err) => {
-                console.error("Error fetching member transactions:", err);
-                setError(err);
-                setIsLoading(false);
-            }
-        );
-
-        return () => unsubscribe();
+    const transactionsQuery = useMemoFirebase(() => {
+        if (!firestore || !companyId) return null;
+        return query(collection(firestore, `companies/${companyId}/transactions`), orderBy('date', 'desc'));
     }, [firestore, companyId]);
+
+    const { data: transactions, isLoading, error } = useCollection(transactionsQuery);
 
     return (
         <Card>
