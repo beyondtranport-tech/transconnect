@@ -7,8 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Loader2, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { useCollection, useFirestore } from '@/firebase';
-import { useMemoFirebase } from '@/hooks/use-config';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collectionGroup, query } from 'firebase/firestore';
 import { Badge } from '@/components/ui/badge';
 
@@ -72,7 +71,7 @@ export default function FundingDivisionContent() {
     if (isLoading) {
         return <div className="flex justify-center items-center py-20"><Loader2 className="h-12 w-12 animate-spin text-primary" /></div>;
     }
-    if (error) {
+     if (error) {
         return <div className="text-destructive-foreground bg-destructive/90 p-4 rounded-md"><h4 className="font-semibold">Error</h4><p>{error.message}</p></div>;
     }
 

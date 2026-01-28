@@ -18,10 +18,9 @@ import { useToast } from '@/hooks/use-toast';
 import { useState, useEffect } from 'react';
 import { Loader2, Building, Save, Banknote } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useUser, useFirestore, getClientSideAuthToken, useDoc } from '@/firebase';
+import { useUser, useFirestore, getClientSideAuthToken, useDoc, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import { Separator } from '@/components/ui/separator';
-import { useMemoFirebase } from '@/hooks/use-memo-firebase';
 
 const companyFormSchema = z.object({
   companyName: z.string().min(1, 'Company name is required'),

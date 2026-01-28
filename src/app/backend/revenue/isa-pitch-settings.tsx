@@ -18,9 +18,8 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Save, Handshake, Percent } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useFirestore, useDoc, getClientSideAuthToken } from '@/firebase';
+import { useFirestore, useDoc, getClientSideAuthToken, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
-import { useMemoFirebase } from '@/hooks/use-memo-firebase';
 
 const formSchema = z.object({
   membershipCommission: z.coerce.number().min(0, "Must be >= 0").max(100, "Must be <= 100"),

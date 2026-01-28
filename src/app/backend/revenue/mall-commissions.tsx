@@ -18,9 +18,8 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Save, ShoppingBasket } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useFirestore, useDoc } from '@/firebase';
+import { useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
-import { useMemoFirebase } from '@/hooks/use-memo-firebase';
 
 const formSchema = z.object({
   financeMall: z.coerce.number().min(0).max(100, 'Must be between 0 and 100'),

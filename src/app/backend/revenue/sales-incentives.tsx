@@ -18,10 +18,9 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Save, TrendingUp, Users, Handshake, Trash2, PlusCircle } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useFirestore, useDoc, getClientSideAuthToken } from '@/firebase';
+import { useFirestore, useDoc, getClientSideAuthToken, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import { Separator } from '@/components/ui/separator';
-import { useMemoFirebase } from '@/hooks/use-memo-firebase';
 
 const tierSchema = z.object({
   threshold: z.coerce.number().min(1, "Threshold must be at least 1"),

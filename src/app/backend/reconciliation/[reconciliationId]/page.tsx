@@ -3,8 +3,7 @@
 
 import { Suspense, useEffect, useState } from 'react';
 import { notFound, useParams } from 'next/navigation';
-import { useDoc, useFirestore } from '@/firebase';
-import { useMemoFirebase } from '@/hooks/use-config';
+import { useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, doc, getDocs, query, where } from 'firebase/firestore';
 import { Loader2, ArrowLeft, Printer, FileText } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';

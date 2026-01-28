@@ -1,11 +1,10 @@
 
 'use client';
 
-import { useUser, useFirestore } from '@/firebase';
+import { useUser, useFirestore, useMemoFirebase } from '@/firebase';
 import { useDoc } from '@/firebase/firestore/use-doc';
 import { doc } from 'firebase/firestore';
 import { useMemo } from 'react';
-import { useMemoFirebase } from './use-memo-firebase';
 
 export type Action = 'create' | 'view' | 'edit' | 'delete' | 'manage';
 export type Resource = 

@@ -4,7 +4,7 @@
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useUser, getClientSideAuthToken, useFirestore } from '@/firebase';
+import { useUser, getClientSideAuthToken, useFirestore, useMemoFirebase } from '@/firebase';
 import { doc, writeBatch, collection, increment, serverTimestamp } from 'firebase/firestore';
 import { Loader2, User, Wallet, Calendar, Mail, FileCheck, Users } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -18,7 +18,6 @@ import MemberWalletPayments from './member-wallet-payments';
 import MemberTransactions from './member-transactions';
 import StaffContent from '@/app/account/staff-content';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useMemoFirebase } from '@/hooks/use-memo-firebase';
 
 const formatCurrency = (amount: number) => new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(amount);
 const formatDate = (isoString: any) => {

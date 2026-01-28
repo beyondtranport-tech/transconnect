@@ -5,13 +5,12 @@ import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Loader2, Store, PlusCircle, ShieldAlert } from 'lucide-react';
-import { useUser, useFirestore, getClientSideAuthToken, useDoc } from '@/firebase';
+import { useUser, useFirestore, getClientSideAuthToken, useDoc, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { ShopWizard } from './shop-wizard';
 import { usePermissions } from '@/hooks/use-permissions';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { useMemoFirebase } from '@/hooks/use-memo-firebase';
 
 export default function ShopContent() {
   const { user, isUserLoading } = useUser();
