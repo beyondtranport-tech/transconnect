@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
@@ -9,7 +8,7 @@ import { Loader2, DollarSign, Clock, ArrowRight, CheckCircle, Send, XCircle } fr
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { useCollection, useFirestore, useMemoFirebase, getClientSideAuthToken } from '@/firebase';
-import { collection, query, collectionGroup } from 'firebase/firestore';
+import { collection, query } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import {
   AlertDialog,
@@ -22,6 +21,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+
 
 interface Company {
     id: string;
@@ -74,27 +74,81 @@ const formatDate = (dateValue: any) => {
     return date.toLocaleString('en-ZA', { dateStyle: 'short', timeStyle: 'short' });
 };
 
+async function performAdminAction(token: string, action: string, payload: any) {
+    const response = await fetch('/api/admin', {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ action, payload }),
+    });
+
+    const result = await response.json();
+    if (!response.ok || !result.success) {
+        throw new Error(result.error || `API Error for action: ${action}`);
+    }
+    return result;
+}
+
 
 export default function WalletTransactionsList() {
     const firestore = useFirestore();
     const { toast } = useToast();
     const [isProcessing, setIsProcessing] = useState<string | null>(null);
 
+    // State for payouts
     const [pendingPayouts, setPendingPayouts] = useState<any[]>([]);
     const [isLoadingPayouts, setIsLoadingPayouts] = useState(true);
     const [payoutsError, setPayoutsError] = useState<string | null>(null);
+    
+    // State for pending wallet payments
+    const [pendingPayments, setPendingPayments] = useState<Payment[]>([]);
+    const [isLoadingPayments, setIsLoadingPayments] = useState(true);
+    const [paymentsError, setPaymentsError] = useState<string | null>(null);
+
+    // State for all transactions
+    const [allocatedTransactions, setAllocatedTransactions] = useState<Transaction[]>([]);
+    const [isLoadingTransactions, setIsLoadingTransactions] = useState(true);
+    const [transactionsError, setTransactionsError] = useState<string | null>(null);
 
     const companiesQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'companies')) : null, [firestore]);
-    const paymentsQuery = useMemoFirebase(() => firestore ? query(collectionGroup(firestore, 'walletPayments')) : null, [firestore]);
-    const transactionsQuery = useMemoFirebase(() => firestore ? query(collectionGroup(firestore, 'transactions')) : null, [firestore]);
-    
     const { data: companies, isLoading: isLoadingCompanies } = useCollection<Company>(companiesQuery);
-    const { data: pendingPayments, isLoading: isLoadingPayments } = useCollection<Payment>(paymentsQuery);
-    const { data: allocatedTransactions, isLoading: isLoadingTransactions } = useCollection<Transaction>(transactionsQuery);
+    
+    const companyMap = useMemo(() => {
+        if (!companies) return new Map();
+        return new Map(companies.map((c: Company) => [c.id, c]));
+    }, [companies]);
 
+    // Combined data fetching function
+    const fetchData = useCallback(async (action: string, setData: React.Dispatch<any>, setIsLoading: React.Dispatch<boolean>, setError: React.Dispatch<string | null>) => {
+        setIsLoading(true);
+        setError(null);
+        try {
+            const token = await getClientSideAuthToken();
+            if (!token) throw new Error("Authentication failed.");
+            
+            const result = await performAdminAction(token, action, {});
+            const sortedData = (result.data || []).sort((a: any, b: any) => {
+                const dateA = a.createdAt || a.date;
+                const dateB = b.createdAt || b.date;
+                if (!dateA || !dateB) return 0;
+                return new Date(dateB).getTime() - new Date(dateA).getTime();
+            });
+            setData(sortedData);
+        } catch (e: any) {
+            setError(e.message);
+        } finally {
+            setIsLoading(false);
+        }
+    }, []);
+
+    // Refresh functions
     const refreshPayouts = useCallback(() => {
+        // This function is defined to fetch payouts, but it's separate from the main fetchData
+        // because it hits a different API route.
         let isMounted = true;
-        const fetchData = async () => {
+        const fetchPayouts = async () => {
             if (!isMounted) return;
             setIsLoadingPayouts(true);
             setPayoutsError(null);
@@ -127,21 +181,21 @@ export default function WalletTransactionsList() {
                 }
             }
         };
-        fetchData();
+        fetchPayouts();
         return () => { isMounted = false };
     }, []);
 
+    const refreshPayments = useCallback(() => fetchData('getWalletPayments', setPendingPayments, setIsLoadingPayments, setPaymentsError), [fetchData]);
+    const refreshTransactions = useCallback(() => fetchData('getWalletTransactions', setAllocatedTransactions, setIsLoadingTransactions, setTransactionsError), [fetchData]);
+    
     useEffect(() => {
-        const cleanup = refreshPayouts();
-        return cleanup;
-    }, [refreshPayouts]);
+        refreshPayouts();
+        refreshPayments();
+        refreshTransactions();
+    }, [refreshPayouts, refreshPayments, refreshTransactions]);
 
     const isLoading = isLoadingCompanies || isLoadingPayments || isLoadingTransactions || isLoadingPayouts;
-
-    const companyMap = useMemo(() => {
-        if (!companies) return new Map();
-        return new Map(companies.map((c: Company) => [c.id, c]));
-    }, [companies]);
+    const error = payoutsError || paymentsError || transactionsError;
 
     const enhancedPayments = useMemo(() => {
         if (!pendingPayments || !companyMap) return [];
@@ -150,8 +204,7 @@ export default function WalletTransactionsList() {
             .map(p => {
                 const company = companyMap.get(p.companyId);
                 return { ...p, memberName: company?.companyName || 'Unknown Member' };
-            })
-            .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+            });
     }, [pendingPayments, companyMap]);
 
     const enhancedPayouts = useMemo(() => {
@@ -162,23 +215,6 @@ export default function WalletTransactionsList() {
         });
     }, [pendingPayouts, companyMap]);
     
-    async function performAdminAction(token: string, action: string, payload: any) {
-        const response = await fetch('/api/admin', {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ action, payload }),
-        });
-
-        const result = await response.json();
-        if (!response.ok || !result.success) {
-            throw new Error(result.error || `API Error for action: ${action}`);
-        }
-        return result;
-    }
-
     const handleApprovePayout = async (payout: any) => {
         setIsProcessing(payout.id);
         try {
@@ -221,7 +257,6 @@ export default function WalletTransactionsList() {
         }
     };
 
-
     const enhancedTransactions = useMemo(() => {
         if (!allocatedTransactions || !companyMap) return [];
         return allocatedTransactions
@@ -229,12 +264,18 @@ export default function WalletTransactionsList() {
                 const company = companyMap.get(tx.companyId);
                 return { ...tx, memberName: company?.companyName || 'Unknown Member' };
             })
-            .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
     }, [allocatedTransactions, companyMap]);
 
-
     const unallocatedTotal = enhancedPayments?.reduce((sum, p) => sum + p.amount, 0) || 0;
+    
+    if (isLoading) {
+        return <div className="flex justify-center items-center py-20"><Loader2 className="h-12 w-12 animate-spin text-primary" /></div>;
+    }
 
+    if (error) {
+        return <Card className="bg-destructive/10 border-destructive text-destructive-foreground"><CardHeader><CardTitle>Error Loading Data</CardTitle></CardHeader><CardContent>{error}</CardContent></Card>;
+    }
+    
     return (
         <div className="space-y-8">
             <Card>
@@ -312,8 +353,10 @@ export default function WalletTransactionsList() {
                     <CardDescription>Member-submitted EFT payments awaiting verification and manual allocation.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    {isLoading ? (
+                    {isLoadingPayments ? (
                         <div className="flex justify-center items-center py-10"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
+                    ) : paymentsError ? (
+                        <div className="text-destructive-foreground bg-destructive/90 p-4 rounded-md"><p>{paymentsError}</p></div>
                     ) : enhancedPayments && enhancedPayments.length > 0 ? (
                         <Table>
                             <TableHeader>
@@ -364,8 +407,10 @@ export default function WalletTransactionsList() {
                     <CardDescription>A combined ledger of all completed transactions across all member wallets.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    {isLoading ? (
+                    {isLoadingTransactions ? (
                          <div className="flex justify-center items-center py-10"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
+                    ) : transactionsError ? (
+                        <div className="text-destructive-foreground bg-destructive/90 p-4 rounded-md"><p>{transactionsError}</p></div>
                     ) : enhancedTransactions && enhancedTransactions.length > 0 ? (
                         <Table>
                             <TableHeader>

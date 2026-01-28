@@ -483,36 +483,42 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, id: newStaffDocRef.id });
             }
             case 'getWalletPayments': {
-                const snapshot = await db.collectionGroup('walletPayments').get();
-                const data = snapshot.docs.map(doc => {
-                    const docPath = doc.ref.path;
-                    const pathSegments = docPath.split('/');
-                    const companiesIndex = pathSegments.indexOf('companies');
-                    const companyId = companiesIndex > -1 && pathSegments.length > companiesIndex + 1 ? pathSegments[companiesIndex + 1] : null;
+                const companiesSnap = await db.collection('companies').get();
+                if (companiesSnap.empty) {
+                    return NextResponse.json({ success: true, data: [] });
+                }
 
-                    return { 
+                const promises = companiesSnap.docs.map(async (companyDoc) => {
+                    const paymentsSnap = await db.collection(`companies/${companyDoc.id}/walletPayments`).get();
+                    return paymentsSnap.docs.map(doc => ({ 
                         id: doc.id,
-                        companyId: companyId, 
+                        companyId: companyDoc.id, 
                         ...serializeTimestamps(doc.data()) 
-                    };
+                    }));
                 });
-                return NextResponse.json({ success: true, data });
+                const results = await Promise.all(promises);
+                const allPayments = results.flat();
+                
+                return NextResponse.json({ success: true, data: allPayments });
             }
             case 'getWalletTransactions': {
-                const snapshot = await db.collectionGroup('transactions').get();
-                const data = snapshot.docs.map(doc => {
-                     const docPath = doc.ref.path;
-                    const pathSegments = docPath.split('/');
-                    const companiesIndex = pathSegments.indexOf('companies');
-                    const companyId = companiesIndex > -1 && pathSegments.length > companiesIndex + 1 ? pathSegments[companiesIndex + 1] : null;
-
-                    return { 
+                const companiesSnap = await db.collection('companies').get();
+                if (companiesSnap.empty) {
+                    return NextResponse.json({ success: true, data: [] });
+                }
+            
+                const promises = companiesSnap.docs.map(async (companyDoc) => {
+                    const txsSnap = await db.collection(`companies/${companyDoc.id}/transactions`).get();
+                    return txsSnap.docs.map(doc => ({ 
                         id: doc.id,
-                        companyId: companyId,
+                        companyId: companyDoc.id, 
                         ...serializeTimestamps(doc.data()) 
-                    };
+                    }));
                 });
-                return NextResponse.json({ success: true, data });
+                const results = await Promise.all(promises);
+                const allTxs = results.flat();
+            
+                return NextResponse.json({ success: true, data: allTxs });
             }
              case 'getMemberships': {
                 const snapshot = await db.collection('memberships').get();
