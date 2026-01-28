@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useUser, useFirestore, useCollection, useDoc, getClientSideAuthToken } from '@/firebase';
@@ -6,14 +7,14 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFoo
 import { Loader2, DollarSign, Wallet, Clock, Info, Gem, Send, AlertCircle, Banknote, Edit } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { collection, query, orderBy, limit, doc } from 'firebase/firestore';
+import { collection, query, orderBy, limit, doc, where } from 'firebase/firestore';
 import { format, formatDistanceToNow } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useConfig } from '@/hooks/use-config';
 import { useMemoFirebase } from '@/hooks/use-memo-firebase';
 import { useToast } from '@/hooks/use-toast';
-import React, { useState } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -45,7 +46,7 @@ const statusColors: { [key: string]: 'default' | 'secondary' | 'destructive' | '
   pending: 'secondary',
 };
 
-function PayoutRequestDialog({ companyData, onPayoutRequested }: { companyData: any, onPayoutRequested: () => void }) {
+function PayoutRequestDialog({ companyData, availableBalance, onPayoutRequested }: { companyData: any, availableBalance: number, onPayoutRequested: () => void }) {
     const { toast } = useToast();
     const [isOpen, setIsOpen] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -59,8 +60,8 @@ function PayoutRequestDialog({ companyData, onPayoutRequested }: { companyData: 
             toast({ variant: 'destructive', title: 'Invalid Amount', description: 'Please enter a positive amount.' });
             return;
         }
-        if (payoutAmount > companyData.walletBalance) {
-            toast({ variant: 'destructive', title: 'Insufficient Funds', description: 'Your requested amount exceeds your wallet balance.' });
+        if (payoutAmount > availableBalance) {
+            toast({ variant: 'destructive', title: 'Insufficient Funds', description: 'Your requested amount exceeds your available balance.' });
             return;
         }
 
@@ -74,8 +75,9 @@ function PayoutRequestDialog({ companyData, onPayoutRequested }: { companyData: 
                 headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
                 body: JSON.stringify({ companyId: companyData.id, amount: payoutAmount }),
             });
-
-            if (!response.ok) throw new Error((await response.json()).error || "Failed to submit request.");
+            
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.error || "Failed to submit request.");
 
             toast({ title: 'Payout Request Submitted!', description: 'Your request will be processed by an admin shortly.' });
             setAmount('');
@@ -115,11 +117,11 @@ function PayoutRequestDialog({ companyData, onPayoutRequested }: { companyData: 
                             </Button>
                         </div>
                         <div className="space-y-2">
-                             <Label htmlFor="payout-amount">Amount</Label>
+                             <Label htmlFor="payout-amount">Amount (Available: {formatCurrency(availableBalance)})</Label>
                              <Input 
                                 id="payout-amount"
                                 type="number"
-                                placeholder={`Max ${formatCurrency(companyData.walletBalance)}`}
+                                placeholder={`Max ${formatCurrency(availableBalance)}`}
                                 value={amount}
                                 onChange={(e) => setAmount(e.target.value)}
                             />
@@ -184,15 +186,36 @@ export default function WalletContent() {
             limit(5)
         );
     }, [firestore, userData]);
+
+    const pendingPayoutsQuery = useMemoFirebase(() => {
+        if (!firestore || !userData?.companyId) return null;
+        return query(
+            collection(firestore, `companies/${userData.companyId}/payoutRequests`),
+            where('status', '==', 'pending')
+        );
+    }, [firestore, userData]);
     
     const { data: techPricing, isLoading: isTechPricingLoading } = useConfig<{ eftTopUpFee?: number }>('techPricing');
     const { data: bankDetails, isLoading: isBankDetailsLoading } = useConfig<any>('bankDetails');
 
     const { data: transactions, isLoading: isLoadingTransactions, error: transactionsError } = useCollection(transactionsQuery);
     const { data: pendingPayments, isLoading: isLoadingPayments, error: paymentsError, forceRefresh: forceRefreshPayments } = useCollection(pendingPaymentsQuery);
+    const { data: pendingPayouts, isLoading: isLoadingPayouts, forceRefresh: forceRefreshPayouts } = useCollection(pendingPayoutsQuery);
+    
+    const pendingPayoutsTotal = useMemo(() => {
+        if (!pendingPayouts) return 0;
+        return pendingPayouts.reduce((sum, p) => sum + p.amount, 0);
+    }, [pendingPayouts]);
 
-    const isLoading = isUserLoading || isUserDocLoading || isCompanyLoading || isLoadingTransactions || isLoadingPayments || isTechPricingLoading || isBankDetailsLoading;
+    const availableBalance = (companyData?.walletBalance || 0) - pendingPayoutsTotal;
+
+    const isLoading = isUserLoading || isUserDocLoading || isCompanyLoading || isLoadingTransactions || isLoadingPayments || isTechPricingLoading || isBankDetailsLoading || isLoadingPayouts;
     const error = transactionsError || paymentsError;
+    
+    const handlePayoutRequestSuccess = () => {
+        forceRefreshCompany();
+        forceRefreshPayouts();
+    };
 
     const unallocatedTotal = pendingPayments?.reduce((sum, p) => sum + p.amount, 0) || 0;
     const recentTransactionsTotal = transactions?.reduce((sum, tx) => {
@@ -252,19 +275,29 @@ export default function WalletContent() {
             </CardHeader>
             <CardContent className="space-y-8">
                 <div className="p-4 bg-muted/50 rounded-lg">
-                    <div className="flex justify-between items-center">
-                         <div>
-                            <p className="text-sm text-muted-foreground">Current Allocated Balance</p>
+                    <div className="space-y-2">
+                        <div className="flex justify-between items-baseline">
+                            <p className="text-sm text-muted-foreground">Current Wallet Balance</p>
                             {isCompanyLoading ? (
                                 <Loader2 className="h-6 w-6 animate-spin mt-1" />
                             ) : (
                                 <p className="text-3xl font-bold">{formatCurrency(companyData?.walletBalance || 0)}</p>
                             )}
                         </div>
-                        <div className="flex items-center gap-2">
-                            {companyData && <PayoutRequestDialog companyData={companyData} onPayoutRequested={forceRefreshCompany}/>}
-                            {companyData && <PayServicesDialog member={companyData} onPaymentSuccess={forceRefreshCompany} />}
+                        {pendingPayoutsTotal > 0 && (
+                             <div className="flex justify-between items-baseline text-destructive">
+                                <p className="text-sm">(-) Pending Withdrawals</p>
+                                <p className="font-semibold">({formatCurrency(pendingPayoutsTotal)})</p>
+                            </div>
+                        )}
+                        <div className="flex justify-between items-baseline border-t pt-2 mt-2">
+                            <p className="text-lg font-bold text-primary">Available Balance</p>
+                            <p className="text-2xl font-bold text-primary">{formatCurrency(availableBalance)}</p>
                         </div>
+                    </div>
+                     <div className="flex items-center gap-2 mt-4">
+                        {companyData && <PayoutRequestDialog companyData={companyData} availableBalance={availableBalance} onPayoutRequested={handlePayoutRequestSuccess}/>}
+                        {companyData && <PayServicesDialog member={companyData} onPaymentSuccess={forceRefreshCompany} />}
                     </div>
                 </div>
 

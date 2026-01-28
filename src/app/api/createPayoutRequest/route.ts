@@ -29,31 +29,48 @@ export async function POST(req: NextRequest) {
     
     const db = getFirestore(app);
 
+    // Authorization check
     const userDoc = await db.collection('users').doc(uid).get();
     if (userDoc.data()?.companyId !== companyId) {
         return NextResponse.json({ success: false, error: 'Forbidden: You can only request payouts for your own company.' }, { status: 403 });
     }
-
-    const companyDoc = await db.collection('companies').doc(companyId).get();
-    const companyData = companyDoc.data();
-
-    if (!companyData || (companyData.walletBalance || 0) < amount) {
-        return NextResponse.json({ success: false, error: 'Insufficient wallet balance.' }, { status: 400 });
-    }
-
-    const collectionRef = db.collection(`companies/${companyId}/payoutRequests`);
-    const newDocRef = collectionRef.doc();
     
-    const payoutData = {
-        id: newDocRef.id,
-        userId: uid,
-        companyId: companyId,
-        amount,
-        status: 'pending',
-        createdAt: FieldValue.serverTimestamp(),
-    };
-    
-    await newDocRef.set(payoutData);
+    // Transactional logic to ensure data integrity
+    const newDocRef = await db.runTransaction(async (transaction) => {
+        const companyRef = db.collection('companies').doc(companyId);
+        const companyDoc = await transaction.get(companyRef);
+        const companyData = companyDoc.data();
+
+        if (!companyData) {
+            throw new Error("Company not found.");
+        }
+
+        const walletBalance = companyData.walletBalance || 0;
+
+        // Fetch existing pending payouts for this company within the transaction
+        const pendingPayoutsQuery = db.collection(`companies/${companyId}/payoutRequests`).where('status', '==', 'pending');
+        const pendingPayoutsSnap = await transaction.get(pendingPayoutsQuery);
+        const pendingTotal = pendingPayoutsSnap.docs.reduce((sum, doc) => sum + doc.data().amount, 0);
+        
+        const availableBalance = walletBalance - pendingTotal;
+
+        if (amount > availableBalance) {
+            throw new Error(`Insufficient available funds. Your current balance is ${walletBalance}, but ${pendingTotal} is already pending withdrawal, leaving ${availableBalance} available.`);
+        }
+
+        const payoutDocRef = db.collection(`companies/${companyId}/payoutRequests`).doc();
+        const payoutData = {
+            id: payoutDocRef.id,
+            userId: uid,
+            companyId: companyId,
+            amount,
+            status: 'pending',
+            createdAt: FieldValue.serverTimestamp(),
+        };
+        
+        transaction.set(payoutDocRef, payoutData);
+        return payoutDocRef;
+    });
 
     return NextResponse.json({ success: true, id: newDocRef.id, message: 'Payout request submitted successfully.' });
 
@@ -62,6 +79,6 @@ export async function POST(req: NextRequest) {
     if (error.code === 'auth/id-token-expired') {
        return NextResponse.json({ success: false, error: 'Authentication token has expired.' }, { status: 401 });
     }
-    return NextResponse.json({ success: false, error: `Internal Server Error: ${error.message}` }, { status: 500 });
+    return NextResponse.json({ success: false, error: `${error.message}` }, { status: 500 });
   }
 }
