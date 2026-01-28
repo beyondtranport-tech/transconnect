@@ -78,8 +78,10 @@ export async function POST(req: NextRequest) {
                     const companyDoc = await transaction.get(companyRef);
                     if (!companyDoc.exists) throw new Error("Company not found.");
 
-                    const currentBalance = companyDoc.data()?.walletBalance || 0;
-                    if (currentBalance < amount) throw new Error("Insufficient funds for payout.");
+                    const currentBalance = Number(companyDoc.data()?.walletBalance || 0);
+                    if (isNaN(currentBalance) || currentBalance < amount) {
+                        throw new Error(`Insufficient funds for payout. Wallet Balance: ${currentBalance}, Requested Amount: ${amount}.`);
+                    }
 
                     // Debit wallet
                     transaction.update(companyRef, {

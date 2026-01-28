@@ -19,8 +19,10 @@ async function handleServicePayment(db: FirebaseFirestore.Firestore, adminUid: s
         const companySnap = await transaction.get(companyRef);
         const companyData = companySnap.data();
 
-        if (!companyData || companyData.walletBalance < amount) {
-            throw new Error('Insufficient wallet balance.');
+        const currentBalance = Number(companyData?.walletBalance || 0);
+
+        if (!companySnap.exists || isNaN(currentBalance) || currentBalance < amount) {
+            throw new Error(`Insufficient funds. Available balance is less than the required amount.`);
         }
         
         const userDoc = await transaction.get(db.collection('users').doc(companyData.ownerId));
