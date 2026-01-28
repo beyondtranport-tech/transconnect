@@ -47,8 +47,8 @@ export async function POST(req: NextRequest) {
     
     await db.runTransaction(async (transaction) => {
       const buyerCompanyDoc = await transaction.get(buyerCompanyRef);
-      if (!buyerCompanyDoc.exists || (buyerCompanyDoc.data()?.walletBalance || 0) < totalAmount) {
-        throw new Error('Insufficient wallet balance.');
+      if (!buyerCompanyDoc.exists || (buyerCompanyDoc.data()?.availableBalance || 0) < totalAmount) {
+        throw new Error('Insufficient available funds.');
       }
       
       const sellerCompanyDoc = await transaction.get(sellerCompanyRef);
@@ -56,30 +56,32 @@ export async function POST(req: NextRequest) {
           throw new Error('Seller company not found.');
       }
       
-      // Get the commission percentage from the active agreement or fallback to global config
+      const mallCommissionsDoc = await transaction.get(db.doc('configuration/mallCommissions'));
       const activeAgreementSnap = await transaction.get(activeAgreementQuery);
       let platformDiscountPercent = 0;
       
       if (!activeAgreementSnap.empty && activeAgreementSnap.docs[0].data().percentage > 0) {
         platformDiscountPercent = activeAgreementSnap.docs[0].data().percentage;
+      } else if (mallCommissionsDoc.exists && mallCommissionsDoc.data()?.supplierMall > 0) {
+        platformDiscountPercent = mallCommissionsDoc.data()?.supplierMall;
       } else {
-        const mallCommissionsDoc = await transaction.get(db.doc('configuration/mallCommissions'));
-        if (mallCommissionsDoc.exists && mallCommissionsDoc.data()?.supplierMall > 0) {
-            platformDiscountPercent = mallCommissionsDoc.data()?.supplierMall;
-        } else {
-            // Hardcoded fallback if nothing is configured, to ensure revenue is tracked.
-            platformDiscountPercent = 2.5; 
-        }
+        platformDiscountPercent = 2.5; 
       }
       
       const platformCommission = totalAmount * (platformDiscountPercent / 100);
       const sellerAmount = totalAmount - platformCommission;
 
-      // 1. Debit buyer's wallet
-      transaction.update(buyerCompanyRef, { walletBalance: FieldValue.increment(-totalAmount) });
+      // 1. Debit buyer's wallet (both total and available)
+      transaction.update(buyerCompanyRef, { 
+          walletBalance: FieldValue.increment(-totalAmount),
+          availableBalance: FieldValue.increment(-totalAmount) 
+      });
 
-      // 2. Credit seller's wallet
-      transaction.update(sellerCompanyRef, { walletBalance: FieldValue.increment(sellerAmount) });
+      // 2. Credit seller's wallet (total and pending, but not available)
+      transaction.update(sellerCompanyRef, { 
+          walletBalance: FieldValue.increment(sellerAmount),
+          pendingBalance: FieldValue.increment(sellerAmount)
+      });
       
       const productNames = items.map((item:any) => `${item.name} (x${item.quantity})`).join(', ');
 
@@ -133,3 +135,5 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: false, error: `Internal Server Error: ${error.message}` }, { status: 500 });
   }
 }
+
+  

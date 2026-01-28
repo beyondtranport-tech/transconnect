@@ -139,6 +139,8 @@ export async function POST(req: NextRequest) {
                 membershipId: 'free',
                 rewardPoints: signupPoints,
                 walletBalance: 0,
+                pendingBalance: 0,
+                availableBalance: 0,
                 loyaltyTier: 'bronze',
                 status: 'pending',
                 createdAt: FieldValue.serverTimestamp(),
@@ -186,3 +188,5 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: false, error: `Internal Server Error: ${error.message}` }, { status: 500 });
   }
 }
+
+  

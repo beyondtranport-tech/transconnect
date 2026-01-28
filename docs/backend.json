@@ -35,13 +35,19 @@
         "city": { "type": "string" },
         "province": { "type": "string" },
         "postalCode": { "type": "string" },
+        "bankName": { "type": "string" },
+        "branchCode": { "type": "string" },
+        "accountNumber": { "type": "string" },
+        "accountHolderName": { "type": "string" },
         "membershipId": { "type": "string", "description": "Reference to Membership tier ID." },
         "membershipStartDate": { "type": "string", "format": "date-time" },
         "billingCycle": { "type": "string", "enum": ["monthly", "annual"] },
         "nextBillingDate": { "type": "string", "format": "date-time" },
         "shopId": { "type": "string", "description": "The ID of the shop owned by this company." },
         "rewardPoints": { "type": "number", "description": "Points earned for community actions." },
-        "walletBalance": { "type": "number", "description": "Cash balance in ZAR." },
+        "walletBalance": { "type": "number", "description": "Total ledger balance, including pending funds." },
+        "pendingBalance": { "type": "number", "description": "Funds from recent sales not yet cleared for withdrawal." },
+        "availableBalance": { "type": "number", "description": "Funds cleared and available for withdrawal or purchases." },
         "loyaltyTier": { "type": "string", "enum": ["bronze", "silver", "gold"], "description": "The current loyalty status of the member." },
         "activePlans": { "type": "array", "items": { "type": "string" }, "description": "A list of activated Connect plans (e.g., 'loyalty', 'rewards')." },
         "createdAt": { "type": "object" },
@@ -285,6 +291,23 @@
         "createdAt": { "type": "object" }
       }
     },
+     "PayoutRequest": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "PayoutRequest",
+      "type": "object",
+      "description": "Represents a request from a member to withdraw funds from their wallet.",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "companyId": { "type": "string" },
+        "amount": { "type": "number" },
+        "status": { "type": "string", "enum": ["pending", "processing", "completed", "rejected"] },
+        "createdAt": { "type": "object" },
+        "processedAt": { "type": "object" },
+        "rejectionReason": { "type": "string" }
+      },
+      "required": ["id", "userId", "companyId", "amount", "status", "createdAt"]
+    },
     "Transaction": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Transaction",
@@ -442,6 +465,14 @@
           "description": "Subcollection for pending wallet payments."
         }
       },
+       {
+        "path": "/companies/{companyId}/payoutRequests/{payoutId}",
+        "definition": {
+          "entityName": "PayoutRequest",
+          "schema": { "$ref": "#/entities/PayoutRequest" },
+          "description": "Subcollection for member payout requests."
+        }
+      },
       {
         "path": "/companies/{companyId}/transactions/{transactionId}",
         "definition": {
@@ -567,4 +598,4 @@
   }
 }
 
-    
+  
