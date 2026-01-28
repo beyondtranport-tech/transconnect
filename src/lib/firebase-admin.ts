@@ -29,11 +29,16 @@ export function getAdminApp(): { app: App | null; error: string | null } {
         throw new Error('Parsed service account is invalid or missing essential properties (project_id, client_email, private_key). Please re-generate it following the backend-setup.md guide.');
     }
     
-    // Let the Admin SDK automatically discover the storage bucket from the service account's project.
-    // This is more robust than hardcoding the bucket name.
+    // Explicitly use the project_id from the service account for all configurations.
+    const projectId = serviceAccount.project_id;
+    
+    // CORRECTED: The Admin SDK requires the GCS bucket name, which ends in .appspot.com
+    const bucketName = "transconnect-v1-39578841-2a857.appspot.com";
+
     const app = initializeApp({
       credential: cert(serviceAccount),
-      projectId: serviceAccount.project_id,
+      projectId: projectId,
+      storageBucket: bucketName, 
     }, ADMIN_APP_NAME);
 
     return { app, error: null };
