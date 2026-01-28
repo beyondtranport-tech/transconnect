@@ -5,8 +5,8 @@ import { NextRequest } from 'next/server';
 import { getAuth } from 'firebase-admin/auth';
 import { getFirestore } from 'firebase-admin/firestore';
 
-// v3 of the app name to force a full re-initialization on the server.
-const ADMIN_APP_NAME = 'firebase-admin-app-transconnect-studio-v3';
+// v4 of the app name to force a full re-initialization on the server.
+const ADMIN_APP_NAME = 'firebase-admin-app-transconnect-studio-v4';
 
 export function getAdminApp(): { app: App | null; error: string | null } {
   const existingApp = getApps().find(app => app.name === ADMIN_APP_NAME);
@@ -33,8 +33,8 @@ export function getAdminApp(): { app: App | null; error: string | null } {
     // Explicitly use the project_id from the service account for all configurations.
     const projectId = serviceAccount.project_id;
     
-    // CORRECTED: The Admin SDK was using the wrong bucket name. This uses the correct one from your project console.
-    const bucketName = "transconnect-v1-39578841-2a857.firebasestorage.app";
+    // CORRECTED: The Admin SDK requires the GCS bucket name, which ends in .appspot.com
+    const bucketName = "transconnect-v1-39578841-2a857.appspot.com";
 
     const app = initializeApp({
       credential: cert(serviceAccount),
