@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
     try {
         const { db } = await verifyAdmin(req);
         
-        const payoutsSnap = await db.collectionGroup('payoutRequests').where('status', '==', 'pending').get();
+        const payoutsSnap = await db.collectionGroup('payoutRequests').where('status', '==', 'pending').orderBy('createdAt', 'desc').get();
         
         if (payoutsSnap.empty) {
             return NextResponse.json({ success: true, data: [] });
