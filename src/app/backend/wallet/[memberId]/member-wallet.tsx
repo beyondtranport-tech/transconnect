@@ -5,7 +5,7 @@ import { useState, useMemo, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useUser, getClientSideAuthToken, useFirestore, useMemoFirebase } from '@/firebase';
-import { doc, writeBatch, collection, increment, serverTimestamp } from 'firebase/firestore';
+import { doc, writeBatch, collection, increment, serverTimestamp, query, deleteDoc, addDoc } from 'firebase/firestore';
 import { Loader2, User, Wallet, Calendar, Mail, FileCheck, Users, AlertTriangle, Check } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
@@ -19,6 +19,7 @@ import MemberTransactions from './member-transactions';
 import StaffContent from '@/app/account/staff-content';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import MemberPayoutRequests from './member-payout-requests';
+import { useRouter } from 'next/navigation';
 
 const formatCurrency = (amount: number) => new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(amount);
 const formatDate = (isoString: any) => {
@@ -32,9 +33,10 @@ const formatDate = (isoString: any) => {
 }
 
 export default function MemberWallet({ memberId }: { memberId: string }) {
-    const toast = useToast();
+    const { toast } = useToast();
     const { user: adminUser, isUserLoading: isAdminLoading } = useUser();
     const firestore = useFirestore();
+    const router = useRouter();
 
     const [isPosting, setIsPosting] = useState(false);
     const [newRecordAmount, setNewRecordAmount] = useState<number | string>('');
