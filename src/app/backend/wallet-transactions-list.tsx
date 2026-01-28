@@ -8,7 +8,7 @@ import { Loader2, DollarSign, Clock, ArrowRight, CheckCircle, Send } from 'lucid
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { useCollection, useFirestore, useMemoFirebase, getClientSideAuthToken } from '@/firebase';
-import { collection, query, collectionGroup, where } from 'firebase/firestore';
+import { collection, query, collectionGroup } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 
 interface Company {
@@ -71,13 +71,41 @@ export default function WalletTransactionsList() {
     const companiesQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'companies')) : null, [firestore]);
     const paymentsQuery = useMemoFirebase(() => firestore ? query(collectionGroup(firestore, 'walletPayments')) : null, [firestore]);
     const transactionsQuery = useMemoFirebase(() => firestore ? query(collectionGroup(firestore, 'transactions')) : null, [firestore]);
-    const payoutsQuery = useMemoFirebase(() => firestore ? query(collectionGroup(firestore, 'payoutRequests'), where('status', '==', 'pending')) : null, [firestore]);
+    
+    // NEW state and fetch for payouts
+    const [pendingPayouts, setPendingPayouts] = useState<any[]>([]);
+    const [isLoadingPayouts, setIsLoadingPayouts] = useState(true);
+    const [payoutsError, setPayoutsError] = useState<string | null>(null);
 
     const { data: companies, isLoading: isLoadingCompanies } = useCollection<Company>(companiesQuery);
     const { data: pendingPayments, isLoading: isLoadingPayments } = useCollection<Payment>(paymentsQuery);
     const { data: allocatedTransactions, isLoading: isLoadingTransactions } = useCollection<Transaction>(transactionsQuery);
-    const { data: pendingPayouts, isLoading: isLoadingPayouts, forceRefresh: refreshPayouts } = useCollection(payoutsQuery);
 
+    const refreshPayouts = useCallback(async () => {
+        setIsLoadingPayouts(true);
+        setPayoutsError(null);
+        try {
+            const token = await getClientSideAuthToken();
+            if (!token) throw new Error("Authentication failed.");
+            
+            const response = await fetch('/api/getPendingPayouts', {
+                method: 'GET',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+
+            const result = await response.json();
+            if (!result.success) throw new Error(result.error);
+            setPendingPayouts(result.data);
+        } catch (e: any) {
+            setPayoutsError(e.message);
+        } finally {
+            setIsLoadingPayouts(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        refreshPayouts();
+    }, [refreshPayouts]);
 
     const isLoading = isLoadingCompanies || isLoadingPayments || isLoadingTransactions || isLoadingPayouts;
 
