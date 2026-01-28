@@ -51,12 +51,15 @@ export function useCollection<T = any>(
   }, []);
 
   const path = useMemo(() => {
-    if (!memoizedTargetRefOrQuery || !('path' in memoizedTargetRefOrQuery)) return null;
-    return (memoizedTargetRefOrQuery as CollectionReference).path;
+    if (memoizedTargetRefOrQuery && 'path' in memoizedTargetRefOrQuery) {
+        return (memoizedTargetRefOrQuery as CollectionReference).path;
+    }
+    return null;
   }, [memoizedTargetRefOrQuery]);
   
   const isCollectionGroup = useMemo(() => {
-    return memoizedTargetRefOrQuery && !('path' in memoizedTargetRefOrQuery);
+    // A query is a collection group query if its internal _query object has a non-null collectionGroup property.
+    return !!(memoizedTargetRefOrQuery && (memoizedTargetRefOrQuery as any)._query?.collectionGroup);
   }, [memoizedTargetRefOrQuery]);
 
   const collectionId = useMemo(() => {
