@@ -66,6 +66,50 @@ export async function POST(req: NextRequest) {
         // --- END AUTHORIZATION ---
 
         switch (action) {
+            case 'approvePayout': {
+                const { companyId, payoutId, amount } = payload;
+                if (!companyId || !payoutId || typeof amount !== 'number') {
+                    throw new Error("Missing data for approving payout.");
+                }
+                const companyRef = db.doc(`companies/${companyId}`);
+                const payoutRef = db.doc(`companies/${companyId}/payoutRequests/${payoutId}`);
+
+                await db.runTransaction(async (transaction) => {
+                    const companyDoc = await transaction.get(companyRef);
+                    if (!companyDoc.exists) throw new Error("Company not found.");
+
+                    const currentBalance = companyDoc.data()?.walletBalance || 0;
+                    if (currentBalance < amount) throw new Error("Insufficient funds for payout.");
+
+                    // Debit wallet
+                    transaction.update(companyRef, {
+                        walletBalance: FieldValue.increment(-amount),
+                        updatedAt: FieldValue.serverTimestamp()
+                    });
+
+                    // Create debit transaction log
+                    const transactionRef = db.collection(`companies/${companyId}/transactions`).doc();
+                    transaction.set(transactionRef, {
+                        transactionId: transactionRef.id,
+                        type: 'debit',
+                        amount: amount,
+                        date: FieldValue.serverTimestamp(),
+                        description: `Wallet Payout to Bank`,
+                        status: 'allocated',
+                        isAdjustment: false,
+                        chartOfAccountsCode: '2110', // Accounts Payable
+                        postedBy: requestorUid,
+                    });
+
+                    // Mark payout as completed
+                    transaction.update(payoutRef, {
+                        status: 'completed',
+                        processedAt: FieldValue.serverTimestamp()
+                    });
+                });
+
+                return NextResponse.json({ success: true, message: "Payout approved and processed." });
+            }
             case 'getDashboardQueues': {
                  const allShopsSnap = await db.collectionGroup('shops').get();
                 const shopMap = new Map();
