@@ -4,7 +4,7 @@
 import { useUser, useFirestore, useCollection, useDoc, getClientSideAuthToken } from '@/firebase';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
-import { Loader2, DollarSign, Wallet, Clock, Info, Gem } from 'lucide-react';
+import { Loader2, DollarSign, Wallet, Clock, Info, Gem, Send, AlertCircle, Banknote, Edit } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { collection, query, orderBy, limit, doc } from 'firebase/firestore';
@@ -14,7 +14,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useConfig } from '@/hooks/use-config';
 import { useMemoFirebase } from '@/hooks/use-memo-firebase';
 import { useToast } from '@/hooks/use-toast';
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -45,6 +45,109 @@ const statusColors: { [key: string]: 'default' | 'secondary' | 'destructive' | '
   reversal: 'destructive',
   pending: 'secondary',
 };
+
+function PayoutRequestDialog({ companyData, onPayoutRequested }: { companyData: any, onPayoutRequested: () => void }) {
+    const { toast } = useToast();
+    const [isOpen, setIsOpen] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [amount, setAmount] = useState<string>('');
+
+    const hasBankDetails = companyData.bankName && companyData.accountNumber;
+
+    const handleSubmit = async () => {
+        const payoutAmount = parseFloat(amount);
+        if (isNaN(payoutAmount) || payoutAmount <= 0) {
+            toast({ variant: 'destructive', title: 'Invalid Amount', description: 'Please enter a positive amount.' });
+            return;
+        }
+        if (payoutAmount > companyData.walletBalance) {
+            toast({ variant: 'destructive', title: 'Insufficient Funds', description: 'Your requested amount exceeds your wallet balance.' });
+            return;
+        }
+
+        setIsSubmitting(true);
+        try {
+            const token = await getClientSideAuthToken();
+            if (!token) throw new Error("Authentication failed.");
+
+            const response = await fetch('/api/createPayoutRequest', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ companyId: companyData.id, amount: payoutAmount }),
+            });
+
+            if (!response.ok) throw new Error((await response.json()).error || "Failed to submit request.");
+
+            toast({ title: 'Payout Request Submitted!', description: 'Your request will be processed by an admin shortly.' });
+            setAmount('');
+            setIsOpen(false);
+            onPayoutRequested();
+        } catch (e: any) {
+            toast({ variant: 'destructive', title: 'Submission Failed', description: e.message });
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    return (
+        <Dialog open={isOpen} onOpenChange={setIsOpen}>
+            <DialogTrigger asChild>
+                <Button variant="outline">
+                    <Send className="mr-2 h-4 w-4"/> Request Payout
+                </Button>
+            </DialogTrigger>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Request Wallet Payout</DialogTitle>
+                     {hasBankDetails ? (
+                        <DialogDescription>Enter the amount you wish to withdraw to your registered bank account.</DialogDescription>
+                     ) : (
+                         <DialogDescription>You need to add your bank details before you can request a payout.</DialogDescription>
+                     )}
+                </DialogHeader>
+                {hasBankDetails ? (
+                    <div className="space-y-4 py-4">
+                        <div className="p-4 border rounded-lg bg-muted">
+                            <h4 className="font-semibold text-sm mb-2">Payout to:</h4>
+                            <p className="text-sm font-mono">{companyData.accountHolderName}</p>
+                            <p className="text-sm font-mono">{companyData.bankName} - {companyData.accountNumber}</p>
+                             <Button variant="link" size="sm" asChild className="p-0 h-auto text-xs mt-1">
+                                <Link href="/account?view=company"><Edit className="mr-1 h-3 w-3"/>Change bank details</Link>
+                            </Button>
+                        </div>
+                        <div className="space-y-2">
+                             <Label htmlFor="payout-amount">Amount</Label>
+                             <Input 
+                                id="payout-amount"
+                                type="number"
+                                placeholder={`Max ${formatCurrency(companyData.walletBalance)}`}
+                                value={amount}
+                                onChange={(e) => setAmount(e.target.value)}
+                            />
+                        </div>
+                    </div>
+                ) : (
+                    <Alert className="mt-4">
+                        <Banknote className="h-4 w-4"/>
+                        <AlertTitle>Bank Details Required</AlertTitle>
+                        <AlertDescription>
+                            Please add your company's bank details on your profile page to enable payouts.
+                            <Button asChild variant="link" className="p-0 h-auto ml-1"><Link href="/account?view=company">Go to Company Profile</Link></Button>
+                        </AlertDescription>
+                    </Alert>
+                )}
+                 <DialogFooter>
+                    {hasBankDetails && (
+                        <Button onClick={handleSubmit} disabled={isSubmitting}>
+                            {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Send className="mr-2 h-4 w-4" />}
+                            Submit Request
+                        </Button>
+                    )}
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    );
+}
 
 export default function WalletContent() {
     const { user, isUserLoading } = useUser();
@@ -130,7 +233,7 @@ export default function WalletContent() {
 
             toast({ title: "Proof Submitted!", description: "An admin will review and credit your wallet shortly."});
             setPaymentAmount('');
-            forceRefreshPayments(); // Refresh the list of pending payments
+            forceRefreshPayments();
         } catch (e: any) {
             toast({ variant: 'destructive', title: "Submission Failed", description: e.message });
         } finally {
@@ -159,9 +262,10 @@ export default function WalletContent() {
                                 <p className="text-3xl font-bold">{formatCurrency(companyData?.walletBalance || 0)}</p>
                             )}
                         </div>
-                        {companyData && (
-                            <PayServicesDialog member={companyData} onPaymentSuccess={forceRefreshCompany} />
-                        )}
+                        <div className="flex items-center gap-2">
+                            {companyData && <PayoutRequestDialog companyData={companyData} onPayoutRequested={forceRefreshCompany}/>}
+                            {companyData && <PayServicesDialog member={companyData} onPaymentSuccess={forceRefreshCompany} />}
+                        </div>
                     </div>
                 </div>
 
@@ -233,7 +337,6 @@ export default function WalletContent() {
 
                 {!isLoading && !error && (
                     <div className="space-y-8">
-                        {/* Section for Unallocated/Pending Payments */}
                         <div>
                             <h3 className="text-sm font-semibold text-muted-foreground flex items-center gap-2 mb-2">
                                 <Clock className="h-4 w-4" />
@@ -281,7 +384,6 @@ export default function WalletContent() {
                             )}
                         </div>
                         
-                        {/* Section for Allocated/Completed Transactions */}
                         <div>
                              <h3 className="text-sm font-semibold text-muted-foreground flex items-center gap-2 mb-2">
                                 <DollarSign className="h-4 w-4" />
