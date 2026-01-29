@@ -55,7 +55,7 @@ export default function MembershipPage() {
       return [...tiers].sort((a, b) => {
           const aIndex = order.indexOf(a.id);
           const bIndex = order.indexOf(b.id);
-          if (aIndex === -1 && bIndex === -1) return (a.price?.monthly || 0) - (b.price?.monthly || 0);
+          if (aIndex === -1 && bIndex === -1) return (a.price || 0) - (b.price || 0);
           if (aIndex === -1) return 1;
           if (bIndex === -1) return -1;
           return aIndex - bIndex;
@@ -91,14 +91,12 @@ export default function MembershipPage() {
         ) : (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-7xl mx-auto">
               {sortedTiers?.map((tier:any) => {
-                  const monthlyPrice = tier.price.monthly || 0;
+                  const monthlyPrice = tier.price || 0;
                   const annualDiscount = tier.annualDiscount || 0;
                   const specialOfferDiscount = tier.specialOfferDiscount || 0;
                   
-                  // Base prices before special offer
                   const baseAnnualPrice = monthlyPrice * 12 * (1 - (annualDiscount / 100));
                   
-                  // Final prices after special offer
                   const finalMonthlyPrice = monthlyPrice * (1 - (specialOfferDiscount / 100));
                   const finalAnnualPrice = baseAnnualPrice * (1 - (specialOfferDiscount / 100));
                   

@@ -220,17 +220,12 @@
         "id": { "type": "string" },
         "name": { "type": "string" },
         "description": { "type": "string" },
-        "price": {
-          "type": "object",
-          "properties": {
-              "monthly": { "type": "number" },
-              "annual": { "type": "number" }
-          }
-        },
-        "commissionShare": { "type": "number", "description": "The member's percentage share of earned commissions (e.g., from product sales)." },
-        "discountShare": { "type": "number", "description": "The member's percentage share of a negotiated group discount." },
+        "price": { "type": "number", "description": "The base monthly price of the plan." },
+        "annualDiscount": { "type": "number", "description": "The discount percentage applied when a member chooses an annual subscription." },
+        "specialOfferDiscount": { "type": "number", "description": "A temporary promotional discount percentage." },
         "features": { "type": "array", "items": { "type": "string" } },
-        "isPopular": { "type": "boolean" }
+        "isPopular": { "type": "boolean" },
+        "version": { "type": "number", "description": "A version number for tracking changes to the plan." }
       },
       "required": ["id", "name", "description"]
     },

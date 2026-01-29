@@ -27,10 +27,7 @@ const planSchema = z.object({
   id: z.string().min(1, 'ID is required (e.g., "basic")'),
   name: z.string().min(1, 'Plan name is required'),
   description: z.string().min(1, 'Description is required'),
-  price: z.object({
-    monthly: z.coerce.number().min(0, 'Price must be 0 or more'),
-    annual: z.coerce.number().min(0, 'Price must be 0 or more').optional(),
-  }),
+  price: z.coerce.number().min(0, 'Price must be 0 or more'),
   annualDiscount: z.coerce.number().min(0).max(100, "Must be between 0-100").optional(),
   specialOfferDiscount: z.coerce.number().min(0).max(100, "Must be between 0-100").optional(),
   features: z.array(z.string()).min(1, 'At least one feature is required'),
@@ -56,7 +53,7 @@ function PlanDialog({ plan, onSave }: { plan?: PlanFormValues; onSave: () => voi
             id: '',
             name: '',
             description: '',
-            price: { monthly: 0, annual: 0 },
+            price: 0,
             annualDiscount: 0,
             specialOfferDiscount: 0,
             features: [],
@@ -66,10 +63,9 @@ function PlanDialog({ plan, onSave }: { plan?: PlanFormValues; onSave: () => voi
         form.reset({
             ...defaultValues,
             ...(plan || {}),
-             price: {
-                monthly: plan?.price?.monthly || 0,
-                annual: plan?.price?.annual || 0,
-            },
+             price: plan?.price ?? 0,
+             annualDiscount: plan?.annualDiscount ?? 0,
+             specialOfferDiscount: plan?.specialOfferDiscount ?? 0,
         });
     }
   }, [isOpen, plan, form]);
@@ -131,7 +127,7 @@ function PlanDialog({ plan, onSave }: { plan?: PlanFormValues; onSave: () => voi
             <FormField name="description" control={form.control} render={({ field }) => (
               <FormItem><FormLabel>Description</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
             )} />
-            <FormField name="price.monthly" control={form.control} render={({ field }) => (
+            <FormField name="price" control={form.control} render={({ field }) => (
                 <FormItem><FormLabel>Monthly Price (R)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
               )} />
              <div className="grid grid-cols-2 gap-4">
@@ -298,7 +294,7 @@ export default function PricingManagement() {
                 {plans && plans.map(plan => (
                   <TableRow key={plan.id}>
                     <TableCell className="font-semibold">{plan.name}</TableCell>
-                    <TableCell>R {plan.price.monthly}</TableCell>
+                    <TableCell>R {plan.price}</TableCell>
                     <TableCell>{plan.annualDiscount || 0}%</TableCell>
                     <TableCell>{plan.specialOfferDiscount || 0}%</TableCell>
                     <TableCell>{plan.features.length}</TableCell>

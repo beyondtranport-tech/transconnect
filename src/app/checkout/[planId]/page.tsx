@@ -59,11 +59,16 @@ function CheckoutComponent() {
   
   const price = useMemo(() => {
     if (!plan) return 0;
+    const monthlyPrice = plan.price || 0;
+    const specialOfferDiscount = plan.specialOfferDiscount || 0;
+    const finalMonthlyPrice = monthlyPrice * (1 - (specialOfferDiscount / 100));
+
     if (cycle === 'annual') {
-        const annualPrice = plan.price.annual || 0;
-        return annualPrice > 0 ? annualPrice : plan.price.monthly * 12 * (1 - (plan.annualDiscount || 0) / 100);
+        const annualDiscount = plan.annualDiscount || 0;
+        const baseAnnualPrice = monthlyPrice * 12 * (1 - (annualDiscount / 100));
+        return baseAnnualPrice * (1 - (specialOfferDiscount / 100));
     }
-    return plan.price.monthly;
+    return finalMonthlyPrice;
   }, [plan, cycle]);
 
   const handlePurchaseWithWallet = async () => {
@@ -71,7 +76,7 @@ function CheckoutComponent() {
         toast({ variant: 'destructive', title: 'Error', description: 'User, plan, or database not available.' });
         return;
     }
-    if (companyData.walletBalance < price) {
+    if (companyData.availableBalance < price) {
         toast({ variant: 'destructive', title: 'Insufficient Funds', description: 'Your wallet balance is too low to complete this purchase.' });
         return;
     }
@@ -119,7 +124,7 @@ function CheckoutComponent() {
   };
 
   const isLoading = isUserLoading || isPlanLoading || isUserDocLoading || isCompanyLoading;
-  const hasSufficientFunds = companyData && companyData.walletBalance >= price;
+  const hasSufficientFunds = companyData && companyData.availableBalance >= price;
 
   if (isLoading || !user) {
       return <div className="flex justify-center items-center h-full"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
@@ -142,7 +147,7 @@ function CheckoutComponent() {
             </div>
              <div className="flex justify-between items-center border-t pt-4">
                 <p className="font-medium">Your Wallet Balance</p>
-                <p className="font-bold text-lg">{formatPrice(companyData?.walletBalance || 0)}</p>
+                <p className="font-bold text-lg">{formatPrice(companyData?.availableBalance || 0)}</p>
             </div>
         </div>
         
