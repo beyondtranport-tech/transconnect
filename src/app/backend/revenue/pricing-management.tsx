@@ -48,29 +48,32 @@ function PlanDialog({ plan, onSave }: { plan?: PlanFormValues; onSave: () => voi
 
   const form = useForm<PlanFormValues>({
     resolver: zodResolver(planSchema),
-    defaultValues: plan || {
-      id: '',
-      name: '',
-      description: '',
-      price: { monthly: 0, annual: 0 },
-      annualDiscount: 0,
-      specialOfferDiscount: 0,
-      features: [],
-      isPopular: false,
-      version: 1,
-    },
   });
   
   useEffect(() => {
     if (isOpen) {
-        if (plan) {
-          form.reset(plan);
-        } else {
-          form.reset({
-            id: '', name: '', description: '', price: { monthly: 0, annual: 0 },
-            annualDiscount: 0, specialOfferDiscount: 0, features: [], isPopular: false, version: 1,
-          });
-        }
+        const defaultValues = {
+            id: '',
+            name: '',
+            description: '',
+            price: { monthly: 0, annual: 0 },
+            annualDiscount: 0,
+            specialOfferDiscount: 0,
+            features: [],
+            isPopular: false,
+            version: 1,
+        };
+        // Merge the potentially incomplete 'plan' data with a full set of defaults.
+        // This ensures that optional fields are always defined (e.g., as 0)
+        // instead of being undefined, preventing the controlled/uncontrolled input error.
+        form.reset({
+            ...defaultValues,
+            ...(plan || {}),
+             price: { // Also ensure nested price object is fully defined
+                monthly: plan?.price?.monthly || 0,
+                annual: plan?.price?.annual || 0,
+            },
+        });
     }
   }, [isOpen, plan, form]);
 
