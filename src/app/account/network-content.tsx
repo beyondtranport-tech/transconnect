@@ -69,7 +69,7 @@ function InviteDialog({ lead, companyId, onInviteSent }: { lead: any, companyId:
             if (!result.success) throw new Error(result.error);
 
             // Construct simple join link
-            const link = `https://transconnect-v1-39578841-2a857.web.app/join?email=${encodeURIComponent(lead.email)}`;
+            const link = `https://transconnect-v1-39578841-2a857.firebaseapp.com/join?email=${encodeURIComponent(lead.email)}`;
             setInviteLink(link);
             
             toast({ title: "Invite Link Generated", description: "You can now share the secure link." });
@@ -361,6 +361,7 @@ export default function NetworkContent() {
     
 
     
+
 
 
 

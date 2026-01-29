@@ -211,7 +211,7 @@ export default function ISAManagement() {
   };
   
   const inviteLink = dialogState.type === 'invite' && dialogState.data
-    ? `https://transconnect-v1-39578841-2a857.web.app/join?email=${encodeURIComponent(dialogState.data.email)}&firstName=${encodeURIComponent(dialogState.data.firstName)}&lastName=${encodeURIComponent(dialogState.data.lastName)}${dialogState.data.phone ? `&phone=${encodeURIComponent(dialogState.data.phone)}` : ''}`
+    ? `https://transconnect-v1-39578841-2a857.firebaseapp.com/join?email=${encodeURIComponent(dialogState.data.email)}&firstName=${encodeURIComponent(dialogState.data.firstName)}&lastName=${encodeURIComponent(dialogState.data.lastName)}${dialogState.data.phone ? `&phone=${encodeURIComponent(dialogState.data.phone)}` : ''}`
     : '';
 
   const copyInviteLink = () => {

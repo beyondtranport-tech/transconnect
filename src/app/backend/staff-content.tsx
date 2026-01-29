@@ -140,7 +140,7 @@ function AddStaffDialog({ onStaffAdded }: { onStaffAdded: () => void }) {
   }
 
   const copyInviteLink = () => {
-    const signupUrl = `${window.location.origin}/join?email=${encodeURIComponent(newUserInfo.email)}&firstName=${encodeURIComponent(newUserInfo.firstName)}&lastName=${encodeURIComponent(newUserInfo.lastName)}`;
+    const signupUrl = `https://transconnect-v1-39578841-2a857.firebaseapp.com/join?email=${encodeURIComponent(newUserInfo.email)}&firstName=${encodeURIComponent(newUserInfo.firstName)}&lastName=${encodeURIComponent(newUserInfo.lastName)}`;
     navigator.clipboard.writeText(signupUrl);
     toast({
         title: 'Sign-up Link Copied!',
@@ -384,3 +384,5 @@ export default function StaffManagement() {
         </Card>
     );
 }
+
+    
