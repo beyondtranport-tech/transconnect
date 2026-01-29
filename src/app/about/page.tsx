@@ -1,7 +1,7 @@
 
 import Image from "next/image";
 import data from "@/lib/placeholder-images.json";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { CheckCircle, ArrowRight, DollarSign, Handshake, Cpu, Shield, Lock, DatabaseZap, ShieldCheck, CreditCard, Building } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
@@ -48,25 +48,25 @@ const values = [
 ];
 
 const partners = [
-  { 
-    name: 'SA Auction Online', 
-    description: 'Powering our auction mall with a vast inventory of vehicles and assets.', 
-    logo: 'https://placehold.co/200x60/14532d/ffffff?text=SA+Auction+Online' 
+  {
+    name: 'SA Auction Online',
+    description: 'Powering our auction mall with a vast inventory of vehicles and assets.',
+    logo: 'https://placehold.co/200x60/14532d/ffffff?text=SA+Auction+Online'
   },
-  { 
-    name: 'SATL', 
-    description: 'Connecting our members to a national network of freight forwarders and shippers.', 
-    logo: 'https://placehold.co/200x60/14532d/ffffff?text=SATL' 
+  {
+    name: 'SATL',
+    description: 'Connecting our members to a national network of freight forwarders and shippers.',
+    logo: 'https://placehold.co/200x60/14532d/ffffff?text=SATL'
   },
-  { 
-    name: 'Ludic Financial Services', 
-    description: 'Providing specialist insurance solutions for the transport sector.', 
-    logo: 'https://placehold.co/200x60/14532d/ffffff?text=Ludic' 
+  {
+    name: 'Ludic Financial Services',
+    description: 'Providing specialist insurance solutions for the transport sector.',
+    logo: 'https://placehold.co/200x60/14532d/ffffff?text=Ludic'
   },
-  { 
-    name: 'CTS Trailers', 
-    description: 'A national trailer manufacturer offering quality assets to our members.', 
-    logo: 'https://placehold.co/200x60/14532d/ffffff?text=CTS+Trailers' 
+  {
+    name: 'CTS Trailers',
+    description: 'A national trailer manufacturer offering quality assets to our members.',
+    logo: 'https://placehold.co/200x60/14532d/ffffff?text=CTS+Trailers'
   }
 ];
 
@@ -101,7 +101,7 @@ export default function AboutPage() {
                 </div>
             </div>
         </section>
-        
+
         <section className="py-16 md:py-24 bg-card">
             <div className="container mx-auto px-4">
                  <div className="space-y-16">
@@ -140,7 +140,7 @@ export default function AboutPage() {
                  </div>
             </div>
         </section>
-        
+
         <section className="py-16 md:py-24 bg-background">
             <div className="container mx-auto px-4">
                 <div className="text-center max-w-3xl mx-auto mb-16">
