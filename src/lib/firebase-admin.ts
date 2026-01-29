@@ -5,8 +5,8 @@ import { NextRequest } from 'next/server';
 import { getAuth } from 'firebase-admin/auth';
 import { getFirestore } from 'firebase-admin/firestore';
 
-// v5 of the app name to force a final, correct re-initialization on the server.
-const ADMIN_APP_NAME = 'firebase-admin-app-transconnect-studio-v5';
+// v8 - Further simplify init by removing explicit projectId to prevent hangs.
+const ADMIN_APP_NAME = 'firebase-admin-app-transconnect-studio-v8';
 
 export function getAdminApp(): { app: App | null; error: string | null } {
   const existingApp = getApps().find(app => app.name === ADMIN_APP_NAME);
@@ -30,15 +30,10 @@ export function getAdminApp(): { app: App | null; error: string | null } {
         throw new Error('Parsed service account is invalid or missing essential properties (project_id, client_email, private_key). Please re-generate it following the backend-setup.md guide.');
     }
     
-    const projectId = serviceAccount.project_id;
-    
-    // CORRECTED BUCKET NAME: Using the '.firebasestorage.app' domain as provided by the user's console.
-    const bucketName = "transconnect-v1-39578841-2a857.firebasestorage.app";
-
+    // The projectId is inferred from the service account credential.
+    // Explicitly removing it from the init config can resolve hangs in certain environments.
     const app = initializeApp({
       credential: cert(serviceAccount),
-      projectId: projectId,
-      storageBucket: bucketName, 
     }, ADMIN_APP_NAME);
 
     return { app, error: null };
