@@ -59,7 +59,11 @@ function CheckoutComponent() {
   
   const price = useMemo(() => {
     if (!plan) return 0;
-    const monthlyPrice = plan.price || 0;
+    
+    const monthlyPrice = (typeof plan.price === 'object' && plan.price !== null)
+        ? plan.price.monthly || 0
+        : plan.price || 0;
+        
     const specialOfferDiscount = plan.specialOfferDiscount || 0;
     const finalMonthlyPrice = monthlyPrice * (1 - (specialOfferDiscount / 100));
 

@@ -91,7 +91,10 @@ export default function MembershipPage() {
         ) : (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-7xl mx-auto">
               {sortedTiers?.map((tier:any) => {
-                  const monthlyPrice = tier.price || 0;
+                  const monthlyPrice = (typeof tier.price === 'object' && tier.price !== null)
+                    ? tier.price.monthly || 0
+                    : tier.price || 0;
+                  
                   const annualDiscount = tier.annualDiscount || 0;
                   const specialOfferDiscount = tier.specialOfferDiscount || 0;
                   
