@@ -35,7 +35,8 @@ import {
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { useCollection, useFirestore, getClientSideAuthToken, useMemoFirebase } from '@/firebase';
+import { useCollection, useFirestore, getClientSideAuthToken } from '@/firebase';
+import { useMemoFirebase } from '@/hooks/use-memo-firebase';
 import { collection, query, where } from 'firebase/firestore';
 import { Loader2, PlusCircle, Handshake, Edit, Trash2, Send, Copy } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
@@ -209,8 +210,8 @@ export default function PartnerManagement() {
     }
   };
   
-  const inviteLink = dialogState.type === 'invite' && dialogState.data && typeof window !== 'undefined'
-    ? `${window.location.origin}/join?email=${encodeURIComponent(dialogState.data.email)}&firstName=${encodeURIComponent(dialogState.data.firstName)}&lastName=${encodeURIComponent(dialogState.data.lastName)}${dialogState.data.phone ? `&phone=${encodeURIComponent(dialogState.data.phone)}` : ''}`
+  const inviteLink = dialogState.type === 'invite' && dialogState.data
+    ? `https://transconnect-v1-39578841-2a857.web.app/join?email=${encodeURIComponent(dialogState.data.email)}&firstName=${encodeURIComponent(dialogState.data.firstName)}&lastName=${encodeURIComponent(dialogState.data.lastName)}${dialogState.data.phone ? `&phone=${encodeURIComponent(dialogState.data.phone)}` : ''}`
     : '';
 
   const copyInviteLink = () => {

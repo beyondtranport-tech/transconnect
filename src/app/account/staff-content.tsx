@@ -133,7 +133,7 @@ function AddStaffDialog({ companyId, onStaffAdded, canCreate }: { companyId: str
   }
 
   const copyInviteLink = () => {
-    const signupUrl = `${window.location.origin}/join?email=${encodeURIComponent(newUserInfo.email)}&firstName=${encodeURIComponent(newUserInfo.firstName)}&lastName=${encodeURIComponent(newUserInfo.lastName)}`;
+    const signupUrl = `https://transconnect-v1-39578841-2a857.web.app/join?email=${encodeURIComponent(newUserInfo.email)}&firstName=${encodeURIComponent(newUserInfo.firstName)}&lastName=${encodeURIComponent(newUserInfo.lastName)}`;
     navigator.clipboard.writeText(signupUrl);
     toast({
         title: 'Sign-up Link Copied!',

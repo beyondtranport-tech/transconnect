@@ -354,6 +354,16 @@ export async function POST(req: NextRequest) {
                 await db.collection('leads').doc(leadId).delete();
                 return NextResponse.json({ success: true });
             }
+            case 'inviteLead': {
+                const { leadId } = payload;
+                if (!leadId) throw new Error("leadId is required.");
+                const leadRef = db.collection('leads').doc(leadId);
+                await leadRef.update({
+                    status: 'invited',
+                    updatedAt: FieldValue.serverTimestamp()
+                });
+                return NextResponse.json({ success: true, message: "Lead status updated to 'invited'." });
+            }
             case 'saveLeads': {
                 const { leads } = payload;
                 if (!Array.isArray(leads)) {
