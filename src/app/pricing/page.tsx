@@ -61,6 +61,14 @@ export default function MembershipPage() {
           return aIndex - bIndex;
       });
   }, [tiers]);
+  
+  const maxAnnualDiscount = useMemo(() => {
+      if (!sortedTiers || sortedTiers.length === 0) {
+          return 0;
+      }
+      // Find the maximum annualDiscount among all tiers
+      return Math.max(...sortedTiers.map(tier => tier.annualDiscount || 0));
+  }, [sortedTiers]);
 
   const allFeatures = useMemo(() => featureSections.flatMap(s => s.features), []);
 
@@ -82,7 +90,10 @@ export default function MembershipPage() {
                 onCheckedChange={(checked) => setBillingCycle(checked ? 'annual' : 'monthly')}
             />
             <Label htmlFor="billing-switch">
-                Annual <span className="text-primary font-semibold ml-1">(Save up to 15%)</span>
+                Annual
+                {maxAnnualDiscount > 0 && (
+                    <span className="text-primary font-semibold ml-1">(Save up to {maxAnnualDiscount}%)</span>
+                )}
             </Label>
         </div>
 
@@ -98,13 +109,14 @@ export default function MembershipPage() {
                   const annualDiscount = tier.annualDiscount || 0;
                   const specialOfferDiscount = tier.specialOfferDiscount || 0;
                   
-                  const baseAnnualPrice = monthlyPrice * 12 * (1 - (annualDiscount / 100));
-                  
+                  // This calculation was flawed, annual price should be based on monthly price
+                  const annualPrice = monthlyPrice * 12 * (1 - (annualDiscount / 100));
+
                   const finalMonthlyPrice = monthlyPrice * (1 - (specialOfferDiscount / 100));
-                  const finalAnnualPrice = baseAnnualPrice * (1 - (specialOfferDiscount / 100));
+                  const finalAnnualPrice = annualPrice * (1 - (specialOfferDiscount / 100));
                   
                   const priceToShow = billingCycle === 'annual' ? finalAnnualPrice / 12 : finalMonthlyPrice;
-                  const originalPriceToShow = billingCycle === 'annual' ? baseAnnualPrice / 12 : monthlyPrice;
+                  const originalPriceToShow = billingCycle === 'annual' ? (monthlyPrice * 12 * (1 - (annualDiscount / 100))) / 12 : monthlyPrice;
                   
                   const isDiscounted = specialOfferDiscount > 0;
 
@@ -134,7 +146,7 @@ export default function MembershipPage() {
                                     <div className="flex items-baseline justify-center gap-2">
                                         {isDiscounted && (
                                             <span className="text-2xl font-medium text-muted-foreground line-through decoration-2">
-                                                {formatPrice(originalPriceToShow)}
+                                                {formatPrice(originalPriceToShow, true)}
                                             </span>
                                         )}
                                         <span className="text-4xl font-extrabold tracking-tight">
