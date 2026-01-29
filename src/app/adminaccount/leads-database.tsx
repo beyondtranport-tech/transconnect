@@ -169,7 +169,13 @@ function InviteDialog({ lead, onInviteSent }: { lead: any; onInviteSent: () => v
             const result = await response.json();
             if (!result.success) throw new Error(result.error);
             
-            setInviteLink(result.inviteLink);
+            const nameParts = (lead.contactPerson || '').split(' ');
+            const firstName = nameParts[0] || '';
+            const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : '';
+            
+            const constructedLink = `${window.location.origin}/join?email=${encodeURIComponent(lead.email || '')}&firstName=${encodeURIComponent(firstName)}&lastName=${encodeURIComponent(lastName)}`;
+            
+            setInviteLink(constructedLink);
             onInviteSent();
             toast({ title: "Invite Link Generated", description: result.message || "You can now share the secure link." });
         } catch(e: any) {
@@ -203,7 +209,7 @@ function InviteDialog({ lead, onInviteSent }: { lead: any; onInviteSent: () => v
                 <DialogHeader>
                     <DialogTitle>Invite {lead.companyName}</DialogTitle>
                     <DialogDescription>
-                        {inviteLink ? "Share this secure sign-up link. It can be used once for the lead to set their password." : `This will create an account for ${lead.email} and generate a sign-up link. Are you sure?`}
+                        {inviteLink ? "Share this secure sign-up link. It can be used once for the lead to set their password." : `This will mark the lead as 'invited' and generate a sign-up link. Are you sure?`}
                     </DialogDescription>
                 </DialogHeader>
 
@@ -484,3 +490,5 @@ export default function LeadsDatabase() {
         </Suspense>
     );
 }
+
+    
