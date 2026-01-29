@@ -91,8 +91,21 @@ export default function MembershipPage() {
         ) : (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-7xl mx-auto">
               {sortedTiers?.map((tier:any) => {
-                  const annualPrice = tier.price.annual || tier.price.monthly * 12 * (1 - (tier.annualDiscount || 0) / 100);
-                  const priceToShow = billingCycle === 'annual' ? annualPrice / 12 : tier.price.monthly;
+                  const monthlyPrice = tier.price.monthly || 0;
+                  const annualDiscount = tier.annualDiscount || 0;
+                  const specialOfferDiscount = tier.specialOfferDiscount || 0;
+                  
+                  // Base prices before special offer
+                  const baseAnnualPrice = monthlyPrice * 12 * (1 - (annualDiscount / 100));
+                  
+                  // Final prices after special offer
+                  const finalMonthlyPrice = monthlyPrice * (1 - (specialOfferDiscount / 100));
+                  const finalAnnualPrice = baseAnnualPrice * (1 - (specialOfferDiscount / 100));
+                  
+                  const priceToShow = billingCycle === 'annual' ? finalAnnualPrice / 12 : finalMonthlyPrice;
+                  const originalPriceToShow = billingCycle === 'annual' ? baseAnnualPrice / 12 : monthlyPrice;
+                  
+                  const isDiscounted = specialOfferDiscount > 0;
 
                   return (
                     <Card key={tier.id} className={cn(
@@ -117,12 +130,19 @@ export default function MembershipPage() {
                                 <span className="text-4xl font-extrabold tracking-tight">Free</span>
                            ) : (
                                 <>
-                                    <span className="text-4xl font-extrabold tracking-tight">
-                                        {formatPrice(priceToShow)}
-                                    </span>
-                                    <span className="text-muted-foreground">/month</span>
+                                    <div className="flex items-baseline justify-center gap-2">
+                                        {isDiscounted && (
+                                            <span className="text-2xl font-medium text-muted-foreground line-through decoration-2">
+                                                {formatPrice(originalPriceToShow)}
+                                            </span>
+                                        )}
+                                        <span className="text-4xl font-extrabold tracking-tight">
+                                            {formatPrice(priceToShow)}
+                                        </span>
+                                        <span className="text-muted-foreground self-end">/month</span>
+                                    </div>
                                     {billingCycle === 'annual' && (
-                                        <p className="text-xs text-muted-foreground mt-1">Billed as {formatPrice(annualPrice)} per year</p>
+                                        <p className="text-xs text-muted-foreground mt-1">Billed as {formatPrice(finalAnnualPrice)} per year</p>
                                     )}
                                 </>
                            )}

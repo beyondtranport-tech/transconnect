@@ -29,7 +29,7 @@ const planSchema = z.object({
   description: z.string().min(1, 'Description is required'),
   price: z.object({
     monthly: z.coerce.number().min(0, 'Price must be 0 or more'),
-    annual: z.coerce.number().min(0, 'Price must be 0 or more'),
+    annual: z.coerce.number().min(0, 'Price must be 0 or more').optional(),
   }),
   annualDiscount: z.coerce.number().min(0).max(100, "Must be between 0-100").optional(),
   specialOfferDiscount: z.coerce.number().min(0).max(100, "Must be between 0-100").optional(),
@@ -63,13 +63,10 @@ function PlanDialog({ plan, onSave }: { plan?: PlanFormValues; onSave: () => voi
             isPopular: false,
             version: 1,
         };
-        // Merge the potentially incomplete 'plan' data with a full set of defaults.
-        // This ensures that optional fields are always defined (e.g., as 0)
-        // instead of being undefined, preventing the controlled/uncontrolled input error.
         form.reset({
             ...defaultValues,
             ...(plan || {}),
-             price: { // Also ensure nested price object is fully defined
+             price: {
                 monthly: plan?.price?.monthly || 0,
                 annual: plan?.price?.annual || 0,
             },
@@ -134,14 +131,9 @@ function PlanDialog({ plan, onSave }: { plan?: PlanFormValues; onSave: () => voi
             <FormField name="description" control={form.control} render={({ field }) => (
               <FormItem><FormLabel>Description</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
             )} />
-            <div className="grid grid-cols-2 gap-4">
-              <FormField name="price.monthly" control={form.control} render={({ field }) => (
+            <FormField name="price.monthly" control={form.control} render={({ field }) => (
                 <FormItem><FormLabel>Monthly Price (R)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
               )} />
-              <FormField name="price.annual" control={form.control} render={({ field }) => (
-                <FormItem><FormLabel>Annual Price (R)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
-              )} />
-            </div>
              <div className="grid grid-cols-2 gap-4">
                 <FormField name="annualDiscount" control={form.control} render={({ field }) => (
                     <FormItem><FormLabel>Annual Discount (%)</FormLabel><FormControl><Input type="number" placeholder="e.g., 15" {...field} /></FormControl><FormMessage /></FormItem>
@@ -295,7 +287,6 @@ export default function PricingManagement() {
                 <TableRow>
                   <TableHead>Plan Name</TableHead>
                   <TableHead>Monthly Price</TableHead>
-                  <TableHead>Annual Price</TableHead>
                   <TableHead>Annual Discount</TableHead>
                   <TableHead>Special Offer</TableHead>
                   <TableHead>Features</TableHead>
@@ -308,7 +299,6 @@ export default function PricingManagement() {
                   <TableRow key={plan.id}>
                     <TableCell className="font-semibold">{plan.name}</TableCell>
                     <TableCell>R {plan.price.monthly}</TableCell>
-                    <TableCell>R {plan.price.annual}</TableCell>
                     <TableCell>{plan.annualDiscount || 0}%</TableCell>
                     <TableCell>{plan.specialOfferDiscount || 0}%</TableCell>
                     <TableCell>{plan.features.length}</TableCell>
