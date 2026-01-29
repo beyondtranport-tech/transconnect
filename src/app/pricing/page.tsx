@@ -91,7 +91,7 @@ export default function MembershipPage() {
         ) : (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-7xl mx-auto">
               {sortedTiers?.map((tier:any) => {
-                  const annualPrice = tier.price.annual || tier.price.monthly * 12 * (1 - (tier.commissionShare || 0) / 100);
+                  const annualPrice = tier.price.annual || tier.price.monthly * 12 * (1 - (tier.annualDiscount || 0) / 100);
                   const priceToShow = billingCycle === 'annual' ? annualPrice / 12 : tier.price.monthly;
 
                   return (

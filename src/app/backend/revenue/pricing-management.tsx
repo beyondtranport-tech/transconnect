@@ -31,11 +31,13 @@ const planSchema = z.object({
     monthly: z.coerce.number().min(0, 'Price must be 0 or more'),
     annual: z.coerce.number().min(0, 'Price must be 0 or more'),
   }),
-  commissionShare: z.coerce.number().min(0).max(100, "Must be between 0-100").optional(),
-  discountShare: z.coerce.number().min(0).max(100, "Must be between 0-100").optional(),
+  annualDiscount: z.coerce.number().min(0).max(100, "Must be between 0-100").optional(),
+  specialOfferDiscount: z.coerce.number().min(0).max(100, "Must be between 0-100").optional(),
   features: z.array(z.string()).min(1, 'At least one feature is required'),
   isPopular: z.boolean().default(false),
+  version: z.coerce.number().min(1).optional(),
 });
+
 
 type PlanFormValues = z.infer<typeof planSchema>;
 
@@ -51,10 +53,11 @@ function PlanDialog({ plan, onSave }: { plan?: PlanFormValues; onSave: () => voi
       name: '',
       description: '',
       price: { monthly: 0, annual: 0 },
-      commissionShare: 0,
-      discountShare: 0,
+      annualDiscount: 0,
+      specialOfferDiscount: 0,
       features: [],
       isPopular: false,
+      version: 1,
     },
   });
   
@@ -65,7 +68,7 @@ function PlanDialog({ plan, onSave }: { plan?: PlanFormValues; onSave: () => voi
         } else {
           form.reset({
             id: '', name: '', description: '', price: { monthly: 0, annual: 0 },
-            commissionShare: 0, discountShare: 0, features: [], isPopular: false,
+            annualDiscount: 0, specialOfferDiscount: 0, features: [], isPopular: false, version: 1,
           });
         }
     }
@@ -77,13 +80,18 @@ function PlanDialog({ plan, onSave }: { plan?: PlanFormValues; onSave: () => voi
     try {
       const token = await getClientSideAuthToken();
       if (!token) throw new Error("Authentication failed.");
+      
+      const dataToSave: Partial<PlanFormValues> & { version: number } = { ...values, version: 1 };
+      if (plan) {
+        dataToSave.version = (plan.version || 1) + 1;
+      }
 
       const response = await fetch('/api/updateConfigDoc', {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({
           path: `memberships/${values.id}`,
-          data: { ...values, updatedAt: { _methodName: 'serverTimestamp' } }
+          data: { ...dataToSave, updatedAt: { _methodName: 'serverTimestamp' } }
         }),
       });
 
@@ -132,11 +140,11 @@ function PlanDialog({ plan, onSave }: { plan?: PlanFormValues; onSave: () => voi
               )} />
             </div>
              <div className="grid grid-cols-2 gap-4">
-                <FormField name="commissionShare" control={form.control} render={({ field }) => (
-                    <FormItem><FormLabel>Commission Share (%)</FormLabel><FormControl><Input type="number" placeholder="e.g., 15" {...field} /></FormControl><FormMessage /></FormItem>
+                <FormField name="annualDiscount" control={form.control} render={({ field }) => (
+                    <FormItem><FormLabel>Annual Discount (%)</FormLabel><FormControl><Input type="number" placeholder="e.g., 15" {...field} /></FormControl><FormMessage /></FormItem>
                 )} />
-                <FormField name="discountShare" control={form.control} render={({ field }) => (
-                    <FormItem><FormLabel>Discount Share (%)</FormLabel><FormControl><Input type="number" placeholder="e.g., 10" {...field} /></FormControl><FormMessage /></FormItem>
+                <FormField name="specialOfferDiscount" control={form.control} render={({ field }) => (
+                    <FormItem><FormLabel>Special Offer Discount (%)</FormLabel><FormControl><Input type="number" placeholder="e.g., 10" {...field} /></FormControl><FormMessage /></FormItem>
                 )} />
             </div>
             
@@ -285,9 +293,10 @@ export default function PricingManagement() {
                   <TableHead>Plan Name</TableHead>
                   <TableHead>Monthly Price</TableHead>
                   <TableHead>Annual Price</TableHead>
-                  <TableHead>Commission Share</TableHead>
-                  <TableHead>Discount Share</TableHead>
+                  <TableHead>Annual Discount</TableHead>
+                  <TableHead>Special Offer</TableHead>
                   <TableHead>Features</TableHead>
+                  <TableHead>Version</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -297,9 +306,10 @@ export default function PricingManagement() {
                     <TableCell className="font-semibold">{plan.name}</TableCell>
                     <TableCell>R {plan.price.monthly}</TableCell>
                     <TableCell>R {plan.price.annual}</TableCell>
-                    <TableCell>{plan.commissionShare || 0}%</TableCell>
-                    <TableCell>{plan.discountShare || 0}%</TableCell>
+                    <TableCell>{plan.annualDiscount || 0}%</TableCell>
+                    <TableCell>{plan.specialOfferDiscount || 0}%</TableCell>
                     <TableCell>{plan.features.length}</TableCell>
+                    <TableCell>{plan.version || 1}</TableCell>
                     <TableCell className="text-right">
                         <PlanDialog plan={plan} onSave={forceRefresh} />
                         <Button variant="ghost" size="icon" onClick={() => handleDelete(plan.id)} disabled={plan.id === 'free'}><Trash2 className="h-4 w-4 text-destructive" /></Button>
