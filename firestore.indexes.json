@@ -16,6 +16,20 @@
       ]
     },
     {
+      "collectionGroup": "companies",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "membershipId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "nextBillingDate",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
       "collectionGroup": "walletPayments",
       "queryScope": "COLLECTION_GROUP",
       "fields": [
