@@ -146,20 +146,27 @@ export default function MembershipPage() {
 
                   const isDiscounted = isOfferActiveNow && specialOfferDiscount > 0;
                   const formattedEndDate = formatDate(tier.specialOfferEndDate);
+                  
+                  const monthlySaving = originalPriceToShow - discountedPrice;
 
 
                   return (
                     <Card key={tier.id} className={cn(
-                        "flex flex-col shadow-lg transition-transform duration-300 hover:scale-105",
-                        tier.isPopular ? "border-primary border-2 relative" : "border"
+                        "flex flex-col shadow-lg transition-transform duration-300 hover:scale-105 relative overflow-visible",
+                        tier.isPopular ? "border-primary border-2" : "border"
                     )}>
+                        {isDiscounted && monthlySaving > 0 && (
+                            <div className="absolute top-8 -left-4 bg-destructive text-destructive-foreground px-4 py-1.5 text-sm font-bold rounded-r-full shadow-lg transform -rotate-15 z-10">
+                                SAVE {formatPrice(monthlySaving)}
+                            </div>
+                        )}
                         {tier.isPopular && (
-                            <div className="absolute -top-4 right-4 bg-primary text-primary-foreground px-3 py-1 text-sm font-semibold rounded-full flex items-center gap-1">
+                            <div className="absolute -top-4 right-4 bg-primary text-primary-foreground px-3 py-1 text-sm font-semibold rounded-full flex items-center gap-1 z-10">
                                 <Star className="h-4 w-4" />
                                 Most Popular
                             </div>
                         )}
-                      <CardHeader className="text-center">
+                      <CardHeader className="text-center pt-8">
                         <CardTitle className="text-2xl font-bold">{tier.name}</CardTitle>
                         <CardDescription className="mt-2 text-base h-12">
                             {tier.id === 'free'
@@ -171,8 +178,8 @@ export default function MembershipPage() {
                                 <span className="text-4xl font-extrabold tracking-tight">Free</span>
                            ) : isDiscounted ? (
                                 <div className="text-center space-y-1">
-                                    <p className="text-base text-muted-foreground line-through">
-                                        {formatPrice(originalPriceToShow, true)}
+                                    <p className="text-base text-muted-foreground">
+                                        Was <span className="line-through">{formatPrice(originalPriceToShow, true)}</span>
                                     </p>
                                     {tier.specialOfferText && <p className="text-lg font-semibold text-primary">{tier.specialOfferText}</p>}
                                     
@@ -185,7 +192,7 @@ export default function MembershipPage() {
                                     
                                     {formattedEndDate && (
                                         <p className="text-xs text-muted-foreground">
-                                            Offer valid until {formattedEndDate}
+                                            Valid until {formattedEndDate}
                                         </p>
                                     )}
                                 </div>
