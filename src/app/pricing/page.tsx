@@ -20,6 +20,7 @@ import featuresData from '@/lib/features.json';
 const { featureSections } = featuresData;
 
 const formatPrice = (price: number, perMonth = false) => {
+    if (typeof price !== 'number' || isNaN(price)) return 'R 0';
     const formatted = new Intl.NumberFormat('en-ZA', {
         style: 'currency',
         currency: 'ZAR',
@@ -124,10 +125,9 @@ export default function MembershipPage() {
                   const monthlyPrice = tier.price || 0;
                   const annualDiscount = tier.annualDiscount || 0;
                   const specialOfferDiscount = tier.specialOfferDiscount || 0;
-                  const annualPrice = monthlyPrice * 12 * (1 - (annualDiscount / 100));
 
                   const isOfferActiveNow = (() => {
-                      if (!tier.specialOfferDiscount || tier.specialOfferDiscount <= 0) return false;
+                      if (!specialOfferDiscount || specialOfferDiscount <= 0) return false;
                       const now = new Date();
                       const startDate = tier.specialOfferStartDate ? new Date(tier.specialOfferStartDate) : null;
                       const endDate = tier.specialOfferEndDate ? new Date(tier.specialOfferEndDate) : null;
@@ -136,12 +136,14 @@ export default function MembershipPage() {
                       return true;
                   })();
 
-                  const finalMonthlyPrice = isOfferActiveNow ? monthlyPrice * (1 - (specialOfferDiscount / 100)) : monthlyPrice;
-                  const finalAnnualPrice = isOfferActiveNow ? annualPrice * (1 - (specialOfferDiscount / 100)) : annualPrice;
+                  const originalMonthly = monthlyPrice;
+                  const originalAnnualPerMonth = monthlyPrice * (1 - (annualDiscount / 100));
 
-                  const priceToShow = billingCycle === 'annual' ? finalAnnualPrice / 12 : finalMonthlyPrice;
-                  const originalPriceToShow = billingCycle === 'annual' ? annualPrice / 12 : monthlyPrice;
+                  const originalPriceToShow = billingCycle === 'annual' ? originalAnnualPerMonth : originalMonthly;
+                  const discountedPrice = originalPriceToShow * (1 - (specialOfferDiscount / 100));
                   
+                  const priceToShow = isOfferActiveNow ? discountedPrice : originalPriceToShow;
+
                   const isDiscounted = isOfferActiveNow && specialOfferDiscount > 0;
                   const formattedEndDate = formatDate(tier.specialOfferEndDate);
 
@@ -168,16 +170,24 @@ export default function MembershipPage() {
                            {tier.id === 'free' ? (
                                 <span className="text-4xl font-extrabold tracking-tight">Free</span>
                            ) : isDiscounted ? (
-                                <div className="text-center">
-                                    <p className="text-sm text-muted-foreground">
-                                        Was <span className="line-through">{formatPrice(originalPriceToShow, true)}</span>
+                                <div className="text-center space-y-1">
+                                    <p className="text-base text-muted-foreground line-through">
+                                        {formatPrice(originalPriceToShow, true)}
                                     </p>
-                                    {tier.specialOfferText && <p className="font-semibold text-primary">{tier.specialOfferText}</p>}
-                                    <span className="text-4xl font-extrabold tracking-tight">
-                                        {formatPrice(priceToShow)}
-                                    </span>
-                                    <span className="text-muted-foreground">/month</span>
-                                    {formattedEndDate && <p className="text-xs text-muted-foreground mt-1">Valid until {formattedEndDate}</p>}
+                                    {tier.specialOfferText && <p className="text-lg font-semibold text-primary">{tier.specialOfferText}</p>}
+                                    
+                                    <div className="flex items-baseline justify-center gap-2 pt-1">
+                                        <span className="text-4xl font-extrabold tracking-tight">
+                                            {formatPrice(priceToShow)}
+                                        </span>
+                                        <span className="text-muted-foreground self-end">/month</span>
+                                    </div>
+                                    
+                                    {formattedEndDate && (
+                                        <p className="text-xs text-muted-foreground">
+                                            Offer valid until {formattedEndDate}
+                                        </p>
+                                    )}
                                 </div>
                             ) : (
                                 <>
@@ -188,7 +198,7 @@ export default function MembershipPage() {
                                         <span className="text-muted-foreground self-end">/month</span>
                                     </div>
                                     {billingCycle === 'annual' && monthlyPrice > 0 && (
-                                        <p className="text-xs text-muted-foreground mt-1">Billed as {formatPrice(finalAnnualPrice)} per year</p>
+                                        <p className="text-xs text-muted-foreground mt-1">Billed as {formatPrice(priceToShow * 12)} per year</p>
                                     )}
                                 </>
                            )}
