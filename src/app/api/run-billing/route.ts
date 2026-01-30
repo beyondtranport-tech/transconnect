@@ -31,14 +31,23 @@ export async function POST(req: NextRequest) {
         const companiesRef = db.collection('companies');
         
         // Fetch all companies and filter in code to avoid complex query/indexing issues
-        const allCompaniesSnapshot = await companiesRef.get();
-        const billableCompanies = allCompaniesSnapshot.docs.filter(doc => doc.data().isBillable === true);
+        const allCompaniesSnapshot = await companiesRef.where('isBillable', '==', true).get();
             
         // Filter by date range in code
-        const companiesDocs = billableCompanies.filter(doc => {
+        const companiesDocs = allCompaniesSnapshot.docs.filter(doc => {
             const company = doc.data();
             if (!company.nextBillingDate) return false;
-            const nextBillingDate = (company.nextBillingDate as Timestamp).toDate();
+            
+            let nextBillingDate: Date;
+            if (company.nextBillingDate.toDate) { // It's a Firestore Timestamp
+                nextBillingDate = company.nextBillingDate.toDate();
+            } else if (typeof company.nextBillingDate === 'string') { // It's an ISO string from a previous mistake
+                nextBillingDate = new Date(company.nextBillingDate);
+                if (isNaN(nextBillingDate.getTime())) return false; // Invalid date string
+            } else {
+                return false; // Unsupported format
+            }
+
             return nextBillingDate >= fromDate && nextBillingDate <= toDate;
         });
 
@@ -46,9 +55,9 @@ export async function POST(req: NextRequest) {
         if (companiesDocs.length === 0) {
             return NextResponse.json({ 
                 success: true, 
-                message: `No billable members found with billing dates in the selected range. Checked ${billableCompanies.length} billable members total.`, 
+                message: `No billable members found with billing dates in the selected range. Checked ${allCompaniesSnapshot.size} billable members total.`, 
                 createdCount: 0, 
-                checkedCount: billableCompanies.length
+                checkedCount: allCompaniesSnapshot.size
             });
         }
 
@@ -88,7 +97,13 @@ export async function POST(req: NextRequest) {
             });
 
             // Calculate the *next* next billing date
-            const currentNextBillingDate = (company.nextBillingDate as Timestamp).toDate();
+            let currentNextBillingDate;
+             if (company.nextBillingDate.toDate) {
+                currentNextBillingDate = company.nextBillingDate.toDate();
+            } else {
+                currentNextBillingDate = new Date(company.nextBillingDate);
+            }
+            
             const newNextBillingDate = new Date(currentNextBillingDate);
              if (cycle === 'monthly') {
                 newNextBillingDate.setMonth(newNextBillingDate.getMonth() + 1);
@@ -109,7 +124,7 @@ export async function POST(req: NextRequest) {
             message: `Billing run completed. ${createdCount} invoice(s) created.`,
             createdCount,
             errors,
-            checkedCount: billableCompanies.length
+            checkedCount: allCompaniesSnapshot.size
         });
 
     } catch (error: any) {
