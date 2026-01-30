@@ -31,15 +31,19 @@ export async function POST(req: NextRequest) {
 
         const companiesRef = db.collection('companies');
 
-        // Query for members with a billable plan whose next billing date is in the selected range.
-        const q = companiesRef
-            .where('isBillable', '==', true)
-            .where('nextBillingDate', '>=', fromDate)
-            .where('nextBillingDate', '<=', toDate);
+        // Query for all billable members.
+        const q = companiesRef.where('isBillable', '==', true);
             
         const companiesSnapshot = await q.get();
         
-        const companiesDocs = companiesSnapshot.docs;
+        // Filter by date range in code to avoid complex Firestore index requirements
+        const companiesDocs = companiesSnapshot.docs.filter(doc => {
+            const company = doc.data();
+            if (!company.nextBillingDate) return false;
+            const nextBillingDate = (company.nextBillingDate as Timestamp).toDate();
+            return nextBillingDate >= fromDate && nextBillingDate <= toDate;
+        });
+
 
         if (companiesDocs.length === 0) {
             return NextResponse.json({ success: true, message: "No members found with billing dates in the selected range.", createdCount: 0 });
