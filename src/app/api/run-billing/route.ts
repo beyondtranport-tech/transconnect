@@ -14,9 +14,6 @@ export async function POST(req: NextRequest) {
         if (!startDate || !endDate) {
             return NextResponse.json({ success: false, error: 'A "From" and "To" date range is required to run billing.' }, { status: 400 });
         }
-
-        const fromDate = new Date(startDate);
-        const toDate = new Date(endDate);
         
         const membershipsSnap = await db.collection('memberships').get();
         const prices: { [key: string]: { price: number, name: string } } = {};
@@ -28,24 +25,34 @@ export async function POST(req: NextRequest) {
             prices[doc.id] = { price: monthlyPrice, name: data.name };
         });
 
-        const companiesRef = db.collection('companies');
+        // Fetch ALL companies to filter in application code.
+        // This is more robust than relying on a potentially missing 'isBillable' flag
+        // or complex queries that require specific indexes.
+        const allCompaniesSnapshot = await db.collection('companies').get();
+
+        const fromDate = new Date(startDate);
+        const toDate = new Date(endDate);
         
-        // Fetch all companies and filter in code to avoid complex query/indexing issues
-        const allCompaniesSnapshot = await companiesRef.where('isBillable', '==', true).get();
-            
-        // Filter by date range in code
+        // Filter in code
         const companiesDocs = allCompaniesSnapshot.docs.filter(doc => {
             const company = doc.data();
+
+            // Rule 1: Must be a billable plan (not 'free' or empty)
+            const isBillablePlan = company.membershipId && company.membershipId !== 'free';
+            if (!isBillablePlan) return false;
+
+            // Rule 2: Must have a nextBillingDate
             if (!company.nextBillingDate) return false;
             
+            // Rule 3: Must be within the date range
             let nextBillingDate: Date;
-            if (company.nextBillingDate.toDate) { // It's a Firestore Timestamp
+            if (company.nextBillingDate.toDate) { // Firestore Timestamp
                 nextBillingDate = company.nextBillingDate.toDate();
-            } else if (typeof company.nextBillingDate === 'string') { // It's an ISO string from a previous mistake
+            } else if (typeof company.nextBillingDate === 'string') { // ISO string fallback
                 nextBillingDate = new Date(company.nextBillingDate);
-                if (isNaN(nextBillingDate.getTime())) return false; // Invalid date string
+                if (isNaN(nextBillingDate.getTime())) return false;
             } else {
-                return false; // Unsupported format
+                return false;
             }
 
             return nextBillingDate >= fromDate && nextBillingDate <= toDate;
@@ -55,7 +62,7 @@ export async function POST(req: NextRequest) {
         if (companiesDocs.length === 0) {
             return NextResponse.json({ 
                 success: true, 
-                message: `No billable members found with billing dates in the selected range. Checked ${allCompaniesSnapshot.size} billable members total.`, 
+                message: `No billable members found with billing dates in the selected range. Checked ${allCompaniesSnapshot.size} total members.`, 
                 createdCount: 0, 
                 checkedCount: allCompaniesSnapshot.size
             });

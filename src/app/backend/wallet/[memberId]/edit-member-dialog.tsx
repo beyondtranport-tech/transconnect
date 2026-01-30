@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -77,21 +78,20 @@ export function EditMemberDialog({ isOpen, setIsOpen, member, onUpdate }: EditMe
         updatedAt: { _methodName: 'serverTimestamp' }
       };
       
-      const isUpgradingToPaid = !['free', ''].includes(values.membershipId) && ['free', '', null, undefined, 'Plan001'].includes(member.membershipId);
-      const isDowngradingToFree = values.membershipId === 'free' && !['free', '', null, undefined].includes(member.membershipId);
+      const isNowPaid = values.membershipId !== 'free';
+      const wasFree = ['free', '', null, undefined, 'Plan001'].includes(member.membershipId);
 
-      if (isUpgradingToPaid) {
-          // If createdAt is a string (from Firestore), convert it to a Date object.
-          // Otherwise, assume it's a Firestore Timestamp and use its toDate() method.
+      // Set isBillable based on the *new* plan status
+      dataToUpdate.isBillable = isNowPaid;
+
+      // If it's the very first time being upgraded to a paid plan, set the billing start date.
+      if (isNowPaid && wasFree) {
           const startDate = typeof member.createdAt === 'string' 
               ? new Date(member.createdAt) 
               : member.createdAt.toDate();
           
           dataToUpdate.membershipStartDate = startDate;
-          dataToUpdate.nextBillingDate = startDate; // Pass JS Date object
-          dataToUpdate.isBillable = true;
-      } else if (isDowngradingToFree) {
-          dataToUpdate.isBillable = false;
+          dataToUpdate.nextBillingDate = startDate;
       }
 
 

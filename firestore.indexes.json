@@ -2,20 +2,6 @@
 {
   "indexes": [
     {
-      "collectionGroup": "companies",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
-          "fieldPath": "isBillable",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "nextBillingDate",
-          "order": "ASCENDING"
-        }
-      ]
-    },
-    {
       "collectionGroup": "walletPayments",
       "queryScope": "COLLECTION_GROUP",
       "fields": [
