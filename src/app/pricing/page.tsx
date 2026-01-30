@@ -136,18 +136,15 @@ export default function MembershipPage() {
                       return true;
                   })();
 
-                  // --- Calculations ---
                   const monthlyBeforeOffer = monthlyPrice;
                   const monthlyAfterOffer = isOfferActiveNow ? monthlyPrice * (1 - (specialOfferDiscountPercent / 100)) : monthlyPrice;
                   
                   const annualFullPrice = monthlyPrice * 12;
-                  const annualDiscountAmount = annualFullPrice * (annualDiscountPercent / 100);
-                  const annualAfterStandardDiscount = annualFullPrice - annualDiscountAmount;
+                  const annualAfterStandardDiscount = annualFullPrice * (1 - (annualDiscountPercent / 100));
                   const annualFinal = isOfferActiveNow ? annualAfterStandardDiscount * (1 - (specialOfferDiscountPercent / 100)) : annualAfterStandardDiscount;
+                  const annualSavingAmount = annualFullPrice - annualFinal;
                   
-                  const stickerSavingAmount = billingCycle === 'annual' 
-                    ? (isOfferActiveNow ? annualAfterStandardDiscount - annualFinal : 0) / 12
-                    : isOfferActiveNow ? monthlyBeforeOffer - monthlyAfterOffer : 0;
+                  const stickerSavingAmount = billingCycle === 'annual' ? annualSavingAmount / 12 : monthlyBeforeOffer - monthlyAfterOffer;
 
                   const formattedEndDate = formatDate(tier.specialOfferEndDate);
                   
@@ -184,7 +181,7 @@ export default function MembershipPage() {
                                             <p className="text-base text-muted-foreground">
                                                 Was <span className="line-through">{formatPrice(monthlyBeforeOffer, true)}</span>
                                             </p>
-                                            {tier.specialOfferText && <p className="text-lg font-semibold text-primary">{tier.specialOfferText}</p>}
+                                            {(tier.specialOfferText || '').trim().length > 0 && <p className="text-lg font-semibold text-primary">{tier.specialOfferText}</p>}
                                             <div className="flex items-baseline justify-center gap-2 pt-1">
                                                 <span className="text-4xl font-extrabold tracking-tight">{formatPrice(monthlyAfterOffer)}</span>
                                                 <span className="text-muted-foreground self-end">/month</span>
@@ -203,16 +200,16 @@ export default function MembershipPage() {
                                 <div className="text-center space-y-1">
                                      {isOfferActiveNow && (
                                         <p className="text-base text-muted-foreground">
-                                            Was <span className="line-through">{formatPrice(annualAfterStandardDiscount, true, 'year')}</span>
+                                            Was <span className="line-through">{formatPrice(annualFullPrice, true, 'year')}</span>
                                         </p>
                                     )}
-                                    {isOfferActiveNow && tier.specialOfferText && <p className="text-lg font-semibold text-primary">{tier.specialOfferText}</p>}
+                                    {(tier.specialOfferText || '').trim().length > 0 && isOfferActiveNow && <p className="text-lg font-semibold text-primary">{tier.specialOfferText}</p>}
                                     <div className="flex items-baseline justify-center gap-2 pt-1">
                                         <span className="text-4xl font-extrabold tracking-tight">{formatPrice(annualFinal)}</span>
                                         <span className="text-muted-foreground self-end">/year</span>
                                     </div>
-                                    <p className="text-sm text-muted-foreground">Billed annually. Equivalent to {formatPrice(annualFinal / 12, true)}.</p>
-                                    {annualDiscountAmount > 0 && <p className="text-sm font-semibold text-primary">You save {formatPrice(annualDiscountAmount)} per year!</p>}
+                                    <p className="text-sm text-muted-foreground">Equivalent to {formatPrice(annualFinal / 12, true)}.</p>
+                                    {annualSavingAmount > 0 && <p className="text-sm font-semibold text-primary">You save {formatPrice(annualSavingAmount)} per year!</p>}
                                 </div>
                            )}
                         </div>
