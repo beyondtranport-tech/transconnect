@@ -6,12 +6,12 @@
       "queryScope": "COLLECTION",
       "fields": [
         {
-          "fieldPath": "referrerId",
+          "fieldPath": "isBillable",
           "order": "ASCENDING"
         },
         {
-          "fieldPath": "createdAt",
-          "order": "DESCENDING"
+          "fieldPath": "nextBillingDate",
+          "order": "ASCENDING"
         }
       ]
     },

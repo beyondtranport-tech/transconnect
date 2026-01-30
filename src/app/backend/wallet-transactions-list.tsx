@@ -144,45 +144,27 @@ export default function WalletTransactionsList() {
     }, []);
 
     // Refresh functions
-    const refreshPayouts = useCallback(() => {
-        // This function is defined to fetch payouts, but it's separate from the main fetchData
-        // because it hits a different API route.
-        let isMounted = true;
-        const fetchPayouts = async () => {
-            if (!isMounted) return;
-            setIsLoadingPayouts(true);
-            setPayoutsError(null);
-            try {
-                const token = await getClientSideAuthToken();
-                if (!token) throw new Error("Authentication failed.");
-                
-                const response = await fetch('/api/getPendingPayouts', {
-                    method: 'POST',
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
+    const refreshPayouts = useCallback(async () => {
+        setIsLoadingPayouts(true);
+        setPayoutsError(null);
+        try {
+            const token = await getClientSideAuthToken();
+            if (!token) throw new Error("Authentication failed.");
+            
+            const response = await fetch('/api/getPendingPayouts', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
 
-                const result = await response.json();
-                if (!result.success) throw new Error(result.error);
-                if (isMounted) {
-                    const sortedData = (result.data || []).sort((a: any, b: any) => {
-                        const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
-                        const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
-                        return dateB - dateA;
-                    });
-                    setPendingPayouts(sortedData);
-                }
-            } catch (e: any) {
-                if (isMounted) {
-                    setPayoutsError(e.message);
-                }
-            } finally {
-                if (isMounted) {
-                    setIsLoadingPayouts(false);
-                }
-            }
-        };
-        fetchPayouts();
-        return () => { isMounted = false };
+            const result = await response.json();
+            if (!result.success) throw new Error(result.error);
+            const sortedData = (result.data || []).sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+            setPendingPayouts(sortedData);
+        } catch (e: any) {
+            setPayoutsError(e.message);
+        } finally {
+            setIsLoadingPayouts(false);
+        }
     }, []);
 
     const refreshPayments = useCallback(() => fetchData('getWalletPayments', setPendingPayments, setIsLoadingPayments, setPaymentsError), [fetchData]);

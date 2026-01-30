@@ -496,42 +496,14 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, id: newStaffDocRef.id });
             }
             case 'getWalletPayments': {
-                const companiesSnap = await db.collection('companies').get();
-                if (companiesSnap.empty) {
-                    return NextResponse.json({ success: true, data: [] });
-                }
-
-                const promises = companiesSnap.docs.map(async (companyDoc) => {
-                    const paymentsSnap = await db.collection(`companies/${companyDoc.id}/walletPayments`).get();
-                    return paymentsSnap.docs.map(doc => ({ 
-                        id: doc.id,
-                        companyId: companyDoc.id, 
-                        ...serializeTimestamps(doc.data()) 
-                    }));
-                });
-                const results = await Promise.all(promises);
-                const allPayments = results.flat();
-                
-                return NextResponse.json({ success: true, data: allPayments });
+                const paymentsSnap = await db.collectionGroup('walletPayments').get();
+                const data = paymentsSnap.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
+                return NextResponse.json({ success: true, data });
             }
             case 'getWalletTransactions': {
-                const companiesSnap = await db.collection('companies').get();
-                if (companiesSnap.empty) {
-                    return NextResponse.json({ success: true, data: [] });
-                }
-            
-                const promises = companiesSnap.docs.map(async (companyDoc) => {
-                    const txsSnap = await db.collection(`companies/${companyDoc.id}/transactions`).get();
-                    return txsSnap.docs.map(doc => ({ 
-                        id: doc.id,
-                        companyId: companyDoc.id, 
-                        ...serializeTimestamps(doc.data()) 
-                    }));
-                });
-                const results = await Promise.all(promises);
-                const allTxs = results.flat();
-            
-                return NextResponse.json({ success: true, data: allTxs });
+                 const transactionsSnap = await db.collectionGroup('transactions').get();
+                const data = transactionsSnap.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
+                return NextResponse.json({ success: true, data });
             }
              case 'getMemberships': {
                 const snapshot = await db.collection('memberships').get();
@@ -596,7 +568,7 @@ export async function POST(req: NextRequest) {
                  const batch = db.batch();
                  
                  const companyRef = db.doc(`companies/${companyId}`);
-                 batch.update(companyRef, { walletBalance: FieldValue.increment(amount) });
+                 batch.update(companyRef, { walletBalance: FieldValue.increment(amount), availableBalance: FieldValue.increment(amount) });
                  
                  const transactionRef = db.collection(`companies/${companyId}/transactions`).doc();
                  batch.set(transactionRef, {

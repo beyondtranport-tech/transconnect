@@ -1,7 +1,7 @@
 
 'use client';
 
-import { Suspense } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { notFound, useParams, useRouter } from 'next/navigation';
 import { useDoc, useFirestore, getClientSideAuthToken, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
