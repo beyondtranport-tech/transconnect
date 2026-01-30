@@ -203,7 +203,9 @@ export default function MembershipPage() {
                                             Was <span className="line-through">{formatPrice(annualFullPrice, true, 'year')}</span>
                                         </p>
                                     )}
-                                    {(tier.specialOfferText || '').trim().length > 0 && isOfferActiveNow && <p className="text-lg font-semibold text-primary">{tier.specialOfferText}</p>}
+                                    {(tier.specialOfferText || '').trim().length > 0 && isOfferActiveNow && (
+                                      <p className="text-lg font-semibold text-primary">{tier.specialOfferText}</p>
+                                    )}
                                     <div className="flex items-baseline justify-center gap-2 pt-1">
                                         <span className="text-4xl font-extrabold tracking-tight">{formatPrice(annualFinal)}</span>
                                         <span className="text-muted-foreground self-end">/year</span>
