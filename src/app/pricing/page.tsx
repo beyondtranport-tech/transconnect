@@ -75,7 +75,7 @@ export default function MembershipPage() {
       return [...tiers].sort((a, b) => {
           const aIndex = order.indexOf(a.id);
           const bIndex = order.indexOf(b.id);
-          if (aIndex === -1 && bIndex === -1) return (a.price || 0) - (b.price || 0);
+          if (aIndex === -1 && bIndex === -1) return (a.price?.monthly || a.price || 0) - (b.price?.monthly || b.price || 0);
           if (aIndex === -1) return 1;
           if (bIndex === -1) return -1;
           return aIndex - bIndex;
@@ -143,8 +143,8 @@ export default function MembershipPage() {
                   const annualAfterStandardDiscount = annualFullPrice * (1 - (annualDiscountPercent / 100));
                   const annualFinal = isOfferActiveNow ? annualAfterStandardDiscount * (1 - (specialOfferDiscountPercent / 100)) : annualAfterStandardDiscount;
                   const annualSavingAmount = annualFullPrice - annualFinal;
-                  
-                  const stickerSavingAmount = billingCycle === 'annual' ? annualSavingAmount / 12 : monthlyBeforeOffer - monthlyAfterOffer;
+
+                  const stickerSavingAmount = billingCycle === 'annual' ? annualSavingAmount : monthlyBeforeOffer - monthlyAfterOffer;
 
                   const formattedEndDate = formatDate(tier.specialOfferEndDate);
                   
@@ -176,7 +176,7 @@ export default function MembershipPage() {
                                 <span className="text-4xl font-extrabold tracking-tight">Free</span>
                            ) : billingCycle === 'monthly' ? (
                                 <>
-                                    {isOfferActiveNow ? (
+                                    {isOfferActiveNow && monthlyBeforeOffer > monthlyAfterOffer ? (
                                         <div className="text-center space-y-1">
                                             <p className="text-base text-muted-foreground">
                                                 Was <span className="line-through">{formatPrice(monthlyBeforeOffer, true)}</span>
@@ -198,7 +198,7 @@ export default function MembershipPage() {
                            ) : (
                                 // Annual Billing View
                                 <div className="text-center space-y-1">
-                                     {isOfferActiveNow && (
+                                     {isOfferActiveNow && annualFullPrice > annualFinal && (
                                         <p className="text-base text-muted-foreground">
                                             Was <span className="line-through">{formatPrice(annualFullPrice, true, 'year')}</span>
                                         </p>
@@ -210,7 +210,7 @@ export default function MembershipPage() {
                                         <span className="text-4xl font-extrabold tracking-tight">{formatPrice(annualFinal)}</span>
                                         <span className="text-muted-foreground self-end">/year</span>
                                     </div>
-                                    <p className="text-sm text-muted-foreground">Equivalent to {formatPrice(annualFinal / 12, true)}.</p>
+                                    <p className="text-sm text-muted-foreground">which is {formatPrice(annualFinal / 12, true)}.</p>
                                     {annualSavingAmount > 0 && <p className="text-sm font-semibold text-primary">You save {formatPrice(annualSavingAmount)} per year!</p>}
                                 </div>
                            )}
