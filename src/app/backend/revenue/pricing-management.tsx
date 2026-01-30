@@ -41,7 +41,7 @@ const planSchema = z.object({
 
 type PlanFormValues = z.infer<typeof planSchema>;
 
-function PlanDialog({ plan, onSave }: { plan?: PlanFormValues; onSave: () => void }) {
+function PlanDialog({ plan, onSave }: { plan?: any; onSave: () => void }) {
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
@@ -52,11 +52,15 @@ function PlanDialog({ plan, onSave }: { plan?: PlanFormValues; onSave: () => voi
   
   useEffect(() => {
     if (isOpen) {
+        const monthlyPrice = (typeof plan?.price === 'object' && plan?.price !== null)
+            ? plan.price.monthly
+            : plan.price;
+
         form.reset({
             id: plan?.id || '',
             name: plan?.name || '',
             description: plan?.description || '',
-            price: plan?.price ?? 0,
+            price: monthlyPrice ?? 0,
             annualDiscount: plan?.annualDiscount ?? 0,
             specialOfferText: plan?.specialOfferText || '',
             specialOfferDiscount: plan?.specialOfferDiscount ?? 0,
@@ -126,7 +130,7 @@ function PlanDialog({ plan, onSave }: { plan?: PlanFormValues; onSave: () => voi
             <FormField name="description" control={form.control} render={({ field }) => (
               <FormItem><FormLabel>Description</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
             )} />
-            <FormField name="price" control={form.control} render={({ field }) => (
+             <FormField name="price" control={form.control} render={({ field }) => (
                 <FormItem><FormLabel>Base Monthly Price (R)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
               )} />
             <FormField name="annualDiscount" control={form.control} render={({ field }) => (
@@ -302,20 +306,26 @@ export default function PricingManagement() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {plans && plans.map(plan => (
-                  <TableRow key={plan.id}>
-                    <TableCell className="font-semibold">{plan.name}</TableCell>
-                    <TableCell>R {plan.price}</TableCell>
-                    <TableCell>{plan.annualDiscount || 0}%</TableCell>
-                    <TableCell>{plan.specialOfferDiscount || 0}%</TableCell>
-                    <TableCell>{plan.features.length}</TableCell>
-                    <TableCell>{plan.version || 1}</TableCell>
-                    <TableCell className="text-right">
-                        <PlanDialog plan={plan} onSave={forceRefresh} />
-                        <Button variant="ghost" size="icon" onClick={() => handleDelete(plan.id)} disabled={plan.id === 'free'}><Trash2 className="h-4 w-4 text-destructive" /></Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                {plans && plans.map((plan: any) => {
+                  const monthlyPrice = (typeof plan.price === 'object' && plan.price !== null)
+                    ? plan.price.monthly
+                    : plan.price;
+
+                  return (
+                    <TableRow key={plan.id}>
+                        <TableCell className="font-semibold">{plan.name}</TableCell>
+                        <TableCell>R {monthlyPrice}</TableCell>
+                        <TableCell>{plan.annualDiscount || 0}%</TableCell>
+                        <TableCell>{plan.specialOfferDiscount || 0}%</TableCell>
+                        <TableCell>{plan.features?.length || 0}</TableCell>
+                        <TableCell>{plan.version || 1}</TableCell>
+                        <TableCell className="text-right">
+                            <PlanDialog plan={plan} onSave={forceRefresh} />
+                            <Button variant="ghost" size="icon" onClick={() => handleDelete(plan.id)} disabled={plan.id === 'free'}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                        </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           </div>
