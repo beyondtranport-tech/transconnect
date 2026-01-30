@@ -22,7 +22,6 @@ export async function POST(req: NextRequest) {
         const prices: { [key: string]: { price: number, name: string } } = {};
         membershipsSnap.forEach(doc => {
             const data = doc.data();
-            // Handle both legacy price objects and new direct price numbers
             const monthlyPrice = (typeof data.price === 'object' && data.price !== null)
                 ? data.price.monthly
                 : data.price;
@@ -30,14 +29,13 @@ export async function POST(req: NextRequest) {
         });
 
         const companiesRef = db.collection('companies');
-
-        // Query for all billable members.
-        const q = companiesRef.where('isBillable', '==', true);
-            
-        const companiesSnapshot = await q.get();
         
-        // Filter by date range in code to avoid complex Firestore index requirements
-        const companiesDocs = companiesSnapshot.docs.filter(doc => {
+        // Fetch all companies and filter in code to avoid complex query/indexing issues
+        const allCompaniesSnapshot = await companiesRef.get();
+        const billableCompanies = allCompaniesSnapshot.docs.filter(doc => doc.data().isBillable === true);
+            
+        // Filter by date range in code
+        const companiesDocs = billableCompanies.filter(doc => {
             const company = doc.data();
             if (!company.nextBillingDate) return false;
             const nextBillingDate = (company.nextBillingDate as Timestamp).toDate();
@@ -46,7 +44,12 @@ export async function POST(req: NextRequest) {
 
 
         if (companiesDocs.length === 0) {
-            return NextResponse.json({ success: true, message: "No members found with billing dates in the selected range.", createdCount: 0 });
+            return NextResponse.json({ 
+                success: true, 
+                message: `No billable members found with billing dates in the selected range. Checked ${billableCompanies.length} billable members total.`, 
+                createdCount: 0, 
+                checkedCount: billableCompanies.length
+            });
         }
 
         const batch = db.batch();
@@ -66,8 +69,6 @@ export async function POST(req: NextRequest) {
                 continue;
             }
             
-            // Note: This simplified version assumes monthly billing for all cycles found.
-            // A more complex version would calculate annual price based on discount.
             const planPrice = planDetails.price;
             const planName = planDetails.name || planId;
 
@@ -105,10 +106,10 @@ export async function POST(req: NextRequest) {
         
         return NextResponse.json({ 
             success: true, 
-            message: `Billing run completed. ${createdCount} receivable records created.`,
+            message: `Billing run completed. ${createdCount} invoice(s) created.`,
             createdCount,
             errors,
-            checkedCount: companiesDocs.length
+            checkedCount: billableCompanies.length
         });
 
     } catch (error: any) {
