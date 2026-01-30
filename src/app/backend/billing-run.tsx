@@ -4,9 +4,15 @@
 import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
-import { Loader2, PlayCircle, CheckCircle, XCircle } from 'lucide-react';
+import { Loader2, PlayCircle, Calendar as CalendarIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken } from '@/firebase';
+import { DateRange } from 'react-day-picker';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { cn } from '@/lib/utils';
+import { format, addDays } from 'date-fns';
+import { Label } from '@/components/ui/label';
 
 interface BillingResult {
     createdCount: number;
@@ -17,9 +23,22 @@ interface BillingResult {
 export default function BillingRun() {
     const [isLoading, setIsLoading] = useState(false);
     const [result, setResult] = useState<BillingResult | null>(null);
+    const [dateRange, setDateRange] = useState<DateRange | undefined>({
+        from: new Date(),
+        to: addDays(new Date(), 30),
+    });
     const { toast } = useToast();
 
     const handleRunBilling = async () => {
+        if (!dateRange?.from || !dateRange?.to) {
+            toast({
+                variant: 'destructive',
+                title: 'Date Range Required',
+                description: 'Please select a start and end date for the billing run.',
+            });
+            return;
+        }
+
         setIsLoading(true);
         setResult(null);
 
@@ -33,6 +52,10 @@ export default function BillingRun() {
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json',
                 },
+                body: JSON.stringify({
+                    startDate: dateRange.from.toISOString(),
+                    endDate: dateRange.to.toISOString(),
+                }),
             });
 
             const data = await response.json();
@@ -67,17 +90,58 @@ export default function BillingRun() {
         <Card>
             <CardHeader>
                 <CardTitle>Recurring Membership Billing</CardTitle>
-                <CardDescription>Manually trigger the process to create payable invoices for all members whose subscription is due.</CardDescription>
+                <CardDescription>Manually trigger the process to create payable invoices for all members whose subscription is due within a specific date range.</CardDescription>
             </CardHeader>
             <CardContent>
-                <Button onClick={handleRunBilling} disabled={isLoading}>
-                    {isLoading ? (
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    ) : (
-                        <PlayCircle className="mr-2 h-4 w-4" />
-                    )}
-                    Generate Membership Invoices
-                </Button>
+                 <div className="flex flex-col sm:flex-row items-center gap-4">
+                    <div className="grid gap-2">
+                        <Label>Billing Period</Label>
+                        <Popover>
+                            <PopoverTrigger asChild>
+                            <Button
+                                id="date"
+                                variant={"outline"}
+                                className={cn(
+                                "w-[300px] justify-start text-left font-normal",
+                                !dateRange && "text-muted-foreground"
+                                )}
+                            >
+                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                {dateRange?.from ? (
+                                dateRange.to ? (
+                                    <>
+                                    {format(dateRange.from, "LLL dd, y")} -{" "}
+                                    {format(dateRange.to, "LLL dd, y")}
+                                    </>
+                                ) : (
+                                    format(dateRange.from, "LLL dd, y")
+                                )
+                                ) : (
+                                <span>Pick a date range</span>
+                                )}
+                            </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar
+                                initialFocus
+                                mode="range"
+                                defaultMonth={dateRange?.from}
+                                selected={dateRange}
+                                onSelect={setDateRange}
+                                numberOfMonths={2}
+                            />
+                            </PopoverContent>
+                        </Popover>
+                    </div>
+                    <Button onClick={handleRunBilling} disabled={isLoading || !dateRange?.from || !dateRange?.to} className="w-full sm:w-auto">
+                        {isLoading ? (
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        ) : (
+                            <PlayCircle className="mr-2 h-4 w-4" />
+                        )}
+                        Generate Invoices
+                    </Button>
+                </div>
             </CardContent>
             {result && (
                 <CardFooter className="flex-col items-start gap-4 text-sm">
