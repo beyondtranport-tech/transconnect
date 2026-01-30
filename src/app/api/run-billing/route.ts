@@ -29,14 +29,27 @@ export async function POST(req: NextRequest) {
             prices[doc.id] = { price: monthlyPrice, name: data.name };
         });
 
-        const companiesQuery = db.collection('companies')
-            .where('membershipId', '!=', 'free')
+        const companiesRef = db.collection('companies');
+
+        // Query for members with membershipId > 'free'
+        const query1 = companiesRef
+            .where('membershipId', '>', 'free')
+            .where('nextBillingDate', '>=', fromDate)
+            .where('nextBillingDate', '<=', toDate);
+
+        // Query for members with membershipId < 'free'
+        const query2 = companiesRef
+            .where('membershipId', '<', 'free')
             .where('nextBillingDate', '>=', fromDate)
             .where('nextBillingDate', '<=', toDate);
             
-        const companiesSnap = await companiesQuery.get();
+        const [snapshot1, snapshot2] = await Promise.all([query1.get(), query2.get()]);
+        
+        const allDocs = [...snapshot1.docs, ...snapshot2.docs];
+        // Deduplicate in case a document somehow matches both.
+        const companiesDocs = Array.from(new Map(allDocs.map(doc => [doc.id, doc])).values());
 
-        if (companiesSnap.empty) {
+        if (companiesDocs.length === 0) {
             return NextResponse.json({ success: true, message: "No members found with billing dates in the selected range.", createdCount: 0 });
         }
 
@@ -44,7 +57,7 @@ export async function POST(req: NextRequest) {
         let createdCount = 0;
         let errors: string[] = [];
 
-        for (const companyDoc of companiesSnap.docs) {
+        for (const companyDoc of companiesDocs) {
             const company = companyDoc.data();
             const companyId = companyDoc.id;
 
@@ -99,7 +112,7 @@ export async function POST(req: NextRequest) {
             message: `Billing run completed. ${createdCount} receivable records created.`,
             createdCount,
             errors,
-            checkedCount: companiesSnap.size
+            checkedCount: companiesDocs.length
         });
 
     } catch (error: any) {
