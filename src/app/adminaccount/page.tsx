@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -118,7 +119,7 @@ function AdminAuthGuard({ children }: { children: React.ReactNode }) {
         }
     }, [user, isUserLoading, router]);
 
-    if (isUserLoading || !user || (user.email !== 'beyondtransport@gmail.com' && user.email !== 'mkoton100@gmail.com')) {
+    if (isUserLoading || !user) {
         return (
             <div className="flex flex-col justify-center items-center min-h-[calc(100vh-8rem)]">
                 <Loader2 className="h-12 w-12 animate-spin text-primary" />
