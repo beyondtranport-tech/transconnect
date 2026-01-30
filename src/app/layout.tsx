@@ -8,6 +8,7 @@ import { Footer } from '@/components/layout/footer';
 import Analytics from '@/components/Analytics';
 import { VisitorTracker } from '@/components/VisitorTracker';
 import { CartProvider } from '@/context/CartContext';
+import { TooltipProvider } from '@/components/ui/tooltip';
 
 export const metadata: Metadata = {
   title: 'Logistics Flow',
@@ -32,14 +33,16 @@ export default function RootLayout({
       <body>
         <FirebaseClientProvider>
           <CartProvider>
-            <Analytics />
-            <VisitorTracker />
-            <div className="relative flex min-h-dvh flex-col bg-background">
-              <Header />
-              <main className="flex-1">{children}</main>
-              <Footer />
-            </div>
-            <Toaster />
+            <TooltipProvider>
+              <Analytics />
+              <VisitorTracker />
+              <div className="relative flex min-h-dvh flex-col bg-background">
+                <Header />
+                <main className="flex-1">{children}</main>
+                <Footer />
+              </div>
+              <Toaster />
+            </TooltipProvider>
           </CartProvider>
         </FirebaseClientProvider>
       </body>
