@@ -31,23 +31,15 @@ export async function POST(req: NextRequest) {
 
         const companiesRef = db.collection('companies');
 
-        // Query for members with membershipId > 'free'
-        const query1 = companiesRef
-            .where('membershipId', '>', 'free')
-            .where('nextBillingDate', '>=', fromDate)
-            .where('nextBillingDate', '<=', toDate);
-
-        // Query for members with membershipId < 'free'
-        const query2 = companiesRef
-            .where('membershipId', '<', 'free')
+        // Query for members with a billable plan whose next billing date is in the selected range.
+        const q = companiesRef
+            .where('isBillable', '==', true)
             .where('nextBillingDate', '>=', fromDate)
             .where('nextBillingDate', '<=', toDate);
             
-        const [snapshot1, snapshot2] = await Promise.all([query1.get(), query2.get()]);
+        const companiesSnapshot = await q.get();
         
-        const allDocs = [...snapshot1.docs, ...snapshot2.docs];
-        // Deduplicate in case a document somehow matches both.
-        const companiesDocs = Array.from(new Map(allDocs.map(doc => [doc.id, doc])).values());
+        const companiesDocs = companiesSnapshot.docs;
 
         if (companiesDocs.length === 0) {
             return NextResponse.json({ success: true, message: "No members found with billing dates in the selected range.", createdCount: 0 });

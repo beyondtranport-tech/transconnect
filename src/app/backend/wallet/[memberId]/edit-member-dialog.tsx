@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -78,12 +79,17 @@ export function EditMemberDialog({ isOpen, setIsOpen, member, onUpdate }: EditMe
       };
       
       const isUpgradingToPaid = !['free', ''].includes(values.membershipId) && ['free', '', null, undefined, 'Plan001'].includes(member.membershipId);
+      const isDowngradingToFree = values.membershipId === 'free' && !['free', '', null, undefined].includes(member.membershipId);
 
       if (isUpgradingToPaid) {
           dataToUpdate.membershipStartDate = member.createdAt;
           // Set next billing to created date, billing run will advance it.
           dataToUpdate.nextBillingDate = member.createdAt;
+          dataToUpdate.isBillable = true;
+      } else if (isDowngradingToFree) {
+          dataToUpdate.isBillable = false;
       }
+
 
       const response = await fetch('/api/updateUserDoc', {
         method: 'POST',

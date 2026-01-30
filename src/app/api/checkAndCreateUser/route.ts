@@ -156,6 +156,7 @@ export async function POST(req: NextRequest) {
         ownerId: firebaseUser.uid,
         companyName: firebaseUser.displayName ? `${firebaseUser.displayName}'s Company` : 'My Company',
         membershipId: 'free',
+        isBillable: false,
         rewardPoints: signupPoints,
         walletBalance: 0,
         pendingBalance: 0,
