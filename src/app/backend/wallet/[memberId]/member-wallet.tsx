@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useEffect, useCallback } from 'react';
@@ -6,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from "@/components/ui/button";
 import { useUser, getClientSideAuthToken, useFirestore, useMemoFirebase, useDoc } from '@/firebase';
 import { doc, writeBatch, collection, increment, serverTimestamp } from 'firebase/firestore';
-import { Loader2, User, Wallet, Calendar, Mail, FileCheck, Users, AlertTriangle, Check } from 'lucide-react';
+import { Loader2, User, Wallet, Calendar, Mail, FileCheck, Users, AlertTriangle, Check, Edit } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
 import { Input } from '@/components/ui/input';
@@ -20,6 +19,7 @@ import StaffContent from '@/app/account/staff-content';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import MemberPayoutRequests from './member-payout-requests';
 import { useRouter } from 'next/navigation';
+import { EditMemberDialog } from './edit-member-dialog';
 
 const formatCurrency = (amount: number) => new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(amount);
 const formatDate = (isoString: any) => {
@@ -45,6 +45,7 @@ export default function MemberWallet({ memberId }: { memberId: string }) {
     const [resetAmount, setResetAmount] = useState<number | string>('');
     const [isClearing, setIsClearing] = useState(false);
     const [refreshTrigger, setRefreshTrigger] = useState(0);
+    const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
     
     // --- SAFE DATA FETCHING ---
     const companyDocRef = useMemoFirebase(() => {
@@ -210,21 +211,28 @@ export default function MemberWallet({ memberId }: { memberId: string }) {
 
     return (
         <div className="space-y-8">
+            {companyData && <EditMemberDialog isOpen={isEditDialogOpen} setIsOpen={setIsEditDialogOpen} member={companyData} onUpdate={onDataUpdate} />}
             <Card>
                 <CardHeader>
-                    <div className="flex items-center gap-4">
-                        <Avatar className="h-16 w-16">
-                            <AvatarFallback>{getInitials(ownerData?.firstName, ownerData?.lastName)}</AvatarFallback>
-                        </Avatar>
-                        <div>
-                             <CardTitle className="text-3xl">{ownerData?.firstName} {ownerData?.lastName}</CardTitle>
-                             <CardDescription className="flex items-center gap-2 mt-1">
-                                <Mail className="h-4 w-4" /> {ownerData?.email}
-                             </CardDescription>
-                             <CardDescription className="flex items-center gap-2">
-                                <Calendar className="h-4 w-4" /> Joined: {formatDate(companyData?.createdAt)}
-                            </CardDescription>
+                    <div className="flex justify-between items-start">
+                        <div className="flex items-center gap-4">
+                            <Avatar className="h-16 w-16">
+                                <AvatarFallback>{getInitials(ownerData?.firstName, ownerData?.lastName)}</AvatarFallback>
+                            </Avatar>
+                            <div>
+                                <CardTitle className="text-3xl">{ownerData?.firstName} {ownerData?.lastName}</CardTitle>
+                                <CardDescription className="flex items-center gap-2 mt-1">
+                                    <Mail className="h-4 w-4" /> {ownerData?.email}
+                                </CardDescription>
+                                <CardDescription className="flex items-center gap-2">
+                                    <Calendar className="h-4 w-4" /> Joined: {formatDate(companyData?.createdAt)}
+                                </CardDescription>
+                            </div>
                         </div>
+                        <Button variant="outline" size="sm" onClick={() => setIsEditDialogOpen(true)}>
+                            <Edit className="mr-2 h-4 w-4"/>
+                            Edit Member
+                        </Button>
                     </div>
                 </CardHeader>
                 <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
