@@ -26,8 +26,27 @@ const formatPrice = (price: number, perMonth = false) => {
         minimumFractionDigits: 0,
         maximumFractionDigits: 0
     }).format(price);
-    return perMonth ? `${formatted}/month` : formatted;
+    const result = perMonth ? `${formatted}/month` : formatted;
+    // Normalize spaces to prevent hydration mismatch
+    return result.replace(/\s/g, ' ');
 };
+
+const formatDate = (dateString: string | undefined) => {
+    if (!dateString) return null;
+    try {
+        const date = new Date(dateString);
+        // A simple check for a valid date
+        if (isNaN(date.getTime())) return null;
+        return date.toLocaleDateString('en-ZA', {
+            day: 'numeric',
+            month: 'long',
+            year: 'numeric',
+        });
+    } catch (e) {
+        return null;
+    }
+};
+
 
 const renderCheckmark = (isIncluded: boolean) => {
     if (isIncluded) {
@@ -102,23 +121,30 @@ export default function MembershipPage() {
         ) : (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-7xl mx-auto">
               {sortedTiers?.map((tier:any) => {
-                  const monthlyPrice = (typeof tier.price === 'object' && tier.price !== null)
-                    ? tier.price.monthly || 0
-                    : tier.price || 0;
-                  
+                  const monthlyPrice = tier.price || 0;
                   const annualDiscount = tier.annualDiscount || 0;
                   const specialOfferDiscount = tier.specialOfferDiscount || 0;
-                  
-                  // This calculation was flawed, annual price should be based on monthly price
                   const annualPrice = monthlyPrice * 12 * (1 - (annualDiscount / 100));
 
-                  const finalMonthlyPrice = monthlyPrice * (1 - (specialOfferDiscount / 100));
-                  const finalAnnualPrice = annualPrice * (1 - (specialOfferDiscount / 100));
-                  
+                  const isOfferActiveNow = (() => {
+                      if (!tier.specialOfferDiscount || tier.specialOfferDiscount <= 0) return false;
+                      const now = new Date();
+                      const startDate = tier.specialOfferStartDate ? new Date(tier.specialOfferStartDate) : null;
+                      const endDate = tier.specialOfferEndDate ? new Date(tier.specialOfferEndDate) : null;
+                      if (startDate && now < startDate) return false;
+                      if (endDate && now > endDate) return false;
+                      return true;
+                  })();
+
+                  const finalMonthlyPrice = isOfferActiveNow ? monthlyPrice * (1 - (specialOfferDiscount / 100)) : monthlyPrice;
+                  const finalAnnualPrice = isOfferActiveNow ? annualPrice * (1 - (specialOfferDiscount / 100)) : annualPrice;
+
                   const priceToShow = billingCycle === 'annual' ? finalAnnualPrice / 12 : finalMonthlyPrice;
-                  const originalPriceToShow = billingCycle === 'annual' ? (monthlyPrice * 12 * (1 - (annualDiscount / 100))) / 12 : monthlyPrice;
+                  const originalPriceToShow = billingCycle === 'annual' ? annualPrice / 12 : monthlyPrice;
                   
-                  const isDiscounted = specialOfferDiscount > 0;
+                  const isDiscounted = isOfferActiveNow && specialOfferDiscount > 0;
+                  const formattedEndDate = formatDate(tier.specialOfferEndDate);
+
 
                   return (
                     <Card key={tier.id} className={cn(
@@ -138,23 +164,30 @@ export default function MembershipPage() {
                                 ? "Get started by building your shop in draft mode. Upgrade to publish and start selling."
                                 : tier.description}
                         </CardDescription>
-                        <div className="pt-4">
+                        <div className="pt-4 min-h-[120px] flex flex-col justify-center">
                            {tier.id === 'free' ? (
                                 <span className="text-4xl font-extrabold tracking-tight">Free</span>
-                           ) : (
+                           ) : isDiscounted ? (
+                                <div className="text-center">
+                                    <p className="text-sm text-muted-foreground">
+                                        Was <span className="line-through">{formatPrice(originalPriceToShow, true)}</span>
+                                    </p>
+                                    {tier.specialOfferText && <p className="font-semibold text-primary">{tier.specialOfferText}</p>}
+                                    <span className="text-4xl font-extrabold tracking-tight">
+                                        {formatPrice(priceToShow)}
+                                    </span>
+                                    <span className="text-muted-foreground">/month</span>
+                                    {formattedEndDate && <p className="text-xs text-muted-foreground mt-1">Valid until {formattedEndDate}</p>}
+                                </div>
+                            ) : (
                                 <>
                                     <div className="flex items-baseline justify-center gap-2">
-                                        {isDiscounted && (
-                                            <span className="text-2xl font-medium text-muted-foreground line-through decoration-2">
-                                                {formatPrice(originalPriceToShow, true)}
-                                            </span>
-                                        )}
                                         <span className="text-4xl font-extrabold tracking-tight">
                                             {formatPrice(priceToShow)}
                                         </span>
                                         <span className="text-muted-foreground self-end">/month</span>
                                     </div>
-                                    {billingCycle === 'annual' && (
+                                    {billingCycle === 'annual' && monthlyPrice > 0 && (
                                         <p className="text-xs text-muted-foreground mt-1">Billed as {formatPrice(finalAnnualPrice)} per year</p>
                                     )}
                                 </>
