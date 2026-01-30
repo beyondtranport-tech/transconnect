@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -10,8 +10,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Loader2, PlusCircle, Save, Edit, Trash2 } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from '@/components/ui/dialog';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore, useCollection, getClientSideAuthToken, useMemoFirebase } from '@/firebase';
 import { collection, query, doc, deleteDoc } from 'firebase/firestore';
@@ -28,9 +28,9 @@ const planSchema = z.object({
   name: z.string().min(1, 'Plan name is required'),
   description: z.string().min(1, 'Description is required'),
   price: z.coerce.number().min(0, 'Price must be 0 or more'),
-  annualDiscount: z.coerce.number().min(0).max(100, "Must be between 0-100").optional(),
+  annualDiscount: z.coerce.number().min(0, "Must be between 0-100").optional(),
   specialOfferText: z.string().optional(),
-  specialOfferDiscount: z.coerce.number().min(0).max(100, "Must be between 0-100").optional(),
+  specialOfferDiscount: z.coerce.number().min(0, "Must be between 0-100").optional(),
   specialOfferStartDate: z.string().optional(),
   specialOfferEndDate: z.string().optional(),
   features: z.array(z.string()).min(1, 'At least one feature is required'),
@@ -52,15 +52,16 @@ function PlanDialog({ plan, onSave }: { plan?: any; onSave: () => void }) {
   
   useEffect(() => {
     if (isOpen) {
+        // This logic handles both the old {monthly, annual} price object and the new number price.
         const monthlyPrice = (typeof plan?.price === 'object' && plan?.price !== null)
-            ? plan.price.monthly
-            : plan.price;
+            ? plan.price.monthly || 0
+            : plan?.price || 0;
 
         form.reset({
             id: plan?.id || '',
             name: plan?.name || '',
             description: plan?.description || '',
-            price: monthlyPrice ?? 0,
+            price: monthlyPrice,
             annualDiscount: plan?.annualDiscount ?? 0,
             specialOfferText: plan?.specialOfferText || '',
             specialOfferDiscount: plan?.specialOfferDiscount ?? 0,
@@ -84,6 +85,9 @@ function PlanDialog({ plan, onSave }: { plan?: any; onSave: () => void }) {
       if (plan) {
         dataToSave.version = (plan.version || 1) + 1;
       }
+      
+      // Ensure price is saved as a number
+      dataToSave.price = Number(values.price);
 
       const response = await fetch('/api/updateConfigDoc', {
         method: 'POST',
@@ -105,6 +109,8 @@ function PlanDialog({ plan, onSave }: { plan?: any; onSave: () => void }) {
       setIsLoading(false);
     }
   };
+
+  const allFeatures = useMemo(() => featureSections.flatMap(s => s.features), []);
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -299,7 +305,7 @@ export default function PricingManagement() {
                   <TableHead>Plan Name</TableHead>
                   <TableHead>Monthly Price</TableHead>
                   <TableHead>Annual Discount</TableHead>
-                  <TableHead>Special Offer</TableHead>
+                  <TableHead>Special Offer Discount</TableHead>
                   <TableHead>Features</TableHead>
                   <TableHead>Version</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
@@ -308,8 +314,8 @@ export default function PricingManagement() {
               <TableBody>
                 {plans && plans.map((plan: any) => {
                   const monthlyPrice = (typeof plan.price === 'object' && plan.price !== null)
-                    ? plan.price.monthly
-                    : plan.price;
+                    ? plan.price.monthly || 0
+                    : plan.price || 0;
 
                   return (
                     <TableRow key={plan.id}>
