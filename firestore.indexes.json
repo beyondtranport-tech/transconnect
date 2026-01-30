@@ -87,9 +87,24 @@
       ]
     },
     {
+      "collectionGroup": "staff",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        { "fieldPath": "email", "order": "ASCENDING" },
+        { "fieldPath": "status", "order": "ASCENDING" }
+      ]
+    },
+    {
       "collectionId": "partners",
       "fields": [
         { "fieldPath": "email", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionId": "partners",
+      "fields": [
+        { "fieldPath": "email", "order": "ASCENDING" },
+        { "fieldPath": "invitationStatus", "order": "ASCENDING" }
       ]
     },
     {
