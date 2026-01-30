@@ -19,7 +19,7 @@ import featuresData from '@/lib/features.json';
 
 const { featureSections } = featuresData;
 
-const formatPrice = (price: number, perMonth = false) => {
+const formatPrice = (price: number, perUnit = false, unit = "month") => {
     if (typeof price !== 'number' || isNaN(price)) return 'R 0';
     const formatted = new Intl.NumberFormat('en-ZA', {
         style: 'currency',
@@ -27,7 +27,7 @@ const formatPrice = (price: number, perMonth = false) => {
         minimumFractionDigits: 0,
         maximumFractionDigits: 0
     }).format(price);
-    const result = perMonth ? `${formatted}/month` : formatted;
+    const result = perUnit ? `${formatted}/${unit}` : formatted;
     // Normalize spaces to prevent hydration mismatch
     return result.replace(/\s/g, ' ');
 };
@@ -123,11 +123,11 @@ export default function MembershipPage() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-7xl mx-auto">
               {sortedTiers?.map((tier:any) => {
                   const monthlyPrice = tier.price || 0;
-                  const annualDiscount = tier.annualDiscount || 0;
-                  const specialOfferDiscount = tier.specialOfferDiscount || 0;
+                  const annualDiscountPercent = tier.annualDiscount || 0;
+                  const specialOfferDiscountPercent = tier.specialOfferDiscount || 0;
 
                   const isOfferActiveNow = (() => {
-                      if (!specialOfferDiscount || specialOfferDiscount <= 0) return false;
+                      if (!specialOfferDiscountPercent || specialOfferDiscountPercent <= 0) return false;
                       const now = new Date();
                       const startDate = tier.specialOfferStartDate ? new Date(tier.specialOfferStartDate) : null;
                       const endDate = tier.specialOfferEndDate ? new Date(tier.specialOfferEndDate) : null;
@@ -136,28 +136,29 @@ export default function MembershipPage() {
                       return true;
                   })();
 
-                  const originalMonthly = monthlyPrice;
-                  const originalAnnualPerMonth = monthlyPrice * (1 - (annualDiscount / 100));
-
-                  const originalPriceToShow = billingCycle === 'annual' ? originalAnnualPerMonth : originalMonthly;
-                  const discountedPrice = originalPriceToShow * (1 - (specialOfferDiscount / 100));
+                  // --- Calculations ---
+                  const monthlyBeforeOffer = monthlyPrice;
+                  const monthlyAfterOffer = isOfferActiveNow ? monthlyPrice * (1 - (specialOfferDiscountPercent / 100)) : monthlyPrice;
                   
-                  const priceToShow = isOfferActiveNow ? discountedPrice : originalPriceToShow;
+                  const annualFullPrice = monthlyPrice * 12;
+                  const annualDiscountAmount = annualFullPrice * (annualDiscountPercent / 100);
+                  const annualAfterStandardDiscount = annualFullPrice - annualDiscountAmount;
+                  const annualFinal = isOfferActiveNow ? annualAfterStandardDiscount * (1 - (specialOfferDiscountPercent / 100)) : annualAfterStandardDiscount;
+                  
+                  const stickerSavingAmount = billingCycle === 'annual' 
+                    ? (isOfferActiveNow ? annualAfterStandardDiscount - annualFinal : 0) / 12
+                    : isOfferActiveNow ? monthlyBeforeOffer - monthlyAfterOffer : 0;
 
-                  const isDiscounted = isOfferActiveNow && specialOfferDiscount > 0;
                   const formattedEndDate = formatDate(tier.specialOfferEndDate);
                   
-                  const monthlySaving = originalPriceToShow - discountedPrice;
-
-
                   return (
                     <Card key={tier.id} className={cn(
                         "flex flex-col shadow-lg transition-transform duration-300 hover:scale-105 relative overflow-visible",
                         tier.isPopular ? "border-primary border-2" : "border"
                     )}>
-                        {isDiscounted && monthlySaving > 0 && (
+                        {isOfferActiveNow && stickerSavingAmount > 0 && (
                             <div className="absolute top-8 -left-4 bg-destructive text-destructive-foreground px-4 py-1.5 text-sm font-bold rounded-r-full shadow-lg transform -rotate-15 z-10">
-                                SAVE {formatPrice(monthlySaving)}
+                                SAVE {formatPrice(stickerSavingAmount)}
                             </div>
                         )}
                         {tier.isPopular && (
@@ -176,38 +177,43 @@ export default function MembershipPage() {
                         <div className="pt-4 min-h-[120px] flex flex-col justify-center">
                            {tier.id === 'free' ? (
                                 <span className="text-4xl font-extrabold tracking-tight">Free</span>
-                           ) : isDiscounted ? (
-                                <div className="text-center space-y-1">
-                                    <p className="text-base text-muted-foreground">
-                                        Was <span className="line-through">{formatPrice(originalPriceToShow, true)}</span>
-                                    </p>
-                                    {tier.specialOfferText && <p className="text-lg font-semibold text-primary">{tier.specialOfferText}</p>}
-                                    
-                                    <div className="flex items-baseline justify-center gap-2 pt-1">
-                                        <span className="text-4xl font-extrabold tracking-tight">
-                                            {formatPrice(priceToShow)}
-                                        </span>
-                                        <span className="text-muted-foreground self-end">/month</span>
-                                    </div>
-                                    
-                                    {formattedEndDate && (
-                                        <p className="text-xs text-muted-foreground">
-                                            Valid until {formattedEndDate}
-                                        </p>
-                                    )}
-                                </div>
-                            ) : (
+                           ) : billingCycle === 'monthly' ? (
                                 <>
-                                    <div className="flex items-baseline justify-center gap-2">
-                                        <span className="text-4xl font-extrabold tracking-tight">
-                                            {formatPrice(priceToShow)}
-                                        </span>
-                                        <span className="text-muted-foreground self-end">/month</span>
-                                    </div>
-                                    {billingCycle === 'annual' && monthlyPrice > 0 && (
-                                        <p className="text-xs text-muted-foreground mt-1">Billed as {formatPrice(priceToShow * 12)} per year</p>
+                                    {isOfferActiveNow ? (
+                                        <div className="text-center space-y-1">
+                                            <p className="text-base text-muted-foreground">
+                                                Was <span className="line-through">{formatPrice(monthlyBeforeOffer, true)}</span>
+                                            </p>
+                                            {tier.specialOfferText && <p className="text-lg font-semibold text-primary">{tier.specialOfferText}</p>}
+                                            <div className="flex items-baseline justify-center gap-2 pt-1">
+                                                <span className="text-4xl font-extrabold tracking-tight">{formatPrice(monthlyAfterOffer)}</span>
+                                                <span className="text-muted-foreground self-end">/month</span>
+                                            </div>
+                                            {formattedEndDate && <p className="text-xs text-muted-foreground">Valid until {formattedEndDate}</p>}
+                                        </div>
+                                    ) : (
+                                        <div className="flex items-baseline justify-center gap-2">
+                                            <span className="text-4xl font-extrabold tracking-tight">{formatPrice(monthlyPrice)}</span>
+                                            <span className="text-muted-foreground self-end">/month</span>
+                                        </div>
                                     )}
                                 </>
+                           ) : (
+                                // Annual Billing View
+                                <div className="text-center space-y-1">
+                                     {isOfferActiveNow && (
+                                        <p className="text-base text-muted-foreground">
+                                            Was <span className="line-through">{formatPrice(annualAfterStandardDiscount, true, 'year')}</span>
+                                        </p>
+                                    )}
+                                    {isOfferActiveNow && tier.specialOfferText && <p className="text-lg font-semibold text-primary">{tier.specialOfferText}</p>}
+                                    <div className="flex items-baseline justify-center gap-2 pt-1">
+                                        <span className="text-4xl font-extrabold tracking-tight">{formatPrice(annualFinal)}</span>
+                                        <span className="text-muted-foreground self-end">/year</span>
+                                    </div>
+                                    <p className="text-sm text-muted-foreground">Billed annually. Equivalent to {formatPrice(annualFinal / 12, true)}.</p>
+                                    {annualDiscountAmount > 0 && <p className="text-sm font-semibold text-primary">You save {formatPrice(annualDiscountAmount)} per year!</p>}
+                                </div>
                            )}
                         </div>
                       </CardHeader>
