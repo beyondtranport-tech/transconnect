@@ -220,20 +220,42 @@
         "id": { "type": "string" },
         "name": { "type": "string" },
         "description": { "type": "string" },
-        "price": {
-          "type": "object",
-          "properties": {
-            "monthly": { "type": "number" },
-            "annual": { "type": "number" }
-          }
-        },
+        "price": { "type": "number", "description": "The base monthly price of the plan." },
         "annualDiscount": { "type": "number", "description": "The discount percentage applied when a member chooses an annual subscription." },
+        "specialOfferText": { "type": "string", "description": "Promotional text for the special offer." },
         "specialOfferDiscount": { "type": "number", "description": "A temporary promotional discount percentage." },
+        "specialOfferStartDate": { "type": "string", "format": "date-time", "description": "The start date for the special offer." },
+        "specialOfferEndDate": { "type": "string", "format": "date-time", "description": "The end date for the special offer." },
         "features": { "type": "array", "items": { "type": "string" } },
         "isPopular": { "type": "boolean" },
         "version": { "type": "number", "description": "A version number for tracking changes to the plan." }
       },
       "required": ["id", "name", "description"]
+    },
+     "ConnectPlanDetail": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "title": "Connect Plan Detail",
+        "type": "object",
+        "description": "Represents the pricing and offer details for a single Connect plan.",
+        "properties": {
+            "price": { "type": "number" },
+            "specialOfferText": { "type": "string", "description": "Promotional text for the special offer." },
+            "specialOfferDiscount": { "type": "number", "description": "The discount percentage for the special offer." },
+            "specialOfferStartDate": { "type": "string", "format": "date-time", "description": "The start date for the special offer." },
+            "specialOfferEndDate": { "type": "string", "format": "date-time", "description": "The end date for the special offer." }
+        },
+        "required": ["price"]
+    },
+    "ConnectPlans": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "title": "Connect Plans Configuration",
+        "type": "object",
+        "description": "Configuration for all Connect plans (Loyalty, Rewards, Actions).",
+        "properties": {
+            "loyalty": { "$ref": "#/entities/ConnectPlanDetail" },
+            "rewards": { "$ref": "#/entities/ConnectPlanDetail" },
+            "actions": { "$ref": "#/entities/ConnectPlanDetail" }
+        }
     },
     "Contribution": {
       "$schema": "http://json-schema.org/draft-07/schema#",
@@ -522,6 +544,14 @@
           "description": "Public collection for available membership plans."
         }
       },
+      {
+        "path": "/configuration/connectPlans",
+        "definition": {
+            "entityName": "ConnectPlans",
+            "schema": { "$ref": "#/entities/ConnectPlans" },
+            "description": "Stores pricing and offer details for the connect plans."
+        }
+      },
        {
         "path": "/rewards/{rewardId}",
         "definition": {
@@ -595,6 +625,6 @@
         }
       }
     ],
-    "reasoning": "The data model is refactored to separate user identity from business entities. A new `/users` collection stores individual user profiles, linked via Firebase Auth UID. A new `/companies` collection stores business-related data, including wallet balance, membership status, and subcollections for transactions, staff, quotes, etc. This creates a cleaner, more scalable architecture where a user owns a company, rather than the user and company being the same entity. This prevents data duplication and clarifies ownership for security rules."
+    "reasoning": "The data model is refactored to separate user identity from business entities. A new `/users` collection stores individual user profiles, linked via Firebase Auth UID. A new `/companies` collection stores business-related data, including wallet balance, membership status, and subcollections for transactions, staff, quotes, etc. This creates a cleaner, more scalable architecture where a user owns a company, rather than the user and company being the same entity. This prevents data duplication and clarifies ownership for security rules. Added Special Offer fields to Membership entity and created new entities for Connect Plan pricing to support advanced promotional offers."
   }
 }

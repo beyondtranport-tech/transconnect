@@ -29,7 +29,10 @@ const planSchema = z.object({
   description: z.string().min(1, 'Description is required'),
   price: z.coerce.number().min(0, 'Price must be 0 or more'),
   annualDiscount: z.coerce.number().min(0).max(100, "Must be between 0-100").optional(),
+  specialOfferText: z.string().optional(),
   specialOfferDiscount: z.coerce.number().min(0).max(100, "Must be between 0-100").optional(),
+  specialOfferStartDate: z.string().optional(),
+  specialOfferEndDate: z.string().optional(),
   features: z.array(z.string()).min(1, 'At least one feature is required'),
   isPopular: z.boolean().default(false),
   version: z.coerce.number().min(1).optional(),
@@ -49,23 +52,19 @@ function PlanDialog({ plan, onSave }: { plan?: PlanFormValues; onSave: () => voi
   
   useEffect(() => {
     if (isOpen) {
-        const defaultValues = {
-            id: '',
-            name: '',
-            description: '',
-            price: 0,
-            annualDiscount: 0,
-            specialOfferDiscount: 0,
-            features: [],
-            isPopular: false,
-            version: 1,
-        };
         form.reset({
-            ...defaultValues,
-            ...(plan || {}),
-             price: plan?.price ?? 0,
-             annualDiscount: plan?.annualDiscount ?? 0,
-             specialOfferDiscount: plan?.specialOfferDiscount ?? 0,
+            id: plan?.id || '',
+            name: plan?.name || '',
+            description: plan?.description || '',
+            price: plan?.price ?? 0,
+            annualDiscount: plan?.annualDiscount ?? 0,
+            specialOfferText: plan?.specialOfferText || '',
+            specialOfferDiscount: plan?.specialOfferDiscount ?? 0,
+            specialOfferStartDate: plan?.specialOfferStartDate || '',
+            specialOfferEndDate: plan?.specialOfferEndDate || '',
+            features: plan?.features || [],
+            isPopular: plan?.isPopular || false,
+            version: plan?.version || 1,
         });
     }
   }, [isOpen, plan, form]);
@@ -128,14 +127,26 @@ function PlanDialog({ plan, onSave }: { plan?: PlanFormValues; onSave: () => voi
               <FormItem><FormLabel>Description</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
             )} />
             <FormField name="price" control={form.control} render={({ field }) => (
-                <FormItem><FormLabel>Monthly Price (R)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
+                <FormItem><FormLabel>Base Monthly Price (R)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
               )} />
-             <div className="grid grid-cols-2 gap-4">
-                <FormField name="annualDiscount" control={form.control} render={({ field }) => (
+            <FormField name="annualDiscount" control={form.control} render={({ field }) => (
                     <FormItem><FormLabel>Annual Discount (%)</FormLabel><FormControl><Input type="number" placeholder="e.g., 15" {...field} /></FormControl><FormMessage /></FormItem>
+            )} />
+
+             <Separator />
+             <h3 className="font-semibold text-lg">Special Launch Offer</h3>
+              <FormField name="specialOfferText" control={form.control} render={({ field }) => (
+                <FormItem><FormLabel>Offer Text</FormLabel><FormControl><Input placeholder="e.g., Limited Launch Offer!" {...field} /></FormControl><FormMessage /></FormItem>
+              )} />
+             <div className="grid grid-cols-3 gap-4">
+                 <FormField name="specialOfferDiscount" control={form.control} render={({ field }) => (
+                    <FormItem><FormLabel>Offer Discount (%)</FormLabel><FormControl><Input type="number" placeholder="e.g., 10" {...field} /></FormControl><FormMessage /></FormItem>
                 )} />
-                <FormField name="specialOfferDiscount" control={form.control} render={({ field }) => (
-                    <FormItem><FormLabel>Special Offer Discount (%)</FormLabel><FormControl><Input type="number" placeholder="e.g., 10" {...field} /></FormControl><FormMessage /></FormItem>
+                <FormField name="specialOfferStartDate" control={form.control} render={({ field }) => (
+                    <FormItem><FormLabel>Offer Start Date</FormLabel><FormControl><Input type="date" {...field} /></FormControl><FormMessage /></FormItem>
+                )} />
+                <FormField name="specialOfferEndDate" control={form.control} render={({ field }) => (
+                    <FormItem><FormLabel>Offer End Date</FormLabel><FormControl><Input type="date" {...field} /></FormControl><FormMessage /></FormItem>
                 )} />
             </div>
             
