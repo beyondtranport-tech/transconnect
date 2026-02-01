@@ -2,11 +2,30 @@
 
 import { useState, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { FileText, Loader2 } from "lucide-react";
+import { FileText, Loader2, AlertCircle } from "lucide-react";
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query, where } from 'firebase/firestore';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+
+// --- Mock Data for Demonstration ---
+const mockClients = [
+    { id: 'client-1', name: 'Demo Client Alpha' },
+    { id: 'client-2', name: 'Demo Client Beta' },
+];
+
+const mockFacilities: { [key: string]: any[] } = {
+    'client-1': [
+        { id: 'facility-1a', productType: 'Loan (PV) – term', limit: 500000 },
+        { id: 'facility-1b', productType: 'Disclosed confirmed factoring 75% advance', limit: 1000000 },
+    ],
+    'client-2': [
+        { id: 'facility-2a', productType: 'Term Agreement', limit: 250000 },
+    ]
+};
+// --- End Mock Data ---
+
 
 export default function AgreementsContent() {
     const firestore = useFirestore();
@@ -18,14 +37,24 @@ export default function AgreementsContent() {
         if (!firestore) return null;
         return query(collection(firestore, 'lendingClients'));
     }, [firestore]);
-    const { data: clients, isLoading: areClientsLoading } = useCollection<{id: string, name: string}>(clientsQuery);
+    const { data: liveClients, isLoading: areClientsLoading } = useCollection<{id: string, name: string}>(clientsQuery);
+    
+    // Use live clients if available, otherwise fallback to mock data
+    const clients = liveClients && liveClients.length > 0 ? liveClients : mockClients;
+    const usingMockClients = !liveClients || liveClients.length === 0;
 
     // 2. Fetch approved facilities for the selected client
     const facilitiesQuery = useMemoFirebase(() => {
         if (!firestore || !selectedClientId) return null;
         return query(collection(firestore, `lendingClients/${selectedClientId}/facilities`), where('status', '==', 'approved'));
     }, [firestore, selectedClientId]);
-    const { data: facilities, isLoading: areFacilitiesLoading } = useCollection<{id: string, productType: string, limit: number}>(facilitiesQuery);
+    const { data: liveFacilities, isLoading: areFacilitiesLoading } = useCollection<{id: string, productType: string, limit: number}>(facilitiesQuery);
+    
+    // Use live facilities if available, otherwise fallback to mock data for the selected client
+    const facilities = selectedClientId && liveFacilities && liveFacilities.length > 0 
+        ? liveFacilities 
+        : selectedClientId ? mockFacilities[selectedClientId] || [] : [];
+    const usingMockFacilities = !liveFacilities || liveFacilities.length === 0;
 
     const handleClientChange = (clientId: string) => {
         setSelectedClientId(clientId);
@@ -53,6 +82,15 @@ export default function AgreementsContent() {
                 </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
+                {(usingMockClients || (selectedClientId && usingMockFacilities)) && (
+                     <Alert>
+                        <AlertCircle className="h-4 w-4" />
+                        <AlertTitle>Demonstration Mode</AlertTitle>
+                        <AlertDescription>
+                           No live data was found, so dropdowns are populated with sample data. Create real clients and facilities to see them here.
+                        </AlertDescription>
+                    </Alert>
+                )}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
                         <Label htmlFor="client-select">Select a Client</Label>
