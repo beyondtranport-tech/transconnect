@@ -3,6 +3,10 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, DollarSign, Landmark, Calendar, AlertCircle } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 
 const clientTabs = [
     { value: "dashboard", label: "Dashboard" },
@@ -105,7 +109,77 @@ export default function ClientsContent() {
                         <Card className="mt-4">
                             <CardHeader><CardTitle>Main Details</CardTitle></CardHeader>
                             <CardContent>
-                                <p className="text-muted-foreground">Main client fields will go here.</p>
+                                <div className="space-y-4 max-w-2xl">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div className="space-y-2">
+                                            <Label htmlFor="client-code">Client Code</Label>
+                                            <Input id="client-code" placeholder="Client Code" />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="client-name">Name</Label>
+                                            <Input id="client-name" placeholder="Client Name" />
+                                        </div>
+                                    </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                        <div className="space-y-2">
+                                            <Label htmlFor="client-status">Status</Label>
+                                            <Select>
+                                                <SelectTrigger id="client-status"><SelectValue placeholder="Select Status" /></SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="active">Active</SelectItem>
+                                                    <SelectItem value="inactive">Inactive</SelectItem>
+                                                    <SelectItem value="pending">Pending</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="client-type">Type</Label>
+                                            <Select>
+                                                <SelectTrigger id="client-type"><SelectValue placeholder="Select Type" /></SelectTrigger>
+                                                <SelectContent>
+                                                     <SelectItem value="individual">Individual</SelectItem>
+                                                    <SelectItem value="company">Company</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="client-category">Category</Label>
+                                            <Select>
+                                                <SelectTrigger id="client-category"><SelectValue placeholder="Select Category" /></SelectTrigger>
+                                                <SelectContent>
+                                                     <SelectItem value="transport">Transport</SelectItem>
+                                                    <SelectItem value="logistics">Logistics</SelectItem>
+                                                    <SelectItem value="other">Other</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                    </div>
+                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div className="space-y-2">
+                                            <Label htmlFor="client-language">Language</Label>
+                                            <Select>
+                                                <SelectTrigger id="client-language"><SelectValue placeholder="Select Language" /></SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="en">English</SelectItem>
+                                                    <SelectItem value="af">Afrikaans</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="reg-id">Reg. ID</Label>
+                                            <Input id="reg-id" placeholder="Registration ID" />
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center space-x-2 pt-2">
+                                        <Checkbox id="vat-registered" />
+                                        <label
+                                            htmlFor="vat-registered"
+                                            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                                        >
+                                            Vat registered?
+                                        </label>
+                                    </div>
+                                </div>
                             </CardContent>
                         </Card>
                     </TabsContent>
