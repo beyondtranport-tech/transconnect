@@ -3,7 +3,7 @@
 
 import { useState, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Landmark, FileText, Repeat, Briefcase, Handshake, Users } from "lucide-react";
+import { Landmark, FileText, Repeat, Briefcase, Handshake, Users, Truck } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
@@ -11,6 +11,8 @@ import { collection, query } from 'firebase/firestore';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { Checkbox } from '@/components/ui/checkbox';
+import Link from 'next/link';
+import { Button } from '@/components/ui/button';
 
 
 const agreementTypes = [
@@ -235,6 +237,13 @@ export default function AgreementsContent() {
                                     <Input id="is-description" placeholder="Asset description" />
                                 </div>
                             </div>
+                             <div className="flex justify-end">
+                                <Button asChild variant="outline">
+                                    <Link href="/backend?view=lending-assets">
+                                        <Truck className="mr-2 h-4 w-4" /> Add Assets
+                                    </Link>
+                                </Button>
+                            </div>
 
                             <Separator />
                             
@@ -355,6 +364,13 @@ export default function AgreementsContent() {
                                     <Input id="lease-description" placeholder="Asset description" />
                                 </div>
                             </div>
+                             <div className="flex justify-end">
+                                <Button asChild variant="outline">
+                                    <Link href="/backend?view=lending-assets">
+                                        <Truck className="mr-2 h-4 w-4" /> Add Assets
+                                    </Link>
+                                </Button>
+                            </div>
                             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                                 <div className="space-y-2">
                                     <Label htmlFor="lease-total-cost">Total cost</Label>
@@ -444,6 +460,13 @@ export default function AgreementsContent() {
                                     <Label htmlFor="factoring-description">Description</Label>
                                     <Input id="factoring-description" placeholder="Agreement description" />
                                 </div>
+                            </div>
+                             <div className="flex justify-end">
+                                <Button asChild variant="outline">
+                                    <Link href="/backend?view=lending-assets">
+                                        <Truck className="mr-2 h-4 w-4" /> Add Assets
+                                    </Link>
+                                </Button>
                             </div>
                             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                                 <div className="space-y-2">
