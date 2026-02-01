@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Separator } from "@/components/ui/separator";
 
 const clientTabs = [
     { value: "dashboard", label: "Dashboard" },
@@ -186,8 +188,54 @@ export default function ClientsContent() {
                     <TabsContent value="address">
                         <Card className="mt-4">
                             <CardHeader><CardTitle>Address Details</CardTitle></CardHeader>
-                            <CardContent>
-                                <p className="text-muted-foreground">Address fields will go here.</p>
+                            <CardContent className="space-y-8">
+                                <div>
+                                    <h3 className="text-lg font-semibold mb-4">Physical Address</h3>
+                                    <div className="space-y-4 max-w-2xl">
+                                        <div className="space-y-2">
+                                            <Label htmlFor="physical-street">Street Address</Label>
+                                            <Input id="physical-street" placeholder="e.g., 123 Industrial Rd" />
+                                        </div>
+                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                            <div className="space-y-2">
+                                                <Label htmlFor="physical-suburb">Suburb</Label>
+                                                <Input id="physical-suburb" placeholder="e.g., Pomona" />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label htmlFor="physical-city">City</Label>
+                                                <Input id="physical-city" placeholder="e.g., Kempton Park" />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label htmlFor="physical-postal">Postal Code</Label>
+                                                <Input id="physical-postal" placeholder="e.g., 1619" />
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <Separator />
+                                <div>
+                                    <h3 className="text-lg font-semibold mb-4">Postal Address</h3>
+                                    <div className="space-y-4 max-w-2xl">
+                                        <div className="space-y-2">
+                                            <Label htmlFor="postal-street">Street Address or P.O. Box</Label>
+                                            <Input id="postal-street" placeholder="e.g., P.O. Box 12345" />
+                                        </div>
+                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                            <div className="space-y-2">
+                                                <Label htmlFor="postal-suburb">Suburb</Label>
+                                                <Input id="postal-suburb" placeholder="e.g., Pomona" />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label htmlFor="postal-city">City</Label>
+                                                <Input id="postal-city" placeholder="e.g., Kempton Park" />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label htmlFor="postal-postal">Postal Code</Label>
+                                                <Input id="postal-postal" placeholder="e.g., 1619" />
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </CardContent>
                         </Card>
                     </TabsContent>
@@ -244,3 +292,4 @@ export default function ClientsContent() {
         </Card>
     );
 }
+    
