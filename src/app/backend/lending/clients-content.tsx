@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -243,7 +242,42 @@ export default function ClientsContent() {
                         <Card className="mt-4">
                             <CardHeader><CardTitle>Contact Information</CardTitle></CardHeader>
                             <CardContent>
-                                <p className="text-muted-foreground">Contact fields will go here.</p>
+                                <div className="space-y-4 max-w-2xl">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div className="space-y-2">
+                                            <Label htmlFor="tel-w">Tel (w)</Label>
+                                            <Input id="tel-w" placeholder="Work Telephone" />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="tel-h">Tel (h)</Label>
+                                            <Input id="tel-h" placeholder="Home Telephone" />
+                                        </div>
+                                    </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div className="space-y-2">
+                                            <Label htmlFor="fax">Fax</Label>
+                                            <Input id="fax" placeholder="Fax Number" />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="cell">Cell</Label>
+                                            <Input id="cell" placeholder="Mobile Number" />
+                                        </div>
+                                    </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div className="space-y-2">
+                                            <Label htmlFor="email">Email</Label>
+                                            <Input id="email" type="email" placeholder="client@example.com" />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="url">URL</Label>
+                                            <Input id="url" type="url" placeholder="https://example.com" />
+                                        </div>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="contact-person">Contact Person</Label>
+                                        <Input id="contact-person" placeholder="Primary Contact Name" />
+                                    </div>
+                                </div>
                             </CardContent>
                         </Card>
                     </TabsContent>
@@ -292,4 +326,3 @@ export default function ClientsContent() {
         </Card>
     );
 }
-    
