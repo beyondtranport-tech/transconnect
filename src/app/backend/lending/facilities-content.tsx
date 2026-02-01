@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Landmark, Briefcase, FileText, Repeat } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 
 // Replicating the product data structure from the funding products page.
 const productsData = {
@@ -117,9 +118,47 @@ export default function FacilitiesContent() {
                         <h3 className="text-lg font-semibold">
                             Configure Facility for: <span className="text-primary">{productOptions.find(p => p.id === productType)?.title}</span>
                         </h3>
-                        <div className="mt-4 p-8 border-2 border-dashed rounded-lg text-center">
-                            <p className="text-muted-foreground">Fields for this product type will appear here. Please provide your instructions.</p>
-                        </div>
+                        
+                        {agreementType === 'discounting' && (
+                            <div className="mt-4 space-y-4 max-w-2xl">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                        <Label htmlFor="agreement-type-display">Agreement Type</Label>
+                                        <Input id="agreement-type-display" value="Factoring" disabled />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="implementation-date">Implementation Date</Label>
+                                        <Input id="implementation-date" type="date" />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="review-date">Review Date</Label>
+                                        <Input id="review-date" type="date" />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="limit">Limit</Label>
+                                        <Input id="limit" type="number" placeholder="R 0.00" />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="retention-percent">Retention %</Label>
+                                        <Input id="retention-percent" type="number" placeholder="e.g., 10" />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="discount-rate">Discount Rate</Label>
+                                        <Input id="discount-rate" type="number" placeholder="e.g., 5" />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="interest-rate">Interest Rate</Label>
+                                        <Input id="interest-rate" type="number" placeholder="e.g., 12.5" />
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                        
+                        {agreementType !== 'discounting' && (
+                            <div className="mt-4 p-8 border-2 border-dashed rounded-lg text-center">
+                                <p className="text-muted-foreground">Fields for this product type will appear here. Please provide your instructions.</p>
+                            </div>
+                        )}
                     </div>
                 )}
 
