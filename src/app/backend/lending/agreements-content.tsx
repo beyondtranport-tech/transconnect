@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -77,7 +78,7 @@ export default function AgreementsContent() {
                         </Select>
                     </div>
                 </div>
-
+                
                 {selectedAgreementType === 'loan-pv' && (
                     <div className="pt-6 border-t">
                         <h3 className="text-lg font-semibold mb-4">
@@ -428,15 +429,75 @@ export default function AgreementsContent() {
                         </div>
                     </div>
                 )}
-                {selectedAgreementType && !['loan-pv', 'loan-fl', 'installment-sale', 'rental'].includes(selectedAgreementType) && (
-                     <div className="pt-6 border-t">
-                         <h3 className="text-lg font-semibold">
-                             Configure Agreement for: <span className="text-primary">{agreementTypes.find(t => t.id === selectedAgreementType)?.label}</span>
-                         </h3>
-                         <div className="mt-4 p-8 border-2 border-dashed rounded-lg text-center">
-                             <p className="text-muted-foreground">Please provide the fields for this agreement type.</p>
-                         </div>
-                     </div>
+                {selectedAgreementType === 'discounting' && (
+                    <div className="pt-6 border-t">
+                        <h3 className="text-lg font-semibold mb-4">
+                            Configure Agreement for: <span className="text-primary">Factoring</span>
+                        </h3>
+                        <div className="space-y-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="factoring-debtor">Debtor</Label>
+                                    <Input id="factoring-debtor" placeholder="Debtor name" />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="factoring-description">Description</Label>
+                                    <Input id="factoring-description" placeholder="Agreement description" />
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="factoring-face-value">Face value</Label>
+                                    <Input id="factoring-face-value" type="number" placeholder="R 0.00" />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="factoring-total-advanced">Total advanced</Label>
+                                    <Input id="factoring-total-advanced" type="number" placeholder="R 0.00" />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="factoring-interest-rate">Interest rate p.a. (%)</Label>
+                                    <Input id="factoring-interest-rate" type="number" placeholder="e.g. 12.5" />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="factoring-discount-rate">Discount % per month</Label>
+                                    <Input id="factoring-discount-rate" type="number" placeholder="e.g. 2.5" />
+                                </div>
+                            </div>
+                             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="factoring-charge-interest-from">Charge interest from</Label>
+                                    <Input id="factoring-charge-interest-from" type="date" />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="factoring-discount-start">Discount start date</Label>
+                                    <Input id="factoring-discount-start" type="date" />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="factoring-discount-due">Discount due date</Label>
+                                    <Input id="factoring-discount-due" type="date" />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="factoring-discount-periods">Discount periods</Label>
+                                    <Input id="factoring-discount-periods" type="number" placeholder="e.g., 3" />
+                                </div>
+                            </div>
+                            <Separator />
+                             <div className="grid grid-cols-2 md:grid-cols-3 gap-4 pt-2">
+                                <div className="flex items-center space-x-2">
+                                    <Checkbox id="factoring-linked" />
+                                    <Label htmlFor="factoring-linked" className="text-sm font-normal">Linked?</Label>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                    <Checkbox id="factoring-arrear-interest" />
+                                    <Label htmlFor="factoring-arrear-interest" className="text-sm font-normal">Arrear interest?</Label>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                    <Checkbox id="factoring-vat" />
+                                    <Label htmlFor="factoring-vat" className="text-sm font-normal">Vat?</Label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 )}
             </CardContent>
         </Card>
