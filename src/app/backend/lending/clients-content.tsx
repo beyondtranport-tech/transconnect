@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -18,8 +17,8 @@ const clientTabs = [
     { value: "owners", label: "Owners" },
     { value: "management", label: "Management" },
     { value: "bank-accounts", label: "Bank Accounts" },
-    { value: "assets", label: "Assets" },
-    { value: "income", label: "Income" },
+    { value: "balance-sheet", label: "Balance Sheet" },
+    { value: "income-statement", label: "Income Statement" },
 ];
 
 export default function ClientsContent() {
@@ -471,15 +470,15 @@ export default function ClientsContent() {
                             </CardContent>
                         </Card>
                     </TabsContent>
-                     <TabsContent value="assets">
+                     <TabsContent value="balance-sheet">
                         <Card className="mt-4">
-                            <CardHeader><CardTitle>Assets</CardTitle></CardHeader>
+                            <CardHeader><CardTitle>Balance Sheet</CardTitle></CardHeader>
                             <CardContent>
-                                <p className="text-muted-foreground">Asset fields will go here.</p>
+                                <p className="text-muted-foreground">Balance sheet fields will go here.</p>
                             </CardContent>
                         </Card>
                     </TabsContent>
-                     <TabsContent value="income">
+                     <TabsContent value="income-statement">
                         <Card className="mt-4">
                             <CardHeader><CardTitle>Income Statement</CardTitle></CardHeader>
                             <CardContent>
