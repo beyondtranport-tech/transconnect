@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Landmark, FileText, Repeat, Briefcase } from "lucide-react";
+import { Landmark, FileText, Repeat, Briefcase, Handshake, Users } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
@@ -24,6 +24,19 @@ export default function AgreementsContent() {
     const firestore = useFirestore();
     const [selectedAgreementType, setSelectedAgreementType] = useState<string | null>(null);
 
+    const clientsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'lendingClients')) : null, [firestore]);
+    const { data: clients, isLoading: areClientsLoading } = useCollection(clientsQuery);
+    
+    // Placeholder for facilities - you would fetch this based on the selected client
+    const [facilities, setFacilities] = useState<any[]>([]);
+
+    // Sample data to use when no live data is available
+    const sampleClients = [{ id: 'sample-client-1', name: 'Sample Transport Co.' }];
+    const sampleFacilities = [{ id: 'sample-facility-1', name: 'Approved Facility (Sample)' }];
+    
+    const displayClients = (clients && clients.length > 0) ? clients : sampleClients;
+    const displayFacilities = (facilities.length > 0) ? facilities : sampleFacilities;
+
     return (
         <Card>
             <CardHeader>
@@ -37,7 +50,20 @@ export default function AgreementsContent() {
             <CardContent className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     <div className="space-y-2">
-                        <Label htmlFor="agreement-type-select">Select Agreement Type</Label>
+                        <Label htmlFor="client-select">Select a Client</Label>
+                        <Select disabled={areClientsLoading}>
+                            <SelectTrigger id="client-select">
+                                <SelectValue placeholder={areClientsLoading ? "Loading clients..." : "Select a client..."} />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {displayClients.map(client => (
+                                    <SelectItem key={client.id} value={client.id}>{client.name}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                     <div className="space-y-2">
+                        <Label htmlFor="agreement-type-select">Select an Agreement Type</Label>
                          <Select onValueChange={setSelectedAgreementType} value={selectedAgreementType || ''}>
                             <SelectTrigger id="agreement-type-select">
                                 <SelectValue placeholder="Select an agreement type..." />
@@ -70,13 +96,13 @@ export default function AgreementsContent() {
                                 <Label htmlFor="pv-interest-rate">Interest rate p.a. (%)</Label>
                                 <Input id="pv-interest-rate" type="number" placeholder="e.g., 12.5" />
                             </div>
+                             <div className="space-y-2">
+                                <Label htmlFor="pv-first-instalment">First instalment date</Label>
+                                <Input id="pv-first-instalment" type="date" />
+                            </div>
                             <div className="space-y-2">
                                 <Label htmlFor="pv-instalments"># Instalments</Label>
                                 <Input id="pv-instalments" type="number" placeholder="e.g., 60" />
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="pv-first-instalment">First instalment date</Label>
-                                <Input id="pv-first-instalment" type="date" />
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="pv-residual">Residual value</Label>
@@ -199,26 +225,107 @@ export default function AgreementsContent() {
                             Configure Agreement for: <span className="text-primary">Instalment Sale</span>
                         </h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                            <div className="space-y-2 lg:col-span-4">
+                                <Label htmlFor="is-supplier">Supplier</Label>
+                                <Input id="is-supplier" placeholder="Supplier name" />
+                            </div>
+                            <div className="space-y-2 lg:col-span-4">
+                                <Label htmlFor="is-description">Description</Label>
+                                <Input id="is-description" placeholder="Asset description" />
+                            </div>
+
                             <div className="space-y-2">
-                                <Label htmlFor="is-implementation-date">Implementation Date</Label>
-                                <Input id="is-implementation-date" type="date" />
+                                <Label htmlFor="is-cash-amount">Cash amount</Label>
+                                <Input id="is-cash-amount" type="number" placeholder="R 0.00" />
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="is-review-date">Review Date</Label>
-                                <Input id="is-review-date" type="date" />
+                                <Label htmlFor="is-vat-amount">Vat amount</Label>
+                                <Input id="is-vat-amount" type="number" placeholder="R 0.00" />
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="is-limit">Limit</Label>
-                                <Input id="is-limit" type="number" placeholder="R 0.00" />
+                                <Label htmlFor="is-total-inclusive">Total inclusive</Label>
+                                <Input id="is-total-inclusive" type="number" placeholder="R 0.00" disabled />
+                            </div>
+                             <div className="space-y-2">
+                                <Label htmlFor="is-deposit">Deposit</Label>
+                                <Input id="is-deposit" type="number" placeholder="R 0.00" />
+                            </div>
+                             <div className="space-y-2">
+                                <Label htmlFor="is-discount-percent">Discount %</Label>
+                                <Input id="is-discount-percent" type="number" placeholder="e.g. 5" />
+                            </div>
+                             <div className="space-y-2">
+                                <Label htmlFor="is-discount-amount">Discount amount</Label>
+                                <Input id="is-discount-amount" type="number" placeholder="R 0.00" disabled />
+                            </div>
+                             <div className="space-y-2">
+                                <Label htmlFor="is-total-advanced">Total advanced</Label>
+                                <Input id="is-total-advanced" type="number" placeholder="R 0.00" disabled />
+                            </div>
+                             <div className="space-y-2">
+                                <Label htmlFor="is-supplier-total">Supplier total payable</Label>
+                                <Input id="is-supplier-total" type="number" placeholder="R 0.00" disabled />
+                            </div>
+
+                            <Separator className="lg:col-span-4" />
+
+                            <div className="space-y-2">
+                                <Label htmlFor="is-residual">Residual value</Label>
+                                <Input id="is-residual" type="number" placeholder="R 0.00" />
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="is-interest-rate">Interest Rate</Label>
-                                <Input id="is-interest-rate" type="number" placeholder="e.g., 12.5" />
+                                <Label htmlFor="is-interest-rate">Interest rate</Label>
+                                <Input id="is-interest-rate" type="number" placeholder="e.g. 12.5" />
+                            </div>
+                             <div className="space-y-2">
+                                <Label htmlFor="is-first-instalment">First instalment date</Label>
+                                <Input id="is-first-instalment" type="date" />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="is-instalments"># Instalments</Label>
+                                <Input id="is-instalments" type="number" placeholder="e.g. 60" />
+                            </div>
+                             <div className="space-y-2">
+                                <Label htmlFor="is-payment-method">Payment method</Label>
+                                 <Select>
+                                    <SelectTrigger id="is-payment-method"><SelectValue placeholder="Select method" /></SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="debit-order">Debit Order</SelectItem>
+                                        <SelectItem value="eft">EFT</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="is-bank-account">Bank account</Label>
+                                <Input id="is-bank-account" placeholder="Enter bank account ID" />
+                            </div>
+
+                             <div className="lg:col-span-4 grid grid-cols-2 md:grid-cols-5 gap-4 pt-4 border-t">
+                                 <div className="flex items-center space-x-2">
+                                    <Checkbox id="is-supplier-deposit" />
+                                    <Label htmlFor="is-supplier-deposit" className="text-sm font-normal">Supplier receives deposit?</Label>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                    <Checkbox id="is-last-instalment-residual" />
+                                    <Label htmlFor="is-last-instalment-residual" className="text-sm font-normal">Last instalment includes residual?</Label>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                    <Checkbox id="is-linked" />
+                                    <Label htmlFor="is-linked" className="text-sm font-normal">Linked?</Label>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                    <Checkbox id="is-arrear-interest" />
+                                    <Label htmlFor="is-arrear-interest" className="text-sm font-normal">Arrear interest?</Label>
+                                </div>
+                                 <div className="flex items-center space-x-2">
+                                    <Checkbox id="is-payments-in-advance" />
+                                    <Label htmlFor="is-payments-in-advance" className="text-sm font-normal">Payments in advance?</Label>
+                                </div>
                             </div>
                         </div>
                     </div>
                 )}
-
+                
                 {selectedAgreementType && !['loan-pv', 'loan-fl', 'instalment-sale'].includes(selectedAgreementType) && (
                      <div className="pt-6 border-t">
                          <h3 className="text-lg font-semibold">
