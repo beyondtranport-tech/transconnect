@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -219,12 +218,12 @@ export default function AgreementsContent() {
                         </div>
                     </div>
                 )}
-                {selectedAgreementType === 'instalment-sale' && (
+                {selectedAgreementType === 'installment-sale' && (
                     <div className="pt-6 border-t">
                         <h3 className="text-lg font-semibold mb-4">
                             Configure Agreement for: <span className="text-primary">Instalment Sale</span>
                         </h3>
-                        <div className="space-y-6">
+                         <div className="space-y-6">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div className="space-y-2">
                                     <Label htmlFor="is-supplier">Supplier</Label>
@@ -339,7 +338,97 @@ export default function AgreementsContent() {
                         </div>
                     </div>
                 )}
-                {selectedAgreementType && !['loan-pv', 'loan-fl', 'instalment-sale'].includes(selectedAgreementType) && (
+                {selectedAgreementType === 'rental' && (
+                    <div className="pt-6 border-t">
+                        <h3 className="text-lg font-semibold mb-4">
+                            Configure Agreement for: <span className="text-primary">Lease</span>
+                        </h3>
+                        <div className="space-y-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="lease-supplier">Supplier</Label>
+                                    <Input id="lease-supplier" placeholder="Supplier name" />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="lease-description">Description</Label>
+                                    <Input id="lease-description" placeholder="Asset description" />
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="lease-total-cost">Total cost</Label>
+                                    <Input id="lease-total-cost" type="number" placeholder="R 0.00" />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="lease-initial-payment">Initial Payment</Label>
+                                    <Input id="lease-initial-payment" type="number" placeholder="R 0.00" />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="lease-residual">Residual value</Label>
+                                    <Input id="lease-residual" type="number" placeholder="R 0.00" />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="lease-interest-rate">Interest rate p.a.</Label>
+                                    <Input id="lease-interest-rate" type="number" placeholder="e.g., 12.5" />
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="lease-escalation-rate">Escalation rate</Label>
+                                    <Input id="lease-escalation-rate" type="number" placeholder="e.g., 5" />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="lease-charge-interest-from">Charge interest from</Label>
+                                    <Input id="lease-charge-interest-from" type="date" />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="lease-first-rental-date">First rental date</Label>
+                                    <Input id="lease-first-rental-date" type="date" />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="lease-rentals"># Rentals</Label>
+                                    <Input id="lease-rentals" type="number" placeholder="e.g., 60" />
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="lease-payment-method">Payment method</Label>
+                                    <Select>
+                                        <SelectTrigger id="lease-payment-method"><SelectValue placeholder="Select method" /></SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="debit-order">Debit Order</SelectItem>
+                                            <SelectItem value="eft">EFT</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="lease-bank-account">Bank account</Label>
+                                    <Input id="lease-bank-account" placeholder="Enter bank account ID" />
+                                </div>
+                            </div>
+                            <Separator />
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-2">
+                                <div className="flex items-center space-x-2">
+                                    <Checkbox id="lease-last-rental-residual" />
+                                    <Label htmlFor="lease-last-rental-residual" className="text-sm font-normal">Last rental includes residual?</Label>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                    <Checkbox id="lease-arrear-interest" />
+                                    <Label htmlFor="lease-arrear-interest" className="text-sm font-normal">Arrear interest?</Label>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                    <Checkbox id="lease-vat" />
+                                    <Label htmlFor="lease-vat" className="text-sm font-normal">Vat?</Label>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                    <Checkbox id="lease-payments-in-advance" />
+                                    <Label htmlFor="lease-payments-in-advance" className="text-sm font-normal">Payments in advance?</Label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+                {selectedAgreementType && !['loan-pv', 'loan-fl', 'installment-sale', 'rental'].includes(selectedAgreementType) && (
                      <div className="pt-6 border-t">
                          <h3 className="text-lg font-semibold">
                              Configure Agreement for: <span className="text-primary">{agreementTypes.find(t => t.id === selectedAgreementType)?.label}</span>
