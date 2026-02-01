@@ -3,7 +3,7 @@
 
 import { useState, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Landmark, FileText } from "lucide-react";
+import { Landmark, FileText, Repeat, Briefcase } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
@@ -36,6 +36,7 @@ export default function AgreementsContent() {
     const { data: facilities } = useCollection(facilitiesQuery);
 
     const displayClients = clients?.length ? clients : [{ id: 'sample-client', name: 'Sample Client (No real clients found)' }];
+    const displayFacilities = facilities?.length ? facilities : [{ id: 'sample-facility', title: 'Sample Facility (No real facilities found)' }];
 
     return (
         <Card>
@@ -48,7 +49,7 @@ export default function AgreementsContent() {
                 </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     <div className="space-y-2">
                         <Label htmlFor="client-select">Select a Client</Label>
                         <Select onValueChange={setSelectedClientId} value={selectedClientId || ''}>
@@ -64,7 +65,7 @@ export default function AgreementsContent() {
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="agreement-type-select">Select Agreement Type</Label>
-                        <Select onValueChange={setSelectedAgreementType} value={selectedAgreementType || ''}>
+                         <Select onValueChange={setSelectedAgreementType} value={selectedAgreementType || ''}>
                             <SelectTrigger id="agreement-type-select">
                                 <SelectValue placeholder="Select an agreement type..." />
                             </SelectTrigger>
@@ -145,7 +146,81 @@ export default function AgreementsContent() {
                     </div>
                 )}
                 
-                {selectedAgreementType && selectedAgreementType !== 'loan-pv' && (
+                {selectedAgreementType === 'loan-fl' && (
+                    <div className="pt-6 border-t">
+                        <h3 className="text-lg font-semibold mb-4">
+                            Configure Agreement for: <span className="text-primary">Loan fl</span>
+                        </h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            <div className="space-y-2 lg:col-span-3">
+                                <Label htmlFor="fl-description">Description</Label>
+                                <Input id="fl-description" placeholder="Loan purpose or description" />
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label htmlFor="fl-total-advanced">Total advanced</Label>
+                                <Input id="fl-total-advanced" type="number" placeholder="R 0.00" />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="fl-interest-rate">Interest rate p.a. (%)</Label>
+                                <Input id="fl-interest-rate" type="number" placeholder="e.g., 12.5" />
+                            </div>
+                             <div className="space-y-2">
+                                <Label htmlFor="fl-instalments"># Instalments</Label>
+                                <Input id="fl-instalments" type="number" placeholder="e.g., 60" />
+                            </div>
+                             <div className="space-y-2">
+                                <Label htmlFor="fl-create-date">Create date</Label>
+                                <Input id="fl-create-date" type="date" />
+                            </div>
+                             <div className="space-y-2">
+                                <Label htmlFor="fl-charge-date">Charge Capitalised(Int.) from date</Label>
+                                <Input id="fl-charge-date" type="date" />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="fl-first-instalment">First instalment date</Label>
+                                <Input id="fl-first-instalment" type="date" />
+                            </div>
+                           
+                            <div className="space-y-2">
+                                <Label htmlFor="fl-interval">Interval</Label>
+                                <Select>
+                                    <SelectTrigger id="fl-interval"><SelectValue placeholder="Select interval" /></SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="daily">Daily</SelectItem>
+                                        <SelectItem value="weekly">Weekly</SelectItem>
+                                        <SelectItem value="bi-monthly">Bi-monthly</SelectItem>
+                                        <SelectItem value="monthly">Monthly</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label htmlFor="fl-payment-method">Payment method</Label>
+                                 <Select>
+                                    <SelectTrigger id="fl-payment-method"><SelectValue placeholder="Select method" /></SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="debit-order">Debit Order</SelectItem>
+                                        <SelectItem value="eft">EFT</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="fl-bank-account">Bank account</Label>
+                                <Input id="fl-bank-account" placeholder="Enter bank account details or ID" />
+                            </div>
+                            
+                            <div className="lg:col-span-3 grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t">
+                                <div className="flex items-center space-x-2">
+                                    <Checkbox id="fl-arrear-interest" />
+                                    <Label htmlFor="fl-arrear-interest" className="text-sm font-normal">Arrear interest?</Label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+                
+                {selectedAgreementType && !['loan-pv', 'loan-fl'].includes(selectedAgreementType) && (
                      <div className="pt-6 border-t">
                          <h3 className="text-lg font-semibold">
                              Configure Agreement for: <span className="text-primary">{agreementTypes.find(t => t.id === selectedAgreementType)?.label}</span>
