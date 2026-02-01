@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -153,8 +154,35 @@ export default function FacilitiesContent() {
                                 </div>
                             </div>
                         )}
+
+                        {agreementType === 'loans' && (
+                            <div className="mt-4 space-y-4 max-w-2xl">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                        <Label htmlFor="agreement-type-display-loan">Agreement Type</Label>
+                                        <Input id="agreement-type-display-loan" value="Loan (PV)" disabled />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="implementation-date-loan">Implementation Date</Label>
+                                        <Input id="implementation-date-loan" type="date" />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="review-date-loan">Review Date</Label>
+                                        <Input id="review-date-loan" type="date" />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="limit-loan">Limit</Label>
+                                        <Input id="limit-loan" type="number" placeholder="R 0.00" />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="interest-rate-loan">Interest Rate</Label>
+                                        <Input id="interest-rate-loan" type="number" placeholder="e.g., 12.5" />
+                                    </div>
+                                </div>
+                            </div>
+                        )}
                         
-                        {agreementType !== 'discounting' && (
+                        {agreementType !== 'discounting' && agreementType !== 'loans' && (
                             <div className="mt-4 p-8 border-2 border-dashed rounded-lg text-center">
                                 <p className="text-muted-foreground">Fields for this product type will appear here. Please provide your instructions.</p>
                             </div>
