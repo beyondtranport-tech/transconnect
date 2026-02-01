@@ -1,14 +1,9 @@
 
 import type { Metadata } from 'next';
 import './globals.css';
-import { FirebaseClientProvider } from '@/firebase/client-provider';
-import { Toaster } from '@/components/ui/toaster';
 import { Header } from '@/components/layout/header';
 import { Footer } from '@/components/layout/footer';
-import Analytics from '@/components/Analytics';
-import { VisitorTracker } from '@/components/VisitorTracker';
-import { CartProvider } from '@/context/CartContext';
-import { TooltipProvider } from '@/components/ui/tooltip';
+import { Providers } from '@/components/providers';
 
 export const metadata: Metadata = {
   title: 'Logistics Flow',
@@ -31,20 +26,13 @@ export default function RootLayout({
         />
       </head>
       <body>
-        <FirebaseClientProvider>
-          <CartProvider>
-            <TooltipProvider>
-              <Analytics />
-              <VisitorTracker />
-              <div className="relative flex min-h-dvh flex-col bg-background">
-                <Header />
-                <main className="flex-1">{children}</main>
-                <Footer />
-              </div>
-              <Toaster />
-            </TooltipProvider>
-          </CartProvider>
-        </FirebaseClientProvider>
+        <Providers>
+          <div className="relative flex min-h-dvh flex-col bg-background">
+            <Header />
+            <main className="flex-1">{children}</main>
+            <Footer />
+          </div>
+        </Providers>
       </body>
     </html>
   );
