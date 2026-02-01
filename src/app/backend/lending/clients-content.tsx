@@ -1,7 +1,7 @@
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users } from "lucide-react";
+import { Users, DollarSign, Landmark, Calendar, AlertCircle } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const clientTabs = [
@@ -35,12 +35,71 @@ export default function ClientsContent() {
                         ))}
                     </TabsList>
                     <TabsContent value="dashboard">
-                        <Card className="mt-4">
-                            <CardHeader><CardTitle>Dashboard</CardTitle></CardHeader>
-                            <CardContent>
-                                <p className="text-muted-foreground">Dashboard content will go here.</p>
-                            </CardContent>
-                        </Card>
+                        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mt-4">
+                            <Card>
+                                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                    <CardTitle className="text-sm font-medium">
+                                        Total Facility
+                                    </CardTitle>
+                                    <DollarSign className="h-4 w-4 text-muted-foreground" />
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="text-2xl font-bold">R1,250,000.00</div>
+                                    <p className="text-xs text-muted-foreground">
+                                        Total credit granted across all agreements.
+                                    </p>
+                                </CardContent>
+                            </Card>
+                            <Card>
+                                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                    <CardTitle className="text-sm font-medium">
+                                        Outstanding Balance
+                                    </CardTitle>
+                                    <Landmark className="h-4 w-4 text-muted-foreground" />
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="text-2xl font-bold">R780,123.45</div>
+                                    <p className="text-xs text-muted-foreground">
+                                        Current principal + interest owed.
+                                    </p>
+                                </CardContent>
+                            </Card>
+                            <Card>
+                                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                    <CardTitle className="text-sm font-medium">Next Payment Due</CardTitle>
+                                    <Calendar className="h-4 w-4 text-muted-foreground" />
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="text-2xl font-bold">R35,000.00</div>
+                                    <p className="text-xs text-muted-foreground">
+                                        on 1 August 2024
+                                    </p>
+                                </CardContent>
+                            </Card>
+                            <Card>
+                                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                    <CardTitle className="text-sm font-medium">Arrears</CardTitle>
+                                    <AlertCircle className="h-4 w-4 text-destructive" />
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="text-2xl font-bold text-destructive">R12,500.00</div>
+                                    <p className="text-xs text-muted-foreground">
+                                        12 days overdue
+                                    </p>
+                                </CardContent>
+                            </Card>
+                        </div>
+                        <div className="mt-8">
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle>Recent Activity</CardTitle>
+                                    <CardDescription>A log of the most recent transactions and events for this client.</CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    <p className="text-muted-foreground">Recent activity will be displayed here.</p>
+                                </CardContent>
+                            </Card>
+                        </div>
                     </TabsContent>
                     <TabsContent value="main">
                         <Card className="mt-4">
