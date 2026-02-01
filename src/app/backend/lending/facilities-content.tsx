@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -160,7 +159,7 @@ export default function FacilitiesContent() {
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div className="space-y-2">
                                         <Label htmlFor="agreement-type-display-loan">Agreement Type</Label>
-                                        <Input id="agreement-type-display-loan" value="Loan (PV)" disabled />
+                                        <Input id="agreement-type-display-loan" value="Loan" disabled />
                                     </div>
                                     <div className="space-y-2">
                                         <Label htmlFor="implementation-date-loan">Implementation Date</Label>
