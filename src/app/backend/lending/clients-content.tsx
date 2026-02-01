@@ -352,15 +352,122 @@ export default function ClientsContent() {
                         <Card className="mt-4">
                             <CardHeader><CardTitle>Management Team</CardTitle></CardHeader>
                             <CardContent>
-                                <p className="text-muted-foreground">Management fields will go here.</p>
+                                <div className="space-y-4 max-w-4xl">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div className="space-y-2">
+                                            <Label htmlFor="mgmt-name">Name</Label>
+                                            <Input id="mgmt-name" placeholder="Full Name" />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="mgmt-id">ID No</Label>
+                                            <Input id="mgmt-id" placeholder="Identity Number" />
+                                        </div>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="mgmt-address">Address</Label>
+                                        <Input id="mgmt-address" placeholder="Street Address" />
+                                    </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                        <div className="space-y-2">
+                                            <Label htmlFor="mgmt-suburb">Suburb</Label>
+                                            <Input id="mgmt-suburb" placeholder="Suburb" />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="mgmt-city">City</Label>
+                                            <Input id="mgmt-city" placeholder="City" />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="mgmt-postcode">Post Code</Label>
+                                            <Input id="mgmt-postcode" placeholder="Post Code" />
+                                        </div>
+                                    </div>
+                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div className="space-y-2">
+                                            <Label htmlFor="mgmt-province">Province</Label>
+                                            <Input id="mgmt-province" placeholder="Province" />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="mgmt-cell">Cell</Label>
+                                            <Input id="mgmt-cell" placeholder="Mobile Number" />
+                                        </div>
+                                    </div>
+                                    <Separator className="my-6" />
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                        <div className="space-y-2">
+                                            <Label htmlFor="mgmt-position">Position</Label>
+                                            <Input id="mgmt-position" placeholder="e.g., Director" />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="mgmt-qualification">Qualification</Label>
+                                            <Input id="mgmt-qualification" placeholder="e.g., B.Com" />
+                                        </div>
+                                         <div className="space-y-2">
+                                            <Label htmlFor="mgmt-since">Since (Year)</Label>
+                                            <Input id="mgmt-since" type="number" placeholder="e.g., 2010" />
+                                        </div>
+                                    </div>
+                                    <div className="space-y-2 md:w-1/3">
+                                        <Label htmlFor="mgmt-held">% Held</Label>
+                                        <Input id="mgmt-held" type="number" placeholder="Percentage of ownership" />
+                                    </div>
+                                </div>
                             </CardContent>
                         </Card>
                     </TabsContent>
                      <TabsContent value="bank-accounts">
                         <Card className="mt-4">
-                            <CardHeader><CardTitle>Bank Accounts</CardTitle></CardHeader>
+                            <CardHeader><CardTitle>Bank Account Details</CardTitle></CardHeader>
                             <CardContent>
-                                <p className="text-muted-foreground">Bank account fields will go here.</p>
+                                <div className="space-y-4 max-w-2xl">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div className="space-y-2">
+                                            <Label htmlFor="bank-name">Bank</Label>
+                                            <Input id="bank-name" placeholder="Bank Name" />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="branch-name">Branch Name</Label>
+                                            <Input id="branch-name" placeholder="Branch Name" />
+                                        </div>
+                                    </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                        <div className="space-y-2">
+                                            <Label htmlFor="account-no">Account No</Label>
+                                            <Input id="account-no" placeholder="Account Number" />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="branch-code">Branch Code</Label>
+                                            <Input id="branch-code" placeholder="Branch Code" />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="bank-code">Bank Code</Label>
+                                            <Input id="bank-code" placeholder="Bank Code" />
+                                        </div>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="bank-address">Address</Label>
+                                        <Input id="bank-address" placeholder="Bank Address" />
+                                    </div>
+                                    <div className="space-y-2 md:w-1/3">
+                                        <Label htmlFor="bank-post-code">Post Code</Label>
+                                        <Input id="bank-post-code" placeholder="Post Code" />
+                                    </div>
+                                    <Separator className="my-6" />
+                                    <h4 className="text-md font-medium">Bank Contact Person</h4>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div className="space-y-2">
+                                            <Label htmlFor="bank-contact">Contact</Label>
+                                            <Input id="bank-contact" placeholder="Contact Person" />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="bank-phone">Phone</Label>
+                                            <Input id="bank-phone" placeholder="Phone Number" />
+                                        </div>
+                                        <div className="space-y-2 md:col-span-2">
+                                            <Label htmlFor="bank-email">Email</Label>
+                                            <Input id="bank-email" type="email" placeholder="Contact Email" />
+                                        </div>
+                                    </div>
+                                </div>
                             </CardContent>
                         </Card>
                     </TabsContent>
