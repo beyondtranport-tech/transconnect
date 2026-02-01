@@ -418,6 +418,80 @@
             "after": { "type": "object", "description": "State of the document after the change." }
         },
         "required": ["collectionPath", "documentId", "userId", "action", "timestamp"]
+    },
+    "Client": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "title": "Client",
+        "description": "Represents a debtor entity in the lending system.",
+        "type": "object",
+        "properties": {
+            "id": { "type": "string" },
+            "name": { "type": "string" },
+            "status": { "type": "string" }
+        }
+    },
+    "Agreement": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "title": "Agreement",
+        "description": "Represents a single lending agreement with a client.",
+        "type": "object",
+        "properties": {
+            "id": { "type": "string" }
+        }
+    },
+    "Facility": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "title": "Facility",
+        "description": "Represents a credit facility granted to a client.",
+        "type": "object",
+        "properties": {
+            "id": { "type": "string" }
+        }
+    },
+    "LendingTransaction": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "title": "Lending Transaction",
+        "description": "A transaction record related to a specific lending agreement.",
+        "type": "object",
+        "properties": {
+            "id": { "type": "string" }
+        }
+    },
+    "Asset": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "title": "Asset",
+        "description": "An asset financed through a lending agreement.",
+        "type": "object",
+        "properties": {
+            "id": { "type": "string" }
+        }
+    },
+    "Security": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "title": "Security",
+        "description": "Collateral or security provided for a loan.",
+        "type": "object",
+        "properties": {
+            "id": { "type": "string" }
+        }
+    },
+    "Payment": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "title": "Payment",
+        "description": "A scheduled or recorded payment for a loan.",
+        "type": "object",
+        "properties": {
+            "id": { "type": "string" }
+        }
+    },
+    "LendingPartner": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "title": "Lending Partner",
+        "description": "A partner or co-funder in the lending process.",
+        "type": "object",
+        "properties": {
+            "id": { "type": "string" }
+        }
     }
   },
   "auth": {
@@ -624,8 +698,72 @@
           "schema": { "$ref": "#/entities/Lead" },
           "description": "Admin-managed collection of sales leads."
         }
+      },
+      {
+        "path": "/lendingClients/{clientId}",
+        "definition": {
+            "entityName": "Client",
+            "schema": { "$ref": "#/entities/Client" },
+            "description": "Debtor Management System: Main collection for lending clients (debtors)."
+        }
+      },
+      {
+        "path": "/lendingClients/{clientId}/agreements/{agreementId}",
+        "definition": {
+            "entityName": "Agreement",
+            "schema": { "$ref": "#/entities/Agreement" },
+            "description": "DMS: Lending agreements for a specific client."
+        }
+      },
+      {
+        "path": "/lendingClients/{clientId}/facilities/{facilityId}",
+        "definition": {
+            "entityName": "Facility",
+            "schema": { "$ref": "#/entities/Facility" },
+            "description": "DMS: Credit facilities approved for a specific client."
+        }
+      },
+      {
+        "path": "/lendingClients/{clientId}/agreements/{agreementId}/transactions/{transactionId}",
+        "definition": {
+            "entityName": "LendingTransaction",
+            "schema": { "$ref": "#/entities/LendingTransaction" },
+            "description": "DMS: Individual loan transactions (disbursements, repayments) for an agreement."
+        }
+      },
+      {
+        "path": "/lendingClients/{clientId}/agreements/{agreementId}/assets/{assetId}",
+        "definition": {
+            "entityName": "Asset",
+            "schema": { "$ref": "#/entities/Asset" },
+            "description": "DMS: Asset(s) being financed under an agreement."
+        }
+      },
+      {
+        "path": "/lendingClients/{clientId}/agreements/{agreementId}/securities/{securityId}",
+        "definition": {
+            "entityName": "Security",
+            "schema": { "$ref": "#/entities/Security" },
+            "description": "DMS: Collateral documents/information for an agreement."
+        }
+      },
+      {
+        "path": "/lendingClients/{clientId}/agreements/{agreementId}/payments/{paymentId}",
+        "definition": {
+            "entityName": "Payment",
+            "schema": { "$ref": "#/entities/Payment" },
+            "description": "DMS: Payment schedules or records for an agreement."
+        }
+      },
+      {
+        "path": "/lendingPartners/{partnerId}",
+        "definition": {
+            "entityName": "LendingPartner",
+            "schema": { "$ref": "#/entities/LendingPartner" },
+            "description": "DMS: Top-level collection for lending partners, co-funders, or brokers."
+        }
       }
     ],
-    "reasoning": "The data model is refactored to separate user identity from business entities. A new `/users` collection stores individual user profiles, linked via Firebase Auth UID. A new `/companies` collection stores business-related data, including wallet balance, membership status, and subcollections for transactions, staff, quotes, etc. This creates a cleaner, more scalable architecture where a user owns a company, rather than the user and company being the same entity. This prevents data duplication and clarifies ownership for security rules. Added Special Offer fields to Membership entity and created new entities for Connect Plan pricing to support advanced promotional offers."
+    "reasoning": "The data model is refactored to separate user identity from business entities. A new `/users` collection stores individual user profiles, linked via Firebase Auth UID. A new `/companies` collection stores business-related data, including wallet balance, membership status, and subcollections for transactions, staff, quotes, etc. This creates a cleaner, more scalable architecture where a user owns a company, rather than the user and company being the same entity. This prevents data duplication and clarifies ownership for security rules. Added Special Offer fields to Membership entity and created new entities for Connect Plan pricing to support advanced promotional offers. Added a complete, separate data structure for the Debtor Management System (DMS) under collections prefixed with 'lending' to ensure clear separation for future spin-off potential."
   }
 }
