@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -285,7 +286,65 @@ export default function ClientsContent() {
                         <Card className="mt-4">
                             <CardHeader><CardTitle>Owners / Directors</CardTitle></CardHeader>
                             <CardContent>
-                                <p className="text-muted-foreground">Owner fields will go here.</p>
+                                <div className="space-y-4 max-w-4xl">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div className="space-y-2">
+                                            <Label htmlFor="owner-name">Name</Label>
+                                            <Input id="owner-name" placeholder="Full Name" />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="owner-id">ID No</Label>
+                                            <Input id="owner-id" placeholder="Identity Number" />
+                                        </div>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="owner-address">Address</Label>
+                                        <Input id="owner-address" placeholder="Street Address" />
+                                    </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                        <div className="space-y-2">
+                                            <Label htmlFor="owner-suburb">Suburb</Label>
+                                            <Input id="owner-suburb" placeholder="Suburb" />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="owner-city">City</Label>
+                                            <Input id="owner-city" placeholder="City" />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="owner-postcode">Post Code</Label>
+                                            <Input id="owner-postcode" placeholder="Post Code" />
+                                        </div>
+                                    </div>
+                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div className="space-y-2">
+                                            <Label htmlFor="owner-province">Province</Label>
+                                            <Input id="owner-province" placeholder="Province" />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="owner-cell">Cell</Label>
+                                            <Input id="owner-cell" placeholder="Mobile Number" />
+                                        </div>
+                                    </div>
+                                    <Separator className="my-6" />
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                        <div className="space-y-2">
+                                            <Label htmlFor="owner-position">Position</Label>
+                                            <Input id="owner-position" placeholder="e.g., Director" />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="owner-qualification">Qualification</Label>
+                                            <Input id="owner-qualification" placeholder="e.g., B.Com" />
+                                        </div>
+                                         <div className="space-y-2">
+                                            <Label htmlFor="owner-since">Since (Year)</Label>
+                                            <Input id="owner-since" type="number" placeholder="e.g., 2010" />
+                                        </div>
+                                    </div>
+                                    <div className="space-y-2 md:w-1/3">
+                                        <Label htmlFor="owner-held">% Held</Label>
+                                        <Input id="owner-held" type="number" placeholder="Percentage of ownership" />
+                                    </div>
+                                </div>
                             </CardContent>
                         </Card>
                     </TabsContent>
