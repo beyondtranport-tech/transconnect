@@ -2,74 +2,80 @@
 
 import { useState, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { FileText, Loader2, AlertCircle } from "lucide-react";
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, query, where } from 'firebase/firestore';
+import { FileText, Loader2, AlertCircle, Landmark, Repeat, Briefcase } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
-// --- Mock Data for Demonstration ---
-const mockClients = [
-    { id: 'client-1', name: 'Demo Client Alpha' },
-    { id: 'client-2', name: 'Demo Client Beta' },
-];
-
-const mockFacilities: { [key: string]: any[] } = {
-    'client-1': [
-        { id: 'facility-1a', productType: 'Loan (PV) – term', limit: 500000 },
-        { id: 'facility-1b', productType: 'Disclosed confirmed factoring 75% advance', limit: 1000000 },
-    ],
-    'client-2': [
-        { id: 'facility-2a', productType: 'Term Agreement', limit: 250000 },
-    ]
+// --- Data copied from facilities-content.tsx for development purposes ---
+const productsData = {
+    loans: {
+        title: "Loan Products",
+        icon: Landmark,
+        items: [
+            { id: "loan-pv-term", title: "Loan (PV) – term" },
+            { id: "loan-pv-interest-only", title: "Loan (PV) - interest only" },
+            { id: "loan-pv-single-payment", title: "Loan (PV) - single payment" },
+            { id: "loan-fl-term-daily", title: "Loan (FL) – term daily" },
+            { id: "loan-fl-term-weekly", title: "Loan (FL) term weekly" },
+            { id: "loan-fl-term-bi-monthly", title: "Loan (FL) term bi-monthly" },
+            { id: "loan-fl-term-monthly", title: "Loan (FL) term monthly" },
+            { id: "loan-revolving-credit", title: "Loan Revolving credit" },
+        ]
+    },
+    'installment-sale': {
+        title: "Installment Sale Products",
+        icon: FileText,
+        items: [
+            { id: "installment-sale-term", title: "Term Agreement" },
+            { id: "installment-sale-balloon", title: "Balloon Payment" }
+        ]
+    },
+    rental: {
+        title: "Lease Products",
+        icon: Repeat,
+        items: [
+             { id: "rental-term", title: "Term Agreement" },
+             { id: "rental-balloon", title: "Balloon (Residual) Agreement" }
+        ]
+    },
+    discounting: {
+        title: "Factoring Products",
+        icon: Briefcase,
+        items: [
+            { id: "disclosed-confirmed-factoring", title: "Disclosed confirmed factoring 75% advance" },
+            { id: "disclosed-unconfirmed-factoring", title: "Disclosed un-confirmed factoring 0% advance" },
+            { id: "invoice-discounting", title: "Invoice discounting 100% advance" },
+            { id: "rights-discounting", title: "Rights discounting" }
+        ]
+    }
 };
-// --- End Mock Data ---
 
+const agreementTypes = [
+    { id: 'loans', label: 'Loans' },
+    { id: 'installment-sale', label: 'Instalment Sale' },
+    { id: 'rental', label: 'Leases' },
+    { id: 'discounting', label: 'Factoring' },
+];
+// --- End of copied data ---
 
 export default function AgreementsContent() {
-    const firestore = useFirestore();
-    const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
-    const [selectedFacilityId, setSelectedFacilityId] = useState<string | null>(null);
-
-    // 1. Fetch all clients to populate the client dropdown
-    const clientsQuery = useMemoFirebase(() => {
-        if (!firestore) return null;
-        return query(collection(firestore, 'lendingClients'));
-    }, [firestore]);
-    const { data: liveClients, isLoading: areClientsLoading } = useCollection<{id: string, name: string}>(clientsQuery);
+    const [selectedAgreementType, setSelectedAgreementType] = useState<string | null>(null);
+    const [selectedProductType, setSelectedProductType] = useState<string | null>(null);
     
-    // Use live clients if available, otherwise fallback to mock data
-    const clients = liveClients && liveClients.length > 0 ? liveClients : mockClients;
-    const usingMockClients = !liveClients || liveClients.length === 0;
+    const productOptions = useMemo(() => {
+        if (!selectedAgreementType) return [];
+        return productsData[selectedAgreementType as keyof typeof productsData]?.items || [];
+    }, [selectedAgreementType]);
 
-    // 2. Fetch approved facilities for the selected client
-    const facilitiesQuery = useMemoFirebase(() => {
-        if (!firestore || !selectedClientId) return null;
-        return query(collection(firestore, `lendingClients/${selectedClientId}/facilities`), where('status', '==', 'approved'));
-    }, [firestore, selectedClientId]);
-    const { data: liveFacilities, isLoading: areFacilitiesLoading } = useCollection<{id: string, productType: string, limit: number}>(facilitiesQuery);
+    const handleAgreementChange = (agreementId: string) => {
+        setSelectedAgreementType(agreementId);
+        setSelectedProductType(null); // Reset product selection
+    };
     
-    // Use live facilities if available, otherwise fallback to mock data for the selected client
-    const facilities = selectedClientId && liveFacilities && liveFacilities.length > 0 
-        ? liveFacilities 
-        : selectedClientId ? mockFacilities[selectedClientId] || [] : [];
-    const usingMockFacilities = !liveFacilities || liveFacilities.length === 0;
-
-    const handleClientChange = (clientId: string) => {
-        setSelectedClientId(clientId);
-        setSelectedFacilityId(null); // Reset facility selection when client changes
-    };
-
-    const selectedFacility = useMemo(() => {
-        if (!selectedFacilityId || !facilities) return null;
-        return facilities.find(f => f.id === selectedFacilityId);
-    }, [selectedFacilityId, facilities]);
-
-    const formatCurrency = (amount: number) => {
-        if (typeof amount !== 'number') return 'N/A';
-        return new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(amount);
-    };
+    const selectedProduct = useMemo(() => {
+        if (!selectedProductType || !productOptions) return null;
+        return productOptions.find(p => p.id === selectedProductType);
+    }, [selectedProductType, productOptions]);
 
     return (
         <Card>
@@ -78,62 +84,49 @@ export default function AgreementsContent() {
                     <FileText /> Agreements Management
                 </CardTitle>
                 <CardDescription>
-                    Create a new lending agreement by selecting a client and one of their approved facilities.
+                    Create a new lending agreement by selecting an agreement and product type.
                 </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-                {(usingMockClients || (selectedClientId && usingMockFacilities)) && (
-                     <Alert>
-                        <AlertCircle className="h-4 w-4" />
-                        <AlertTitle>Demonstration Mode</AlertTitle>
-                        <AlertDescription>
-                           No live data was found, so dropdowns are populated with sample data. Create real clients and facilities to see them here.
-                        </AlertDescription>
-                    </Alert>
-                )}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
-                        <Label htmlFor="client-select">Select a Client</Label>
-                        <Select onValueChange={handleClientChange} value={selectedClientId || ''} disabled={areClientsLoading}>
-                            <SelectTrigger id="client-select">
-                                <SelectValue placeholder={areClientsLoading ? "Loading clients..." : "Select a client..."} />
+                        <Label htmlFor="agreement-type-select">Select Agreement Type</Label>
+                        <Select onValueChange={handleAgreementChange} value={selectedAgreementType || ''}>
+                            <SelectTrigger id="agreement-type-select">
+                                <SelectValue placeholder="Select an agreement type..." />
                             </SelectTrigger>
                             <SelectContent>
-                                {clients && clients.map(client => (
-                                    <SelectItem key={client.id} value={client.id}>{client.name}</SelectItem>
+                                {agreementTypes.map(type => (
+                                    <SelectItem key={type.id} value={type.id}>{type.label}</SelectItem>
                                 ))}
                             </SelectContent>
                         </Select>
                     </div>
                     <div className="space-y-2">
-                        <Label htmlFor="facility-select">Select an Approved Facility</Label>
-                        <Select onValueChange={setSelectedFacilityId} value={selectedFacilityId || ''} disabled={!selectedClientId || areFacilitiesLoading}>
-                            <SelectTrigger id="facility-select">
-                                <SelectValue placeholder={
-                                    !selectedClientId ? "Select a client first" :
-                                    areFacilitiesLoading ? "Loading facilities..." :
-                                    "Select a facility..."
-                                } />
+                        <Label htmlFor="product-select">Select a Product</Label>
+                        <Select onValueChange={setSelectedProductType} value={selectedProductType || ''} disabled={!selectedAgreementType}>
+                            <SelectTrigger id="product-select">
+                                <SelectValue placeholder={!selectedAgreementType ? "Select an agreement first" : "Select a product..."} />
                             </SelectTrigger>
                             <SelectContent>
-                                {facilities && facilities.length > 0 ? (
-                                    facilities.map(facility => (
-                                        <SelectItem key={facility.id} value={facility.id}>
-                                            {facility.productType} - Limit: {formatCurrency(facility.limit)}
+                                {productOptions.length > 0 ? (
+                                    productOptions.map(product => (
+                                        <SelectItem key={product.id} value={product.id}>
+                                            {product.title}
                                         </SelectItem>
                                     ))
                                 ) : (
-                                    <SelectItem value="none" disabled>No approved facilities found</SelectItem>
+                                    <SelectItem value="none" disabled>No products for this type</SelectItem>
                                 )}
                             </SelectContent>
                         </Select>
                     </div>
                 </div>
 
-                {selectedFacility && (
+                {selectedProduct && (
                     <div className="pt-6 border-t">
                         <h3 className="text-lg font-semibold">
-                            Create Agreement for: <span className="text-primary">{selectedFacility.productType}</span>
+                            Create Agreement for: <span className="text-primary">{selectedProduct.title}</span>
                         </h3>
                         <div className="mt-4 p-8 border-2 border-dashed rounded-lg text-center">
                             <p className="text-muted-foreground">Fields for this agreement will be displayed here. Please provide your instructions.</p>
