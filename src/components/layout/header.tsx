@@ -53,6 +53,7 @@ export function Header() {
     try {
         await signOut(auth);
         setIsSheetOpen(false);
+        router.push('/');
     } catch (error) {
         console.error("Error signing out: ", error);
     }
