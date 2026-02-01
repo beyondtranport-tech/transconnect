@@ -50,6 +50,7 @@
         "availableBalance": { "type": "number", "description": "Funds cleared and available for withdrawal or purchases." },
         "loyaltyTier": { "type": "string", "enum": ["bronze", "silver", "gold"], "description": "The current loyalty status of the member." },
         "activePlans": { "type": "array", "items": { "type": "string" }, "description": "A list of activated Connect plans (e.g., 'loyalty', 'rewards')." },
+        "isBillable": { "type": "boolean", "description": "Flag to indicate if the company has an active, billable subscription." },
         "createdAt": { "type": "object" },
         "updatedAt": { "type": "object" }
       },
