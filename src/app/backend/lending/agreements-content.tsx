@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -23,20 +22,7 @@ const agreementTypes = [
 
 export default function AgreementsContent() {
     const firestore = useFirestore();
-    const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
     const [selectedAgreementType, setSelectedAgreementType] = useState<string | null>(null);
-
-    const clientsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'lendingClients')) : null, [firestore]);
-    const { data: clients } = useCollection(clientsQuery);
-
-    const facilitiesQuery = useMemoFirebase(() => {
-        if (!firestore || !selectedClientId) return null;
-        return query(collection(firestore, `lendingClients/${selectedClientId}/facilities`));
-    }, [firestore, selectedClientId]);
-    const { data: facilities } = useCollection(facilitiesQuery);
-
-    const displayClients = clients?.length ? clients : [{ id: 'sample-client', name: 'Sample Client (No real clients found)' }];
-    const displayFacilities = facilities?.length ? facilities : [{ id: 'sample-facility', title: 'Sample Facility (No real facilities found)' }];
 
     return (
         <Card>
@@ -50,19 +36,6 @@ export default function AgreementsContent() {
             </CardHeader>
             <CardContent className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    <div className="space-y-2">
-                        <Label htmlFor="client-select">Select a Client</Label>
-                        <Select onValueChange={setSelectedClientId} value={selectedClientId || ''}>
-                            <SelectTrigger id="client-select">
-                                <SelectValue placeholder="Select a client..." />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {displayClients.map(client => (
-                                    <SelectItem key={client.id} value={client.id}>{client.name}</SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    </div>
                     <div className="space-y-2">
                         <Label htmlFor="agreement-type-select">Select Agreement Type</Label>
                          <Select onValueChange={setSelectedAgreementType} value={selectedAgreementType || ''}>
@@ -145,8 +118,8 @@ export default function AgreementsContent() {
                         </div>
                     </div>
                 )}
-                
-                {selectedAgreementType === 'loan-fl' && (
+
+                 {selectedAgreementType === 'loan-fl' && (
                     <div className="pt-6 border-t">
                         <h3 className="text-lg font-semibold mb-4">
                             Configure Agreement for: <span className="text-primary">Loan fl</span>
@@ -220,7 +193,33 @@ export default function AgreementsContent() {
                     </div>
                 )}
                 
-                {selectedAgreementType && !['loan-pv', 'loan-fl'].includes(selectedAgreementType) && (
+                {selectedAgreementType === 'instalment-sale' && (
+                    <div className="pt-6 border-t">
+                        <h3 className="text-lg font-semibold mb-4">
+                            Configure Agreement for: <span className="text-primary">Instalment Sale</span>
+                        </h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                            <div className="space-y-2">
+                                <Label htmlFor="is-implementation-date">Implementation Date</Label>
+                                <Input id="is-implementation-date" type="date" />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="is-review-date">Review Date</Label>
+                                <Input id="is-review-date" type="date" />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="is-limit">Limit</Label>
+                                <Input id="is-limit" type="number" placeholder="R 0.00" />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="is-interest-rate">Interest Rate</Label>
+                                <Input id="is-interest-rate" type="number" placeholder="e.g., 12.5" />
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {selectedAgreementType && !['loan-pv', 'loan-fl', 'instalment-sale'].includes(selectedAgreementType) && (
                      <div className="pt-6 border-t">
                          <h3 className="text-lg font-semibold">
                              Configure Agreement for: <span className="text-primary">{agreementTypes.find(t => t.id === selectedAgreementType)?.label}</span>
