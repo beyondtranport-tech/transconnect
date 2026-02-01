@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -22,6 +23,7 @@ const agreementTypes = [
 
 export default function AgreementsContent() {
     const firestore = useFirestore();
+    const [selectedClient, setSelectedClient] = useState<string | null>(null);
     const [selectedAgreementType, setSelectedAgreementType] = useState<string | null>(null);
 
     const clientsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'lendingClients')) : null, [firestore]);
@@ -51,7 +53,7 @@ export default function AgreementsContent() {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     <div className="space-y-2">
                         <Label htmlFor="client-select">Select a Client</Label>
-                        <Select disabled={areClientsLoading}>
+                        <Select onValueChange={setSelectedClient} value={selectedClient || ''} disabled={areClientsLoading}>
                             <SelectTrigger id="client-select">
                                 <SelectValue placeholder={areClientsLoading ? "Loading clients..." : "Select a client..."} />
                             </SelectTrigger>
@@ -144,7 +146,6 @@ export default function AgreementsContent() {
                         </div>
                     </div>
                 )}
-
                  {selectedAgreementType === 'loan-fl' && (
                     <div className="pt-6 border-t">
                         <h3 className="text-lg font-semibold mb-4">
@@ -165,10 +166,6 @@ export default function AgreementsContent() {
                                 <Input id="fl-interest-rate" type="number" placeholder="e.g., 12.5" />
                             </div>
                              <div className="space-y-2">
-                                <Label htmlFor="fl-instalments"># Instalments</Label>
-                                <Input id="fl-instalments" type="number" placeholder="e.g., 60" />
-                            </div>
-                             <div className="space-y-2">
                                 <Label htmlFor="fl-create-date">Create date</Label>
                                 <Input id="fl-create-date" type="date" />
                             </div>
@@ -179,6 +176,10 @@ export default function AgreementsContent() {
                             <div className="space-y-2">
                                 <Label htmlFor="fl-first-instalment">First instalment date</Label>
                                 <Input id="fl-first-instalment" type="date" />
+                            </div>
+                             <div className="space-y-2">
+                                <Label htmlFor="fl-instalments"># Instalments</Label>
+                                <Input id="fl-instalments" type="number" placeholder="e.g., 60" />
                             </div>
                            
                             <div className="space-y-2">
@@ -218,94 +219,107 @@ export default function AgreementsContent() {
                         </div>
                     </div>
                 )}
-                
                 {selectedAgreementType === 'instalment-sale' && (
                     <div className="pt-6 border-t">
                         <h3 className="text-lg font-semibold mb-4">
                             Configure Agreement for: <span className="text-primary">Instalment Sale</span>
                         </h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                            <div className="space-y-2 lg:col-span-4">
-                                <Label htmlFor="is-supplier">Supplier</Label>
-                                <Input id="is-supplier" placeholder="Supplier name" />
-                            </div>
-                            <div className="space-y-2 lg:col-span-4">
-                                <Label htmlFor="is-description">Description</Label>
-                                <Input id="is-description" placeholder="Asset description" />
-                            </div>
-
-                            <div className="space-y-2">
-                                <Label htmlFor="is-cash-amount">Cash amount</Label>
-                                <Input id="is-cash-amount" type="number" placeholder="R 0.00" />
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="is-vat-amount">Vat amount</Label>
-                                <Input id="is-vat-amount" type="number" placeholder="R 0.00" />
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="is-total-inclusive">Total inclusive</Label>
-                                <Input id="is-total-inclusive" type="number" placeholder="R 0.00" disabled />
-                            </div>
-                             <div className="space-y-2">
-                                <Label htmlFor="is-deposit">Deposit</Label>
-                                <Input id="is-deposit" type="number" placeholder="R 0.00" />
-                            </div>
-                             <div className="space-y-2">
-                                <Label htmlFor="is-discount-percent">Discount %</Label>
-                                <Input id="is-discount-percent" type="number" placeholder="e.g. 5" />
-                            </div>
-                             <div className="space-y-2">
-                                <Label htmlFor="is-discount-amount">Discount amount</Label>
-                                <Input id="is-discount-amount" type="number" placeholder="R 0.00" disabled />
-                            </div>
-                             <div className="space-y-2">
-                                <Label htmlFor="is-total-advanced">Total advanced</Label>
-                                <Input id="is-total-advanced" type="number" placeholder="R 0.00" disabled />
-                            </div>
-                             <div className="space-y-2">
-                                <Label htmlFor="is-supplier-total">Supplier total payable</Label>
-                                <Input id="is-supplier-total" type="number" placeholder="R 0.00" disabled />
+                        <div className="space-y-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="is-supplier">Supplier</Label>
+                                    <Input id="is-supplier" placeholder="Supplier name" />
+                                </div>
+                                 <div className="space-y-2">
+                                    <Label htmlFor="is-description">Description</Label>
+                                    <Input id="is-description" placeholder="Asset description" />
+                                </div>
                             </div>
 
-                            <Separator className="lg:col-span-4" />
+                            <Separator />
+                            
+                             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="is-cash-amount">Cash amount</Label>
+                                    <Input id="is-cash-amount" type="number" placeholder="R 0.00" />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="is-vat-amount">Vat amount</Label>
+                                    <Input id="is-vat-amount" type="number" placeholder="R 0.00" />
+                                </div>
+                                 <div className="space-y-2">
+                                    <Label htmlFor="is-total-inclusive">Total inclusive</Label>
+                                    <Input id="is-total-inclusive" type="number" placeholder="R 0.00" disabled />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="is-deposit">Deposit</Label>
+                                    <Input id="is-deposit" type="number" placeholder="R 0.00" />
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                               <div className="space-y-2">
+                                    <Label htmlFor="is-discount-percent">Discount %</Label>
+                                    <Input id="is-discount-percent" type="number" placeholder="e.g. 5" />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="is-discount-amount">Discount amount</Label>
+                                    <Input id="is-discount-amount" type="number" placeholder="R 0.00" disabled />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="is-total-advanced">Total advanced</Label>
+                                    <Input id="is-total-advanced" type="number" placeholder="R 0.00" disabled />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="is-supplier-total">Supplier total payable</Label>
+                                    <Input id="is-supplier-total" type="number" placeholder="R 0.00" disabled />
+                                </div>
+                            </div>
 
-                            <div className="space-y-2">
-                                <Label htmlFor="is-residual">Residual value</Label>
-                                <Input id="is-residual" type="number" placeholder="R 0.00" />
+                            <Separator />
+
+                            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="is-interest-rate">Interest rate</Label>
+                                    <Input id="is-interest-rate" type="number" placeholder="e.g. 12.5" />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="is-instalments"># Instalments</Label>
+                                    <Input id="is-instalments" type="number" placeholder="e.g. 60" />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="is-first-instalment">First instalment date</Label>
+                                    <Input id="is-first-instalment" type="date" />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="is-residual">Residual value</Label>
+                                    <Input id="is-residual" type="number" placeholder="R 0.00" />
+                                </div>
                             </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="is-interest-rate">Interest rate</Label>
-                                <Input id="is-interest-rate" type="number" placeholder="e.g. 12.5" />
-                            </div>
-                             <div className="space-y-2">
-                                <Label htmlFor="is-first-instalment">First instalment date</Label>
-                                <Input id="is-first-instalment" type="date" />
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="is-instalments"># Instalments</Label>
-                                <Input id="is-instalments" type="number" placeholder="e.g. 60" />
-                            </div>
-                             <div className="space-y-2">
-                                <Label htmlFor="is-payment-method">Payment method</Label>
-                                 <Select>
-                                    <SelectTrigger id="is-payment-method"><SelectValue placeholder="Select method" /></SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="debit-order">Debit Order</SelectItem>
-                                        <SelectItem value="eft">EFT</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="is-bank-account">Bank account</Label>
-                                <Input id="is-bank-account" placeholder="Enter bank account ID" />
+                             <div className="grid grid-cols-2 gap-4">
+                                 <div className="space-y-2">
+                                    <Label htmlFor="is-payment-method">Payment method</Label>
+                                     <Select>
+                                        <SelectTrigger id="is-payment-method"><SelectValue placeholder="Select method" /></SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="debit-order">Debit Order</SelectItem>
+                                            <SelectItem value="eft">EFT</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="is-bank-account">Bank account</Label>
+                                    <Input id="is-bank-account" placeholder="Enter bank account ID" />
+                                </div>
                             </div>
 
-                             <div className="lg:col-span-4 grid grid-cols-2 md:grid-cols-5 gap-4 pt-4 border-t">
-                                 <div className="flex items-center space-x-2">
+                            <Separator />
+                            
+                            <div className="grid grid-cols-2 md:grid-cols-5 gap-4 pt-2">
+                                <div className="flex items-center space-x-2">
                                     <Checkbox id="is-supplier-deposit" />
                                     <Label htmlFor="is-supplier-deposit" className="text-sm font-normal">Supplier receives deposit?</Label>
                                 </div>
-                                <div className="flex items-center space-x-2">
+                                 <div className="flex items-center space-x-2">
                                     <Checkbox id="is-last-instalment-residual" />
                                     <Label htmlFor="is-last-instalment-residual" className="text-sm font-normal">Last instalment includes residual?</Label>
                                 </div>
@@ -325,7 +339,6 @@ export default function AgreementsContent() {
                         </div>
                     </div>
                 )}
-                
                 {selectedAgreementType && !['loan-pv', 'loan-fl', 'instalment-sale'].includes(selectedAgreementType) && (
                      <div className="pt-6 border-t">
                          <h3 className="text-lg font-semibold">
