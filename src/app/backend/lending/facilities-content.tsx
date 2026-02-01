@@ -154,12 +154,12 @@ export default function FacilitiesContent() {
                             </div>
                         )}
 
-                        {agreementType === 'loans' && (
+                        {(agreementType === 'loans' || agreementType === 'installment-sale') && (
                             <div className="mt-4 space-y-4 max-w-2xl">
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div className="space-y-2">
                                         <Label htmlFor="agreement-type-display-loan">Agreement Type</Label>
-                                        <Input id="agreement-type-display-loan" value="Loan" disabled />
+                                        <Input id="agreement-type-display-loan" value={agreementType === 'loans' ? "Loan" : "Instalment Sale"} disabled />
                                     </div>
                                     <div className="space-y-2">
                                         <Label htmlFor="implementation-date-loan">Implementation Date</Label>
@@ -181,7 +181,7 @@ export default function FacilitiesContent() {
                             </div>
                         )}
                         
-                        {agreementType !== 'discounting' && agreementType !== 'loans' && (
+                        {agreementType !== 'discounting' && agreementType !== 'loans' && agreementType !== 'installment-sale' && (
                             <div className="mt-4 p-8 border-2 border-dashed rounded-lg text-center">
                                 <p className="text-muted-foreground">Fields for this product type will appear here. Please provide your instructions.</p>
                             </div>
@@ -193,3 +193,4 @@ export default function FacilitiesContent() {
         </Card>
     );
 }
+    
