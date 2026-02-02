@@ -92,6 +92,7 @@ const AssetsContent = dynamic(() => import('./lending/assets-content'), { loadin
 const AcquisitionsContent = dynamic(() => import('./lending/security-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const PaymentsContent = dynamic(() => import('./lending/payments-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const LendingPartnersContent = dynamic(() => import('./lending/partners-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const PartnerDetails = dynamic(() => import('./lending/partner-details'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 
 
 // Platform Settings
@@ -179,10 +180,10 @@ function BackendContent() {
       case 'lending-partners': return <LendingPartnersContent />;
 
       // Partners
-      case 'partners-suppliers': return <Card><CardHeader><CardTitle>Suppliers</CardTitle></CardHeader><CardContent><p>Content for Suppliers Management will be here.</p></CardContent></Card>;
-      case 'partners-vendors': return <Card><CardHeader><CardTitle>Vendors</CardTitle></CardHeader><CardContent><p>Content for Vendors Management will be here.</p></CardContent></Card>;
-      case 'partners-associates': return <Card><CardHeader><CardTitle>Associates</CardTitle></CardHeader><CardContent><p>Content for Associates Management will be here.</p></CardContent></Card>;
-      case 'partners-debtors': return <Card><CardHeader><CardTitle>Debtors</CardTitle></CardHeader><CardContent><p>Content for Debtors Management will be here.</p></CardContent></Card>;
+      case 'partners-suppliers': return <PartnerDetails partnerType="Suppliers" />;
+      case 'partners-vendors': return <PartnerDetails partnerType="Vendors" />;
+      case 'partners-associates': return <PartnerDetails partnerType="Associates" />;
+      case 'partners-debtors': return <PartnerDetails partnerType="Debtors" />;
 
 
       // Platform Settings
