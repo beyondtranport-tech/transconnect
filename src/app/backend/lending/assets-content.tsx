@@ -17,6 +17,50 @@ const assetTypes = [
     { id: 'equipment', label: 'Equipment', icon: Construction },
 ];
 
+const motorisedVehicleTypes = [
+    "Truck Tractor (Semi-truck)",
+    "Rigid Truck (Straight Truck)",
+    "Box Truck",
+    "Flatbed Truck",
+    "Refrigerated Truck (Reefer)",
+    "Dump Truck",
+    "Tanker Truck",
+    "Tow Truck",
+    "Garbage Truck",
+    "Cement Mixer",
+    "Crane Truck",
+    "Pickup Truck / Bakkie",
+    "Panel Van",
+    "Step Van",
+    "Other"
+];
+
+const drawnVehicleTypes = [
+    "Flatbed Trailer",
+    "Tautliner / Curtain-side Trailer",
+    "Refrigerated Trailer (Reefer)",
+    "Lowbed / Step-deck Trailer",
+    "Dry Van / Box Trailer",
+    "Tanker Trailer",
+    "Tipper Trailer",
+    "Interlink Trailer",
+    "Superlink Trailer",
+    "Other"
+];
+
+const equipmentTypes = [
+    "Excavator",
+    "Bulldozer",
+    "Grader",
+    "Front-end Loader",
+    "Backhoe Loader",
+    "Forklift",
+    "Crane",
+    "Compactor / Roller",
+    "Generator",
+    "Other"
+];
+
 
 export default function AssetsContent() {
     const [selectedAssetType, setSelectedAssetType] = useState<string | null>(null);
@@ -61,6 +105,15 @@ export default function AssetsContent() {
                                 <div className="space-y-2">
                                     <Label htmlFor="vehicle-register-no">Vehicle register #</Label>
                                     <Input id="vehicle-register-no" placeholder="Vehicle Register #" />
+                                </div>
+                                 <div className="space-y-2">
+                                    <Label htmlFor="motorised-type">Type</Label>
+                                    <Select>
+                                        <SelectTrigger id="motorised-type"><SelectValue placeholder="Select type..." /></SelectTrigger>
+                                        <SelectContent>
+                                            {motorisedVehicleTypes.map(type => <SelectItem key={type} value={type}>{type}</SelectItem>)}
+                                        </SelectContent>
+                                    </Select>
                                 </div>
                                 <div className="space-y-2">
                                     <Label htmlFor="make">Make</Label>
@@ -114,6 +167,15 @@ export default function AssetsContent() {
                                     <Input id="drawn-register-no" placeholder="Vehicle Register #" />
                                 </div>
                                 <div className="space-y-2">
+                                    <Label htmlFor="drawn-type">Type</Label>
+                                    <Select>
+                                        <SelectTrigger id="drawn-type"><SelectValue placeholder="Select type..." /></SelectTrigger>
+                                        <SelectContent>
+                                            {drawnVehicleTypes.map(type => <SelectItem key={type} value={type}>{type}</SelectItem>)}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div className="space-y-2">
                                     <Label htmlFor="drawn-make">Make</Label>
                                     <Input id="drawn-make" placeholder="e.g., Henred Fruehauf" />
                                 </div>
@@ -155,7 +217,16 @@ export default function AssetsContent() {
                             Details for: <span className="text-primary">Equipment</span>
                         </h3>
                         <div className="space-y-4">
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                                 <div className="space-y-2">
+                                    <Label htmlFor="equipment-type">Type</Label>
+                                    <Select>
+                                        <SelectTrigger id="equipment-type"><SelectValue placeholder="Select type..." /></SelectTrigger>
+                                        <SelectContent>
+                                            {equipmentTypes.map(type => <SelectItem key={type} value={type}>{type}</SelectItem>)}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
                                 <div className="space-y-2">
                                     <Label htmlFor="equipment-make">Make</Label>
                                     <Input id="equipment-make" placeholder="e.g., CAT" />
@@ -180,7 +251,7 @@ export default function AssetsContent() {
                                     <Label htmlFor="equipment-quantity">Quantity</Label>
                                     <Input id="equipment-quantity" type="number" defaultValue="1" />
                                 </div>
-                                 <div className="space-y-2 md:col-span-3">
+                                 <div className="space-y-2">
                                     <Label htmlFor="equipment-cost">Cost (ex. VAT)</Label>
                                     <Input id="equipment-cost" type="number" placeholder="R 0.00" />
                                 </div>
