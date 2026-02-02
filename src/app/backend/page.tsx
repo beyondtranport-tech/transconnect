@@ -55,7 +55,8 @@ import {
   Truck,
   ShieldCheck,
   Repeat,
-  FileSignature
+  FileSignature,
+  Building,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -68,6 +69,7 @@ import { signOut } from 'firebase/auth';
 
 import dynamic from 'next/dynamic';
 import React from 'react';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 
 // --- Dynamic Imports for Business Components ---
 
@@ -176,6 +178,13 @@ function BackendContent() {
       case 'lending-payments': return <PaymentsContent />;
       case 'lending-partners': return <LendingPartnersContent />;
 
+      // Partners
+      case 'partners-suppliers': return <Card><CardHeader><CardTitle>Suppliers</CardTitle></CardHeader><CardContent><p>Content for Suppliers Management will be here.</p></CardContent></Card>;
+      case 'partners-vendors': return <Card><CardHeader><CardTitle>Vendors</CardTitle></CardHeader><CardContent><p>Content for Vendors Management will be here.</p></CardContent></Card>;
+      case 'partners-associates': return <Card><CardHeader><CardTitle>Associates</CardTitle></CardHeader><CardContent><p>Content for Associates Management will be here.</p></CardContent></Card>;
+      case 'partners-debtors': return <Card><CardHeader><CardTitle>Debtors</CardTitle></CardHeader><CardContent><p>Content for Debtors Management will be here.</p></CardContent></Card>;
+
+
       // Platform Settings
       case 'permissions': return <PermissionsContent />;
       case 'loyalty': return <LoyaltySettings />;
@@ -209,6 +218,7 @@ function BackendContent() {
   
   const isOperationsActive = ['members', 'wallet', 'wallet-transactions', 'shops', 'reconciliation', 'contributions'].includes(activeView);
   const isLendingActive = activeView.startsWith('lending-');
+  const isPartnersActive = activeView.startsWith('partners-');
   const isRevenueActive = [
     'pricing-memberships', 'pricing-connect', 'pricing-tech', 'pricing-marketplace',
     'commissions-malls', 'incentives-sales'
@@ -263,6 +273,15 @@ function BackendContent() {
                     <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'lending-payments'} onClick={() => navigate('lending-payments')}><Banknote />Payments</SidebarMenuSubButton></SidebarMenuSubItem>
                     <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'lending-partners'} onClick={() => navigate('lending-partners')}><Handshake />Partners</SidebarMenuSubButton></SidebarMenuSubItem>
                   </SidebarMenuSub>
+                </SidebarMenuItem>
+                 <SidebarMenuItem>
+                    <SidebarMenuButton tooltip="Partners" isActive={isPartnersActive}><Handshake /><span>Partners</span></SidebarMenuButton>
+                    <SidebarMenuSub>
+                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'partners-suppliers'} onClick={() => navigate('partners-suppliers')}><Building />Suppliers</SidebarMenuSubButton></SidebarMenuSubItem>
+                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'partners-vendors'} onClick={() => navigate('partners-vendors')}><Store />Vendors</SidebarMenuSubButton></SidebarMenuSubItem>
+                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'partners-associates'} onClick={() => navigate('partners-associates')}><Briefcase />Associates</SidebarMenuSubButton></SidebarMenuSubItem>
+                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'partners-debtors'} onClick={() => navigate('partners-debtors')}><Users />Debtors</SidebarMenuSubButton></SidebarMenuSubItem>
+                    </SidebarMenuSub>
                 </SidebarMenuItem>
                 <SidebarMenuItem>
                     <SidebarMenuButton tooltip="Revenue & Pricing" isActive={isRevenueActive}><DollarSign /><span>Revenue & Pricing</span></SidebarMenuButton>
