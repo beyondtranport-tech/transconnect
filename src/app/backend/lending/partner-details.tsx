@@ -15,6 +15,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel } from '@/components/
 import * as React from "react";
 import { useEffect } from 'react';
 import { Textarea } from "@/components/ui/textarea";
+import { provinces } from "@/lib/geodata";
 
 // Define the tabs as requested
 const partnerTabs = [
@@ -28,6 +29,8 @@ const partnerTabs = [
     { value: "assets", label: "Assets" },
     { value: "income", label: "Income" },
 ];
+
+const positions = ["Director", "CEO", "CFO", "COO", "Manager", "Shareholder", "Member", "Other"];
 
 interface PartnerDetailsProps {
     partnerType: 'Suppliers' | 'Vendors' | 'Associates' | 'Debtors';
@@ -121,7 +124,7 @@ export default function PartnerDetails({ partnerType }: PartnerDetailsProps) {
 
                             <TabsContent value="main">
                                 <Card className="mt-4">
-                                    <CardHeader><CardTitle>Main & Contact Details</CardTitle></CardHeader>
+                                    <CardHeader><CardTitle>Main Details</CardTitle></CardHeader>
                                     <CardContent>
                                         <div className="space-y-4 max-w-2xl">
                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -256,12 +259,36 @@ export default function PartnerDetails({ partnerType }: PartnerDetailsProps) {
                                                     <FormField control={control} name={`owners.${index}.postCode`} render={({ field }) => (<FormItem><FormLabel>Post Code</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
                                                 </div>
                                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                    <FormField control={control} name={`owners.${index}.province`} render={({ field }) => (<FormItem><FormLabel>Province</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
+                                                    <FormField control={control} name={`owners.${index}.province`} render={({ field }) => (
+                                                        <FormItem>
+                                                            <FormLabel>Province</FormLabel>
+                                                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                                <FormControl>
+                                                                    <SelectTrigger><SelectValue placeholder="Select province..." /></SelectTrigger>
+                                                                </FormControl>
+                                                                <SelectContent>
+                                                                    {provinces.map(p => <SelectItem key={p.name} value={p.name}>{p.name}</SelectItem>)}
+                                                                </SelectContent>
+                                                            </Select>
+                                                        </FormItem>
+                                                    )} />
                                                     <FormField control={control} name={`owners.${index}.cell`} render={({ field }) => (<FormItem><FormLabel>Cell</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
                                                 </div>
                                                 <Separator />
                                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                                                     <FormField control={control} name={`owners.${index}.position`} render={({ field }) => (<FormItem><FormLabel>Position</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
+                                                     <FormField control={control} name={`owners.${index}.position`} render={({ field }) => (
+                                                        <FormItem>
+                                                            <FormLabel>Position</FormLabel>
+                                                             <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                                <FormControl>
+                                                                    <SelectTrigger><SelectValue placeholder="Select position..." /></SelectTrigger>
+                                                                </FormControl>
+                                                                <SelectContent>
+                                                                    {positions.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}
+                                                                </SelectContent>
+                                                            </Select>
+                                                        </FormItem>
+                                                    )} />
                                                     <FormField control={control} name={`owners.${index}.qualification`} render={({ field }) => (<FormItem><FormLabel>Qualification</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
                                                     <FormField control={control} name={`owners.${index}.since`} render={({ field }) => (<FormItem><FormLabel>Since</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
                                                     <FormField control={control} name={`owners.${index}.held`} render={({ field }) => (<FormItem><FormLabel>% Held</FormLabel><FormControl><Input type="number" {...field} /></FormControl></FormItem>)} />
@@ -299,12 +326,36 @@ export default function PartnerDetails({ partnerType }: PartnerDetailsProps) {
                                                     <FormField control={control} name={`management.${index}.postCode`} render={({ field }) => (<FormItem><FormLabel>Post Code</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
                                                 </div>
                                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                    <FormField control={control} name={`management.${index}.province`} render={({ field }) => (<FormItem><FormLabel>Province</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
+                                                    <FormField control={control} name={`management.${index}.province`} render={({ field }) => (
+                                                        <FormItem>
+                                                            <FormLabel>Province</FormLabel>
+                                                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                                <FormControl>
+                                                                    <SelectTrigger><SelectValue placeholder="Select province..." /></SelectTrigger>
+                                                                </FormControl>
+                                                                <SelectContent>
+                                                                    {provinces.map(p => <SelectItem key={p.name} value={p.name}>{p.name}</SelectItem>)}
+                                                                </SelectContent>
+                                                            </Select>
+                                                        </FormItem>
+                                                    )} />
                                                     <FormField control={control} name={`management.${index}.cell`} render={({ field }) => (<FormItem><FormLabel>Cell</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
                                                 </div>
                                                 <Separator />
                                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                                    <FormField control={control} name={`management.${index}.position`} render={({ field }) => (<FormItem><FormLabel>Position</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
+                                                    <FormField control={control} name={`management.${index}.position`} render={({ field }) => (
+                                                         <FormItem>
+                                                            <FormLabel>Position</FormLabel>
+                                                             <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                                <FormControl>
+                                                                    <SelectTrigger><SelectValue placeholder="Select position..." /></SelectTrigger>
+                                                                </FormControl>
+                                                                <SelectContent>
+                                                                    {positions.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}
+                                                                </SelectContent>
+                                                            </Select>
+                                                        </FormItem>
+                                                    )} />
                                                     <FormField control={control} name={`management.${index}.qualification`} render={({ field }) => (<FormItem><FormLabel>Qualification</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
                                                     <FormField control={control} name={`management.${index}.since`} render={({ field }) => (<FormItem><FormLabel>Since</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
                                                 </div>
@@ -378,7 +429,7 @@ export default function PartnerDetails({ partnerType }: PartnerDetailsProps) {
                                 </Card>
                             </TabsContent>
 
-                            {partnerTabs.filter(t => !['main', 'dashboard', 'address', 'management', 'owners', 'global-facility'].includes(t.value)).map((tab) => (
+                            {partnerTabs.filter(t => !['main', 'dashboard', 'address', 'management', 'owners', 'global-facility', 'contact'].includes(t.value)).map((tab) => (
                                 <TabsContent key={tab.value} value={tab.value}>
                                     <Card className="mt-4">
                                         <CardHeader>
