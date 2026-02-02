@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -147,8 +148,51 @@ export default function AssetsContent() {
                         </div>
                     </div>
                 )}
+
+                {selectedAssetType === 'equipment' && (
+                    <div className="pt-6 border-t">
+                        <h3 className="text-lg font-semibold mb-4">
+                            Details for: <span className="text-primary">Equipment</span>
+                        </h3>
+                        <div className="space-y-4">
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="equipment-make">Make</Label>
+                                    <Input id="equipment-make" placeholder="e.g., CAT" />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="equipment-model">Model</Label>
+                                    <Input id="equipment-model" placeholder="e.g., 320D" />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="equipment-serial">Serial #</Label>
+                                    <Input id="equipment-serial" placeholder="Serial Number" />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="equipment-year">Year</Label>
+                                    <Input id="equipment-year" placeholder="e.g., 2019" />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="equipment-colour">Colour</Label>
+                                    <Input id="equipment-colour" placeholder="e.g., Yellow" />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="equipment-quantity">Quantity</Label>
+                                    <Input id="equipment-quantity" type="number" defaultValue="1" />
+                                </div>
+                                 <div className="space-y-2 md:col-span-3">
+                                    <Label htmlFor="equipment-cost">Cost (ex. VAT)</Label>
+                                    <Input id="equipment-cost" type="number" placeholder="R 0.00" />
+                                </div>
+                            </div>
+                             <div className="flex justify-end mt-4">
+                                <Button>Save Asset</Button>
+                            </div>
+                        </div>
+                    </div>
+                )}
                 
-                {selectedAssetType && !['motorised', 'drawn'].includes(selectedAssetType) && (
+                {selectedAssetType && !['motorised', 'drawn', 'equipment'].includes(selectedAssetType) && (
                     <div className="pt-6 border-t">
                         <h3 className="text-lg font-semibold mb-4">
                             Details for: <span className="text-primary">{assetTypes.find(t => t.id === selectedAssetType)?.label}</span>
