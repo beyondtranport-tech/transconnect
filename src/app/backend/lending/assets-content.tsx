@@ -58,6 +58,13 @@ const equipmentTypes = [
     "Crane",
     "Compactor / Roller",
     "Generator",
+    "Welding Machine",
+    "Tractor (Agricultural)",
+    "Harvester",
+    "Computer",
+    "Server Equipment",
+    "Printer/Copier",
+    "Medical Scanner",
     "Other"
 ];
 
