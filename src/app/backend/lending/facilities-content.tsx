@@ -25,10 +25,17 @@ export default function FacilitiesContent() {
     const firestore = useFirestore();
     const [selectedClient, setSelectedClient] = useState<any | null>(null);
     const [selectedPartner, setSelectedPartner] = useState<any | null>(null);
+    const [selectedAgreement, setSelectedAgreement] = useState<string | null>(null);
     const [newFacilityLimit, setNewFacilityLimit] = useState(0);
 
     const clientsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'lendingClients')) : null, [firestore]);
     const { data: clients, isLoading: areClientsLoading } = useCollection(clientsQuery);
+
+    const agreementsQuery = useMemoFirebase(() => {
+        if (!firestore || !selectedClient) return null;
+        return query(collection(firestore, `lendingClients/${selectedClient.id}/agreements`));
+    }, [firestore, selectedClient]);
+    const { data: agreements, isLoading: areAgreementsLoading } = useCollection(agreementsQuery);
 
     const partnersQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'lendingPartners')) : null, [firestore]);
     const { data: partners, isLoading: arePartnersLoading } = useCollection(partnersQuery);
@@ -36,6 +43,7 @@ export default function FacilitiesContent() {
     const handleClientChange = (clientId: string) => {
         const client = clients?.find(c => c.id === clientId);
         setSelectedClient(client || null);
+        setSelectedAgreement(null); // Reset agreement when client changes
     };
     
     const handlePartnerChange = (partnerId: string) => {
@@ -58,7 +66,7 @@ export default function FacilitiesContent() {
                     <CardDescription>Link a Client and a Lending Partner to create a new credit facility for a specific agreement.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                         <div className="space-y-2">
                             <Label htmlFor="client-select">1. Select a Client</Label>
                             <Select onValueChange={handleClientChange} disabled={areClientsLoading}>
@@ -66,15 +74,24 @@ export default function FacilitiesContent() {
                                 <SelectContent>{(clients || []).map(client => (<SelectItem key={client.id} value={client.id}>{client.name}</SelectItem>))}</SelectContent>
                             </Select>
                         </div>
+                         <div className="space-y-2">
+                            <Label htmlFor="agreement-select">2. Select an Agreement</Label>
+                            <Select onValueChange={setSelectedAgreement} value={selectedAgreement || ''} disabled={!selectedClient || areAgreementsLoading}>
+                                <SelectTrigger id="agreement-select"><SelectValue placeholder={areAgreementsLoading ? "Loading..." : "Select an agreement..."} /></SelectTrigger>
+                                <SelectContent>
+                                    {(agreements || []).map(agreement => (<SelectItem key={agreement.id} value={agreement.id}>{agreement.id}</SelectItem>))}
+                                </SelectContent>
+                            </Select>
+                        </div>
                         <div className="space-y-2">
-                            <Label htmlFor="partner-select">2. Select a Lending Partner</Label>
+                            <Label htmlFor="partner-select">3. Select a Lending Partner</Label>
                             <Select onValueChange={handlePartnerChange} disabled={arePartnersLoading}>
                                 <SelectTrigger id="partner-select"><SelectValue placeholder="Select a partner..." /></SelectTrigger>
                                 <SelectContent>{(partners || []).map(partner => (<SelectItem key={partner.id} value={partner.id}>{partner.name || 'Unnamed Partner'}</SelectItem>))}</SelectContent>
                             </Select>
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="facility-limit">3. Facility Limit</Label>
+                            <Label htmlFor="facility-limit">4. Facility Limit</Label>
                             <Input id="facility-limit" type="number" placeholder="R 0.00" value={newFacilityLimit} onChange={e => setNewFacilityLimit(Number(e.target.value))} />
                         </div>
                     </div>
@@ -100,7 +117,7 @@ export default function FacilitiesContent() {
 
                 </CardContent>
                  <CardFooter>
-                    <Button disabled={!selectedClient || !selectedPartner || newFacilityLimit <= 0 || isClientOverLimit || isPartnerOverLimit}>
+                    <Button disabled={!selectedClient || !selectedPartner || !selectedAgreement || newFacilityLimit <= 0 || isClientOverLimit || isPartnerOverLimit}>
                         <PlusCircle className="mr-2 h-4 w-4" /> Create Facility
                     </Button>
                  </CardFooter>

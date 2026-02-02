@@ -134,7 +134,15 @@ export default function ClientsContent() {
                                                     <Input id="reg-id" placeholder="Registration ID" />
                                                 </div>
                                             </div>
-                                            <div className="flex items-center space-x-2 pt-2">
+                                            <Separator className="my-6" />
+                                            <div>
+                                                <h3 className="text-lg font-semibold">Financial Limits</h3>
+                                                <div className="space-y-2 mt-4 max-w-sm">
+                                                    <Label htmlFor="global-facility-limit">Global Facility Limit</Label>
+                                                    <Input id="global-facility-limit" type="number" placeholder="e.g., 1000000" />
+                                                </div>
+                                            </div>
+                                            <div className="flex items-center space-x-2 pt-4">
                                                 <Checkbox id="vat-registered" />
                                                 <label
                                                     htmlFor="vat-registered"
