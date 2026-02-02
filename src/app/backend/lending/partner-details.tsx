@@ -1,10 +1,8 @@
-
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Users, PlusCircle, Trash2 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import * as React from "react";
-import { useEffect } from 'react';
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -13,7 +11,8 @@ import { Separator } from "@/components/ui/separator";
 import { useForm, useFieldArray, FormProvider } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form';
-import { PlusCircle, Trash2 } from "lucide-react";
+import * as React from "react";
+import { useEffect } from 'react';
 import { Textarea } from "@/components/ui/textarea";
 
 // Define the tabs as requested
@@ -46,6 +45,10 @@ export default function PartnerDetails({ partnerType }: PartnerDetailsProps) {
             postalSuburb: '',
             postalCity: '',
             postalPostCode: '',
+            facilityNo: '',
+            facilityDate: '',
+            signatory: '',
+            facilityLimit: 0,
             owners: [{ name: '', address: '', suburb: '', city: '', province: '', postCode: '', idNo: '', cell: '', position: '', qualification: '', since: '', held: 0 }],
             management: [{ name: '', address: '', suburb: '', city: '', province: '', postCode: '', idNo: '', cell: '', position: '', qualification: '', since: '', held: 0 }],
             contacts: [{ name: '', position: '', title: '', description: '' }],
@@ -120,21 +123,21 @@ export default function PartnerDetails({ partnerType }: PartnerDetailsProps) {
                                     <CardHeader><CardTitle>Main Details</CardTitle></CardHeader>
                                     <CardContent>
                                         <div className="space-y-4 max-w-2xl">
-                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                                 <div className="space-y-2">
                                                     <Label htmlFor="partner-code">Code</Label>
                                                     <Input id="partner-code" placeholder="Partner Code" />
                                                 </div>
                                                  <div className="space-y-2">
-                                                    <Label htmlFor="partner-name">Name</Label>
-                                                    <Input id="partner-name" placeholder="Partner Name" />
-                                                </div>
-                                            </div>
-                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                                <div className="space-y-2">
                                                     <Label htmlFor="partner-facility">Facility #</Label>
                                                     <Input id="partner-facility" placeholder="Facility Number" />
                                                 </div>
+                                            </div>
+                                             <div className="space-y-2">
+                                                <Label htmlFor="partner-name">Name</Label>
+                                                <Input id="partner-name" placeholder="Partner Name" />
+                                            </div>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                                 <div className="space-y-2">
                                                     <Label htmlFor="partner-language">Language</Label>
                                                     <Select>
@@ -338,8 +341,51 @@ export default function PartnerDetails({ partnerType }: PartnerDetailsProps) {
                                     </CardContent>
                                 </Card>
                             </TabsContent>
+                            
+                            <TabsContent value="global-facility">
+                                <Card className="mt-4">
+                                    <CardHeader>
+                                        <CardTitle>Global Facility</CardTitle>
+                                        <CardDescription>
+                                            Define the overall facility limit and details for this partner.
+                                        </CardDescription>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <div className="space-y-4 max-w-2xl">
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                <FormField control={control} name="facilityNo" render={({ field }) => (
+                                                    <FormItem>
+                                                        <FormLabel>Facility No:</FormLabel>
+                                                        <FormControl><Input placeholder="Facility Number" {...field} /></FormControl>
+                                                    </FormItem>
+                                                )} />
+                                                <FormField control={control} name="facilityDate" render={({ field }) => (
+                                                    <FormItem>
+                                                        <FormLabel>Facility Date:</FormLabel>
+                                                        <FormControl><Input type="date" {...field} /></FormControl>
+                                                    </FormItem>
+                                                )} />
+                                            </div>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                <FormField control={control} name="signatory" render={({ field }) => (
+                                                    <FormItem>
+                                                        <FormLabel>Signatory:</FormLabel>
+                                                        <FormControl><Input placeholder="Name of signatory" {...field} /></FormControl>
+                                                    </FormItem>
+                                                )} />
+                                                <FormField control={control} name="facilityLimit" render={({ field }) => (
+                                                    <FormItem>
+                                                        <FormLabel>Facility Limit:</FormLabel>
+                                                        <FormControl><Input type="number" placeholder="R 0.00" {...field} /></FormControl>
+                                                    </FormItem>
+                                                )} />
+                                            </div>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            </TabsContent>
 
-                            {partnerTabs.filter(t => !['main', 'dashboard', 'address', 'contact', 'owners'].includes(t.value)).map((tab) => (
+                            {partnerTabs.filter(t => !['main', 'dashboard', 'address', 'contact', 'owners', 'global-facility'].includes(t.value)).map((tab) => (
                                 <TabsContent key={tab.value} value={tab.value}>
                                     <Card className="mt-4">
                                         <CardHeader>
@@ -360,5 +406,3 @@ export default function PartnerDetails({ partnerType }: PartnerDetailsProps) {
         </FormProvider>
     );
 }
-
-    
