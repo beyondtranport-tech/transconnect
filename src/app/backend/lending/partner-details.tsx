@@ -110,7 +110,7 @@ export default function PartnerDetails({ partnerType }: PartnerDetailsProps) {
                     </CardHeader>
                     <CardContent>
                         <Tabs defaultValue="dashboard" className="w-full">
-                            <TabsList className="grid w-full grid-cols-10">
+                            <TabsList className="flex flex-wrap h-auto">
                                 {partnerTabs.map((tab) => (
                                     <TabsTrigger key={tab.value} value={tab.value}>
                                         {tab.label}

@@ -63,7 +63,7 @@ export default function ClientsContent() {
                     </CardHeader>
                     <CardContent>
                         <Tabs defaultValue="dashboard" className="w-full">
-                            <TabsList className="grid w-full grid-cols-10">
+                            <TabsList className="flex flex-wrap h-auto">
                                 {clientTabs.map((tab) => (
                                     <TabsTrigger key={tab.value} value={tab.value}>{tab.label}</TabsTrigger>
                                 ))}
