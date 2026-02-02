@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -24,6 +25,7 @@ const clientTabs = [
     { value: "bank-accounts", label: "Bank Accounts" },
     { value: "balance-sheet", label: "Balance Sheet" },
     { value: "income-statement", label: "Income Statement" },
+    { value: "sub-facilities", label: "Sub-Facilities" },
 ];
 
 export default function ClientsContent() {
@@ -61,7 +63,7 @@ export default function ClientsContent() {
                     </CardHeader>
                     <CardContent>
                         <Tabs defaultValue="dashboard" className="w-full">
-                            <TabsList className="grid w-full grid-cols-9">
+                            <TabsList className="grid w-full grid-cols-10">
                                 {clientTabs.map((tab) => (
                                     <TabsTrigger key={tab.value} value={tab.value}>{tab.label}</TabsTrigger>
                                 ))}
@@ -328,7 +330,7 @@ export default function ClientsContent() {
                                                 </div>
                                                 <Separator />
                                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                                                    <FormField control={control} name={`management.${index}.position`} render={({ field }) => (<FormItem><FormLabel>Position</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
+                                                     <FormField control={control} name={`management.${index}.position`} render={({ field }) => (<FormItem><FormLabel>Position</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
                                                     <FormField control={control} name={`management.${index}.qualification`} render={({ field }) => (<FormItem><FormLabel>Qualification</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
                                                     <FormField control={control} name={`management.${index}.since`} render={({ field }) => (<FormItem><FormLabel>Since</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
                                                     <FormField control={control} name={`management.${index}.held`} render={({ field }) => (<FormItem><FormLabel>% Held</FormLabel><FormControl><Input type="number" {...field} /></FormControl></FormItem>)} />
@@ -395,7 +397,7 @@ export default function ClientsContent() {
                                     </CardContent>
                                 </Card>
                             </TabsContent>
-                            <TabsContent value="balance-sheet">
+                             <TabsContent value="balance-sheet">
                                <Card className="mt-4">
                                     <CardHeader><CardTitle>Statement of Financial Position (Balance Sheet)</CardTitle></CardHeader>
                                     <CardContent className="space-y-6">
@@ -438,7 +440,7 @@ export default function ClientsContent() {
                                     </CardContent>
                                 </Card>
                             </TabsContent>
-                             <TabsContent value="income-statement">
+                            <TabsContent value="income-statement">
                                 <Card className="mt-4">
                                     <CardHeader><CardTitle>Statement of Comprehensive Income (Income Statement)</CardTitle></CardHeader>
                                     <CardContent className="space-y-4 max-w-2xl">
@@ -460,6 +462,56 @@ export default function ClientsContent() {
                                             <Label>Income Tax Expense</Label><Input type="number" placeholder="R 0.00" />
                                             <Label>Profit for the Period</Label><Input type="number" placeholder="R 0.00" disabled className="font-bold text-primary" />
                                         </div>
+                                    </CardContent>
+                                </Card>
+                            </TabsContent>
+                            <TabsContent value="sub-facilities">
+                                <Card className="mt-4">
+                                    <CardHeader>
+                                        <CardTitle>Sub-Facilities Management</CardTitle>
+                                        <CardDescription>Manage sub-facilities associated with this client.</CardDescription>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <Tabs defaultValue="facilities" className="w-full">
+                                            <TabsList>
+                                                <TabsTrigger value="facilities">Facilities</TabsTrigger>
+                                                <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
+                                                <TabsTrigger value="main">Main</TabsTrigger>
+                                                <TabsTrigger value="statements">Statements</TabsTrigger>
+                                            </TabsList>
+                                            <TabsContent value="facilities">
+                                                <Card className="mt-4">
+                                                    <CardHeader><CardTitle>Facilities List</CardTitle></CardHeader>
+                                                    <CardContent>
+                                                        <p className="text-muted-foreground">A list of sub-facilities will be displayed here.</p>
+                                                    </CardContent>
+                                                </Card>
+                                            </TabsContent>
+                                            <TabsContent value="dashboard">
+                                                 <Card className="mt-4">
+                                                    <CardHeader><CardTitle>Sub-Facilities Dashboard</CardTitle></CardHeader>
+                                                    <CardContent>
+                                                        <p className="text-muted-foreground">Dashboard content for sub-facilities will go here.</p>
+                                                    </CardContent>
+                                                </Card>
+                                            </TabsContent>
+                                            <TabsContent value="main">
+                                                 <Card className="mt-4">
+                                                    <CardHeader><CardTitle>Main Sub-Facility Details</CardTitle></CardHeader>
+                                                    <CardContent>
+                                                        <p className="text-muted-foreground">Main details for sub-facilities will go here.</p>
+                                                    </CardContent>
+                                                </Card>
+                                            </TabsContent>
+                                            <TabsContent value="statements">
+                                                 <Card className="mt-4">
+                                                    <CardHeader><CardTitle>Sub-Facility Statements</CardTitle></CardHeader>
+                                                    <CardContent>
+                                                        <p className="text-muted-foreground">Statements for sub-facilities will go here.</p>
+                                                    </CardContent>
+                                                </Card>
+                                            </TabsContent>
+                                        </Tabs>
                                     </CardContent>
                                 </Card>
                             </TabsContent>

@@ -28,6 +28,7 @@ const partnerTabs = [
     { value: "bank-accounts", label: "Bank Accounts" },
     { value: "balance-sheet", label: "Balance Sheet" },
     { value: "income-statement", label: "Income Statement" },
+    { value: "sub-facilities", label: "Sub-Facilities" },
 ];
 
 const positions = ["Director", "CEO", "CFO", "COO", "Manager", "Shareholder", "Member", "Other"];
@@ -109,7 +110,7 @@ export default function PartnerDetails({ partnerType }: PartnerDetailsProps) {
                     </CardHeader>
                     <CardContent>
                         <Tabs defaultValue="dashboard" className="w-full">
-                            <TabsList className="grid w-full grid-cols-9">
+                            <TabsList className="grid w-full grid-cols-10">
                                 {partnerTabs.map((tab) => (
                                     <TabsTrigger key={tab.value} value={tab.value}>
                                         {tab.label}
@@ -543,6 +544,56 @@ export default function PartnerDetails({ partnerType }: PartnerDetailsProps) {
                                             <Label>Income Tax Expense</Label><Input type="number" placeholder="R 0.00" />
                                             <Label>Profit for the Period</Label><Input type="number" placeholder="R 0.00" disabled className="font-bold text-primary" />
                                         </div>
+                                    </CardContent>
+                                </Card>
+                            </TabsContent>
+                             <TabsContent value="sub-facilities">
+                                <Card className="mt-4">
+                                    <CardHeader>
+                                        <CardTitle>Sub-Facilities Management</CardTitle>
+                                        <CardDescription>Manage sub-facilities associated with this partner.</CardDescription>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <Tabs defaultValue="facilities" className="w-full">
+                                            <TabsList>
+                                                <TabsTrigger value="facilities">Facilities</TabsTrigger>
+                                                <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
+                                                <TabsTrigger value="main">Main</TabsTrigger>
+                                                <TabsTrigger value="statements">Statements</TabsTrigger>
+                                            </TabsList>
+                                            <TabsContent value="facilities">
+                                                <Card className="mt-4">
+                                                    <CardHeader><CardTitle>Facilities List</CardTitle></CardHeader>
+                                                    <CardContent>
+                                                        <p className="text-muted-foreground">A list of sub-facilities will be displayed here.</p>
+                                                    </CardContent>
+                                                </Card>
+                                            </TabsContent>
+                                            <TabsContent value="dashboard">
+                                                 <Card className="mt-4">
+                                                    <CardHeader><CardTitle>Sub-Facilities Dashboard</CardTitle></CardHeader>
+                                                    <CardContent>
+                                                        <p className="text-muted-foreground">Dashboard content for sub-facilities will go here.</p>
+                                                    </CardContent>
+                                                </Card>
+                                            </TabsContent>
+                                            <TabsContent value="main">
+                                                 <Card className="mt-4">
+                                                    <CardHeader><CardTitle>Main Sub-Facility Details</CardTitle></CardHeader>
+                                                    <CardContent>
+                                                        <p className="text-muted-foreground">Main details for sub-facilities will go here.</p>
+                                                    </CardContent>
+                                                </Card>
+                                            </TabsContent>
+                                            <TabsContent value="statements">
+                                                 <Card className="mt-4">
+                                                    <CardHeader><CardTitle>Sub-Facility Statements</CardTitle></CardHeader>
+                                                    <CardContent>
+                                                        <p className="text-muted-foreground">Statements for sub-facilities will go here.</p>
+                                                    </CardContent>
+                                                </Card>
+                                            </TabsContent>
+                                        </Tabs>
                                     </CardContent>
                                 </Card>
                             </TabsContent>
