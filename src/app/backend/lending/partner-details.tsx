@@ -249,8 +249,42 @@ export default function PartnerDetails({ partnerType }: PartnerDetailsProps) {
                                                         </div>
                                                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                                             <FormField control={control} name={`contacts.${index}.name`} render={({ field }) => (<FormItem><FormLabel>Full Name</FormLabel><FormControl><Input {...field} placeholder="e.g., Jane Smith"/></FormControl></FormItem>)} />
-                                                            <FormField control={control} name={`contacts.${index}.position`} render={({ field }) => (<FormItem><FormLabel>Position</FormLabel><FormControl><Input {...field} placeholder="e.g., Accounts Manager"/></FormControl></FormItem>)} />
-                                                            <FormField control={control} name={`contacts.${index}.title`} render={({ field }) => (<FormItem><FormLabel>Title</FormLabel><FormControl><Input {...field} placeholder="e.g., Mrs."/></FormControl></FormItem>)} />
+                                                            <FormField control={control} name={`contacts.${index}.position`} render={({ field }) => (
+                                                                <FormItem>
+                                                                    <FormLabel>Position</FormLabel>
+                                                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                                        <FormControl>
+                                                                            <SelectTrigger><SelectValue placeholder="Select position" /></SelectTrigger>
+                                                                        </FormControl>
+                                                                        <SelectContent>
+                                                                            <SelectItem value="Accounts Manager">Accounts Manager</SelectItem>
+                                                                            <SelectItem value="Sales Representative">Sales Representative</SelectItem>
+                                                                            <SelectItem value="Director">Director</SelectItem>
+                                                                            <SelectItem value="Owner">Owner</SelectItem>
+                                                                            <SelectItem value="Logistics Coordinator">Logistics Coordinator</SelectItem>
+                                                                            <SelectItem value="General Manager">General Manager</SelectItem>
+                                                                        </SelectContent>
+                                                                    </Select>
+                                                                </FormItem>
+                                                            )} />
+                                                            <FormField control={control} name={`contacts.${index}.title`} render={({ field }) => (
+                                                                <FormItem>
+                                                                    <FormLabel>Title</FormLabel>
+                                                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                                        <FormControl>
+                                                                            <SelectTrigger><SelectValue placeholder="Select title" /></SelectTrigger>
+                                                                        </FormControl>
+                                                                        <SelectContent>
+                                                                            <SelectItem value="Mr.">Mr.</SelectItem>
+                                                                            <SelectItem value="Mrs.">Mrs.</SelectItem>
+                                                                            <SelectItem value="Ms.">Ms.</SelectItem>
+                                                                            <SelectItem value="Miss">Miss</SelectItem>
+                                                                            <SelectItem value="Dr.">Dr.</SelectItem>
+                                                                            <SelectItem value="Prof.">Prof.</SelectItem>
+                                                                        </SelectContent>
+                                                                    </Select>
+                                                                </FormItem>
+                                                            )} />
                                                         </div>
                                                          <FormField control={control} name={`contacts.${index}.description`} render={({ field }) => (<FormItem><FormLabel>Job Description</FormLabel><FormControl><Textarea {...field} placeholder="e.g., Handles all invoice queries."/></FormControl></FormItem>)} />
                                                     </div>
@@ -282,5 +316,3 @@ export default function PartnerDetails({ partnerType }: PartnerDetailsProps) {
         </FormProvider>
     );
 }
-
-    
