@@ -10,9 +10,9 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
-import { useForm, useFieldArray, FormProvider } from 'react-hook-form';
-import { Form, FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form';
+import { useForm, useFieldArray, FormProvider } from "react-hook-form";
 import { Button } from "@/components/ui/button";
+import { Form, FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form';
 import { PlusCircle, Trash2 } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 
@@ -295,7 +295,51 @@ export default function PartnerDetails({ partnerType }: PartnerDetailsProps) {
                                 </Card>
                             </TabsContent>
 
-                            {partnerTabs.filter(t => !['main', 'dashboard', 'address', 'contact'].includes(t.value)).map((tab) => (
+                             <TabsContent value="owners">
+                                <Card className="mt-4">
+                                    <CardHeader className="flex flex-row items-center justify-between">
+                                        <CardTitle>Owners / Directors</CardTitle>
+                                        <Button type="button" variant="outline" size="sm" onClick={() => appendOwner({ name: '', address: '', suburb: '', city: '', province: '', postCode: '', idNo: '', cell: '', position: '', qualification: '', since: '', held: 0 })}>
+                                            <PlusCircle className="mr-2 h-4 w-4" /> Add Owner
+                                        </Button>
+                                    </CardHeader>
+                                    <CardContent className="space-y-6">
+                                        {ownerFields.map((field, index) => (
+                                            <div key={field.id} className="p-4 border rounded-lg relative space-y-4">
+                                                <div className="flex justify-between items-center">
+                                                    <h3 className="font-semibold text-lg">Owner #{index + 1}</h3>
+                                                    <Button type="button" variant="ghost" size="icon" onClick={() => removeOwner(index)}>
+                                                        <Trash2 className="h-4 w-4 text-destructive" />
+                                                    </Button>
+                                                </div>
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                    <FormField control={control} name={`owners.${index}.name`} render={({ field }) => (<FormItem><FormLabel>Name</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
+                                                    <FormField control={control} name={`owners.${index}.idNo`} render={({ field }) => (<FormItem><FormLabel>ID No</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
+                                                </div>
+                                                <FormField control={control} name={`owners.${index}.address`} render={({ field }) => (<FormItem><FormLabel>Address</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
+                                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                                    <FormField control={control} name={`owners.${index}.suburb`} render={({ field }) => (<FormItem><FormLabel>Suburb</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
+                                                    <FormField control={control} name={`owners.${index}.city`} render={({ field }) => (<FormItem><FormLabel>City</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
+                                                    <FormField control={control} name={`owners.${index}.postCode`} render={({ field }) => (<FormItem><FormLabel>Post Code</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
+                                                </div>
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                    <FormField control={control} name={`owners.${index}.province`} render={({ field }) => (<FormItem><FormLabel>Province</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
+                                                    <FormField control={control} name={`owners.${index}.cell`} render={({ field }) => (<FormItem><FormLabel>Cell</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
+                                                </div>
+                                                <Separator />
+                                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                                                     <FormField control={control} name={`owners.${index}.position`} render={({ field }) => (<FormItem><FormLabel>Position</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
+                                                    <FormField control={control} name={`owners.${index}.qualification`} render={({ field }) => (<FormItem><FormLabel>Qualification</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
+                                                    <FormField control={control} name={`owners.${index}.since`} render={({ field }) => (<FormItem><FormLabel>Since</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
+                                                    <FormField control={control} name={`owners.${index}.held`} render={({ field }) => (<FormItem><FormLabel>% Held</FormLabel><FormControl><Input type="number" {...field} /></FormControl></FormItem>)} />
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </CardContent>
+                                </Card>
+                            </TabsContent>
+
+                            {partnerTabs.filter(t => !['main', 'dashboard', 'address', 'contact', 'owners'].includes(t.value)).map((tab) => (
                                 <TabsContent key={tab.value} value={tab.value}>
                                     <Card className="mt-4">
                                         <CardHeader>
@@ -316,3 +360,5 @@ export default function PartnerDetails({ partnerType }: PartnerDetailsProps) {
         </FormProvider>
     );
 }
+
+    
