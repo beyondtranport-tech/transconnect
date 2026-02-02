@@ -5,7 +5,7 @@ import { NextRequest } from 'next/server';
 import { getAuth } from 'firebase-admin/auth';
 import { getFirestore } from 'firebase-admin/firestore';
 
-// v7 - Decoupling storage bucket from main init to prevent hangs.
+// Reverting to v7 initialization to fix potential hangs.
 const ADMIN_APP_NAME = 'firebase-admin-app-transconnect-studio-v7';
 
 export function getAdminApp(): { app: App | null; error: string | null } {
