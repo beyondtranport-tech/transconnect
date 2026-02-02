@@ -96,7 +96,55 @@ export default function AssetsContent() {
                         </div>
                     </div>
                 )}
-                {selectedAssetType && selectedAssetType !== 'motorised' && (
+
+                {selectedAssetType === 'drawn' && (
+                    <div className="pt-6 border-t">
+                        <h3 className="text-lg font-semibold mb-4">
+                            Details for: <span className="text-primary">Drawn Vehicle</span>
+                        </h3>
+                        <div className="space-y-4">
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="drawn-register-no">Vehicle register #</Label>
+                                    <Input id="drawn-register-no" placeholder="Vehicle Register #" />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="drawn-make">Make</Label>
+                                    <Input id="drawn-make" placeholder="e.g., Henred Fruehauf" />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="drawn-model">Model</Label>
+                                    <Input id="drawn-model" placeholder="e.g., Tautliner" />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="drawn-year">Year</Label>
+                                    <Input id="drawn-year" placeholder="e.g., 2020" />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="drawn-vin">Vin #</Label>
+                                    <Input id="drawn-vin" placeholder="Vehicle Identification Number" />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="drawn-colour">Colour</Label>
+                                    <Input id="drawn-colour" placeholder="e.g., Blue" />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="drawn-quantity">Quantity</Label>
+                                    <Input id="drawn-quantity" type="number" defaultValue="1" />
+                                </div>
+                                 <div className="space-y-2">
+                                    <Label htmlFor="drawn-cost">Cost (ex. VAT)</Label>
+                                    <Input id="drawn-cost" type="number" placeholder="R 0.00" />
+                                </div>
+                            </div>
+                             <div className="flex justify-end mt-4">
+                                <Button>Save Asset</Button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+                
+                {selectedAssetType && !['motorised', 'drawn'].includes(selectedAssetType) && (
                     <div className="pt-6 border-t">
                         <h3 className="text-lg font-semibold mb-4">
                             Details for: <span className="text-primary">{assetTypes.find(t => t.id === selectedAssetType)?.label}</span>
