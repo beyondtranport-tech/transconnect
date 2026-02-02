@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -20,7 +21,6 @@ const partnerTabs = [
     { value: "dashboard", label: "Dashboard" },
     { value: "main", label: "Main" },
     { value: "address", label: "Address" },
-    { value: "contact", label: "Contact" },
     { value: "global-facility", label: "Global Facility" },
     { value: "owners", label: "Owners" },
     { value: "management", label: "Management" },
@@ -49,9 +49,15 @@ export default function PartnerDetails({ partnerType }: PartnerDetailsProps) {
             facilityDate: '',
             signatory: '',
             facilityLimit: 0,
+            telW: '',
+            telH: '',
+            fax: '',
+            cell: '',
+            email: '',
+            url: '',
+            primaryContact: '',
             owners: [{ name: '', address: '', suburb: '', city: '', province: '', postCode: '', idNo: '', cell: '', position: '', qualification: '', since: '', held: 0 }],
-            management: [{ name: '', address: '', suburb: '', city: '', province: '', postCode: '', idNo: '', cell: '', position: '', qualification: '', since: '', held: 0 }],
-            contacts: [{ name: '', position: '', title: '', description: '' }],
+            management: [{ name: '', address: '', suburb: '', city: '', province: '', postCode: '', idNo: '', cell: '', position: '', qualification: '', since: '', held: 0, title: '', description: '' }],
         }
     });
 
@@ -65,11 +71,6 @@ export default function PartnerDetails({ partnerType }: PartnerDetailsProps) {
     const { fields: managementFields, append: appendManagement, remove: removeManagement } = useFieldArray({
         control,
         name: "management"
-    });
-
-    const { fields: contactFields, append: appendContact, remove: removeContact } = useFieldArray({
-        control,
-        name: "contacts"
     });
     
     const usePhysicalForPostal = watch('usePhysicalForPostal');
@@ -99,7 +100,7 @@ export default function PartnerDetails({ partnerType }: PartnerDetailsProps) {
                     </CardHeader>
                     <CardContent>
                         <Tabs defaultValue="dashboard" className="w-full">
-                            <TabsList className="grid w-full grid-cols-10">
+                            <TabsList className="grid w-full grid-cols-9">
                                 {partnerTabs.map((tab) => (
                                     <TabsTrigger key={tab.value} value={tab.value}>
                                         {tab.label}
@@ -120,10 +121,10 @@ export default function PartnerDetails({ partnerType }: PartnerDetailsProps) {
 
                             <TabsContent value="main">
                                 <Card className="mt-4">
-                                    <CardHeader><CardTitle>Main Details</CardTitle></CardHeader>
+                                    <CardHeader><CardTitle>Main & Contact Details</CardTitle></CardHeader>
                                     <CardContent>
                                         <div className="space-y-4 max-w-2xl">
-                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                                 <div className="space-y-2">
                                                     <Label htmlFor="partner-code">Code</Label>
                                                     <Input id="partner-code" placeholder="Partner Code" />
@@ -153,6 +154,21 @@ export default function PartnerDetails({ partnerType }: PartnerDetailsProps) {
                                                     <Input id="partner-reg" placeholder="Company Registration Number" />
                                                 </div>
                                             </div>
+                                            <Separator className="my-6" />
+                                            <h3 className="text-lg font-semibold">General Contact Information</h3>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                <FormField control={control} name="telW" render={({ field }) => ( <FormItem><FormLabel>Tel (w)</FormLabel><FormControl><Input placeholder="Work Telephone" {...field} /></FormControl></FormItem> )} />
+                                                <FormField control={control} name="telH" render={({ field }) => ( <FormItem><FormLabel>Tel (h)</FormLabel><FormControl><Input placeholder="Home Telephone" {...field} /></FormControl></FormItem> )} />
+                                            </div>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                <FormField control={control} name="fax" render={({ field }) => ( <FormItem><FormLabel>Fax</FormLabel><FormControl><Input placeholder="Fax Number" {...field} /></FormControl></FormItem> )} />
+                                                <FormField control={control} name="cell" render={({ field }) => ( <FormItem><FormLabel>Cell</FormLabel><FormControl><Input placeholder="Mobile Number" {...field} /></FormControl></FormItem> )} />
+                                            </div>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                <FormField control={control} name="email" render={({ field }) => ( <FormItem><FormLabel>Email</FormLabel><FormControl><Input type="email" placeholder="contact@example.com" {...field} /></FormControl></FormItem> )} />
+                                                <FormField control={control} name="url" render={({ field }) => ( <FormItem><FormLabel>URL</FormLabel><FormControl><Input type="url" placeholder="https://example.com" {...field} /></FormControl></FormItem> )} />
+                                            </div>
+                                            <FormField control={control} name="primaryContact" render={({ field }) => ( <FormItem><FormLabel>Primary Contact Person</FormLabel><FormControl><Input placeholder="Primary Contact Name" {...field} /></FormControl></FormItem> )} />
                                         </div>
                                     </CardContent>
                                 </Card>
@@ -212,92 +228,6 @@ export default function PartnerDetails({ partnerType }: PartnerDetailsProps) {
                                 </Card>
                             </TabsContent>
                             
-                             <TabsContent value="contact">
-                                <Card className="mt-4">
-                                    <CardHeader><CardTitle>Contact Information</CardTitle></CardHeader>
-                                    <CardContent className="space-y-8">
-                                        <div>
-                                            <h3 className="text-lg font-semibold mb-4">General Contact Details</h3>
-                                            <div className="space-y-4 max-w-2xl">
-                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                    <FormField control={control} name="telW" render={({ field }) => ( <FormItem><FormLabel>Tel (w)</FormLabel><FormControl><Input placeholder="Work Telephone" {...field} /></FormControl></FormItem> )} />
-                                                    <FormField control={control} name="telH" render={({ field }) => ( <FormItem><FormLabel>Tel (h)</FormLabel><FormControl><Input placeholder="Home Telephone" {...field} /></FormControl></FormItem> )} />
-                                                </div>
-                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                    <FormField control={control} name="fax" render={({ field }) => ( <FormItem><FormLabel>Fax</FormLabel><FormControl><Input placeholder="Fax Number" {...field} /></FormControl></FormItem> )} />
-                                                    <FormField control={control} name="cell" render={({ field }) => ( <FormItem><FormLabel>Cell</FormLabel><FormControl><Input placeholder="Mobile Number" {...field} /></FormControl></FormItem> )} />
-                                                </div>
-                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                    <FormField control={control} name="email" render={({ field }) => ( <FormItem><FormLabel>Email</FormLabel><FormControl><Input type="email" placeholder="contact@example.com" {...field} /></FormControl></FormItem> )} />
-                                                    <FormField control={control} name="url" render={({ field }) => ( <FormItem><FormLabel>URL</FormLabel><FormControl><Input type="url" placeholder="https://example.com" {...field} /></FormControl></FormItem> )} />
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <Separator />
-                                         <div>
-                                            <div className="flex justify-between items-center mb-4">
-                                                <h3 className="text-lg font-semibold">Contact Persons</h3>
-                                                <Button type="button" variant="outline" size="sm" onClick={() => appendContact({ name: '', position: '', title: '', description: '' })}>
-                                                    <PlusCircle className="mr-2 h-4 w-4" /> Add Person
-                                                </Button>
-                                            </div>
-                                             <div className="space-y-6">
-                                                {contactFields.map((field, index) => (
-                                                    <div key={field.id} className="p-4 border rounded-lg relative space-y-4">
-                                                        <div className="flex justify-between items-start">
-                                                            <h4 className="font-medium text-md">Person #{index + 1}</h4>
-                                                            <Button type="button" variant="ghost" size="icon" onClick={() => removeContact(index)}>
-                                                                <Trash2 className="h-4 w-4 text-destructive" />
-                                                            </Button>
-                                                        </div>
-                                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                                            <FormField control={control} name={`contacts.${index}.name`} render={({ field }) => (<FormItem><FormLabel>Full Name</FormLabel><FormControl><Input {...field} placeholder="e.g., Jane Smith"/></FormControl></FormItem>)} />
-                                                            <FormField control={control} name={`contacts.${index}.position`} render={({ field }) => (
-                                                                <FormItem>
-                                                                    <FormLabel>Position</FormLabel>
-                                                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                                                        <FormControl>
-                                                                            <SelectTrigger><SelectValue placeholder="Select position" /></SelectTrigger>
-                                                                        </FormControl>
-                                                                        <SelectContent>
-                                                                            <SelectItem value="Accounts Manager">Accounts Manager</SelectItem>
-                                                                            <SelectItem value="Sales Representative">Sales Representative</SelectItem>
-                                                                            <SelectItem value="Director">Director</SelectItem>
-                                                                            <SelectItem value="Owner">Owner</SelectItem>
-                                                                            <SelectItem value="Logistics Coordinator">Logistics Coordinator</SelectItem>
-                                                                            <SelectItem value="General Manager">General Manager</SelectItem>
-                                                                        </SelectContent>
-                                                                    </Select>
-                                                                </FormItem>
-                                                            )} />
-                                                            <FormField control={control} name={`contacts.${index}.title`} render={({ field }) => (
-                                                                <FormItem>
-                                                                    <FormLabel>Title</FormLabel>
-                                                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                                                        <FormControl>
-                                                                            <SelectTrigger><SelectValue placeholder="Select title" /></SelectTrigger>
-                                                                        </FormControl>
-                                                                        <SelectContent>
-                                                                            <SelectItem value="Mr.">Mr.</SelectItem>
-                                                                            <SelectItem value="Mrs.">Mrs.</SelectItem>
-                                                                            <SelectItem value="Ms.">Ms.</SelectItem>
-                                                                            <SelectItem value="Miss">Miss</SelectItem>
-                                                                            <SelectItem value="Dr.">Dr.</SelectItem>
-                                                                            <SelectItem value="Prof.">Prof.</SelectItem>
-                                                                        </SelectContent>
-                                                                    </Select>
-                                                                </FormItem>
-                                                            )} />
-                                                        </div>
-                                                         <FormField control={control} name={`contacts.${index}.description`} render={({ field }) => (<FormItem><FormLabel>Job Description</FormLabel><FormControl><Textarea {...field} placeholder="e.g., Handles all invoice queries."/></FormControl></FormItem>)} />
-                                                    </div>
-                                                ))}
-                                             </div>
-                                        </div>
-                                    </CardContent>
-                                </Card>
-                            </TabsContent>
-
                              <TabsContent value="owners">
                                 <Card className="mt-4">
                                     <CardHeader className="flex flex-row items-center justify-between">
@@ -336,6 +266,69 @@ export default function PartnerDetails({ partnerType }: PartnerDetailsProps) {
                                                     <FormField control={control} name={`owners.${index}.since`} render={({ field }) => (<FormItem><FormLabel>Since</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
                                                     <FormField control={control} name={`owners.${index}.held`} render={({ field }) => (<FormItem><FormLabel>% Held</FormLabel><FormControl><Input type="number" {...field} /></FormControl></FormItem>)} />
                                                 </div>
+                                            </div>
+                                        ))}
+                                    </CardContent>
+                                </Card>
+                            </TabsContent>
+                             <TabsContent value="management">
+                                <Card className="mt-4">
+                                    <CardHeader className="flex flex-row items-center justify-between">
+                                        <CardTitle>Management & Key Personnel</CardTitle>
+                                         <Button type="button" variant="outline" size="sm" onClick={() => appendManagement({ name: '', address: '', suburb: '', city: '', province: '', postCode: '', idNo: '', cell: '', position: '', qualification: '', since: '', held: 0, title: '', description: '' })}>
+                                            <PlusCircle className="mr-2 h-4 w-4" /> Add Person
+                                        </Button>
+                                    </CardHeader>
+                                    <CardContent className="space-y-6">
+                                        {managementFields.map((field, index) => (
+                                            <div key={field.id} className="p-4 border rounded-lg relative space-y-4">
+                                                <div className="flex justify-between items-center">
+                                                    <h3 className="font-semibold text-lg">Person #{index + 1}</h3>
+                                                    <Button type="button" variant="ghost" size="icon" onClick={() => removeManagement(index)}>
+                                                        <Trash2 className="h-4 w-4 text-destructive" />
+                                                    </Button>
+                                                </div>
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                    <FormField control={control} name={`management.${index}.name`} render={({ field }) => (<FormItem><FormLabel>Name</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
+                                                    <FormField control={control} name={`management.${index}.idNo`} render={({ field }) => (<FormItem><FormLabel>ID No</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
+                                                </div>
+                                                <FormField control={control} name={`management.${index}.address`} render={({ field }) => (<FormItem><FormLabel>Address</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
+                                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                                    <FormField control={control} name={`management.${index}.suburb`} render={({ field }) => (<FormItem><FormLabel>Suburb</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
+                                                    <FormField control={control} name={`management.${index}.city`} render={({ field }) => (<FormItem><FormLabel>City</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
+                                                    <FormField control={control} name={`management.${index}.postCode`} render={({ field }) => (<FormItem><FormLabel>Post Code</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
+                                                </div>
+                                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                    <FormField control={control} name={`management.${index}.province`} render={({ field }) => (<FormItem><FormLabel>Province</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
+                                                    <FormField control={control} name={`management.${index}.cell`} render={({ field }) => (<FormItem><FormLabel>Cell</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
+                                                </div>
+                                                <Separator />
+                                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                                    <FormField control={control} name={`management.${index}.position`} render={({ field }) => (<FormItem><FormLabel>Position</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
+                                                    <FormField control={control} name={`management.${index}.qualification`} render={({ field }) => (<FormItem><FormLabel>Qualification</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
+                                                    <FormField control={control} name={`management.${index}.since`} render={({ field }) => (<FormItem><FormLabel>Since</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
+                                                </div>
+                                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t">
+                                                     <FormField control={control} name={`management.${index}.title`} render={({ field }) => (
+                                                        <FormItem>
+                                                            <FormLabel>Title</FormLabel>
+                                                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                                <FormControl>
+                                                                    <SelectTrigger><SelectValue placeholder="Select title" /></SelectTrigger>
+                                                                </FormControl>
+                                                                <SelectContent>
+                                                                    <SelectItem value="Mr.">Mr.</SelectItem>
+                                                                    <SelectItem value="Mrs.">Mrs.</SelectItem>
+                                                                    <SelectItem value="Ms.">Ms.</SelectItem>
+                                                                    <SelectItem value="Miss">Miss</SelectItem>
+                                                                    <SelectItem value="Dr.">Dr.</SelectItem>
+                                                                    <SelectItem value="Prof.">Prof.</SelectItem>
+                                                                </SelectContent>
+                                                            </Select>
+                                                        </FormItem>
+                                                    )} />
+                                                     <FormField control={control} name={`management.${index}.description`} render={({ field }) => (<FormItem className="md:col-span-2"><FormLabel>Description / Role</FormLabel><FormControl><Textarea {...field} placeholder="e.g., Handles all invoice queries."/></FormControl></FormItem>)} />
+                                                 </div>
                                             </div>
                                         ))}
                                     </CardContent>
@@ -385,7 +378,7 @@ export default function PartnerDetails({ partnerType }: PartnerDetailsProps) {
                                 </Card>
                             </TabsContent>
 
-                            {partnerTabs.filter(t => !['main', 'dashboard', 'address', 'contact', 'owners', 'global-facility'].includes(t.value)).map((tab) => (
+                            {partnerTabs.filter(t => !['main', 'dashboard', 'address', 'management', 'owners', 'global-facility'].includes(t.value)).map((tab) => (
                                 <TabsContent key={tab.value} value={tab.value}>
                                     <Card className="mt-4">
                                         <CardHeader>
