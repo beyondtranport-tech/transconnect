@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -65,6 +64,9 @@ const equipmentTypes = [
     "Server Equipment",
     "Printer/Copier",
     "Medical Scanner",
+    "Office Equipment",
+    "Construction Equipment",
+    "Engineering Equipment",
     "Other"
 ];
 
@@ -270,7 +272,34 @@ export default function AssetsContent() {
                     </div>
                 )}
                 
-                {selectedAssetType && !['motorised', 'drawn', 'equipment'].includes(selectedAssetType) && (
+                {selectedAssetType === 'rights' && (
+                    <div className="pt-6 border-t">
+                        <h3 className="text-lg font-semibold mb-4">
+                            Details for: <span className="text-primary">Rights</span>
+                        </h3>
+                        <div className="space-y-4">
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="rights-type">Type</Label>
+                                    <Select>
+                                        <SelectTrigger id="rights-type"><SelectValue placeholder="Select type..." /></SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="property-bridging">Property Bridging</SelectItem>
+                                            <SelectItem value="salary">Salary</SelectItem>
+                                            <SelectItem value="brokering">Brokering</SelectItem>
+                                            <SelectItem value="other">Other</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            </div>
+                            <div className="flex justify-end mt-4">
+                                <Button>Save Asset</Button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {selectedAssetType && !['motorised', 'drawn', 'equipment', 'rights'].includes(selectedAssetType) && (
                     <div className="pt-6 border-t">
                         <h3 className="text-lg font-semibold mb-4">
                             Details for: <span className="text-primary">{assetTypes.find(t => t.id === selectedAssetType)?.label}</span>
