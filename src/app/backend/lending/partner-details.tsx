@@ -26,8 +26,8 @@ const partnerTabs = [
     { value: "owners", label: "Owners" },
     { value: "management", label: "Management" },
     { value: "bank-accounts", label: "Bank Accounts" },
-    { value: "assets", label: "Assets" },
-    { value: "income", label: "Income" },
+    { value: "balance-sheet", label: "Balance Sheet" },
+    { value: "income-statement", label: "Income Statement" },
 ];
 
 const positions = ["Director", "CEO", "CFO", "COO", "Manager", "Shareholder", "Member", "Other"];
@@ -362,10 +362,6 @@ export default function PartnerDetails({ partnerType }: PartnerDetailsProps) {
                                                             </Select>
                                                         </FormItem>
                                                     )} />
-                                                    <FormField control={control} name={`management.${index}.qualification`} render={({ field }) => (<FormItem><FormLabel>Qualification</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
-                                                    <FormField control={control} name={`management.${index}.since`} render={({ field }) => (<FormItem><FormLabel>Since</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
-                                                </div>
-                                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t">
                                                      <FormField control={control} name={`management.${index}.title`} render={({ field }) => (
                                                         <FormItem>
                                                             <FormLabel>Title</FormLabel>
@@ -384,6 +380,10 @@ export default function PartnerDetails({ partnerType }: PartnerDetailsProps) {
                                                             </Select>
                                                         </FormItem>
                                                     )} />
+                                                     <FormField control={control} name={`management.${index}.qualification`} render={({ field }) => (<FormItem><FormLabel>Qualification</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
+                                                </div>
+                                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t">
+                                                     <FormField control={control} name={`management.${index}.since`} render={({ field }) => (<FormItem><FormLabel>Since</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
                                                      <FormField control={control} name={`management.${index}.description`} render={({ field }) => (<FormItem className="md:col-span-2"><FormLabel>Description / Role</FormLabel><FormControl><Textarea {...field} placeholder="e.g., Handles all invoice queries."/></FormControl></FormItem>)} />
                                                  </div>
                                             </div>
@@ -477,21 +477,75 @@ export default function PartnerDetails({ partnerType }: PartnerDetailsProps) {
                                     </CardContent>
                                 </Card>
                             </TabsContent>
-
-                            {partnerTabs.filter(t => !['main', 'dashboard', 'address', 'management', 'owners', 'global-facility', 'contact', 'bank-accounts'].includes(t.value)).map((tab) => (
-                                <TabsContent key={tab.value} value={tab.value}>
-                                    <Card className="mt-4">
-                                        <CardHeader>
-                                            <CardTitle>{tab.label}</CardTitle>
-                                        </CardHeader>
-                                        <CardContent>
-                                            <p className="text-muted-foreground">
-                                                Content for the {tab.label} tab will go here.
-                                            </p>
-                                        </CardContent>
-                                    </Card>
-                                </TabsContent>
-                            ))}
+                            
+                            <TabsContent value="balance-sheet">
+                               <Card className="mt-4">
+                                    <CardHeader><CardTitle>Statement of Financial Position (Balance Sheet)</CardTitle></CardHeader>
+                                    <CardContent className="space-y-6">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                            <div className="space-y-4">
+                                                <h3 className="font-semibold text-lg border-b pb-2">Assets</h3>
+                                                <h4 className="font-medium text-muted-foreground">Non-Current Assets</h4>
+                                                <div className="space-y-2 pl-4">
+                                                    <Label>Property, Plant and Equipment</Label><Input type="number" placeholder="R 0.00" />
+                                                    <Label>Intangible Assets</Label><Input type="number" placeholder="R 0.00" />
+                                                    <Label>Financial Assets</Label><Input type="number" placeholder="R 0.00" />
+                                                </div>
+                                                <h4 className="font-medium text-muted-foreground pt-2">Current Assets</h4>
+                                                <div className="space-y-2 pl-4">
+                                                    <Label>Inventories</Label><Input type="number" placeholder="R 0.00" />
+                                                    <Label>Trade and Other Receivables</Label><Input type="number" placeholder="R 0.00" />
+                                                    <Label>Cash and Cash Equivalents</Label><Input type="number" placeholder="R 0.00" />
+                                                </div>
+                                            </div>
+                                            <div className="space-y-4">
+                                                <h3 className="font-semibold text-lg border-b pb-2">Equity and Liabilities</h3>
+                                                <h4 className="font-medium text-muted-foreground">Equity</h4>
+                                                <div className="space-y-2 pl-4">
+                                                    <Label>Share Capital</Label><Input type="number" placeholder="R 0.00" />
+                                                    <Label>Retained Earnings</Label><Input type="number" placeholder="R 0.00" />
+                                                </div>
+                                                <h4 className="font-medium text-muted-foreground pt-2">Non-Current Liabilities</h4>
+                                                <div className="space-y-2 pl-4">
+                                                    <Label>Long-Term Borrowings</Label><Input type="number" placeholder="R 0.00" />
+                                                    <Label>Lease Liabilities</Label><Input type="number" placeholder="R 0.00" />
+                                                </div>
+                                                <h4 className="font-medium text-muted-foreground pt-2">Current Liabilities</h4>
+                                                <div className="space-y-2 pl-4">
+                                                    <Label>Trade and Other Payables</Label><Input type="number" placeholder="R 0.00" />
+                                                    <Label>Short-Term Borrowings</Label><Input type="number" placeholder="R 0.00" />
+                                                    <Label>Current Tax Payable</Label><Input type="number" placeholder="R 0.00" />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            </TabsContent>
+                            <TabsContent value="income-statement">
+                                <Card className="mt-4">
+                                    <CardHeader><CardTitle>Statement of Comprehensive Income (Income Statement)</CardTitle></CardHeader>
+                                    <CardContent className="space-y-4 max-w-2xl">
+                                        <div className="space-y-2">
+                                            <Label>Revenue</Label><Input type="number" placeholder="R 0.00" />
+                                            <Label>Cost of Sales</Label><Input type="number" placeholder="R 0.00" />
+                                            <Label>Gross Profit</Label><Input type="number" placeholder="R 0.00" disabled className="font-bold" />
+                                        </div>
+                                        <Separator />
+                                        <div className="space-y-2">
+                                            <Label>Other Income</Label><Input type="number" placeholder="R 0.00" />
+                                            <Label>Operating Expenses</Label><Input type="number" placeholder="R 0.00" />
+                                            <Label>Operating Profit</Label><Input type="number" placeholder="R 0.00" disabled className="font-bold" />
+                                        </div>
+                                        <Separator />
+                                        <div className="space-y-2">
+                                            <Label>Finance Costs</Label><Input type="number" placeholder="R 0.00" />
+                                            <Label>Profit Before Tax</Label><Input type="number" placeholder="R 0.00" disabled className="font-bold" />
+                                            <Label>Income Tax Expense</Label><Input type="number" placeholder="R 0.00" />
+                                            <Label>Profit for the Period</Label><Input type="number" placeholder="R 0.00" disabled className="font-bold text-primary" />
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            </TabsContent>
                         </Tabs>
                     </CardContent>
                 </Card>
