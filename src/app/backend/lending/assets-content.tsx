@@ -5,6 +5,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Truck, FileText, FileQuestion, Tractor, Construction } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 
 const assetTypes = [
     { id: 'motorised', label: 'Motorised Vehicles', icon: Truck },
@@ -48,14 +50,58 @@ export default function AssetsContent() {
                     </Select>
                 </div>
 
-                {/* The forms for each asset type will be rendered here based on selection */}
-                {selectedAssetType && (
+                {selectedAssetType === 'motorised' && (
+                    <div className="pt-6 border-t">
+                        <h3 className="text-lg font-semibold mb-4">
+                            Details for: <span className="text-primary">Motorised Vehicle</span>
+                        </h3>
+                        <div className="space-y-4">
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="vehicle-register-no">Vehicle register #</Label>
+                                    <Input id="vehicle-register-no" placeholder="Vehicle Register #" />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="make">Make</Label>
+                                    <Input id="make" placeholder="e.g., Scania" />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="model">Model</Label>
+                                    <Input id="model" placeholder="e.g., R 560" />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="year">Year</Label>
+                                    <Input id="year" placeholder="e.g., 2022" />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="vin">Vin #</Label>
+                                    <Input id="vin" placeholder="Vehicle Identification Number" />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="engine-no">Engine #</Label>
+                                    <Input id="engine-no" placeholder="Engine Number" />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="colour">Colour</Label>
+                                    <Input id="colour" placeholder="e.g., White" />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="quantity">Quantity</Label>
+                                    <Input id="quantity" type="number" defaultValue="1" />
+                                </div>
+                            </div>
+                            <div className="flex justify-end mt-4">
+                                <Button>Save Asset</Button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+                {selectedAssetType && selectedAssetType !== 'motorised' && (
                     <div className="pt-6 border-t">
                         <h3 className="text-lg font-semibold mb-4">
                             Details for: <span className="text-primary">{assetTypes.find(t => t.id === selectedAssetType)?.label}</span>
                         </h3>
-                        {/* Placeholder for the form fields */}
-                         <div className="p-8 border-2 border-dashed rounded-lg text-center">
+                        <div className="p-8 border-2 border-dashed rounded-lg text-center">
                             <p className="text-muted-foreground">Please specify the fields for this asset type.</p>
                         </div>
                     </div>
