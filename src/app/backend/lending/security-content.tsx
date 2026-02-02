@@ -1,21 +1,22 @@
+
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ShieldCheck, PlusCircle } from "lucide-react";
+import { FileSignature, PlusCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 
-export default function SecurityContent() {
+export default function AcquisitionsContent() {
     return (
         <Card>
             <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                    <ShieldCheck /> Security & Collateral Management
+                    <FileSignature /> Asset Acquisition Records
                 </CardTitle>
                 <CardDescription>
-                    Capture the details of the entity issuing the right or selling the asset being financed. This represents the security for the agreement.
+                    Capture the details of the invoice or purchase agreement from the entity selling the asset. This record documents the transfer of ownership.
                 </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -57,14 +58,14 @@ export default function SecurityContent() {
                 <div className="pt-6 border-t">
                     <h3 className="text-lg font-semibold">Linked Assets (Line Items)</h3>
                     <div className="mt-4 p-6 border-2 border-dashed rounded-lg text-center">
-                        <p className="text-muted-foreground">Assets linked to this security agreement will appear here.</p>
+                        <p className="text-muted-foreground">Assets linked to this purchase will appear here.</p>
                         <Button variant="outline" className="mt-4">
                             <PlusCircle className="mr-2 h-4 w-4" /> Link Asset
                         </Button>
                     </div>
                 </div>
                  <div className="flex justify-end mt-6">
-                    <Button>Save Security Agreement</Button>
+                    <Button>Save Acquisition Record</Button>
                 </div>
             </CardContent>
         </Card>
