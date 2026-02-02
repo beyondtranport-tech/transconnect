@@ -427,7 +427,8 @@
         "properties": {
             "id": { "type": "string" },
             "name": { "type": "string" },
-            "status": { "type": "string" }
+            "status": { "type": "string" },
+            "globalFacilityLimit": { "type": "number", "description": "The maximum total exposure allowed for this client across all facilities." }
         }
     },
     "Agreement": {
@@ -442,10 +443,15 @@
     "Facility": {
         "$schema": "http://json-schema.org/draft-07/schema#",
         "title": "Facility",
-        "description": "Represents a credit facility granted to a client.",
+        "description": "Represents a credit facility granted to a client, often linked to a partner and a specific agreement.",
         "type": "object",
         "properties": {
-            "id": { "type": "string" }
+            "id": { "type": "string" },
+            "agreementId": { "type": "string", "description": "The ID of the lending agreement this facility is tied to." },
+            "partnerId": { "type": "string", "description": "The ID of the lending partner providing funds for this facility." },
+            "limit": { "type": "number", "description": "The maximum amount for this specific facility." },
+            "type": { "type": "string", "enum": ["loan", "lease", "factoring", "installment_sale"], "description": "The type of facility provided." },
+            "status": { "type": "string", "enum": ["active", "inactive", "pending"], "description": "The status of the facility." }
         }
     },
     "LendingTransaction": {
@@ -490,7 +496,8 @@
         "description": "A partner or co-funder in the lending process.",
         "type": "object",
         "properties": {
-            "id": { "type": "string" }
+            "id": { "type": "string" },
+            "globalFacilityLimit": { "type": "number", "description": "The maximum total exposure allowed for this partner across all client facilities." }
         }
     }
   },
