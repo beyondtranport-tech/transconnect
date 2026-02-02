@@ -61,6 +61,7 @@ export default function PartnerDetails({ partnerType }: PartnerDetailsProps) {
             primaryContact: '',
             owners: [{ name: '', address: '', suburb: '', city: '', province: '', postCode: '', idNo: '', cell: '', position: '', qualification: '', since: '', held: 0 }],
             management: [{ name: '', address: '', suburb: '', city: '', province: '', postCode: '', idNo: '', cell: '', position: '', qualification: '', since: '', held: 0, title: '', description: '' }],
+            bankAccounts: [{ bank: '', branchCode: '', accountNo: '', branchName: '', bankCode: '', address: '', postCode: '', phone: '', email: '', contact: '' }],
         }
     });
 
@@ -74,6 +75,11 @@ export default function PartnerDetails({ partnerType }: PartnerDetailsProps) {
     const { fields: managementFields, append: appendManagement, remove: removeManagement } = useFieldArray({
         control,
         name: "management"
+    });
+    
+    const { fields: bankAccountFields, append: appendBankAccount, remove: removeBankAccount } = useFieldArray({
+        control,
+        name: "bankAccounts"
     });
     
     const usePhysicalForPostal = watch('usePhysicalForPostal');
@@ -429,7 +435,50 @@ export default function PartnerDetails({ partnerType }: PartnerDetailsProps) {
                                 </Card>
                             </TabsContent>
 
-                            {partnerTabs.filter(t => !['main', 'dashboard', 'address', 'management', 'owners', 'global-facility', 'contact'].includes(t.value)).map((tab) => (
+                             <TabsContent value="bank-accounts">
+                                <Card className="mt-4">
+                                    <CardHeader className="flex flex-row items-center justify-between">
+                                        <CardTitle>Bank Account Details</CardTitle>
+                                        <Button type="button" variant="outline" size="sm" onClick={() => appendBankAccount({ bank: '', branchCode: '', accountNo: '', branchName: '', bankCode: '', address: '', postCode: '', phone: '', email: '', contact: '' })}>
+                                            <PlusCircle className="mr-2 h-4 w-4" /> Add Bank Account
+                                        </Button>
+                                    </CardHeader>
+                                    <CardContent className="space-y-6">
+                                        {bankAccountFields.map((field, index) => (
+                                            <div key={field.id} className="p-4 border rounded-lg relative space-y-4">
+                                                <div className="flex justify-between items-center">
+                                                    <h3 className="font-semibold text-lg">Bank Account #{index + 1}</h3>
+                                                    <Button type="button" variant="ghost" size="icon" onClick={() => removeBankAccount(index)}>
+                                                        <Trash2 className="h-4 w-4 text-destructive" />
+                                                    </Button>
+                                                </div>
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                    <FormField control={control} name={`bankAccounts.${index}.bank`} render={({ field }) => (<FormItem><FormLabel>Bank</FormLabel><FormControl><Input {...field} placeholder="Bank Name" /></FormControl></FormItem>)} />
+                                                    <FormField control={control} name={`bankAccounts.${index}.branchName`} render={({ field }) => (<FormItem><FormLabel>Branch Name</FormLabel><FormControl><Input {...field} placeholder="Branch Name" /></FormControl></FormItem>)} />
+                                                </div>
+                                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                                    <FormField control={control} name={`bankAccounts.${index}.accountNo`} render={({ field }) => (<FormItem><FormLabel>Account No</FormLabel><FormControl><Input {...field} placeholder="Account Number" /></FormControl></FormItem>)} />
+                                                    <FormField control={control} name={`bankAccounts.${index}.branchCode`} render={({ field }) => (<FormItem><FormLabel>Branch Code</FormLabel><FormControl><Input {...field} placeholder="Branch Code" /></FormControl></FormItem>)} />
+                                                    <FormField control={control} name={`bankAccounts.${index}.bankCode`} render={({ field }) => (<FormItem><FormLabel>Bank Code</FormLabel><FormControl><Input {...field} placeholder="Bank Code" /></FormControl></FormItem>)} />
+                                                </div>
+                                                <Separator />
+                                                <h4 className="text-md font-medium">Bank Contact (Optional)</h4>
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                     <FormField control={control} name={`bankAccounts.${index}.address`} render={({ field }) => (<FormItem><FormLabel>Address</FormLabel><FormControl><Input {...field} placeholder="Bank Address" /></FormControl></FormItem>)} />
+                                                     <FormField control={control} name={`bankAccounts.${index}.postCode`} render={({ field }) => (<FormItem><FormLabel>Post Code</FormLabel><FormControl><Input {...field} placeholder="Post Code" /></FormControl></FormItem>)} />
+                                                </div>
+                                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                                     <FormField control={control} name={`bankAccounts.${index}.contact`} render={({ field }) => (<FormItem><FormLabel>Contact Person</FormLabel><FormControl><Input {...field} placeholder="Contact Person" /></FormControl></FormItem>)} />
+                                                     <FormField control={control} name={`bankAccounts.${index}.phone`} render={({ field }) => (<FormItem><FormLabel>Phone</FormLabel><FormControl><Input {...field} placeholder="Phone Number" /></FormControl></FormItem>)} />
+                                                     <FormField control={control} name={`bankAccounts.${index}.email`} render={({ field }) => (<FormItem><FormLabel>Email</FormLabel><FormControl><Input {...field} type="email" placeholder="Contact Email" /></FormControl></FormItem>)} />
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </CardContent>
+                                </Card>
+                            </TabsContent>
+
+                            {partnerTabs.filter(t => !['main', 'dashboard', 'address', 'management', 'owners', 'global-facility', 'contact', 'bank-accounts'].includes(t.value)).map((tab) => (
                                 <TabsContent key={tab.value} value={tab.value}>
                                     <Card className="mt-4">
                                         <CardHeader>
