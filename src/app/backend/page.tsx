@@ -217,8 +217,7 @@ function BackendContent() {
   const navigate = (view: string) => router.push(`/backend?view=${view}`, { scroll: false });
   
   const isOperationsActive = ['members', 'wallet', 'wallet-transactions', 'shops', 'reconciliation', 'contributions'].includes(activeView);
-  const isLendingActive = activeView.startsWith('lending-');
-  const isPartnersActive = activeView.startsWith('partners-');
+  const isLendingActive = activeView.startsWith('lending-') || activeView.startsWith('partners-');
   const isRevenueActive = [
     'pricing-memberships', 'pricing-connect', 'pricing-tech', 'pricing-marketplace',
     'commissions-malls', 'incentives-sales'
@@ -226,6 +225,8 @@ function BackendContent() {
   const isPlatformSettingsActive = [
     'permissions', 'loyalty', 'tasks', 'settings-bank'
   ].includes(activeView);
+  const isPartnersActive = activeView.startsWith('partners-');
+
 
   return (
     <AdminAuthGuard>
@@ -271,17 +272,19 @@ function BackendContent() {
                     <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'lending-assets'} onClick={() => navigate('lending-assets')}><Truck />Assets</SidebarMenuSubButton></SidebarMenuSubItem>
                     <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'lending-security'} onClick={() => navigate('lending-security')}><FileSignature />Acquisitions</SidebarMenuSubButton></SidebarMenuSubItem>
                     <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'lending-payments'} onClick={() => navigate('lending-payments')}><Banknote />Payments</SidebarMenuSubButton></SidebarMenuSubItem>
-                    <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'lending-partners'} onClick={() => navigate('lending-partners')}><Handshake />Partners</SidebarMenuSubButton></SidebarMenuSubItem>
+                    <SidebarMenuSeparator />
+                    <SidebarMenuSubItem>
+                        <SidebarMenuButton tooltip="Partners" isActive={isPartnersActive}>
+                            <Handshake /><span>Partners</span>
+                        </SidebarMenuButton>
+                        <SidebarMenuSub>
+                            <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'partners-suppliers'} onClick={() => navigate('partners-suppliers')}><Building />Suppliers</SidebarMenuSubButton></SidebarMenuSubItem>
+                            <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'partners-vendors'} onClick={() => navigate('partners-vendors')}><Store />Vendors</SidebarMenuSubButton></SidebarMenuSubItem>
+                            <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'partners-associates'} onClick={() => navigate('partners-associates')}><Briefcase />Associates</SidebarMenuSubButton></SidebarMenuSubItem>
+                            <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'partners-debtors'} onClick={() => navigate('partners-debtors')}><Users />Debtors</SidebarMenuSubButton></SidebarMenuSubItem>
+                        </SidebarMenuSub>
+                    </SidebarMenuSubItem>
                   </SidebarMenuSub>
-                </SidebarMenuItem>
-                 <SidebarMenuItem>
-                    <SidebarMenuButton tooltip="Partners" isActive={isPartnersActive}><Handshake /><span>Partners</span></SidebarMenuButton>
-                    <SidebarMenuSub>
-                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'partners-suppliers'} onClick={() => navigate('partners-suppliers')}><Building />Suppliers</SidebarMenuSubButton></SidebarMenuSubItem>
-                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'partners-vendors'} onClick={() => navigate('partners-vendors')}><Store />Vendors</SidebarMenuSubButton></SidebarMenuSubItem>
-                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'partners-associates'} onClick={() => navigate('partners-associates')}><Briefcase />Associates</SidebarMenuSubButton></SidebarMenuSubItem>
-                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'partners-debtors'} onClick={() => navigate('partners-debtors')}><Users />Debtors</SidebarMenuSubButton></SidebarMenuSubItem>
-                    </SidebarMenuSub>
                 </SidebarMenuItem>
                 <SidebarMenuItem>
                     <SidebarMenuButton tooltip="Revenue & Pricing" isActive={isRevenueActive}><DollarSign /><span>Revenue & Pricing</span></SidebarMenuButton>
