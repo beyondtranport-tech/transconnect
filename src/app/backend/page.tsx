@@ -89,7 +89,6 @@ const AgreementsContent = dynamic(() => import('./lending/agreements-content'), 
 const FacilitiesContent = dynamic(() => import('./lending/facilities-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const LendingTransactionsContent = dynamic(() => import('./lending/transactions-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const AssetsContent = dynamic(() => import('./lending/assets-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const AcquisitionsContent = dynamic(() => import('./lending/security-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const PaymentsContent = dynamic(() => import('./lending/payments-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const LendingPartnersContent = dynamic(() => import('./lending/partners-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const PartnerDetails = dynamic(() => import('./lending/partner-details'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
@@ -175,7 +174,6 @@ function BackendContent() {
       case 'lending-facilities': return <FacilitiesContent />;
       case 'lending-transactions': return <LendingTransactionsContent />;
       case 'lending-assets': return <AssetsContent />;
-      case 'lending-security': return <AcquisitionsContent />;
       case 'lending-payments': return <PaymentsContent />;
       case 'lending-partners': return <LendingPartnersContent />;
 
@@ -271,7 +269,6 @@ function BackendContent() {
                     <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'lending-facilities'} onClick={() => navigate('lending-facilities')}><Landmark />Facilities</SidebarMenuSubButton></SidebarMenuSubItem>
                     <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'lending-transactions'} onClick={() => navigate('lending-transactions')}><DollarSign />Transactions</SidebarMenuSubButton></SidebarMenuSubItem>
                     <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'lending-assets'} onClick={() => navigate('lending-assets')}><Truck />Assets</SidebarMenuSubButton></SidebarMenuSubItem>
-                    <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'lending-security'} onClick={() => navigate('lending-security')}><FileSignature />Acquisitions</SidebarMenuSubButton></SidebarMenuSubItem>
                     <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'lending-payments'} onClick={() => navigate('lending-payments')}><Banknote />Payments</SidebarMenuSubButton></SidebarMenuSubItem>
                     <SidebarMenuSeparator />
                     <SidebarMenuSubItem>
