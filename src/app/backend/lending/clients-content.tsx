@@ -11,7 +11,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
 import { useForm, useFieldArray, FormProvider } from "react-hook-form";
 import { Button } from "@/components/ui/button";
-import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import * as React from "react";
 import { useEffect } from 'react';
 import { Textarea } from "@/components/ui/textarea";
@@ -359,56 +359,7 @@ export default function ClientsContent() {
                                 <Card className="mt-4">
                                     <CardHeader><CardTitle>Bank Account Details</CardTitle></CardHeader>
                                     <CardContent>
-                                        <div className="space-y-4 max-w-2xl">
-                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                <div className="space-y-2">
-                                                    <Label htmlFor="bank-name">Bank</Label>
-                                                    <Input id="bank-name" placeholder="Bank Name" />
-                                                </div>
-                                                <div className="space-y-2">
-                                                    <Label htmlFor="branch-name">Branch Name</Label>
-                                                    <Input id="branch-name" placeholder="Branch Name" />
-                                                </div>
-                                            </div>
-                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                                <div className="space-y-2">
-                                                    <Label htmlFor="account-no">Account No</Label>
-                                                    <Input id="account-no" placeholder="Account Number" />
-                                                </div>
-                                                <div className="space-y-2">
-                                                    <Label htmlFor="branch-code">Branch Code</Label>
-                                                    <Input id="branch-code" placeholder="Branch Code" />
-                                                </div>
-                                                <div className="space-y-2">
-                                                    <Label htmlFor="bank-code">Bank Code</Label>
-                                                    <Input id="bank-code" placeholder="Bank Code" />
-                                                </div>
-                                            </div>
-                                            <div className="space-y-2">
-                                                <Label htmlFor="bank-address">Address</Label>
-                                                <Input id="bank-address" placeholder="Bank Address" />
-                                            </div>
-                                            <div className="space-y-2 md:w-1/3">
-                                                <Label htmlFor="bank-post-code">Post Code</Label>
-                                                <Input id="bank-post-code" placeholder="Post Code" />
-                                            </div>
-                                            <Separator className="my-6" />
-                                            <h4 className="text-md font-medium">Bank Contact Person</h4>
-                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                <div className="space-y-2">
-                                                    <Label htmlFor="bank-contact">Contact</Label>
-                                                    <Input id="bank-contact" placeholder="Contact Person" />
-                                                </div>
-                                                <div className="space-y-2">
-                                                    <Label htmlFor="bank-phone">Phone</Label>
-                                                    <Input id="bank-phone" placeholder="Phone Number" />
-                                                </div>
-                                                <div className="space-y-2 md:col-span-2">
-                                                    <Label htmlFor="bank-email">Email</Label>
-                                                    <Input id="bank-email" type="email" placeholder="Contact Email" />
-                                                </div>
-                                            </div>
-                                        </div>
+                                        <p className="text-muted-foreground">Bank account form will go here.</p>
                                     </CardContent>
                                 </Card>
                             </TabsContent>
@@ -512,7 +463,7 @@ export default function ClientsContent() {
                                     </CardContent>
                                 </Card>
                             </TabsContent>
-                            <TabsContent value="sub-facilities">
+                             <TabsContent value="sub-facilities">
                                 <Card className="mt-4">
                                     <CardHeader>
                                         <CardTitle>Sub-Facilities Management</CardTitle>
