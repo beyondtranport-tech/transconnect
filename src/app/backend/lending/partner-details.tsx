@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -140,29 +139,13 @@ export default function PartnerDetails({ partnerType }: PartnerDetailsProps) {
                                                     <Input id="partner-code" placeholder="Partner Code" />
                                                 </div>
                                                  <div className="space-y-2">
-                                                    <Label htmlFor="partner-facility">Facility #</Label>
-                                                    <Input id="partner-facility" placeholder="Facility Number" />
+                                                    <Label htmlFor="partner-name">Name</Label>
+                                                    <Input id="partner-name" placeholder="Partner Name" />
                                                 </div>
                                             </div>
                                              <div className="space-y-2">
-                                                <Label htmlFor="partner-name">Name</Label>
-                                                <Input id="partner-name" placeholder="Partner Name" />
-                                            </div>
-                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                <div className="space-y-2">
-                                                    <Label htmlFor="partner-language">Language</Label>
-                                                    <Select>
-                                                        <SelectTrigger id="partner-language"><SelectValue placeholder="Select Language" /></SelectTrigger>
-                                                        <SelectContent>
-                                                            <SelectItem value="en">English</SelectItem>
-                                                            <SelectItem value="af">Afrikaans</SelectItem>
-                                                        </SelectContent>
-                                                    </Select>
-                                                </div>
-                                                 <div className="space-y-2">
-                                                    <Label htmlFor="partner-reg">Co Reg. #</Label>
-                                                    <Input id="partner-reg" placeholder="Company Registration Number" />
-                                                </div>
+                                                <Label htmlFor="partner-reg">Co Reg. #</Label>
+                                                <Input id="partner-reg" placeholder="Company Registration Number" />
                                             </div>
                                             <Separator className="my-6" />
                                             <h3 className="text-lg font-semibold">General Contact Information</h3>
