@@ -13,7 +13,7 @@ import { useForm, useFieldArray, FormProvider } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form';
 import * as React from "react";
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { Textarea } from "@/components/ui/textarea";
 import { provinces } from "@/lib/geodata";
 
@@ -38,34 +38,37 @@ interface PartnerDetailsProps {
 }
 
 export default function PartnerDetails({ partnerType }: PartnerDetailsProps) {
+
+    const defaultValues = useMemo(() => ({
+        usePhysicalForPostal: false,
+        physicalStreet: '',
+        physicalSuburb: '',
+        physicalCity: '',
+        physicalPostCode: '',
+        postalStreet: '',
+        postalSuburb: '',
+        postalCity: '',
+        postalPostCode: '',
+        facilityNo: '',
+        facilityDate: '',
+        signatory: '',
+        facilityLimit: 0,
+        telW: '',
+        telH: '',
+        fax: '',
+        cell: '',
+        email: '',
+        url: '',
+        primaryContact: '',
+        owners: [{ name: '', address: '', suburb: '', city: '', province: '', postCode: '', idNo: '', cell: '', position: '', qualification: '', since: '', held: 0 }],
+        management: [{ name: '', address: '', suburb: '', city: '', province: '', postCode: '', idNo: '', cell: '', position: '', qualification: '', since: '', held: 0, title: '', description: '' }],
+        bankAccounts: [{ bank: '', branchCode: '', accountNo: '', branchName: '', bankCode: '', address: '', postCode: '', phone: '', email: '', contact: '' }],
+        balanceSheets: [{ statementDate: '', propertyPlantEquipment: 0, intangibleAssets: 0, financialAssets: 0, inventories: 0, tradeReceivables: 0, cashEquivalents: 0, shareCapital: 0, retainedEarnings: 0, longTermBorrowings: 0, leaseLiabilities: 0, tradePayables: 0, shortTermBorrowings: 0, currentTaxPayable: 0 }],
+        incomeStatements: [{ statementDate: '', revenue: 0, costOfSales: 0, grossProfit: 0, otherIncome: 0, operatingExpenses: 0, operatingProfit: 0, financeCosts: 0, profitBeforeTax: 0, incomeTaxExpense: 0, profitForThePeriod: 0 }],
+    }), []);
+
     const formMethods = useForm({
-        defaultValues: {
-            usePhysicalForPostal: false,
-            physicalStreet: '',
-            physicalSuburb: '',
-            physicalCity: '',
-            physicalPostCode: '',
-            postalStreet: '',
-            postalSuburb: '',
-            postalCity: '',
-            postalPostCode: '',
-            facilityNo: '',
-            facilityDate: '',
-            signatory: '',
-            facilityLimit: 0,
-            telW: '',
-            telH: '',
-            fax: '',
-            cell: '',
-            email: '',
-            url: '',
-            primaryContact: '',
-            owners: [{ name: '', address: '', suburb: '', city: '', province: '', postCode: '', idNo: '', cell: '', position: '', qualification: '', since: '', held: 0 }],
-            management: [{ name: '', address: '', suburb: '', city: '', province: '', postCode: '', idNo: '', cell: '', position: '', qualification: '', since: '', held: 0, title: '', description: '' }],
-            bankAccounts: [{ bank: '', branchCode: '', accountNo: '', branchName: '', bankCode: '', address: '', postCode: '', phone: '', email: '', contact: '' }],
-            balanceSheets: [{ statementDate: '', propertyPlantEquipment: 0, intangibleAssets: 0, financialAssets: 0, inventories: 0, tradeReceivables: 0, cashEquivalents: 0, shareCapital: 0, retainedEarnings: 0, longTermBorrowings: 0, leaseLiabilities: 0, tradePayables: 0, shortTermBorrowings: 0, currentTaxPayable: 0 }],
-            incomeStatements: [{ statementDate: '', revenue: 0, costOfSales: 0, grossProfit: 0, otherIncome: 0, operatingExpenses: 0, operatingProfit: 0, financeCosts: 0, profitBeforeTax: 0, incomeTaxExpense: 0, profitForThePeriod: 0 }],
-        }
+        defaultValues,
     });
 
     const { control, watch, setValue } = formMethods;
