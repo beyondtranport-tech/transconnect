@@ -51,6 +51,15 @@ function InviteDialog({ lead, companyId, onInviteSent }: { lead: any, companyId:
     };
 
     const handleGenerateLink = async () => {
+        if (!lead.email) {
+            toast({
+                variant: 'destructive',
+                title: 'Cannot Invite Lead',
+                description: 'This lead does not have an email address. Please edit the lead to add one before inviting.',
+            });
+            return;
+        }
+
         setIsLoading(true);
         try {
             const token = await getClientSideAuthToken();
@@ -68,8 +77,12 @@ function InviteDialog({ lead, companyId, onInviteSent }: { lead: any, companyId:
             const result = await response.json();
             if (!result.success) throw new Error(result.error);
 
-            // Construct simple join link
-            const link = `https://transconnect-v1-39578841-2a857.firebaseapp.com/join?email=${encodeURIComponent(lead.email)}`;
+            const nameParts = (lead.contactPerson || '').split(' ');
+            const firstName = nameParts[0] || '';
+            const lastName = nameParts.slice(1).join(' ') || '';
+
+            const link = `${window.location.origin}/join?email=${encodeURIComponent(lead.email)}&firstName=${encodeURIComponent(firstName)}&lastName=${encodeURIComponent(lastName)}${lead.phone ? `&phone=${encodeURIComponent(lead.phone)}` : ''}`;
+            
             setInviteLink(link);
             
             toast({ title: "Invite Link Generated", description: "You can now share the secure link." });
@@ -361,6 +374,7 @@ export default function NetworkContent() {
     
 
     
+
 
 
 
