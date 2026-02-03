@@ -1,4 +1,3 @@
-
 'use client';
 
 import data from "@/lib/placeholder-images.json";
@@ -77,8 +76,7 @@ const processSteps = [
 
 export default function FinancierCategoryPage({ params }: { params: { category: string } }) {
     
-    const resolvedParams = React.use(params);
-    const category = categoryDetails[resolvedParams.category as keyof typeof categoryDetails];
+    const category = categoryDetails[params.category as keyof typeof categoryDetails];
 
     if (!category) {
         notFound();
