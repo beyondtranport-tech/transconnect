@@ -13,6 +13,9 @@ import { useForm, useFieldArray, FormProvider } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
 import * as React from "react";
+import { useEffect } from 'react';
+import { Textarea } from "@/components/ui/textarea";
+import { provinces } from "@/lib/geodata";
 
 
 const clientTabs = [
@@ -30,14 +33,16 @@ const clientTabs = [
 
 export default function ClientsContent() {
 
-    const form = useForm({
+    const formMethods = useForm({
         defaultValues: {
             owners: [{ name: '', address: '', suburb: '', city: '', province: '', postCode: '', idNo: '', cell: '', position: '', qualification: '', since: '', held: 0 }],
             management: [{ name: '', address: '', suburb: '', city: '', province: '', postCode: '', idNo: '', cell: '', position: '', qualification: '', since: '', held: 0 }],
+            balanceSheets: [{ statementDate: '', propertyPlantEquipment: 0, intangibleAssets: 0, financialAssets: 0, inventories: 0, tradeReceivables: 0, cashEquivalents: 0, shareCapital: 0, retainedEarnings: 0, longTermBorrowings: 0, leaseLiabilities: 0, tradePayables: 0, shortTermBorrowings: 0, currentTaxPayable: 0 }],
+            incomeStatements: [{ statementDate: '', revenue: 0, costOfSales: 0, grossProfit: 0, otherIncome: 0, operatingExpenses: 0, operatingProfit: 0, financeCosts: 0, profitBeforeTax: 0, incomeTaxExpense: 0, profitForThePeriod: 0 }],
         }
     });
 
-    const { control } = form;
+    const { control } = formMethods;
 
     const { fields: ownerFields, append: appendOwner, remove: removeOwner } = useFieldArray({
         control,
@@ -49,8 +54,18 @@ export default function ClientsContent() {
         name: "management"
     });
 
+    const { fields: balanceSheetFields, append: appendBalanceSheet, remove: removeBalanceSheet } = useFieldArray({
+        control,
+        name: "balanceSheets"
+    });
+
+    const { fields: incomeStatementFields, append: appendIncomeStatement, remove: removeIncomeStatement } = useFieldArray({
+        control,
+        name: "incomeStatements"
+    });
+
     return (
-        <FormProvider {...form}>
+        <FormProvider {...formMethods}>
             <form>
                 <Card>
                     <CardHeader>
@@ -398,70 +413,102 @@ export default function ClientsContent() {
                                 </Card>
                             </TabsContent>
                              <TabsContent value="balance-sheet">
-                               <Card className="mt-4">
-                                    <CardHeader><CardTitle>Statement of Financial Position (Balance Sheet)</CardTitle></CardHeader>
+                                <Card className="mt-4">
+                                    <CardHeader className="flex flex-row items-center justify-between">
+                                        <CardTitle>Statement of Financial Position (Balance Sheet)</CardTitle>
+                                        <Button type="button" variant="outline" size="sm" onClick={() => appendBalanceSheet({ statementDate: '', propertyPlantEquipment: 0, intangibleAssets: 0, financialAssets: 0, inventories: 0, tradeReceivables: 0, cashEquivalents: 0, shareCapital: 0, retainedEarnings: 0, longTermBorrowings: 0, leaseLiabilities: 0, tradePayables: 0, shortTermBorrowings: 0, currentTaxPayable: 0 })}>
+                                            <PlusCircle className="mr-2 h-4 w-4" /> Add Instance
+                                        </Button>
+                                    </CardHeader>
                                     <CardContent className="space-y-6">
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                            <div className="space-y-4">
-                                                <h3 className="font-semibold text-lg border-b pb-2">Assets</h3>
-                                                <h4 className="font-medium text-muted-foreground">Non-Current Assets</h4>
-                                                <div className="space-y-2 pl-4">
-                                                    <Label>Property, Plant and Equipment</Label><Input type="number" placeholder="R 0.00" />
-                                                    <Label>Intangible Assets</Label><Input type="number" placeholder="R 0.00" />
-                                                    <Label>Financial Assets</Label><Input type="number" placeholder="R 0.00" />
+                                        {balanceSheetFields.map((field, index) => (
+                                            <Card key={field.id} className="p-4 relative">
+                                                <div className="flex justify-between items-center mb-4">
+                                                    <FormField control={control} name={`balanceSheets.${index}.statementDate`} render={({ field }) => (
+                                                        <FormItem className="flex-grow max-w-xs">
+                                                            <FormLabel>Statement Date</FormLabel>
+                                                            <FormControl><Input type="date" {...field} /></FormControl>
+                                                        </FormItem>
+                                                    )} />
+                                                    <Button type="button" variant="ghost" size="icon" onClick={() => removeBalanceSheet(index)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
                                                 </div>
-                                                <h4 className="font-medium text-muted-foreground pt-2">Current Assets</h4>
-                                                <div className="space-y-2 pl-4">
-                                                    <Label>Inventories</Label><Input type="number" placeholder="R 0.00" />
-                                                    <Label>Trade and Other Receivables</Label><Input type="number" placeholder="R 0.00" />
-                                                    <Label>Cash and Cash Equivalents</Label><Input type="number" placeholder="R 0.00" />
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                                    <div className="space-y-4">
+                                                        <h3 className="font-semibold text-lg border-b pb-2">Assets</h3>
+                                                        <h4 className="font-medium text-muted-foreground">Non-Current Assets</h4>
+                                                        <div className="space-y-2 pl-4">
+                                                            <FormField control={control} name={`balanceSheets.${index}.propertyPlantEquipment`} render={({ field }) => (<FormItem><FormLabel>Property, Plant and Equipment</FormLabel><FormControl><Input type="number" placeholder="R 0.00" {...field} /></FormControl></FormItem>)} />
+                                                            <FormField control={control} name={`balanceSheets.${index}.intangibleAssets`} render={({ field }) => (<FormItem><FormLabel>Intangible Assets</FormLabel><FormControl><Input type="number" placeholder="R 0.00" {...field} /></FormControl></FormItem>)} />
+                                                            <FormField control={control} name={`balanceSheets.${index}.financialAssets`} render={({ field }) => (<FormItem><FormLabel>Financial Assets</FormLabel><FormControl><Input type="number" placeholder="R 0.00" {...field} /></FormControl></FormItem>)} />
+                                                        </div>
+                                                        <h4 className="font-medium text-muted-foreground pt-2">Current Assets</h4>
+                                                        <div className="space-y-2 pl-4">
+                                                             <FormField control={control} name={`balanceSheets.${index}.inventories`} render={({ field }) => (<FormItem><FormLabel>Inventories</FormLabel><FormControl><Input type="number" placeholder="R 0.00" {...field} /></FormControl></FormItem>)} />
+                                                            <FormField control={control} name={`balanceSheets.${index}.tradeReceivables`} render={({ field }) => (<FormItem><FormLabel>Trade and Other Receivables</FormLabel><FormControl><Input type="number" placeholder="R 0.00" {...field} /></FormControl></FormItem>)} />
+                                                            <FormField control={control} name={`balanceSheets.${index}.cashEquivalents`} render={({ field }) => (<FormItem><FormLabel>Cash and Cash Equivalents</FormLabel><FormControl><Input type="number" placeholder="R 0.00" {...field} /></FormControl></FormItem>)} />
+                                                        </div>
+                                                    </div>
+                                                    <div className="space-y-4">
+                                                        <h3 className="font-semibold text-lg border-b pb-2">Equity and Liabilities</h3>
+                                                        <h4 className="font-medium text-muted-foreground">Equity</h4>
+                                                        <div className="space-y-2 pl-4">
+                                                            <FormField control={control} name={`balanceSheets.${index}.shareCapital`} render={({ field }) => (<FormItem><FormLabel>Share Capital</FormLabel><FormControl><Input type="number" placeholder="R 0.00" {...field} /></FormControl></FormItem>)} />
+                                                            <FormField control={control} name={`balanceSheets.${index}.retainedEarnings`} render={({ field }) => (<FormItem><FormLabel>Retained Earnings</FormLabel><FormControl><Input type="number" placeholder="R 0.00" {...field} /></FormControl></FormItem>)} />
+                                                        </div>
+                                                        <h4 className="font-medium text-muted-foreground pt-2">Non-Current Liabilities</h4>
+                                                        <div className="space-y-2 pl-4">
+                                                            <FormField control={control} name={`balanceSheets.${index}.longTermBorrowings`} render={({ field }) => (<FormItem><FormLabel>Long-Term Borrowings</FormLabel><FormControl><Input type="number" placeholder="R 0.00" {...field} /></FormControl></FormItem>)} />
+                                                            <FormField control={control} name={`balanceSheets.${index}.leaseLiabilities`} render={({ field }) => (<FormItem><FormLabel>Lease Liabilities</FormLabel><FormControl><Input type="number" placeholder="R 0.00" {...field} /></FormControl></FormItem>)} />
+                                                        </div>
+                                                        <h4 className="font-medium text-muted-foreground pt-2">Current Liabilities</h4>
+                                                        <div className="space-y-2 pl-4">
+                                                             <FormField control={control} name={`balanceSheets.${index}.tradePayables`} render={({ field }) => (<FormItem><FormLabel>Trade and Other Payables</FormLabel><FormControl><Input type="number" placeholder="R 0.00" {...field} /></FormControl></FormItem>)} />
+                                                            <FormField control={control} name={`balanceSheets.${index}.shortTermBorrowings`} render={({ field }) => (<FormItem><FormLabel>Short-Term Borrowings</FormLabel><FormControl><Input type="number" placeholder="R 0.00" {...field} /></FormControl></FormItem>)} />
+                                                            <FormField control={control} name={`balanceSheets.${index}.currentTaxPayable`} render={({ field }) => (<FormItem><FormLabel>Current Tax Payable</FormLabel><FormControl><Input type="number" placeholder="R 0.00" {...field} /></FormControl></FormItem>)} />
+                                                        </div>
+                                                    </div>
                                                 </div>
-                                            </div>
-                                            <div className="space-y-4">
-                                                <h3 className="font-semibold text-lg border-b pb-2">Equity and Liabilities</h3>
-                                                <h4 className="font-medium text-muted-foreground">Equity</h4>
-                                                <div className="space-y-2 pl-4">
-                                                    <Label>Share Capital</Label><Input type="number" placeholder="R 0.00" />
-                                                    <Label>Retained Earnings</Label><Input type="number" placeholder="R 0.00" />
-                                                </div>
-                                                <h4 className="font-medium text-muted-foreground pt-2">Non-Current Liabilities</h4>
-                                                <div className="space-y-2 pl-4">
-                                                    <Label>Long-Term Borrowings</Label><Input type="number" placeholder="R 0.00" />
-                                                    <Label>Lease Liabilities</Label><Input type="number" placeholder="R 0.00" />
-                                                </div>
-                                                <h4 className="font-medium text-muted-foreground pt-2">Current Liabilities</h4>
-                                                <div className="space-y-2 pl-4">
-                                                    <Label>Trade and Other Payables</Label><Input type="number" placeholder="R 0.00" />
-                                                    <Label>Short-Term Borrowings</Label><Input type="number" placeholder="R 0.00" />
-                                                    <Label>Current Tax Payable</Label><Input type="number" placeholder="R 0.00" />
-                                                </div>
-                                            </div>
-                                        </div>
+                                            </Card>
+                                        ))}
                                     </CardContent>
                                 </Card>
                             </TabsContent>
                             <TabsContent value="income-statement">
-                                <Card className="mt-4">
-                                    <CardHeader><CardTitle>Statement of Comprehensive Income (Income Statement)</CardTitle></CardHeader>
-                                    <CardContent className="space-y-4 max-w-2xl">
-                                        <div className="space-y-2">
-                                            <Label>Revenue</Label><Input type="number" placeholder="R 0.00" />
-                                            <Label>Cost of Sales</Label><Input type="number" placeholder="R 0.00" />
-                                            <Label>Gross Profit</Label><Input type="number" placeholder="R 0.00" disabled className="font-bold" />
-                                        </div>
-                                        <Separator />
-                                        <div className="space-y-2">
-                                            <Label>Other Income</Label><Input type="number" placeholder="R 0.00" />
-                                            <Label>Operating Expenses</Label><Input type="number" placeholder="R 0.00" />
-                                            <Label>Operating Profit</Label><Input type="number" placeholder="R 0.00" disabled className="font-bold" />
-                                        </div>
-                                        <Separator />
-                                        <div className="space-y-2">
-                                            <Label>Finance Costs</Label><Input type="number" placeholder="R 0.00" />
-                                            <Label>Profit Before Tax</Label><Input type="number" placeholder="R 0.00" disabled className="font-bold" />
-                                            <Label>Income Tax Expense</Label><Input type="number" placeholder="R 0.00" />
-                                            <Label>Profit for the Period</Label><Input type="number" placeholder="R 0.00" disabled className="font-bold text-primary" />
-                                        </div>
+                               <Card className="mt-4">
+                                    <CardHeader className="flex flex-row items-center justify-between">
+                                        <CardTitle>Statement of Comprehensive Income (Income Statement)</CardTitle>
+                                        <Button type="button" variant="outline" size="sm" onClick={() => appendIncomeStatement({ statementDate: '', revenue: 0, costOfSales: 0, grossProfit: 0, otherIncome: 0, operatingExpenses: 0, operatingProfit: 0, financeCosts: 0, profitBeforeTax: 0, incomeTaxExpense: 0, profitForThePeriod: 0 })}>
+                                            <PlusCircle className="mr-2 h-4 w-4" /> Add Instance
+                                        </Button>
+                                    </CardHeader>
+                                    <CardContent className="space-y-6">
+                                        {incomeStatementFields.map((field, index) => (
+                                            <Card key={field.id} className="p-4 relative max-w-2xl mx-auto">
+                                                <div className="flex justify-between items-center mb-4">
+                                                    <FormField control={control} name={`incomeStatements.${index}.statementDate`} render={({ field }) => (
+                                                        <FormItem className="flex-grow max-w-xs">
+                                                            <FormLabel>Statement Date</FormLabel>
+                                                            <FormControl><Input type="date" {...field} /></FormControl>
+                                                        </FormItem>
+                                                    )} />
+                                                    <Button type="button" variant="ghost" size="icon" onClick={() => removeIncomeStatement(index)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                                                </div>
+                                                <div className="space-y-4">
+                                                    <FormField control={control} name={`incomeStatements.${index}.revenue`} render={({ field }) => (<FormItem><FormLabel>Revenue</FormLabel><FormControl><Input type="number" placeholder="R 0.00" {...field} /></FormControl></FormItem>)} />
+                                                    <FormField control={control} name={`incomeStatements.${index}.costOfSales`} render={({ field }) => (<FormItem><FormLabel>Cost of Sales</FormLabel><FormControl><Input type="number" placeholder="R 0.00" {...field} /></FormControl></FormItem>)} />
+                                                    <FormField control={control} name={`incomeStatements.${index}.grossProfit`} render={({ field }) => (<FormItem><FormLabel>Gross Profit</FormLabel><FormControl><Input type="number" placeholder="R 0.00" disabled className="font-bold" {...field} /></FormControl></FormItem>)} />
+                                                    <Separator />
+                                                    <FormField control={control} name={`incomeStatements.${index}.otherIncome`} render={({ field }) => (<FormItem><FormLabel>Other Income</FormLabel><FormControl><Input type="number" placeholder="R 0.00" {...field} /></FormControl></FormItem>)} />
+                                                    <FormField control={control} name={`incomeStatements.${index}.operatingExpenses`} render={({ field }) => (<FormItem><FormLabel>Operating Expenses</FormLabel><FormControl><Input type="number" placeholder="R 0.00" {...field} /></FormControl></FormItem>)} />
+                                                    <FormField control={control} name={`incomeStatements.${index}.operatingProfit`} render={({ field }) => (<FormItem><FormLabel>Operating Profit</FormLabel><FormControl><Input type="number" placeholder="R 0.00" disabled className="font-bold" {...field} /></FormControl></FormItem>)} />
+                                                    <Separator />
+                                                    <FormField control={control} name={`incomeStatements.${index}.financeCosts`} render={({ field }) => (<FormItem><FormLabel>Finance Costs</FormLabel><FormControl><Input type="number" placeholder="R 0.00" {...field} /></FormControl></FormItem>)} />
+                                                    <FormField control={control} name={`incomeStatements.${index}.profitBeforeTax`} render={({ field }) => (<FormItem><FormLabel>Profit Before Tax</FormLabel><FormControl><Input type="number" placeholder="R 0.00" disabled className="font-bold" {...field} /></FormControl></FormItem>)} />
+                                                    <FormField control={control} name={`incomeStatements.${index}.incomeTaxExpense`} render={({ field }) => (<FormItem><FormLabel>Income Tax Expense</FormLabel><FormControl><Input type="number" placeholder="R 0.00" {...field} /></FormControl></FormItem>)} />
+                                                    <FormField control={control} name={`incomeStatements.${index}.profitForThePeriod`} render={({ field }) => (<FormItem><FormLabel>Profit for the Period</FormLabel><FormControl><Input type="number" placeholder="R 0.00" disabled className="font-bold text-primary" {...field} /></FormControl></FormItem>)} />
+                                                </div>
+                                            </Card>
+                                        ))}
                                     </CardContent>
                                 </Card>
                             </TabsContent>
