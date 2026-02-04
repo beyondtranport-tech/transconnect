@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -63,6 +64,10 @@ function AddTransactionDialog({ client, agreement, onSave }: { client: any, agre
             effectiveDate: new Date().toISOString().split('T')[0],
         }
     });
+    
+    const { watch } = form;
+    const selectedTransactionType = watch('transactionType');
+
 
     const onSubmit = async (values: TransactionFormValues) => {
         setIsLoading(true);
@@ -140,27 +145,28 @@ function AddTransactionDialog({ client, agreement, onSave }: { client: any, agre
 export default function TransactionsContent() {
     const [transactions, setTransactions] = useState(dummyTransactions);
     const firestore = useFirestore();
-    const [selectedClient, setSelectedClient] = useState<any | null>(null);
-    const [selectedAgreement, setSelectedAgreement] = useState<any | null>(null);
+    const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
+    const [selectedAgreementId, setSelectedAgreementId] = useState<string | null>(null);
 
     const clientsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'lendingClients')) : null, [firestore]);
     const { data: clients, isLoading: areClientsLoading } = useCollection(clientsQuery);
     
     const agreementsQuery = useMemoFirebase(() => {
-        if (!firestore || !selectedClient) return null;
-        return query(collection(firestore, `lendingClients/${selectedClient.id}/agreements`));
-    }, [firestore, selectedClient]);
+        if (!firestore || !selectedClientId) return null;
+        return query(collection(firestore, `lendingClients/${selectedClientId}/agreements`));
+    }, [firestore, selectedClientId]);
     const { data: agreements, isLoading: areAgreementsLoading } = useCollection(agreementsQuery);
+
+    const selectedClient = useMemo(() => clients?.find(c => c.id === selectedClientId) || null, [clients, selectedClientId]);
+    const selectedAgreement = useMemo(() => agreements?.find(a => a.id === selectedAgreementId) || null, [agreements, selectedAgreementId]);
     
     const handleClientChange = (clientId: string) => {
-        const client = clients?.find(c => c.id === clientId);
-        setSelectedClient(client || null);
-        setSelectedAgreement(null); 
+        setSelectedClientId(clientId);
+        setSelectedAgreementId(null); 
     };
 
     const handleAgreementChange = (agreementId: string) => {
-        const agreement = agreements?.find(a => a.id === agreementId);
-        setSelectedAgreement(agreement || null);
+        setSelectedAgreementId(agreementId);
     };
 
     const handleSaveJournal = (data: any) => {
@@ -169,7 +175,7 @@ export default function TransactionsContent() {
             ...data,
             balance: latestBalance + data.amount,
         };
-        setTransactions(prev => [...prev, newTransaction]);
+        setTransactions(prev => [...prev, newTransaction].sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
     };
 
     return (
@@ -199,7 +205,7 @@ export default function TransactionsContent() {
                     </div>
                      <div className="space-y-2">
                         <Label htmlFor="agreement-select">2. Select Agreement</Label>
-                         <Select onValueChange={handleAgreementChange} disabled={!selectedClient || areAgreementsLoading}>
+                         <Select onValueChange={handleAgreementChange} disabled={!selectedClient || areAgreementsLoading} value={selectedAgreementId || ''}>
                             <SelectTrigger id="agreement-select">
                                 <SelectValue placeholder={areAgreementsLoading ? "Loading..." : "Select an agreement..."} />
                             </SelectTrigger>
@@ -244,4 +250,6 @@ export default function TransactionsContent() {
         </Card>
     );
 }
+    
+
     
