@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -13,44 +13,75 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DollarSign, PlusCircle, Loader2, Save } from "lucide-react";
 import { useToast } from '@/hooks/use-toast';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { collection, query } from 'firebase/firestore';
+import { Label } from '@/components/ui/label';
+import { Textarea } from "@/components/ui/textarea";
 
-const journalSchema = z.object({
-  date: z.string().min(1, "Date is required."),
-  journalType: z.string().min(1, "Journal type is required."),
-  reference: z.string().min(1, "Reference is required."),
-  detail: z.string().min(1, "Detail is required."),
-  amount: z.coerce.number(),
+const transactionSchema = z.object({
+  transactionType: z.string().min(1, "Please select a transaction type."),
+  paymentNo: z.string().optional(),
+  effectiveDate: z.string().min(1, "Date is required."),
+  interest: z.coerce.number().optional().default(0),
+  capital: z.coerce.number().optional().default(0),
+  reference: z.string().optional(),
+  comment: z.string().optional(),
+}).refine(data => data.interest !== 0 || data.capital !== 0, {
+  message: "Either Interest or Capital must have a value.",
+  path: ["capital"], // Assign error to a specific field
 });
 
-type JournalFormValues = z.infer<typeof journalSchema>;
+type TransactionFormValues = z.infer<typeof transactionSchema>;
+
+const transactionTypes = {
+    'cash-credit': { label: 'Cash Credit (CR)', type: 'credit' },
+    'deposit-payment': { label: 'Deposit payment (CR)', type: 'credit' },
+    'internal-receipt': { label: 'Internal receipt (CR)', type: 'credit' },
+    'journal-debit': { label: 'Journal debit (DR)', type: 'debit' },
+    'journal-credit': { label: 'Journal credit (CR)', type: 'credit' },
+    'paid-up': { label: 'Paid up (CR)', type: 'credit' },
+    'settled': { label: 'Settled (CR)', type: 'credit' },
+};
 
 // Dummy data for demonstration
 const dummyTransactions = [
-  { id: 'txn-1', date: '2024-08-01', journal: 'Disbursement', reference: 'AG-101', detail: 'Initial loan payout', amount: -500000, balance: -500000 },
-  { id: 'txn-2', date: '2024-09-01', journal: 'Payment', reference: 'EFT-CLIENT-001', detail: 'First installment', amount: 12000, balance: -488000 },
-  { id: 'txn-3', date: '2024-10-01', journal: 'Payment', reference: 'EFT-CLIENT-002', detail: 'Second installment', amount: 12000, balance: -476000 },
+  { id: 'txn-1', date: '2024-08-01', journal: 'Disbursement', reference: 'AG-101', detail: 'Initial loan payout', amount: 500000, balance: 500000 },
+  { id: 'txn-2', date: '2024-09-01', journal: 'Payment', reference: 'EFT-CLIENT-001', detail: 'First installment', amount: -12000, balance: 488000 },
+  { id: 'txn-3', date: '2024-10-01', journal: 'Payment', reference: 'EFT-CLIENT-002', detail: 'Second installment', amount: -12000, balance: 476000 },
 ];
 
 const formatCurrency = (amount: number) => new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(amount);
 
-function AddJournalDialog({ onSave }: { onSave: (data: JournalFormValues) => void }) {
+function AddTransactionDialog({ client, agreement, onSave }: { client: any, agreement: any, onSave: (data: any) => void }) {
     const [isOpen, setIsOpen] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const { toast } = useToast();
     
-    const form = useForm<JournalFormValues>({
-        resolver: zodResolver(journalSchema),
+    const form = useForm<TransactionFormValues>({
+        resolver: zodResolver(transactionSchema),
         defaultValues: {
-            date: new Date().toISOString().split('T')[0],
+            effectiveDate: new Date().toISOString().split('T')[0],
         }
     });
 
-    const onSubmit = async (values: JournalFormValues) => {
+    const onSubmit = async (values: TransactionFormValues) => {
         setIsLoading(true);
         // Simulate API call
         await new Promise(resolve => setTimeout(resolve, 1000));
-        console.log("Submitting Journal:", values);
-        onSave(values);
+        
+        const journalTypeInfo = transactionTypes[values.transactionType as keyof typeof transactionTypes];
+        const amount = (values.capital || 0) + (values.interest || 0);
+
+        const newTransaction = {
+            id: `txn-${Date.now()}`,
+            date: values.effectiveDate,
+            journal: journalTypeInfo.label,
+            reference: values.reference,
+            detail: values.comment,
+            amount: journalTypeInfo.type === 'debit' ? amount : -amount,
+        };
+        
+        onSave(newTransaction);
         toast({ title: 'Journal Entry Posted', description: 'The transaction has been recorded.' });
         setIsLoading(false);
         setIsOpen(false);
@@ -60,35 +91,42 @@ function AddJournalDialog({ onSave }: { onSave: (data: JournalFormValues) => voi
     return (
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
             <DialogTrigger asChild>
-                <Button><PlusCircle className="mr-2 h-4 w-4"/> Add Journal Entry</Button>
+                <Button disabled={!agreement}><PlusCircle className="mr-2 h-4 w-4"/> Add Transaction</Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="sm:max-w-xl">
                 <DialogHeader>
-                    <DialogTitle>Add New Journal Entry</DialogTitle>
+                    <DialogTitle>Add New Transaction</DialogTitle>
                     <DialogDescription>
-                        Record a new transaction against a liability based on bank statement records.
+                        Record a new transaction for agreement <span className="font-semibold">{agreement?.id}</span> for client <span className="font-semibold">{client?.name}</span>.
                     </DialogDescription>
                 </DialogHeader>
                 <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
-                        <FormField control={form.control} name="date" render={({ field }) => (<FormItem><FormLabel>Date</FormLabel><FormControl><Input type="date" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                        <FormField control={form.control} name="journalType" render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Journal Type</FormLabel>
-                                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                    <FormControl><SelectTrigger><SelectValue placeholder="Select type..." /></SelectTrigger></FormControl>
-                                    <SelectContent>
-                                        <SelectItem value="payment">Payment</SelectItem>
-                                        <SelectItem value="journal_debit">Journal Debit</SelectItem>
-                                        <SelectItem value="journal_credit">Journal Credit</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                                <FormMessage />
-                            </FormItem>
-                        )} />
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <FormField control={form.control} name="transactionType" render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Transaction Type</FormLabel>
+                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                        <FormControl><SelectTrigger><SelectValue placeholder="Select type..." /></SelectTrigger></FormControl>
+                                        <SelectContent>
+                                            {Object.entries(transactionTypes).map(([key, value]) => (
+                                                <SelectItem key={key} value={key}>{value.label}</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                    <FormMessage />
+                                </FormItem>
+                            )} />
+                            <FormField control={form.control} name="paymentNo" render={({ field }) => (<FormItem><FormLabel>Payment No</FormLabel><FormControl><Input placeholder="Payment Number" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                        </div>
+                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                             <FormField control={form.control} name="effectiveDate" render={({ field }) => (<FormItem><FormLabel>Effective Date</FormLabel><FormControl><Input type="date" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                             <FormField control={form.control} name="interest" render={({ field }) => (<FormItem><FormLabel>Interest</FormLabel><FormControl><Input type="number" placeholder="0.00" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                             <FormField control={form.control} name="capital" render={({ field }) => (<FormItem><FormLabel>Capital</FormLabel><FormControl><Input type="number" placeholder="0.00" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                        </div>
                         <FormField control={form.control} name="reference" render={({ field }) => (<FormItem><FormLabel>Reference</FormLabel><FormControl><Input placeholder="e.g., Bank Statement Ref" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                        <FormField control={form.control} name="detail" render={({ field }) => (<FormItem><FormLabel>Detail</FormLabel><FormControl><Input placeholder="e.g., Monthly Installment" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                        <FormField control={form.control} name="amount" render={({ field }) => (<FormItem><FormLabel>Amount</FormLabel><FormControl><Input type="number" placeholder="Use negative for debits" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                        <FormField control={form.control} name="comment" render={({ field }) => (<FormItem><FormLabel>Comment</FormLabel><FormControl><Textarea placeholder="e.g., Monthly Installment" {...field} /></FormControl><FormMessage /></FormItem>)} />
+
                         <DialogFooter>
                             <Button type="submit" disabled={isLoading}>{isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Save className="mr-2 h-4 w-4"/>} Post Journal</Button>
                         </DialogFooter>
@@ -101,61 +139,109 @@ function AddJournalDialog({ onSave }: { onSave: (data: JournalFormValues) => voi
 
 export default function TransactionsContent() {
     const [transactions, setTransactions] = useState(dummyTransactions);
+    const firestore = useFirestore();
+    const [selectedClient, setSelectedClient] = useState<any | null>(null);
+    const [selectedAgreement, setSelectedAgreement] = useState<any | null>(null);
 
-    const handleSaveJournal = (data: JournalFormValues) => {
+    const clientsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'lendingClients')) : null, [firestore]);
+    const { data: clients, isLoading: areClientsLoading } = useCollection(clientsQuery);
+    
+    const agreementsQuery = useMemoFirebase(() => {
+        if (!firestore || !selectedClient) return null;
+        return query(collection(firestore, `lendingClients/${selectedClient.id}/agreements`));
+    }, [firestore, selectedClient]);
+    const { data: agreements, isLoading: areAgreementsLoading } = useCollection(agreementsQuery);
+    
+    const handleClientChange = (clientId: string) => {
+        const client = clients?.find(c => c.id === clientId);
+        setSelectedClient(client || null);
+        setSelectedAgreement(null); 
+    };
+
+    const handleAgreementChange = (agreementId: string) => {
+        const agreement = agreements?.find(a => a.id === agreementId);
+        setSelectedAgreement(agreement || null);
+    };
+
+    const handleSaveJournal = (data: any) => {
+        const latestBalance = transactions.length > 0 ? transactions[transactions.length - 1].balance : 0;
         const newTransaction = {
-            id: `txn-${Date.now()}`,
-            date: data.date,
-            journal: data.journalType,
-            reference: data.reference,
-            detail: data.detail,
-            amount: data.amount,
-            balance: (transactions[transactions.length - 1]?.balance || 0) + data.amount,
+            ...data,
+            balance: latestBalance + data.amount,
         };
         setTransactions(prev => [...prev, newTransaction]);
     };
 
     return (
         <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-                <div>
-                    <CardTitle className="flex items-center gap-2">
-                        <DollarSign /> Transactions Ledger
-                    </CardTitle>
-                    <CardDescription>
-                        A ledger reflecting journals raised by users based on bank statement records.
-                    </CardDescription>
-                </div>
-                <AddJournalDialog onSave={handleSaveJournal} />
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                    <DollarSign /> Transactions Ledger
+                </CardTitle>
+                <CardDescription>
+                   Select a client and agreement to view the ledger or post new transactions.
+                </CardDescription>
             </CardHeader>
-            <CardContent>
-                <div className="border rounded-lg">
-                     <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead className="w-[120px]">Date</TableHead>
-                                <TableHead>Journal</TableHead>
-                                <TableHead>Reference</TableHead>
-                                <TableHead>Detail</TableHead>
-                                <TableHead className="text-right">Amount</TableHead>
-                                <TableHead className="text-right">Cumulative Balance</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {transactions.map(tx => (
-                                <TableRow key={tx.id}>
-                                    <TableCell>{tx.date}</TableCell>
-                                    <TableCell className="font-medium capitalize">{tx.journal.replace('_', ' ')}</TableCell>
-                                    <TableCell className="font-mono text-xs">{tx.reference}</TableCell>
-                                    <TableCell>{tx.detail}</TableCell>
-                                    <TableCell className={`text-right font-mono ${tx.amount > 0 ? 'text-green-600' : 'text-destructive'}`}>{formatCurrency(tx.amount)}</TableCell>
-                                    <TableCell className="text-right font-mono">{formatCurrency(tx.balance)}</TableCell>
-                                </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
+            <CardContent className="space-y-6">
+                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
+                    <div className="space-y-2">
+                        <Label htmlFor="client-select">1. Select Client</Label>
+                        <Select onValueChange={handleClientChange} disabled={areClientsLoading}>
+                            <SelectTrigger id="client-select">
+                                <SelectValue placeholder={areClientsLoading ? "Loading..." : "Select a client..."} />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {(clients || []).map(client => (
+                                    <SelectItem key={client.id} value={client.id}>{client.name}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                     <div className="space-y-2">
+                        <Label htmlFor="agreement-select">2. Select Agreement</Label>
+                         <Select onValueChange={handleAgreementChange} disabled={!selectedClient || areAgreementsLoading}>
+                            <SelectTrigger id="agreement-select">
+                                <SelectValue placeholder={areAgreementsLoading ? "Loading..." : "Select an agreement..."} />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {(agreements || []).map(agreement => (
+                                    <SelectItem key={agreement.id} value={agreement.id}>{agreement.id}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <AddTransactionDialog client={selectedClient} agreement={selectedAgreement} onSave={handleSaveJournal} />
                 </div>
+                 {selectedAgreement && (
+                    <div className="border rounded-lg mt-6">
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead className="w-[120px]">Date</TableHead>
+                                    <TableHead>Journal</TableHead>
+                                    <TableHead>Reference</TableHead>
+                                    <TableHead>Detail</TableHead>
+                                    <TableHead className="text-right">Amount</TableHead>
+                                    <TableHead className="text-right">Cumulative Balance</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {transactions.map(tx => (
+                                    <TableRow key={tx.id}>
+                                        <TableCell>{tx.date}</TableCell>
+                                        <TableCell className="font-medium capitalize">{tx.journal.replace('_', ' ')}</TableCell>
+                                        <TableCell className="font-mono text-xs">{tx.reference}</TableCell>
+                                        <TableCell>{tx.detail}</TableCell>
+                                        <TableCell className={`text-right font-mono ${tx.amount > 0 ? 'text-destructive' : 'text-green-600'}`}>{formatCurrency(tx.amount)}</TableCell>
+                                        <TableCell className="text-right font-mono font-semibold">{formatCurrency(tx.balance)}</TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </div>
+                 )}
             </CardContent>
         </Card>
     );
 }
+    
