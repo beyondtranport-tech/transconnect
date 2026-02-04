@@ -59,9 +59,6 @@ service cloud.firestore {
     match /{path=**}/walletPayments/{paymentId} {
       allow get, list: if isAdmin();
     }
-    match /{path=**}/payoutRequests/{payoutId} {
-      allow get, list: if isAdmin();
-    }
     match /{path=**}/transactions/{transactionId} {
       allow get, list: if isAdmin();
     }
@@ -136,6 +133,11 @@ service cloud.firestore {
 
     // Admin-managed collection for sales leads.
     match /leads/{leadId=**} {
+      allow read, write: if isAdmin();
+    }
+    
+    // Admin-managed collection for partners, ISAs, and investors.
+    match /partners/{partnerId} {
       allow read, write: if isAdmin();
     }
   }
