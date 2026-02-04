@@ -112,12 +112,7 @@ const ISAPitchSettings = dynamic(() => import('../backend/revenue/isa-pitch-sett
 
 
 // Financials & Projections
-const FinancialSetup = dynamic(() => import('./financial-setup'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const SalesRoadmap = dynamic(() => import('./sales-roadmap'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const MemberProjection = dynamic(() => import('./member-projection'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const Targets = dynamic(() => import('./targets'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const BudgetPage = dynamic(() => import('./budget/page'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const ForecastPage = dynamic(() => import('./forecast/page'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const FinancialProjections = dynamic(() => import('./financial-projections'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const PlatformTransactions = dynamic(() => import('../backend/revenue/platform-transactions'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 
 
@@ -199,16 +194,14 @@ function AdminAccountContent() {
       // Strategy & Pitching
       case 'partner-offer': return <PartnerOffer />;
       case 'commissions-isa': return <ISAPitchSettings />;
+      case 'member-sales-offer': return <NetworkOffer />;
+      case 'member-sales-emails': return <NetworkEmails />;
+      case 'member-sales-performance': return <PerformanceContent />;
       case 'partner-pitch': return <PartnerElevatorPitch />;
       case 'partner-emails': return <PartnerEmailSequence />;
       
       // Financials
-      case 'financial-setup': return <FinancialSetup />;
-      case 'sales-roadmap': return <SalesRoadmap />;
-      case 'member-projection': return <MemberProjection />;
-      case 'targets': return <Targets />;
-      case 'budget': return <BudgetPage />;
-      case 'forecast': return <ForecastPage />;
+      case 'financial-projections': return <FinancialProjections />;
       case 'revenue-ledger': return <PlatformTransactions />;
       
       default: return <DashboardContent />;
@@ -237,9 +230,7 @@ function AdminAccountContent() {
     'investor-offer', 'investor-emails', 'isa-agents', 'members', 'partners', 'staff-management',
     'investors'
   ].includes(activeView);
-  const isFinancialsActive = [
-    'financial-setup', 'sales-roadmap', 'member-projection', 'targets', 'budget', 'forecast', 'revenue-ledger'
-  ].includes(activeView);
+  const isFinancialsActive = ['financial-projections', 'revenue-ledger'].includes(activeView);
 
   return (
     <AdminAuthGuard>
@@ -333,18 +324,8 @@ function AdminAccountContent() {
                      <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'investors'} onClick={() => navigate('investors')}><Briefcase />Investors</SidebarMenuSubButton></SidebarMenuSubItem>
                   </SidebarMenuSub>
                 </SidebarMenuItem>
-                <SidebarMenuItem>
-                    <SidebarMenuButton tooltip="Financials" isActive={isFinancialsActive}><FinancialSheetIcon /><span>Financials</span></SidebarMenuButton>
-                    <SidebarMenuSub>
-                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'financial-setup'} onClick={() => navigate('financial-setup')}><Settings />Set Up</SidebarMenuSubButton></SidebarMenuSubItem>
-                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'sales-roadmap'} onClick={() => navigate('sales-roadmap')}><Map />Sales Roadmap</SidebarMenuSubButton></SidebarMenuSubItem>
-                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'member-projection'} onClick={() => navigate('member-projection')}><Users />Member Projection</SidebarMenuSubButton></SidebarMenuSubItem>
-                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'targets'} onClick={() => navigate('targets')}><Target />Monthly Targets</SidebarMenuSubButton></SidebarMenuSubItem>
-                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'budget'} onClick={() => navigate('budget')}><Calculator />Budget</SidebarMenuSubButton></SidebarMenuSubItem>
-                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'forecast'} onClick={() => navigate('forecast')}><TrendingUp />Forecast</SidebarMenuSubButton></SidebarMenuSubItem>
-                        <SidebarMenuSeparator />
-                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'revenue-ledger'} onClick={() => navigate('revenue-ledger')}><DollarSign />Platform Revenue</SidebarMenuSubButton></SidebarMenuSubItem>
-                    </SidebarMenuSub>
+                 <SidebarMenuItem>
+                    <SidebarMenuButton tooltip="Financial Projections" isActive={isFinancialsActive} onClick={() => navigate('financial-projections')}><FinancialSheetIcon /><span>Financials</span></SidebarMenuButton>
                 </SidebarMenuItem>
                  <SidebarMenuItem>
                     <SidebarMenuButton tooltip="Staff Management" isActive={activeView === 'staff-management'} onClick={() => navigate('staff-management')}>
@@ -396,7 +377,7 @@ function AdminAccountContent() {
 export default function AdminAccountPage() {
   return (
     <Suspense fallback={<div className="flex justify-center items-center min-h-[calc(100vh-8rem)]"><Loader2 className="h-16 w-16 animate-spin text-primary" /></div>}>
-      <AdminAccountContent />
+      <BackendContent />
     </Suspense>
   );
 }
