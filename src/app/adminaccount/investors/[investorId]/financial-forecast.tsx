@@ -1,13 +1,15 @@
 
 'use client';
 
-import React, { useMemo, Suspense } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import React, { useMemo, useState, useEffect } from 'react';
+import { useForm } from 'react-hook-form';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { TrendingUp, AlertTriangle, Loader2, DollarSign, Users } from 'lucide-react';
-import { salesRoadmapLogic, budgetLogic } from '../../forecast/calculations';
-import Link from 'next/link';
+import { TrendingUp, Save, RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Form, FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { useToast } from '@/hooks/use-toast';
 
 const formatCurrency = (value: number) => {
     if (typeof value !== 'number' || isNaN(value)) return 'R 0';
@@ -19,172 +21,126 @@ const formatNumber = (value: number) => {
     return value.toLocaleString();
 };
 
-export default function FinancialForecast({ investorId }: { investorId: string }) {
-    
-    // This component no longer calculates. It reads from the master forecast data stored in localStorage.
-    const { salesInputs, budgetData, settings, targets } = useMemo(() => {
-        if (typeof window === 'undefined') return { salesInputs: null, budgetData: null, settings: null, targets: null };
-        try {
-            const settingsString = localStorage.getItem('accountFinancialSetup_v1');
-            const budgetString = localStorage.getItem('accountBudgetAssumptions_v2');
-            const salesRoadmapString = localStorage.getItem('accountSalesRoadmapScenarios_v1');
-            const targetsString = localStorage.getItem('accountFinancialTargets_v1');
-            
-            const settings = settingsString ? JSON.parse(settingsString) : null;
-            const budget = budgetString ? JSON.parse(budgetString) : null;
-            
-            const salesRoadmapData = salesRoadmapString ? JSON.parse(salesRoadmapString) : null;
-            const activeScenarioName = salesRoadmapData?.activeScenario || 'Default';
-            const salesRoadmap = salesRoadmapData?.scenarios?.[activeScenarioName] || null;
+const defaultValues = {
+    membersPerMonth: 50,
+    projectionMonths: 36,
+    avgMembershipFee: 350,
+    avgMallSpend: 1500,
+    mallCommissionPercent: 2.5,
+    opexPerMonth: 250000,
+};
 
-            const targets = targetsString ? JSON.parse(targetsString) : null;
+type ForecastInputs = typeof defaultValues;
 
-            if (!settings || !budget || !salesRoadmap || !targets) {
-                return { salesInputs: null, budgetData: null, settings: null, targets: null };
-            }
+function calculateForecast(inputs: ForecastInputs) {
+    const data = [];
+    let cumulativeMembers = 0;
 
-            return { 
-                salesInputs: salesRoadmap,
-                budgetData: budget, 
-                settings,
-                targets,
-            };
-        } catch (e) {
-            console.error("Failed to parse forecast data:", e);
-            return { salesInputs: null, budgetData: null, settings: null, targets: null };
-        }
-    }, []);
-    
-    const roadmapData = useMemo(() => {
-        if (!salesInputs || !settings) return [];
-        return salesRoadmapLogic(settings, salesInputs);
-    }, [salesInputs, settings]);
-
-    const forecastData = useMemo(() => {
-        if (roadmapData.length === 0 || !budgetData || !targets) return [];
-        return budgetLogic(roadmapData, budgetData, targets);
-    }, [roadmapData, budgetData, targets]);
-
-     const yearlyTotals = useMemo(() => {
-        const totals: Record<string, any> = {};
-        if (!forecastData || forecastData.length === 0) return totals;
-        
-        forecastData.forEach(row => {
-            if (!totals[row.year]) {
-                 totals[row.year] = {
-                    members: 0,
-                    membershipRevenue: 0, connectPlanRevenue: 0, mallRevenue: 0, techRevenue: 0, totalRevenue: 0,
-                    memberCommission: 0, isaCommission: 0, totalCogs: 0,
-                    grossProfit: 0,
-                    opexSalaries: 0, digitalAdvertising: 0, contentCreation: 0, eventsAndSponsorships: 0,
-                    officeRental: 0, utilities: 0, insurance: 0, legalAndProfessional: 0, bankCharges: 0,
-                    telephone: 0, travelAndEntertainment: 0, platformCosts: 0, softwareLicenses: 0, totalOpex: 0,
-                    netProfit: 0
-                };
-            }
-            Object.keys(row).forEach(key => {
-                if (key !== 'month' && key !== 'year' && key !== 'members') {
-                     totals[row.year][key] += row[key];
-                }
-            });
-            totals[row.year].members = row.members;
+    for (let i = 1; i <= inputs.projectionMonths; i++) {
+        cumulativeMembers += inputs.membersPerMonth;
+        const membershipRevenue = cumulativeMembers * inputs.avgMembershipFee;
+        const mallRevenue = cumulativeMembers * inputs.avgMallSpend * (inputs.mallCommissionPercent / 100);
+        const totalRevenue = membershipRevenue + mallRevenue;
+        const netProfit = totalRevenue - inputs.opexPerMonth;
+        data.push({
+            month: i,
+            members: cumulativeMembers,
+            membershipRevenue,
+            mallRevenue,
+            totalRevenue,
+            opex: inputs.opexPerMonth,
+            netProfit,
         });
-        return totals;
-    }, [forecastData]);
-
-    const lineItems = [
-        { key: 'members', label: 'Members', format: formatNumber, isHeader: true, isBold: true },
-        { key: 'revenue', label: 'Revenue', isHeader: true },
-        { key: 'membershipRevenue', label: 'Membership Revenue', format: formatCurrency, indent: 1 },
-        { key: 'connectPlanRevenue', label: 'Connect Plan Revenue', format: formatCurrency, indent: 1 },
-        { key: 'mallRevenue', label: 'Mall Commission Revenue', format: formatCurrency, indent: 1 },
-        { key: 'techRevenue', label: 'Tech Services Revenue', format: formatCurrency, indent: 1 },
-        { key: 'totalRevenue', label: 'Total Revenue', format: formatCurrency, isBold: true, isPrimary: true },
-        { key: 'cogs', label: 'Cost of Goods Sold (COGS)', isHeader: true },
-        { key: 'memberCommission', label: 'Member Commission Share', format: formatCurrency, indent: 1 },
-        { key: 'isaCommission', label: 'ISA Commission', format: formatCurrency, indent: 1 },
-        { key: 'totalCogs', label: 'Total COGS', format: formatCurrency, isBold: true },
-        { key: 'grossProfit', label: 'Gross Profit', format: formatCurrency, isBold: true, isPrimary: true },
-        { key: 'opex', label: 'Operating Expenses (OPEX)', isHeader: true },
-        { key: 'opexSalaries', label: 'Salaries & Wages', format: formatCurrency, indent: 1 },
-        { key: 'digitalAdvertising', label: 'Digital Advertising', format: formatCurrency, indent: 1 },
-        { key: 'contentCreation', label: 'Content Creation & SEO', format: formatCurrency, indent: 1 },
-        { key: 'eventsAndSponsorships', label: 'Events & Sponsorships', format: formatCurrency, indent: 1 },
-        { key: 'officeRental', label: 'Office Rental', format: formatCurrency, indent: 1 },
-        { key: 'utilities', label: 'Utilities', format: formatCurrency, indent: 1 },
-        { key: 'insurance', label: 'Insurance', format: formatCurrency, indent: 1 },
-        { key: 'legalAndProfessional', label: 'Legal & Professional Fees', format: formatCurrency, indent: 1 },
-        { key: 'bankCharges', label: 'Bank Charges', format: formatCurrency, indent: 1 },
-        { key: 'telephone', label: 'Telephone & Communications', format: formatCurrency, indent: 1 },
-        { key: 'travelAndEntertainment', label: 'Travel & Entertainment', format: formatCurrency, indent: 1 },
-        { key: 'platformCosts', label: 'Cloud Hosting & Infrastructure', format: formatCurrency, indent: 1 },
-        { key: 'softwareLicenses', label: 'Software Licenses', format: formatCurrency, indent: 1 },
-        { key: 'totalOpex', label: 'Total OPEX', format: formatCurrency, isBold: true },
-        { key: 'netProfit', label: 'Net Profit', format: formatCurrency, isBold: true, isPrimary: true, isProfit: true },
-    ];
-    
-    if (!settings || !salesInputs || !budgetData || !targets || forecastData.length === 0) {
-        return (
-            <Card className="w-full max-w-2xl mx-auto">
-                <CardHeader className="text-center">
-                    <AlertTriangle className="mx-auto h-12 w-12 text-destructive" />
-                    <CardTitle>Incomplete Forecast Data</CardTitle>
-                    <CardDescription>
-                        A master forecast has not been generated yet. Please go to the main "Financials" section to complete the setup.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent className="text-center">
-                    <Button asChild>
-                        <Link href="/adminaccount?view=forecast">Go to Master Forecast</Link>
-                    </Button>
-                </CardContent>
-            </Card>
-        );
     }
-    
-    const years = [...new Set(forecastData.map(d => d.year))];
-
-    return (
-        <Card>
-            <CardHeader>
-                <CardTitle className="flex items-center gap-2"><TrendingUp /> Master Financial Forecast</CardTitle>
-                <CardDescription>This is a read-only view of the main business forecast. To change assumptions, please visit the "Financials" section of the admin dashboard.</CardDescription>
-            </CardHeader>
-            <CardContent className="overflow-x-auto">
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead className="sticky left-0 bg-card z-10 w-[250px]">Line Item</TableHead>
-                            {forecastData.map((col) => (
-                            <TableHead key={col.month} className="text-right">{col.month}</TableHead>
-                            ))}
-                            {years.map(year => (
-                                <TableHead key={`total-${year}`} className="text-right bg-primary/10 font-bold">Total {year}</TableHead>
-                            ))}
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {lineItems.map(item => (
-                            <TableRow key={item.key} className={item.isHeader ? 'bg-muted/50' : ''}>
-                                <TableCell className={`sticky left-0 bg-card z-10 ${item.isBold ? 'font-semibold' : ''} ${item.isPrimary ? 'text-primary' : ''} ${item.indent ? `pl-${item.indent * 4}` : ''}`}>
-                                    {item.label}
-                                </TableCell>
-                                {forecastData.map(col => (
-                                    <TableCell key={`${item.key}-${col.month}`} className={`text-right font-mono text-xs ${item.isProfit && col[item.key as keyof typeof col] < 0 ? 'text-destructive' : ''}`}>
-                                        {item.format ? item.format(col[item.key as keyof typeof col]) : ''}
-                                    </TableCell>
-                                ))}
-                                {years.map(year => (
-                                    <TableCell key={`total-${item.key}-${year}`} className={`text-right bg-primary/10 font-bold font-mono text-sm ${item.isProfit && yearlyTotals[year]?.[item.key] < 0 ? 'text-destructive' : ''}`}>
-                                        {item.format && yearlyTotals[year] ? item.format(yearlyTotals[year][item.key]) : ''}
-                                    </TableCell>
-                                ))}
-                            </TableRow>
-                        ))}
-                    </TableBody>
-                </Table>
-            </CardContent>
-        </Card>
-    );
+    return data;
 }
 
+export default function FinancialForecast({ investorId }: { investorId: string }) {
+    const { toast } = useToast();
+    const localStorageKey = `investorForecast_${investorId}`;
+
+    const form = useForm<ForecastInputs>({
+        defaultValues: (() => {
+            if (typeof window === 'undefined') return defaultValues;
+            const saved = localStorage.getItem(localStorageKey);
+            return saved ? JSON.parse(saved) : defaultValues;
+        })()
+    });
+    
+    const { control, handleSubmit, watch, reset } = form;
+    const watchedInputs = watch();
+
+    const forecastData = useMemo(() => calculateForecast(watchedInputs), [watchedInputs]);
+
+    const onSubmit = (data: ForecastInputs) => {
+        localStorage.setItem(localStorageKey, JSON.stringify(data));
+        toast({ title: "Forecast Assumptions Saved!", description: "Your inputs have been saved locally for this investor." });
+    };
+
+    const handleReset = () => {
+        localStorage.removeItem(localStorageKey);
+        reset(defaultValues);
+        toast({ title: 'Inputs Reset', description: 'Assumptions have been reset to default values.' });
+    };
+
+    return (
+        <div className="space-y-8">
+            <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2"><TrendingUp /> Financial Forecast</CardTitle>
+                    <CardDescription>Adjust the inputs to generate a simple net profit projection tailored for this investor. Data is saved locally in your browser.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <Form {...form}>
+                        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+                            <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+                                <FormField control={control} name="membersPerMonth" render={({ field }) => (<FormItem><FormLabel>New Members / Mo</FormLabel><FormControl><Input type="number" {...field} /></FormControl></FormItem>)} />
+                                <FormField control={control} name="projectionMonths" render={({ field }) => (<FormItem><FormLabel>Months to Project</FormLabel><FormControl><Input type="number" {...field} /></FormControl></FormItem>)} />
+                                <FormField control={control} name="avgMembershipFee" render={({ field }) => (<FormItem><FormLabel>Avg. Membership Fee (R)</FormLabel><FormControl><Input type="number" {...field} /></FormControl></FormItem>)} />
+                                <FormField control={control} name="avgMallSpend" render={({ field }) => (<FormItem><FormLabel>Avg. Mall Spend / Member (R)</FormLabel><FormControl><Input type="number" {...field} /></FormControl></FormItem>)} />
+                                <FormField control={control} name="mallCommissionPercent" render={({ field }) => (<FormItem><FormLabel>Mall Commission (%)</FormLabel><FormControl><Input type="number" {...field} /></FormControl></FormItem>)} />
+                                <FormField control={control} name="opexPerMonth" render={({ field }) => (<FormItem><FormLabel>Operating Expenses / Mo (R)</FormLabel><FormControl><Input type="number" {...field} /></FormControl></FormItem>)} />
+                            </div>
+                            <div className="flex gap-2">
+                                <Button type="submit"><Save className="mr-2 h-4 w-4"/>Save Inputs</Button>
+                                <Button type="button" variant="outline" onClick={handleReset}><RotateCcw className="mr-2 h-4 w-4"/>Reset</Button>
+                            </div>
+                        </form>
+                    </Form>
+                </CardContent>
+            </Card>
+            
+            <Card>
+                <CardHeader><CardTitle>Profit & Loss Projection</CardTitle></CardHeader>
+                <CardContent className="overflow-x-auto">
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Month</TableHead>
+                                <TableHead>Members</TableHead>
+                                <TableHead>Membership Revenue</TableHead>
+                                <TableHead>Mall Revenue</TableHead>
+                                <TableHead className="font-bold">Total Revenue</TableHead>
+                                <TableHead>OPEX</TableHead>
+                                <TableHead className="font-bold text-primary">Net Profit</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {forecastData.map(row => (
+                                <TableRow key={row.month}>
+                                    <TableCell>{row.month}</TableCell>
+                                    <TableCell>{formatNumber(row.members)}</TableCell>
+                                    <TableCell>{formatCurrency(row.membershipRevenue)}</TableCell>
+                                    <TableCell>{formatCurrency(row.mallRevenue)}</TableCell>
+                                    <TableCell className="font-semibold">{formatCurrency(row.totalRevenue)}</TableCell>
+                                    <TableCell>{formatCurrency(row.opex)}</TableCell>
+                                    <TableCell className="font-bold text-primary">{formatCurrency(row.netProfit)}</TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                </CardContent>
+            </Card>
+        </div>
+    );
+}

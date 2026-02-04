@@ -112,13 +112,6 @@ const ISAPitchSettings = dynamic(() => import('../backend/revenue/isa-pitch-sett
 
 
 // Financials & Projections
-const FinancialSetup = dynamic(() => import('./financial-setup'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const SalesRoadmap = dynamic(() => import('./sales-roadmap'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const Targets = dynamic(() => import('./targets'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const MemberProjection = dynamic(() => import('./member-projection'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const CostCalculator = dynamic(() => import('./cost-calculator'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const BudgetPage = dynamic(() => import('./budget/page'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const ForecastPage = dynamic(() => import('./forecast/page'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const PlatformTransactions = dynamic(() => import('../backend/revenue/platform-transactions'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 
 
@@ -203,14 +196,7 @@ function AdminAccountContent() {
       case 'partner-pitch': return <PartnerElevatorPitch />;
       case 'partner-emails': return <PartnerEmailSequence />;
       
-      // Financials & Projections
-      case 'financial-setup': return <FinancialSetup />;
-      case 'sales-roadmap': return <SalesRoadmap />;
-      case 'targets': return <Targets />;
-      case 'member-projection': return <MemberProjection />;
-      case 'cost-calculator': return <CostCalculator />;
-      case 'budget': return <BudgetPage />;
-      case 'forecast': return <ForecastPage />;
+      // Financials
       case 'revenue-ledger': return <PlatformTransactions />;
       
       default: return <DashboardContent />;
@@ -239,7 +225,7 @@ function AdminAccountContent() {
     'investor-offer', 'investor-emails', 'isa-agents', 'members', 'partners', 'staff-management',
     'investors'
   ].includes(activeView);
-  const isFinancialsActive = ['financial-setup', 'sales-roadmap', 'targets', 'member-projection', 'cost-calculator', 'budget', 'forecast', 'revenue-ledger'].includes(activeView);
+  const isFinancialsActive = [].includes(activeView);
 
   return (
     <AdminAuthGuard>
@@ -337,19 +323,6 @@ function AdminAccountContent() {
                     <SidebarMenuButton tooltip="Staff Management" isActive={activeView === 'staff-management'} onClick={() => navigate('staff-management')}>
                         <Users /><span>All Staff</span>
                     </SidebarMenuButton>
-                </SidebarMenuItem>
-                <SidebarMenuItem>
-                  <SidebarMenuButton tooltip="Financials" isActive={isFinancialsActive}><DollarSign /><span>Financials</span></SidebarMenuButton>
-                  <SidebarMenuSub>
-                    <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'revenue-ledger'} onClick={() => navigate('revenue-ledger')}><DollarSign />Platform Revenue</SidebarMenuSubButton></SidebarMenuSubItem>
-                    <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'financial-setup'} onClick={() => navigate('financial-setup')}><Settings />Setup</SidebarMenuSubButton></SidebarMenuSubItem>
-                    <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'sales-roadmap'} onClick={() => navigate('sales-roadmap')}><Map />Sales Roadmap</SidebarMenuSubButton></SidebarMenuSubItem>
-                    <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'targets'} onClick={() => navigate('targets')}><Target />Targets</SidebarMenuSubButton></SidebarMenuSubItem>
-                    <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'member-projection'} onClick={() => navigate('member-projection')}><Users />Member Projection</SidebarMenuSubButton></SidebarMenuSubItem>
-                    <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'cost-calculator'} onClick={() => navigate('cost-calculator')}><Calculator />Cost Calculator</SidebarMenuSubButton></SidebarMenuSubItem>
-                    <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'budget'} onClick={() => navigate('budget')}><FinancialSheetIcon />Budget</SidebarMenuSubButton></SidebarMenuSubItem>
-                    <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'forecast'} onClick={() => navigate('forecast')}><TrendingUp />Forecast</SidebarMenuSubButton></SidebarMenuSubItem>
-                  </SidebarMenuSub>
                 </SidebarMenuItem>
             </SidebarGroup>
           </SidebarContent>
