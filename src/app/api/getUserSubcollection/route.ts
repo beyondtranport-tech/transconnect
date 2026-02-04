@@ -53,7 +53,7 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ success: false, error: 'Unauthorized: No token provided for a private route.' }, { status: 401 });
         }
 
-        const isAdmin = decodedToken?.email === 'beyondtransport@gmail.com';
+        const isAdmin = decodedToken?.email === 'beyondtransport@gmail.com' || decodedToken?.email === 'mkoton100@gmail.com';
         const uid = decodedToken?.uid;
         
         // --- Authorization Logic ---
