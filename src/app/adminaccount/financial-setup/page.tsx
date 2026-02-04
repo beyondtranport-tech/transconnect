@@ -22,7 +22,7 @@ const defaultValues = {
     forecastMonths: 36,
 };
 
-export default function FinancialSetup() {
+export default function FinancialSetupPage() {
     const router = useRouter();
     const { toast } = useToast();
 

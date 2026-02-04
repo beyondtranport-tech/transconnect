@@ -1,17 +1,14 @@
 
 'use client';
 
-import React, { useMemo } from 'react';
+import React, { useMemo, Suspense } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
-import { AlertTriangle, Users } from 'lucide-react';
+import { AlertTriangle, Users, Map, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-
-const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-const SALES_ROADMAP_KEY = 'accountSalesRoadmapScenarios_v1';
-const SETUP_KEY = 'accountFinancialSetup_v1';
+import { salesRoadmapLogic } from './lib/calculations';
 
 const memberRoleGroups = [
     { role: 'Vendors', id: 'Vendors' },
@@ -22,144 +19,16 @@ const memberRoleGroups = [
     { role: 'Developers', id: 'Developers' }
 ];
 
-const memberProjectionLogic = (roadmapInputs: any, setupInputs: any) => {
-    if (!roadmapInputs || !roadmapInputs.monthlyAssumptions || !setupInputs) {
-        return { total: [], byRole: {} };
-    }
-
-    const monthlyAssumptions = roadmapInputs.monthlyAssumptions;
-    const { forecastMonths, startYear, startMonth } = setupInputs;
-
-    let byRoleProjections: { [key: string]: any[] } = {};
-
-    const powerPartnerNewMembersPerMonth = Math.round(
-        (Number(monthlyAssumptions.numberOfPowerPartners?.[0]) || 0) *
-        (Number(monthlyAssumptions.opportunitiesPerPartner?.[0]) || 0) *
-        ((Number(monthlyAssumptions.powerPartnerConversion?.[0]) || 0) / 100)
-    );
-
-    memberRoleGroups.forEach(group => {
-        const roleKey = group.role;
-        const roleId = group.id;
-        byRoleProjections[roleKey] = [];
-        
-        const initialMembers = Number(monthlyAssumptions[`initialMembers${roleId}`]?.[0]) || 0;
-        
-        let cumulativeForRole = initialMembers;
-        
-        const referralsArray = monthlyAssumptions[`referralsPerMember${roleId}`] || [];
-        const conversionArray = monthlyAssumptions[`conversionToMember${roleId}`] || [];
-
-        for (let i = 0; i < forecastMonths; i++) {
-            const date = new Date(startYear, startMonth + i, 1);
-            const month = monthNames[date.getMonth()];
-            const year = date.getFullYear();
-
-            const referralsPerMember = Number(referralsArray[i]) || 0;
-            const conversionToMember = (Number(conversionArray[i]) || 0) / 100;
-            
-            const newMembersThisMonth = Math.round(cumulativeForRole * referralsPerMember * conversionToMember);
-            cumulativeForRole += newMembersThisMonth;
-
-            byRoleProjections[roleKey].push({
-                month: `${month} ${year}`,
-                newMembers: newMembersThisMonth,
-                cumulativeMembers: cumulativeForRole,
-            });
-        }
-    });
-
-    let totalProjection: any[] = [];
-    const initialTotalMembers = memberRoleGroups.reduce((acc, group) => {
-        const roleId = group.id;
-        return acc + (Number(monthlyAssumptions[`initialMembers${roleId}`]?.[0]) || 0);
-    }, 0);
-    
-    let cumulativeTotal = initialTotalMembers;
-
-    for (let i = 0; i < forecastMonths; i++) {
-        const date = new Date(startYear, startMonth + i, 1);
-        const month = monthNames[date.getMonth()];
-        const year = date.getFullYear();
-
-        let newMembersFromRoles = 0;
-        memberRoleGroups.forEach(group => {
-            const roleKey = group.role;
-            const projectionForMonth = byRoleProjections[roleKey][i];
-            if (projectionForMonth) {
-                newMembersFromRoles += projectionForMonth.newMembers;
-            }
-        });
-        
-        const powerPartnerConversionForMonth = (Number(monthlyAssumptions.powerPartnerConversion?.[i]) || 0) / 100;
-        const powerPartnerNewMembers = Math.round(
-            (Number(monthlyAssumptions.numberOfPowerPartners?.[i]) || 0) *
-            (Number(monthlyAssumptions.opportunitiesPerPartner?.[i]) || 0) *
-            powerPartnerConversionForMonth
-        );
-
-        const totalNewThisMonth = newMembersFromRoles + powerPartnerNewMembers;
-        cumulativeTotal += totalNewThisMonth;
-        
-        totalProjection.push({
-            month: `${month} ${year}`,
-            year,
-            powerPartnerNewMembers: powerPartnerNewMembers,
-            referralNewMembers: newMembersFromRoles,
-            totalNewMembers: totalNewThisMonth,
-            cumulativeMembers: cumulativeTotal,
-        });
-    }
-
-    return { total: totalProjection, byRole: byRoleProjections };
-};
-
-
-function ProjectionTable({ title, data }: { title: string; data: any[] }) {
-    if (!data || data.length === 0) {
-        return null;
-    }
-    return (
-        <Card>
-            <CardHeader>
-                <CardTitle className="flex items-center gap-2"><Users /> {title}</CardTitle>
-            </CardHeader>
-            <CardContent>
-                <ScrollArea className="w-full whitespace-nowrap rounded-md border">
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead className="w-[120px] sticky left-0 bg-background z-10">Month</TableHead>
-                                <TableHead className="text-right">New Members</TableHead>
-                                <TableHead className="text-right font-bold text-primary">Cumulative Members</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {data.map((row) => (
-                                <TableRow key={row.month}>
-                                    <TableCell className="sticky left-0 bg-background z-10">{row.month}</TableCell>
-                                    <TableCell className="text-right">{row.newMembers.toLocaleString()}</TableCell>
-                                    <TableCell className="text-right font-bold text-primary">{row.cumulativeMembers.toLocaleString()}</TableCell>
-                                </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
-                    <ScrollBar orientation="horizontal" />
-                </ScrollArea>
-            </CardContent>
-        </Card>
-    );
-}
-
-export default function MemberProjection() {
+function MemberProjectionComponent() {
     const { roadmapInputs, setupInputs } = useMemo(() => {
         if (typeof window === 'undefined') return { roadmapInputs: null, setupInputs: null };
         try {
-            const salesRoadmapData = localStorage.getItem(SALES_ROADMAP_KEY);
+            const salesRoadmapData = localStorage.getItem('accountSalesRoadmapScenarios_v1');
+            const setupData = localStorage.getItem('accountFinancialSetup_v1');
+            
             const activeScenarioName = salesRoadmapData ? JSON.parse(salesRoadmapData).activeScenario : 'Default';
             const scenarios = salesRoadmapData ? JSON.parse(salesRoadmapData).scenarios : null;
 
-            const setupData = localStorage.getItem(SETUP_KEY);
             return {
                 roadmapInputs: scenarios ? scenarios[activeScenarioName] : null,
                 setupInputs: setupData ? JSON.parse(setupData) : null,
@@ -170,13 +39,14 @@ export default function MemberProjection() {
         }
     }, []);
 
-    const { total, byRole } = useMemo(() => {
-        return memberProjectionLogic(roadmapInputs, setupInputs);
+    const projectionData = useMemo(() => {
+        if (!roadmapInputs || !setupInputs) return [];
+        return salesRoadmapLogic(setupInputs, roadmapInputs);
     }, [roadmapInputs, setupInputs]);
-    
+
     if (!roadmapInputs || !setupInputs) {
         return (
-             <Card className="w-full max-w-2xl mx-auto">
+            <Card className="w-full max-w-2xl mx-auto">
                 <CardHeader className="text-center">
                     <AlertTriangle className="mx-auto h-12 w-12 text-destructive" />
                     <CardTitle>Incomplete Projection Data</CardTitle>
@@ -184,10 +54,7 @@ export default function MemberProjection() {
                         Please complete the "Set Up" and "Sales Roadmap" pages in the Financials section first.
                     </CardDescription>
                 </CardHeader>
-                <CardContent className="text-center space-y-2">
-                    <Button asChild>
-                        <Link href="/adminaccount?view=financial-setup">Go to Set Up</Link>
-                    </Button>
+                <CardContent className="text-center">
                     <Button asChild variant="outline">
                         <Link href="/adminaccount?view=sales-roadmap">Go to Sales Roadmap</Link>
                     </Button>
@@ -195,6 +62,18 @@ export default function MemberProjection() {
             </Card>
         );
     }
+    
+    const yearlyTotals = projectionData.reduce((acc, row) => {
+        if (!acc[row.year]) {
+            acc[row.year] = { powerPartnerNewMembers: 0, referralNewMembers: 0, totalNewMembers: 0, cumulativeMembers: 0 };
+        }
+        acc[row.year].powerPartnerNewMembers += row.powerPartnerNewMembers;
+        acc[row.year].referralNewMembers += row.referralNewMembers;
+        acc[row.year].totalNewMembers += row.totalNewMembers;
+        acc[row.year].cumulativeMembers = row.cumulativeMembers; // Take the last value for cumulative
+        return acc;
+    }, {} as Record<string, any>);
+    const years = Object.keys(yearlyTotals);
 
     return (
         <div className="space-y-8">
@@ -208,35 +87,45 @@ export default function MemberProjection() {
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead className="w-[120px] sticky left-0 bg-background z-10">Month</TableHead>
-                                    <TableHead className="text-right">New Members (Partners)</TableHead>
-                                    <TableHead className="text-right">New Members (Referrals)</TableHead>
-                                    <TableHead className="text-right font-bold text-primary">Total New Members</TableHead>
-                                    <TableHead className="text-right font-bold text-primary">Cumulative Members</TableHead>
+                                    <TableHead className="w-[120px] sticky left-0 bg-card z-10">Month</TableHead>
+                                    <TableHead className="text-right">New (Partners)</TableHead>
+                                    <TableHead className="text-right">New (Referrals)</TableHead>
+                                    <TableHead className="text-right font-bold text-primary">Total New</TableHead>
+                                    <TableHead className="text-right font-bold text-primary">Cumulative</TableHead>
+                                     {years.map(year => <TableHead key={year} className="text-right bg-muted font-bold">Total {year}</TableHead>)}
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {total.map((row) => (
+                                {projectionData.map((row) => (
                                     <TableRow key={row.month}>
-                                        <TableCell className="sticky left-0 bg-background z-10">{row.month}</TableCell>
+                                        <TableCell className="sticky left-0 bg-card z-10">{row.month}</TableCell>
                                         <TableCell className="text-right">{row.powerPartnerNewMembers.toLocaleString()}</TableCell>
                                         <TableCell className="text-right">{row.referralNewMembers.toLocaleString()}</TableCell>
                                         <TableCell className="text-right font-bold text-primary">{row.totalNewMembers.toLocaleString()}</TableCell>
                                         <TableCell className="text-right font-bold text-primary">{row.cumulativeMembers.toLocaleString()}</TableCell>
                                     </TableRow>
                                 ))}
+                                <TableRow className="bg-muted font-bold">
+                                    <TableCell>Total</TableCell>
+                                    <TableCell className="text-right">{Object.values(yearlyTotals).reduce((s, y) => s + y.powerPartnerNewMembers, 0).toLocaleString()}</TableCell>
+                                    <TableCell className="text-right">{Object.values(yearlyTotals).reduce((s, y) => s + y.referralNewMembers, 0).toLocaleString()}</TableCell>
+                                    <TableCell className="text-right text-primary">{Object.values(yearlyTotals).reduce((s, y) => s + y.totalNewMembers, 0).toLocaleString()}</TableCell>
+                                    <TableCell className="text-right text-primary">{yearlyTotals[years[years.length-1]]?.cumulativeMembers.toLocaleString()}</TableCell>
+                                </TableRow>
                             </TableBody>
                         </Table>
                         <ScrollBar orientation="horizontal" />
                     </ScrollArea>
                 </CardContent>
             </Card>
-
-            <div className="space-y-8">
-                {Object.entries(byRole).map(([roleName, data]) => (
-                    <ProjectionTable key={roleName} title={`${roleName} Growth Projection`} data={data as any[]} />
-                ))}
-            </div>
         </div>
+    );
+}
+
+export default function MemberProjectionPage() {
+    return (
+        <Suspense fallback={<div className="flex justify-center items-center min-h-[calc(100vh-8rem)]"><Loader2 className="h-16 w-16 animate-spin" /></div>}>
+            <MemberProjectionComponent />
+        </Suspense>
     );
 }
