@@ -121,52 +121,46 @@ function EditSecurityDialog({ doc, isOpen, onOpenChange }: { doc: any; isOpen: b
   );
 }
 
+
 export default function SecurityContent() {
-    const [actionToConfirm, setActionToConfirm] = useState<'confirm' | 'unconfirm' | 'delete' | null>(null);
-    const [selectedDocId, setSelectedDocId] = useState<string | null>(null);
-    const [isEditOpen, setIsEditOpen] = useState(false);
-    
-    const selectedDoc = useMemo(() => {
-        if (!selectedDocId) return null;
-        return dummySecurityDocs.find(doc => doc.id === selectedDocId);
-    }, [selectedDocId]);
+    const { toast } = useToast();
+    const [isProcessing, setIsProcessing] = useState(false);
+    const [dialogState, setDialogState] = useState<{ type: 'edit' | 'confirm' | 'unconfirm' | 'delete' | null, doc: any | null }>({ type: null, doc: null });
 
-    const handleOpenConfirmation = (action: 'confirm' | 'unconfirm' | 'delete', docId: string) => {
-        setSelectedDocId(docId);
-        setActionToConfirm(action);
-    };
-
-    const handleOpenEdit = (docId: string) => {
-        setSelectedDocId(docId);
-        setIsEditOpen(true);
+    const handleOpenDialog = (type: 'edit' | 'confirm' | 'unconfirm' | 'delete', doc: any) => {
+        setDialogState({ type, doc });
     };
 
     const handleCloseDialogs = useCallback(() => {
-        setActionToConfirm(null);
-        setSelectedDocId(null);
-        setIsEditOpen(false);
+        setDialogState({ type: null, doc: null });
     }, []);
-    
+
+    const handleConfirmAction = () => {
+        // Placeholder for future API calls
+        console.log(`Performing action: ${dialogState.type} on doc: ${dialogState.doc?.id}`);
+        toast({ title: "Action Confirmed (Demo)", description: `The '${dialogState.type}' action was completed.` });
+        handleCloseDialogs();
+    };
+
     const getAlertStrings = () => {
-      if (!selectedDoc) return { title: 'Are you sure?', description: '' };
-      switch (actionToConfirm) {
-        case 'confirm': return { title: `Confirm Document?`, description: `Mark "${selectedDoc.name}" as confirmed?` };
-        case 'unconfirm': return { title: `Unconfirm Document?`, description: `Revert "${selectedDoc.name}" to a pending state?` };
-        case 'delete': return { title: `Delete Document?`, description: `This will permanently delete the log for "${selectedDoc.name}".` };
-        default: return { title: "Are you sure?", description: "" };
-      }
+        if (!dialogState.doc) return { title: 'Are you sure?', description: '' };
+        switch (dialogState.type) {
+            case 'confirm': return { title: `Confirm Document?`, description: `Mark "${dialogState.doc.name}" as confirmed?` };
+            case 'unconfirm': return { title: `Unconfirm Document?`, description: `Revert "${dialogState.doc.name}" to a pending state?` };
+            case 'delete': return { title: `Delete Document?`, description: `This will permanently delete the log for "${dialogState.doc.name}".` };
+            default: return { title: "Are you sure?", description: "" };
+        }
     };
 
     return (
         <>
-            <EditSecurityDialog 
-                doc={selectedDoc} 
-                isOpen={isEditOpen} 
-                onOpenChange={(open) => {
-                    if (!open) handleCloseDialogs();
-                }} 
+            <EditSecurityDialog
+                doc={dialogState.doc}
+                isOpen={dialogState.type === 'edit'}
+                onOpenChange={(open) => !open && handleCloseDialogs()}
             />
-            <AlertDialog open={!!actionToConfirm} onOpenChange={(open) => { if (!open) handleCloseDialogs(); }}>
+
+            <AlertDialog open={['confirm', 'unconfirm', 'delete'].includes(dialogState.type || '')} onOpenChange={(open) => !open && handleCloseDialogs()}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
                         <AlertDialogTitle>{getAlertStrings().title}</AlertDialogTitle>
@@ -174,7 +168,7 @@ export default function SecurityContent() {
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                         <AlertDialogCancel onClick={handleCloseDialogs}>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleCloseDialogs} variant={actionToConfirm === 'delete' ? 'destructive' : 'default'}>
+                        <AlertDialogAction onClick={handleConfirmAction} variant={dialogState.type === 'delete' ? 'destructive' : 'default'}>
                             Yes, Proceed
                         </AlertDialogAction>
                     </AlertDialogFooter>
@@ -221,20 +215,20 @@ export default function SecurityContent() {
                                     <TableCell className="text-right">
                                         <DropdownMenu>
                                             <DropdownMenuTrigger asChild>
-                                                <Button variant="ghost" size="icon">
+                                                <Button variant="ghost" size="icon" disabled={isProcessing}>
                                                     <MoreVertical className="h-4 w-4"/>
                                                 </Button>
                                             </DropdownMenuTrigger>
                                             <DropdownMenuContent align="end">
                                                 <DropdownMenuItem disabled><View className="mr-2"/>View Details</DropdownMenuItem>
-                                                <DropdownMenuItem onSelect={() => handleOpenEdit(doc.id)}>
+                                                <DropdownMenuItem onSelect={() => handleOpenDialog('edit', doc)}>
                                                     <Edit className="mr-2"/>Edit / Manage Docs
                                                 </DropdownMenuItem>
                                                 <DropdownMenuSeparator />
-                                                <DropdownMenuItem onSelect={() => handleOpenConfirmation('confirm', doc.id)}><CheckCircle className="mr-2"/>Confirm</DropdownMenuItem>
-                                                <DropdownMenuItem onSelect={() => handleOpenConfirmation('unconfirm', doc.id)}><XCircle className="mr-2"/>Unconfirm</DropdownMenuItem>
+                                                <DropdownMenuItem onSelect={() => handleOpenDialog('confirm', doc)}><CheckCircle className="mr-2"/>Confirm</DropdownMenuItem>
+                                                <DropdownMenuItem onSelect={() => handleOpenDialog('unconfirm', doc)}><XCircle className="mr-2"/>Unconfirm</DropdownMenuItem>
                                                 <DropdownMenuSeparator />
-                                                <DropdownMenuItem onSelect={() => handleOpenConfirmation('delete', doc.id)} className="text-destructive">
+                                                <DropdownMenuItem onSelect={() => handleOpenDialog('delete', doc)} className="text-destructive">
                                                     <Trash2 className="mr-2"/>Delete
                                                 </DropdownMenuItem>
                                             </DropdownMenuContent>
