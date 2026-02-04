@@ -11,8 +11,8 @@ import React from 'react';
 import { Briefcase, Info, Presentation, Mail, Cpu, AlertCircle, Handshake, CheckCircle, DollarSign, TrendingUp, ShoppingBasket, ClipboardCopy } from 'lucide-react';
 
 
-// --- ElevatorPitch Content ---
-const elevatorPitchSections = [
+// --- Overview Content ---
+const overviewSections = [
     {
         icon: <Cpu className="h-8 w-8 text-primary" />,
         title: "What is TransConnect?",
@@ -53,15 +53,15 @@ const elevatorPitchSections = [
     }
 ];
 
-function ElevatorPitch() {
+function Overview() {
     return (
         <div className="space-y-8">
             <div>
-                <h1 className="text-3xl font-bold font-headline">Elevator Pitch: The Investment Case</h1>
+                <h1 className="text-3xl font-bold font-headline">Overview: The Investment Case</h1>
                 <p className="text-lg text-muted-foreground mt-2">A concise summary of the TransConnect investment opportunity.</p>
             </div>
 
-            {elevatorPitchSections.map(section => (
+            {overviewSections.map(section => (
                 <Card key={section.title}>
                     <CardHeader>
                         <CardTitle className="flex items-center gap-3">
@@ -248,12 +248,12 @@ export default function InvestorDashboard() {
     <Tabs defaultValue="list" className="w-full">
       <TabsList className="grid w-full grid-cols-4">
         <TabsTrigger value="list"><Briefcase className="mr-2 h-4 w-4" />Investor List</TabsTrigger>
-        <TabsTrigger value="pitch"><Info className="mr-2 h-4 w-4" />Elevator Pitch</TabsTrigger>
+        <TabsTrigger value="overview"><Info className="mr-2 h-4 w-4" />Overview</TabsTrigger>
         <TabsTrigger value="offer"><Presentation className="mr-2 h-4 w-4" />Investor Offer</TabsTrigger>
         <TabsTrigger value="emails"><Mail className="mr-2 h-4 w-4" />Email Sequence</TabsTrigger>
       </TabsList>
       <TabsContent value="list" className="mt-6"><InvestorManagement /></TabsContent>
-      <TabsContent value="pitch" className="mt-6"><ElevatorPitch /></TabsContent>
+      <TabsContent value="overview" className="mt-6"><Overview /></TabsContent>
       <TabsContent value="offer" className="mt-6"><InvestorOffer /></TabsContent>
       <TabsContent value="emails" className="mt-6"><InvestorEmailSequence /></TabsContent>
     </Tabs>
