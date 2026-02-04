@@ -1,20 +1,22 @@
 
 'use client';
 
-import { Suspense } from 'react';
+import { Suspense, useMemo } from 'react';
 import { useParams } from 'next/navigation';
 import { useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
-import { Loader2, Briefcase } from 'lucide-react';
+import { Loader2, Briefcase, Info, Presentation, Mail, Handshake, DollarSign, TrendingUp, CheckCircle, Cpu, AlertCircle } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import React from 'react';
 import FinancialForecast from './financial-forecast';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
-// --- Copied components from investor-dashboard to make this self-contained ---
+// --- Re-inlined the components ---
 
-// --- Overview Content ---
 const overviewSections = [
     {
+        icon: <AlertCircle className="h-8 w-8 text-destructive" />,
         title: "The Problem We Solve for Transporters",
         points: [
             "Access to capital is a primary roadblock, as traditional banks often reject viable businesses.",
@@ -24,6 +26,7 @@ const overviewSections = [
         ]
     },
     {
+        icon: <Handshake className="h-8 w-8 text-primary" />,
         title: "The Investment Opportunity",
         points: [
             "Capitalize on a first-mover advantage in a massive, underserved market with a proven business model.",
@@ -37,14 +40,22 @@ const overviewSections = [
 function Overview() {
     return (
         <div className="space-y-8">
+            <Card>
+                <CardHeader><CardTitle className="flex items-center gap-3"><Cpu className="h-8 w-8 text-primary" />What is TransConnect?</CardTitle></CardHeader>
+                <CardContent>
+                    <ul className="list-disc list-inside space-y-3 text-muted-foreground">
+                        <li>An integrated digital ecosystem designed specifically for the South African transport industry.</li>
+                        <li>A platform that unifies four core business pillars: Funding, a multi-faceted Mall, a value-added Marketplace, and a powerful Tech division.</li>
+                        <li>A reward-first, loyalty-driven community where member participation and collaboration create a high-value network.</li>
+                    </ul>
+                </CardContent>
+            </Card>
             {overviewSections.map(section => (
                 <Card key={section.title}>
-                    <CardHeader><CardTitle>{section.title}</CardTitle></CardHeader>
+                    <CardHeader><CardTitle className="flex items-center gap-3">{section.icon}{section.title}</CardTitle></CardHeader>
                     <CardContent>
                         <ul className="list-disc list-inside space-y-3 text-muted-foreground">
-                            {section.points.map((point, index) => (
-                                <li key={index}>{point}</li>
-                            ))}
+                            {section.points.map((point, index) => ( <li key={index}>{point}</li> ))}
                         </ul>
                     </CardContent>
                 </Card>
@@ -53,14 +64,12 @@ function Overview() {
     );
 }
 
-// --- InvestorOffer Content ---
 function InvestorOffer() {
+     const year1_total_revenue = 2880000, year3_total_revenue = 43200000, year1_net_profit = 1008000, year3_net_profit = 19440000;
+     const formatCurrency = (amount: number) => new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR', maximumFractionDigits: 0 }).format(amount);
     return (
         <div className="space-y-8">
-            <Card>
-                <CardHeader>
-                    <CardTitle>Multi-Stream Revenue Model</CardTitle>
-                </CardHeader>
+            <Card><CardHeader><CardTitle className="flex items-center gap-2"><DollarSign className="h-6 w-6 text-primary"/>Multi-Stream Revenue Model</CardTitle></CardHeader>
                 <CardContent className="space-y-4">
                      <p className="text-muted-foreground">Our platform generates revenue through three primary, diversified streams:</p>
                     <div className="grid md:grid-cols-3 gap-6">
@@ -70,11 +79,24 @@ function InvestorOffer() {
                     </div>
                 </CardContent>
             </Card>
+            <Card><CardHeader><CardTitle className="flex items-center gap-2"><TrendingUp className="h-6 w-6 text-primary"/>Financial Projections (Illustrative)</CardTitle><CardDescription>Based on our sales roadmap and market assumptions.</CardDescription></CardHeader>
+                <CardContent>
+                    <Table>
+                        <TableHeader><TableRow><TableHead>Metric</TableHead><TableHead className="text-right">Year 1 Projection</TableHead><TableHead className="text-right">Year 3 Projection</TableHead></TableRow></TableHeader>
+                        <TableBody>
+                            <TableRow><TableCell>Total Members</TableCell><TableCell className="text-right font-semibold">1,200</TableCell><TableCell className="text-right font-semibold">15,000</TableCell></TableRow>
+                            <TableRow><TableCell>Total Annual Revenue</TableCell><TableCell className="text-right font-semibold">{formatCurrency(year1_total_revenue)}</TableCell><TableCell className="text-right font-semibold">{formatCurrency(year3_total_revenue)}</TableCell></TableRow>
+                            <TableRow className="bg-primary/5"><TableCell className="font-bold">Projected Net Profit</TableCell><TableCell className="text-right font-bold text-primary text-lg">{formatCurrency(year1_net_profit)}</TableCell><TableCell className="text-right font-bold text-primary text-lg">{formatCurrency(year3_net_profit)}</TableCell></TableRow>
+                        </TableBody>
+                    </Table>
+                </CardContent>
+                <CardFooter><p className="text-xs text-muted-foreground">Disclaimer: These projections are illustrative and not a guarantee of future performance.</p></CardFooter>
+            </Card>
         </div>
     );
 }
+// --- END Re-inlining ---
 
-// --- Main Investor Pitch Page ---
 
 function InvestorPitchPage() {
     const params = useParams();
@@ -86,14 +108,18 @@ function InvestorPitchPage() {
         return doc(firestore, 'partners', investorId);
     }, [firestore, investorId]);
     
-    const { data: investor, isLoading } = useDoc(investorRef);
+    const { data: investor, isLoading, error } = useDoc(investorRef);
 
     if (isLoading) {
         return <div className="flex justify-center py-20"><Loader2 className="h-12 w-12 animate-spin" /></div>;
     }
+    
+    if (error) {
+        return <div className="text-center py-20 text-destructive">Error loading investor: {error.message}</div>;
+    }
 
     if (!investor) {
-        return <div className="text-center py-20">Investor not found.</div>;
+        return <div className="text-center py-20 text-muted-foreground">Investor with ID "{investorId}" not found.</div>;
     }
 
     return (
