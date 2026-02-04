@@ -14,7 +14,7 @@ function serializeTimestamps(docData: any): any {
         if (value instanceof Timestamp) {
             newDocData[key] = value.toDate().toISOString();
         } else if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
-            newDocData[key] = serializeTimestamps(value);
+            newDocData[key] = serializeTimestamps(value); // Recursively serialize nested objects
         } else {
             newDocData[key] = value;
         }
@@ -64,10 +64,6 @@ export async function POST(req: NextRequest) {
             if (uid && pathSegments.length >= 2) {
                 // Check if user is accessing their own user document
                 if (pathSegments[0] === 'users' && pathSegments[1] === uid) {
-                    isAuthorized = true;
-                }
-                // Check if user is accessing their own member document or its subcollections
-                else if (pathSegments[0] === 'members' && pathSegments[1] === uid) {
                     isAuthorized = true;
                 }
                 // Check if user is accessing their own company document or its subcollections
