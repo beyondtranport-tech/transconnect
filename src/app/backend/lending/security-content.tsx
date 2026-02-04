@@ -1,8 +1,8 @@
 
 'use client';
 
-import { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useState, useMemo } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
 import { PlusCircle, FileSignature, Upload, Edit, Trash2, MoreVertical, View, CheckCircle, XCircle } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -115,19 +115,30 @@ function EditSecurityDialog({ doc, isOpen, onOpenChange }: { doc: any; isOpen: b
 
 export default function SecurityContent() {
     const [actionToConfirm, setActionToConfirm] = useState<'confirm' | 'unconfirm' | 'delete' | null>(null);
-    const [selectedDoc, setSelectedDoc] = useState<any | null>(null);
+    const [selectedDocId, setSelectedDocId] = useState<string | null>(null);
     const [isEditOpen, setIsEditOpen] = useState(false);
     
-    const handleOpenConfirmation = (action: 'confirm' | 'unconfirm' | 'delete', doc: any) => {
+    // Derived state for the selected document. This is more stable than storing the object itself.
+    const selectedDoc = useMemo(() => {
+        if (!selectedDocId) return null;
+        return dummySecurityDocs.find(doc => doc.id === selectedDocId);
+    }, [selectedDocId]);
+
+    const handleOpenConfirmation = (action: 'confirm' | 'unconfirm' | 'delete', docId: string) => {
         setActionToConfirm(action);
-        setSelectedDoc(doc);
+        setSelectedDocId(docId);
+    };
+
+    const handleOpenEdit = (docId: string) => {
+        setSelectedDocId(docId);
+        setIsEditOpen(true);
     };
 
     const handleCloseDialogs = () => {
         setActionToConfirm(null);
-        setSelectedDoc(null);
+        setSelectedDocId(null);
         setIsEditOpen(false);
-    }
+    };
     
     const getAlertStrings = () => {
       if (!selectedDoc) return { title: 'Are you sure?', description: '' };
@@ -148,7 +159,6 @@ export default function SecurityContent() {
                         isOpen={isEditOpen} 
                         onOpenChange={(open) => {
                             if (!open) handleCloseDialogs();
-                            else setIsEditOpen(true);
                         }} 
                     />
                     <AlertDialog open={!!actionToConfirm} onOpenChange={(open) => { if (!open) handleCloseDialogs(); }}>
@@ -214,14 +224,14 @@ export default function SecurityContent() {
                                             </DropdownMenuTrigger>
                                             <DropdownMenuContent align="end">
                                                 <DropdownMenuItem disabled><View className="mr-2"/>View Details</DropdownMenuItem>
-                                                <DropdownMenuItem onSelect={() => {setSelectedDoc(doc); setIsEditOpen(true);}}>
+                                                <DropdownMenuItem onSelect={() => handleOpenEdit(doc.id)}>
                                                     <Edit className="mr-2"/>Edit / Manage Docs
                                                 </DropdownMenuItem>
                                                 <DropdownMenuSeparator />
-                                                <DropdownMenuItem onSelect={() => handleOpenConfirmation('confirm', doc)}><CheckCircle className="mr-2"/>Confirm</DropdownMenuItem>
-                                                <DropdownMenuItem onSelect={() => handleOpenConfirmation('unconfirm', doc)}><XCircle className="mr-2"/>Unconfirm</DropdownMenuItem>
+                                                <DropdownMenuItem onSelect={() => handleOpenConfirmation('confirm', doc.id)}><CheckCircle className="mr-2"/>Confirm</DropdownMenuItem>
+                                                <DropdownMenuItem onSelect={() => handleOpenConfirmation('unconfirm', doc.id)}><XCircle className="mr-2"/>Unconfirm</DropdownMenuItem>
                                                 <DropdownMenuSeparator />
-                                                <DropdownMenuItem onSelect={() => handleOpenConfirmation('delete', doc)} className="text-destructive">
+                                                <DropdownMenuItem onSelect={() => handleOpenConfirmation('delete', doc.id)} className="text-destructive">
                                                     <Trash2 className="mr-2"/>Delete
                                                 </DropdownMenuItem>
                                             </DropdownMenuContent>
