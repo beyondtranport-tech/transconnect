@@ -25,6 +25,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
+  AlertDialogTrigger
 } from '@/components/ui/alert-dialog';
 import {
   DropdownMenu,
@@ -89,188 +90,173 @@ function AddSecurityDocDialog() {
     )
 }
 
-function EditSecurityDialog({ doc, isOpen, onOpenChange }: { doc: any | null; isOpen: boolean; onOpenChange: (open: boolean) => void; }) {
-  return (
-    <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent>
-        {doc ? (
-            <>
+// Self-contained component for the Edit Dialog
+function EditDialog({ doc }: { doc: any }) {
+    return (
+        <Dialog>
+            <DialogTrigger asChild>
+                <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                    <Edit className="mr-2 h-4 w-4" />
+                    <span>Edit / Manage Docs</span>
+                </DropdownMenuItem>
+            </DialogTrigger>
+            <DialogContent>
                 <DialogHeader>
-                <DialogTitle>Manage Document: {doc.name}</DialogTitle>
-                <DialogDescription>
-                    This is where you will generate, upload, and manage the PDF documents for this security agreement. This functionality is under construction.
-                </DialogDescription>
+                    <DialogTitle>Manage Document: {doc.name}</DialogTitle>
+                    <DialogDescription>
+                        This is where you will generate, upload, and manage the PDF documents for this security agreement. This functionality is under construction.
+                    </DialogDescription>
                 </DialogHeader>
                 <div className="py-8 text-center text-muted-foreground">
                     <p>Document generation and upload interface will be here.</p>
                 </div>
-                <DialogFooter>
-                <Button variant="outline" onClick={() => onOpenChange(false)}>Close</Button>
-                </DialogFooter>
-            </>
-        ) : (
-            <div className="flex justify-center items-center p-8">
-                <Loader2 className="h-8 w-8 animate-spin" />
-            </div>
-        )}
-      </DialogContent>
-    </Dialog>
-  );
+            </DialogContent>
+        </Dialog>
+    );
 }
 
-
+// Main component with corrected state management
 export default function SecurityContent() {
     const { toast } = useToast();
-    const [isProcessing, setIsProcessing] = useState(false);
-    
-    // A single state object to control all dialogs and their data.
-    const [dialogState, setDialogState] = useState<{
-        type: 'edit' | 'confirm' | null;
-        doc: any | null;
-        confirmAction?: 'confirm' | 'unconfirm' | 'delete';
-    }>({ type: null, doc: null });
+    // No central state management for dialogs needed anymore.
 
-    // Single entry point to open any dialog.
-    const handleOpenDialog = (type: 'edit' | 'confirm', doc: any, confirmAction?: 'confirm' | 'unconfirm' | 'delete') => {
-        setDialogState({ type, doc, confirmAction });
-    };
-
-    // Single function to close all dialogs and reset state.
-    const handleCloseDialogs = useCallback(() => {
-        setDialogState({ type: null, doc: null, confirmAction: undefined });
-    }, []);
-
-    // Single confirmation handler.
-    const handleConfirmAction = () => {
-        if (!dialogState.confirmAction || !dialogState.doc) return;
-        
-        setIsProcessing(true);
-        // Simulate API call
-        setTimeout(() => {
-            console.log(`Performing action: ${dialogState.confirmAction} on doc: ${dialogState.doc.id}`);
-            toast({ title: "Action Confirmed (Demo)", description: `The '${dialogState.confirmAction}' action was completed.` });
-            setIsProcessing(false);
-            handleCloseDialogs(); // Close and reset state
-            // In a real app, you would refetch data here.
-        }, 1000);
-    };
-
-    // Helper to get text for the confirmation dialog.
-    const getAlertStrings = () => {
-        if (!dialogState.doc) return { title: 'Are you sure?', description: '' };
-        switch (dialogState.confirmAction) {
-            case 'confirm': return { title: `Confirm Document?`, description: `Mark "${dialogState.doc.name}" as confirmed? This may lock the record.` };
-            case 'unconfirm': return { title: `Unconfirm Document?`, description: `Revert "${dialogState.doc.name}" to an unconfirmed state, making it editable.` };
-            case 'delete': return { title: `Delete Document?`, description: `This will permanently delete the log for "${dialogState.doc.name}".` };
-            default: return { title: "Are you sure?", description: "" };
-        }
+    const handleAction = async (action: string, doc: any) => {
+        // Placeholder for API calls
+        console.log(`Performing action: ${action} on doc: ${doc.id}`);
+        await new Promise(resolve => setTimeout(resolve, 500));
+        toast({ title: 'Action completed (demo)' });
+        // In a real app, you would call forceRefresh() here
     };
 
     return (
-        <>
-            <EditSecurityDialog
-                doc={dialogState.doc}
-                isOpen={dialogState.type === 'edit'}
-                onOpenChange={(open) => !open && handleCloseDialogs()}
-            />
+        <Card>
+            <CardHeader className="flex flex-row justify-between items-start">
+                <div>
+                    <CardTitle className="flex items-center gap-2">
+                        <FileSignature /> Security Agreements Register
+                    </CardTitle>
+                    <CardDescription>
+                        Track non-tangible security agreements like deeds of surety and cessions of book debt.
+                    </CardDescription>
+                </div>
+                <AddSecurityDocDialog />
+            </CardHeader>
+            <CardContent>
+                <div className="border rounded-lg">
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead>Agreement Type</TableHead>
+                            <TableHead>Client</TableHead>
+                            <TableHead>Main Agreement</TableHead>
+                            <TableHead>Record Status</TableHead>
+                            <TableHead>Doc Status</TableHead>
+                            <TableHead>Last Updated</TableHead>
+                            <TableHead className="text-right">Actions</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {dummySecurityDocs.map(doc => {
+                            const isLocked = doc.recordStatus === 'Confirmed';
+                            return (
+                            <TableRow key={doc.id}>
+                                <TableCell className="font-medium">{doc.name}</TableCell>
+                                <TableCell>{doc.client}</TableCell>
+                                <TableCell className="font-mono text-xs">{doc.agreement}</TableCell>
+                                <TableCell>
+                                    <Badge variant={recordStatusColors[doc.recordStatus] || 'secondary'} className="capitalize">
+                                        {doc.recordStatus}
+                                    </Badge>
+                                </TableCell>
+                                <TableCell>
+                                    <Select defaultValue={doc.docStatus} disabled={isLocked}>
+                                        <SelectTrigger className="w-[150px] h-8 text-xs">
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {docStatusOptions.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                                        </SelectContent>
+                                    </Select>
+                                </TableCell>
+                                <TableCell>{doc.lastUpdated}</TableCell>
+                                <TableCell className="text-right">
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                            <Button variant="ghost" size="icon">
+                                                <MoreVertical className="h-4 w-4"/>
+                                            </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent align="end">
+                                            
+                                            <EditDialog doc={doc} />
 
-            <AlertDialog open={dialogState.type === 'confirm'} onOpenChange={(open) => !open && handleCloseDialogs()}>
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle>{getAlertStrings().title}</AlertDialogTitle>
-                        <AlertDialogDescription>{getAlertStrings().description}</AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel onClick={handleCloseDialogs} disabled={isProcessing}>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleConfirmAction} variant={dialogState.confirmAction === 'delete' ? 'destructive' : 'default'} disabled={isProcessing}>
-                            {isProcessing ? <Loader2 className="h-4 w-4 animate-spin"/> : "Yes, Proceed"}
-                        </AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
+                                            <DropdownMenuSeparator />
 
-            <Card>
-                <CardHeader className="flex flex-row justify-between items-start">
-                    <div>
-                        <CardTitle className="flex items-center gap-2">
-                            <FileSignature /> Security Agreements Register
-                        </CardTitle>
-                        <CardDescription>
-                            Track non-tangible security agreements like deeds of surety and cessions of book debt.
-                        </CardDescription>
-                    </div>
-                    <AddSecurityDocDialog />
-                </CardHeader>
-                <CardContent>
-                    <div className="border rounded-lg">
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Agreement Type</TableHead>
-                                <TableHead>Client</TableHead>
-                                <TableHead>Main Agreement</TableHead>
-                                <TableHead>Record Status</TableHead>
-                                <TableHead>Doc Status</TableHead>
-                                <TableHead>Last Updated</TableHead>
-                                <TableHead className="text-right">Actions</TableHead>
+                                            <AlertDialog>
+                                                <AlertDialogTrigger asChild>
+                                                    <DropdownMenuItem onSelect={(e) => e.preventDefault()} disabled={isLocked}>
+                                                        <CheckCircle className="mr-2 h-4 w-4" /> Confirm
+                                                    </DropdownMenuItem>
+                                                </AlertDialogTrigger>
+                                                <AlertDialogContent>
+                                                    <AlertDialogHeader>
+                                                        <AlertDialogTitle>Confirm Document?</AlertDialogTitle>
+                                                        <AlertDialogDescription>Mark "{doc.name}" as confirmed? This may lock the record.</AlertDialogDescription>
+                                                    </AlertDialogHeader>
+                                                    <AlertDialogFooter>
+                                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                        <AlertDialogAction onClick={() => handleAction('confirm', doc)}>Yes, Confirm</AlertDialogAction>
+                                                    </AlertDialogFooter>
+                                                </AlertDialogContent>
+                                            </AlertDialog>
+                                            
+                                            <AlertDialog>
+                                                <AlertDialogTrigger asChild>
+                                                    <DropdownMenuItem onSelect={(e) => e.preventDefault()} disabled={!isLocked}>
+                                                        <XCircle className="mr-2 h-4 w-4" /> Unconfirm
+                                                    </DropdownMenuItem>
+                                                </AlertDialogTrigger>
+                                                <AlertDialogContent>
+                                                     <AlertDialogHeader>
+                                                        <AlertDialogTitle>Unconfirm Document?</AlertDialogTitle>
+                                                        <AlertDialogDescription>Revert "{doc.name}" to an unconfirmed state, making it editable.</AlertDialogDescription>
+                                                    </AlertDialogHeader>
+                                                    <AlertDialogFooter>
+                                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                        <AlertDialogAction onClick={() => handleAction('unconfirm', doc)}>Yes, Unconfirm</AlertDialogAction>
+                                                    </AlertDialogFooter>
+                                                </AlertDialogContent>
+                                            </AlertDialog>
+
+                                            <DropdownMenuSeparator />
+
+                                             <AlertDialog>
+                                                <AlertDialogTrigger asChild>
+                                                     <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive">
+                                                        <Trash2 className="mr-2 h-4 w-4" /> Delete
+                                                    </DropdownMenuItem>
+                                                </AlertDialogTrigger>
+                                                <AlertDialogContent>
+                                                     <AlertDialogHeader>
+                                                        <AlertDialogTitle>Delete Document?</AlertDialogTitle>
+                                                        <AlertDialogDescription>This will permanently delete the log for "{doc.name}".</AlertDialogDescription>
+                                                    </AlertDialogHeader>
+                                                    <AlertDialogFooter>
+                                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                        <AlertDialogAction onClick={() => handleAction('delete', doc)} variant="destructive">Delete</AlertDialogAction>
+                                                    </AlertDialogFooter>
+                                                </AlertDialogContent>
+                                            </AlertDialog>
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
+                                </TableCell>
                             </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {dummySecurityDocs.map(doc => {
-                                const isLocked = doc.recordStatus === 'Confirmed';
-                                return (
-                                <TableRow key={doc.id}>
-                                    <TableCell className="font-medium">{doc.name}</TableCell>
-                                    <TableCell>{doc.client}</TableCell>
-                                    <TableCell className="font-mono text-xs">{doc.agreement}</TableCell>
-                                    <TableCell>
-                                        <Badge variant={recordStatusColors[doc.recordStatus] || 'secondary'} className="capitalize">
-                                            {doc.recordStatus}
-                                        </Badge>
-                                    </TableCell>
-                                    <TableCell>
-                                        <Select defaultValue={doc.docStatus} disabled={isLocked}>
-                                            <SelectTrigger className="w-[150px] h-8 text-xs">
-                                                <SelectValue />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                {docStatusOptions.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-                                            </SelectContent>
-                                        </Select>
-                                    </TableCell>
-                                    <TableCell>{doc.lastUpdated}</TableCell>
-                                    <TableCell className="text-right">
-                                        <DropdownMenu>
-                                            <DropdownMenuTrigger asChild>
-                                                <Button variant="ghost" size="icon">
-                                                    <MoreVertical className="h-4 w-4"/>
-                                                </Button>
-                                            </DropdownMenuTrigger>
-                                            <DropdownMenuContent align="end">
-                                                <DropdownMenuItem onSelect={(e) => { e.preventDefault(); handleOpenDialog('edit', doc); }}>
-                                                    <Edit className="mr-2"/>Edit / Manage Docs
-                                                </DropdownMenuItem>
-                                                <DropdownMenuSeparator />
-                                                <DropdownMenuItem onSelect={() => handleOpenDialog('confirm', doc, 'confirm')} disabled={isLocked}>
-                                                    <CheckCircle className="mr-2"/>Confirm
-                                                </DropdownMenuItem>
-                                                <DropdownMenuItem onSelect={() => handleOpenDialog('confirm', doc, 'unconfirm')} disabled={!isLocked}>
-                                                    <XCircle className="mr-2"/>Unconfirm
-                                                </DropdownMenuItem>
-                                                <DropdownMenuSeparator />
-                                                <DropdownMenuItem onSelect={() => handleOpenDialog('confirm', doc, 'delete')} className="text-destructive">
-                                                    <Trash2 className="mr-2"/>Delete
-                                                </DropdownMenuItem>
-                                            </DropdownMenuContent>
-                                        </DropdownMenu>
-                                    </TableCell>
-                                </TableRow>
-                            )})}
-                        </TableBody>
-                    </Table>
-                    </div>
-                </CardContent>
-            </Card>
-        </>
+                        )})}
+                    </TableBody>
+                </Table>
+                </div>
+            </CardContent>
+        </Card>
     );
 }
+
