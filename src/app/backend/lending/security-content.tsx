@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
-import { PlusCircle, FileSignature, Upload, Edit, Trash2 } from 'lucide-react';
+import { PlusCircle, FileSignature, Upload, Edit, Trash2, MoreVertical, View, CheckCircle, XCircle } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -15,6 +15,23 @@ import {
   DialogFooter,
   DialogTrigger,
 } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -23,9 +40,19 @@ import { useToast } from '@/hooks/use-toast';
 const dummySecurityDocs = [
     { id: 'sec-001', name: 'Cession of Book Debts', client: 'Sample Transport Co.', agreement: 'AG-101', status: 'Generated', lastUpdated: '2024-07-29' },
     { id: 'sec-002', name: 'Suretyship by Directors', client: 'Another Client Ltd', agreement: 'AG-205', status: 'Signed In', lastUpdated: '2024-07-25' },
+    { id: 'sec-003', name: 'General Notarial Bond', client: 'Fast Freight Inc.', agreement: 'AG-301', status: 'Sent', lastUpdated: '2024-07-30' },
+    { id: 'sec-004', name: 'Pledge and Cession', client: 'Bulk Movers', agreement: 'AG-404', status: 'Received', lastUpdated: '2024-07-28' },
 ];
 
 const statusOptions = ["Generated", "Sent", "Received", "Checked", "Signed In"];
+
+const statusColors: { [key: string]: 'default' | 'secondary' | 'destructive' | 'outline' } = {
+  Generated: 'secondary',
+  Sent: 'outline',
+  Received: 'default',
+  Checked: 'default',
+  'Signed In': 'default',
+};
 
 function AddSecurityDocDialog() {
     const { toast } = useToast();
@@ -64,59 +91,141 @@ function AddSecurityDocDialog() {
     )
 }
 
+function EditSecurityDialog({ doc, isOpen, setIsOpen }: { doc: any; isOpen: boolean; setIsOpen: (open: boolean) => void; }) {
+  // This is a placeholder for the actual edit UI.
+  return (
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Manage Document: {doc.name}</DialogTitle>
+          <DialogDescription>
+            This is where you will generate, upload, and manage the PDF documents for this security agreement. This functionality is under construction.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="py-8 text-center text-muted-foreground">
+            <p>Document generation and upload interface will be here.</p>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setIsOpen(false)}>Close</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 export default function SecurityContent() {
+    const [actionToConfirm, setActionToConfirm] = useState<'confirm' | 'unconfirm' | 'delete' | null>(null);
+    const [selectedDoc, setSelectedDoc] = useState<any | null>(null);
+    const [isEditOpen, setIsEditOpen] = useState(false);
+    
+    const handleOpenConfirmation = (action: 'confirm' | 'unconfirm' | 'delete', doc: any) => {
+        setActionToConfirm(action);
+        setSelectedDoc(doc);
+    };
+
+    const handleCloseConfirmation = () => {
+        setActionToConfirm(null);
+        setSelectedDoc(null);
+    }
+    
+    const getAlertStrings = () => {
+      if (!selectedDoc) return { title: 'Are you sure?', description: '' };
+      switch (actionToConfirm) {
+        case 'confirm': return { title: `Confirm Document?`, description: `Mark "${selectedDoc.name}" as confirmed?` };
+        case 'unconfirm': return { title: `Unconfirm Document?`, description: `Revert "${selectedDoc.name}" to a pending state?` };
+        case 'delete': return { title: `Delete Document?`, description: `This will permanently delete the log for "${selectedDoc.name}".` };
+        default: return { title: "Are you sure?", description: "" };
+      }
+    };
+
     return (
-        <Card>
-            <CardHeader className="flex flex-row justify-between items-start">
-                <div>
-                    <CardTitle className="flex items-center gap-2">
-                        <FileSignature /> Security Agreements Register
-                    </CardTitle>
-                    <CardDescription>
-                        Track non-tangible security agreements like deeds of surety and cessions of book debt. These provide legal rights but are not tied to a specific, titled asset.
-                    </CardDescription>
-                </div>
-                <AddSecurityDocDialog />
-            </CardHeader>
-            <CardContent>
-                <div className="border rounded-lg">
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>Agreement Type</TableHead>
-                            <TableHead>Client</TableHead>
-                            <TableHead>Main Agreement</TableHead>
-                            <TableHead>Status</TableHead>
-                            <TableHead>Last Updated</TableHead>
-                            <TableHead className="text-right">Actions</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {dummySecurityDocs.map(doc => (
-                            <TableRow key={doc.id}>
-                                <TableCell className="font-medium">{doc.name}</TableCell>
-                                <TableCell>{doc.client}</TableCell>
-                                <TableCell className="font-mono text-xs">{doc.agreement}</TableCell>
-                                <TableCell>
-                                    <Select defaultValue={doc.status}>
-                                        <SelectTrigger className="w-[150px] h-8 text-xs">
-                                            <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {statusOptions.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-                                        </SelectContent>
-                                    </Select>
-                                </TableCell>
-                                <TableCell>{doc.lastUpdated}</TableCell>
-                                <TableCell className="text-right space-x-1">
-                                    <Button variant="outline" size="sm"><Upload className="mr-2 h-4 w-4"/> Attach PDF</Button>
-                                </TableCell>
+        <>
+            {selectedDoc && (
+                <>
+                    <EditSecurityDialog doc={selectedDoc} isOpen={isEditOpen} setIsOpen={setIsEditOpen} />
+                    <AlertDialog open={!!actionToConfirm} onOpenChange={handleCloseConfirmation}>
+                        <AlertDialogContent>
+                            <AlertDialogHeader>
+                                <AlertDialogTitle>{getAlertStrings().title}</AlertDialogTitle>
+                                <AlertDialogDescription>{getAlertStrings().description}</AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                                <AlertDialogCancel onClick={handleCloseConfirmation}>Cancel</AlertDialogCancel>
+                                <AlertDialogAction onClick={handleCloseConfirmation} variant={actionToConfirm === 'delete' ? 'destructive' : 'default'}>
+                                    Yes, Proceed
+                                </AlertDialogAction>
+                            </AlertDialogFooter>
+                        </AlertDialogContent>
+                    </AlertDialog>
+                </>
+            )}
+
+            <Card>
+                <CardHeader className="flex flex-row justify-between items-start">
+                    <div>
+                        <CardTitle className="flex items-center gap-2">
+                            <FileSignature /> Security Agreements Register
+                        </CardTitle>
+                        <CardDescription>
+                            Track non-tangible security agreements like deeds of surety and cessions of book debt.
+                        </CardDescription>
+                    </div>
+                    <AddSecurityDocDialog />
+                </CardHeader>
+                <CardContent>
+                    <div className="border rounded-lg">
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Agreement Type</TableHead>
+                                <TableHead>Client</TableHead>
+                                <TableHead>Main Agreement</TableHead>
+                                <TableHead>Status</TableHead>
+                                <TableHead>Last Updated</TableHead>
+                                <TableHead className="text-right">Actions</TableHead>
                             </TableRow>
-                        ))}
-                    </TableBody>
-                </Table>
-                </div>
-            </CardContent>
-        </Card>
+                        </TableHeader>
+                        <TableBody>
+                            {dummySecurityDocs.map(doc => (
+                                <TableRow key={doc.id}>
+                                    <TableCell className="font-medium">{doc.name}</TableCell>
+                                    <TableCell>{doc.client}</TableCell>
+                                    <TableCell className="font-mono text-xs">{doc.agreement}</TableCell>
+                                    <TableCell>
+                                        <Badge variant={statusColors[doc.status] || 'secondary'} className="capitalize">
+                                            {doc.status}
+                                        </Badge>
+                                    </TableCell>
+                                    <TableCell>{doc.lastUpdated}</TableCell>
+                                    <TableCell className="text-right">
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger asChild>
+                                                <Button variant="ghost" size="icon">
+                                                    <MoreVertical className="h-4 w-4"/>
+                                                </Button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent align="end">
+                                                <DropdownMenuItem disabled><View className="mr-2"/>View Details</DropdownMenuItem>
+                                                <DropdownMenuItem onSelect={() => {setSelectedDoc(doc); setIsEditOpen(true);}}>
+                                                    <Edit className="mr-2"/>Edit / Manage Docs
+                                                </DropdownMenuItem>
+                                                <DropdownMenuSeparator />
+                                                <DropdownMenuItem onSelect={() => handleOpenConfirmation('confirm', doc)}><CheckCircle className="mr-2"/>Confirm</DropdownMenuItem>
+                                                <DropdownMenuItem onSelect={() => handleOpenConfirmation('unconfirm', doc)}><XCircle className="mr-2"/>Unconfirm</DropdownMenuItem>
+                                                <DropdownMenuSeparator />
+                                                <DropdownMenuItem onSelect={() => handleOpenConfirmation('delete', doc)} className="text-destructive">
+                                                    <Trash2 className="mr-2"/>Delete
+                                                </DropdownMenuItem>
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
+                                    </TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                    </div>
+                </CardContent>
+            </Card>
+        </>
     );
 }
