@@ -1,8 +1,7 @@
 
 'use client';
 
-import React, { useMemo, Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
+import React, { useMemo, Suspense, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { TrendingUp, AlertTriangle, Loader2, DollarSign, Users } from 'lucide-react';
@@ -20,7 +19,7 @@ const formatNumber = (value: number) => {
     return value.toLocaleString();
 };
 
-function ForecastContent() {
+function ForecastComponent() {
     const { salesInputs, budgetData, settings, targets } = useMemo(() => {
         if (typeof window === 'undefined') return { salesInputs: null, budgetData: null, settings: null, targets: null };
         try {
@@ -28,7 +27,7 @@ function ForecastContent() {
             const budgetString = localStorage.getItem('accountBudgetAssumptions_v2');
             const salesRoadmapString = localStorage.getItem('accountSalesRoadmapScenarios_v1');
             const targetsString = localStorage.getItem('accountFinancialTargets_v1');
-
+            
             const settings = settingsString ? JSON.parse(settingsString) : null;
             const budget = budgetString ? JSON.parse(budgetString) : null;
             
@@ -58,7 +57,7 @@ function ForecastContent() {
         if (!salesInputs || !settings) return [];
         return salesRoadmapLogic(settings, salesInputs);
     }, [salesInputs, settings]);
-    
+
     const forecastData = useMemo(() => {
         if (roadmapData.length === 0 || !budgetData || !targets) return [];
         return budgetLogic(roadmapData, budgetData, targets);
@@ -90,17 +89,11 @@ function ForecastContent() {
         });
         return totals;
     }, [forecastData]);
-    
-     const grandTotals = useMemo(() => {
-        if (!forecastData || forecastData.length === 0) {
-        return null;
-        }
+
+    const grandTotals = useMemo(() => {
+        if (!forecastData || forecastData.length === 0) return null;
         const totals = {
-            totalRevenue: 0,
-            totalCogs: 0,
-            totalOpex: 0,
-            netProfit: 0,
-            finalMemberCount: 0,
+            totalRevenue: 0, totalCogs: 0, totalOpex: 0, netProfit: 0, finalMemberCount: 0,
         };
         forecastData.forEach((row) => {
             totals.totalRevenue += row.totalRevenue;
@@ -108,11 +101,9 @@ function ForecastContent() {
             totals.totalOpex += row.totalOpex;
             totals.netProfit += row.netProfit;
         });
-        
         if (forecastData.length > 0) {
             totals.finalMemberCount = forecastData[forecastData.length - 1].members;
         }
-
         return totals;
     }, [forecastData]);
 
@@ -232,7 +223,6 @@ function ForecastContent() {
                     )}
                 </CardContent>
             </Card>
-
             <Card>
             <CardHeader>
                 <CardTitle className="flex items-center gap-2"><TrendingUp /> Income Statement Forecast</CardTitle>
@@ -264,7 +254,7 @@ function ForecastContent() {
                                 ))}
                                 {years.map(year => (
                                     <TableCell key={`total-${item.key}-${year}`} className={`text-right bg-primary/10 font-bold font-mono text-sm ${item.isProfit && yearlyTotals[year]?.[item.key] < 0 ? 'text-destructive' : ''}`}>
-                                         {item.format && yearlyTotals[year] ? item.format(yearlyTotals[year][item.key]) : ''}
+                                        {item.format && yearlyTotals[year] ? item.format(yearlyTotals[year][item.key]) : ''}
                                     </TableCell>
                                 ))}
                             </TableRow>
