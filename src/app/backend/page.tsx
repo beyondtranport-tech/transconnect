@@ -57,6 +57,7 @@ import {
   Repeat,
   FileSignature,
   Building,
+  FileSearch,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -94,6 +95,7 @@ const CollateralContent = dynamic(() => import('./lending/collateral-content'), 
 const PaymentsContent = dynamic(() => import('./lending/payments-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const LendingPartnersContent = dynamic(() => import('./lending/partners-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const PartnerDetails = dynamic(() => import('./lending/partner-details'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const DiscoveryContent = dynamic(() => import('./lending/discovery-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 
 
 // Platform Settings
@@ -180,6 +182,7 @@ function BackendContent() {
       case 'lending-collateral': return <CollateralContent />;
       case 'lending-payments': return <PaymentsContent />;
       case 'lending-partners': return <LendingPartnersContent />;
+      case 'lending-discovery': return <DiscoveryContent />;
 
       // Partners
       case 'partners-suppliers': return <PartnerDetails partnerType="Suppliers" />;
@@ -268,6 +271,7 @@ function BackendContent() {
                 <SidebarMenuItem>
                   <SidebarMenuButton tooltip="Lending" isActive={isLendingActive}><Landmark /><span>Lending</span></SidebarMenuButton>
                   <SidebarMenuSub>
+                    <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'lending-discovery'} onClick={() => navigate('lending-discovery')}><FileSearch/>Discovery</SidebarMenuSubButton></SidebarMenuSubItem>
                     <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'lending-clients'} onClick={() => navigate('lending-clients')}><Users/>Clients</SidebarMenuSubButton></SidebarMenuSubItem>
                     <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'lending-agreements'} onClick={() => navigate('lending-agreements')}><FileText />Agreements</SidebarMenuSubButton></SidebarMenuSubItem>
                     <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'lending-facilities'} onClick={() => navigate('lending-facilities')}><Landmark />Facilities</SidebarMenuSubButton></SidebarMenuSubItem>
