@@ -36,19 +36,29 @@ function calculateForecast(inputs: ForecastInputs) {
     const data = [];
     let cumulativeMembers = 0;
 
-    for (let i = 1; i <= inputs.projectionMonths; i++) {
-        cumulativeMembers += inputs.membersPerMonth;
-        const membershipRevenue = cumulativeMembers * inputs.avgMembershipFee;
-        const mallRevenue = cumulativeMembers * inputs.avgMallSpend * (inputs.mallCommissionPercent / 100);
+    // Ensure all inputs from the form are treated as numbers
+    const numInputs = {
+        projectionMonths: Number(inputs.projectionMonths) || 0,
+        membersPerMonth: Number(inputs.membersPerMonth) || 0,
+        avgMembershipFee: Number(inputs.avgMembershipFee) || 0,
+        avgMallSpend: Number(inputs.avgMallSpend) || 0,
+        mallCommissionPercent: Number(inputs.mallCommissionPercent) || 0,
+        opexPerMonth: Number(inputs.opexPerMonth) || 0,
+    };
+
+    for (let i = 1; i <= numInputs.projectionMonths; i++) {
+        cumulativeMembers += numInputs.membersPerMonth;
+        const membershipRevenue = cumulativeMembers * numInputs.avgMembershipFee;
+        const mallRevenue = cumulativeMembers * numInputs.avgMallSpend * (numInputs.mallCommissionPercent / 100);
         const totalRevenue = membershipRevenue + mallRevenue;
-        const netProfit = totalRevenue - inputs.opexPerMonth;
+        const netProfit = totalRevenue - numInputs.opexPerMonth;
         data.push({
             month: i,
             members: cumulativeMembers,
             membershipRevenue,
             mallRevenue,
             totalRevenue,
-            opex: inputs.opexPerMonth,
+            opex: numInputs.opexPerMonth,
             netProfit,
         });
     }
