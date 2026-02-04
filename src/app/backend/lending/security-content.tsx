@@ -39,20 +39,17 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast';
 
 const dummySecurityDocs = [
-    { id: 'sec-001', name: 'Cession of Book Debts', client: 'Sample Transport Co.', agreement: 'AG-101', status: 'Generated', lastUpdated: '2024-07-29' },
-    { id: 'sec-002', name: 'Suretyship by Directors', client: 'Another Client Ltd', agreement: 'AG-205', status: 'Signed In', lastUpdated: '2024-07-25' },
-    { id: 'sec-003', name: 'General Notarial Bond', client: 'Fast Freight Inc.', agreement: 'AG-301', status: 'Sent', lastUpdated: '2024-07-30' },
-    { id: 'sec-004', name: 'Pledge and Cession', client: 'Bulk Movers', agreement: 'AG-404', status: 'Received', lastUpdated: '2024-07-28' },
+    { id: 'sec-001', name: 'Cession of Book Debts', client: 'Sample Transport Co.', agreement: 'AG-101', docStatus: 'Generated', recordStatus: 'Unconfirmed', lastUpdated: '2024-07-29' },
+    { id: 'sec-002', name: 'Suretyship by Directors', client: 'Another Client Ltd', agreement: 'AG-205', docStatus: 'Signed In', recordStatus: 'Confirmed', lastUpdated: '2024-07-25' },
+    { id: 'sec-003', name: 'General Notarial Bond', client: 'Fast Freight Inc.', agreement: 'AG-301', docStatus: 'Sent', recordStatus: 'Unconfirmed', lastUpdated: '2024-07-30' },
+    { id: 'sec-004', name: 'Pledge and Cession', client: 'Bulk Movers', agreement: 'AG-404', docStatus: 'Received', recordStatus: 'Confirmed', lastUpdated: '2024-07-28' },
 ];
 
-const statusOptions = ["Generated", "Sent", "Received", "Checked", "Signed In"];
+const docStatusOptions = ["Generated", "Sent", "Received", "Checked", "Signed In"];
 
-const statusColors: { [key: string]: 'default' | 'secondary' | 'destructive' | 'outline' } = {
-  Generated: 'secondary',
-  Sent: 'outline',
-  Received: 'default',
-  Checked: 'default',
-  'Signed In': 'default',
+const recordStatusColors: { [key: string]: 'default' | 'secondary' | 'destructive' | 'outline' } = {
+  Confirmed: 'default',
+  Unconfirmed: 'secondary',
 };
 
 function AddSecurityDocDialog() {
@@ -126,12 +123,14 @@ export default function SecurityContent() {
     const { toast } = useToast();
     const [isProcessing, setIsProcessing] = useState(false);
     
+    // State management for dialogs
     const [selectedDoc, setSelectedDoc] = useState<any | null>(null);
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
     const [isConfirmOpen, setIsConfirmOpen] = useState(false);
     const [confirmAction, setConfirmAction] = useState<'confirm' | 'unconfirm' | 'delete' | null>(null);
-    
-    const handleOpenDialog = (type: 'edit' | 'confirm' | 'unconfirm' | 'delete', doc: any) => {
+
+    // This function will be called when a menu item is clicked
+    const handleActionClick = (type: 'edit' | 'confirm' | 'unconfirm' | 'delete', doc: any) => {
         setSelectedDoc(doc);
         if (type === 'edit') {
             setIsEditDialogOpen(true);
@@ -140,36 +139,27 @@ export default function SecurityContent() {
             setIsConfirmOpen(true);
         }
     };
-    
-    const handleCloseDialogs = useCallback(() => {
-        if (!isProcessing) {
-            setIsEditDialogOpen(false);
-            setIsConfirmOpen(false);
-            // Delay clearing selectedDoc to prevent content flicker
-            setTimeout(() => {
-                setSelectedDoc(null);
-                setConfirmAction(null);
-            }, 150);
-        }
-    }, [isProcessing]);
 
+    // This function will be called by the confirmation dialog's "Proceed" button
     const handleConfirmAction = () => {
         if (!confirmAction || !selectedDoc) return;
         
         setIsProcessing(true);
+        // Simulate API call
         setTimeout(() => {
             console.log(`Performing action: ${confirmAction} on doc: ${selectedDoc.id}`);
             toast({ title: "Action Confirmed (Demo)", description: `The '${confirmAction}' action was completed.` });
             setIsProcessing(false);
-            handleCloseDialogs();
+            setIsConfirmOpen(false); // Close the confirmation dialog
+            // In a real app, you would refetch data here.
         }, 1000);
     };
 
     const getAlertStrings = () => {
         if (!selectedDoc) return { title: 'Are you sure?', description: '' };
         switch (confirmAction) {
-            case 'confirm': return { title: `Confirm Document?`, description: `Mark "${selectedDoc.name}" as confirmed?` };
-            case 'unconfirm': return { title: `Unconfirm Document?`, description: `Revert "${selectedDoc.name}" to a pending state?` };
+            case 'confirm': return { title: `Confirm Document?`, description: `Mark "${selectedDoc.name}" as confirmed? This may lock the record.` };
+            case 'unconfirm': return { title: `Unconfirm Document?`, description: `Revert "${selectedDoc.name}" to an unconfirmed state, making it editable.` };
             case 'delete': return { title: `Delete Document?`, description: `This will permanently delete the log for "${selectedDoc.name}".` };
             default: return { title: "Are you sure?", description: "" };
         }
@@ -190,7 +180,7 @@ export default function SecurityContent() {
                         <AlertDialogDescription>{getAlertStrings().description}</AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel onClick={handleCloseDialogs}>Cancel</AlertDialogCancel>
+                        <AlertDialogCancel onClick={() => setIsConfirmOpen(false)} disabled={isProcessing}>Cancel</AlertDialogCancel>
                         <AlertDialogAction onClick={handleConfirmAction} variant={confirmAction === 'delete' ? 'destructive' : 'default'} disabled={isProcessing}>
                             {isProcessing ? <Loader2 className="h-4 w-4 animate-spin"/> : "Yes, Proceed"}
                         </AlertDialogAction>
@@ -218,47 +208,63 @@ export default function SecurityContent() {
                                 <TableHead>Agreement Type</TableHead>
                                 <TableHead>Client</TableHead>
                                 <TableHead>Main Agreement</TableHead>
-                                <TableHead>Status</TableHead>
+                                <TableHead>Record Status</TableHead>
+                                <TableHead>Doc Status</TableHead>
                                 <TableHead>Last Updated</TableHead>
                                 <TableHead className="text-right">Actions</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {dummySecurityDocs.map(doc => (
+                            {dummySecurityDocs.map(doc => {
+                                const isLocked = doc.recordStatus === 'Confirmed';
+                                return (
                                 <TableRow key={doc.id}>
                                     <TableCell className="font-medium">{doc.name}</TableCell>
                                     <TableCell>{doc.client}</TableCell>
                                     <TableCell className="font-mono text-xs">{doc.agreement}</TableCell>
                                     <TableCell>
-                                        <Badge variant={statusColors[doc.status] || 'secondary'} className="capitalize">
-                                            {doc.status}
+                                        <Badge variant={recordStatusColors[doc.recordStatus] || 'secondary'} className="capitalize">
+                                            {doc.recordStatus}
                                         </Badge>
+                                    </TableCell>
+                                    <TableCell>
+                                        <Select defaultValue={doc.docStatus} disabled={isLocked}>
+                                            <SelectTrigger className="w-[150px] h-8 text-xs">
+                                                <SelectValue />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {docStatusOptions.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                                            </SelectContent>
+                                        </Select>
                                     </TableCell>
                                     <TableCell>{doc.lastUpdated}</TableCell>
                                     <TableCell className="text-right">
                                         <DropdownMenu>
                                             <DropdownMenuTrigger asChild>
-                                                <Button variant="ghost" size="icon" disabled={isProcessing}>
+                                                <Button variant="ghost" size="icon">
                                                     <MoreVertical className="h-4 w-4"/>
                                                 </Button>
                                             </DropdownMenuTrigger>
                                             <DropdownMenuContent align="end">
-                                                <DropdownMenuItem disabled><View className="mr-2"/>View Details</DropdownMenuItem>
-                                                <DropdownMenuItem onSelect={() => handleOpenDialog('edit', doc)}>
+                                                <DropdownMenuItem onSelect={() => handleActionClick('edit', doc)}>
                                                     <Edit className="mr-2"/>Edit / Manage Docs
                                                 </DropdownMenuItem>
                                                 <DropdownMenuSeparator />
-                                                <DropdownMenuItem onSelect={() => handleOpenDialog('confirm', doc)}><CheckCircle className="mr-2"/>Confirm</DropdownMenuItem>
-                                                <DropdownMenuItem onSelect={() => handleOpenDialog('unconfirm', doc)}><XCircle className="mr-2"/>Unconfirm</DropdownMenuItem>
+                                                <DropdownMenuItem onSelect={() => handleActionClick('confirm', doc)} disabled={isLocked}>
+                                                    <CheckCircle className="mr-2"/>Confirm
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem onSelect={() => handleActionClick('unconfirm', doc)} disabled={!isLocked}>
+                                                    <XCircle className="mr-2"/>Unconfirm
+                                                </DropdownMenuItem>
                                                 <DropdownMenuSeparator />
-                                                <DropdownMenuItem onSelect={() => handleOpenDialog('delete', doc)} className="text-destructive">
+                                                <DropdownMenuItem onSelect={() => handleActionClick('delete', doc)} className="text-destructive">
                                                     <Trash2 className="mr-2"/>Delete
                                                 </DropdownMenuItem>
                                             </DropdownMenuContent>
                                         </DropdownMenu>
                                     </TableCell>
                                 </TableRow>
-                            ))}
+                            )})}
                         </TableBody>
                     </Table>
                     </div>
