@@ -36,11 +36,12 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken } from '@/firebase';
-import { Loader2, PlusCircle, Briefcase, Edit, Trash2, Send, Copy } from 'lucide-react';
+import { Loader2, PlusCircle, Briefcase, Edit, Trash2, Send, Copy, Presentation } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { type ColumnDef } from '@/hooks/use-data-table';
+import Link from 'next/link';
 
 async function performAdminAction(token: string, action: string, payload: any) {
     const response = await fetch('/api/admin', {
@@ -144,9 +145,14 @@ function InvestorDialog({ open, onOpenChange, investor, onSave }: { open: boolea
   );
 }
 
-function InvestorActionMenu({ onInvite, onEdit, onDelete }: { onInvite: () => void; onEdit: () => void; onDelete: () => void; }) {
+function InvestorActionMenu({ onInvite, onEdit, onDelete, onPitch, investorId }: { onInvite: () => void; onEdit: () => void; onDelete: () => void; onPitch: () => void; investorId: string; }) {
   return (
     <div className="flex justify-end items-center gap-1">
+      <Button asChild variant="ghost" size="icon" title="Go to Pitch">
+        <Link href={`/adminaccount/investors/${investorId}`}>
+            <Presentation className="h-4 w-4" />
+        </Link>
+      </Button>
       <Button variant="ghost" size="icon" onClick={onInvite} title="Invite Investor">
         <Send className="h-4 w-4" />
       </Button>
@@ -253,7 +259,7 @@ export default function InvestorManagement() {
     { accessorKey: 'companyName', header: 'Company', cell: ({row}) => <div>{row.original.companyName}</div> },
     { accessorKey: 'status', header: 'Status', cell: ({row}) => <Badge className="capitalize">{row.original.status}</Badge>},
     { accessorKey: 'invitationStatus', header: 'Invite Status', cell: ({row}) => ( <Badge variant={invitationStatusColors[row.original.invitationStatus] || 'secondary'} className="capitalize"> {row.original.invitationStatus?.replace(/_/g, ' ') || 'Pending'} </Badge> ) },
-    { id: 'actions', header: () => <div className="text-right">Actions</div>, cell: ({ row }) => ( <InvestorActionMenu onInvite={() => handleOpenDialog('invite', row.original)} onEdit={() => handleOpenDialog('edit', row.original)} onDelete={() => handleOpenDialog('delete', row.original)} /> ) },
+    { id: 'actions', header: () => <div className="text-right">Actions</div>, cell: ({ row }) => ( <InvestorActionMenu investorId={row.original.id} onInvite={() => handleOpenDialog('invite', row.original)} onEdit={() => handleOpenDialog('edit', row.original)} onDelete={() => handleOpenDialog('delete', row.original)} onPitch={() => {}} /> ) },
   ], [handleOpenDialog]);
 
 
@@ -327,9 +333,11 @@ export default function InvestorManagement() {
                       </TableCell>
                       <TableCell className="text-right">
                         <InvestorActionMenu
+                            investorId={investor.id}
                             onInvite={() => handleOpenDialog('invite', investor)}
                             onEdit={() => handleOpenDialog('edit', investor)}
                             onDelete={() => handleOpenDialog('delete', investor)}
+                            onPitch={() => {}}
                         />
                       </TableCell>
                     </TableRow>
