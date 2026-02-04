@@ -13,7 +13,7 @@ import { useForm, useFieldArray, FormProvider } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel } from "@/components/ui/form";
 import * as React from "react";
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { Textarea } from "@/components/ui/textarea";
 import { provinces } from "@/lib/geodata";
 
@@ -34,8 +34,25 @@ const clientTabs = [
 export default function ClientsContent() {
 
     const defaultValues = useMemo(() => ({
+        usePhysicalForPostal: false,
+        physicalStreet: '',
+        physicalSuburb: '',
+        physicalCity: '',
+        physicalPostCode: '',
+        postalStreet: '',
+        postalSuburb: '',
+        postalCity: '',
+        postalPostCode: '',
+        telW: '',
+        telH: '',
+        fax: '',
+        cell: '',
+        email: '',
+        url: '',
+        primaryContact: '',
         owners: [{ name: '', address: '', suburb: '', city: '', province: '', postCode: '', idNo: '', cell: '', position: '', qualification: '', since: '', held: 0 }],
-        management: [{ name: '', address: '', suburb: '', city: '', province: '', postCode: '', idNo: '', cell: '', position: '', qualification: '', since: '', held: 0 }],
+        management: [{ name: '', address: '', suburb: '', city: '', province: '', postCode: '', idNo: '', cell: '', position: '', qualification: '', since: '', held: 0, title: '', description: '' }],
+        bankAccounts: [{ bank: '', branchCode: '', accountNo: '', branchName: '', bankCode: '', address: '', postCode: '', phone: '', email: '', contact: '' }],
         balanceSheets: [{ statementDate: '', propertyPlantEquipment: 0, intangibleAssets: 0, financialAssets: 0, inventories: 0, tradeReceivables: 0, cashEquivalents: 0, shareCapital: 0, retainedEarnings: 0, longTermBorrowings: 0, leaseLiabilities: 0, tradePayables: 0, shortTermBorrowings: 0, currentTaxPayable: 0 }],
         incomeStatements: [{ statementDate: '', revenue: 0, costOfSales: 0, grossProfit: 0, otherIncome: 0, operatingExpenses: 0, operatingProfit: 0, financeCosts: 0, profitBeforeTax: 0, incomeTaxExpense: 0, profitForThePeriod: 0 }],
     }), []);
@@ -44,7 +61,7 @@ export default function ClientsContent() {
         defaultValues
     });
 
-    const { control } = formMethods;
+    const { control, watch, setValue } = formMethods;
 
     const { fields: ownerFields, append: appendOwner, remove: removeOwner } = useFieldArray({
         control,
@@ -54,6 +71,11 @@ export default function ClientsContent() {
     const { fields: managementFields, append: appendManagement, remove: removeManagement } = useFieldArray({
         control,
         name: "management"
+    });
+    
+    const { fields: bankAccountFields, append: appendBankAccount, remove: removeBankAccount } = useFieldArray({
+        control,
+        name: "bankAccounts"
     });
 
     const { fields: balanceSheetFields, append: appendBalanceSheet, remove: removeBalanceSheet } = useFieldArray({
@@ -65,6 +87,21 @@ export default function ClientsContent() {
         control,
         name: "incomeStatements"
     });
+    
+    const usePhysicalForPostal = watch('usePhysicalForPostal');
+    const physicalStreet = watch('physicalStreet');
+    const physicalSuburb = watch('physicalSuburb');
+    const physicalCity = watch('physicalCity');
+    const physicalPostCode = watch('physicalPostCode');
+
+    useEffect(() => {
+        if (usePhysicalForPostal) {
+            setValue('postalStreet', physicalStreet || '');
+            setValue('postalSuburb', physicalSuburb || '');
+            setValue('postalCity', physicalCity || '');
+            setValue('postalPostCode', physicalPostCode || '');
+        }
+    }, [usePhysicalForPostal, physicalStreet, physicalSuburb, physicalCity, physicalPostCode, setValue]);
 
     return (
         <FormProvider {...formMethods}>
@@ -318,7 +355,7 @@ export default function ClientsContent() {
                                 <Card className="mt-4">
                                     <CardHeader className="flex flex-row items-center justify-between">
                                         <CardTitle>Management Team</CardTitle>
-                                         <Button type="button" variant="outline" size="sm" onClick={() => appendManagement({ name: '', address: '', suburb: '', city: '', province: '', postCode: '', idNo: '', cell: '', position: '', qualification: '', since: '', held: 0 })}>
+                                         <Button type="button" variant="outline" size="sm" onClick={() => appendManagement({ name: '', address: '', suburb: '', city: '', province: '', postCode: '', idNo: '', cell: '', position: '', qualification: '', since: '', held: 0, title: '', description: '' })}>
                                             <PlusCircle className="mr-2 h-4 w-4" /> Add Manager
                                         </Button>
                                     </CardHeader>
@@ -348,9 +385,30 @@ export default function ClientsContent() {
                                                 <Separator />
                                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                                                     <FormField control={control} name={`management.${index}.position`} render={({ field }) => (<FormItem><FormLabel>Position</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
-                                                    <FormField control={control} name={`management.${index}.qualification`} render={({ field }) => (<FormItem><FormLabel>Qualification</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
-                                                    <FormField control={control} name={`management.${index}.since`} render={({ field }) => (<FormItem><FormLabel>Since</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
+                                                     <FormField control={control} name={`management.${index}.title`} render={({ field }) => (
+                                                        <FormItem>
+                                                            <FormLabel>Title</FormLabel>
+                                                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                                <FormControl>
+                                                                    <SelectTrigger><SelectValue placeholder="Select title" /></SelectTrigger>
+                                                                </FormControl>
+                                                                <SelectContent>
+                                                                    <SelectItem value="Mr.">Mr.</SelectItem>
+                                                                    <SelectItem value="Mrs.">Mrs.</SelectItem>
+                                                                    <SelectItem value="Ms.">Ms.</SelectItem>
+                                                                    <SelectItem value="Miss">Miss</SelectItem>
+                                                                    <SelectItem value="Dr.">Dr.</SelectItem>
+                                                                    <SelectItem value="Prof.">Prof.</SelectItem>
+                                                                </SelectContent>
+                                                            </Select>
+                                                        </FormItem>
+                                                    )} />
+                                                     <FormField control={control} name={`management.${index}.qualification`} render={({ field }) => (<FormItem><FormLabel>Qualification</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
                                                 </div>
+                                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t">
+                                                     <FormField control={control} name={`management.${index}.since`} render={({ field }) => (<FormItem><FormLabel>Since</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
+                                                     <FormField control={control} name={`management.${index}.description`} render={({ field }) => (<FormItem className="md:col-span-2"><FormLabel>Description / Role</FormLabel><FormControl><Textarea {...field} placeholder="e.g., Handles all invoice queries."/></FormControl></FormItem>)} />
+                                                 </div>
                                             </div>
                                         ))}
                                     </CardContent>
