@@ -41,6 +41,27 @@ import {
   Users,
   Mic,
   LineChart,
+  Shield,
+  Activity,
+  Wrench,
+  Wallet,
+  ListTodo,
+  Store,
+  Lock,
+  Star,
+  Banknote,
+  FileText,
+  Landmark,
+  Truck,
+  ShieldCheck,
+  Repeat,
+  FileSignature,
+  Building,
+  FileSearch,
+  UserPlus,
+  Filter,
+  Lightbulb,
+  ClipboardList,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -53,6 +74,7 @@ import { signOut } from 'firebase/auth';
 
 import dynamic from 'next/dynamic';
 import React from 'react';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 
 // --- Dynamic Imports for Business Components ---
 
