@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -28,14 +27,6 @@ const dummySecurityDocs = [
 
 const statusOptions = ["Generated", "Sent", "Received", "Checked", "Signed In"];
 
-const statusColors: { [key: string]: 'default' | 'secondary' | 'destructive' | 'outline' } = {
-    Generated: 'secondary',
-    Sent: 'outline',
-    Received: 'default',
-    Checked: 'default',
-    'Signed In': 'default',
-};
-
 function AddSecurityDocDialog() {
     const { toast } = useToast();
     const handleSave = () => {
@@ -44,11 +35,11 @@ function AddSecurityDocDialog() {
     return (
         <Dialog>
             <DialogTrigger asChild>
-                <Button><PlusCircle className="mr-2 h-4 w-4" /> Add Security Document</Button>
+                <Button><PlusCircle className="mr-2 h-4 w-4" /> Add Security Agreement</Button>
             </DialogTrigger>
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>Log New Security Document</DialogTitle>
+                    <DialogTitle>Log New Security Agreement</DialogTitle>
                     <DialogDescription>Select the client and agreement this document is for.</DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4 py-4">
@@ -61,7 +52,7 @@ function AddSecurityDocDialog() {
                          <Select><SelectTrigger><SelectValue placeholder="Select an agreement..." /></SelectTrigger><SelectContent><SelectItem value="ag-101">AG-101</SelectItem></SelectContent></Select>
                     </div>
                     <div className="space-y-2">
-                        <Label htmlFor="doc-name">Document Name</Label>
+                        <Label htmlFor="doc-name">Agreement Type</Label>
                         <Input id="doc-name" placeholder="e.g., Cession of Book Debts" />
                     </div>
                 </div>
@@ -79,10 +70,10 @@ export default function SecurityContent() {
             <CardHeader className="flex flex-row justify-between items-start">
                 <div>
                     <CardTitle className="flex items-center gap-2">
-                        <FileSignature /> Security Document Management
+                        <FileSignature /> Security Agreements Register
                     </CardTitle>
                     <CardDescription>
-                        Track the status and manage documents for security agreements.
+                        Track non-tangible security agreements like deeds of surety and cessions of book debt. These provide legal rights but are not tied to a specific, titled asset.
                     </CardDescription>
                 </div>
                 <AddSecurityDocDialog />
@@ -92,9 +83,9 @@ export default function SecurityContent() {
                 <Table>
                     <TableHeader>
                         <TableRow>
-                            <TableHead>Document Name</TableHead>
+                            <TableHead>Agreement Type</TableHead>
                             <TableHead>Client</TableHead>
-                            <TableHead>Agreement</TableHead>
+                            <TableHead>Main Agreement</TableHead>
                             <TableHead>Status</TableHead>
                             <TableHead>Last Updated</TableHead>
                             <TableHead className="text-right">Actions</TableHead>
