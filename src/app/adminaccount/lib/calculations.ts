@@ -1,8 +1,8 @@
+
 'use client';
 
 const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
-// This function is corrected to use the right logic for sales projections.
 export function salesRoadmapLogic(settings: any, roadmapInputs: any) {
     if (!roadmapInputs || !roadmapInputs.monthlyAssumptions || !settings) {
         return [];

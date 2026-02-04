@@ -112,6 +112,13 @@ const ISAPitchSettings = dynamic(() => import('../backend/revenue/isa-pitch-sett
 
 
 // Financials & Projections
+const FinancialSetup = dynamic(() => import('./financial-setup/page'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const SalesRoadmap = dynamic(() => import('./sales-roadmap/page'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const MonthlyTargets = dynamic(() => import('./targets/page'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const BudgetPage = dynamic(() => import('./budget/page'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const MemberProjection = dynamic(() => import('./member-projection/page'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const TurnoverProjection = dynamic(() => import('./turnover/page'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const IncomeStatementProjection = dynamic(() => import('./income-statement/page'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const PlatformTransactions = dynamic(() => import('../backend/revenue/platform-transactions'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 
 
@@ -200,6 +207,13 @@ function AdminAccountContent() {
       case 'partner-emails': return <PartnerEmailSequence />;
       
       // Financials
+      case 'financial-setup': return <FinancialSetup />;
+      case 'sales-roadmap': return <SalesRoadmap />;
+      case 'targets': return <MonthlyTargets />;
+      case 'budget': return <BudgetPage />;
+      case 'member-projection': return <MemberProjection />;
+      case 'turnover': return <TurnoverProjection />;
+      case 'income-statement': return <IncomeStatementProjection />;
       case 'revenue-ledger': return <PlatformTransactions />;
       
       default: return <DashboardContent />;
@@ -228,7 +242,10 @@ function AdminAccountContent() {
     'investor-offer', 'investor-emails', 'isa-agents', 'members', 'partners', 'staff-management',
     'investors'
   ].includes(activeView);
-  const isFinancialsActive = ['revenue-ledger'].includes(activeView);
+  const isFinancialsActive = [
+      'financial-setup', 'sales-roadmap', 'targets', 'budget', 'member-projection', 
+      'turnover', 'income-statement', 'revenue-ledger'
+  ].includes(activeView);
 
   return (
     <AdminAuthGuard>
@@ -323,7 +340,23 @@ function AdminAccountContent() {
                   </SidebarMenuSub>
                 </SidebarMenuItem>
                  <SidebarMenuItem>
-                    <SidebarMenuButton tooltip="Revenue Ledger" isActive={isFinancialsActive} onClick={() => navigate('revenue-ledger')}><FinancialSheetIcon /><span>Revenue Ledger</span></SidebarMenuButton>
+                    <SidebarMenuButton tooltip="Financials" isActive={isFinancialsActive}>
+                        <FinancialSheetIcon /><span>Financials</span>
+                    </SidebarMenuButton>
+                    <SidebarMenuSub>
+                        <SidebarMenuSubItem><span className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">Inputs</span></SidebarMenuSubItem>
+                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'financial-setup'} onClick={() => navigate('financial-setup')}><Settings />Set Up</SidebarMenuSubButton></SidebarMenuSubItem>
+                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'sales-roadmap'} onClick={() => navigate('sales-roadmap')}><Map />Sales Roadmap</SidebarMenuSubButton></SidebarMenuSubItem>
+                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'targets'} onClick={() => navigate('targets')}><Target />Monthly Targets</SidebarMenuSubButton></SidebarMenuSubItem>
+                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'budget'} onClick={() => navigate('budget')}><Calculator />Budget</SidebarMenuSubButton></SidebarMenuSubItem>
+                        <SidebarMenuSeparator />
+                        <SidebarMenuSubItem><span className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">Projections</span></SidebarMenuSubItem>
+                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'member-projection'} onClick={() => navigate('member-projection')}><Users />Members</SidebarMenuSubButton></SidebarMenuSubItem>
+                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'turnover'} onClick={() => navigate('turnover')}><DollarSign />Turnover</SidebarMenuSubButton></SidebarMenuSubItem>
+                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'income-statement'} onClick={() => navigate('income-statement')}><TrendingUp />Income Statement</SidebarMenuSubButton></SidebarMenuSubItem>
+                        <SidebarMenuSeparator />
+                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'revenue-ledger'} onClick={() => navigate('revenue-ledger')}><DollarSign />Revenue Ledger</SidebarMenuSubButton></SidebarMenuSubItem>
+                    </SidebarMenuSub>
                 </SidebarMenuItem>
                  <SidebarMenuItem>
                     <SidebarMenuButton tooltip="Staff Management" isActive={activeView === 'staff-management'} onClick={() => navigate('staff-management')}>
