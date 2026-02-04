@@ -3,21 +3,35 @@
 
 import { useState, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { Loader2, User, Building, Store, FileText, Handshake, BrainCircuit, Search, ArrowRight } from "lucide-react";
+import { Loader2, User, Building, Store, FileText, Handshake, BrainCircuit, Search, ArrowRight, Activity } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { useCollection, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
-import { collection, query, doc } from 'firebase/firestore';
+import { collection, query, doc, collectionGroup, where, orderBy, limit } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
+import { Badge } from '@/components/ui/badge';
 
-const formatCurrency = (amount: number) => new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(amount);
+const formatCurrency = (amount: number) => {
+    if (typeof amount !== 'number') return 'N/A';
+    return new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(amount)
+};
 const formatDate = (dateValue: any) => {
     if (!dateValue) return 'N/A';
     const date = dateValue.toDate ? dateValue.toDate() : new Date(dateValue);
     if (isNaN(date.getTime())) return 'Invalid Date';
     return date.toLocaleString('en-ZA', { dateStyle: 'medium', timeStyle: 'short'});
 };
+
+const statusColors: { [key: string]: 'default' | 'secondary' | 'destructive' | 'outline' } = {
+  pending: 'secondary',
+  under_review: 'outline',
+  matched: 'default',
+  rejected: 'destructive',
+  funded: 'default',
+  quote: 'outline',
+};
+
 
 function DiscoveryDossier({ companyId }: { companyId: string }) {
     const firestore = useFirestore();
@@ -31,10 +45,39 @@ function DiscoveryDossier({ companyId }: { companyId: string }) {
     const enquiriesQuery = useMemoFirebase(() => query(collection(firestore, `companies/${companyId}/enquiries`)), [firestore, companyId]);
     const { data: enquiries, isLoading: areEnquiriesLoading } = useCollection(enquiriesQuery);
 
+    const quotesQuery = useMemoFirebase(() => query(collection(firestore, `companies/${companyId}/quotes`)), [firestore, companyId]);
+    const { data: quotes, isLoading: areQuotesLoading } = useCollection(quotesQuery);
+
+    const auditLogsQuery = useMemoFirebase(() => {
+        if (!firestore || !companyId) return null;
+        return query(
+            collectionGroup(firestore, 'auditLogs'),
+            where('companyId', '==', companyId),
+            orderBy('timestamp', 'desc'),
+            limit(10)
+        );
+    }, [firestore, companyId]);
+    const { data: auditLogs, isLoading: areLogsLoading } = useCollection(auditLogsQuery);
+
     const shopRef = useMemoFirebase(() => company?.shopId ? doc(firestore, `companies/${companyId}/shops/${company.shopId}`) : null, [firestore, company]);
     const { data: shop, isLoading: isShopLoading } = useDoc(shopRef);
 
-    const isLoading = isCompanyLoading || isOwnerLoading || areEnquiriesLoading || isShopLoading;
+    const isLoading = isCompanyLoading || isOwnerLoading || areEnquiriesLoading || areQuotesLoading || isShopLoading || areLogsLoading;
+    
+    const fundingRecords = useMemo(() => {
+        if (!quotes && !enquiries) return [];
+        const combinedRecords = [
+            ...(quotes || []).map((q: any) => ({ ...q, recordType: 'Quote', status: 'quote' })),
+            ...(enquiries || []).map((e: any) => ({ ...e, recordType: 'Enquiry' })),
+        ];
+        combinedRecords.sort((a, b) => {
+            const dateA = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt);
+            const dateB = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt);
+            if(isNaN(dateA.getTime()) || isNaN(dateB.getTime())) return 0;
+            return dateB.getTime() - dateA.getTime();
+        });
+        return combinedRecords;
+    }, [quotes, enquiries]);
 
     if (isLoading) {
         return <div className="flex justify-center items-center py-20"><Loader2 className="h-10 w-10 animate-spin text-primary" /></div>;
@@ -68,26 +111,44 @@ function DiscoveryDossier({ companyId }: { companyId: string }) {
             </Card>
 
             <Card>
-                <CardHeader><CardTitle className="flex items-center gap-2"><FileText /> Funding Enquiry History</CardTitle></CardHeader>
+                <CardHeader><CardTitle className="flex items-center gap-2"><FileText /> Funding Records (Quotes & Enquiries)</CardTitle></CardHeader>
                 <CardContent>
-                    {enquiries && enquiries.length > 0 ? (
-                        <ul className="space-y-2">
-                            {enquiries.map(enquiry => (
-                                <li key={enquiry.id} className="p-3 border rounded-md">
-                                    <div className="flex justify-between items-start">
-                                        <div>
-                                            <p className="font-semibold capitalize">{enquiry.fundingType?.replace(/-/g, ' ')}</p>
-                                            <p className="text-sm text-muted-foreground">{formatDate(enquiry.createdAt)}</p>
-                                        </div>
-                                        <div className="text-right">
-                                            <p className="font-bold text-lg text-primary">{formatCurrency(enquiry.amountRequested)}</p>
-                                            <p className="text-xs text-muted-foreground capitalize">Status: {enquiry.status}</p>
-                                        </div>
+                    {fundingRecords && fundingRecords.length > 0 ? (
+                        <div className="overflow-x-auto">
+                            <Table>
+                                <TableHeader><TableRow><TableHead>Date</TableHead><TableHead>Type</TableHead><TableHead>Status</TableHead><TableHead className="text-right">Amount</TableHead></TableRow></TableHeader>
+                                <TableBody>
+                                    {fundingRecords.map(rec => (
+                                        <TableRow key={`${rec.recordType}-${rec.id}`}>
+                                            <TableCell className="text-xs">{formatDate(rec.createdAt)}</TableCell>
+                                            <TableCell className="font-medium">{rec.fundingType?.replace(/-/g, ' ')}</TableCell>
+                                            <TableCell><Badge variant={statusColors[rec.status] || 'secondary'} className="capitalize">{rec.recordType}</Badge></TableCell>
+                                            <TableCell className="text-right font-semibold">{formatCurrency(rec.amountRequested)}</TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </div>
+                    ) : <p className="text-muted-foreground">No funding records found for this member.</p>}
+                </CardContent>
+            </Card>
+
+             <Card>
+                <CardHeader><CardTitle className="flex items-center gap-2"><Activity /> Platform Activity Log</CardTitle></CardHeader>
+                <CardContent>
+                     {auditLogs && auditLogs.length > 0 ? (
+                        <div className="space-y-2">
+                            {auditLogs.map(log => (
+                                <div key={log.id} className="flex items-start gap-3 p-2 border-b last:border-b-0">
+                                    <div className="w-20 text-xs text-muted-foreground">{formatDate(log.timestamp)}</div>
+                                    <div className="flex-1">
+                                        <p className="text-sm"><span className="font-semibold">{log.userName || 'System'}</span> performed action: <span className="font-mono text-primary bg-primary/10 px-1.5 py-0.5 rounded">{log.action}</span></p>
+                                        <p className="text-xs text-muted-foreground">{log.collectionPath}/{log.documentId}</p>
                                     </div>
-                                </li>
+                                </div>
                             ))}
-                        </ul>
-                    ) : <p className="text-muted-foreground">No funding enquiries found for this member.</p>}
+                        </div>
+                    ) : <p className="text-muted-foreground">No recent activity found for this member.</p>}
                 </CardContent>
             </Card>
             
