@@ -35,9 +35,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { useCollection, useFirestore, getClientSideAuthToken } from '@/firebase';
-import { useMemoFirebase } from '@/firebase';
-import { collection, query, where } from 'firebase/firestore';
+import { getClientSideAuthToken } from '@/firebase';
 import { Loader2, PlusCircle, Bot, Edit, Trash2, Send, Copy } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -163,10 +161,31 @@ function ISAActionMenu({ onInvite, onEdit, onDelete }: { onInvite: () => void; o
 }
 
 export default function ISAManagement() {
-  const firestore = useFirestore();
-  const partnersQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'partners'), where('type', '==', 'isa')) : null, [firestore]);
-  const { data: partners, isLoading, forceRefresh } = useCollection(partnersQuery);
   const { toast } = useToast();
+  const [partners, setPartners] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const forceRefresh = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+        const token = await getClientSideAuthToken();
+        if (!token) throw new Error("Authentication failed.");
+        
+        const result = await performAdminAction(token, 'getPartnersByType', { type: 'isa' });
+        setPartners(result.data || []);
+    } catch (e: any) {
+        setError(e.message);
+        toast({ variant: 'destructive', title: 'Error loading ISAs', description: e.message });
+    } finally {
+        setIsLoading(false);
+    }
+  }, [toast]);
+  
+  useEffect(() => {
+    forceRefresh();
+  }, [forceRefresh]);
 
   const [dialogState, setDialogState] = useState<{ type: 'add' | 'edit' | 'delete' | 'invite' | null, data?: any }>({ type: null, data: undefined });
 
@@ -325,5 +344,3 @@ export default function ISAManagement() {
     </>
   );
 }
-
-    

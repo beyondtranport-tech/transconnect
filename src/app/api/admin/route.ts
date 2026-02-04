@@ -66,6 +66,15 @@ export async function POST(req: NextRequest) {
         // --- END AUTHORIZATION ---
 
         switch (action) {
+            case 'getPartnersByType': {
+                const { type } = payload;
+                if (!type || !['partner', 'isa', 'investor'].includes(type)) {
+                    throw new Error("A valid partner type ('partner', 'isa', 'investor') is required.");
+                }
+                const partnersSnap = await db.collection('partners').where('type', '==', type).get();
+                const data = partnersSnap.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
+                return NextResponse.json({ success: true, data });
+            }
             case 'approvePayout': {
                 const { companyId, payoutId, amount } = payload;
                 if (!companyId || !payoutId || typeof amount !== 'number') {

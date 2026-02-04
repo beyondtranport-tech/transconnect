@@ -35,9 +35,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { useCollection, useFirestore, getClientSideAuthToken } from '@/firebase';
-import { useMemoFirebase } from '@/firebase';
-import { collection, query, where } from 'firebase/firestore';
+import { getClientSideAuthToken } from '@/firebase';
 import { Loader2, PlusCircle, Briefcase, Edit, Trash2, Send, Copy } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -163,10 +161,32 @@ function InvestorActionMenu({ onInvite, onEdit, onDelete }: { onInvite: () => vo
 }
 
 export default function InvestorManagement() {
-  const firestore = useFirestore();
-  const investorsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'partners'), where('type', '==', 'investor')) : null, [firestore]);
-  const { data: investors, isLoading, forceRefresh } = useCollection(investorsQuery);
   const { toast } = useToast();
+
+  const [investors, setInvestors] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const forceRefresh = useCallback(async () => {
+      setIsLoading(true);
+      setError(null);
+      try {
+          const token = await getClientSideAuthToken();
+          if (!token) throw new Error("Authentication failed.");
+          
+          const result = await performAdminAction(token, 'getPartnersByType', { type: 'investor' });
+          setInvestors(result.data || []);
+      } catch (e: any) {
+          setError(e.message);
+          toast({ variant: 'destructive', title: 'Error loading investors', description: e.message });
+      } finally {
+          setIsLoading(false);
+      }
+  }, [toast]);
+  
+  useEffect(() => {
+      forceRefresh();
+  }, [forceRefresh]);
 
   const [dialogState, setDialogState] = useState<{ type: 'add' | 'edit' | 'delete' | 'invite' | null, data?: any }>({ type: null, data: undefined });
 
