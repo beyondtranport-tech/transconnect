@@ -1,9 +1,10 @@
+
 'use client';
 
 import { useState, useMemo } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
-import { PlusCircle, ShieldCheck, Upload, Edit, Trash2 } from 'lucide-react';
+import { PlusCircle, ShieldCheck, Upload, Trash2, MoreVertical } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import {
   Dialog,
@@ -14,12 +15,29 @@ import {
   DialogFooter,
   DialogTrigger,
 } from '@/components/ui/dialog';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 
-// New dummy data structure for collateral assets
+// Dummy data structure for collateral assets
 const dummyCollateralAssets = [
     { 
         id: 'asset-001', 
@@ -42,6 +60,79 @@ const dummyCollateralAssets = [
 
 const statusOptions = ["Generated", "Sent", "Received", "Checked", "Signed In"];
 
+// Component for handling actions for a single row
+function CollateralActionMenu({ asset }: { asset: any }) {
+    const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+    const [isUploadSecurityOpen, setIsUploadSecurityOpen] = useState(false);
+    const [isUploadTitleOpen, setIsUploadTitleOpen] = useState(false);
+    const { toast } = useToast();
+
+    const handleDelete = () => {
+        // Placeholder for delete logic
+        toast({ title: "Action: Delete", description: `Deleting asset ${asset.id}` });
+        setIsDeleteDialogOpen(false);
+    };
+
+    return (
+        <>
+            <Dialog open={isUploadSecurityOpen} onOpenChange={setIsUploadSecurityOpen}>
+                 <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Upload Security Agreement</DialogTitle>
+                        <DialogDescription>Upload the security document for "{asset.assetDescription}". This feature is under construction.</DialogDescription>
+                    </DialogHeader>
+                     <div className="py-8 text-center text-muted-foreground">
+                        <p>File upload component will be here.</p>
+                    </div>
+                </DialogContent>
+            </Dialog>
+            <Dialog open={isUploadTitleOpen} onOpenChange={setIsUploadTitleOpen}>
+                 <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Upload Title Document</DialogTitle>
+                        <DialogDescription>Upload the title document (e.g., RC1) for "{asset.assetDescription}". This feature is under construction.</DialogDescription>
+                    </DialogHeader>
+                     <div className="py-8 text-center text-muted-foreground">
+                        <p>File upload component will be here.</p>
+                    </div>
+                </DialogContent>
+            </Dialog>
+
+            <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                        <AlertDialogDescription>This will permanently delete the log for this collateral asset.</AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleDelete} variant="destructive">Yes, delete</AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+
+            <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon"><MoreVertical className="h-4 w-4"/></Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                    <DropdownMenuItem onSelect={(e) => { e.preventDefault(); setIsUploadSecurityOpen(true); }}>
+                        <Upload className="mr-2 h-4 w-4"/> Upload Security Doc
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onSelect={(e) => { e.preventDefault(); setIsUploadTitleOpen(true); }}>
+                        <Upload className="mr-2 h-4 w-4"/> Upload Title Doc
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem className="text-destructive" onSelect={(e) => { e.preventDefault(); setIsDeleteDialogOpen(true); }}>
+                        <Trash2 className="mr-2 h-4 w-4"/> Delete
+                    </DropdownMenuItem>
+                </DropdownMenuContent>
+            </DropdownMenu>
+        </>
+    );
+}
+
+// Dialog for adding a new asset
 function AddCollateralAssetDialog() {
     const { toast } = useToast();
     const handleSave = () => {
@@ -79,6 +170,7 @@ function AddCollateralAssetDialog() {
     )
 }
 
+// Main component
 export default function CollateralContent() {
     return (
         <Card>
@@ -132,9 +224,8 @@ export default function CollateralContent() {
                                         </SelectContent>
                                     </Select>
                                 </TableCell>
-                                <TableCell className="text-right space-x-1">
-                                    <Button variant="outline" size="sm"><Upload className="mr-2 h-4 w-4"/> Agreement</Button>
-                                    <Button variant="outline" size="sm"><Upload className="mr-2 h-4 w-4"/> Title Doc</Button>
+                                <TableCell className="text-right">
+                                    <CollateralActionMenu asset={asset} />
                                 </TableCell>
                             </TableRow>
                         ))}
