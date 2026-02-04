@@ -288,6 +288,11 @@ function BackendContent() {
                             <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'partners-debtors'} onClick={() => navigate('partners-debtors')}><Users />Debtors</SidebarMenuSubButton></SidebarMenuSubItem>
                         </SidebarMenuSub>
                     </SidebarMenuSubItem>
+                    <SidebarMenuSeparator />
+                    <SidebarMenuSubItem><span className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">Administration</span></SidebarMenuSubItem>
+                    <SidebarMenuSubItem><SidebarMenuSubButton disabled><Settings className="mr-2 h-4 w-4" />System Admin</SidebarMenuSubButton></SidebarMenuSubItem>
+                    <SidebarMenuSubItem><SidebarMenuSubButton disabled><Wrench className="mr-2 h-4 w-4" />Utilities</SidebarMenuSubButton></SidebarMenuSubItem>
+                    <SidebarMenuSubItem><SidebarMenuSubButton disabled><FileText className="mr-2 h-4 w-4" />Reports</SidebarMenuSubButton></SidebarMenuSubItem>
                   </SidebarMenuSub>
                 </SidebarMenuItem>
                 <SidebarMenuItem>
