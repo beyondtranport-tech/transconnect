@@ -4,7 +4,7 @@
 import { useState, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
-import { PlusCircle, FileSignature, Upload, Edit, Trash2 } from 'lucide-react';
+import { PlusCircle, ShieldCheck, Upload, Edit, Trash2 } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -21,34 +21,26 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 
-const dummySecurityDocs = [
-    { id: 'sec-001', name: 'Cession of Book Debts', client: 'Sample Transport Co.', agreement: 'AG-101', status: 'Generated', lastUpdated: '2024-07-29' },
-    { id: 'sec-002', name: 'Suretyship by Directors', client: 'Another Client Ltd', agreement: 'AG-205', status: 'Signed In', lastUpdated: '2024-07-25' },
+const dummyCollateralDocs = [
+    { id: 'col-001', name: 'Vehicle RC1 Document', client: 'Sample Transport Co.', agreement: 'AG-101', status: 'Received', lastUpdated: '2024-07-28' },
+    { id: 'col-002', name: 'Property Title Deed', client: 'Another Client Ltd', agreement: 'AG-205', status: 'Checked', lastUpdated: '2024-07-26' },
 ];
 
 const statusOptions = ["Generated", "Sent", "Received", "Checked", "Signed In"];
 
-const statusColors: { [key: string]: 'default' | 'secondary' | 'destructive' | 'outline' } = {
-    Generated: 'secondary',
-    Sent: 'outline',
-    Received: 'default',
-    Checked: 'default',
-    'Signed In': 'default',
-};
-
-function AddSecurityDocDialog() {
+function AddCollateralDocDialog() {
     const { toast } = useToast();
     const handleSave = () => {
-        toast({ title: "Document Logged", description: "The new security document has been added to the register."});
+        toast({ title: "Document Logged", description: "The new collateral document has been added to the register."});
     }
     return (
         <Dialog>
             <DialogTrigger asChild>
-                <Button><PlusCircle className="mr-2 h-4 w-4" /> Add Security Document</Button>
+                <Button><PlusCircle className="mr-2 h-4 w-4" /> Add Collateral Document</Button>
             </DialogTrigger>
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>Log New Security Document</DialogTitle>
+                    <DialogTitle>Log New Collateral Document</DialogTitle>
                     <DialogDescription>Select the client and agreement this document is for.</DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4 py-4">
@@ -62,7 +54,7 @@ function AddSecurityDocDialog() {
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="doc-name">Document Name</Label>
-                        <Input id="doc-name" placeholder="e.g., Cession of Book Debts" />
+                        <Input id="doc-name" placeholder="e.g., Vehicle RC1" />
                     </div>
                 </div>
                  <DialogFooter>
@@ -73,19 +65,19 @@ function AddSecurityDocDialog() {
     )
 }
 
-export default function SecurityContent() {
+export default function CollateralContent() {
     return (
         <Card>
             <CardHeader className="flex flex-row justify-between items-start">
                 <div>
                     <CardTitle className="flex items-center gap-2">
-                        <FileSignature /> Security Document Management
+                        <ShieldCheck /> Collateral Management
                     </CardTitle>
                     <CardDescription>
-                        Track the status and manage documents for security agreements.
+                        Track the status and manage documents for collateral agreements.
                     </CardDescription>
                 </div>
-                <AddSecurityDocDialog />
+                <AddCollateralDocDialog />
             </CardHeader>
             <CardContent>
                 <div className="border rounded-lg">
@@ -101,7 +93,7 @@ export default function SecurityContent() {
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {dummySecurityDocs.map(doc => (
+                        {dummyCollateralDocs.map(doc => (
                             <TableRow key={doc.id}>
                                 <TableCell className="font-medium">{doc.name}</TableCell>
                                 <TableCell>{doc.client}</TableCell>
