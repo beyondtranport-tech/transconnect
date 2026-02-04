@@ -11,22 +11,29 @@ import { useToast } from '@/hooks/use-toast';
 
 
 const scorecardCriteria = {
-    "Business Stability": [
-        { id: 'timeInBusiness', label: 'Time in Business (> 2 years)', defaultPoints: 10 },
-        { id: 'paidMembership', label: 'Has a Paid Membership', defaultPoints: 15 },
-        { id: 'multipleStaff', label: 'Has 2+ Staff Members Confirmed', defaultPoints: 5 },
+    "Financial": [
+        { id: 'positiveNetProfit', label: 'Positive Net Profit in Last Financials', defaultPoints: 20 },
+        { id: 'healthyDebtRatio', label: 'Healthy Debt-to-Equity Ratio', defaultPoints: 15 },
+        { id: 'consistentRevenue', label: 'Consistent or Growing Revenue', defaultPoints: 15 },
+        { id: 'positiveWallet', label: 'Maintains Positive Wallet Balance', defaultPoints: 5 },
     ],
-    "Financial Indicators": [
-        { id: 'hasBankDetails', label: 'Bank Details Provided', defaultPoints: 10 },
-        { id: 'hasPositiveWallet', label: 'Positive Wallet Balance', defaultPoints: 5 },
+    "Customer": [
+        { id: 'highRating', label: 'High Community/Customer Rating', defaultPoints: 15 },
+        { id: 'repeatBusiness', label: 'Demonstrates Repeat Business', defaultPoints: 10 },
+        { id: 'lowDisputes', label: 'Low Rate of Disputes/Complaints', defaultPoints: 10 },
     ],
-    "Platform Engagement": [
-        { id: 'hasShop', label: 'Has a Created Shop', defaultPoints: 10 },
-        { id: 'hasProducts', label: 'Shop has Products Listed', defaultPoints: 10 },
-        { id: 'hasMadeSale', label: 'Has Made a Sale in Mall', defaultPoints: 20 },
-        { id: 'hasMadePurchase', label: 'Has Made a Purchase in Mall', defaultPoints: 5 },
-        { id: 'dataContributed', label: 'Has Contributed Data', defaultPoints: 10 },
+    "Internal Process": [
+        { id: 'completedShop', label: 'Has a Completed Shop Profile', defaultPoints: 10 },
+        { id: 'hasProducts', label: 'Shop has Products Listed', defaultPoints: 5 },
+        { id: 'hasSales', label: 'Has Made Sales via Platform', defaultPoints: 15 },
+        { id: 'contributesData', label: 'Contributes Data to the Community', defaultPoints: 10 },
     ],
+    "Learning & Growth": [
+        { id: 'timeInBusiness', label: 'Time in Business (> 3 years)', defaultPoints: 10 },
+        { id: 'paidMembership', label: 'Has a Paid Membership Plan', defaultPoints: 10 },
+        { id: 'multipleStaff', label: 'Has Multiple Confirmed Staff Members', defaultPoints: 5 },
+        { id: 'techAdoption', label: 'Has Used Advanced Tech Tools (e.g., AI)', defaultPoints: 5 },
+    ]
 };
 
 const defaultPoints = Object.values(scorecardCriteria).flatMap(section => section).reduce((acc, item) => {
@@ -71,7 +78,7 @@ export default function ScoringContent() {
                     <Star /> Credit Scorecard Builder
                 </CardTitle>
                 <CardDescription>
-                    Define the criteria and points system for your credit scoring model. This scorecard will be used to automatically evaluate applicants.
+                    Define the criteria and points system for your credit scoring model based on the Balanced Scorecard framework.
                 </CardDescription>
             </CardHeader>
             <CardContent>
@@ -87,7 +94,7 @@ export default function ScoringContent() {
                             {Object.entries(scorecardCriteria).map(([category, items]) => (
                                 <React.Fragment key={category}>
                                     <TableRow className="bg-muted/50">
-                                        <TableCell colSpan={2} className="font-semibold text-primary">{category}</TableCell>
+                                        <TableCell colSpan={2} className="font-semibold text-primary">{category} Perspective</TableCell>
                                     </TableRow>
                                     {items.map(item => (
                                         <TableRow key={item.id}>
