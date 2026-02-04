@@ -287,7 +287,7 @@ function BackendContent() {
                  <SidebarMenuItem>
                   <SidebarMenuButton tooltip="Client Onboarding" isActive={isClientOnboardingActive}><UserPlus /><span>Client Onboarding</span></SidebarMenuButton>
                   <SidebarMenuSub>
-                    <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'client-onboarding'} onClick={() => navigate('client-onboarding')}><Users/>Client Onboarding</SidebarMenuSubButton></SidebarMenuSubItem>
+                    <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'client-onboarding'} onClick={() => navigate('client-onboarding')}><Users/>Application</SidebarMenuSubButton></SidebarMenuSubItem>
                     <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'client-discovery'} onClick={() => navigate('client-discovery')}><FileSearch/>Discovery</SidebarMenuSubButton></SidebarMenuSubItem>
                     <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'client-scoring'} onClick={() => navigate('client-scoring')}><Star />Scoring</SidebarMenuSubButton></SidebarMenuSubItem>
                   </SidebarMenuSub>
@@ -296,7 +296,7 @@ function BackendContent() {
                  <SidebarMenuItem>
                   <SidebarMenuButton tooltip="Agreement Onboarding" isActive={isAgreementOnboardingActive}><FileText /><span>Agreement Onboarding</span></SidebarMenuButton>
                   <SidebarMenuSub>
-                    <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'agreement-onboarding'} onClick={() => navigate('agreement-onboarding')}><FileText />Agreement Onboarding</SidebarMenuSubButton></SidebarMenuSubItem>
+                    <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'agreement-onboarding'} onClick={() => navigate('agreement-onboarding')}><FileText />Application</SidebarMenuSubButton></SidebarMenuSubItem>
                     <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'agreement-discovery'} onClick={() => navigate('agreement-discovery')}><FileSearch/>Discovery</SidebarMenuSubButton></SidebarMenuSubItem>
                     <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'agreement-scoring'} onClick={() => navigate('agreement-scoring')}><Star />Scoring</SidebarMenuSubButton></SidebarMenuSubItem>
                   </SidebarMenuSub>
