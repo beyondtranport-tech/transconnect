@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useMemo, useEffect, Suspense, useCallback } from 'react';
@@ -26,8 +27,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { useCollection, useFirestore, getClientSideAuthToken } from '@/firebase';
-import { useMemoFirebase } from '@/hooks/use-config';
+import { useCollection, useFirestore, getClientSideAuthToken, useMemoFirebase } from '@/firebase';
 import { collection, query } from 'firebase/firestore';
 import { Loader2, PlusCircle, Users, Edit, Trash2, Search, Check, AlertTriangle, Send, Copy } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
@@ -173,7 +173,7 @@ function InviteDialog({ lead, onInviteSent }: { lead: any; onInviteSent: () => v
             const firstName = nameParts[0] || '';
             const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : '';
             
-            const constructedLink = `https://transconnect-v1-39578841-2a857.firebaseapp.com/join?email=${encodeURIComponent(lead.email || '')}&firstName=${encodeURIComponent(firstName)}&lastName=${encodeURIComponent(lastName)}`;
+            const constructedLink = `${window.location.origin}/join?email=${encodeURIComponent(lead.email || '')}&firstName=${encodeURIComponent(firstName)}&lastName=${encodeURIComponent(lastName)}`;
             
             setInviteLink(constructedLink);
             onInviteSent();
@@ -490,3 +490,5 @@ export default function LeadsDatabase() {
         </Suspense>
     );
 }
+
+    
