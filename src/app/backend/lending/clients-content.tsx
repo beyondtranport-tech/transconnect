@@ -526,7 +526,7 @@ export default function ClientsContent() {
                                 <Card className="mt-4">
                                     <CardHeader>
                                         <CardTitle>Sub-Facilities Management</CardTitle>
-                                        <CardDescription>Manage sub-facilities associated with this client.</CardDescription>
+                                        <CardDescription>Manage sub-facilities associated with this partner.</CardDescription>
                                     </CardHeader>
                                     <CardContent>
                                         <Tabs defaultValue="facilities" className="w-full">
@@ -579,3 +579,5 @@ export default function ClientsContent() {
         </FormProvider>
     );
 }
+
+    

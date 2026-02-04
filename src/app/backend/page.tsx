@@ -285,21 +285,31 @@ function BackendContent() {
                 </SidebarMenuItem>
 
                 <SidebarMenuItem>
-                  <SidebarMenuButton tooltip="Origination" isActive={isOriginationActive}><Filter /><span>Origination</span></SidebarMenuButton>
-                  <SidebarMenuSub>
-                    <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'opportunities'} onClick={() => navigate('opportunities')}><Lightbulb />Opportunities</SidebarMenuSubButton></SidebarMenuSubItem>
-                    <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'quotes'} onClick={() => navigate('quotes')}><Calculator />Quotes</SidebarMenuSubButton></SidebarMenuSubItem>
-                    <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'enquiries'} onClick={() => navigate('enquiries')}><ClipboardList />Enquiries</SidebarMenuSubButton></SidebarMenuSubItem>
-                    <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'application'} onClick={() => navigate('application')}><FileSearch/>Application</SidebarMenuSubButton></SidebarMenuSubItem>
-                    <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'scoring'} onClick={() => navigate('scoring')}><Star />Scoring</SidebarMenuSubButton></SidebarMenuSubItem>
-                  </SidebarMenuSub>
-                </SidebarMenuItem>
-
-                <SidebarMenuItem>
                   <SidebarMenuButton tooltip="Lending Management" isActive={isLendingActive}><Landmark /><span>Lending Management</span></SidebarMenuButton>
                   <SidebarMenuSub>
-                    <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'lending-clients'} onClick={() => navigate('lending-clients')}><Users/>Clients</SidebarMenuSubButton></SidebarMenuSubItem>
-                    <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'lending-agreements'} onClick={() => navigate('lending-agreements')}><FileText />Agreements</SidebarMenuSubButton></SidebarMenuSubItem>
+                    <SidebarMenuSubItem>
+                        <SidebarMenuButton tooltip="Client Onboarding" isActive={['lending-clients', 'lending-discovery', 'lending-scoring'].includes(activeView)}>
+                            <UserPlus /><span>Client Onboarding</span>
+                        </SidebarMenuButton>
+                        <SidebarMenuSub>
+                             <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'lending-clients'} onClick={() => navigate('lending-clients')}><Users/>Application</SidebarMenuSubButton></SidebarMenuSubItem>
+                             <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'lending-discovery'} onClick={() => navigate('lending-discovery')}><FileSearch/>Discovery</SidebarMenuSubButton></SidebarMenuSubItem>
+                             <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'lending-scoring'} onClick={() => navigate('lending-scoring')}><Star />Scoring</SidebarMenuSubButton></SidebarMenuSubItem>
+                        </SidebarMenuSub>
+                    </SidebarMenuSubItem>
+                     <SidebarMenuSubItem>
+                        <SidebarMenuButton tooltip="Agreement Onboarding" isActive={['lending-agreements', 'agreement-discovery', 'agreement-scoring'].includes(activeView)}>
+                            <FileText /><span>Agreement Onboarding</span>
+                        </SidebarMenuButton>
+                         <SidebarMenuSub>
+                            <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'lending-agreements'} onClick={() => navigate('lending-agreements')}><Users/>Application</SidebarMenuSubButton></SidebarMenuSubItem>
+                             <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'agreement-discovery'} onClick={() => navigate('agreement-discovery')}><FileSearch/>Discovery</SidebarMenuSubButton></SidebarMenuSubItem>
+                             <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'agreement-scoring'} onClick={() => navigate('agreement-scoring')}><Star />Scoring</SidebarMenuSubButton></SidebarMenuSubItem>
+                        </SidebarMenuSub>
+                    </SidebarMenuSubItem>
+                    
+                    <SidebarMenuSeparator />
+
                     <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'lending-facilities'} onClick={() => navigate('lending-facilities')}><Landmark />Facilities</SidebarMenuSubButton></SidebarMenuSubItem>
                     <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'lending-transactions'} onClick={() => navigate('lending-transactions')}><DollarSign />Transactions</SidebarMenuSubButton></SidebarMenuSubItem>
                     <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'lending-assets'} onClick={() => navigate('lending-assets')}><Truck />Assets</SidebarMenuSubButton></SidebarMenuSubItem>
@@ -394,3 +404,5 @@ export default function BackendPage() {
     </Suspense>
   );
 }
+
+    
