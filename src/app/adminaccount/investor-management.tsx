@@ -297,7 +297,7 @@ export default function InvestorManagement() {
                     <TableRow key={investor.id}>
                       <TableCell><div>{investor.firstName} {investor.lastName}</div></TableCell>
                       <TableCell><div>{investor.email}</div></TableCell>
-                      <TableCell><div>{investor.phone}</div></TableCell>
+                       <TableCell><div>{investor.phone}</div></TableCell>
                       <TableCell><div>{investor.companyName}</div></TableCell>
                       <TableCell><Badge className="capitalize">{investor.status}</Badge></TableCell>
                       <TableCell>
@@ -325,4 +325,3 @@ export default function InvestorManagement() {
     </>
   );
 }
-    
