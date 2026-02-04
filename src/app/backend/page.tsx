@@ -230,7 +230,8 @@ function BackendContent() {
   const navigate = (view: string) => router.push(`/backend?view=${view}`, { scroll: false });
   
   const isOperationsActive = ['members', 'wallet', 'wallet-transactions', 'shops', 'reconciliation', 'contributions'].includes(activeView);
-  const isOriginationActive = ['client-onboarding', 'agreement-onboarding', 'discovery', 'scoring'].includes(activeView);
+  const isClientOnboardingActive = ['client-onboarding', 'discovery', 'scoring'].includes(activeView);
+  const isAgreementOnboardingActive = ['agreement-onboarding'].includes(activeView);
   const isLendingActive = activeView.startsWith('lending-') || activeView.startsWith('partners-');
   const isRevenueActive = [
     'pricing-memberships', 'pricing-connect', 'pricing-tech', 'pricing-marketplace',
@@ -278,12 +279,18 @@ function BackendContent() {
                 </SidebarMenuItem>
                 
                  <SidebarMenuItem>
-                  <SidebarMenuButton tooltip="Origination" isActive={isOriginationActive}><UserPlus /><span>Origination</span></SidebarMenuButton>
+                  <SidebarMenuButton tooltip="Client Onboarding" isActive={isClientOnboardingActive}><UserPlus /><span>Client Onboarding</span></SidebarMenuButton>
                   <SidebarMenuSub>
                     <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'client-onboarding'} onClick={() => navigate('client-onboarding')}><Users/>Client Onboarding</SidebarMenuSubButton></SidebarMenuSubItem>
-                    <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'agreement-onboarding'} onClick={() => navigate('agreement-onboarding')}><FileText />Agreement Onboarding</SidebarMenuSubButton></SidebarMenuSubItem>
                     <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'discovery'} onClick={() => navigate('discovery')}><FileSearch/>Discovery</SidebarMenuSubButton></SidebarMenuSubItem>
                     <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'scoring'} onClick={() => navigate('scoring')}><Star />Scoring</SidebarMenuSubButton></SidebarMenuSubItem>
+                  </SidebarMenuSub>
+                </SidebarMenuItem>
+
+                 <SidebarMenuItem>
+                  <SidebarMenuButton tooltip="Agreement Onboarding" isActive={isAgreementOnboardingActive}><FileText /><span>Agreement Onboarding</span></SidebarMenuButton>
+                  <SidebarMenuSub>
+                    <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'agreement-onboarding'} onClick={() => navigate('agreement-onboarding')}><FileText />Agreement Onboarding</SidebarMenuSubButton></SidebarMenuSubItem>
                   </SidebarMenuSub>
                 </SidebarMenuItem>
 
