@@ -125,29 +125,52 @@ function EditSecurityDialog({ doc, isOpen, onOpenChange }: { doc: any; isOpen: b
 export default function SecurityContent() {
     const { toast } = useToast();
     const [isProcessing, setIsProcessing] = useState(false);
-    const [dialogState, setDialogState] = useState<{ type: 'edit' | 'confirm' | 'unconfirm' | 'delete' | null, doc: any | null }>({ type: null, doc: null });
-
+    
+    const [selectedDoc, setSelectedDoc] = useState<any | null>(null);
+    const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+    const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+    const [confirmAction, setConfirmAction] = useState<'confirm' | 'unconfirm' | 'delete' | null>(null);
+    
     const handleOpenDialog = (type: 'edit' | 'confirm' | 'unconfirm' | 'delete', doc: any) => {
-        setDialogState({ type, doc });
+        setSelectedDoc(doc);
+        if (type === 'edit') {
+            setIsEditDialogOpen(true);
+        } else {
+            setConfirmAction(type);
+            setIsConfirmOpen(true);
+        }
     };
-
+    
     const handleCloseDialogs = useCallback(() => {
-        setDialogState({ type: null, doc: null });
-    }, []);
+        if (!isProcessing) {
+            setIsEditDialogOpen(false);
+            setIsConfirmOpen(false);
+            // Delay clearing selectedDoc to prevent content flicker
+            setTimeout(() => {
+                setSelectedDoc(null);
+                setConfirmAction(null);
+            }, 150);
+        }
+    }, [isProcessing]);
 
     const handleConfirmAction = () => {
-        // Placeholder for future API calls
-        console.log(`Performing action: ${dialogState.type} on doc: ${dialogState.doc?.id}`);
-        toast({ title: "Action Confirmed (Demo)", description: `The '${dialogState.type}' action was completed.` });
-        handleCloseDialogs();
+        if (!confirmAction || !selectedDoc) return;
+        
+        setIsProcessing(true);
+        setTimeout(() => {
+            console.log(`Performing action: ${confirmAction} on doc: ${selectedDoc.id}`);
+            toast({ title: "Action Confirmed (Demo)", description: `The '${confirmAction}' action was completed.` });
+            setIsProcessing(false);
+            handleCloseDialogs();
+        }, 1000);
     };
 
     const getAlertStrings = () => {
-        if (!dialogState.doc) return { title: 'Are you sure?', description: '' };
-        switch (dialogState.type) {
-            case 'confirm': return { title: `Confirm Document?`, description: `Mark "${dialogState.doc.name}" as confirmed?` };
-            case 'unconfirm': return { title: `Unconfirm Document?`, description: `Revert "${dialogState.doc.name}" to a pending state?` };
-            case 'delete': return { title: `Delete Document?`, description: `This will permanently delete the log for "${dialogState.doc.name}".` };
+        if (!selectedDoc) return { title: 'Are you sure?', description: '' };
+        switch (confirmAction) {
+            case 'confirm': return { title: `Confirm Document?`, description: `Mark "${selectedDoc.name}" as confirmed?` };
+            case 'unconfirm': return { title: `Unconfirm Document?`, description: `Revert "${selectedDoc.name}" to a pending state?` };
+            case 'delete': return { title: `Delete Document?`, description: `This will permanently delete the log for "${selectedDoc.name}".` };
             default: return { title: "Are you sure?", description: "" };
         }
     };
@@ -155,12 +178,12 @@ export default function SecurityContent() {
     return (
         <>
             <EditSecurityDialog
-                doc={dialogState.doc}
-                isOpen={dialogState.type === 'edit'}
-                onOpenChange={(open) => !open && handleCloseDialogs()}
+                doc={selectedDoc}
+                isOpen={isEditDialogOpen}
+                onOpenChange={setIsEditDialogOpen}
             />
 
-            <AlertDialog open={['confirm', 'unconfirm', 'delete'].includes(dialogState.type || '')} onOpenChange={(open) => !open && handleCloseDialogs()}>
+            <AlertDialog open={isConfirmOpen} onOpenChange={setIsConfirmOpen}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
                         <AlertDialogTitle>{getAlertStrings().title}</AlertDialogTitle>
@@ -168,8 +191,8 @@ export default function SecurityContent() {
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                         <AlertDialogCancel onClick={handleCloseDialogs}>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleConfirmAction} variant={dialogState.type === 'delete' ? 'destructive' : 'default'}>
-                            Yes, Proceed
+                        <AlertDialogAction onClick={handleConfirmAction} variant={confirmAction === 'delete' ? 'destructive' : 'default'} disabled={isProcessing}>
+                            {isProcessing ? <Loader2 className="h-4 w-4 animate-spin"/> : "Yes, Proceed"}
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
