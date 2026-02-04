@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -91,10 +92,9 @@ function AddSecurityDocDialog() {
     )
 }
 
-function EditSecurityDialog({ doc, isOpen, setIsOpen }: { doc: any; isOpen: boolean; setIsOpen: (open: boolean) => void; }) {
-  // This is a placeholder for the actual edit UI.
+function EditSecurityDialog({ doc, isOpen, onOpenChange }: { doc: any; isOpen: boolean; onOpenChange: (open: boolean) => void; }) {
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+    <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Manage Document: {doc.name}</DialogTitle>
@@ -106,7 +106,7 @@ function EditSecurityDialog({ doc, isOpen, setIsOpen }: { doc: any; isOpen: bool
             <p>Document generation and upload interface will be here.</p>
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={() => setIsOpen(false)}>Close</Button>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>Close</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -123,9 +123,10 @@ export default function SecurityContent() {
         setSelectedDoc(doc);
     };
 
-    const handleCloseConfirmation = () => {
+    const handleCloseDialogs = () => {
         setActionToConfirm(null);
         setSelectedDoc(null);
+        setIsEditOpen(false);
     }
     
     const getAlertStrings = () => {
@@ -142,16 +143,23 @@ export default function SecurityContent() {
         <>
             {selectedDoc && (
                 <>
-                    <EditSecurityDialog doc={selectedDoc} isOpen={isEditOpen} setIsOpen={setIsEditOpen} />
-                    <AlertDialog open={!!actionToConfirm} onOpenChange={handleCloseConfirmation}>
+                    <EditSecurityDialog 
+                        doc={selectedDoc} 
+                        isOpen={isEditOpen} 
+                        onOpenChange={(open) => {
+                            if (!open) handleCloseDialogs();
+                            else setIsEditOpen(true);
+                        }} 
+                    />
+                    <AlertDialog open={!!actionToConfirm} onOpenChange={(open) => { if (!open) handleCloseDialogs(); }}>
                         <AlertDialogContent>
                             <AlertDialogHeader>
                                 <AlertDialogTitle>{getAlertStrings().title}</AlertDialogTitle>
                                 <AlertDialogDescription>{getAlertStrings().description}</AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
-                                <AlertDialogCancel onClick={handleCloseConfirmation}>Cancel</AlertDialogCancel>
-                                <AlertDialogAction onClick={handleCloseConfirmation} variant={actionToConfirm === 'delete' ? 'destructive' : 'default'}>
+                                <AlertDialogCancel onClick={handleCloseDialogs}>Cancel</AlertDialogCancel>
+                                <AlertDialogAction onClick={handleCloseDialogs} variant={actionToConfirm === 'delete' ? 'destructive' : 'default'}>
                                     Yes, Proceed
                                 </AlertDialogAction>
                             </AlertDialogFooter>
