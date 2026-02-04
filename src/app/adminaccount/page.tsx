@@ -88,7 +88,7 @@ const MembersList = dynamic(() => import('./members-list'), { loading: () => <Lo
 const StaffManagement = dynamic(() => import('./staff-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const PartnerManagement = dynamic(() => import('./partner-management'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const ISAManagement = dynamic(() => import('./isa-management'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const InvestorManagement = dynamic(() => import('./investor-management'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const InvestorDashboard = dynamic(() => import('./investor-dashboard'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 
 
 // Sales & Marketing
@@ -106,11 +106,9 @@ const TTSStudio = dynamic(() => import('./tts-studio'), { loading: () => <Loader
 
 // Strategy & Pitching
 const PartnerOffer = dynamic(() => import('./partner-offer'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const InvestorOffer = dynamic(() => import('./investor-offer'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const ElevatorPitch = dynamic(() => import('./elevator-pitch'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const PartnerElevatorPitch = dynamic(() => import('./partner-elevator-pitch'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const PartnerEmailSequence = dynamic(() => import('./partner-email-sequence'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const InvestorEmailSequence = dynamic(() => import('./investor-email-sequence'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const ISAPitchSettings = dynamic(() => import('../backend/revenue/isa-pitch-settings'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 
 
@@ -183,7 +181,7 @@ function AdminAccountContent() {
       case 'staff-management': return <StaffManagement />;
       case 'partners': return <PartnerManagement />;
       case 'isa-agents': return <ISAManagement />;
-      case 'investor-management': return <InvestorManagement />;
+      case 'investors': return <InvestorDashboard />;
       
       // Sales & Marketing
       case 'leads-agent': return <LeadsAgent />;
@@ -208,9 +206,6 @@ function AdminAccountContent() {
       case 'member-sales-performance': return <PerformanceContent />;
       case 'partner-pitch': return <PartnerElevatorPitch />;
       case 'partner-emails': return <PartnerEmailSequence />;
-      case 'elevator-pitch': return <ElevatorPitch />;
-      case 'investor-offer': return <InvestorOffer />;
-      case 'investor-emails': return <InvestorEmailSequence />;
       
       // Financials & Projections
       case 'financial-setup': return <FinancialSetup />;
@@ -246,7 +241,7 @@ function AdminAccountContent() {
     'partner-offer', 'commissions-isa', 'member-sales-offer', 'member-sales-emails', 
     'member-sales-performance', 'partner-pitch', 'partner-emails', 'elevator-pitch', 
     'investor-offer', 'investor-emails', 'isa-agents', 'members', 'partners', 'staff-management',
-    'investor-management'
+    'investors'
   ].includes(activeView);
   const isFinancialsActive = ['financial-setup', 'sales-roadmap', 'targets', 'member-projection', 'cost-calculator', 'budget', 'forecast', 'revenue-ledger'].includes(activeView);
 
@@ -339,10 +334,7 @@ function AdminAccountContent() {
                      <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'partner-emails'} onClick={() => navigate('partner-emails')}><Mail />Partner Emails</SidebarMenuSubButton></SidebarMenuSubItem>
                      <SidebarMenuSeparator />
                      <SidebarMenuSubItem><span className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">Investors</span></SidebarMenuSubItem>
-                     <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'investor-management'} onClick={() => navigate('investor-management')}><Briefcase />Investor Management</SidebarMenuSubButton></SidebarMenuSubItem>
-                     <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'elevator-pitch'} onClick={() => navigate('elevator-pitch')}><Info />Investor Pitch</SidebarMenuSubButton></SidebarMenuSubItem>
-                     <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'investor-offer'} onClick={() => navigate('investor-offer')}><Presentation />Investor Offer</SidebarMenuSubButton></SidebarMenuSubItem>
-                     <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'investor-emails'} onClick={() => navigate('investor-emails')}><Mail />Investor Emails</SidebarMenuSubButton></SidebarMenuSubItem>
+                     <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'investors'} onClick={() => navigate('investors')}><Briefcase />Investors</SidebarMenuSubButton></SidebarMenuSubItem>
                   </SidebarMenuSub>
                 </SidebarMenuItem>
                  <SidebarMenuItem>
