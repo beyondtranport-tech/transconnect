@@ -1,10 +1,9 @@
 
 'use client';
 
-import { Suspense, useMemo } from 'react';
+import { Suspense, useMemo, useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
-import { useDoc, useFirestore, useMemoFirebase } from '@/firebase';
-import { doc } from 'firebase/firestore';
+import { getClientSideAuthToken } from '@/firebase';
 import { Loader2, Briefcase, Info, Presentation, Mail, Handshake, DollarSign, TrendingUp, CheckCircle, Cpu, AlertCircle } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
@@ -101,21 +100,54 @@ function InvestorOffer() {
 function InvestorPitchPage() {
     const params = useParams();
     const investorId = params.investorId as string;
-    const firestore = useFirestore();
+    const [investor, setInvestor] = useState<any | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
-    const investorRef = useMemoFirebase(() => {
-        if (!firestore || !investorId) return null;
-        return doc(firestore, 'partners', investorId);
-    }, [firestore, investorId]);
+    useEffect(() => {
+        const fetchInvestor = async () => {
+            if (!investorId) {
+                setIsLoading(false);
+                setError("No investor ID provided.");
+                return;
+            }
+            setIsLoading(true);
+            setError(null);
+            try {
+                const token = await getClientSideAuthToken();
+                if (!token) throw new Error("Authentication token not available.");
+
+                const response = await fetch('/api/admin', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'getPartnerById', payload: { partnerId: investorId } }),
+                });
+
+                const result = await response.json();
+                if (!result.success) throw new Error(result.error);
+                
+                if (result.data) {
+                    setInvestor(result.data);
+                } else {
+                    setError(`Investor with ID "${investorId}" not found.`);
+                }
+
+            } catch (e: any) {
+                setError(e.message);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchInvestor();
+    }, [investorId]);
     
-    const { data: investor, isLoading, error } = useDoc(investorRef);
-
     if (isLoading) {
         return <div className="flex justify-center py-20"><Loader2 className="h-12 w-12 animate-spin" /></div>;
     }
     
     if (error) {
-        return <div className="text-center py-20 text-destructive">Error loading investor: {error.message}</div>;
+        return <div className="text-center py-20 text-destructive">Error loading investor: {error}</div>;
     }
 
     if (!investor) {

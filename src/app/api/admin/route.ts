@@ -75,6 +75,17 @@ export async function POST(req: NextRequest) {
                 const data = partnersSnap.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
                 return NextResponse.json({ success: true, data });
             }
+            case 'getPartnerById': {
+                const { partnerId } = payload;
+                if (!partnerId) {
+                    throw new Error("partnerId is required.");
+                }
+                const partnerDoc = await db.collection('partners').doc(partnerId).get();
+                if (!partnerDoc.exists) {
+                    return NextResponse.json({ success: true, data: null });
+                }
+                return NextResponse.json({ success: true, data: { id: partnerDoc.id, ...serializeTimestamps(partnerDoc.data()) } });
+            }
             case 'approvePayout': {
                 const { companyId, payoutId, amount } = payload;
                 if (!companyId || !payoutId || typeof amount !== 'number') {
