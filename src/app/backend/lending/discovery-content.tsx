@@ -3,7 +3,7 @@
 
 import { useState, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { Loader2, User, Building, Store, FileText, Handshake, BrainCircuit, Search } from "lucide-react";
+import { Loader2, User, Building, Store, FileText, Handshake, BrainCircuit, Search, ArrowRight } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { useCollection, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
