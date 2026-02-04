@@ -1,10 +1,10 @@
 
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
-import { PlusCircle, FileSignature, Upload, Edit, Trash2, MoreVertical, View, CheckCircle, XCircle } from 'lucide-react';
+import { PlusCircle, FileSignature, Upload, Edit, Trash2, MoreVertical, View, CheckCircle, XCircle, Loader2 } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -96,18 +96,26 @@ function EditSecurityDialog({ doc, isOpen, onOpenChange }: { doc: any; isOpen: b
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Manage Document: {doc.name}</DialogTitle>
-          <DialogDescription>
-            This is where you will generate, upload, and manage the PDF documents for this security agreement. This functionality is under construction.
-          </DialogDescription>
-        </DialogHeader>
-        <div className="py-8 text-center text-muted-foreground">
-            <p>Document generation and upload interface will be here.</p>
-        </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Close</Button>
-        </DialogFooter>
+        {doc ? (
+            <>
+                <DialogHeader>
+                <DialogTitle>Manage Document: {doc.name}</DialogTitle>
+                <DialogDescription>
+                    This is where you will generate, upload, and manage the PDF documents for this security agreement. This functionality is under construction.
+                </DialogDescription>
+                </DialogHeader>
+                <div className="py-8 text-center text-muted-foreground">
+                    <p>Document generation and upload interface will be here.</p>
+                </div>
+                <DialogFooter>
+                <Button variant="outline" onClick={() => onOpenChange(false)}>Close</Button>
+                </DialogFooter>
+            </>
+        ) : (
+            <div className="flex justify-center items-center p-8">
+                <Loader2 className="h-8 w-8 animate-spin" />
+            </div>
+        )}
       </DialogContent>
     </Dialog>
   );
@@ -118,15 +126,14 @@ export default function SecurityContent() {
     const [selectedDocId, setSelectedDocId] = useState<string | null>(null);
     const [isEditOpen, setIsEditOpen] = useState(false);
     
-    // Derived state for the selected document. This is more stable than storing the object itself.
     const selectedDoc = useMemo(() => {
         if (!selectedDocId) return null;
         return dummySecurityDocs.find(doc => doc.id === selectedDocId);
     }, [selectedDocId]);
 
     const handleOpenConfirmation = (action: 'confirm' | 'unconfirm' | 'delete', docId: string) => {
-        setActionToConfirm(action);
         setSelectedDocId(docId);
+        setActionToConfirm(action);
     };
 
     const handleOpenEdit = (docId: string) => {
@@ -134,11 +141,11 @@ export default function SecurityContent() {
         setIsEditOpen(true);
     };
 
-    const handleCloseDialogs = () => {
+    const handleCloseDialogs = useCallback(() => {
         setActionToConfirm(null);
         setSelectedDocId(null);
         setIsEditOpen(false);
-    };
+    }, []);
     
     const getAlertStrings = () => {
       if (!selectedDoc) return { title: 'Are you sure?', description: '' };
@@ -152,31 +159,27 @@ export default function SecurityContent() {
 
     return (
         <>
-            {selectedDoc && (
-                <>
-                    <EditSecurityDialog 
-                        doc={selectedDoc} 
-                        isOpen={isEditOpen} 
-                        onOpenChange={(open) => {
-                            if (!open) handleCloseDialogs();
-                        }} 
-                    />
-                    <AlertDialog open={!!actionToConfirm} onOpenChange={(open) => { if (!open) handleCloseDialogs(); }}>
-                        <AlertDialogContent>
-                            <AlertDialogHeader>
-                                <AlertDialogTitle>{getAlertStrings().title}</AlertDialogTitle>
-                                <AlertDialogDescription>{getAlertStrings().description}</AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                                <AlertDialogCancel onClick={handleCloseDialogs}>Cancel</AlertDialogCancel>
-                                <AlertDialogAction onClick={handleCloseDialogs} variant={actionToConfirm === 'delete' ? 'destructive' : 'default'}>
-                                    Yes, Proceed
-                                </AlertDialogAction>
-                            </AlertDialogFooter>
-                        </AlertDialogContent>
-                    </AlertDialog>
-                </>
-            )}
+            <EditSecurityDialog 
+                doc={selectedDoc} 
+                isOpen={isEditOpen} 
+                onOpenChange={(open) => {
+                    if (!open) handleCloseDialogs();
+                }} 
+            />
+            <AlertDialog open={!!actionToConfirm} onOpenChange={(open) => { if (!open) handleCloseDialogs(); }}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>{getAlertStrings().title}</AlertDialogTitle>
+                        <AlertDialogDescription>{getAlertStrings().description}</AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel onClick={handleCloseDialogs}>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleCloseDialogs} variant={actionToConfirm === 'delete' ? 'destructive' : 'default'}>
+                            Yes, Proceed
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
 
             <Card>
                 <CardHeader className="flex flex-row justify-between items-start">
