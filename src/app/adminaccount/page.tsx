@@ -112,7 +112,6 @@ const ISAPitchSettings = dynamic(() => import('../backend/revenue/isa-pitch-sett
 
 
 // Financials & Projections
-const FinancialProjections = dynamic(() => import('./financial-projections'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const PlatformTransactions = dynamic(() => import('../backend/revenue/platform-transactions'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 
 
@@ -201,7 +200,6 @@ function AdminAccountContent() {
       case 'partner-emails': return <PartnerEmailSequence />;
       
       // Financials
-      case 'financial-projections': return <FinancialProjections />;
       case 'revenue-ledger': return <PlatformTransactions />;
       
       default: return <DashboardContent />;
@@ -230,7 +228,7 @@ function AdminAccountContent() {
     'investor-offer', 'investor-emails', 'isa-agents', 'members', 'partners', 'staff-management',
     'investors'
   ].includes(activeView);
-  const isFinancialsActive = ['financial-projections', 'revenue-ledger'].includes(activeView);
+  const isFinancialsActive = ['revenue-ledger'].includes(activeView);
 
   return (
     <AdminAuthGuard>
@@ -325,7 +323,7 @@ function AdminAccountContent() {
                   </SidebarMenuSub>
                 </SidebarMenuItem>
                  <SidebarMenuItem>
-                    <SidebarMenuButton tooltip="Financial Projections" isActive={isFinancialsActive} onClick={() => navigate('financial-projections')}><FinancialSheetIcon /><span>Financials</span></SidebarMenuButton>
+                    <SidebarMenuButton tooltip="Revenue Ledger" isActive={isFinancialsActive} onClick={() => navigate('revenue-ledger')}><FinancialSheetIcon /><span>Revenue Ledger</span></SidebarMenuButton>
                 </SidebarMenuItem>
                  <SidebarMenuItem>
                     <SidebarMenuButton tooltip="Staff Management" isActive={activeView === 'staff-management'} onClick={() => navigate('staff-management')}>
