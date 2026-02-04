@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -73,7 +72,13 @@ function AddTransactionDialog({ client, agreement, onSave }: { client: any, agre
     const form = useForm<TransactionFormValues>({
         resolver: zodResolver(transactionSchema),
         defaultValues: {
+            transactionType: '',
+            paymentNo: '',
             effectiveDate: new Date().toISOString().split('T')[0],
+            interest: 0,
+            capital: 0,
+            reference: '',
+            comment: '',
         }
     });
     
@@ -273,6 +278,4 @@ export default function TransactionsContent() {
         </Card>
     );
 }
-    
-
     
