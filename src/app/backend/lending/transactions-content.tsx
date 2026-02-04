@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -37,6 +38,7 @@ const transactionTypes = {
     'cash-credit': { label: 'Cash Credit (CR)', type: 'credit' },
     'deposit-payment': { label: 'Deposit payment (CR)', type: 'credit' },
     'internal-receipt': { label: 'Internal receipt (CR)', type: 'credit' },
+    'receipt': { label: 'Receipt (CR)', type: 'credit' },
     'journal-debit': { label: 'Journal debit (DR)', type: 'debit' },
     'journal-credit': { label: 'Journal credit (CR)', type: 'credit' },
     'paid-up': { label: 'Paid up (CR)', type: 'credit' },
