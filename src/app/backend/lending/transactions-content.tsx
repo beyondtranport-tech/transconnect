@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -50,6 +49,17 @@ const dummyTransactions = [
   { id: 'txn-2', date: '2024-09-01', journal: 'Payment', reference: 'EFT-CLIENT-001', detail: 'First installment', amount: -12000, balance: 488000 },
   { id: 'txn-3', date: '2024-10-01', journal: 'Payment', reference: 'EFT-CLIENT-002', detail: 'Second installment', amount: -12000, balance: 476000 },
 ];
+
+const dummyClients = [
+    { id: 'client-1', name: 'Sample Transport Co.' },
+    { id: 'client-2', name: 'Another Client Ltd' },
+];
+
+const dummyAgreements: { [key: string]: { id: string; type: string }[] } = {
+    'client-1': [{ id: 'AG-101', type: 'loan' }, { id: 'AG-102', type: 'lease' }],
+    'client-2': [{ id: 'AG-205', type: 'factoring' }],
+};
+
 
 const formatCurrency = (amount: number) => new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(amount);
 
@@ -157,8 +167,19 @@ export default function TransactionsContent() {
     }, [firestore, selectedClientId]);
     const { data: agreements, isLoading: areAgreementsLoading } = useCollection(agreementsQuery);
 
-    const selectedClient = useMemo(() => clients?.find(c => c.id === selectedClientId) || null, [clients, selectedClientId]);
-    const selectedAgreement = useMemo(() => agreements?.find(a => a.id === selectedAgreementId) || null, [agreements, selectedAgreementId]);
+    const displayClients = (clients && clients.length > 0) ? clients : dummyClients;
+
+    const displayAgreements = useMemo(() => {
+        if (!selectedClientId) return [];
+        if (agreements && agreements.length > 0) return agreements;
+        if (clients?.length === 0 || !clients) { // If no real clients, use dummy agreements
+            return dummyAgreements[selectedClientId as keyof typeof dummyAgreements] || [];
+        }
+        return [];
+    }, [agreements, clients, selectedClientId]);
+
+    const selectedClient = useMemo(() => displayClients?.find(c => c.id === selectedClientId) || null, [displayClients, selectedClientId]);
+    const selectedAgreement = useMemo(() => displayAgreements?.find((a: any) => a.id === selectedAgreementId) || null, [displayAgreements, selectedAgreementId]);
     
     const handleClientChange = (clientId: string) => {
         setSelectedClientId(clientId);
@@ -197,7 +218,7 @@ export default function TransactionsContent() {
                                 <SelectValue placeholder={areClientsLoading ? "Loading..." : "Select a client..."} />
                             </SelectTrigger>
                             <SelectContent>
-                                {(clients || []).map(client => (
+                                {displayClients.map(client => (
                                     <SelectItem key={client.id} value={client.id}>{client.name}</SelectItem>
                                 ))}
                             </SelectContent>
@@ -210,7 +231,7 @@ export default function TransactionsContent() {
                                 <SelectValue placeholder={areAgreementsLoading ? "Loading..." : "Select an agreement..."} />
                             </SelectTrigger>
                             <SelectContent>
-                                {(agreements || []).map(agreement => (
+                                {displayAgreements.map((agreement: any) => (
                                     <SelectItem key={agreement.id} value={agreement.id}>{agreement.id}</SelectItem>
                                 ))}
                             </SelectContent>
@@ -250,6 +271,4 @@ export default function TransactionsContent() {
         </Card>
     );
 }
-    
-
     
