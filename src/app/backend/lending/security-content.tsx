@@ -136,9 +136,9 @@ export default function SecurityContent() {
     };
 
     // Single function to close all dialogs and reset state.
-    const handleCloseDialogs = () => {
+    const handleCloseDialogs = useCallback(() => {
         setDialogState({ type: null, doc: null, confirmAction: undefined });
-    };
+    }, []);
 
     // Single confirmation handler.
     const handleConfirmAction = () => {
@@ -247,7 +247,7 @@ export default function SecurityContent() {
                                                 </Button>
                                             </DropdownMenuTrigger>
                                             <DropdownMenuContent align="end">
-                                                <DropdownMenuItem onSelect={() => handleOpenDialog('edit', doc)}>
+                                                <DropdownMenuItem onSelect={(e) => { e.preventDefault(); handleOpenDialog('edit', doc); }}>
                                                     <Edit className="mr-2"/>Edit / Manage Docs
                                                 </DropdownMenuItem>
                                                 <DropdownMenuSeparator />
