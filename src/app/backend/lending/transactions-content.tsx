@@ -134,7 +134,7 @@ function AddTransactionDialog({ client, agreement, onSave }: { client: any, agre
                                     <FormMessage />
                                 </FormItem>
                             )} />
-                            <FormField control={form.control} name="paymentNo" render={({ field }) => (<FormItem><FormLabel>Payment No</FormLabel><FormControl><Input placeholder="Payment Number" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                            <FormField control={form.control} name="paymentNo" render={({ field }) => (<FormItem><FormLabel>Receipt/Journal #</FormLabel><FormControl><Input placeholder="Receipt/Journal Number" {...field} /></FormControl><FormMessage /></FormItem>)} />
                         </div>
                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                              <FormField control={form.control} name="effectiveDate" render={({ field }) => (<FormItem><FormLabel>Effective Date</FormLabel><FormControl><Input type="date" {...field} /></FormControl><FormMessage /></FormItem>)} />
@@ -180,7 +180,7 @@ export default function TransactionsContent() {
         return [];
     }, [agreements, clients, selectedClientId]);
 
-    const selectedClient = useMemo(() => displayClients?.find(c => c.id === selectedClientId) || null, [displayClients, selectedClientId]);
+    const selectedClient = useMemo(() => displayClients?.find((c: any) => c.id === selectedClientId) || null, [displayClients, selectedClientId]);
     const selectedAgreement = useMemo(() => displayAgreements?.find((a: any) => a.id === selectedAgreementId) || null, [displayAgreements, selectedAgreementId]);
     
     const handleClientChange = (clientId: string) => {
@@ -220,7 +220,7 @@ export default function TransactionsContent() {
                                 <SelectValue placeholder={areClientsLoading ? "Loading..." : "Select a client..."} />
                             </SelectTrigger>
                             <SelectContent>
-                                {displayClients.map(client => (
+                                {displayClients.map((client: any) => (
                                     <SelectItem key={client.id} value={client.id}>{client.name}</SelectItem>
                                 ))}
                             </SelectContent>
@@ -273,4 +273,6 @@ export default function TransactionsContent() {
         </Card>
     );
 }
+    
+
     
