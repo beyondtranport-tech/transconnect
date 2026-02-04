@@ -1,16 +1,16 @@
 
 'use client';
 
-import React, { useMemo, useState, useCallback, Suspense, useEffect } from 'react';
-import { useForm, useFieldArray, Controller } from 'react-hook-form';
+import React, { useMemo, useState, useCallback, Suspense } from 'react';
+import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { TrendingUp, AlertTriangle, Loader2, DollarSign, Users, Map, Target, Banknote, Save, RotateCcw, Handshake, Bot } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormDescription } from '@/components/ui/form';
+import { Form, FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
@@ -164,7 +164,7 @@ function FinancialProjectionsComponent() {
     const handleReset = () => {
         localStorage.removeItem(PROJECTIONS_KEY);
         reset(defaultValues);
-        toast({ title: 'Projections Reset', description: 'Assumptions have been reset to their default values.' });
+        toast({ title: 'Projections Reset', description: 'Assumptions have been reset to default values.' });
     };
 
     const renderInput = (name: keyof FormValues, label: string) => (
@@ -279,7 +279,7 @@ function FinancialProjectionsComponent() {
                             <TableHeader><TableRow><TableHead>Month</TableHead><TableHead>Total Revenue</TableHead><TableHead>OPEX</TableHead><TableHead>Net Profit</TableHead></TableRow></TableHeader>
                             <TableBody>
                                 {projections.map(p => (<TableRow key={p.month}><TableCell>{p.month}</TableCell><TableCell>{formatCurrency(p.totalRevenue)}</TableCell><TableCell>{formatCurrency(p.opex)}</TableCell><TableCell className={`font-bold ${p.netProfit < 0 ? 'text-destructive' : 'text-green-600'}`}>{formatCurrency(p.netProfit)}</TableCell></TableRow>))}
-                                <TableRow className="bg-muted font-bold"><TableCell>Total</TableCell><TableCell>{formatCurrency(totals.totalRevenue)}</TableCell><TableCell>{formatCurrency(totals.opex * forecastMonths)}</TableCell><TableCell className={`font-bold ${totals.netProfit < 0 ? 'text-destructive' : 'text-green-600'}`}>{formatCurrency(totals.netProfit)}</TableCell></TableRow>
+                                <TableRow className="bg-muted font-bold"><TableCell>Total</TableCell><TableCell>{formatCurrency(totals.totalRevenue)}</TableCell><TableCell>{formatCurrency(totals.opex)}</TableCell><TableCell className={`font-bold ${totals.netProfit < 0 ? 'text-destructive' : 'text-green-600'}`}>{formatCurrency(totals.netProfit)}</TableCell></TableRow>
                             </TableBody>
                         </Table></CardContent>
                     </Card>
