@@ -59,6 +59,9 @@ import {
   Building,
   FileSearch,
   UserPlus,
+  Filter,
+  Lightbulb,
+  ClipboardList,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -98,6 +101,9 @@ const LendingPartnersContent = dynamic(() => import('./lending/partners-content'
 const PartnerDetails = dynamic(() => import('./lending/partner-details'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const DiscoveryContent = dynamic(() => import('./lending/discovery-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const ScoringContent = dynamic(() => import('./lending/scoring-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const FundingDivisionContent = dynamic(() => import('./funding-division-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const LeadsDatabase = dynamic(() => import('./leads-database'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+
 
 
 // Platform Settings
@@ -175,16 +181,11 @@ function BackendContent() {
       case 'contributions': return <ContributionsList />;
       
       // Origination
-      case 'client-onboarding': return <ClientsContent />;
-      case 'agreement-onboarding': return <AgreementsContent />;
-      case 'discovery':
-      case 'agreement-discovery':
-      case 'client-discovery':
-        return <DiscoveryContent />;
-      case 'scoring': 
-      case 'agreement-scoring':
-      case 'client-scoring':
-        return <ScoringContent />;
+      case 'opportunities': return <LeadsDatabase />;
+      case 'quotes': return <FundingDivisionContent />;
+      case 'enquiries': return <FundingDivisionContent />;
+      case 'application': return <DiscoveryContent />;
+      case 'scoring': return <ScoringContent />;
 
       // Lending DMS (Servicing)
       case 'lending-clients': return <ClientsContent />;
@@ -236,8 +237,7 @@ function BackendContent() {
   const navigate = (view: string) => router.push(`/backend?view=${view}`, { scroll: false });
   
   const isOperationsActive = ['members', 'wallet', 'wallet-transactions', 'shops', 'reconciliation', 'contributions'].includes(activeView);
-  const isClientOnboardingActive = ['client-onboarding', 'client-discovery', 'client-scoring'].includes(activeView);
-  const isAgreementOnboardingActive = ['agreement-onboarding', 'agreement-discovery', 'agreement-scoring'].includes(activeView);
+  const isOriginationActive = ['opportunities', 'quotes', 'enquiries', 'application', 'scoring'].includes(activeView);
   const isLendingActive = activeView.startsWith('lending-') || activeView.startsWith('partners-');
   const isRevenueActive = [
     'pricing-memberships', 'pricing-connect', 'pricing-tech', 'pricing-marketplace',
@@ -283,22 +283,15 @@ function BackendContent() {
                     <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'reconciliation'} onClick={() => navigate('reconciliation')}><Scale />Bank Reconciliation</SidebarMenuSubButton></SidebarMenuSubItem>
                   </SidebarMenuSub>
                 </SidebarMenuItem>
-                
-                 <SidebarMenuItem>
-                  <SidebarMenuButton tooltip="Client Onboarding" isActive={isClientOnboardingActive}><UserPlus /><span>Client Onboarding</span></SidebarMenuButton>
-                  <SidebarMenuSub>
-                    <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'client-onboarding'} onClick={() => navigate('client-onboarding')}><Users/>Application</SidebarMenuSubButton></SidebarMenuSubItem>
-                    <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'client-discovery'} onClick={() => navigate('client-discovery')}><FileSearch/>Discovery</SidebarMenuSubButton></SidebarMenuSubItem>
-                    <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'client-scoring'} onClick={() => navigate('client-scoring')}><Star />Scoring</SidebarMenuSubButton></SidebarMenuSubItem>
-                  </SidebarMenuSub>
-                </SidebarMenuItem>
 
-                 <SidebarMenuItem>
-                  <SidebarMenuButton tooltip="Agreement Onboarding" isActive={isAgreementOnboardingActive}><FileText /><span>Agreement Onboarding</span></SidebarMenuButton>
+                <SidebarMenuItem>
+                  <SidebarMenuButton tooltip="Origination" isActive={isOriginationActive}><Filter /><span>Origination</span></SidebarMenuButton>
                   <SidebarMenuSub>
-                    <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'agreement-onboarding'} onClick={() => navigate('agreement-onboarding')}><FileText />Application</SidebarMenuSubButton></SidebarMenuSubItem>
-                    <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'agreement-discovery'} onClick={() => navigate('agreement-discovery')}><FileSearch/>Discovery</SidebarMenuSubButton></SidebarMenuSubItem>
-                    <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'agreement-scoring'} onClick={() => navigate('agreement-scoring')}><Star />Scoring</SidebarMenuSubButton></SidebarMenuSubItem>
+                    <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'opportunities'} onClick={() => navigate('opportunities')}><Lightbulb />Opportunities</SidebarMenuSubButton></SidebarMenuSubItem>
+                    <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'quotes'} onClick={() => navigate('quotes')}><Calculator />Quotes</SidebarMenuSubButton></SidebarMenuSubItem>
+                    <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'enquiries'} onClick={() => navigate('enquiries')}><ClipboardList />Enquiries</SidebarMenuSubButton></SidebarMenuSubItem>
+                    <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'application'} onClick={() => navigate('application')}><FileSearch/>Application</SidebarMenuSubButton></SidebarMenuSubItem>
+                    <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'scoring'} onClick={() => navigate('scoring')}><Star />Scoring</SidebarMenuSubButton></SidebarMenuSubItem>
                   </SidebarMenuSub>
                 </SidebarMenuItem>
 
