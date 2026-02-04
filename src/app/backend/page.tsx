@@ -58,6 +58,7 @@ import {
   FileSignature,
   Building,
   FileSearch,
+  UserPlus,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -173,7 +174,13 @@ function BackendContent() {
       case 'reconciliation': return <ReconciliationPage />;
       case 'contributions': return <ContributionsList />;
       
-      // Lending DMS
+      // Origination
+      case 'client-onboarding': return <ClientsContent />;
+      case 'agreement-onboarding': return <AgreementsContent />;
+      case 'discovery': return <DiscoveryContent />;
+      case 'scoring': return <ScoringContent />;
+
+      // Lending DMS (Servicing)
       case 'lending-clients': return <ClientsContent />;
       case 'lending-agreements': return <AgreementsContent />;
       case 'lending-facilities': return <FacilitiesContent />;
@@ -183,8 +190,6 @@ function BackendContent() {
       case 'lending-collateral': return <CollateralContent />;
       case 'lending-payments': return <PaymentsContent />;
       case 'lending-partners': return <LendingPartnersContent />;
-      case 'lending-discovery': return <DiscoveryContent />;
-      case 'lending-scoring': return <ScoringContent />;
 
       // Partners
       case 'partners-suppliers': return <PartnerDetails partnerType="Suppliers" />;
@@ -225,6 +230,7 @@ function BackendContent() {
   const navigate = (view: string) => router.push(`/backend?view=${view}`, { scroll: false });
   
   const isOperationsActive = ['members', 'wallet', 'wallet-transactions', 'shops', 'reconciliation', 'contributions'].includes(activeView);
+  const isOriginationActive = ['client-onboarding', 'agreement-onboarding', 'discovery', 'scoring'].includes(activeView);
   const isLendingActive = activeView.startsWith('lending-') || activeView.startsWith('partners-');
   const isRevenueActive = [
     'pricing-memberships', 'pricing-connect', 'pricing-tech', 'pricing-marketplace',
@@ -270,11 +276,20 @@ function BackendContent() {
                     <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'reconciliation'} onClick={() => navigate('reconciliation')}><Scale />Bank Reconciliation</SidebarMenuSubButton></SidebarMenuSubItem>
                   </SidebarMenuSub>
                 </SidebarMenuItem>
-                <SidebarMenuItem>
-                  <SidebarMenuButton tooltip="Lending" isActive={isLendingActive}><Landmark /><span>Lending</span></SidebarMenuButton>
+                
+                 <SidebarMenuItem>
+                  <SidebarMenuButton tooltip="Origination" isActive={isOriginationActive}><UserPlus /><span>Origination</span></SidebarMenuButton>
                   <SidebarMenuSub>
-                    <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'lending-discovery'} onClick={() => navigate('lending-discovery')}><FileSearch/>Discovery</SidebarMenuSubButton></SidebarMenuSubItem>
-                    <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'lending-scoring'} onClick={() => navigate('lending-scoring')}><Star />Scoring</SidebarMenuSubButton></SidebarMenuSubItem>
+                    <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'client-onboarding'} onClick={() => navigate('client-onboarding')}><Users/>Client Onboarding</SidebarMenuSubButton></SidebarMenuSubItem>
+                    <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'agreement-onboarding'} onClick={() => navigate('agreement-onboarding')}><FileText />Agreement Onboarding</SidebarMenuSubButton></SidebarMenuSubItem>
+                    <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'discovery'} onClick={() => navigate('discovery')}><FileSearch/>Discovery</SidebarMenuSubButton></SidebarMenuSubItem>
+                    <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'scoring'} onClick={() => navigate('scoring')}><Star />Scoring</SidebarMenuSubButton></SidebarMenuSubItem>
+                  </SidebarMenuSub>
+                </SidebarMenuItem>
+
+                <SidebarMenuItem>
+                  <SidebarMenuButton tooltip="Lending Management" isActive={isLendingActive}><Landmark /><span>Lending Management</span></SidebarMenuButton>
+                  <SidebarMenuSub>
                     <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'lending-clients'} onClick={() => navigate('lending-clients')}><Users/>Clients</SidebarMenuSubButton></SidebarMenuSubItem>
                     <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'lending-agreements'} onClick={() => navigate('lending-agreements')}><FileText />Agreements</SidebarMenuSubButton></SidebarMenuSubItem>
                     <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'lending-facilities'} onClick={() => navigate('lending-facilities')}><Landmark />Facilities</SidebarMenuSubButton></SidebarMenuSubItem>
