@@ -2,8 +2,8 @@
 'use client';
 
 import { Suspense, useMemo, useState, useEffect } from 'react';
-import { useParams } from 'next/navigation';
-import { getClientSideAuthToken } from '@/firebase';
+import { useParams, useRouter } from 'next/navigation';
+import { getClientSideAuthToken, useUser } from '@/firebase';
 import { Loader2, Briefcase, Info, Presentation, Mail, Handshake, DollarSign, TrendingUp, CheckCircle, Cpu, AlertCircle } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
@@ -99,19 +99,28 @@ function InvestorOffer() {
 
 function InvestorPitchPage() {
     const params = useParams();
+    const router = useRouter();
+    const { user, isUserLoading } = useUser();
     const investorId = params.investorId as string;
     const [investor, setInvestor] = useState<any | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
+    const [isLoadingData, setIsLoadingData] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
+        if (isUserLoading) return; // Wait for user status to be resolved
+        
+        if (!user) {
+            router.replace('/signin'); // Redirect if not logged in
+            return;
+        }
+
         const fetchInvestor = async () => {
             if (!investorId) {
-                setIsLoading(false);
+                setIsLoadingData(false);
                 setError("No investor ID provided.");
                 return;
             }
-            setIsLoading(true);
+            setIsLoadingData(true);
             setError(null);
             try {
                 const token = await getClientSideAuthToken();
@@ -135,14 +144,14 @@ function InvestorPitchPage() {
             } catch (e: any) {
                 setError(e.message);
             } finally {
-                setIsLoading(false);
+                setIsLoadingData(false);
             }
         };
 
         fetchInvestor();
-    }, [investorId]);
+    }, [investorId, user, isUserLoading, router]);
     
-    if (isLoading) {
+    if (isUserLoading || isLoadingData) {
         return <div className="flex justify-center py-20"><Loader2 className="h-12 w-12 animate-spin" /></div>;
     }
     
