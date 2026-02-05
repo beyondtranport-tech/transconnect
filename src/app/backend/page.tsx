@@ -118,6 +118,14 @@ const MarketplaceFees = dynamic(() => import('./revenue/marketplace-fees'), { lo
 const SalesIncentives = dynamic(() => import('./revenue/sales-incentives'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const LoyaltySettings = dynamic(() => import('./loyalty-settings'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 
+// Lending Model
+const LendingAssumptions = dynamic(() => import('./lending/lending-assumptions'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const RepaymentSchedule = dynamic(() => import('./lending/repayment-schedule'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const LendingLoanBook = dynamic(() => import('./lending/loan-book'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const LendingIncomeStatement = dynamic(() => import('./lending/income-statement'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const LendingBalanceSheet = dynamic(() => import('./lending/balance-sheet'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const LendingCashflow = dynamic(() => import('./lending/cashflow'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+
 
 function AdminAuthGuard({ children }: { children: React.ReactNode }) {
     const { user, isUserLoading } = useUser();
@@ -170,7 +178,6 @@ function BackendContent() {
     switch (activeView) {
       // Dashboard
       case 'dashboard': return <AdminDashboardContent />;
-      case 'activity': return <ActivityFeed />;
       
       // Operations
       case 'members': return <MembersList />;
@@ -179,6 +186,7 @@ function BackendContent() {
       case 'shops': return <ShopsList />;
       case 'reconciliation': return <ReconciliationPage />;
       case 'contributions': return <ContributionsList />;
+      case 'activity': return <ActivityFeed />;
       
       // Origination
       case 'opportunities': return <LeadsDatabase />;
@@ -216,6 +224,14 @@ function BackendContent() {
       case 'incentives-sales': return <SalesIncentives />;
       case 'tasks': return <PlatformTasks />;
       case 'settings-bank': return <PlatformSettingsContent />;
+      
+      // Lending Model
+      case 'lending-assumptions': return <LendingAssumptions />;
+      case 'lending-repayment-schedule': return <RepaymentSchedule />;
+      case 'lending-loan-book': return <LendingLoanBook />;
+      case 'lending-income-statement': return <LendingIncomeStatement />;
+      case 'lending-balance-sheet': return <LendingBalanceSheet />;
+      case 'lending-cashflow': return <LendingCashflow />;
 
       default: return <AdminDashboardContent />;
     }
@@ -334,6 +350,21 @@ function BackendContent() {
                     <SidebarMenuSubItem><SidebarMenuSubButton disabled><Wrench className="mr-2 h-4 w-4" />Utilities</SidebarMenuSubButton></SidebarMenuSubItem>
                     <SidebarMenuSubItem><SidebarMenuSubButton disabled><FileText className="mr-2 h-4 w-4" />Reports</SidebarMenuSubButton></SidebarMenuSubItem>
                   </SidebarMenuSub>
+                </SidebarMenuItem>
+                 <SidebarMenuItem>
+                  <SidebarMenuButton tooltip="Lending Model" isActive={activeView.startsWith('lending-') && !isLendingActive}>
+                    <TrendingUp /><span>Lending Model</span>
+                  </SidebarMenuButton>
+                   <SidebarMenuSub>
+                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'lending-assumptions'} onClick={() => navigate('lending-assumptions')}><Calculator />Assumptions</SidebarMenuSubButton></SidebarMenuSubItem>
+                        <SidebarMenuSeparator />
+                        <SidebarMenuSubItem><span className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">Projections</span></SidebarMenuSubItem>
+                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'lending-repayment-schedule'} onClick={() => navigate('lending-repayment-schedule')}><FinancialSheetIcon />Repayment Schedule</SidebarMenuSubButton></SidebarMenuSubItem>
+                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'lending-loan-book'} onClick={() => navigate('lending-loan-book')}><Database />Loan Book</SidebarMenuSubButton></SidebarMenuSubItem>
+                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'lending-income-statement'} onClick={() => navigate('lending-income-statement')}><TrendingUp />Income Statement</SidebarMenuSubButton></SidebarMenuSubItem>
+                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'lending-balance-sheet'} onClick={() => navigate('lending-balance-sheet')}><FinancialSheetIcon />Balance Sheet</SidebarMenuSubButton></SidebarMenuSubItem>
+                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'lending-cashflow'} onClick={() => navigate('lending-cashflow')}><DollarSign />Cashflow</SidebarMenuSubButton></SidebarMenuSubItem>
+                    </SidebarMenuSub>
                 </SidebarMenuItem>
                 <SidebarMenuItem>
                     <SidebarMenuButton tooltip="Revenue & Pricing" isActive={isRevenueActive}><DollarSign /><span>Revenue & Pricing</span></SidebarMenuButton>

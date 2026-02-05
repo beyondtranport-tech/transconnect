@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useMemo, useState, useEffect } from 'react';
@@ -34,21 +35,23 @@ export default function LendingLoanBook() {
     const loanBookData = useMemo(() => {
         if (!assumptions) return [];
 
-        const { loan, installmentSale } = assumptions; // Simplified for now
+        const { loan, installmentSale, lease, factoring } = assumptions;
         const agreementTypes = [
             { type: 'loan', ...loan },
-            { type: 'installmentSale', ...installmentSale }
-            // Add lease and factoring here when their calculations are defined
+            { type: 'installmentSale', ...installmentSale },
+            { type: 'lease', ...lease },
+            { type: 'factoring', ...factoring },
         ];
         
         const allSchedules: { startMonth: number, schedule: MonthlyPayment[] }[] = [];
-        const forecastPeriod = 36; // Keep a fixed forecast period for now
+        const forecastPeriod = 36;
 
         // 1. Originate all loans and generate their schedules upfront
         for (let i = 0; i < forecastPeriod; i++) { // For each month in the forecast
             for (const agreement of agreementTypes) {
-                if (agreement.enabled && agreement.dealsPerMonth > 0) {
-                    for (let j = 0; j < agreement.dealsPerMonth; j++) { // For each deal in the month
+                 // Only originate if it's recurring OR if it's the very first month.
+                if (agreement.enabled && agreement.dealsPerMonth > 0 && (agreement.recurring || i === 0)) {
+                    for (let j = 0; j < agreement.dealsPerMonth; j++) {
                         const schedule = generateAmortizationSchedule(
                             agreement.amount || 0,
                             agreement.rate || 0,
@@ -62,7 +65,6 @@ export default function LendingLoanBook() {
             }
         }
         
-        // 2. Build the monthly projection by summing up the values from all active schedules
         const projection = [];
         let cumulativePayouts = 0;
         let cumulativeReceiptsCapital = 0;
@@ -76,11 +78,9 @@ export default function LendingLoanBook() {
 
             for (const scheduledLoan of allSchedules) {
                 if (scheduledLoan.startMonth === currentMonth) {
-                    // This loan is disbursed this month. Payout is the principal amount.
                     monthlyPayouts += scheduledLoan.schedule[0]?.principal + scheduledLoan.schedule[0]?.remainingBalance;
                 }
                 
-                // Calculate payments for loans that are currently active
                 const monthInLoanLife = currentMonth - scheduledLoan.startMonth;
                 if (monthInLoanLife >= 0 && monthInLoanLife < scheduledLoan.schedule.length) {
                     const payment = scheduledLoan.schedule[monthInLoanLife];
@@ -89,7 +89,6 @@ export default function LendingLoanBook() {
                 }
             }
             
-            // Update cumulative totals and balance
             cumulativePayouts += monthlyPayouts;
             cumulativeReceiptsCapital += monthlyReceiptsCapital;
             cumulativeReceiptsInterest += monthlyReceiptsInterest;
