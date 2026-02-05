@@ -243,7 +243,6 @@ function BackendContent() {
   const navigate = (view: string) => router.push(`/backend?view=${view}`, { scroll: false });
   
   const isOperationsActive = ['members', 'wallet', 'wallet-transactions', 'shops', 'reconciliation', 'contributions'].includes(activeView);
-  const isOriginationActive = ['opportunities', 'quotes', 'enquiries', 'application', 'scoring'].includes(activeView);
   const isLendingDMSActive = activeView.startsWith('lending-') && activeView !== 'lending-model';
   const isPartnersActive = activeView.startsWith('partners-');
   const isRevenueActive = [
