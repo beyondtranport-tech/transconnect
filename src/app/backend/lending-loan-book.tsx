@@ -9,7 +9,6 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { generateAmortizationSchedule, type MonthlyPayment } from './lending/loan-calculations';
 
-// Keys for localStorage
 const LENDING_ASSUMPTIONS_KEY = 'adminLendingAssumptions_v1';
 const SETUP_KEY = 'accountFinancialSetup_v1';
 
@@ -24,7 +23,6 @@ export default function LendingLoanBook() {
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
-        // This effect runs only on the client side after the component mounts
         try {
             const savedAssumptions = localStorage.getItem(LENDING_ASSUMPTIONS_KEY);
             const savedSettings = localStorage.getItem(SETUP_KEY);
@@ -41,7 +39,6 @@ export default function LendingLoanBook() {
     }, []);
 
     const loanBookData = useMemo(() => {
-        // Ensure both assumptions and settings are loaded before calculating
         if (!assumptions || !settings) return [];
 
         const { loan, installmentSale, lease, factoring } = assumptions;
@@ -53,11 +50,10 @@ export default function LendingLoanBook() {
         ];
         
         const allOriginatedLoanSchedules: { startMonth: number; schedule: MonthlyPayment[]; principal: number }[] = [];
-        const forecastPeriod = settings.forecastMonths || 36; // Use forecastMonths from settings
+        const forecastPeriod = settings.forecastMonths || 36;
 
-        // 1. Determine all loans that will be created and when.
+        // 1. Determine all loans that will be created and when, based on the assumptions.
         for (const agreement of agreementTypes) {
-            // Skip if the agreement type is not enabled or has no deals
             if (!agreement.enabled || !agreement.dealsPerMonth || agreement.dealsPerMonth <= 0) {
                 continue;
             }
@@ -66,8 +62,12 @@ export default function LendingLoanBook() {
             const loanRate = agreement.rate || 0;
             const loanTerm = agreement.term || 0;
             
-            // If it's a recurring deal, originate it every month
-            if (agreement.recurring) {
+            // This is the critical fix. We must explicitly check for a boolean `true` value.
+            // This prevents issues if the value is undefined or a string from local storage.
+            const isRecurring = agreement.recurring === true;
+
+            if (isRecurring) {
+                // If recurring is checked, originate deals every single month.
                 for (let month = 0; month < forecastPeriod; month++) {
                     for (let i = 0; i < agreement.dealsPerMonth; i++) {
                         const schedule = generateAmortizationSchedule(loanPrincipal, loanRate, loanTerm);
@@ -76,7 +76,8 @@ export default function LendingLoanBook() {
                         }
                     }
                 }
-            } else { // If not recurring, originate only in the first month (month 0)
+            } else {
+                // If recurring is NOT checked, originate all the deals for this type ONLY in the first month (month 0).
                 for (let i = 0; i < agreement.dealsPerMonth; i++) {
                     const schedule = generateAmortizationSchedule(loanPrincipal, loanRate, loanTerm);
                     if (schedule.length > 0) {
@@ -153,7 +154,7 @@ export default function LendingLoanBook() {
                 </CardHeader>
                 <CardContent className="text-center">
                      <Button asChild variant="outline">
-                        <Link href="/backend?view=lending-assumptions">Go to Lending Assumptions</Link>
+                        <Link href="/adminaccount?view=lending-assumptions">Go to Lending Assumptions</Link>
                     </Button>
                 </CardContent>
             </Card>
