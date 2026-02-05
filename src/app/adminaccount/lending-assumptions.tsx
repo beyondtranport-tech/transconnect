@@ -19,6 +19,7 @@ const agreementSchema = z.object({
     amount: z.coerce.number().optional(),
     term: z.coerce.number().optional(),
     rate: z.coerce.number().optional(),
+    dealsPerMonth: z.coerce.number().optional(),
 });
 
 const formSchema = z.object({
@@ -45,10 +46,10 @@ export default function LendingAssumptions() {
             quoteConversionRate: 50,
             enquiryConversionRate: 30,
             applicationConversionRate: 60,
-            loan: { enabled: true, amount: 250000, term: 48, rate: 18 },
-            installmentSale: { enabled: true, amount: 750000, term: 60, rate: 15 },
-            lease: { enabled: false, amount: 600000, term: 54, rate: 16 },
-            factoring: { enabled: true, amount: 100000, term: 3, rate: 5 },
+            loan: { enabled: true, amount: 250000, term: 48, rate: 18, dealsPerMonth: 1 },
+            installmentSale: { enabled: true, amount: 750000, term: 60, rate: 15, dealsPerMonth: 1 },
+            lease: { enabled: false, amount: 600000, term: 54, rate: 16, dealsPerMonth: 0 },
+            factoring: { enabled: true, amount: 100000, term: 3, rate: 5, dealsPerMonth: 2 },
         }
     });
 
@@ -82,9 +83,12 @@ export default function LendingAssumptions() {
             </CardHeader>
             <CardContent className="space-y-4">
                 <fieldset disabled={!form.watch(`${name}.enabled`)} className="space-y-4">
-                    <FormField control={form.control} name={`${name}.amount`} render={({ field }) => (<FormItem><FormLabel>Avg. Amount (R)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                    <FormField control={form.control} name={`${name}.term`} render={({ field }) => (<FormItem><FormLabel>Avg. Term (Months)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                    <FormField control={form.control} name={`${name}.rate`} render={({ field }) => (<FormItem><FormLabel>Avg. Rate / Discount Fee (%)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <FormField control={form.control} name={`${name}.dealsPerMonth`} render={({ field }) => (<FormItem><FormLabel># of Deals / Month</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                        <FormField control={form.control} name={`${name}.amount`} render={({ field }) => (<FormItem><FormLabel>Avg. Amount (R)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                        <FormField control={form.control} name={`${name}.term`} render={({ field }) => (<FormItem><FormLabel>Avg. Term (Months)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                        <FormField control={form.control} name={`${name}.rate`} render={({ field }) => (<FormItem><FormLabel>Avg. Rate / Discount Fee (%)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                    </div>
                 </fieldset>
             </CardContent>
         </Card>
@@ -119,7 +123,7 @@ export default function LendingAssumptions() {
                             <CardTitle className="flex items-center gap-2"><FileText /> Agreement Product Mix</CardTitle>
                             <CardDescription>Enable the agreement types you want to offer and set their average financial parameters.</CardDescription>
                         </CardHeader>
-                        <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <CardContent className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                             {renderAgreementFields("loan", "Loans")}
                             {renderAgreementFields("installmentSale", "Installment Sale")}
                             {renderAgreementFields("lease", "Lease / Rental")}
