@@ -78,7 +78,7 @@ export default function LendingRepaymentSchedule() {
                 </CardHeader>
                 <CardContent className="text-center">
                      <Button asChild variant="outline">
-                        <Link href="/adminaccount?view=lending-assumptions">Go to Lending Assumptions</Link>
+                        <Link href="/backend?view=lending-assumptions">Go to Lending Assumptions</Link>
                     </Button>
                 </CardContent>
             </Card>
