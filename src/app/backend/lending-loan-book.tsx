@@ -21,6 +21,7 @@ export default function LendingLoanBook() {
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
+        // This effect runs only on the client side after the component mounts
         try {
             const savedData = localStorage.getItem(LENDING_ASSUMPTIONS_KEY);
             if (savedData) {
@@ -129,7 +130,7 @@ export default function LendingLoanBook() {
                 </CardHeader>
                 <CardContent className="text-center">
                      <Button asChild variant="outline">
-                        <Link href="/adminaccount?view=lending-assumptions">Go to Lending Assumptions</Link>
+                        <Link href="/backend?view=lending-assumptions">Go to Lending Assumptions</Link>
                     </Button>
                 </CardContent>
             </Card>

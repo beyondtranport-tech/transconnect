@@ -60,20 +60,20 @@ export default function LendingAssumptions() {
                 return defaultValues;
             }
             const savedData = localStorage.getItem(LENDING_ASSUMPTIONS_KEY);
-            // Basic validation to check if saved data has new keys, if not, merge with defaults
             if (savedData) {
                 const parsed = JSON.parse(savedData);
-                if (parsed.loan && typeof parsed.loan.recurring === 'undefined') {
-                    // This ensures old saved data is compatible with the new structure
-                    const updated = { ...defaultValues };
-                    for (const key in parsed) {
-                        if (key in updated) {
+                // Ensure new fields are added to old saved data
+                const updated = { ...defaultValues };
+                 for (const key in updated) {
+                    if (parsed[key] !== undefined) {
+                        if (typeof (updated as any)[key] === 'object' && (updated as any)[key] !== null && !Array.isArray((updated as any)[key])) {
                             (updated as any)[key] = { ...(updated as any)[key], ...(parsed as any)[key] };
+                        } else {
+                            (updated as any)[key] = (parsed as any)[key];
                         }
                     }
-                    return updated;
                 }
-                return parsed;
+                return updated;
             }
             return defaultValues;
         }, [])()
