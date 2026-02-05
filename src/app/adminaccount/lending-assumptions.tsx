@@ -6,7 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
@@ -21,6 +21,7 @@ const agreementSchema = z.object({
     term: z.coerce.number().optional(),
     rate: z.coerce.number().optional(),
     dealsPerMonth: z.coerce.number().optional(),
+    recurring: z.boolean().default(true),
 });
 
 const formSchema = z.object({
@@ -41,10 +42,10 @@ const defaultValues: FormValues = {
     quoteConversionRate: 50,
     enquiryConversionRate: 30,
     applicationConversionRate: 60,
-    loan: { enabled: true, amount: 250000, term: 48, rate: 18, dealsPerMonth: 1 },
-    installmentSale: { enabled: true, amount: 750000, term: 60, rate: 15, dealsPerMonth: 1 },
-    lease: { enabled: false, amount: 600000, term: 54, rate: 16, dealsPerMonth: 0 },
-    factoring: { enabled: true, amount: 100000, term: 3, rate: 5, dealsPerMonth: 2 },
+    loan: { enabled: true, amount: 250000, term: 48, rate: 18, dealsPerMonth: 1, recurring: true },
+    installmentSale: { enabled: true, amount: 750000, term: 60, rate: 15, dealsPerMonth: 1, recurring: true },
+    lease: { enabled: false, amount: 600000, term: 54, rate: 16, dealsPerMonth: 0, recurring: true },
+    factoring: { enabled: true, amount: 100000, term: 3, rate: 5, dealsPerMonth: 2, recurring: true },
 };
 
 export default function LendingAssumptions() {
@@ -58,7 +59,26 @@ export default function LendingAssumptions() {
                 return defaultValues;
             }
             const savedData = localStorage.getItem(LENDING_ASSUMPTIONS_KEY);
-            return savedData ? JSON.parse(savedData) : defaultValues;
+            // Basic validation to check if saved data has new keys, if not, merge with defaults
+            if (savedData) {
+                const parsed = JSON.parse(savedData);
+                if (parsed.loan && typeof parsed.loan.recurring === 'undefined') {
+                    // This ensures old saved data is compatible with the new structure
+                    const updated = { ...defaultValues };
+                    for (const key in parsed) {
+                        if (key in updated) {
+                           if (typeof (updated as any)[key] === 'object' && (updated as any)[key] !== null && !Array.isArray((updated as any)[key])) {
+                                (updated as any)[key] = { ...(updated as any)[key], ...(parsed as any)[key] };
+                            } else {
+                                (updated as any)[key] = (parsed as any)[key];
+                            }
+                        }
+                    }
+                    return updated;
+                }
+                return parsed;
+            }
+            return defaultValues;
         }, [])()
     });
 
@@ -99,6 +119,27 @@ export default function LendingAssumptions() {
                         <FormField control={form.control} name={`${name}.amount`} render={({ field }) => (<FormItem><FormLabel>Avg. Amount (R)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
                         <FormField control={form.control} name={`${name}.term`} render={({ field }) => (<FormItem><FormLabel>Avg. Term (Months)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
                         <FormField control={form.control} name={`${name}.rate`} render={({ field }) => (<FormItem><FormLabel>Avg. Rate / Discount Fee (%)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                    </div>
+                     <div className="flex items-center space-x-2 pt-4 border-t">
+                        <FormField
+                            control={form.control}
+                            name={`${name}.recurring`}
+                            render={({ field }) => (
+                                <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                                    <FormControl>
+                                        <Checkbox checked={field.value} onCheckedChange={field.onChange} />
+                                    </FormControl>
+                                    <div className="space-y-1 leading-none">
+                                        <FormLabel>
+                                            Recurring Monthly Deals
+                                        </FormLabel>
+                                        <FormDescription className="text-xs">
+                                            If checked, originate this many deals every month. If unchecked, originate only in the first month.
+                                        </FormDescription>
+                                    </div>
+                                </FormItem>
+                            )}
+                        />
                     </div>
                 </fieldset>
             </CardContent>
