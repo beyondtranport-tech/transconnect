@@ -3,96 +3,108 @@
 
 const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
+// This is the function to be updated
 export function salesRoadmapLogic(settings: any, roadmapInputs: any) {
     if (!roadmapInputs || !roadmapInputs.monthlyAssumptions || !settings) {
-        return [];
+        return {
+            powerPartnerProjection: [],
+            isaProjection: [],
+            totalProjection: [],
+        };
     }
 
-    const monthlyAssumptions = roadmapInputs.monthlyAssumptions;
+    const { monthlyAssumptions } = roadmapInputs;
     const { forecastMonths, startYear, startMonth } = settings;
-    
-    const memberRoleGroups = [
-        { role: 'Vendors', id: 'Vendors' },
-        { role: 'Buyers', id: 'Buyers' },
-        { role: 'Associates', id: 'Associates' },
-        { role: 'ISA Agents', id: 'IsaAgents' },
-        { role: 'Drivers', id: 'Drivers' },
-        { role: 'Developers', id: 'Developers' }
-    ];
 
-    let byRoleProjections: { [key: string]: any[] } = {};
-
-    memberRoleGroups.forEach(group => {
-        const roleKey = group.role;
-        const roleId = group.id;
-        byRoleProjections[roleKey] = [];
-        
-        const initialMembers = Number(monthlyAssumptions[`initialMembers${roleId}`]?.[0]) || 0;
-        let cumulativeForRole = initialMembers;
-        
-        const referralsArray = monthlyAssumptions[`referralsPerMember${roleId}`] || [];
-        const conversionArray = monthlyAssumptions[`conversionToMember${roleId}`] || [];
-
-        for (let i = 0; i < forecastMonths; i++) {
-            const date = new Date(startYear, startMonth + i, 1);
-            const month = monthNames[date.getMonth()];
-            const year = date.getFullYear();
-            const referralsPerMember = Number(referralsArray[i]) || 0;
-            const conversionToMember = (Number(conversionArray[i]) || 0) / 100;
-            const newMembersThisMonth = Math.round(cumulativeForRole * referralsPerMember * conversionToMember);
-            cumulativeForRole += newMembersThisMonth;
-            byRoleProjections[roleKey].push({
-                month: `${month} ${year}`,
-                newMembers: newMembersThisMonth,
-                cumulativeMembers: cumulativeForRole,
-            });
-        }
-    });
-
-    let totalProjection: any[] = [];
-    const initialTotalMembers = memberRoleGroups.reduce((acc, group) => {
-        const roleId = group.id;
-        return acc + (Number(monthlyAssumptions[`initialMembers${roleId}`]?.[0]) || 0);
-    }, 0);
-    
-    let cumulativeTotal = initialTotalMembers;
+    // --- Power Partner Projections ---
+    const powerPartnerProjection: any[] = [];
+    const initialPartners = Number(monthlyAssumptions.numberOfPowerPartners?.[0]) || 0;
+    let cumulativePartnerOpps = 0;
+    let cumulativePartnerMembers = 0;
 
     for (let i = 0; i < forecastMonths; i++) {
         const date = new Date(startYear, startMonth + i, 1);
         const month = monthNames[date.getMonth()];
         const year = date.getFullYear();
 
-        let newMembersFromRoles = 0;
-        memberRoleGroups.forEach(group => {
-            const roleKey = group.role;
-            const projectionForMonth = byRoleProjections[roleKey][i];
-            if (projectionForMonth) {
-                newMembersFromRoles += projectionForMonth.newMembers;
-            }
-        });
+        const oppsPerPartner = Number(monthlyAssumptions.opportunitiesPerPartner?.[i]) || 0;
+        const conversionRate = (Number(monthlyAssumptions.powerPartnerConversion?.[i]) || 0) / 100;
         
-        const powerPartnerConversionForMonth = (Number(monthlyAssumptions.powerPartnerConversion?.[i]) || 0) / 100;
-        const powerPartnerNewMembers = Math.round(
-            (Number(monthlyAssumptions.numberOfPowerPartners?.[i]) || 0) *
-            (Number(monthlyAssumptions.opportunitiesPerPartner?.[i]) || 0) *
-            powerPartnerConversionForMonth
-        );
+        const newOpportunities = initialPartners * oppsPerPartner;
+        cumulativePartnerOpps += newOpportunities;
+        const newMembers = Math.round(newOpportunities * conversionRate);
+        cumulativePartnerMembers += newMembers;
 
-        const totalNewThisMonth = newMembersFromRoles + powerPartnerNewMembers;
-        cumulativeTotal += totalNewThisMonth;
-        
-        totalProjection.push({
+        powerPartnerProjection.push({
             month: `${month} ${year}`,
-            year,
-            powerPartnerNewMembers: powerPartnerNewMembers,
-            referralNewMembers: newMembersFromRoles,
-            totalNewMembers: totalNewThisMonth,
-            cumulativeMembers: cumulativeTotal,
+            partners: initialPartners,
+            oppsPerPartner,
+            newOpportunities,
+            cumulativeOpportunities: cumulativePartnerOpps,
+            conversionRate: conversionRate * 100, // Display as percentage
+            newMembers,
+            cumulativeMembers: cumulativePartnerMembers,
         });
     }
 
-    return totalProjection;
-};
+    // --- ISA Projections ---
+    const isaProjection: any[] = [];
+    const initialIsas = Number(monthlyAssumptions.initialMembersIsaAgents?.[0]) || 0;
+    let cumulativeIsaReferrals = 0;
+    let cumulativeIsaMembers = 0;
+
+    for (let i = 0; i < forecastMonths; i++) {
+        const date = new Date(startYear, startMonth + i, 1);
+        const month = monthNames[date.getMonth()];
+        const year = date.getFullYear();
+
+        const referralsPerIsa = Number(monthlyAssumptions.referralsPerMemberIsaAgents?.[i]) || 0;
+        const conversionRate = (Number(monthlyAssumptions.conversionToMemberIsaAgents?.[i]) || 0) / 100;
+        
+        const newReferrals = initialIsas * referralsPerIsa;
+        cumulativeIsaReferrals += newReferrals;
+        const newMembers = Math.round(newReferrals * conversionRate);
+        cumulativeIsaMembers += newMembers;
+
+        isaProjection.push({
+            month: `${month} ${year}`,
+            isas: initialIsas,
+            referralsPerIsa,
+            newReferrals,
+            cumulativeReferrals: cumulativeIsaReferrals,
+            conversionRate: conversionRate * 100,
+            newMembers,
+            cumulativeMembers: cumulativeIsaMembers,
+        });
+    }
+    
+    // --- Total Member Projection (simplified for now, but should include other channels later) ---
+    const totalProjection: any[] = [];
+    let cumulativeTotalMembers = 0;
+    for (let i=0; i<forecastMonths; i++) {
+        const ppNew = powerPartnerProjection[i]?.newMembers || 0;
+        const isaNew = isaProjection[i]?.newMembers || 0;
+        
+        const totalNewThisMonth = ppNew + isaNew;
+        cumulativeTotalMembers += totalNewThisMonth;
+
+        totalProjection.push({
+            month: powerPartnerProjection[i].month,
+            year: new Date(startYear, startMonth + i, 1).getFullYear(),
+            powerPartnerNewMembers: ppNew,
+            isaNewMembers: isaNew,
+            totalNewMembers: totalNewThisMonth,
+            cumulativeMembers: cumulativeTotalMembers
+        });
+    }
+
+
+    return {
+        powerPartnerProjection,
+        isaProjection,
+        totalProjection,
+    };
+}
 
 
 export function budgetLogic(roadmapData: any[], budgetData: any, targets: any) {
