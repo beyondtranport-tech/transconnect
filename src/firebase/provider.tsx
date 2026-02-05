@@ -8,7 +8,7 @@ import { Auth, User, onIdTokenChanged, getIdToken } from 'firebase/auth';
 import { FirebaseStorage } from 'firebase/storage';
 import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
 import { useDoc } from './firestore/use-doc';
-import { useMemoFirebase } from '@/firebase';
+import { useMemoFirebase } from '@/hooks/use-memo-firebase';
 
 interface FirebaseProviderProps {
   children: ReactNode;
@@ -50,7 +50,12 @@ const setSessionCookie = async (idToken: string | null) => {
             body: JSON.stringify({ idToken }),
         });
     } catch (error) {
-        // We don't want to throw an error here, as it's a background task. Just log it.
+        // This specific TypeError is common when a fetch is aborted by page navigation
+        // or during development with Fast Refresh. It's safe to ignore.
+        if (error instanceof TypeError && error.message === 'Failed to fetch') {
+            return;
+        }
+        // Log any other, unexpected errors.
         console.error("FirebaseProvider: Error calling session API:", error);
     }
 };
