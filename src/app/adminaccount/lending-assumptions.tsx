@@ -1,7 +1,6 @@
-
 'use client';
 
-import React from 'react';
+import React, { useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -13,6 +12,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Save, Calculator, Users, Percent, FileText } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
+
+const LENDING_ASSUMPTIONS_KEY = 'adminLendingAssumptions_v1';
 
 const agreementSchema = z.object({
     enabled: z.boolean().default(false),
@@ -35,32 +36,42 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
+const defaultValues: FormValues = {
+    monthlySignups: 100,
+    quoteConversionRate: 50,
+    enquiryConversionRate: 30,
+    applicationConversionRate: 60,
+    loan: { enabled: true, amount: 250000, term: 48, rate: 18, dealsPerMonth: 1 },
+    installmentSale: { enabled: true, amount: 750000, term: 60, rate: 15, dealsPerMonth: 1 },
+    lease: { enabled: false, amount: 600000, term: 54, rate: 16, dealsPerMonth: 0 },
+    factoring: { enabled: true, amount: 100000, term: 3, rate: 5, dealsPerMonth: 2 },
+};
+
 export default function LendingAssumptions() {
     const { toast } = useToast();
     const [isLoading, setIsLoading] = React.useState(false);
 
     const form = useForm<FormValues>({
         resolver: zodResolver(formSchema),
-        defaultValues: {
-            monthlySignups: 100,
-            quoteConversionRate: 50,
-            enquiryConversionRate: 30,
-            applicationConversionRate: 60,
-            loan: { enabled: true, amount: 250000, term: 48, rate: 18, dealsPerMonth: 1 },
-            installmentSale: { enabled: true, amount: 750000, term: 60, rate: 15, dealsPerMonth: 1 },
-            lease: { enabled: false, amount: 600000, term: 54, rate: 16, dealsPerMonth: 0 },
-            factoring: { enabled: true, amount: 100000, term: 3, rate: 5, dealsPerMonth: 2 },
-        }
+        defaultValues: useCallback(() => {
+            if (typeof window === 'undefined') {
+                return defaultValues;
+            }
+            const savedData = localStorage.getItem(LENDING_ASSUMPTIONS_KEY);
+            return savedData ? JSON.parse(savedData) : defaultValues;
+        }, [])()
     });
 
     const onSubmit = (values: FormValues) => {
         setIsLoading(true);
-        console.log(values);
-        // Here you would save the data to localStorage or a backend
-        setTimeout(() => {
+        try {
+            localStorage.setItem(LENDING_ASSUMPTIONS_KEY, JSON.stringify(values));
             toast({ title: "Assumptions Saved", description: "Your lending model inputs have been updated." });
+        } catch (e) {
+             toast({ variant: 'destructive', title: "Save Failed", description: "Could not save data to local storage." });
+        } finally {
             setIsLoading(false);
-        }, 1000);
+        }
     };
 
     const renderAgreementFields = (name: "loan" | "installmentSale" | "lease" | "factoring", title: string) => (
