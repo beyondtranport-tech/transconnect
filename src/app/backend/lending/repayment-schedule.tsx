@@ -7,7 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Sheet, AlertTriangle, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { generateAmortizationSchedule } from './loan-calculations';
+import { generateAmortizationSchedule, type MonthlyPayment } from './loan-calculations';
 
 const LENDING_ASSUMPTIONS_KEY = 'adminLendingAssumptions_v1';
 
@@ -133,4 +133,3 @@ export default function LendingRepaymentSchedule() {
         </Card>
     );
 }
-

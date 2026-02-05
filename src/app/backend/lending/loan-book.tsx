@@ -7,6 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Database, AlertTriangle, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import { generateAmortizationSchedule, type MonthlyPayment } from './loan-calculations';
 
 const LENDING_ASSUMPTIONS_KEY = 'adminLendingAssumptions_v1';
 
@@ -36,52 +37,82 @@ export default function LendingLoanBook() {
         if (!assumptions) return [];
 
         const { loan, installmentSale, lease, factoring } = assumptions;
-        const agreementTypes = { loan, installmentSale, lease, factoring };
+        const agreementTypes = [
+            { type: 'loan', ...loan },
+            { type: 'installmentSale', ...installmentSale },
+            { type: 'lease', ...lease },
+            { type: 'factoring', ...factoring },
+        ];
         
-        let outstandingBalance = 0;
+        const allSchedules: { startMonth: number, schedule: MonthlyPayment[] }[] = [];
+        const forecastPeriod = 36;
+
+        // 1. Originate all loans and generate their schedules upfront
+        for (let i = 0; i < forecastPeriod; i++) { // For each month in the forecast
+            for (const agreement of agreementTypes) {
+                 // MODIFIED LOGIC HERE: Only originate if it's recurring OR if it's the very first month.
+                if (agreement.enabled && agreement.dealsPerMonth > 0 && (agreement.recurring || i === 0)) {
+                    for (let j = 0; j < agreement.dealsPerMonth; j++) {
+                        const schedule = generateAmortizationSchedule(
+                            agreement.amount || 0,
+                            agreement.rate || 0,
+                            agreement.term || 0
+                        );
+                        if (schedule.length > 0) {
+                            allSchedules.push({ startMonth: i, schedule });
+                        }
+                    }
+                }
+            }
+        }
+        
+        const projection = [];
         let cumulativePayouts = 0;
         let cumulativeReceiptsCapital = 0;
         let cumulativeReceiptsInterest = 0;
+        let outstandingBalance = 0;
 
-        const data = [];
-
-        for (let i = 0; i < 36; i++) { // Simulate 36 months for now
+        for (let currentMonth = 0; currentMonth < forecastPeriod; currentMonth++) {
             let monthlyPayouts = 0;
+            let monthlyReceiptsCapital = 0;
+            let monthlyReceiptsInterest = 0;
 
-            for (const key in agreementTypes) {
-                const agreement = agreementTypes[key as keyof typeof agreementTypes];
-                if (agreement.enabled) {
-                    monthlyPayouts += (agreement.dealsPerMonth || 0) * (agreement.amount || 0);
+            for (const scheduledLoan of allSchedules) {
+                // If the loan starts this month, its full amount is a payout.
+                if (scheduledLoan.startMonth === currentMonth) {
+                    monthlyPayouts += scheduledLoan.schedule[0]?.principal + scheduledLoan.schedule[0]?.remainingBalance;
+                }
+                
+                // If the loan is active this month, add its repayments to the monthly totals.
+                const monthInLoanLife = currentMonth - scheduledLoan.startMonth;
+                if (monthInLoanLife >= 0 && monthInLoanLife < scheduledLoan.schedule.length) {
+                    const payment = scheduledLoan.schedule[monthInLoanLife];
+                    monthlyReceiptsCapital += payment.principal;
+                    monthlyReceiptsInterest += payment.interest;
                 }
             }
             
             cumulativePayouts += monthlyPayouts;
+            cumulativeReceiptsCapital += monthlyReceiptsCapital;
+            cumulativeReceiptsInterest += monthlyReceiptsInterest;
+            outstandingBalance += monthlyPayouts - monthlyReceiptsCapital;
 
-            // Simple placeholder logic for receipts
-            const receiptsCapital = outstandingBalance > 0 ? outstandingBalance * 0.02 : 0; // Assuming 2% of capital is paid back each month
-            const receiptsInterest = outstandingBalance > 0 ? outstandingBalance * (0.15 / 12) : 0; // Assuming 15% annual interest
-            
-            cumulativeReceiptsCapital += receiptsCapital;
-            cumulativeReceiptsInterest += receiptsInterest;
-
-            outstandingBalance += monthlyPayouts - receiptsCapital;
-
-            data.push({
-                month: `Month ${i + 1}`,
+            projection.push({
+                month: `Month ${currentMonth + 1}`,
                 payouts: monthlyPayouts,
                 cumulativePayouts,
-                receiptsCapital,
+                receiptsCapital: monthlyReceiptsCapital,
                 cumulativeReceiptsCapital,
-                receiptsInterest,
+                receiptsInterest: monthlyReceiptsInterest,
                 cumulativeReceiptsInterest,
                 outstanding: outstandingBalance,
             });
         }
 
-        return data;
+        return projection;
     }, [assumptions]);
-
-    if (isLoading) {
+    
+     if (isLoading) {
         return (
             <div className="flex justify-center items-center h-64">
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />

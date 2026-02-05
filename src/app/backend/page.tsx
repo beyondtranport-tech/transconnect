@@ -352,7 +352,7 @@ function BackendContent() {
                   </SidebarMenuSub>
                 </SidebarMenuItem>
                  <SidebarMenuItem>
-                  <SidebarMenuButton tooltip="Lending Model" isActive={activeView.startsWith('lending-') && !isLendingActive}>
+                  <SidebarMenuButton tooltip="Lending Model" isActive={isLendingActive && !activeView.startsWith('lending-') }>
                     <TrendingUp /><span>Lending Model</span>
                   </SidebarMenuButton>
                    <SidebarMenuSub>
