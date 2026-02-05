@@ -244,7 +244,7 @@ function BackendContent() {
   
   const isOperationsActive = ['members', 'wallet', 'wallet-transactions', 'shops', 'reconciliation', 'contributions'].includes(activeView);
   const isOriginationActive = ['opportunities', 'quotes', 'enquiries', 'application', 'scoring'].includes(activeView);
-  const isLendingActive = activeView.startsWith('lending-') && activeView !== 'lending-model';
+  const isLendingDMSActive = activeView.startsWith('lending-') && activeView !== 'lending-model';
   const isPartnersActive = activeView.startsWith('partners-');
   const isRevenueActive = [
     'pricing-memberships', 'pricing-connect', 'pricing-tech', 'pricing-marketplace',
@@ -292,7 +292,7 @@ function BackendContent() {
                 </SidebarMenuItem>
 
                 <SidebarMenuItem>
-                  <SidebarMenuButton tooltip="Lending Management" isActive={isLendingActive}><Landmark /><span>Lending Management</span></SidebarMenuButton>
+                  <SidebarMenuButton tooltip="Lending Management" isActive={isLendingDMSActive}><Landmark /><span>Lending DMS</span></SidebarMenuButton>
                   <SidebarMenuSub>
                     <SidebarMenuSubItem>
                         <SidebarMenuButton tooltip="Client Onboarding" isActive={['lending-clients', 'lending-discovery', 'lending-scoring'].includes(activeView)}>
