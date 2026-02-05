@@ -45,7 +45,7 @@ export default function LendingLoanBook() {
         ];
         
         const allSchedules: { startMonth: number; schedule: MonthlyPayment[]; principal: number }[] = [];
-        const forecastPeriod = 36;
+        const forecastPeriod = assumptions.forecastMonths || 36; // Use the value from assumptions
 
         // 1. Originate all loans and generate their amortization schedules upfront
         for (const agreement of agreementTypes) {
@@ -54,16 +54,8 @@ export default function LendingLoanBook() {
                 const loanRate = agreement.rate || 0;
                 const loanTerm = agreement.term || 0;
 
-                // Check if recurring is explicitly false. If it's true or undefined, treat as recurring.
-                if (agreement.recurring === false) {
-                    // Not recurring: Originate deals only in the first month (i=0)
-                    for (let j = 0; j < agreement.dealsPerMonth; j++) {
-                        const schedule = generateAmortizationSchedule(loanPrincipal, loanRate, loanTerm);
-                        if (schedule.length > 0) {
-                            allSchedules.push({ startMonth: 0, schedule, principal: loanPrincipal });
-                        }
-                    }
-                } else {
+                // If recurring is not explicitly false, treat it as recurring.
+                if (agreement.recurring !== false) {
                     // Recurring: Originate deals every month for the forecast period
                     for (let i = 0; i < forecastPeriod; i++) {
                         for (let j = 0; j < agreement.dealsPerMonth; j++) {
@@ -71,6 +63,14 @@ export default function LendingLoanBook() {
                             if (schedule.length > 0) {
                                 allSchedules.push({ startMonth: i, schedule, principal: loanPrincipal });
                             }
+                        }
+                    }
+                } else {
+                    // Not recurring: Originate deals only in the first month (i=0)
+                    for (let j = 0; j < agreement.dealsPerMonth; j++) {
+                        const schedule = generateAmortizationSchedule(loanPrincipal, loanRate, loanTerm);
+                        if (schedule.length > 0) {
+                            allSchedules.push({ startMonth: 0, schedule, principal: loanPrincipal });
                         }
                     }
                 }
@@ -144,7 +144,7 @@ export default function LendingLoanBook() {
                 </CardHeader>
                 <CardContent className="text-center">
                      <Button asChild variant="outline">
-                        <Link href="/backend?view=lending-assumptions">Go to Lending Assumptions</Link>
+                        <Link href="/adminaccount?view=lending-assumptions">Go to Lending Assumptions</Link>
                     </Button>
                 </CardContent>
             </Card>
