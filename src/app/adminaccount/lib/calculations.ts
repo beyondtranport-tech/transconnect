@@ -3,7 +3,6 @@
 
 const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
-// This is the function to be updated
 export function salesRoadmapLogic(settings: any, roadmapInputs: any) {
     if (!roadmapInputs || !roadmapInputs.monthlyAssumptions || !settings) {
         return {
@@ -18,7 +17,7 @@ export function salesRoadmapLogic(settings: any, roadmapInputs: any) {
 
     // --- Power Partner Projections ---
     const powerPartnerProjection: any[] = [];
-    const initialPartners = Number(monthlyAssumptions.numberOfPowerPartners?.[0]) || 0;
+    const initialPartners = Number(monthlyAssumptions.numberOfPowerPartners?.[0] || 0);
     let cumulativePartnerOpps = 0;
     let cumulativePartnerMembers = 0;
 
@@ -27,8 +26,8 @@ export function salesRoadmapLogic(settings: any, roadmapInputs: any) {
         const month = monthNames[date.getMonth()];
         const year = date.getFullYear();
 
-        const oppsPerPartner = Number(monthlyAssumptions.opportunitiesPerPartner?.[i]) || 0;
-        const conversionRate = (Number(monthlyAssumptions.powerPartnerConversion?.[i]) || 0) / 100;
+        const oppsPerPartner = Number(monthlyAssumptions.opportunitiesPerPartner?.[i] || 0);
+        const conversionRate = Number(monthlyAssumptions.powerPartnerConversion?.[i] || 0) / 100;
         
         const newOpportunities = initialPartners * oppsPerPartner;
         cumulativePartnerOpps += newOpportunities;
@@ -49,7 +48,7 @@ export function salesRoadmapLogic(settings: any, roadmapInputs: any) {
 
     // --- ISA Projections ---
     const isaProjection: any[] = [];
-    const initialIsas = Number(monthlyAssumptions.initialMembersIsaAgents?.[0]) || 0;
+    const initialIsas = Number(monthlyAssumptions.initialMembersIsaAgents?.[0] || 0);
     let cumulativeIsaReferrals = 0;
     let cumulativeIsaMembers = 0;
 
@@ -58,8 +57,8 @@ export function salesRoadmapLogic(settings: any, roadmapInputs: any) {
         const month = monthNames[date.getMonth()];
         const year = date.getFullYear();
 
-        const referralsPerIsa = Number(monthlyAssumptions.referralsPerMemberIsaAgents?.[i]) || 0;
-        const conversionRate = (Number(monthlyAssumptions.conversionToMemberIsaAgents?.[i]) || 0) / 100;
+        const referralsPerIsa = Number(monthlyAssumptions.referralsPerMemberIsaAgents?.[i] || 0);
+        const conversionRate = Number(monthlyAssumptions.conversionToMemberIsaAgents?.[i] || 0) / 100;
         
         const newReferrals = initialIsas * referralsPerIsa;
         cumulativeIsaReferrals += newReferrals;
@@ -78,7 +77,7 @@ export function salesRoadmapLogic(settings: any, roadmapInputs: any) {
         });
     }
     
-    // --- Total Member Projection (simplified for now, but should include other channels later) ---
+    // --- Total Member Projection (combined) ---
     const totalProjection: any[] = [];
     let cumulativeTotalMembers = 0;
     for (let i=0; i<forecastMonths; i++) {

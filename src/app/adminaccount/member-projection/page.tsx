@@ -38,12 +38,12 @@ function MemberProjectionComponent() {
         }
     }, []);
 
-    const { powerPartnerProjection, isaProjection, totalProjection } = useMemo(() => {
+    const { powerPartnerProjection, isaProjection } = useMemo(() => {
         if (!roadmapInputs || !setupInputs) return { powerPartnerProjection: [], isaProjection: [], totalProjection: [] };
         return salesRoadmapLogic(setupInputs, roadmapInputs);
     }, [roadmapInputs, setupInputs]);
     
-    // Totals Calculation
+    // Totals Calculation for Power Partners
     const powerPartnerTotals = useMemo(() => {
         if (!powerPartnerProjection || powerPartnerProjection.length === 0) return null;
         return {
@@ -53,6 +53,7 @@ function MemberProjectionComponent() {
         }
     }, [powerPartnerProjection]);
 
+    // Totals Calculation for ISAs
     const isaTotals = useMemo(() => {
         if (!isaProjection || isaProjection.length === 0) return null;
         return {

@@ -44,15 +44,15 @@ function TurnoverComponent() {
         }
     }, []);
     
-    const roadmapData = useMemo(() => {
-        if (!salesInputs || !settings) return [];
-        return salesRoadmapLogic(settings, salesInputs);
+    const { totalProjection } = useMemo(() => {
+        if (!salesInputs || !settings) return { totalProjection: [] };
+        return salesRoadmapLogic(setupInputs, salesInputs);
     }, [salesInputs, settings]);
 
     const forecastData = useMemo(() => {
-        if (roadmapData.length === 0 || !budgetData || !targets) return [];
-        return budgetLogic(roadmapData, budgetData, targets);
-    }, [roadmapData, budgetData, targets]);
+        if (totalProjection.length === 0 || !budgetData || !targets) return [];
+        return budgetLogic(totalProjection, budgetData, targets);
+    }, [totalProjection, budgetData, targets]);
 
      const yearlyTotals = useMemo(() => {
         const totals: Record<string, any> = {};
