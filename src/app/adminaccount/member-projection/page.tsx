@@ -39,7 +39,7 @@ function MemberProjectionComponent() {
     }, []);
 
     const { powerPartnerProjection, isaProjection } = useMemo(() => {
-        if (!roadmapInputs || !setupInputs) return { powerPartnerProjection: [], isaProjection: [], totalProjection: [] };
+        if (!roadmapInputs || !setupInputs) return { powerPartnerProjection: [], isaProjection: [] };
         return salesRoadmapLogic(setupInputs, roadmapInputs);
     }, [roadmapInputs, setupInputs]);
     
@@ -102,7 +102,7 @@ function MemberProjectionComponent() {
                                     <TableHeader>
                                         <TableRow>
                                             <TableHead className="sticky left-0 bg-card z-10">Month</TableHead>
-                                            <TableHead className="text-right"># Partners</TableHead>
+                                            <TableHead className="text-right"># Power Partners</TableHead>
                                             <TableHead className="text-right">Opps/Partner/Mo</TableHead>
                                             <TableHead className="text-right">New Opportunities</TableHead>
                                             <TableHead className="text-right">Cumulative Opps</TableHead>
