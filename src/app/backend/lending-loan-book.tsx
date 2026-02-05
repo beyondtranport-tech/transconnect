@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useMemo, useState, useEffect } from 'react';
@@ -7,6 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Database, AlertTriangle, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import { generateAmortizationSchedule, type MonthlyPayment } from './lending/loan-calculations';
 
 const LENDING_ASSUMPTIONS_KEY = 'adminLendingAssumptions_v1';
 
@@ -20,7 +20,6 @@ export default function LendingLoanBook() {
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
-        // This effect runs only on the client side after the component mounts
         try {
             const savedData = localStorage.getItem(LENDING_ASSUMPTIONS_KEY);
             if (savedData) {
@@ -35,78 +34,83 @@ export default function LendingLoanBook() {
     const loanBookData = useMemo(() => {
         if (!assumptions) return [];
 
-        const { loan, installmentSale, lease, factoring } = assumptions;
-        const agreementTypes = { loan, installmentSale, lease, factoring };
+        const { loan, installmentSale } = assumptions; // Simplified for now
+        const agreementTypes = [
+            { type: 'loan', ...loan },
+            { type: 'installmentSale', ...installmentSale }
+            // Add lease and factoring here when their calculations are defined
+        ];
         
-        let outstandingBalance = 0;
+        const allSchedules: { startMonth: number, schedule: MonthlyPayment[] }[] = [];
+        const forecastPeriod = 36; // Keep a fixed forecast period for now
+
+        // 1. Originate all loans and generate their schedules upfront
+        for (let i = 0; i < forecastPeriod; i++) { // For each month in the forecast
+            for (const agreement of agreementTypes) {
+                if (agreement.enabled && agreement.dealsPerMonth > 0) {
+                    for (let j = 0; j < agreement.dealsPerMonth; j++) { // For each deal in the month
+                        const schedule = generateAmortizationSchedule(
+                            agreement.amount || 0,
+                            agreement.rate || 0,
+                            agreement.term || 0
+                        );
+                        if (schedule.length > 0) {
+                            allSchedules.push({ startMonth: i, schedule });
+                        }
+                    }
+                }
+            }
+        }
+        
+        // 2. Build the monthly projection by summing up the values from all active schedules
+        const projection = [];
         let cumulativePayouts = 0;
         let cumulativeReceiptsCapital = 0;
         let cumulativeReceiptsInterest = 0;
-        const data = [];
+        let outstandingBalance = 0;
 
-        for (let i = 0; i < 36; i++) { // Simulate 36 months
+        for (let currentMonth = 0; currentMonth < forecastPeriod; currentMonth++) {
             let monthlyPayouts = 0;
-            let totalDealValue = 0;
-            let weightedAvgRate = 0;
-            let weightedAvgTerm = 0;
+            let monthlyReceiptsCapital = 0;
+            let monthlyReceiptsInterest = 0;
 
-            // 1. Calculate new payouts and weighted averages for this month's new loans
-            for (const key in agreementTypes) {
-                const agreement = agreementTypes[key as keyof typeof agreementTypes];
-                if (agreement.enabled && agreement.dealsPerMonth > 0 && agreement.amount > 0) {
-                    const dealValue = agreement.dealsPerMonth * agreement.amount;
-                    monthlyPayouts += dealValue;
-                    
-                    totalDealValue += dealValue;
-                    weightedAvgRate += (agreement.rate || 0) * dealValue;
-                    weightedAvgTerm += (agreement.term || 0) * dealValue;
+            for (const scheduledLoan of allSchedules) {
+                if (scheduledLoan.startMonth === currentMonth) {
+                    // This loan is disbursed this month. Payout is the principal amount.
+                    monthlyPayouts += scheduledLoan.schedule[0]?.principal + scheduledLoan.schedule[0]?.remainingBalance;
+                }
+                
+                // Calculate payments for loans that are currently active
+                const monthInLoanLife = currentMonth - scheduledLoan.startMonth;
+                if (monthInLoanLife >= 0 && monthInLoanLife < scheduledLoan.schedule.length) {
+                    const payment = scheduledLoan.schedule[monthInLoanLife];
+                    monthlyReceiptsCapital += payment.principal;
+                    monthlyReceiptsInterest += payment.interest;
                 }
             }
-
-            const avgRatePA = totalDealValue > 0 ? weightedAvgRate / totalDealValue : 0;
-            const avgMonthlyRate = (avgRatePA / 100) / 12;
-            const avgTerm = totalDealValue > 0 ? weightedAvgTerm / totalDealValue : 1;
-
-            // 2. Calculate receipts based on the opening balance for the month
-            const openingBalanceForMonth = outstandingBalance;
             
-            // Interest is earned on the balance at the start of the month
-            const receiptsInterest = openingBalanceForMonth * avgMonthlyRate;
-
-            // Capital repayment is modeled as paying down the opening balance over the average term
-            const receiptsCapital = avgTerm > 0 ? openingBalanceForMonth / avgTerm : 0;
-
-            // 3. Update cumulative totals
+            // Update cumulative totals and balance
             cumulativePayouts += monthlyPayouts;
-            cumulativeReceiptsCapital += receiptsCapital;
-            cumulativeReceiptsInterest += receiptsInterest;
+            cumulativeReceiptsCapital += monthlyReceiptsCapital;
+            cumulativeReceiptsInterest += monthlyReceiptsInterest;
+            outstandingBalance += monthlyPayouts - monthlyReceiptsCapital;
 
-            // 4. Update the outstanding balance for the end of the month
-            // Opening + New Loans - Capital Repaid
-            outstandingBalance = openingBalanceForMonth + monthlyPayouts - receiptsCapital;
-            
-            // Ensure balance doesn't go negative
-            if (outstandingBalance < 0) {
-              outstandingBalance = 0;
-            }
-
-            data.push({
-                month: `Month ${i + 1}`,
+            projection.push({
+                month: `Month ${currentMonth + 1}`,
                 payouts: monthlyPayouts,
                 cumulativePayouts,
-                receiptsCapital,
+                receiptsCapital: monthlyReceiptsCapital,
                 cumulativeReceiptsCapital,
-                receiptsInterest,
+                receiptsInterest: monthlyReceiptsInterest,
                 cumulativeReceiptsInterest,
                 outstanding: outstandingBalance,
             });
         }
 
-        return data;
+        return projection;
     }, [assumptions]);
-
-
-    if (isLoading) {
+    
+     if (isLoading) {
         return (
             <div className="flex justify-center items-center h-64">
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
