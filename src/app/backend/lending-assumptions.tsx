@@ -7,7 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
@@ -64,7 +64,14 @@ export default function LendingAssumptions() {
             if (savedData) {
                 const parsed = JSON.parse(savedData);
                 if (parsed.loan && typeof parsed.loan.recurring === 'undefined') {
-                    return { ...defaultValues, ...parsed };
+                    // This ensures old saved data is compatible with the new structure
+                    const updated = { ...defaultValues };
+                    for (const key in parsed) {
+                        if (key in updated) {
+                            (updated as any)[key] = { ...(updated as any)[key], ...(parsed as any)[key] };
+                        }
+                    }
+                    return updated;
                 }
                 return parsed;
             }
@@ -110,7 +117,7 @@ export default function LendingAssumptions() {
                         <FormField control={form.control} name={`${name}.term`} render={({ field }) => (<FormItem><FormLabel>Avg. Term (Months)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
                         <FormField control={form.control} name={`${name}.rate`} render={({ field }) => (<FormItem><FormLabel>Avg. Rate / Discount Fee (%)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
                     </div>
-                    <div className="flex items-center space-x-2 pt-4 border-t">
+                     <div className="flex items-center space-x-2 pt-4 border-t">
                         <FormField
                             control={form.control}
                             name={`${name}.recurring`}
