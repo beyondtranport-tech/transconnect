@@ -1,4 +1,3 @@
-
 'use client';
 
 const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -17,7 +16,7 @@ export function salesRoadmapLogic(settings: any, roadmapInputs: any) {
 
     // --- Power Partner Projections ---
     const powerPartnerProjection: any[] = [];
-    const initialPartners = Number(monthlyAssumptions.numberOfPowerPartners?.[0] || 0);
+    const initialPartners = Number(monthlyAssumptions.numberOfPowerPartners?.[0] || 0); // Use the initial value as a constant number of partners
     let cumulativePartnerOpps = 0;
     let cumulativePartnerMembers = 0;
 
@@ -29,8 +28,11 @@ export function salesRoadmapLogic(settings: any, roadmapInputs: any) {
         const oppsPerPartner = Number(monthlyAssumptions.opportunitiesPerPartner?.[i] || 0);
         const conversionRate = Number(monthlyAssumptions.powerPartnerConversion?.[i] || 0) / 100;
         
+        // Correct logic: The constant number of partners generates new opportunities each month.
         const newOpportunities = initialPartners * oppsPerPartner;
         cumulativePartnerOpps += newOpportunities;
+        
+        // New members are converted from this month's new opportunities.
         const newMembers = Math.round(newOpportunities * conversionRate);
         cumulativePartnerMembers += newMembers;
 
@@ -48,7 +50,7 @@ export function salesRoadmapLogic(settings: any, roadmapInputs: any) {
 
     // --- ISA Projections ---
     const isaProjection: any[] = [];
-    const initialIsas = Number(monthlyAssumptions.initialMembersIsaAgents?.[0] || 0);
+    const initialIsas = Number(monthlyAssumptions.initialMembersIsaAgents?.[0] || 0); // Use the initial value as a constant number of ISAs
     let cumulativeIsaReferrals = 0;
     let cumulativeIsaMembers = 0;
 
@@ -60,8 +62,11 @@ export function salesRoadmapLogic(settings: any, roadmapInputs: any) {
         const referralsPerIsa = Number(monthlyAssumptions.referralsPerMemberIsaAgents?.[i] || 0);
         const conversionRate = Number(monthlyAssumptions.conversionToMemberIsaAgents?.[i] || 0) / 100;
         
+        // Correct logic: The constant number of ISAs generates new referrals each month.
         const newReferrals = initialIsas * referralsPerIsa;
         cumulativeIsaReferrals += newReferrals;
+
+        // New members are converted from this month's new referrals.
         const newMembers = Math.round(newReferrals * conversionRate);
         cumulativeIsaMembers += newMembers;
 
