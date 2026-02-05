@@ -1,9 +1,10 @@
+
 'use client';
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Database, AlertTriangle } from 'lucide-react';
+import { Database, AlertTriangle, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 
@@ -14,13 +15,67 @@ const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR', maximumFractionDigits: 0 }).format(value);
 };
 
-
 export default function LendingLoanBook() {
-    const assumptions = useMemo(() => {
-        if (typeof window === 'undefined') return null;
-        const savedData = localStorage.getItem(LENDING_ASSUMPTIONS_KEY);
-        return savedData ? JSON.parse(savedData) : null;
+    const [assumptions, setAssumptions] = useState<any | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+        // This effect runs only on the client side after the component mounts
+        try {
+            const savedData = localStorage.getItem(LENDING_ASSUMPTIONS_KEY);
+            if (savedData) {
+                setAssumptions(JSON.parse(savedData));
+            }
+        } catch (e) {
+            console.error("Failed to parse lending assumptions:", e);
+        }
+        setIsLoading(false);
     }, []);
+
+    const loanBookData = useMemo(() => {
+        if (!assumptions) return [];
+
+        const { loan, installmentSale, lease, factoring } = assumptions;
+        const agreementTypes = { loan, installmentSale, lease, factoring };
+        
+        let outstandingBalance = 0;
+        const data = [];
+
+        for (let i = 0; i < 36; i++) { // Simulate 36 months for now
+            let monthlyPayouts = 0;
+
+            for (const key in agreementTypes) {
+                const agreement = agreementTypes[key as keyof typeof agreementTypes];
+                if (agreement.enabled) {
+                    monthlyPayouts += (agreement.dealsPerMonth || 0) * (agreement.amount || 0);
+                }
+            }
+
+            // Simple placeholder logic for receipts
+            const receiptsCapital = outstandingBalance > 0 ? outstandingBalance * 0.02 : 0; // Assuming 2% of capital is paid back each month
+            const receiptsInterest = outstandingBalance > 0 ? outstandingBalance * (0.15 / 12) : 0; // Assuming 15% annual interest
+            
+            outstandingBalance += monthlyPayouts - receiptsCapital;
+
+            data.push({
+                month: `Month ${i + 1}`,
+                payouts: monthlyPayouts,
+                receiptsCapital,
+                receiptsInterest,
+                outstanding: outstandingBalance,
+            });
+        }
+
+        return data;
+    }, [assumptions]);
+
+    if (isLoading) {
+        return (
+            <div className="flex justify-center items-center h-64">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+        );
+    }
 
     if (!assumptions) {
         return (
@@ -40,12 +95,6 @@ export default function LendingLoanBook() {
             </Card>
         );
     }
-    
-    // Placeholder for calculation logic that will be added later
-    const loanBookData = [
-        { month: 'Month 1', payouts: 1100000, receiptsCapital: 20000, receiptsInterest: 5000, outstanding: 1080000 },
-        { month: 'Month 2', payouts: 1100000, receiptsCapital: 41000, receiptsInterest: 10000, outstanding: 2139000 },
-    ];
 
     return (
         <Card>
@@ -54,7 +103,7 @@ export default function LendingLoanBook() {
                     <Database /> Loan Book Projection
                 </CardTitle>
                 <CardDescription>
-                    This projection shows the growth of the loan book based on your assumptions.
+                    This projection shows the growth of the loan book based on your saved assumptions.
                 </CardDescription>
             </CardHeader>
             <CardContent>
@@ -79,11 +128,13 @@ export default function LendingLoanBook() {
                                     <TableCell className="text-right font-bold text-primary">{formatCurrency(row.outstanding)}</TableCell>
                                 </TableRow>
                             ))}
-                              <TableRow>
-                                <TableCell colSpan={5} className="text-center h-24 text-muted-foreground">
-                                    Full projection calculation is under development.
-                                </TableCell>
-                            </TableRow>
+                             {loanBookData.length === 0 && (
+                                <TableRow>
+                                    <TableCell colSpan={5} className="text-center h-24 text-muted-foreground">
+                                        No active lending products found in your assumptions.
+                                    </TableCell>
+                                </TableRow>
+                            )}
                         </TableBody>
                     </Table>
                 </div>
