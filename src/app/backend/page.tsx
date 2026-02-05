@@ -244,7 +244,8 @@ function BackendContent() {
   
   const isOperationsActive = ['members', 'wallet', 'wallet-transactions', 'shops', 'reconciliation', 'contributions'].includes(activeView);
   const isOriginationActive = ['opportunities', 'quotes', 'enquiries', 'application', 'scoring'].includes(activeView);
-  const isLendingActive = activeView.startsWith('lending-') || activeView.startsWith('partners-');
+  const isLendingActive = activeView.startsWith('lending-') && activeView !== 'lending-model';
+  const isPartnersActive = activeView.startsWith('partners-');
   const isRevenueActive = [
     'pricing-memberships', 'pricing-connect', 'pricing-tech', 'pricing-marketplace',
     'commissions-malls', 'incentives-sales'
@@ -252,7 +253,6 @@ function BackendContent() {
   const isPlatformSettingsActive = [
     'permissions', 'loyalty', 'tasks', 'settings-bank'
   ].includes(activeView);
-  const isPartnersActive = activeView.startsWith('partners-');
   const isLendingModelActive = activeView === 'lending-model';
 
 
