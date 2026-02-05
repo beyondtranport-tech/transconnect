@@ -44,22 +44,33 @@ export default function LendingLoanBook() {
             { type: 'factoring', ...factoring },
         ];
         
-        const allSchedules: { startMonth: number, schedule: MonthlyPayment[] }[] = [];
+        const allSchedules: { startMonth: number; schedule: MonthlyPayment[]; principal: number }[] = [];
         const forecastPeriod = 36;
 
-        // 1. Originate all loans and generate their schedules upfront
-        for (let i = 0; i < forecastPeriod; i++) { // For each month in the forecast
-            for (const agreement of agreementTypes) {
-                 // Only originate if it's recurring OR if it's the very first month.
-                if (agreement.enabled && agreement.dealsPerMonth > 0 && (agreement.recurring || i === 0)) {
+        // 1. Originate all loans and generate their amortization schedules upfront
+        for (const agreement of agreementTypes) {
+            if (agreement.enabled && agreement.dealsPerMonth > 0) {
+                const loanPrincipal = agreement.amount || 0;
+                const loanRate = agreement.rate || 0;
+                const loanTerm = agreement.term || 0;
+
+                // Check if recurring is explicitly false. If it's true or undefined, treat as recurring.
+                if (agreement.recurring === false) {
+                    // Not recurring: Originate deals only in the first month (i=0)
                     for (let j = 0; j < agreement.dealsPerMonth; j++) {
-                        const schedule = generateAmortizationSchedule(
-                            agreement.amount || 0,
-                            agreement.rate || 0,
-                            agreement.term || 0
-                        );
+                        const schedule = generateAmortizationSchedule(loanPrincipal, loanRate, loanTerm);
                         if (schedule.length > 0) {
-                            allSchedules.push({ startMonth: i, schedule });
+                            allSchedules.push({ startMonth: 0, schedule, principal: loanPrincipal });
+                        }
+                    }
+                } else {
+                    // Recurring: Originate deals every month for the forecast period
+                    for (let i = 0; i < forecastPeriod; i++) {
+                        for (let j = 0; j < agreement.dealsPerMonth; j++) {
+                            const schedule = generateAmortizationSchedule(loanPrincipal, loanRate, loanTerm);
+                            if (schedule.length > 0) {
+                                allSchedules.push({ startMonth: i, schedule, principal: loanPrincipal });
+                            }
                         }
                     }
                 }
@@ -72,16 +83,19 @@ export default function LendingLoanBook() {
         let cumulativeReceiptsInterest = 0;
         let outstandingBalance = 0;
 
+        // 2. Process the timeline month by month
         for (let currentMonth = 0; currentMonth < forecastPeriod; currentMonth++) {
             let monthlyPayouts = 0;
             let monthlyReceiptsCapital = 0;
             let monthlyReceiptsInterest = 0;
 
             for (const scheduledLoan of allSchedules) {
+                // If a loan's start month matches the current month, add its principal to this month's payouts.
                 if (scheduledLoan.startMonth === currentMonth) {
-                    monthlyPayouts += scheduledLoan.schedule[0]?.principal + scheduledLoan.schedule[0]?.remainingBalance;
+                    monthlyPayouts += scheduledLoan.principal;
                 }
                 
+                // If the loan is active during this month, add its scheduled repayment to the monthly totals.
                 const monthInLoanLife = currentMonth - scheduledLoan.startMonth;
                 if (monthInLoanLife >= 0 && monthInLoanLife < scheduledLoan.schedule.length) {
                     const payment = scheduledLoan.schedule[monthInLoanLife];
