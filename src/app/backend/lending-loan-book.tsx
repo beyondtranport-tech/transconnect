@@ -9,7 +9,9 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { generateAmortizationSchedule, type MonthlyPayment } from './lending/loan-calculations';
 
+// Keys for localStorage
 const LENDING_ASSUMPTIONS_KEY = 'adminLendingAssumptions_v1';
+const SETUP_KEY = 'accountFinancialSetup_v1';
 
 const formatCurrency = (value: number) => {
     if (typeof value !== 'number' || isNaN(value)) return 'R 0';
@@ -18,14 +20,19 @@ const formatCurrency = (value: number) => {
 
 export default function LendingLoanBook() {
     const [assumptions, setAssumptions] = useState<any | null>(null);
+    const [settings, setSettings] = useState<any | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
         // This effect runs only on the client side after the component mounts
         try {
-            const savedData = localStorage.getItem(LENDING_ASSUMPTIONS_KEY);
-            if (savedData) {
-                setAssumptions(JSON.parse(savedData));
+            const savedAssumptions = localStorage.getItem(LENDING_ASSUMPTIONS_KEY);
+            const savedSettings = localStorage.getItem(SETUP_KEY);
+            if (savedAssumptions) {
+                setAssumptions(JSON.parse(savedAssumptions));
+            }
+            if (savedSettings) {
+                setSettings(JSON.parse(savedSettings));
             }
         } catch (e) {
             console.error("Failed to parse lending assumptions:", e);
@@ -34,7 +41,8 @@ export default function LendingLoanBook() {
     }, []);
 
     const loanBookData = useMemo(() => {
-        if (!assumptions) return [];
+        // Ensure both assumptions and settings are loaded before calculating
+        if (!assumptions || !settings) return [];
 
         const { loan, installmentSale, lease, factoring } = assumptions;
         const agreementTypes = [
@@ -45,10 +53,11 @@ export default function LendingLoanBook() {
         ];
         
         const allOriginatedLoanSchedules: { startMonth: number; schedule: MonthlyPayment[]; principal: number }[] = [];
-        const forecastPeriod = assumptions.forecastMonths || 36;
+        const forecastPeriod = settings.forecastMonths || 36; // Use forecastMonths from settings
 
         // 1. Determine all loans that will be created and when.
         for (const agreement of agreementTypes) {
+            // Skip if the agreement type is not enabled or has no deals
             if (!agreement.enabled || !agreement.dealsPerMonth || agreement.dealsPerMonth <= 0) {
                 continue;
             }
@@ -56,9 +65,9 @@ export default function LendingLoanBook() {
             const loanPrincipal = agreement.amount || 0;
             const loanRate = agreement.rate || 0;
             const loanTerm = agreement.term || 0;
-
-            // If recurring is not explicitly false, treat it as recurring.
-            if (agreement.recurring !== false) {
+            
+            // If it's a recurring deal, originate it every month
+            if (agreement.recurring) {
                 for (let month = 0; month < forecastPeriod; month++) {
                     for (let i = 0; i < agreement.dealsPerMonth; i++) {
                         const schedule = generateAmortizationSchedule(loanPrincipal, loanRate, loanTerm);
@@ -67,7 +76,7 @@ export default function LendingLoanBook() {
                         }
                     }
                 }
-            } else { // Not recurring, originate only in the first month.
+            } else { // If not recurring, originate only in the first month (month 0)
                 for (let i = 0; i < agreement.dealsPerMonth; i++) {
                     const schedule = generateAmortizationSchedule(loanPrincipal, loanRate, loanTerm);
                     if (schedule.length > 0) {
@@ -122,7 +131,7 @@ export default function LendingLoanBook() {
         }
 
         return projection;
-    }, [assumptions]);
+    }, [assumptions, settings]);
     
      if (isLoading) {
         return (
@@ -132,19 +141,19 @@ export default function LendingLoanBook() {
         );
     }
 
-    if (!assumptions) {
+    if (!assumptions || !settings) {
         return (
              <Card className="w-full max-w-2xl mx-auto">
                 <CardHeader className="text-center">
                     <AlertTriangle className="mx-auto h-12 w-12 text-destructive" />
                     <CardTitle>Assumption Data Missing</CardTitle>
                     <CardDescription>
-                        Please set up and save your assumptions for the lending model before viewing this projection.
+                        Please set up and save your assumptions for the lending model and financial forecast before viewing this projection.
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="text-center">
                      <Button asChild variant="outline">
-                        <Link href="/adminaccount?view=lending-assumptions">Go to Lending Assumptions</Link>
+                        <Link href="/backend?view=lending-assumptions">Go to Lending Assumptions</Link>
                     </Button>
                 </CardContent>
             </Card>
