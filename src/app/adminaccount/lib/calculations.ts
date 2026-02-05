@@ -1,3 +1,4 @@
+
 'use client';
 
 const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -16,7 +17,7 @@ export function salesRoadmapLogic(settings: any, roadmapInputs: any) {
 
     // --- Power Partner Projections ---
     const powerPartnerProjection: any[] = [];
-    const initialPartners = Number(monthlyAssumptions.numberOfPowerPartners?.[0] || 0); // Use the initial value as a constant number of partners
+    const initialPartners = Number(monthlyAssumptions.numberOfPowerPartners?.[0] || 0); // This is now a constant
     let cumulativePartnerOpps = 0;
     let cumulativePartnerMembers = 0;
 
@@ -38,7 +39,7 @@ export function salesRoadmapLogic(settings: any, roadmapInputs: any) {
 
         powerPartnerProjection.push({
             month: `${month} ${year}`,
-            partners: initialPartners,
+            partners: initialPartners, // This value is now constant
             oppsPerPartner,
             newOpportunities,
             cumulativeOpportunities: cumulativePartnerOpps,
@@ -50,7 +51,7 @@ export function salesRoadmapLogic(settings: any, roadmapInputs: any) {
 
     // --- ISA Projections ---
     const isaProjection: any[] = [];
-    const initialIsas = Number(monthlyAssumptions.initialMembersIsaAgents?.[0] || 0); // Use the initial value as a constant number of ISAs
+    const initialIsas = Number(monthlyAssumptions.initialMembersIsaAgents?.[0] || 0); // This is now a constant
     let cumulativeIsaReferrals = 0;
     let cumulativeIsaMembers = 0;
 
@@ -72,7 +73,7 @@ export function salesRoadmapLogic(settings: any, roadmapInputs: any) {
 
         isaProjection.push({
             month: `${month} ${year}`,
-            isas: initialIsas,
+            isas: initialIsas, // This value is now constant
             referralsPerIsa,
             newReferrals,
             cumulativeReferrals: cumulativeIsaReferrals,
