@@ -140,14 +140,5 @@ service cloud.firestore {
     match /partners/{partnerId} {
       allow read, write: if isAdmin();
     }
-    
-    // --- Debtor Management System (DMS) ---
-    // All lending-related data is restricted to admins for now.
-    match /lendingClients/{clientId=**} {
-        allow read, write: if isAdmin();
-    }
-    match /lendingPartners/{partnerId=**} {
-        allow read, write: if isAdmin();
-    }
   }
 }

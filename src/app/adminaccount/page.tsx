@@ -50,18 +50,7 @@ import {
   Lock,
   Star,
   Banknote,
-  FileText,
-  Landmark,
-  Truck,
-  ShieldCheck,
-  Repeat,
-  FileSignature,
-  Building,
-  FileSearch,
-  UserPlus,
-  Filter,
-  Lightbulb,
-  ClipboardList,
+  FileText
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
