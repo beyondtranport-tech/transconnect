@@ -263,6 +263,10 @@ function BackendContent() {
     'permissions', 'loyalty', 'tasks', 'settings-bank'
   ].includes(activeView);
   const isPartnersActive = activeView.startsWith('partners-');
+  const isLendingModelActive = [
+      'lending-assumptions', 'lending-repayment-schedule', 'lending-loan-book',
+      'lending-income-statement', 'lending-balance-sheet', 'lending-cashflow'
+  ].includes(activeView);
 
 
   return (
@@ -352,7 +356,7 @@ function BackendContent() {
                   </SidebarMenuSub>
                 </SidebarMenuItem>
                  <SidebarMenuItem>
-                  <SidebarMenuButton tooltip="Lending Model" isActive={isLendingActive && !activeView.startsWith('lending-') }>
+                  <SidebarMenuButton tooltip="Lending Model" isActive={isLendingModelActive}>
                     <TrendingUp /><span>Lending Model</span>
                   </SidebarMenuButton>
                    <SidebarMenuSub>
