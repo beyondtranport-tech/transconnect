@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useCallback } from 'react';
@@ -22,6 +23,9 @@ const agreementSchema = z.object({
     rate: z.coerce.number().optional(),
     dealsPerMonth: z.coerce.number().optional(),
     recurring: z.boolean().default(true),
+    startDate: z.string().optional(),
+    firstInstallmentDate: z.string().optional(),
+    paymentsInAdvance: z.boolean().default(false),
 });
 
 const formSchema = z.object({
@@ -42,10 +46,10 @@ const defaultValues: FormValues = {
     quoteConversionRate: 50,
     enquiryConversionRate: 30,
     applicationConversionRate: 60,
-    loan: { enabled: true, amount: 250000, term: 48, rate: 18, dealsPerMonth: 1, recurring: true },
-    installmentSale: { enabled: true, amount: 750000, term: 60, rate: 15, dealsPerMonth: 1, recurring: true },
-    lease: { enabled: false, amount: 600000, term: 54, rate: 16, dealsPerMonth: 0, recurring: true },
-    factoring: { enabled: true, amount: 100000, term: 3, rate: 5, dealsPerMonth: 2, recurring: true },
+    loan: { enabled: true, amount: 250000, term: 48, rate: 18, dealsPerMonth: 1, recurring: true, startDate: '', firstInstallmentDate: '', paymentsInAdvance: false },
+    installmentSale: { enabled: true, amount: 750000, term: 60, rate: 15, dealsPerMonth: 1, recurring: true, startDate: '', firstInstallmentDate: '', paymentsInAdvance: false },
+    lease: { enabled: false, amount: 600000, term: 54, rate: 16, dealsPerMonth: 0, recurring: true, startDate: '', firstInstallmentDate: '', paymentsInAdvance: false },
+    factoring: { enabled: true, amount: 100000, term: 3, rate: 5, dealsPerMonth: 2, recurring: true, startDate: '', firstInstallmentDate: '', paymentsInAdvance: false },
 };
 
 export default function LendingAssumptions() {
@@ -59,24 +63,19 @@ export default function LendingAssumptions() {
                 return defaultValues;
             }
             const savedData = localStorage.getItem(LENDING_ASSUMPTIONS_KEY);
-            // Basic validation to check if saved data has new keys, if not, merge with defaults
             if (savedData) {
                 const parsed = JSON.parse(savedData);
-                if (parsed.loan && typeof parsed.loan.recurring === 'undefined') {
-                    // This ensures old saved data is compatible with the new structure
-                    const updated = { ...defaultValues };
-                    for (const key in parsed) {
-                        if (key in updated) {
-                           if (typeof (updated as any)[key] === 'object' && (updated as any)[key] !== null && !Array.isArray((updated as any)[key])) {
-                                (updated as any)[key] = { ...(updated as any)[key], ...(parsed as any)[key] };
-                            } else {
-                                (updated as any)[key] = (parsed as any)[key];
-                            }
+                const updated = { ...defaultValues };
+                 for (const key in updated) {
+                    if (parsed[key] !== undefined) {
+                        if (typeof (updated as any)[key] === 'object' && (updated as any)[key] !== null && !Array.isArray((updated as any)[key])) {
+                            (updated as any)[key] = { ...(updated as any)[key], ...(parsed as any)[key] };
+                        } else {
+                            (updated as any)[key] = (parsed as any)[key];
                         }
                     }
-                    return updated;
                 }
-                return parsed;
+                return updated;
             }
             return defaultValues;
         }, [])()
@@ -114,28 +113,37 @@ export default function LendingAssumptions() {
             </CardHeader>
             <CardContent className="space-y-4">
                 <fieldset disabled={!form.watch(`${name}.enabled`)} className="space-y-4">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                         <FormField control={form.control} name={`${name}.dealsPerMonth`} render={({ field }) => (<FormItem><FormLabel># of Deals / Month</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
                         <FormField control={form.control} name={`${name}.amount`} render={({ field }) => (<FormItem><FormLabel>Avg. Amount (R)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
                         <FormField control={form.control} name={`${name}.term`} render={({ field }) => (<FormItem><FormLabel>Avg. Term (Months)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                        <FormField control={form.control} name={`${name}.rate`} render={({ field }) => (<FormItem><FormLabel>Avg. Rate / Discount Fee (%)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                        <FormField control={form.control} name={`${name}.rate`} render={({ field }) => (<FormItem><FormLabel>Avg. Rate (%)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                        <FormField control={form.control} name={`${name}.startDate`} render={({ field }) => (<FormItem><FormLabel>Start Date</FormLabel><FormControl><Input type="date" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                        <FormField control={form.control} name={`${name}.firstInstallmentDate`} render={({ field }) => (<FormItem><FormLabel>First Installment Date</FormLabel><FormControl><Input type="date" {...field} /></FormControl><FormMessage /></FormItem>)} />
                     </div>
-                     <div className="flex items-center space-x-2 pt-4 border-t">
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 pt-4 border-t">
                         <FormField
                             control={form.control}
                             name={`${name}.recurring`}
                             render={({ field }) => (
-                                <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                                    <FormControl>
-                                        <Checkbox checked={field.value} onCheckedChange={field.onChange} />
-                                    </FormControl>
+                                <FormItem className="flex flex-row items-start space-x-3 space-y-0 pt-2">
+                                    <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl>
                                     <div className="space-y-1 leading-none">
-                                        <FormLabel>
-                                            Recurring Monthly Deals
-                                        </FormLabel>
-                                        <FormDescription className="text-xs">
-                                            If checked, originate this many deals every month. If unchecked, originate only in the first month.
-                                        </FormDescription>
+                                        <FormLabel>Recurring Monthly Deals</FormLabel>
+                                        <FormDescription className="text-xs">If checked, originate deals every month. If unchecked, originate only in the first month.</FormDescription>
+                                    </div>
+                                </FormItem>
+                            )}
+                        />
+                        <FormField
+                            control={form.control}
+                            name={`${name}.paymentsInAdvance`}
+                            render={({ field }) => (
+                                <FormItem className="flex flex-row items-start space-x-3 space-y-0 pt-2">
+                                    <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl>
+                                    <div className="space-y-1 leading-none">
+                                        <FormLabel>Payments in Advance</FormLabel>
+                                        <FormDescription className="text-xs">If checked, the first payment occurs on the start date. Otherwise, it's in arrears.</FormDescription>
                                     </div>
                                 </FormItem>
                             )}
@@ -194,3 +202,5 @@ export default function LendingAssumptions() {
         </div>
     );
 }
+
+    
