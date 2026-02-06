@@ -9,6 +9,7 @@
  */
 
 import {ai} from '@/ai/genkit';
+import {googleAI} from '@genkit-ai/google-genai';
 import { SocialLinkGeneratorInputSchema, SocialLinkGeneratorOutputSchema, type SocialLinkGeneratorInput, type SocialLinkGeneratorOutput } from '@/ai/schemas';
 
 export async function generateSocialLinks(input: SocialLinkGeneratorInput): Promise<SocialLinkGeneratorOutput> {
@@ -23,7 +24,7 @@ const socialLinkGeneratorFlow = ai.defineFlow(
   },
   async (input) => {
     const { output } = await ai.generate({
-        model: 'googleai/gemini-1.0-pro',
+        model: googleAI.model('gemini-1.0-pro'),
         prompt: `You are an assistant that creates plausible social media URLs for a business.
         Given the shop name "${input.shopName}", create conventional, best-guess URLs for the following platforms: Facebook, Instagram, Twitter (X), LinkedIn (as a company page), and YouTube.
         - Sanitize the shop name to be URL-friendly (remove spaces, special characters).

@@ -8,6 +8,7 @@
  */
 
 import {ai} from '@/ai/genkit';
+import {googleAI} from '@genkit-ai/google-genai';
 import { MatchFreightInputSchema, MatchFreightOutputSchema, type MatchFreightInput, type MatchFreightOutput } from '@/ai/schemas';
 
 export async function matchFreight(input: MatchFreightInput): Promise<MatchFreightOutput> {
@@ -22,7 +23,7 @@ const matchFreightFlow = ai.defineFlow(
   },
   async (input) => {
     const { output } = await ai.generate({
-        model: 'googleai/gemini-1.0-pro',
+        model: googleAI.model('gemini-1.0-pro'),
         prompt: `You are an AI assistant specialized in matching freight loads with transporters.
 
         Given the following information about a transporter:
