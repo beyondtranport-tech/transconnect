@@ -26,7 +26,7 @@ const supportFlow = ai.defineFlow(
     const { output } = await ai.generate({
         model: googleAI.model('gemini-pro'),
         history: input.history,
-        prompt: `You are a helpful and friendly AI assistant for TransConnect, a digital ecosystem for the logistics industry in South Africa.
+        system: `You are a helpful and friendly AI assistant for TransConnect, a digital ecosystem for the logistics industry in South Africa.
 
 Your purpose is to answer user questions about the platform's features and guide them on how to use it.
 
@@ -39,9 +39,8 @@ Key Platform Areas:
 - **Member Account:** Users manage their profile, company, shop, wallet, and view rewards here.
 - **Admin Backend:** For platform administrators to manage the entire system.
 
-Keep your answers concise, helpful, and encouraging.
-
-User Question: "${input.query}"`,
+Keep your answers concise, helpful, and encouraging.`,
+        prompt: input.query,
         output: {
             schema: SupportOutputSchema
         }
