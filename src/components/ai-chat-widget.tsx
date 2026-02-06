@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
@@ -37,26 +36,30 @@ export default function AIChatWidget() {
         if (!input.trim()) return;
 
         const currentInput = input;
-        const newMessages: Message[] = [...messages, { role: 'user', text: currentInput }];
+        const userMessage: Message = { role: 'user', text: currentInput };
+
+        // Optimistically update the UI with the user's message
+        setMessages(prev => [...prev, userMessage]);
         
-        setMessages(newMessages); // Optimistically add user's message to the UI
+        // Clear the input and set loading state
         setInput('');
         setIsLoading(true);
 
         try {
-            // Build history from the *new* message list to send to the API
-            const historyForApi = newMessages.map(msg => ({
+            // Build history for the API call (all messages *before* the new one)
+            const historyForApi = messages.map(msg => ({
                 role: msg.role as 'user' | 'model',
                 parts: [{ text: msg.text }],
             }));
             
+            // Make the API call with the old history and the new query
             const result = await supportQuery({ 
-                history: historyForApi 
+                history: historyForApi,
+                query: currentInput,
             });
             
+            // On success, add the AI's response to the UI
             const modelMessage: Message = { role: 'model', text: result.response };
-
-            // Update the state with the model's response
             setMessages(prev => [...prev, modelMessage]);
 
         } catch (error: any) {
@@ -65,7 +68,8 @@ export default function AIChatWidget() {
                 title: 'Send Failed',
                 description: error.message || 'Could not get a response. Please try again.',
             });
-            // On error, keep the user's message in the chat for context, but put the text back in the input for them to retry.
+            // On error, remove the user's message so they can try again
+            setMessages(prev => prev.filter(m => m !== userMessage));
             setInput(currentInput); 
         } finally {
             setIsLoading(false);
