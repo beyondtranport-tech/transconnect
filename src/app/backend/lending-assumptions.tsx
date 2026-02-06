@@ -11,7 +11,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDes
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Save, Calculator, Users, Percent, FileText, Sheet } from 'lucide-react';
+import { Loader2, Save, Calculator, Users, Percent, FileText } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { useRouter } from 'next/navigation';
 
@@ -111,7 +111,7 @@ export default function LendingAssumptions() {
     }
 
     const renderAgreementFields = (name: "loan" | "installmentSale" | "lease" | "factoring", title: string) => (
-        <Card>
+        <Card className="flex flex-col">
             <CardHeader>
                 <FormField
                     control={form.control}
@@ -128,7 +128,7 @@ export default function LendingAssumptions() {
                     )}
                 />
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-4 flex-grow">
                 <fieldset disabled={!form.watch(`${name}.enabled`)} className="space-y-4">
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                         <FormField control={form.control} name={`${name}.dealsPerMonth`} render={({ field }) => (<FormItem><FormLabel># of Deals / Month</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
@@ -156,9 +156,9 @@ export default function LendingAssumptions() {
                 </fieldset>
             </CardContent>
             <CardFooter>
-                 <Button type="button" onClick={() => handleGenerateSchedule(name)} disabled={!form.watch(`${name}.enabled`)}>
-                    <Sheet className="mr-2 h-4 w-4" />
-                    Repayment Sched.
+                 <Button className="w-full" type="button" onClick={() => handleGenerateSchedule(name)} disabled={!form.watch(`${name}.enabled`)}>
+                    <Calculator className="mr-2 h-4 w-4" />
+                    Generate Repayment Schedule
                 </Button>
             </CardFooter>
         </Card>
