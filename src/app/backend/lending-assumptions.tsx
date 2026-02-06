@@ -93,7 +93,7 @@ export default function LendingAssumptions() {
             setIsLoading(false);
         }
     };
-    
+
     const { watch } = form;
     
     const handleGenerateSchedule = (agreementType: "loan" | "installmentSale" | "lease" | "factoring") => {
@@ -212,3 +212,4 @@ export default function LendingAssumptions() {
         </div>
     );
 }
+

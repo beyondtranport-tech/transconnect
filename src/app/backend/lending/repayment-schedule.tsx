@@ -149,7 +149,9 @@ function RepaymentScheduleContent() {
 export default function RepaymentSchedulePage() {
     return (
         <div className="py-16">
-            <RepaymentScheduleContent />
+            <React.Suspense fallback={<div className="flex justify-center items-center min-h-[calc(100vh-8rem)]"><Loader2 className="h-16 w-16 animate-spin text-primary" /></div>}>
+                <RepaymentScheduleContent />
+            </React.Suspense>
         </div>
     )
 }

@@ -33,6 +33,13 @@ export function generateAmortizationSchedule(
     if (principal <= 0 || termInMonths <= 0) {
         return [];
     }
+    
+    // Use a default date if the string is invalid or empty
+    const firstPaymentDate = new Date(firstInstallmentDateStr || new Date());
+    if (isNaN(firstPaymentDate.getTime())) {
+        // Handle invalid date string gracefully
+        return [];
+    }
 
     const monthlyRate = annualRate / 100 / 12;
     const schedule: MonthlyPayment[] = [];
@@ -40,7 +47,12 @@ export function generateAmortizationSchedule(
 
     let pmt = 0;
     if (monthlyRate > 0) {
-        pmt = (principal * monthlyRate * Math.pow(1 + monthlyRate, termInMonths)) / (Math.pow(1 + monthlyRate, termInMonths) - 1);
+        // Standard formula for payments in arrears
+        pmt = (principal * monthlyRate) / (1 - Math.pow(1 + monthlyRate, -termInMonths));
+        if (paymentsInAdvance) {
+            // Adjust payment if in advance
+            pmt = pmt / (1 + monthlyRate);
+        }
     } else {
         pmt = principal / termInMonths;
     }
@@ -51,14 +63,16 @@ export function generateAmortizationSchedule(
     let cumulativeCapitalPaid = 0;
     let cumulativeInterestPaid = 0;
 
-    const firstPaymentDate = new Date(firstInstallmentDateStr);
-    if (isNaN(firstPaymentDate.getTime())) {
-        // Handle invalid date string gracefully
-        return [];
-    }
-    
     for (let i = 1; i <= termInMonths; i++) {
-        const interestPayment = remainingBalance * monthlyRate;
+        // The date for this installment
+        const paymentDate = new Date(firstPaymentDate);
+        paymentDate.setMonth(paymentDate.getMonth() + (i - 1));
+
+        // Interest calculation depends on advance/arrears
+        const interestPayment = paymentsInAdvance && i === 1 
+            ? 0 // No interest on the first payment if in advance
+            : remainingBalance * monthlyRate;
+
         const principalPayment = pmt - interestPayment;
         remainingBalance -= principalPayment;
         
@@ -68,10 +82,6 @@ export function generateAmortizationSchedule(
         const totalPaid = cumulativeCapitalPaid + cumulativeInterestPaid;
         const remainingInterest = totalInterest - cumulativeInterestPaid;
         const totalBalanceOwed = remainingBalance + remainingInterest;
-
-        // Calculate the date for the current installment
-        const paymentDate = new Date(firstPaymentDate);
-        paymentDate.setMonth(paymentDate.getMonth() + (i - 1));
 
         schedule.push({
             month: i,
