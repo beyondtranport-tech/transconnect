@@ -48,7 +48,12 @@ export async function generateVideo(input: VideoGenerateInput): Promise<VideoGen
     throw new Error(`Video generation failed: ${operation.error.message}`);
   }
 
-  const video = operation.output?.message?.content.find(p => !!p.media);
+  const content = operation.output?.message?.content;
+  if (!content) {
+    throw new Error('Failed to find content in the video generation operation result.');
+  }
+  const video = content.find(p => !!p.media);
+
   if (!video?.media?.url) {
     throw new Error('Failed to find the generated video in the operation result.');
   }
