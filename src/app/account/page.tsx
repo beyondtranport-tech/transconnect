@@ -33,6 +33,7 @@ import {
   Presentation,
   Mail,
   Sparkles,
+  MessageSquare,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -61,6 +62,8 @@ const PerformanceContent = dynamic(() => import('./performance-content'), { load
 const NetworkOffer = dynamic(() => import('./network-offer'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const NetworkEmails = dynamic(() => import('./network-emails'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const MarketingStudio = dynamic(() => import('./marketing-studio'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const SupportChatContent = dynamic(() => import('./support-chat'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+
 
 // Placeholder components for sections under construction
 function DocumentsContent() {
@@ -123,6 +126,7 @@ function AccountPageContent() {
       case 'billing': return <BillingContent />;
       case 'rewards': return <RewardsContent />;
       case 'activity': return <ActivityFeed />;
+      case 'support-chat': return <SupportChatContent />;
       
       // Sales / Network
       case 'network': return <NetworkContent />;
@@ -252,6 +256,12 @@ function AccountPageContent() {
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
+                <SidebarMenuButton tooltip="Support Chat" isActive={activeView === 'support-chat'} onClick={() => navigate('support-chat')}>
+                  <MessageSquare />
+                  <span>Support Chat</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
                 <SidebarMenuButton tooltip="Billing" isActive={activeView === 'billing'} onClick={() => navigate('billing')}>
                   <CreditCard />
                   <span>Billing</span>
@@ -314,3 +324,5 @@ export default function AccountPage() {
     </Suspense>
   );
 }
+
+    

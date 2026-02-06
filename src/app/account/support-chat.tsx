@@ -1,0 +1,151 @@
+
+'use client';
+
+import { useState, useMemo, useCallback, useEffect } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Loader2, MessageSquare, Send } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { useUser, useFirestore, useCollection, getClientSideAuthToken, useDoc, useMemoFirebase } from '@/firebase';
+import { collection, query, orderBy, serverTimestamp, doc } from 'firebase/firestore';
+import { cn } from '@/lib/utils';
+
+const formatDate = (dateValue: any) => {
+    if (!dateValue) return 'N/A';
+    const date = dateValue.toDate ? dateValue.toDate() : new Date(dateValue);
+    if (isNaN(date.getTime())) return 'Invalid Date';
+    return date.toLocaleString('en-ZA', { dateStyle: 'medium', timeStyle: 'short'});
+};
+
+export default function SupportChatContent() {
+    const { user, isUserLoading } = useUser();
+    const firestore = useFirestore();
+    const { toast } = useToast();
+    const [message, setMessage] = useState('');
+    const [isSending, setIsSending] = useState(false);
+
+    const userDocRef = useMemoFirebase(() => {
+        if (!firestore || !user) return null;
+        return doc(firestore, 'users', user.uid);
+    }, [firestore, user]);
+    const { data: userData, isLoading: isUserDataLoading } = useDoc(userDocRef);
+    const companyId = userData?.companyId;
+
+    const messagesQuery = useMemoFirebase(() => {
+        if (!firestore || !companyId) return null;
+        return query(
+            collection(firestore, `companies/${companyId}/supportMessages`),
+            orderBy('timestamp', 'asc')
+        );
+    }, [firestore, companyId]);
+
+    const { data: messages, isLoading: areMessagesLoading, forceRefresh } = useCollection(messagesQuery);
+
+    const isLoading = isUserLoading || isUserDataLoading || areMessagesLoading;
+
+    const handleSend = async () => {
+        if (!user || !companyId || !message.trim()) return;
+        setIsSending(true);
+
+        try {
+            const token = await getClientSideAuthToken();
+            if (!token) throw new Error("Authentication failed.");
+
+            const path = `companies/${companyId}/supportMessages`;
+            const messageData = {
+                text: message,
+                senderId: user.uid,
+                senderName: user.displayName || 'Member',
+                timestamp: serverTimestamp(),
+                readByAdmin: false,
+            };
+
+            const response = await fetch('/api/addUserDoc', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ collectionPath: path, data: messageData }),
+            });
+
+            if (!response.ok) {
+                const result = await response.json();
+                throw new Error(result.error || 'Failed to send message.');
+            }
+            
+            setMessage('');
+            forceRefresh();
+        } catch (error: any) {
+            toast({
+                variant: 'destructive',
+                title: 'Send Failed',
+                description: error.message,
+            });
+        } finally {
+            setIsSending(false);
+        }
+    };
+
+    return (
+        <Card className="h-[calc(100vh-10rem)] flex flex-col">
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2"><MessageSquare /> Support Chat</CardTitle>
+                <CardDescription>Have a question? Chat directly with our admin support team.</CardDescription>
+            </CardHeader>
+            <CardContent className="flex-1 flex flex-col min-h-0">
+                <ScrollArea className="flex-1 pr-4 -mr-4 mb-4">
+                    <div className="space-y-4">
+                        {isLoading ? (
+                             <div className="flex justify-center items-center h-full"><Loader2 className="animate-spin h-8 w-8 text-primary" /></div>
+                        ) : (
+                            messages?.map((msg: any) => {
+                                const isMember = msg.senderId === user?.uid;
+                                const alignment = isMember ? "justify-end" : "justify-start";
+
+                                return (
+                                    <div key={msg.id} className={cn("flex items-end gap-2", alignment)}>
+                                        {!isMember && (
+                                            <Avatar className="h-8 w-8">
+                                                <AvatarFallback className='bg-secondary'>AD</AvatarFallback>
+                                            </Avatar>
+                                        )}
+                                        <div className={cn(
+                                            "rounded-lg px-3 py-2 max-w-[80%] text-sm", 
+                                            isMember ? "bg-primary text-primary-foreground" : "bg-muted"
+                                        )}>
+                                            <p>{msg.text}</p>
+                                            <p className="text-xs opacity-70 mt-1 text-right">{formatDate(msg.timestamp)}</p>
+                                        </div>
+                                        {isMember && (
+                                            <Avatar className="h-8 w-8">
+                                                <AvatarFallback>YOU</AvatarFallback>
+                                            </Avatar>
+                                        )}
+                                    </div>
+                                );
+                            })
+                        )}
+                         {messages?.length === 0 && !isLoading && (
+                            <p className="text-center text-sm text-muted-foreground pt-8">No messages yet. Send a message to start a conversation.</p>
+                        )}
+                    </div>
+                </ScrollArea>
+                <div className="mt-auto flex items-center gap-2 pt-4 border-t">
+                    <Input 
+                        placeholder="Type your message to the admin team..." 
+                        value={message}
+                        onChange={e => setMessage(e.target.value)}
+                        onKeyDown={e => e.key === 'Enter' && !isSending && handleSend()}
+                        disabled={isSending}
+                    />
+                    <Button onClick={handleSend} disabled={isSending || !message.trim()} size="icon">
+                        {isSending ? <Loader2 className="h-4 w-4 animate-spin"/> : <Send className="h-4 w-4" />}
+                    </Button>
+                </div>
+            </CardContent>
+        </Card>
+    );
+}
+
+    
