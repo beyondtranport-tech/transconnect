@@ -150,6 +150,52 @@ function InviteDialog({ lead, companyId, onInviteSent }: { lead: any, companyId:
     );
 }
 
+// Placeholder MessageDialog
+function MessageDialog({ lead }: { lead: any }) {
+    const [isOpen, setIsOpen] = useState(false);
+    const [message, setMessage] = useState('');
+    const { toast } = useToast();
+
+    const handleSend = () => {
+        toast({
+            title: "Feature Coming Soon",
+            description: "Real-time chat functionality is currently in development.",
+        });
+        setIsOpen(false);
+    }
+
+    return (
+        <Dialog open={isOpen} onOpenChange={setIsOpen}>
+            <DialogTrigger asChild>
+                <Button variant="ghost" size="icon" title="Message Lead">
+                    <MessageSquare className="h-4 w-4" />
+                </Button>
+            </DialogTrigger>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Send Message to {lead.companyName}</DialogTitle>
+                    <DialogDescription>
+                        Compose your message below. This will be sent to {lead.contactPerson || lead.companyName}.
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="py-4">
+                    <Textarea 
+                        placeholder="Type your message here..."
+                        value={message}
+                        onChange={(e) => setMessage(e.target.value)}
+                        rows={6}
+                    />
+                </div>
+                <DialogFooter>
+                    <Button onClick={handleSend}>
+                        <Send className="mr-2 h-4 w-4" /> Send Message
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    );
+}
+
 // LeadDialog for adding/editing leads
 function LeadDialog({ lead, companyId, onSave, children }: { lead?: any, companyId: string, onSave: () => void, children: React.ReactNode }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -367,6 +413,7 @@ export default function NetworkContent() {
           header: () => <div className="text-right">Actions</div>,
           cell: ({ row }) => (
             <div className="flex items-center justify-end">
+              <MessageDialog lead={row.original} />
               <InviteDialog lead={row.original} companyId={companyId!} onInviteSent={forceRefresh} />
               <LeadDialog lead={row.original} companyId={companyId!} onSave={forceRefresh}>
                 <Button variant="ghost" size="icon" title="Edit Lead"><Edit className="h-4 w-4" /></Button>
@@ -428,6 +475,7 @@ export default function NetworkContent() {
     
 
     
+
 
 
 

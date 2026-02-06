@@ -131,3 +131,18 @@ export const SocialLinkGeneratorOutputSchema = z.object({
   youtubeLink: z.string().url().optional(),
 });
 export type SocialLinkGeneratorOutput = z.infer<typeof SocialLinkGeneratorOutputSchema>;
+
+// From support-flow.ts
+export const SupportInputSchema = z.object({
+  query: z.string().describe("The user's question about the TransConnect platform."),
+  history: z.array(z.object({
+    role: z.enum(['user', 'model']),
+    parts: z.array(z.object({ text: z.string() })),
+  })).optional().describe('The conversation history.'),
+});
+export type SupportInput = z.infer<typeof SupportInputSchema>;
+
+export const SupportOutputSchema = z.object({
+  response: z.string().describe("The AI assistant's helpful response."),
+});
+export type SupportOutput = z.infer<typeof SupportOutputSchema>;

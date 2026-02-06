@@ -44,6 +44,7 @@ import { Loader2 } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import dynamic from 'next/dynamic';
 import React from 'react';
+import AIChatWidget from '@/components/ai-chat-widget';
 
 // Dynamically import all components that are conditionally rendered
 const AccountDashboard = dynamic(() => import('./dashboard'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
@@ -155,6 +156,7 @@ function AccountPageContent() {
 
   return (
     <SidebarProvider>
+      <AIChatWidget />
       <Sidebar>
         <SidebarHeader>
           <div className="flex items-center gap-2">
