@@ -12,21 +12,7 @@ import {ai} from '@/ai/genkit';
 import { SupportInputSchema, SupportOutputSchema, type SupportInput, type SupportOutput } from '@/ai/schemas';
 import { googleAI } from '@genkit-ai/google-genai';
 
-export async function supportQuery(input: SupportInput): Promise<SupportOutput> {
-  return supportFlow(input);
-}
-
-const supportFlow = ai.defineFlow(
-  {
-    name: 'supportFlow',
-    inputSchema: SupportInputSchema,
-    outputSchema: SupportOutputSchema,
-  },
-  async (input) => {
-    const { history, query } = input;
-    
-    // Manually construct the prompt for robustness
-    const prompt = `You are a helpful and friendly AI assistant for Logistics Flow, a digital ecosystem for the logistics industry in South Africa.
+const systemPrompt = `You are a helpful and friendly AI assistant for Logistics Flow, a digital ecosystem for the logistics industry in South Africa.
 
 Your purpose is to answer user questions about the platform's features and guide them on how to use it.
 
@@ -45,22 +31,32 @@ Key Platform Areas:
   - **Wallet:** For managing funds, payouts, and viewing transactions. Users can top up via EFT and request payouts to their registered bank account (which must be filled out in the Company section).
 - **Admin Backend:** For platform administrators to manage the entire system.
 
-Keep your answers concise, helpful, and encouraging.
+Keep your answers concise, helpful, and encouraging.`;
 
----
-CONVERSATION HISTORY:
-${history.map(m => `${m.role === 'user' ? 'User' : 'Assistant'}: ${m.parts[0].text}`).join('\n')}
 
----
-LATEST USER QUESTION:
-${query}
+export async function supportQuery(input: SupportInput): Promise<SupportOutput> {
+  return supportFlow(input);
+}
 
-Please provide a helpful response to the latest user question based on the conversation history and your knowledge base.`;
-
+const supportFlow = ai.defineFlow(
+  {
+    name: 'supportFlow',
+    inputSchema: SupportInputSchema,
+    outputSchema: SupportOutputSchema,
+  },
+  async (input) => {
+    const { history, query } = input;
+    
+    if (!query) {
+        throw new Error("The user's query was empty.");
+    }
+    
     try {
         const response = await ai.generate({
             model: googleAI.model('gemini-2.5-flash'),
-            prompt: prompt,
+            system: systemPrompt,
+            history: history,
+            prompt: query, // Use the latest user message as the prompt
         });
         
         // Add a safety check for the response and its text property.
@@ -74,7 +70,7 @@ Please provide a helpful response to the latest user question based on the conve
     } catch (e: any) {
         console.error("Error inside supportFlow:", e);
         // Propagate a user-friendly error to the frontend.
-        throw new Error("The AI service is currently unavailable. Please try again later.");
+        throw new Error(`The AI service is currently unavailable. Details: ${e.message}`);
     }
   }
 );

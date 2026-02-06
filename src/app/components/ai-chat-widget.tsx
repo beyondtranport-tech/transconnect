@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
@@ -36,20 +35,17 @@ export default function AIChatWidget() {
     const handleSend = async () => {
         if (!input.trim()) return;
 
-        const currentInput = input;
-        const userMessage: Message = { role: 'user', text: currentInput };
+        const userMessage: Message = { role: 'user', text: input };
         
-        // This is the history BEFORE the new user message.
-        const previousMessages = messages;
-
-        // Immediately update the UI with the user's new message. It will stay even if the AI fails.
+        // Immediately update the UI with the user's new message.
         setMessages(prev => [...prev, userMessage]);
+        const currentInput = input;
         setInput('');
         setIsLoading(true);
 
         try {
-            // Build history for the API call from the PREVIOUS messages state.
-            const historyForApi = previousMessages.map(msg => ({
+            // Build history for the API call from the messages state *before* the new user message.
+            const historyForApi = messages.map(msg => ({
                 role: msg.role,
                 parts: [{ text: msg.text }],
             }));
@@ -69,7 +65,6 @@ export default function AIChatWidget() {
                 title: 'AI Assistant Error',
                 description: error.message || 'Could not get a response from the assistant.',
             });
-            // On error, we no longer revert the UI state. The user's message remains visible.
         } finally {
             setIsLoading(false);
         }
