@@ -32,6 +32,7 @@ import {
   TrendingUp,
   Presentation,
   Mail,
+  Sparkles,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -58,6 +59,7 @@ const NetworkContent = dynamic(() => import('./network-content'), { loading: () 
 const PerformanceContent = dynamic(() => import('./performance-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const NetworkOffer = dynamic(() => import('./network-offer'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const NetworkEmails = dynamic(() => import('./network-emails'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const MarketingStudio = dynamic(() => import('./marketing-studio'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 
 // Placeholder components for sections under construction
 function DocumentsContent() {
@@ -115,6 +117,7 @@ function AccountPageContent() {
       case 'company': return <CompanyContent />;
       case 'staff': return <StaffContent />;
       case 'shop': return <ShopContent />;
+      case 'marketing-studio': return <MarketingStudio />;
       case 'wallet': return <WalletContent />;
       case 'billing': return <BillingContent />;
       case 'rewards': return <RewardsContent />;
@@ -193,6 +196,12 @@ function AccountPageContent() {
                 <SidebarMenuButton tooltip="My Shop" isActive={activeView === 'shop'} onClick={() => navigate('shop')}>
                   <Store />
                   <span>My Shop</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton tooltip="AI Marketing Studio" isActive={activeView === 'marketing-studio'} onClick={() => navigate('marketing-studio')}>
+                  <Sparkles />
+                  <span>AI Marketing</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
