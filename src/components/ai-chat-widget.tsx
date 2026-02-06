@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
@@ -37,17 +38,14 @@ export default function AIChatWidget() {
 
         const currentInput = input;
         const userMessage: Message = { role: 'user', text: currentInput };
-
-        // Create the new list of messages including the user's new one
-        const updatedMessagesForUI = [...messages, userMessage];
         
         // 1. Immediately update the UI with the user's message.
-        setMessages(updatedMessagesForUI);
+        setMessages(prev => [...prev, userMessage]);
         setInput('');
         setIsLoading(true);
 
         try {
-            // 2. Build history from the state *before* adding the new user message.
+            // 2. Build history from the state *before* the latest user message was added.
             const historyForApi = messages.map(msg => ({
                 role: msg.role as 'user' | 'model',
                 parts: [{ text: msg.text }],
@@ -62,7 +60,7 @@ export default function AIChatWidget() {
             const modelMessage: Message = { role: 'model', text: result.response };
 
             // 4. Update the UI again, this time adding the model's response.
-            setMessages(prevMessages => [...prevMessages, modelMessage]);
+            setMessages(prev => [...prev, modelMessage]);
 
         } catch (error: any) {
             toast({
