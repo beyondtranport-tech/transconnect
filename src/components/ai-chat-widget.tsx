@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
@@ -35,8 +36,8 @@ export default function AIChatWidget() {
     const handleSend = async () => {
         if (!input.trim()) return;
 
-        const userMessage: Message = { role: 'user', text: input };
-        const newMessages = [...messages, userMessage]; // Create the new message list
+        const currentInput = input;
+        const newMessages: Message[] = [...messages, { role: 'user', text: currentInput }];
         
         setMessages(newMessages); // Optimistically add user's message to the UI
         setInput('');
@@ -48,8 +49,7 @@ export default function AIChatWidget() {
                 role: msg.role as 'user' | 'model',
                 parts: [{ text: msg.text }],
             }));
-
-            // The flow now only needs the full history
+            
             const result = await supportQuery({ 
                 history: historyForApi 
             });
@@ -62,10 +62,11 @@ export default function AIChatWidget() {
         } catch (error: any) {
             toast({
                 variant: 'destructive',
-                title: 'AI Assistant Error',
+                title: 'Send Failed',
                 description: error.message || 'Could not get a response. Please try again.',
             });
-            // On error, the user's message will still be visible. We just stop loading.
+            // On error, keep the user's message in the chat for context, but put the text back in the input for them to retry.
+            setInput(currentInput); 
         } finally {
             setIsLoading(false);
         }
