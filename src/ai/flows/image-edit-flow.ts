@@ -9,11 +9,12 @@
  */
 
 import { ai } from '@/ai/genkit';
+import { googleAI } from '@genkit-ai/google-genai';
 import { ImageEditInputSchema, ImageEditOutputSchema, type ImageEditInput, type ImageEditOutput } from '@/ai/schemas';
 
 export async function imageEdit(input: ImageEditInput): Promise<ImageEditOutput> {
   const { media } = await ai.generate({
-    model: 'googleai/gemini-1.5-pro-latest',
+    model: googleAI.model('gemini-1.5-pro-latest'),
     prompt: [
       { media: { url: input.photoDataUri } },
       { text: input.prompt },
