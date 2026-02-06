@@ -115,7 +115,8 @@ export async function POST(req: NextRequest) {
                 }
                 
                 return { 
-                    id: doc.id, 
+                    id: doc.id,
+                    path: doc.ref.path,
                     companyId, 
                     ...serializeTimestamps(docData) 
                 };
