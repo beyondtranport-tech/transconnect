@@ -14,7 +14,7 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { useUser, getClientSideAuthToken, useDoc, useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import Link from 'next/link';
-import { collection, doc } from 'firebase/firestore';
+import { collection, doc, query, orderBy } from 'firebase/firestore';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -22,6 +22,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { roles as potentialRoles } from '@/lib/roles';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { cn } from '@/lib/utils';
 
 // Schema for the lead form
 const leadSchema = z.object({
@@ -150,20 +152,64 @@ function InviteDialog({ lead, companyId, onInviteSent }: { lead: any, companyId:
     );
 }
 
-// Placeholder MessageDialog
-function MessageDialog({ lead }: { lead: any }) {
+function MessageDialog({ lead, companyId }: { lead: any, companyId: string }) {
+    const { user } = useUser();
+    const firestore = useFirestore();
     const [isOpen, setIsOpen] = useState(false);
     const [message, setMessage] = useState('');
+    const [isSending, setIsSending] = useState(false);
     const { toast } = useToast();
 
-    const handleSend = () => {
-        toast({
-            title: "Feature Coming Soon",
-            description: "Real-time chat functionality is currently in development.",
-        });
-        setIsOpen(false);
-    }
+    const messagesQuery = useMemoFirebase(() => {
+        if (!firestore || !companyId || !lead?.id) return null;
+        return query(
+            collection(firestore, `companies/${companyId}/leads/${lead.id}/messages`),
+            orderBy('timestamp', 'asc')
+        );
+    }, [firestore, companyId, lead]);
 
+    const { data: messages, isLoading: areMessagesLoading } = useCollection(messagesQuery);
+
+    const handleSend = async () => {
+        if (!user || !message.trim()) return;
+        setIsSending(true);
+
+        try {
+            const token = await getClientSideAuthToken();
+            if (!token) throw new Error("Authentication failed.");
+
+            const path = `companies/${companyId}/leads/${lead.id}/messages`;
+            const messageData = {
+                text: message,
+                senderId: user.uid,
+                timestamp: { _methodName: 'serverTimestamp' },
+                read: false,
+            };
+
+            const response = await fetch('/api/addUserDoc', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ collectionPath: path, data: messageData }),
+            });
+
+            if (!response.ok) {
+                const result = await response.json();
+                throw new Error(result.error || 'Failed to send message.');
+            }
+            
+            setMessage('');
+            // useCollection will handle UI update automatically
+        } catch (error: any) {
+            toast({
+                variant: 'destructive',
+                title: 'Send Failed',
+                description: error.message,
+            });
+        } finally {
+            setIsSending(false);
+        }
+    };
+    
     return (
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
             <DialogTrigger asChild>
@@ -171,26 +217,41 @@ function MessageDialog({ lead }: { lead: any }) {
                     <MessageSquare className="h-4 w-4" />
                 </Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="sm:max-w-md flex flex-col h-[70vh]">
                 <DialogHeader>
-                    <DialogTitle>Send Message to {lead.companyName}</DialogTitle>
+                    <DialogTitle>Chat with {lead.companyName}</DialogTitle>
                     <DialogDescription>
-                        Compose your message below. This will be sent to {lead.contactPerson || lead.companyName}.
+                        {lead.contactPerson || 'No contact person'} - {lead.email || 'No email'}
                     </DialogDescription>
                 </DialogHeader>
-                <div className="py-4">
-                    <Textarea 
-                        placeholder="Type your message here..."
+                <ScrollArea className="flex-1 p-4 -mx-6 border-y">
+                    <div className="space-y-4 px-6">
+                        {areMessagesLoading && <div className="flex justify-center"><Loader2 className="animate-spin" /></div>}
+                        {messages?.map((msg: any) => (
+                            <div key={msg.id} className={cn("flex items-end gap-2", msg.senderId === user?.uid ? "justify-end" : "justify-start")}>
+                                <div className={cn("rounded-lg px-3 py-2 max-w-[80%]", msg.senderId === user?.uid ? "bg-primary text-primary-foreground" : "bg-muted")}>
+                                    <p className="text-sm">{msg.text}</p>
+                                    <p className="text-xs opacity-70 mt-1 text-right">{msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}</p>
+                                </div>
+                            </div>
+                        ))}
+                        {messages?.length === 0 && !areMessagesLoading && (
+                            <p className="text-center text-sm text-muted-foreground pt-8">No messages yet. Start the conversation!</p>
+                        )}
+                    </div>
+                </ScrollArea>
+                <div className="mt-auto flex items-center gap-2 pt-4">
+                    <Input 
+                        placeholder="Type your message..." 
                         value={message}
-                        onChange={(e) => setMessage(e.target.value)}
-                        rows={6}
+                        onChange={e => setMessage(e.target.value)}
+                        onKeyDown={e => e.key === 'Enter' && !isSending && handleSend()}
+                        disabled={isSending}
                     />
-                </div>
-                <DialogFooter>
-                    <Button onClick={handleSend}>
-                        <Send className="mr-2 h-4 w-4" /> Send Message
+                    <Button onClick={handleSend} disabled={isSending || !message.trim()} size="icon">
+                        {isSending ? <Loader2 className="h-4 w-4 animate-spin"/> : <Send className="h-4 w-4" />}
                     </Button>
-                </DialogFooter>
+                </div>
             </DialogContent>
         </Dialog>
     );
@@ -413,7 +474,7 @@ export default function NetworkContent() {
           header: () => <div className="text-right">Actions</div>,
           cell: ({ row }) => (
             <div className="flex items-center justify-end">
-              <MessageDialog lead={row.original} />
+              <MessageDialog lead={row.original} companyId={companyId!} />
               <InviteDialog lead={row.original} companyId={companyId!} onInviteSent={forceRefresh} />
               <LeadDialog lead={row.original} companyId={companyId!} onSave={forceRefresh}>
                 <Button variant="ghost" size="icon" title="Edit Lead"><Edit className="h-4 w-4" /></Button>
@@ -475,6 +536,7 @@ export default function NetworkContent() {
     
 
     
+
 
 
 
