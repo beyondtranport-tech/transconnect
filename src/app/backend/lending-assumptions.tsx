@@ -12,7 +12,6 @@ import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Save, Calculator, Users, Percent, FileText } from 'lucide-react';
-import { Separator } from '@/components/ui/separator';
 import { useRouter } from 'next/navigation';
 
 const LENDING_ASSUMPTIONS_KEY = 'adminLendingAssumptions_v1';
@@ -84,6 +83,8 @@ export default function LendingAssumptions() {
         }, [])()
     });
 
+    const { watch } = form;
+
     const onSubmit = (values: FormValues) => {
         setIsLoading(true);
         try {
@@ -95,8 +96,6 @@ export default function LendingAssumptions() {
             setIsLoading(false);
         }
     };
-
-    const { watch } = form;
     
     const handleGenerateSchedule = (agreementType: "loan" | "installmentSale" | "lease" | "factoring") => {
         const values = watch(agreementType);
