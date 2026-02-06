@@ -151,27 +151,33 @@ export default function SupportChatInbox() {
                         <ScrollArea className="flex-1 w-full pr-4 mb-4">
                              <div className="space-y-4">
                                 {convo.messages.map((message: Message) => {
-                                    const isAdmin = message.senderId === adminUser?.uid;
-                                    const alignment = isAdmin ? "justify-end" : "justify-start";
+                                    const isThisAdmin = message.senderId === adminUser?.uid;
+                                    const isAI = message.senderId === 'ai-assistant';
+                                    const isMember = !isThisAdmin && !isAI;
+                                    const alignment = (isThisAdmin) ? "justify-end" : "justify-start";
 
                                     return (
                                         <div key={message.id} className={cn("flex items-end gap-2", alignment)}>
-                                            {!isAdmin && (
+                                            {!isThisAdmin && (
                                                 <Avatar className="h-8 w-8">
-                                                    <AvatarFallback className="bg-muted">M</AvatarFallback>
+                                                    <AvatarFallback className={isAI ? 'bg-secondary' : 'bg-muted'}>
+                                                        {isAI ? <Bot className="h-5 w-5" /> : 'M'}
+                                                    </AvatarFallback>
                                                 </Avatar>
                                             )}
                                             <div className={cn(
                                                 "rounded-lg px-3 py-2 max-w-[80%] text-sm", 
-                                                isAdmin ? "bg-primary text-primary-foreground" : "bg-background border"
+                                                isThisAdmin ? "bg-primary text-primary-foreground" : 
+                                                isAI ? "bg-secondary text-secondary-foreground" :
+                                                "bg-background border"
                                             )}>
                                                 <p className="font-semibold text-xs mb-1">{message.senderName || 'Member'}</p>
                                                 <p>{message.text}</p>
                                                 <p className="text-xs opacity-70 mt-1 text-right">{formatDate(message.timestamp)}</p>
                                             </div>
-                                             {isAdmin && (
+                                             {isThisAdmin && (
                                                 <Avatar className="h-8 w-8">
-                                                    <AvatarFallback className={'bg-secondary'}>AD</AvatarFallback>
+                                                    <AvatarFallback className={'bg-primary text-primary-foreground'}>AD</AvatarFallback>
                                                 </Avatar>
                                             )}
                                         </div>
@@ -214,7 +220,7 @@ export default function SupportChatInbox() {
         <Card>
             <CardHeader>
                 <CardTitle className="flex items-center gap-2"><MessageSquare /> Support Inbox</CardTitle>
-                <CardDescription>Review and respond to all member support requests.</CardDescription>
+                <CardDescription>Review and respond to all member support requests. The AI assistant will attempt to answer first.</CardDescription>
             </CardHeader>
             <CardContent>
                 {conversations.length > 0 ? (
