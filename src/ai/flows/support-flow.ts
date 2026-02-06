@@ -23,7 +23,7 @@ const supportFlow = ai.defineFlow(
     outputSchema: SupportOutputSchema,
   },
   async (input) => {
-    const { output } = await ai.generate({
+    const response = await ai.generate({
         model: googleAI.model('gemini-2.5-flash'),
         history: input.history,
         system: `You are a helpful and friendly AI assistant for TransConnect, a digital ecosystem for the logistics industry in South Africa.
@@ -45,12 +45,10 @@ Key Platform Areas:
 - **Admin Backend:** For platform administrators to manage the entire system.
 
 Keep your answers concise, helpful, and encouraging.`,
-        prompt: input.query,
-        output: {
-            schema: SupportOutputSchema
-        }
     });
     
-    return output || { response: "I'm sorry, I couldn't process that request. Please try rephrasing your question." };
+    const textResponse = response.text;
+    
+    return { response: textResponse || "I'm sorry, I'm having trouble responding right now. Please try again." };
   }
 );
