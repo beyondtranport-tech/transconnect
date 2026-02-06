@@ -1,6 +1,7 @@
+
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Bot, Send, Loader2, X } from 'lucide-react';
@@ -9,6 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supportQuery } from '@/ai/flows/support-flow';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { cn } from '@/lib/utils';
 
 type Message = {
     role: 'user' | 'model';
@@ -21,33 +23,51 @@ export default function AIChatWidget() {
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const { toast } = useToast();
+    const scrollAreaRef = useRef<HTMLDivElement>(null);
+
+    // Effect to scroll to bottom when messages change
+    useEffect(() => {
+        if (scrollAreaRef.current) {
+            scrollAreaRef.current.scrollTo({ top: scrollAreaRef.current.scrollHeight, behavior: 'smooth' });
+        }
+    }, [messages]);
+
 
     const handleSend = async () => {
         if (!input.trim()) return;
 
-        const userMessage: Message = { role: 'user', text: input };
-        setMessages(prev => [...prev, userMessage]);
+        const currentInput = input;
+        const newMessages: Message[] = [...messages, { role: 'user', text: currentInput }];
+        
+        setMessages(newMessages); // Optimistically add user's message to the UI
         setInput('');
         setIsLoading(true);
 
         try {
-            // Convert message history for the AI flow
-            const history = messages.map(msg => ({
-                role: msg.role,
+            // Build history from the *new* message list to send to the API
+            const historyForApi = newMessages.map(msg => ({
+                role: msg.role as 'user' | 'model',
                 parts: [{ text: msg.text }],
             }));
             
-            const result = await supportQuery({ query: input, history });
+            const result = await supportQuery({ 
+                history: historyForApi,
+                query: currentInput, 
+            });
             
             const modelMessage: Message = { role: 'model', text: result.response };
+
+            // Update the state with the model's response
             setMessages(prev => [...prev, modelMessage]);
 
         } catch (error: any) {
             toast({
                 variant: 'destructive',
-                title: 'AI Assistant Error',
+                title: 'Send Failed',
                 description: error.message || 'Could not get a response. Please try again.',
             });
+            // On error, we keep the user's message in the chat for context, but put the text back in the input for them to retry.
+            // setInput(currentInput); 
         } finally {
             setIsLoading(false);
         }
@@ -75,17 +95,17 @@ export default function AIChatWidget() {
                             <X className="h-4 w-4" />
                         </Button>
                     </div>
-                    <ScrollArea className="flex-1 p-4">
+                    <ScrollArea className="flex-1 p-4" ref={scrollAreaRef as any}>
                         <div className="space-y-4">
                             {messages.map((message, index) => (
-                                <div key={index} className={`flex items-start gap-3 ${message.role === 'user' ? 'justify-end' : ''}`}>
+                                <div key={index} className={cn("flex items-end gap-2", message.role === 'user' ? 'justify-end' : 'justify-start')}>
                                     {message.role === 'model' && (
                                         <Avatar className="h-8 w-8">
                                             <AvatarFallback className="bg-primary text-primary-foreground">AI</AvatarFallback>
                                         </Avatar>
                                     )}
-                                    <div className={`rounded-lg px-3 py-2 max-w-[80%] text-sm ${message.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
-                                        {message.text}
+                                    <div className={cn("rounded-lg px-3 py-2 max-w-[80%] text-sm", message.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-muted')}>
+                                        <p className="whitespace-pre-wrap">{message.text}</p>
                                     </div>
                                 </div>
                             ))}

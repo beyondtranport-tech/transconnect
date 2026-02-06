@@ -47,8 +47,13 @@ export async function generateVideo(input: VideoGenerateInput): Promise<VideoGen
   if (operation.error) {
     throw new Error(`Video generation failed: ${operation.error.message}`);
   }
+  
+  // FIX: Check for the existence of `output` before trying to access its properties.
+  if (!operation.output) {
+      throw new Error('Video generation operation completed but returned no output.');
+  }
 
-  const content = operation.output?.message?.content;
+  const content = operation.output.message?.content;
   if (!content) {
     throw new Error('Failed to find content in the video generation operation result.');
   }

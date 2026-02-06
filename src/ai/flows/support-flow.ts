@@ -23,10 +23,10 @@ const supportFlow = ai.defineFlow(
     outputSchema: SupportOutputSchema,
   },
   async (input) => {
-    const response = await ai.generate({
-        model: googleAI.model('gemini-2.5-flash'), // Using the correct, working model
-        history: input.history, // The full conversation history, including the user's latest message
-        system: `You are a helpful and friendly AI assistant for Logistics Flow, a digital ecosystem for the logistics industry in South Africa.
+    const { history, query } = input;
+    
+    // Manually construct the prompt for robustness
+    const prompt = `You are a helpful and friendly AI assistant for Logistics Flow, a digital ecosystem for the logistics industry in South Africa.
 
 Your purpose is to answer user questions about the platform's features and guide them on how to use it.
 
@@ -44,7 +44,21 @@ Key Platform Areas:
   - **Wallet:** For managing funds, payouts, and viewing transactions.
 - **Admin Backend:** For platform administrators to manage the entire system.
 
-Keep your answers concise, helpful, and encouraging.`,
+Keep your answers concise, helpful, and encouraging.
+
+---
+CONVERSATION HISTORY:
+${history.map(m => `${m.role === 'user' ? 'User' : 'Assistant'}: ${m.parts[0].text}`).join('\n')}
+
+---
+LATEST USER QUESTION:
+${query}
+
+Please provide a helpful response to the latest user question based on the conversation history and your knowledge base.`;
+
+    const response = await ai.generate({
+        model: googleAI.model('gemini-2.5-flash'),
+        prompt: prompt,
     });
     
     const textResponse = response.text;

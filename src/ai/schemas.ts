@@ -134,10 +134,11 @@ export type SocialLinkGeneratorOutput = z.infer<typeof SocialLinkGeneratorOutput
 
 // From support-flow.ts
 export const SupportInputSchema = z.object({
+  query: z.string().describe('The user\'s latest question.'),
   history: z.array(z.object({
     role: z.enum(['user', 'model']),
     parts: z.array(z.object({ text: z.string() })),
-  })).describe('The full conversation history, including the latest user message.'),
+  })).describe('The conversation history.'),
 });
 export type SupportInput = z.infer<typeof SupportInputSchema>;
 
