@@ -154,11 +154,23 @@ function InviteDialog({ lead, companyId, onInviteSent }: { lead: any, companyId:
 function LeadDialog({ lead, companyId, onSave, children }: { lead?: any, companyId: string, onSave: () => void, children: React.ReactNode }) {
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [inviteStep, setInviteStep] = useState(false);
+  const [newLeadInfo, setNewLeadInfo] = useState<LeadFormValues | null>(null);
+
   const { toast } = useToast();
 
   const form = useForm<LeadFormValues>({
     resolver: zodResolver(leadSchema),
   });
+
+  const onOpenChange = (open: boolean) => {
+    if (!open) {
+        form.reset();
+        setInviteStep(false);
+        setNewLeadInfo(null);
+    }
+    setIsOpen(open);
+  }
 
   useEffect(() => {
     if (isOpen) {
@@ -191,7 +203,13 @@ function LeadDialog({ lead, companyId, onSave, children }: { lead?: any, company
       
       toast({ title: lead ? 'Lead Updated' : 'Lead Added' });
       onSave();
-      setIsOpen(false);
+
+      if (lead) { // If editing, just close
+        setIsOpen(false);
+      } else { // If creating, go to invite step
+        setNewLeadInfo(values);
+        setInviteStep(true);
+      }
     } catch(e: any) {
       toast({ variant: 'destructive', title: 'Operation Failed', description: e.message });
     } finally {
@@ -199,32 +217,68 @@ function LeadDialog({ lead, companyId, onSave, children }: { lead?: any, company
     }
   };
 
+  const copyInviteLink = () => {
+    if (!newLeadInfo?.email) return;
+
+    const nameParts = (newLeadInfo.contactPerson || '').split(' ');
+    const firstName = nameParts[0] || '';
+    const lastName = nameParts.slice(1).join(' ') || '';
+    const signupUrl = `${window.location.origin}/join?email=${encodeURIComponent(newLeadInfo.email)}&firstName=${encodeURIComponent(firstName)}&lastName=${encodeURIComponent(lastName)}${newLeadInfo.phone ? `&phone=${encodeURIComponent(newLeadInfo.phone)}` : ''}`;
+
+    navigator.clipboard.writeText(signupUrl);
+    toast({
+        title: 'Sign-up Link Copied!',
+        description: 'You can now send the link to the new lead.'
+    });
+  }
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+    <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{lead ? 'Edit Lead' : 'Add New Lead'}</DialogTitle>
-           <DialogDescription>
-            Enter the details for the potential member.
-          </DialogDescription>
-        </DialogHeader>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4 max-h-[60vh] overflow-y-auto pr-2">
-              <FormField control={form.control} name="companyName" render={({ field }) => ( <FormItem><FormLabel>Company Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
-              <FormField control={form.control} name="contactPerson" render={({ field }) => ( <FormItem><FormLabel>Contact Person</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
-              <FormField control={form.control} name="email" render={({ field }) => ( <FormItem><FormLabel>Email</FormLabel><FormControl><Input type="email" {...field} /></FormControl><FormMessage /></FormItem> )} />
-              <FormField control={form.control} name="phone" render={({ field }) => ( <FormItem><FormLabel>Phone</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
-              <FormField control={form.control} name="role" render={({ field }) => ( <FormItem><FormLabel>Potential Role</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select a role" /></SelectTrigger></FormControl><SelectContent>{potentialRoles.map(r => <SelectItem key={r.id} value={r.title}>{r.title}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )} />
-              <FormField control={form.control} name="status" render={({ field }) => ( <FormItem><FormLabel>Status</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="new">New</SelectItem><SelectItem value="contacted">Contacted</SelectItem><SelectItem value="qualified">Qualified</SelectItem><SelectItem value="unqualified">Unqualified</SelectItem><SelectItem value="invited">Invited</SelectItem><SelectItem value="registered">Registered</SelectItem></SelectContent></Select><FormMessage /></FormItem> )} />
-              <FormField control={form.control} name="notes" render={({ field }) => ( <FormItem><FormLabel>Notes</FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage /></FormItem> )} />
-          </form>
-        </Form>
-        <DialogFooter>
-            <Button variant="ghost" onClick={() => setIsOpen(false)}>Cancel</Button>
-            <Button type="button" onClick={form.handleSubmit(onSubmit)} disabled={isLoading}>{isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null} Save Lead</Button>
-        </DialogFooter>
+        {inviteStep && newLeadInfo ? (
+            <>
+                 <DialogHeader>
+                    <DialogTitle>Step 2: Invite Your Lead</DialogTitle>
+                    <DialogDescription>
+                        The lead for {newLeadInfo.companyName} has been created. Now, send them the secure sign-up link.
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="py-4 space-y-4">
+                     <p className="text-sm">Please copy the sign-up link and send it to <span className="font-semibold text-primary">{newLeadInfo.email}</span>. They will be invited to create an account.</p>
+                     <Button onClick={copyInviteLink} className="w-full">
+                        <Copy className="mr-2 h-4 w-4" /> Copy Sign-up Link
+                    </Button>
+                </div>
+                 <DialogFooter>
+                    <Button onClick={() => onOpenChange(false)}>Done</Button>
+                </DialogFooter>
+            </>
+        ) : (
+            <>
+                <DialogHeader>
+                  <DialogTitle>{lead ? 'Edit Lead' : 'Add New Lead'}</DialogTitle>
+                  <DialogDescription>
+                    Enter the details for the potential member.
+                  </DialogDescription>
+                </DialogHeader>
+                <Form {...form}>
+                  <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4 max-h-[60vh] overflow-y-auto pr-2">
+                      <FormField control={form.control} name="companyName" render={({ field }) => ( <FormItem><FormLabel>Company Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
+                      <FormField control={form.control} name="contactPerson" render={({ field }) => ( <FormItem><FormLabel>Contact Person</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
+                      <FormField control={form.control} name="email" render={({ field }) => ( <FormItem><FormLabel>Email</FormLabel><FormControl><Input type="email" {...field} /></FormControl><FormMessage /></FormItem> )} />
+                      <FormField control={form.control} name="phone" render={({ field }) => ( <FormItem><FormLabel>Phone</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
+                      <FormField control={form.control} name="role" render={({ field }) => ( <FormItem><FormLabel>Potential Role</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select a role" /></SelectTrigger></FormControl><SelectContent>{potentialRoles.map(r => <SelectItem key={r.id} value={r.title}>{r.title}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )} />
+                      <FormField control={form.control} name="status" render={({ field }) => ( <FormItem><FormLabel>Status</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="new">New</SelectItem><SelectItem value="contacted">Contacted</SelectItem><SelectItem value="qualified">Qualified</SelectItem><SelectItem value="unqualified">Unqualified</SelectItem><SelectItem value="invited">Invited</SelectItem><SelectItem value="registered">Registered</SelectItem></SelectContent></Select><FormMessage /></FormItem> )} />
+                      <FormField control={form.control} name="notes" render={({ field }) => ( <FormItem><FormLabel>Notes</FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage /></FormItem> )} />
+                  </form>
+                </Form>
+                <DialogFooter>
+                    <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
+                    <Button type="button" onClick={form.handleSubmit(onSubmit)} disabled={isLoading}>{isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null} Save Lead</Button>
+                </DialogFooter>
+            </>
+        )}
       </DialogContent>
     </Dialog>
   );
@@ -374,6 +428,7 @@ export default function NetworkContent() {
     
 
     
+
 
 
 
