@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
@@ -84,11 +83,18 @@ export default function SupportChatContent() {
             forceRefresh(); // Immediately show user's message
 
             // 2. Call the AI for a response
-            const history = (messages || []).map(msg => ({
+            const historyForApi = (messages || []).map(msg => ({
                 role: msg.senderId === user.uid ? 'user' : 'model',
                 parts: [{ text: msg.text }],
             }));
-            const aiResult = await supportQuery({ query: userMessageText, history });
+            
+            // Add the new message to the history for the AI call
+            const currentMessageForApi = { role: 'user', parts: [{text: userMessageText}]};
+
+            const aiResult = await supportQuery({ 
+                query: userMessageText, 
+                history: [...historyForApi, currentMessageForApi]
+            });
 
             // 3. Save the AI's response
             const aiMessageData = {
@@ -143,7 +149,9 @@ export default function SupportChatContent() {
                                         )}
                                         <div className={cn(
                                             "rounded-lg px-3 py-2 max-w-[80%] text-sm", 
-                                            isMember ? "bg-primary text-primary-foreground" : "bg-muted"
+                                            isMember ? "bg-primary text-primary-foreground" : 
+                                            isAdmin ? "bg-secondary text-secondary-foreground" :
+                                            "bg-muted"
                                         )}>
                                             <p className="font-semibold text-xs mb-1">{msg.senderName || 'Support'}</p>
                                             <p>{msg.text}</p>

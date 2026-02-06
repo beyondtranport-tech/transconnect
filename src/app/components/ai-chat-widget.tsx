@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
@@ -37,19 +36,22 @@ export default function AIChatWidget() {
         if (!input.trim()) return;
 
         const currentInput = input;
-        const newMessages: Message[] = [...messages, { role: 'user', text: currentInput }];
-        
-        setMessages(newMessages); // Optimistically add user's message to the UI
+        const userMessage: Message = { role: 'user', text: currentInput };
+
+        // Immediately add the user's message to the UI state.
+        const newMessages = [...messages, userMessage];
+        setMessages(newMessages);
         setInput('');
         setIsLoading(true);
 
         try {
-            // Build history from the *new* message list to send to the API
-            const historyForApi = newMessages.map(msg => ({
+            // Build history from the messages that were present *before* the user's new one.
+            const historyForApi = messages.map(msg => ({
                 role: msg.role as 'user' | 'model',
                 parts: [{ text: msg.text }],
             }));
             
+            // Call the AI with the old history and the new query.
             const result = await supportQuery({ 
                 history: historyForApi,
                 query: currentInput, 
@@ -57,7 +59,7 @@ export default function AIChatWidget() {
             
             const modelMessage: Message = { role: 'model', text: result.response };
 
-            // Update the state with the model's response
+            // Add the AI's response.
             setMessages(prev => [...prev, modelMessage]);
 
         } catch (error: any) {
@@ -66,8 +68,7 @@ export default function AIChatWidget() {
                 title: 'Send Failed',
                 description: error.message || 'Could not get a response. Please try again.',
             });
-            // On error, we keep the user's message in the chat for context, but put the text back in the input for them to retry.
-            // setInput(currentInput); 
+            // On error, we DO NOT revert the state. The user's message stays in the chat.
         } finally {
             setIsLoading(false);
         }
