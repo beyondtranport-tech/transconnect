@@ -10,6 +10,7 @@
 
 import {ai} from '@/ai/genkit';
 import { SupportInputSchema, SupportOutputSchema, type SupportInput, type SupportOutput } from '@/ai/schemas';
+import { googleAI } from '@genkit-ai/google-genai';
 
 export async function supportQuery(input: SupportInput): Promise<SupportOutput> {
   return supportFlow(input);
@@ -23,7 +24,7 @@ const supportFlow = ai.defineFlow(
   },
   async (input) => {
     const { output } = await ai.generate({
-        model: 'googleai/gemini-1.5-pro-latest',
+        model: googleAI.model('gemini-1.5-pro-latest'),
         history: input.history,
         system: `You are a helpful and friendly AI assistant for TransConnect, a digital ecosystem for the logistics industry in South Africa.
 
