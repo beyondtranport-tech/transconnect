@@ -1,4 +1,3 @@
-
 import { z } from 'zod';
 
 // From ai-freight-matching.ts
@@ -134,11 +133,11 @@ export type SocialLinkGeneratorOutput = z.infer<typeof SocialLinkGeneratorOutput
 
 // From support-flow.ts
 export const SupportInputSchema = z.object({
-  query: z.string().describe('The user\'s latest question.'),
   history: z.array(z.object({
     role: z.enum(['user', 'model']),
     parts: z.array(z.object({ text: z.string() })),
-  })).describe('The conversation history.'),
+  })).describe('The entire conversation history, including the latest user message.'),
+  query: z.string().optional().describe('DEPRECATED: This field is no longer used. The latest query is inferred from the history array.'),
 });
 export type SupportInput = z.infer<typeof SupportInputSchema>;
 

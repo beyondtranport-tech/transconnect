@@ -38,28 +38,24 @@ export default function AIChatWidget() {
         const currentInput = input;
         const userMessage: Message = { role: 'user', text: currentInput };
 
-        // Immediately add the user's message to the UI state.
+        // Immediately update the UI with the user's new message.
         const newMessages = [...messages, userMessage];
         setMessages(newMessages);
         setInput('');
         setIsLoading(true);
 
         try {
-            // Build history from the messages that were present *before* the user's new one.
-            const historyForApi = messages.map(msg => ({
-                role: msg.role as 'user' | 'model',
+            // The history for the API call includes the message we just added.
+            const historyForApi = newMessages.map(msg => ({
+                role: msg.role,
                 parts: [{ text: msg.text }],
             }));
             
-            // Call the AI with the old history and the new query.
             const result = await supportQuery({ 
                 history: historyForApi,
-                query: currentInput, 
             });
             
             const modelMessage: Message = { role: 'model', text: result.response };
-
-            // Add the AI's response.
             setMessages(prev => [...prev, modelMessage]);
 
         } catch (error: any) {
@@ -68,7 +64,6 @@ export default function AIChatWidget() {
                 title: 'Send Failed',
                 description: error.message || 'Could not get a response. Please try again.',
             });
-            // On error, we DO NOT revert the state. The user's message stays in the chat.
         } finally {
             setIsLoading(false);
         }

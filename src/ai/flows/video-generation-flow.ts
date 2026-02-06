@@ -48,7 +48,6 @@ export async function generateVideo(input: VideoGenerateInput): Promise<VideoGen
     throw new Error(`Video generation failed: ${operation.error.message}`);
   }
   
-  // FIX: Check for the existence of `output` before trying to access its properties.
   if (!operation.output) {
       throw new Error('Video generation operation completed but returned no output.');
   }

@@ -11,21 +11,7 @@ import {ai} from '@/ai/genkit';
 import { SupportInputSchema, SupportOutputSchema, type SupportInput, type SupportOutput } from '@/ai/schemas';
 import { googleAI } from '@genkit-ai/google-genai';
 
-export async function supportQuery(input: SupportInput): Promise<SupportOutput> {
-  return supportFlow(input);
-}
-
-const supportFlow = ai.defineFlow(
-  {
-    name: 'supportFlow',
-    inputSchema: SupportInputSchema,
-    outputSchema: SupportOutputSchema,
-  },
-  async (input) => {
-    const { history, query } = input;
-    
-    // Manually construct the prompt for robustness
-    const prompt = `You are a helpful and friendly AI assistant for Logistics Flow, a digital ecosystem for the logistics industry in South Africa.
+const systemPrompt = `You are a helpful and friendly AI assistant for Logistics Flow, a digital ecosystem for the logistics industry in South Africa.
 
 Your purpose is to answer user questions about the platform's features and guide them on how to use it.
 
@@ -44,25 +30,49 @@ Key Platform Areas:
   - **Wallet:** For managing funds, payouts, and viewing transactions. Users can top up via EFT and request payouts to their registered bank account (which must be filled out in the Company section).
 - **Admin Backend:** For platform administrators to manage the entire system.
 
-Keep your answers concise, helpful, and encouraging.
+Keep your answers concise, helpful, and encouraging.`;
 
----
-CONVERSATION HISTORY:
-${history.map(m => `${m.role === 'user' ? 'User' : 'Assistant'}: ${m.parts[0].text}`).join('\n')}
 
----
-LATEST USER QUESTION:
-${query}
+export async function supportQuery(input: SupportInput): Promise<SupportOutput> {
+  return supportFlow(input);
+}
 
-Please provide a helpful response to the latest user question based on the conversation history and your knowledge base.`;
-
-    const response = await ai.generate({
-        model: googleAI.model('gemini-2.5-flash'),
-        prompt: prompt,
-    });
+const supportFlow = ai.defineFlow(
+  {
+    name: 'supportFlow',
+    inputSchema: SupportInputSchema,
+    outputSchema: SupportOutputSchema,
+  },
+  async (input) => {
+    // The history from the client already contains the latest user message.
+    // The Gemini `generate` API expects the history and the latest prompt to be separate.
+    const history = input.history.slice(0, -1); // All messages except the last one
+    const latestQuery = input.history.slice(-1)[0]?.parts[0]?.text; // The text of the last message
     
-    const textResponse = response.text;
+    if (!latestQuery) {
+        throw new Error("The user's query was empty.");
+    }
     
-    return { response: textResponse || "I'm sorry, I'm having trouble responding right now. Please try again." };
+    try {
+        const response = await ai.generate({
+            model: googleAI.model('gemini-2.5-flash'),
+            system: systemPrompt,
+            history: history,
+            prompt: latestQuery, // Use the latest user message as the prompt
+        });
+        
+        // Add a safety check for the response and its text property.
+        if (!response || typeof response.text !== 'string') {
+            throw new Error("The AI model returned an empty or invalid response.");
+        }
+        
+        const textResponse = response.text;
+        
+        return { response: textResponse || "I'm sorry, I'm having trouble formulating a response. Please try asking in a different way." };
+    } catch (e: any) {
+        console.error("Error inside supportFlow:", e);
+        // Propagate a user-friendly error to the frontend.
+        throw new Error(`The AI service is currently unavailable. Details: ${e.message}`);
+    }
   }
 );
