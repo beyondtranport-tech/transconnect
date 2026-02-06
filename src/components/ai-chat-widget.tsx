@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
@@ -38,29 +37,27 @@ export default function AIChatWidget() {
 
         const currentInput = input;
         const userMessage: Message = { role: 'user', text: currentInput };
-        
-        // This is the history BEFORE the new user message.
-        const previousMessages = messages;
 
-        // Immediately update the UI with the user's new message. It will stay even if the AI fails.
+        // **THE FIX**: Immediately update the UI with the user's message.
         setMessages(prev => [...prev, userMessage]);
         setInput('');
         setIsLoading(true);
 
         try {
-            // Build history for the API call from the PREVIOUS messages state.
-            const historyForApi = previousMessages.map(msg => ({
+            // Build history from the state *before* adding the new user message.
+            // The `messages` state here is from the previous render, which is what we want.
+            const historyForApi = messages.map(msg => ({
                 role: msg.role,
                 parts: [{ text: msg.text }],
             }));
             
-            // Call the AI with the old history and the new query.
             const result = await supportQuery({ 
                 history: historyForApi,
                 query: currentInput, 
             });
             
             const modelMessage: Message = { role: 'model', text: result.response };
+            // Now, add the AI's response to the list.
             setMessages(prev => [...prev, modelMessage]);
 
         } catch (error: any) {
@@ -69,7 +66,6 @@ export default function AIChatWidget() {
                 title: 'AI Assistant Error',
                 description: error.message || 'Could not get a response from the assistant.',
             });
-            // On error, we no longer revert the UI state. The user's message remains visible.
         } finally {
             setIsLoading(false);
         }
@@ -109,6 +105,11 @@ export default function AIChatWidget() {
                                     <div className={cn("rounded-lg px-3 py-2 max-w-[80%] text-sm", message.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-muted')}>
                                         <p className="whitespace-pre-wrap">{message.text}</p>
                                     </div>
+                                     {message.role === 'user' && (
+                                        <Avatar className="h-8 w-8">
+                                            <AvatarFallback>YOU</AvatarFallback>
+                                        </Avatar>
+                                    )}
                                 </div>
                             ))}
                              {isLoading && (
