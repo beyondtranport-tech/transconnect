@@ -24,9 +24,8 @@ const supportFlow = ai.defineFlow(
   },
   async (input) => {
     const response = await ai.generate({
-        model: googleAI.model('gemini-pro'),
-        history: input.history,
-        prompt: input.query, // This was the missing piece.
+        model: googleAI.model('gemini-2.5-flash'), // Using the correct, working model
+        history: input.history, // The full conversation history, including the user's latest message
         system: `You are a helpful and friendly AI assistant for Logistics Flow, a digital ecosystem for the logistics industry in South Africa.
 
 Your purpose is to answer user questions about the platform's features and guide them on how to use it.

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
@@ -36,25 +35,29 @@ export default function AIChatWidget() {
     const handleSend = async () => {
         if (!input.trim()) return;
 
-        const currentInput = input;
-        const newMessages: Message[] = [...messages, { role: 'user', text: currentInput }];
+        const userMessage: Message = { role: 'user', text: input };
+        const newMessages = [...messages, userMessage]; // Create the new message list
         
-        setMessages(newMessages); // Optimistically update UI with user's message
+        setMessages(newMessages); // Optimistically add user's message to the UI
         setInput('');
         setIsLoading(true);
 
         try {
-            // Build history from the previous messages, not including the current one
-            const history = messages.map(msg => ({
-                role: msg.role,
+            // Build history from the *new* message list to send to the API
+            const historyForApi = newMessages.map(msg => ({
+                role: msg.role as 'user' | 'model',
                 parts: [{ text: msg.text }],
             }));
-            
-            // Call the AI flow with the current input and the history
-            const result = await supportQuery({ query: currentInput, history });
+
+            // The flow now only needs the full history
+            const result = await supportQuery({ 
+                history: historyForApi 
+            });
             
             const modelMessage: Message = { role: 'model', text: result.response };
-            setMessages(prev => [...prev, modelMessage]); // Add the model's response
+
+            // Update the state with the model's response
+            setMessages(prev => [...prev, modelMessage]);
 
         } catch (error: any) {
             toast({
@@ -62,8 +65,7 @@ export default function AIChatWidget() {
                 title: 'AI Assistant Error',
                 description: error.message || 'Could not get a response. Please try again.',
             });
-            // On error, do not roll back the user's message.
-            // The user's message remains, and the loading spinner stops.
+            // On error, the user's message will still be visible. We just stop loading.
         } finally {
             setIsLoading(false);
         }
