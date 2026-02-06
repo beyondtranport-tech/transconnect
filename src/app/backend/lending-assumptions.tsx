@@ -138,7 +138,7 @@ export default function LendingAssumptions() {
                         <FormField control={form.control} name={`${name}.startDate`} render={({ field }) => (<FormItem><FormLabel>Start Date</FormLabel><FormControl><Input type="date" {...field} /></FormControl><FormMessage /></FormItem>)} />
                         <FormField control={form.control} name={`${name}.firstInstallmentDate`} render={({ field }) => (<FormItem><FormLabel>First Installment Date</FormLabel><FormControl><Input type="date" {...field} /></FormControl><FormMessage /></FormItem>)} />
                     </div>
-                     <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 pt-4 border-t">
+                     <div className="pt-4 border-t">
                         <FormField
                             control={form.control}
                             name={`${name}.paymentsInAdvance`}
@@ -213,3 +213,4 @@ export default function LendingAssumptions() {
     );
 }
 
+    

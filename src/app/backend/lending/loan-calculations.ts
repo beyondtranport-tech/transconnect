@@ -27,8 +27,8 @@ export function generateAmortizationSchedule(
     principal: number, 
     annualRate: number, 
     termInMonths: number,
-    firstInstallmentDateStr: string,
-    paymentsInAdvance: boolean
+    firstInstallmentDateStr?: string,
+    paymentsInAdvance?: boolean
 ): MonthlyPayment[] {
     if (principal <= 0 || termInMonths <= 0) {
         return [];
@@ -37,7 +37,6 @@ export function generateAmortizationSchedule(
     // Use a default date if the string is invalid or empty
     const firstPaymentDate = new Date(firstInstallmentDateStr || new Date());
     if (isNaN(firstPaymentDate.getTime())) {
-        // Handle invalid date string gracefully
         return [];
     }
 
@@ -99,3 +98,5 @@ export function generateAmortizationSchedule(
 
     return schedule;
 }
+
+    
