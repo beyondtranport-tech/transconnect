@@ -45,7 +45,7 @@ const defaultValues: FormValues = {
     quoteConversionRate: 50,
     enquiryConversionRate: 30,
     applicationConversionRate: 60,
-    loan: { enabled: true, amount: 50000, term: 12, rate: 60, dealsPerMonth: 12, startDate: '2026-02-05', firstInstallmentDate: '2026-03-05', paymentsInAdvance: false },
+    loan: { enabled: true, amount: 50000, term: 12, rate: 60, dealsPerMonth: 1, startDate: '2026-02-05', firstInstallmentDate: '2026-03-05', paymentsInAdvance: false },
     installmentSale: { enabled: true, amount: 750000, term: 60, rate: 15, dealsPerMonth: 1, startDate: '', firstInstallmentDate: '', paymentsInAdvance: false },
     lease: { enabled: false, amount: 600000, term: 54, rate: 16, dealsPerMonth: 0, startDate: '', firstInstallmentDate: '', paymentsInAdvance: false },
     factoring: { enabled: true, amount: 100000, term: 3, rate: 5, dealsPerMonth: 2, startDate: '', firstInstallmentDate: '', paymentsInAdvance: false },
@@ -69,7 +69,7 @@ export default function LendingAssumptions() {
                  for (const key in updated) {
                     if (parsed[key] !== undefined) {
                         if (typeof (updated as any)[key] === 'object' && (updated as any)[key] !== null && !Array.isArray((updated as any)[key])) {
-                             // This ensures old 'recurring' fields are not carried over from localStorage
+                            // This ensures old 'recurring' fields are not carried over from localStorage
                             if (parsed[key]?.recurring) delete parsed[key].recurring;
                             (updated as any)[key] = { ...(updated as any)[key], ...(parsed as any)[key] };
                         } else {
