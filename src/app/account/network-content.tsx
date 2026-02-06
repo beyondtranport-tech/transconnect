@@ -14,7 +14,7 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { useUser, getClientSideAuthToken, useDoc, useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import Link from 'next/link';
-import { collection, doc, query, orderBy } from 'firebase/firestore';
+import { collection, doc, query, orderBy, serverTimestamp } from 'firebase/firestore';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -24,6 +24,7 @@ import { roles as potentialRoles } from '@/lib/roles';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 
 // Schema for the lead form
 const leadSchema = z.object({
@@ -168,7 +169,25 @@ function MessageDialog({ lead, companyId }: { lead: any, companyId: string }) {
         );
     }, [firestore, companyId, lead]);
 
-    const { data: messages, isLoading: areMessagesLoading } = useCollection(messagesQuery);
+    const { data: messages, isLoading: areMessagesLoading, forceRefresh } = useCollection(messagesQuery);
+
+    const participants = useMemo(() => {
+        if (!messages || messages.length === 0 || !user) return { agentId: user?.uid || null, leadId: null };
+    
+        const agentId = user.uid;
+        // Find the first sender who is NOT the current user (agent).
+        const otherMessage = messages.find(m => m.senderId !== agentId);
+        const otherId = otherMessage ? otherMessage.senderId : null;
+    
+        return { agentId, leadId: otherId };
+    }, [messages, user]);
+
+    useEffect(() => {
+        if(isOpen) {
+            forceRefresh();
+        }
+    }, [isOpen, forceRefresh]);
+
 
     const handleSend = async () => {
         if (!user || !message.trim()) return;
@@ -182,7 +201,7 @@ function MessageDialog({ lead, companyId }: { lead: any, companyId: string }) {
             const messageData = {
                 text: message,
                 senderId: user.uid,
-                timestamp: { _methodName: 'serverTimestamp' },
+                timestamp: serverTimestamp(),
                 read: false,
             };
 
@@ -198,7 +217,7 @@ function MessageDialog({ lead, companyId }: { lead: any, companyId: string }) {
             }
             
             setMessage('');
-            // useCollection will handle UI update automatically
+            forceRefresh();
         } catch (error: any) {
             toast({
                 variant: 'destructive',
@@ -227,14 +246,38 @@ function MessageDialog({ lead, companyId }: { lead: any, companyId: string }) {
                 <ScrollArea className="flex-1 p-4 -mx-6 border-y">
                     <div className="space-y-4 px-6">
                         {areMessagesLoading && <div className="flex justify-center"><Loader2 className="animate-spin" /></div>}
-                        {messages?.map((msg: any) => (
-                            <div key={msg.id} className={cn("flex items-end gap-2", msg.senderId === user?.uid ? "justify-end" : "justify-start")}>
-                                <div className={cn("rounded-lg px-3 py-2 max-w-[80%]", msg.senderId === user?.uid ? "bg-primary text-primary-foreground" : "bg-muted")}>
-                                    <p className="text-sm">{msg.text}</p>
-                                    <p className="text-xs opacity-70 mt-1 text-right">{msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}</p>
+                        {messages?.map((msg: any) => {
+                            const isAgent = msg.senderId === participants.agentId;
+                            // Any sender who is not the agent or the determined lead is an admin
+                            const isAdmin = !isAgent && msg.senderId !== participants.leadId;
+                            const alignment = isAgent ? "justify-end" : "justify-start";
+
+                            return (
+                                <div key={msg.id} className={cn("flex items-end gap-2", alignment)}>
+                                    {!isAgent && (
+                                        <Avatar className="h-8 w-8">
+                                            <AvatarFallback className={isAdmin ? 'bg-amber-500 text-white' : 'bg-muted'}>
+                                                {isAdmin ? 'AD' : 'L'}
+                                            </AvatarFallback>
+                                        </Avatar>
+                                    )}
+                                    <div className={cn(
+                                        "rounded-lg px-3 py-2 max-w-[80%] text-sm", 
+                                        isAgent ? "bg-primary text-primary-foreground" : 
+                                        isAdmin ? "bg-amber-100 text-amber-900" :
+                                        "bg-muted"
+                                    )}>
+                                        <p>{msg.text}</p>
+                                        <p className="text-xs opacity-70 mt-1 text-right">{msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}</p>
+                                    </div>
+                                    {isAgent && (
+                                        <Avatar className="h-8 w-8">
+                                            <AvatarFallback>YOU</AvatarFallback>
+                                        </Avatar>
+                                    )}
                                 </div>
-                            </div>
-                        ))}
+                            );
+                        })}
                         {messages?.length === 0 && !areMessagesLoading && (
                             <p className="text-center text-sm text-muted-foreground pt-8">No messages yet. Start the conversation!</p>
                         )}
@@ -536,6 +579,7 @@ export default function NetworkContent() {
     
 
     
+
 
 
 

@@ -169,14 +169,13 @@ export default function CommunicationsContent() {
                                 {convo.messages.map((message: Message) => {
                                     const isAgent = message.senderId === convo.company?.ownerId;
                                     const isAdmin = message.senderId === user?.uid;
-                                    const alignment = isAgent ? "justify-end" : "justify-start";
+                                    const alignment = (isAgent || isAdmin) ? "justify-end" : "justify-start";
+
                                     return (
                                         <div key={message.id} className={cn("flex items-end gap-2", alignment)}>
-                                            {!isAgent && (
+                                            {!(isAgent || isAdmin) && (
                                                 <Avatar className="h-8 w-8">
-                                                    <AvatarFallback className={isAdmin ? 'bg-secondary' : 'bg-muted'}>
-                                                        {isAdmin ? 'AD' : '??'}
-                                                    </AvatarFallback>
+                                                    <AvatarFallback className="bg-muted">L</AvatarFallback>
                                                 </Avatar>
                                             )}
                                             <div className={cn("rounded-lg px-3 py-2 max-w-[80%] text-sm", 
@@ -187,9 +186,11 @@ export default function CommunicationsContent() {
                                                 <p>{message.text}</p>
                                                 <p className="text-xs opacity-70 mt-1 text-right">{formatDate(message.timestamp)}</p>
                                             </div>
-                                             {isAgent && (
+                                             {(isAgent || isAdmin) && (
                                                 <Avatar className="h-8 w-8">
-                                                    <AvatarFallback>AG</AvatarFallback>
+                                                    <AvatarFallback className={isAdmin ? 'bg-secondary' : 'bg-primary'}>
+                                                        {isAdmin ? 'AD' : 'AG'}
+                                                    </AvatarFallback>
                                                 </Avatar>
                                             )}
                                         </div>
