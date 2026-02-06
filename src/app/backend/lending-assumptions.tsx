@@ -70,6 +70,8 @@ export default function LendingAssumptions() {
                  for (const key in updated) {
                     if (parsed[key] !== undefined) {
                         if (typeof (updated as any)[key] === 'object' && (updated as any)[key] !== null && !Array.isArray((updated as any)[key])) {
+                             // This ensures old 'recurring' fields are not carried over from localStorage
+                            if (parsed[key]?.recurring) delete parsed[key].recurring;
                             (updated as any)[key] = { ...(updated as any)[key], ...(parsed as any)[key] };
                         } else {
                             (updated as any)[key] = (parsed as any)[key];
@@ -212,5 +214,3 @@ export default function LendingAssumptions() {
         </div>
     );
 }
-
-    
