@@ -24,8 +24,10 @@ const supportFlow = ai.defineFlow(
   },
   async (input) => {
     const response = await ai.generate({
-        model: googleAI.model('gemini-2.5-flash'),
-        prompt: `You are a helpful and friendly AI assistant for TransConnect, a digital ecosystem for the logistics industry in South Africa.
+        model: googleAI.model('gemini-2.5-flash'), // Reverted to the working model
+        history: input.history,
+        prompt: input.query,
+        system: `You are a helpful and friendly AI assistant for Logistics Flow, a digital ecosystem for the logistics industry in South Africa.
 
 Your purpose is to answer user questions about the platform's features and guide them on how to use it.
 
@@ -43,11 +45,7 @@ Key Platform Areas:
   - **Wallet:** For managing funds, payouts, and viewing transactions.
 - **Admin Backend:** For platform administrators to manage the entire system.
 
-Keep your answers concise, helpful, and encouraging.
-
----
-USER QUESTION: ${input.query}
-`,
+Keep your answers concise, helpful, and encouraging.`,
     });
     
     const textResponse = response.text;

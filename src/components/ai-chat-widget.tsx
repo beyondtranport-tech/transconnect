@@ -39,18 +39,18 @@ export default function AIChatWidget() {
         const currentInput = input;
         const newMessages: Message[] = [...messages, { role: 'user', text: currentInput }];
         
-        setMessages(newMessages); // Optimistically update UI
+        setMessages(newMessages); // Optimistically update UI with user's message
         setInput('');
         setIsLoading(true);
 
         try {
-            // Build history from the new message list
-            const history = newMessages.map(msg => ({
+            // Build history from the previous messages, not including the current one
+            const history = messages.map(msg => ({
                 role: msg.role,
                 parts: [{ text: msg.text }],
             }));
             
-            // Call the AI flow
+            // Call the AI flow with the current input and the history
             const result = await supportQuery({ query: currentInput, history });
             
             const modelMessage: Message = { role: 'model', text: result.response };
@@ -62,8 +62,8 @@ export default function AIChatWidget() {
                 title: 'AI Assistant Error',
                 description: error.message || 'Could not get a response. Please try again.',
             });
-            // Rollback the optimistic UI update on error
-            setMessages(messages); 
+            // On error, do not roll back the user's message.
+            // The user's message remains, and the loading spinner stops.
         } finally {
             setIsLoading(false);
         }
