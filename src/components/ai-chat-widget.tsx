@@ -38,27 +38,31 @@ export default function AIChatWidget() {
         const currentInput = input;
         const userMessage: Message = { role: 'user', text: currentInput };
 
-        // **THE FIX**: Immediately update the UI with the user's message.
-        setMessages(prev => [...prev, userMessage]);
+        // Create the new list of messages including the user's new one
+        const updatedMessagesForUI = [...messages, userMessage];
+        
+        // 1. Immediately update the UI with the user's message.
+        setMessages(updatedMessagesForUI);
         setInput('');
         setIsLoading(true);
 
         try {
-            // Build history from the state *before* adding the new user message.
-            // The `messages` state here is from the previous render, which is what we want.
+            // 2. Build history from the state *before* adding the new user message.
             const historyForApi = messages.map(msg => ({
-                role: msg.role,
+                role: msg.role as 'user' | 'model',
                 parts: [{ text: msg.text }],
             }));
             
+            // 3. Call the AI with the correct history and the new query.
             const result = await supportQuery({ 
                 history: historyForApi,
                 query: currentInput, 
             });
             
             const modelMessage: Message = { role: 'model', text: result.response };
-            // Now, add the AI's response to the list.
-            setMessages(prev => [...prev, modelMessage]);
+
+            // 4. Update the UI again, this time adding the model's response.
+            setMessages(prevMessages => [...prevMessages, modelMessage]);
 
         } catch (error: any) {
             toast({
