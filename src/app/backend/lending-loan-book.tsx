@@ -54,7 +54,7 @@ export default function LendingLoanBook() {
 
         // 1. Determine all loans that will be created and when, based on the assumptions.
         for (const agreement of agreementTypes) {
-            if (!agreement.enabled || !agreement.dealsPerMonth || agreement.dealsPerMonth <= 0) {
+            if (!agreement.enabled || agreement.dealsPerMonth <= 0) {
                 continue;
             }
 
@@ -63,11 +63,10 @@ export default function LendingLoanBook() {
             const loanTerm = agreement.term || 0;
             
             // This is the critical fix. We must explicitly check for a boolean `true` value.
-            // This prevents issues if the value is undefined or a string from local storage.
             const isRecurring = agreement.recurring === true;
 
             if (isRecurring) {
-                // If recurring is checked, originate deals every single month.
+                // If recurring is checked, originate 'dealsPerMonth' deals every single month.
                 for (let month = 0; month < forecastPeriod; month++) {
                     for (let i = 0; i < agreement.dealsPerMonth; i++) {
                         const schedule = generateAmortizationSchedule(loanPrincipal, loanRate, loanTerm);
@@ -77,12 +76,11 @@ export default function LendingLoanBook() {
                     }
                 }
             } else {
-                // If recurring is NOT checked, originate all the deals for this type ONLY in the first month (month 0).
-                for (let i = 0; i < agreement.dealsPerMonth; i++) {
-                    const schedule = generateAmortizationSchedule(loanPrincipal, loanRate, loanTerm);
-                    if (schedule.length > 0) {
-                        allOriginatedLoanSchedules.push({ startMonth: 0, schedule, principal: loanPrincipal });
-                    }
+                // If recurring is NOT checked, originate deals ONLY in the first month.
+                // The user's instruction implies that for a single event, we look at the amount, not a multiplier.
+                const schedule = generateAmortizationSchedule(loanPrincipal, loanRate, loanTerm);
+                if (schedule.length > 0) {
+                    allOriginatedLoanSchedules.push({ startMonth: 0, schedule, principal: loanPrincipal });
                 }
             }
         }
