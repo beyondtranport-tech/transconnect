@@ -23,11 +23,10 @@ const supportFlow = ai.defineFlow(
     outputSchema: SupportOutputSchema,
   },
   async (input) => {
-    // This flow now only needs the conversation history. It will respond to the last message.
-    const response = await ai.generate({
-        model: googleAI.model('gemini-2.5-flash'), // Reverting to the known working model
-        history: input.history,
-        system: `You are a helpful and friendly AI assistant for Logistics Flow, a digital ecosystem for the logistics industry in South Africa.
+    const { history, query } = input;
+    
+    // Manually construct the prompt for robustness
+    const prompt = `You are a helpful and friendly AI assistant for Logistics Flow, a digital ecosystem for the logistics industry in South Africa.
 
 Your purpose is to answer user questions about the platform's features and guide them on how to use it.
 
@@ -42,10 +41,25 @@ Key Platform Areas:
   - **My Profile:** For personal user details.
   - **Company:** For business and banking information.
   - **My Shop:** This is where users create and manage their online shop, including adding products and customizing its appearance. This is the primary answer for "how to set up my shop".
+  - **AI Marketing Studio:** A suite of AI-powered tools to help users create marketing materials. This includes an AI Image Generator, AI Image Editor, AI Video Generator, and AI Video Animator.
   - **Wallet:** For managing funds, payouts, and viewing transactions.
 - **Admin Backend:** For platform administrators to manage the entire system.
 
-Keep your answers concise, helpful, and encouraging.`,
+Keep your answers concise, helpful, and encouraging.
+
+---
+CONVERSATION HISTORY:
+${history.map(m => `${m.role === 'user' ? 'User' : 'Assistant'}: ${m.parts[0].text}`).join('\n')}
+
+---
+LATEST USER QUESTION:
+${query}
+
+Please provide a helpful response to the latest user question based on the conversation history and your knowledge base.`;
+
+    const response = await ai.generate({
+        model: googleAI.model('gemini-2.5-flash'),
+        prompt: prompt,
     });
     
     const textResponse = response.text;
