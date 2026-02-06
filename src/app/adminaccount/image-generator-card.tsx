@@ -28,7 +28,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useUser } from '@/firebase';
 import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
-import { getClientSideAuthToken } from '@/firebase/errors';
+import { getClientSideAuthToken } from '@/firebase';
 
 const defaultPrompt = `A cinematic, professional photograph of a futuristic, gleaming white and green Scania truck driving on a high-tech highway at dusk. The road is illuminated with glowing data lines, and the sky has a vibrant sunset. The image should look modern, professional, and convey a sense of speed and efficiency.`;
 

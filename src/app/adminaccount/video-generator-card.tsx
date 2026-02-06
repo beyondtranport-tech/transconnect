@@ -24,10 +24,9 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2, Sparkles, Video, Download, Save, Copy } from 'lucide-react';
 import { generateVideo } from '@/ai/flows/video-generation-flow';
 import { Textarea } from '@/components/ui/textarea';
-import { useUser } from '@/firebase';
+import { useUser, getClientSideAuthToken } from '@/firebase';
 import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
-import { getClientSideAuthToken } from '@/firebase/errors';
 
 const defaultPrompt = `Create a short, professional marketing video that showcases how easy it is to create an online shop on the Logistics Flow platform. The video should visually represent these steps: 1. Sign up for a free account. 2. Use the simple Shop Wizard to add your business name, description, and products. 3. Publish your professional-looking online shop to the network. The video should be modern, clean, and use a color palette of green and charcoal.`;
 
@@ -210,7 +209,7 @@ export default function VideoGeneratorCard({ promptTemplate }: { promptTemplate?
                       )}
                   </div>
               </div>
-              <DialogFooter className="mt-auto flex-shrink-0 pt-4">
+              <DialogFooter className="mt-auto flex-shrink-0 pt-4 sm:justify-between">
                 <div className="flex w-full items-center justify-between gap-2">
                   {generatedVideo ? (
                       <div className="flex items-center gap-2">

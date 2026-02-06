@@ -24,11 +24,10 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2, Sparkles, Video, Download, Save, Copy, Film } from 'lucide-react';
 import { generateVideo } from '@/ai/flows/video-generation-flow';
 import { Textarea } from '@/components/ui/textarea';
-import { useUser } from '@/firebase';
+import { useUser, getClientSideAuthToken } from '@/firebase';
 import { Input } from '@/components/ui/input';
 import Image from 'next/image';
 import { Progress } from '@/components/ui/progress';
-import { getClientSideAuthToken } from '@/firebase/errors';
 
 const defaultPrompt = `Animate this image. If it contains a vehicle, make its wheels spin and have it drive down the road. Add some subtle lens flare and a cinematic feel.`;
 

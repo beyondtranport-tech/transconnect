@@ -26,9 +26,8 @@ import { Loader2, Sparkles, Wand2, Download, Save, Copy } from 'lucide-react';
 import Image from 'next/image';
 import { imageEdit } from '@/ai/flows/image-edit-flow';
 import { Textarea } from '@/components/ui/textarea';
-import { useUser } from '@/firebase';
+import { useUser, getClientSideAuthToken } from '@/firebase';
 import { Progress } from '@/components/ui/progress';
-import { getClientSideAuthToken } from '@/firebase/errors';
 
 const defaultEditPrompt = `Place the truck on a winding mountain pass at sunset.
 
