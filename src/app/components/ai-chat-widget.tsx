@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
@@ -37,22 +38,26 @@ export default function AIChatWidget() {
 
         const currentInput = input;
         const userMessage: Message = { role: 'user', text: currentInput };
+        
+        // This is the history BEFORE the new user message.
+        const previousMessages = messages;
 
-        // Immediately update the UI with the user's new message.
-        const newMessages = [...messages, userMessage];
-        setMessages(newMessages);
+        // Immediately update the UI with the user's new message. It will stay even if the AI fails.
+        setMessages(prev => [...prev, userMessage]);
         setInput('');
         setIsLoading(true);
 
         try {
-            // The history for the API call includes the message we just added.
-            const historyForApi = newMessages.map(msg => ({
+            // Build history for the API call from the PREVIOUS messages state.
+            const historyForApi = previousMessages.map(msg => ({
                 role: msg.role,
                 parts: [{ text: msg.text }],
             }));
             
+            // Call the AI with the old history and the new query.
             const result = await supportQuery({ 
                 history: historyForApi,
+                query: currentInput, 
             });
             
             const modelMessage: Message = { role: 'model', text: result.response };
@@ -61,9 +66,10 @@ export default function AIChatWidget() {
         } catch (error: any) {
             toast({
                 variant: 'destructive',
-                title: 'Send Failed',
-                description: error.message || 'Could not get a response. Please try again.',
+                title: 'AI Assistant Error',
+                description: error.message || 'Could not get a response from the assistant.',
             });
+            // On error, we no longer revert the UI state. The user's message remains visible.
         } finally {
             setIsLoading(false);
         }

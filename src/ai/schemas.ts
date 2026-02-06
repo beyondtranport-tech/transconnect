@@ -1,3 +1,4 @@
+
 import { z } from 'zod';
 
 // From ai-freight-matching.ts
@@ -136,8 +137,8 @@ export const SupportInputSchema = z.object({
   history: z.array(z.object({
     role: z.enum(['user', 'model']),
     parts: z.array(z.object({ text: z.string() })),
-  })).describe('The entire conversation history, including the latest user message.'),
-  query: z.string().optional().describe('DEPRECATED: This field is no longer used. The latest query is inferred from the history array.'),
+  })).describe('The conversation history prior to the latest query.'),
+  query: z.string().min(1, "Query cannot be empty.").describe('The latest user question.'),
 });
 export type SupportInput = z.infer<typeof SupportInputSchema>;
 

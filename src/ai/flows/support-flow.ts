@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview An AI-powered customer support agent.
@@ -44,12 +45,9 @@ const supportFlow = ai.defineFlow(
     outputSchema: SupportOutputSchema,
   },
   async (input) => {
-    // The history from the client already contains the latest user message.
-    // The Gemini `generate` API expects the history and the latest prompt to be separate.
-    const history = input.history.slice(0, -1); // All messages except the last one
-    const latestQuery = input.history.slice(-1)[0]?.parts[0]?.text; // The text of the last message
+    const { history, query } = input;
     
-    if (!latestQuery) {
+    if (!query) {
         throw new Error("The user's query was empty.");
     }
     
@@ -58,7 +56,7 @@ const supportFlow = ai.defineFlow(
             model: googleAI.model('gemini-2.5-flash'),
             system: systemPrompt,
             history: history,
-            prompt: latestQuery, // Use the latest user message as the prompt
+            prompt: query, // Use the latest user message as the prompt
         });
         
         // Add a safety check for the response and its text property.
