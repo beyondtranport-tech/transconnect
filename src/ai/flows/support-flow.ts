@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview An AI-powered customer support agent.
@@ -54,18 +55,17 @@ const supportFlow = ai.defineFlow(
         const response = await ai.generate({
             model: googleAI.model('gemini-2.5-flash'),
             system: systemPrompt,
-            history: history,
-            prompt: query, // Use the latest user message as the prompt
+            history: history || [], // FIX: Default to an empty array if history is undefined. This prevents the server crash.
+            prompt: query,
         });
-        
-        // Add a safety check for the response and its text property.
-        if (!response || typeof response.text !== 'string') {
-            throw new Error("The AI model returned an empty or invalid response.");
-        }
         
         const textResponse = response.text;
         
-        return { response: textResponse || "I'm sorry, I'm having trouble formulating a response. Please try asking in a different way." };
+        if (!textResponse) {
+            throw new Error("The AI model returned an empty or invalid response.");
+        }
+        
+        return { response: textResponse };
     } catch (e: any) {
         console.error("Error inside supportFlow:", e);
         // Propagate a user-friendly error to the frontend.
