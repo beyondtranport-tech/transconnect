@@ -52,15 +52,13 @@ const supportFlow = ai.defineFlow(
     }
     
     try {
-        const fullPrompt = [
-            { role: 'system', parts: [{ text: systemPrompt }] },
-            ...(history || []), // Use the history from the input, defaulting to an empty array
-            { role: 'user', parts: [{ text: query }] } // Add the current user query
-        ];
-
         const response = await ai.generate({
             model: googleAI.model('gemini-2.5-flash'),
-            prompt: fullPrompt, // Pass the single, correctly-structured prompt array
+            system: systemPrompt,
+            prompt: [
+                ...(history || []),
+                { role: 'user', parts: [{ text: query }] }
+            ], 
         });
         
         const textResponse = response.text;

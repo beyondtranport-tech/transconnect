@@ -39,27 +39,24 @@ export default function AIChatWidget() {
         const currentInput = input;
         const userMessage: Message = { role: 'user', text: currentInput };
         
-        // 1. Immediately update the UI with the user's message.
+        // Build history from the state *before* adding the new user message.
+        const historyForApi = messages.map(msg => ({
+            role: msg.role as 'user' | 'model',
+            parts: [{ text: msg.text }],
+        }));
+
+        // Optimistically update the UI with the user's message.
         setMessages(prev => [...prev, userMessage]);
         setInput('');
         setIsLoading(true);
 
         try {
-            // 2. Build history from the state *before* the latest user message was added.
-            const historyForApi = messages.map(msg => ({
-                role: msg.role as 'user' | 'model',
-                parts: [{ text: msg.text }],
-            }));
-            
-            // 3. Call the AI with the correct history and the new query.
             const result = await supportQuery({ 
                 history: historyForApi,
                 query: currentInput, 
             });
             
             const modelMessage: Message = { role: 'model', text: result.response };
-
-            // 4. Update the UI again, this time adding the model's response.
             setMessages(prev => [...prev, modelMessage]);
 
         } catch (error: any) {
@@ -68,6 +65,9 @@ export default function AIChatWidget() {
                 title: 'AI Assistant Error',
                 description: error.message || 'Could not get a response from the assistant.',
             });
+            // On error, remove the user's last message to allow them to retry without clutter.
+            setMessages(prev => prev.slice(0, -1));
+            setInput(currentInput);
         } finally {
             setIsLoading(false);
         }
