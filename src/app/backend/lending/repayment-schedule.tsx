@@ -1,84 +1,60 @@
 
 'use client';
 
-import React, { useMemo, useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Sheet, AlertTriangle, Loader2 } from 'lucide-react';
+import React, { useMemo } from 'react';
+import { useSearchParams, notFound } from 'next/navigation';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
+import { Sheet, AlertTriangle, ArrowLeft } from 'lucide-react';
+import { generateAmortizationSchedule } from './loan-calculations';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { generateAmortizationSchedule, type MonthlyPayment } from './loan-calculations';
-
-const LENDING_ASSUMPTIONS_KEY = 'adminLendingAssumptions_v1';
 
 const formatCurrency = (value: number) => {
-    if (typeof value !== 'number' || isNaN(value)) return 'R 0';
+    if (typeof value !== 'number' || isNaN(value)) return 'R 0.00';
     return new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(value);
 };
 
-export default function LendingRepaymentSchedule() {
-    const [assumptions, setAssumptions] = useState<any | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
+const formatDate = (date: Date) => {
+    if (!date || isNaN(date.getTime())) return 'N/A';
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}/${month}/${year}`;
+};
 
-    useEffect(() => {
-        try {
-            const savedData = localStorage.getItem(LENDING_ASSUMPTIONS_KEY);
-            if (savedData) {
-                setAssumptions(JSON.parse(savedData));
-            }
-        } catch (e) {
-            console.error("Failed to parse lending assumptions:", e);
-        }
-        setIsLoading(false);
-    }, []);
+function RepaymentScheduleContent() {
+    const searchParams = useSearchParams();
 
-    const { loan, schedule } = useMemo(() => {
-        if (!assumptions) return { loan: null, schedule: [] };
-        
-        const agreementTypes = ['loan', 'installmentSale', 'lease', 'factoring'];
-        let firstEnabledLoan = null;
-
-        for (const type of agreementTypes) {
-            if (assumptions[type] && assumptions[type].enabled) {
-                firstEnabledLoan = { type, ...assumptions[type] };
-                break;
-            }
-        }
-        
-        if (!firstEnabledLoan) {
-            return { loan: null, schedule: [] };
-        }
-
-        const amortizationSchedule = generateAmortizationSchedule(
-            firstEnabledLoan.amount || 0,
-            firstEnabledLoan.rate || 0,
-            firstEnabledLoan.term || 0
-        );
-
-        return { loan: firstEnabledLoan, schedule: amortizationSchedule };
-    }, [assumptions]);
+    const principal = Number(searchParams.get('principal') || '0');
+    const rate = Number(searchParams.get('rate') || '0');
+    const term = Number(searchParams.get('term') || '0');
+    const firstInstallmentDate = searchParams.get('firstInstallmentDate') || new Date().toISOString().split('T')[0];
+    const paymentsInAdvance = searchParams.get('paymentsInAdvance') === 'true';
+    const type = searchParams.get('type') || 'Loan';
     
-    if (isLoading) {
-        return (
-            <div className="flex justify-center items-center h-64">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            </div>
-        );
-    }
+    const schedule = useMemo(() => {
+        return generateAmortizationSchedule(principal, rate, term, firstInstallmentDate, paymentsInAdvance);
+    }, [principal, rate, term, firstInstallmentDate, paymentsInAdvance]);
+    
+    const totalInterest = useMemo(() => {
+        if (schedule.length === 0) return 0;
+        return schedule.reduce((acc, row) => acc + row.interest, 0);
+    }, [schedule]);
 
-    if (!loan) {
+    if (!principal || !term) {
         return (
-             <Card className="w-full max-w-2xl mx-auto">
+            <Card className="w-full max-w-2xl mx-auto">
                 <CardHeader className="text-center">
                     <AlertTriangle className="mx-auto h-12 w-12 text-destructive" />
-                    <CardTitle>No Active Loan Product Found</CardTitle>
+                    <CardTitle>Incomplete Data</CardTitle>
                     <CardDescription>
-                        Please enable at least one loan product in the assumptions to view a sample schedule.
+                        Principal, term, and rate must be provided to generate a schedule.
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="text-center">
                      <Button asChild variant="outline">
-                        <Link href="/backend?view=lending-assumptions">Go to Lending Assumptions</Link>
+                        <Link href="/backend?view=lending-assumptions">Back to Assumptions</Link>
                     </Button>
                 </CardContent>
             </Card>
@@ -86,50 +62,94 @@ export default function LendingRepaymentSchedule() {
     }
     
     return (
-        <Card>
+        <Card className="w-full max-w-6xl mx-auto">
             <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                    <Sheet /> Amortization Schedule
-                </CardTitle>
-                <CardDescription>
-                    Showing a sample repayment schedule for the first enabled loan product in your assumptions: <span className="font-semibold text-primary">{loan.type}</span>.
-                </CardDescription>
+                 <div className="flex justify-between items-start">
+                    <div>
+                        <CardTitle className="flex items-center gap-2"><Sheet /> Repayment Schedule</CardTitle>
+                        <CardDescription>
+                            A detailed amortization schedule based on your inputs. This is for illustrative purposes.
+                        </CardDescription>
+                    </div>
+                     <Button variant="outline" asChild>
+                        <Link href="/backend?view=lending-assumptions"><ArrowLeft className="mr-2 h-4 w-4" /> Back to Assumptions</Link>
+                    </Button>
+                </div>
             </CardHeader>
             <CardContent>
-                 <div className="p-4 bg-muted/50 rounded-lg mb-6">
-                    <h3 className="font-semibold text-lg">Loan Parameters</h3>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-2 text-sm">
-                        <div><p className="text-muted-foreground">Principal</p><p className="font-mono font-semibold">{formatCurrency(loan.amount)}</p></div>
-                        <div><p className="text-muted-foreground">Annual Rate</p><p className="font-mono font-semibold">{loan.rate}%</p></div>
-                        <div><p className="text-muted-foreground">Term</p><p className="font-mono font-semibold">{loan.term} Months</p></div>
-                        <div><p className="text-muted-foreground">Est. Payment</p><p className="font-mono font-semibold">{formatCurrency(schedule[0]?.payment || 0)}</p></div>
+                <div className="p-4 rounded-lg border bg-muted mb-6">
+                    <h3 className="font-semibold text-lg">Loan Summary</h3>
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mt-2 text-sm">
+                        <div className="space-y-1"><p className="text-muted-foreground">Client</p><p className="font-semibold">Psalm Trading CC</p></div>
+                        <div className="space-y-1"><p className="text-muted-foreground">Client Status</p><p className="font-semibold">Captured</p></div>
+                        <div className="space-y-1"><p className="text-muted-foreground">Agreement Status</p><p className="font-semibold">Pending</p></div>
+                        <div className="space-y-1"><p className="text-muted-foreground">Type</p><p className="font-semibold capitalize">{type}</p></div>
+                        <div className="space-y-1"><p className="text-muted-foreground">Principal</p><p className="font-semibold font-mono">{formatCurrency(principal)}</p></div>
+                        <div className="space-y-1"><p className="text-muted-foreground">Financial Charges</p><p className="font-semibold font-mono">{formatCurrency(totalInterest)}</p></div>
+                        <div className="space-y-1"><p className="text-muted-foreground">Interest Rate</p><p className="font-semibold font-mono">{rate}%</p></div>
+                        <div className="space-y-1"><p className="text-muted-foreground">Current Prime</p><p className="font-semibold font-mono">7.75%</p></div>
+                        <div className="space-y-1"><p className="text-muted-foreground"># Instalments</p><p className="font-semibold font-mono">{term}</p></div>
+                        <div className="space-y-1"><p className="text-muted-foreground">Current Instalment</p><p className="font-semibold font-mono">{formatCurrency(schedule[0]?.payment || 0)}</p></div>
                     </div>
                 </div>
-                 <div className="border rounded-lg overflow-x-auto">
+                <div className="border rounded-md overflow-x-auto">
                     <Table>
                         <TableHeader>
                             <TableRow>
-                                <TableHead>Month</TableHead>
-                                <TableHead className="text-right">Payment</TableHead>
-                                <TableHead className="text-right">Principal</TableHead>
+                                <TableHead>Date</TableHead>
+                                <TableHead>No</TableHead>
+                                <TableHead>Billed</TableHead>
+                                <TableHead>Date Billed</TableHead>
+                                <TableHead>Rate</TableHead>
+                                <TableHead className="text-right">Capital</TableHead>
                                 <TableHead className="text-right">Interest</TableHead>
-                                <TableHead className="text-right font-bold text-primary">Remaining Balance</TableHead>
+                                <TableHead className="text-right">Instalment</TableHead>
+                                <TableHead className="text-right">Capital Paid</TableHead>
+                                <TableHead className="text-right">Interest Paid</TableHead>
+                                <TableHead className="text-right">Total Paid</TableHead>
+                                <TableHead className="text-right">Capital o/s</TableHead>
+                                <TableHead className="text-right">Total Balance o/s</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {schedule.map((row) => (
+                            {schedule.map(row => (
                                 <TableRow key={row.month}>
+                                    <TableCell>{formatDate(row.date)}</TableCell>
                                     <TableCell>{row.month}</TableCell>
-                                    <TableCell className="text-right font-mono">{formatCurrency(row.payment)}</TableCell>
-                                    <TableCell className="text-right font-mono">{formatCurrency(row.principal)}</TableCell>
-                                    <TableCell className="text-right font-mono text-destructive">{formatCurrency(row.interest)}</TableCell>
-                                    <TableCell className="text-right font-mono font-bold text-primary">{formatCurrency(row.remainingBalance)}</TableCell>
+                                    <TableCell></TableCell> {/* Billed */}
+                                    <TableCell></TableCell> {/* Date Billed */}
+                                    <TableCell>{rate.toFixed(2)}%</TableCell>
+                                    <TableCell className="text-right">{formatCurrency(row.principal)}</TableCell>
+                                    <TableCell className="text-right">{formatCurrency(row.interest)}</TableCell>
+                                    <TableCell className="text-right">{formatCurrency(row.payment)}</TableCell>
+                                    <TableCell className="text-right">{formatCurrency(row.capitalPaid)}</TableCell>
+                                    <TableCell className="text-right">{formatCurrency(row.interestPaid)}</TableCell>
+                                    <TableCell className="text-right">{formatCurrency(row.totalPaid)}</TableCell>
+                                    <TableCell className="text-right font-semibold">{formatCurrency(row.remainingBalance)}</TableCell>
+                                    <TableCell className="text-right font-semibold">{formatCurrency(row.totalBalanceOwed)}</TableCell>
                                 </TableRow>
                             ))}
                         </TableBody>
+                        <TableFooter>
+                            <TableRow>
+                                <TableCell colSpan={5} className="font-bold">Totals</TableCell>
+                                <TableCell className="text-right font-bold">{formatCurrency(schedule.reduce((acc, r) => acc + r.principal, 0))}</TableCell>
+                                <TableCell className="text-right font-bold">{formatCurrency(totalInterest)}</TableCell>
+                                <TableCell className="text-right font-bold">{formatCurrency(schedule.reduce((acc, r) => acc + r.payment, 0))}</TableCell>
+                                <TableCell colSpan={5}></TableCell>
+                            </TableRow>
+                        </TableFooter>
                     </Table>
                 </div>
             </CardContent>
         </Card>
     );
+}
+
+export default function RepaymentSchedulePage() {
+    return (
+        <div className="py-16">
+            <RepaymentScheduleContent />
+        </div>
+    )
 }

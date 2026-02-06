@@ -119,7 +119,7 @@ const SalesIncentives = dynamic(() => import('./revenue/sales-incentives'), { lo
 const LoyaltySettings = dynamic(() => import('./loyalty-settings'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 
 // Lending Model
-const LendingModelDashboard = dynamic(() => import('./lending-model-dashboard'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const LendingAssumptions = dynamic(() => import('./lending-assumptions'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 
 
 function AdminAuthGuard({ children }: { children: React.ReactNode }) {
@@ -200,6 +200,7 @@ function BackendContent() {
       case 'lending-collateral': return <CollateralContent />;
       case 'lending-payments': return <PaymentsContent />;
       case 'lending-partners': return <LendingPartnersContent />;
+      case 'lending-assumptions': return <LendingAssumptions />;
 
       // Partners
       case 'partners-suppliers': return <PartnerDetails partnerType="Suppliers" />;
@@ -219,9 +220,6 @@ function BackendContent() {
       case 'incentives-sales': return <SalesIncentives />;
       case 'tasks': return <PlatformTasks />;
       case 'settings-bank': return <PlatformSettingsContent />;
-      
-      // Lending Model (New)
-      case 'lending-model': return <LendingModelDashboard />;
 
       default: return <AdminDashboardContent />;
     }
@@ -243,7 +241,7 @@ function BackendContent() {
   const navigate = (view: string) => router.push(`/backend?view=${view}`, { scroll: false });
   
   const isOperationsActive = ['members', 'wallet', 'wallet-transactions', 'shops', 'reconciliation', 'contributions'].includes(activeView);
-  const isLendingDMSActive = activeView.startsWith('lending-') && activeView !== 'lending-model';
+  const isLendingDMSActive = activeView.startsWith('lending-');
   const isPartnersActive = activeView.startsWith('partners-');
   const isRevenueActive = [
     'pricing-memberships', 'pricing-connect', 'pricing-tech', 'pricing-marketplace',
@@ -252,8 +250,6 @@ function BackendContent() {
   const isPlatformSettingsActive = [
     'permissions', 'loyalty', 'tasks', 'settings-bank'
   ].includes(activeView);
-  const isLendingModelActive = activeView === 'lending-model';
-
 
   return (
     <AdminAuthGuard>
@@ -315,7 +311,7 @@ function BackendContent() {
                     </SidebarMenuSubItem>
                     
                     <SidebarMenuSeparator />
-
+                    <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'lending-assumptions'} onClick={() => navigate('lending-assumptions')}><Calculator />Assumptions</SidebarMenuSubButton></SidebarMenuSubItem>
                     <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'lending-facilities'} onClick={() => navigate('lending-facilities')}><Landmark />Facilities</SidebarMenuSubButton></SidebarMenuSubItem>
                     <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'lending-transactions'} onClick={() => navigate('lending-transactions')}><DollarSign />Transactions</SidebarMenuSubButton></SidebarMenuSubItem>
                     <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'lending-assets'} onClick={() => navigate('lending-assets')}><Truck />Assets</SidebarMenuSubButton></SidebarMenuSubItem>
@@ -340,11 +336,6 @@ function BackendContent() {
                     <SidebarMenuSubItem><SidebarMenuSubButton disabled><Wrench className="mr-2 h-4 w-4" />Utilities</SidebarMenuSubButton></SidebarMenuSubItem>
                     <SidebarMenuSubItem><SidebarMenuSubButton disabled><FileText className="mr-2 h-4 w-4" />Reports</SidebarMenuSubButton></SidebarMenuSubItem>
                   </SidebarMenuSub>
-                </SidebarMenuItem>
-                 <SidebarMenuItem>
-                    <SidebarMenuButton tooltip="Lending Model" isActive={isLendingModelActive} onClick={() => navigate('lending-model')}>
-                        <TrendingUp /><span>Lending Model</span>
-                    </SidebarMenuButton>
                 </SidebarMenuItem>
                 <SidebarMenuItem>
                     <SidebarMenuButton tooltip="Revenue & Pricing" isActive={isRevenueActive}><DollarSign /><span>Revenue & Pricing</span></SidebarMenuButton>

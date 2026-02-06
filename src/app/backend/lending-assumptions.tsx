@@ -11,8 +11,9 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDes
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Save, Calculator, Users, Percent, FileText } from 'lucide-react';
+import { Loader2, Save, Calculator, Users, Percent, FileText, Sheet } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
+import { useRouter } from 'next/navigation';
 
 const LENDING_ASSUMPTIONS_KEY = 'adminLendingAssumptions_v1';
 
@@ -22,7 +23,9 @@ const agreementSchema = z.object({
     term: z.coerce.number().optional(),
     rate: z.coerce.number().optional(),
     dealsPerMonth: z.coerce.number().optional(),
-    recurring: z.boolean().default(true),
+    startDate: z.string().optional(),
+    firstInstallmentDate: z.string().optional(),
+    paymentsInAdvance: z.boolean().default(false),
 });
 
 const formSchema = z.object({
@@ -43,14 +46,15 @@ const defaultValues: FormValues = {
     quoteConversionRate: 50,
     enquiryConversionRate: 30,
     applicationConversionRate: 60,
-    loan: { enabled: true, amount: 250000, term: 48, rate: 18, dealsPerMonth: 1, recurring: true },
-    installmentSale: { enabled: true, amount: 750000, term: 60, rate: 15, dealsPerMonth: 1, recurring: true },
-    lease: { enabled: false, amount: 600000, term: 54, rate: 16, dealsPerMonth: 0, recurring: true },
-    factoring: { enabled: true, amount: 100000, term: 3, rate: 5, dealsPerMonth: 2, recurring: true },
+    loan: { enabled: true, amount: 50000, term: 12, rate: 60, dealsPerMonth: 12, startDate: '2026-02-05', firstInstallmentDate: '2026-03-05', paymentsInAdvance: false },
+    installmentSale: { enabled: true, amount: 750000, term: 60, rate: 15, dealsPerMonth: 1, startDate: '', firstInstallmentDate: '', paymentsInAdvance: false },
+    lease: { enabled: false, amount: 600000, term: 54, rate: 16, dealsPerMonth: 0, startDate: '', firstInstallmentDate: '', paymentsInAdvance: false },
+    factoring: { enabled: true, amount: 100000, term: 3, rate: 5, dealsPerMonth: 2, startDate: '', firstInstallmentDate: '', paymentsInAdvance: false },
 };
 
 export default function LendingAssumptions() {
     const { toast } = useToast();
+    const router = useRouter();
     const [isLoading, setIsLoading] = React.useState(false);
 
     const form = useForm<FormValues>({
@@ -62,7 +66,6 @@ export default function LendingAssumptions() {
             const savedData = localStorage.getItem(LENDING_ASSUMPTIONS_KEY);
             if (savedData) {
                 const parsed = JSON.parse(savedData);
-                // Ensure new fields are added to old saved data
                 const updated = { ...defaultValues };
                  for (const key in updated) {
                     if (parsed[key] !== undefined) {
@@ -90,6 +93,22 @@ export default function LendingAssumptions() {
             setIsLoading(false);
         }
     };
+    
+    const { watch } = form;
+    
+    const handleGenerateSchedule = (agreementType: "loan" | "installmentSale" | "lease" | "factoring") => {
+        const values = watch(agreementType);
+        const query = new URLSearchParams({
+            principal: values.amount?.toString() || '0',
+            rate: values.rate?.toString() || '0',
+            term: values.term?.toString() || '0',
+            startDate: values.startDate || '',
+            firstInstallmentDate: values.firstInstallmentDate || '',
+            paymentsInAdvance: values.paymentsInAdvance ? 'true' : 'false',
+            type: agreementType
+        });
+        router.push(`/backend/lending/repayment-schedule?${query.toString()}`);
+    }
 
     const renderAgreementFields = (name: "loan" | "installmentSale" | "lease" | "factoring", title: string) => (
         <Card>
@@ -111,28 +130,24 @@ export default function LendingAssumptions() {
             </CardHeader>
             <CardContent className="space-y-4">
                 <fieldset disabled={!form.watch(`${name}.enabled`)} className="space-y-4">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                         <FormField control={form.control} name={`${name}.dealsPerMonth`} render={({ field }) => (<FormItem><FormLabel># of Deals / Month</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
                         <FormField control={form.control} name={`${name}.amount`} render={({ field }) => (<FormItem><FormLabel>Avg. Amount (R)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
                         <FormField control={form.control} name={`${name}.term`} render={({ field }) => (<FormItem><FormLabel>Avg. Term (Months)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                        <FormField control={form.control} name={`${name}.rate`} render={({ field }) => (<FormItem><FormLabel>Avg. Rate / Discount Fee (%)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                        <FormField control={form.control} name={`${name}.rate`} render={({ field }) => (<FormItem><FormLabel>Avg. Rate (%)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                        <FormField control={form.control} name={`${name}.startDate`} render={({ field }) => (<FormItem><FormLabel>Start Date</FormLabel><FormControl><Input type="date" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                        <FormField control={form.control} name={`${name}.firstInstallmentDate`} render={({ field }) => (<FormItem><FormLabel>First Installment Date</FormLabel><FormControl><Input type="date" {...field} /></FormControl><FormMessage /></FormItem>)} />
                     </div>
-                     <div className="flex items-center space-x-2 pt-4 border-t">
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 pt-4 border-t">
                         <FormField
                             control={form.control}
-                            name={`${name}.recurring`}
+                            name={`${name}.paymentsInAdvance`}
                             render={({ field }) => (
-                                <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                                    <FormControl>
-                                        <Checkbox checked={field.value} onCheckedChange={field.onChange} />
-                                    </FormControl>
+                                <FormItem className="flex flex-row items-start space-x-3 space-y-0 pt-2">
+                                    <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl>
                                     <div className="space-y-1 leading-none">
-                                        <FormLabel>
-                                            Recurring Monthly Deals
-                                        </FormLabel>
-                                        <FormDescription className="text-xs">
-                                            If checked, originate this many deals every month. If unchecked, originate only in the first month.
-                                        </FormDescription>
+                                        <FormLabel>Payments in Advance</FormLabel>
+                                        <FormDescription className="text-xs">If checked, the first payment occurs on the start date. Otherwise, it's in arrears.</FormDescription>
                                     </div>
                                 </FormItem>
                             )}
@@ -140,6 +155,12 @@ export default function LendingAssumptions() {
                     </div>
                 </fieldset>
             </CardContent>
+            <CardFooter>
+                 <Button type="button" onClick={() => handleGenerateSchedule(name)} disabled={!form.watch(`${name}.enabled`)}>
+                    <Sheet className="mr-2 h-4 w-4" />
+                    Repayment Sched.
+                </Button>
+            </CardFooter>
         </Card>
     );
 
