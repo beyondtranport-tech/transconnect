@@ -38,28 +38,30 @@ export default function AIChatWidget() {
         const currentInput = input;
         const userMessage: Message = { role: 'user', text: currentInput };
 
-        // Optimistically update the UI with the user's message
+        // This is the state of the conversation *before* the user's new message.
+        const previousMessages = messages;
+
+        // Immediately update the UI with the user's new message.
         setMessages(prev => [...prev, userMessage]);
-        
-        // Clear the input and set loading state
         setInput('');
         setIsLoading(true);
 
         try {
-            // Build history for the API call (all messages *before* the new one)
-            const historyForApi = messages.map(msg => ({
+            // Build history from the PREVIOUS messages.
+            const historyForApi = previousMessages.map(msg => ({
                 role: msg.role as 'user' | 'model',
                 parts: [{ text: msg.text }],
             }));
             
-            // Make the API call with the old history and the new query
+            // Call the AI with the old history and the new query.
             const result = await supportQuery({ 
                 history: historyForApi,
-                query: currentInput,
+                query: currentInput, 
             });
             
-            // On success, add the AI's response to the UI
             const modelMessage: Message = { role: 'model', text: result.response };
+
+            // Add the AI's response.
             setMessages(prev => [...prev, modelMessage]);
 
         } catch (error: any) {
@@ -68,9 +70,8 @@ export default function AIChatWidget() {
                 title: 'Send Failed',
                 description: error.message || 'Could not get a response. Please try again.',
             });
-            // On error, remove the user's message so they can try again
-            setMessages(prev => prev.filter(m => m !== userMessage));
-            setInput(currentInput); 
+            // If the API call fails, we will now leave the user's message in the chat
+            // so they can see what they sent and try again.
         } finally {
             setIsLoading(false);
         }
