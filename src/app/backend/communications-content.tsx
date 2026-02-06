@@ -3,13 +3,16 @@
 
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, MessageSquare, User, Bot } from 'lucide-react';
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, query, collectionGroup } from 'firebase/firestore';
+import { Loader2, MessageSquare, User, Bot, Send } from 'lucide-react';
+import { useCollection, useFirestore, useMemoFirebase, useUser, getClientSideAuthToken } from '@/firebase';
+import { collection, query, collectionGroup, serverTimestamp } from 'firebase/firestore';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { useToast } from '@/hooks/use-toast';
 
 interface Message {
   id: string;
@@ -42,10 +45,12 @@ const formatDate = (dateValue: any) => {
 
 export default function CommunicationsContent() {
     const firestore = useFirestore();
+    const { user } = useUser();
+    const { toast } = useToast();
 
     // Fetch all necessary data
     const messagesQuery = useMemoFirebase(() => firestore ? query(collectionGroup(firestore, 'messages')) : null, [firestore]);
-    const { data: messages, isLoading: areMessagesLoading } = useCollection<Message>(messagesQuery);
+    const { data: messages, isLoading: areMessagesLoading, forceRefresh } = useCollection<Message>(messagesQuery);
 
     const companiesQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'companies')) : null, [firestore]);
     const { data: companies, isLoading: areCompaniesLoading } = useCollection<Company>(companiesQuery);
@@ -92,9 +97,123 @@ export default function CommunicationsContent() {
             }
         });
         
-        return Object.values(grouped);
+        return Object.values(grouped).sort((a,b) => {
+            const lastMsgA = a.messages[a.messages.length - 1];
+            const lastMsgB = b.messages[b.messages.length - 1];
+            const dateA = lastMsgA?.timestamp?.toDate ? lastMsgA.timestamp.toDate() : new Date(0);
+            const dateB = lastMsgB?.timestamp?.toDate ? lastMsgB.timestamp.toDate() : new Date(0);
+            return dateB.getTime() - dateA.getTime();
+        });
     }, [messages, companies, leads]);
 
+    const Conversation = ({ convo }: { convo: any }) => {
+        const [adminInput, setAdminInput] = useState('');
+        const [isSending, setIsSending] = useState(false);
+        
+        const handleAdminSend = async () => {
+            if (!user || !adminInput.trim() || !convo.company?.id || !convo.lead?.id) return;
+            setIsSending(true);
+
+            try {
+                const token = await getClientSideAuthToken();
+                if (!token) throw new Error("Authentication failed.");
+                
+                const path = `companies/${convo.company.id}/leads/${convo.lead.id}/messages`;
+                const messageData = {
+                    text: adminInput,
+                    senderId: user.uid,
+                    timestamp: serverTimestamp(),
+                    read: false,
+                };
+                
+                const response = await fetch('/api/addUserDoc', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ collectionPath: path, data: messageData }),
+                });
+
+                if (!response.ok) {
+                    const result = await response.json();
+                    throw new Error(result.error || 'Failed to send message.');
+                }
+                
+                setAdminInput('');
+                forceRefresh();
+            } catch (error: any) {
+                toast({
+                    variant: 'destructive',
+                    title: 'Send Failed',
+                    description: error.message,
+                });
+            } finally {
+                setIsSending(false);
+            }
+        };
+
+        return (
+            <AccordionItem value={convo.company?.id + convo.lead?.id} key={convo.company?.id + convo.lead?.id}>
+                <AccordionTrigger>
+                    <div>
+                        <p className="font-semibold text-left">
+                            <span className="text-primary">{convo.company?.companyName || 'Unknown Company'}</span> &harr; <span className="text-primary">{convo.lead?.companyName || 'Unknown Lead'}</span>
+                        </p>
+                         <p className="text-xs text-muted-foreground text-left">
+                            {convo.messages.length} message(s) | Last message: {formatDate(convo.messages[convo.messages.length - 1].timestamp)}
+                        </p>
+                    </div>
+                </AccordionTrigger>
+                <AccordionContent>
+                    <div className="p-4 border rounded-lg bg-muted/50 h-[60vh] flex flex-col">
+                        <ScrollArea className="flex-1 w-full pr-4 mb-4">
+                             <div className="space-y-4">
+                                {convo.messages.map((message: Message) => {
+                                    const isAgent = message.senderId === convo.company?.ownerId;
+                                    const isAdmin = message.senderId === user?.uid;
+                                    const alignment = isAgent ? "justify-end" : "justify-start";
+                                    return (
+                                        <div key={message.id} className={cn("flex items-end gap-2", alignment)}>
+                                            {!isAgent && (
+                                                <Avatar className="h-8 w-8">
+                                                    <AvatarFallback className={isAdmin ? 'bg-secondary' : 'bg-muted'}>
+                                                        {isAdmin ? 'AD' : '??'}
+                                                    </AvatarFallback>
+                                                </Avatar>
+                                            )}
+                                            <div className={cn("rounded-lg px-3 py-2 max-w-[80%] text-sm", 
+                                                isAgent ? "bg-primary text-primary-foreground" : 
+                                                isAdmin ? "bg-secondary text-secondary-foreground" :
+                                                "bg-background border"
+                                            )}>
+                                                <p>{message.text}</p>
+                                                <p className="text-xs opacity-70 mt-1 text-right">{formatDate(message.timestamp)}</p>
+                                            </div>
+                                             {isAgent && (
+                                                <Avatar className="h-8 w-8">
+                                                    <AvatarFallback>AG</AvatarFallback>
+                                                </Avatar>
+                                            )}
+                                        </div>
+                                    );
+                                })}
+                             </div>
+                        </ScrollArea>
+                        <div className="mt-auto flex items-center gap-2 pt-4 border-t">
+                            <Input 
+                                placeholder="Type as Admin to join discussion..." 
+                                value={adminInput}
+                                onChange={e => setAdminInput(e.target.value)}
+                                onKeyDown={e => e.key === 'Enter' && !isSending && handleAdminSend()}
+                                disabled={isSending}
+                            />
+                            <Button onClick={handleAdminSend} disabled={isSending || !adminInput.trim()} size="icon">
+                                {isSending ? <Loader2 className="h-4 w-4 animate-spin"/> : <Send className="h-4 w-4" />}
+                            </Button>
+                        </div>
+                    </div>
+                </AccordionContent>
+            </AccordionItem>
+        )
+    };
 
     if (isLoading) {
         return (
@@ -113,40 +232,13 @@ export default function CommunicationsContent() {
         <Card>
             <CardHeader>
                 <CardTitle className="flex items-center gap-2"><MessageSquare /> Communication Logs</CardTitle>
-                <CardDescription>Review all chat conversations between agents and their leads. This data can be used for moderation, training, and data mining.</CardDescription>
+                <CardDescription>Review all chat conversations between agents and their leads. You can join the discussion by typing in the message box below each conversation.</CardDescription>
             </CardHeader>
             <CardContent>
                 {conversations.length > 0 ? (
                     <Accordion type="single" collapsible className="w-full">
-                        {conversations.map((convo, index) => (
-                            <AccordionItem value={`item-${index}`} key={index}>
-                                <AccordionTrigger>
-                                    <div>
-                                        <p className="font-semibold text-left">
-                                            <span className="text-primary">{convo.company?.companyName || 'Unknown Company'}</span> &harr; <span className="text-primary">{convo.lead?.companyName || 'Unknown Lead'}</span>
-                                        </p>
-                                         <p className="text-xs text-muted-foreground text-left">
-                                            {convo.messages.length} message(s)
-                                        </p>
-                                    </div>
-                                </AccordionTrigger>
-                                <AccordionContent>
-                                    <div className="p-4 border rounded-lg bg-muted/50 h-96">
-                                        <ScrollArea className="h-full w-full pr-4">
-                                             <div className="space-y-4">
-                                                {convo.messages.map((message) => (
-                                                    <div key={message.id} className={cn("flex items-end gap-2", message.senderId === convo.company?.ownerId ? "justify-end" : "justify-start")}>
-                                                        <div className={cn("rounded-lg px-3 py-2 max-w-[80%] text-sm", message.senderId === convo.company?.ownerId ? "bg-primary text-primary-foreground" : "bg-background border")}>
-                                                            <p>{message.text}</p>
-                                                            <p className="text-xs opacity-70 mt-1 text-right">{formatDate(message.timestamp)}</p>
-                                                        </div>
-                                                    </div>
-                                                ))}
-                                             </div>
-                                        </ScrollArea>
-                                    </div>
-                                </AccordionContent>
-                            </AccordionItem>
+                        {conversations.map((convo) => (
+                           <Conversation key={convo.company?.id + convo.lead?.id} convo={convo} />
                         ))}
                     </Accordion>
                 ) : (
@@ -158,5 +250,5 @@ export default function CommunicationsContent() {
                 )}
             </CardContent>
         </Card>
-    )
+    );
 }
