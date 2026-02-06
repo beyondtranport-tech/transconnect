@@ -11,38 +11,14 @@
 import { ai } from '@/ai/genkit';
 import { VideoGenerateInputSchema, VideoGenerateOutputSchema, type VideoGenerateInput, type VideoGenerateOutput } from '@/ai/schemas';
 
-async function pollOperation(operationName: string) {
-    const { google } = require('googleapis');
-    const aiplatform = google.aiplatform('v1');
-    const auth = new google.auth.GoogleAuth({
-        scopes: ['https://www.googleapis.com/auth/cloud-platform'],
-    });
-    const authClient = await auth.getClient();
-    google.options({ auth: authClient });
-
-    return new Promise((resolve, reject) => {
-        const interval = setInterval(async () => {
-            try {
-                const request = new aiplatform.operations.GetRequest({ name: operationName });
-                const response = await aiplatform.operations.get(request);
-
-                if (response.data.done) {
-                    clearInterval(interval);
-                    resolve(response.data);
-                }
-            } catch (error) {
-                clearInterval(interval);
-                reject(error);
-            }
-        }, 5000); // Poll every 5 seconds
-    });
-}
-
 export async function generateVideo(input: VideoGenerateInput): Promise<VideoGenerateOutput> {
   
-  const promptParts: (string | { text: string } | { media: { url: string } })[] = [{ text: input.prompt }];
+  const promptParts: (string | { text: string } | { media: { url: string, contentType?: string } })[] = [{ text: input.prompt }];
   if (input.imageDataUri) {
-      promptParts.unshift({ media: { url: input.imageDataUri } });
+      // Logic to extract MIME type from data URI
+      const match = input.imageDataUri.match(/^data:(image\/\w+);base64,/);
+      const contentType = match ? match[1] : 'image/jpeg';
+      promptParts.unshift({ media: { url: input.imageDataUri, contentType: contentType } });
   }
 
   let { operation } = await ai.generate({
@@ -72,7 +48,12 @@ export async function generateVideo(input: VideoGenerateInput): Promise<VideoGen
     throw new Error(`Video generation failed: ${operation.error.message}`);
   }
 
-  const video = operation.output?.message?.content.find(p => !!p.media);
+  const content = operation.output?.message?.content;
+  if (!content) {
+    throw new Error('Failed to find content in the video generation operation result.');
+  }
+  const video = content.find(p => !!p.media);
+
   if (!video?.media?.url) {
     throw new Error('Failed to find the generated video in the operation result.');
   }
