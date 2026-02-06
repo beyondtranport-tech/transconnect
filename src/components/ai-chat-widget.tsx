@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
@@ -37,19 +38,19 @@ export default function AIChatWidget() {
 
         const currentInput = input;
         const userMessage: Message = { role: 'user', text: currentInput };
-
-        // This is the state of the conversation *before* the user's new message.
+        
+        // This is the history BEFORE the new user message.
         const previousMessages = messages;
 
-        // Immediately update the UI with the user's new message.
+        // Immediately update the UI with the user's new message. It will stay even if the AI fails.
         setMessages(prev => [...prev, userMessage]);
         setInput('');
         setIsLoading(true);
 
         try {
-            // Build history from the PREVIOUS messages.
+            // Build history for the API call from the PREVIOUS messages state.
             const historyForApi = previousMessages.map(msg => ({
-                role: msg.role as 'user' | 'model',
+                role: msg.role,
                 parts: [{ text: msg.text }],
             }));
             
@@ -60,18 +61,15 @@ export default function AIChatWidget() {
             });
             
             const modelMessage: Message = { role: 'model', text: result.response };
-
-            // Add the AI's response.
             setMessages(prev => [...prev, modelMessage]);
 
         } catch (error: any) {
             toast({
                 variant: 'destructive',
-                title: 'Send Failed',
-                description: error.message || 'Could not get a response. Please try again.',
+                title: 'AI Assistant Error',
+                description: error.message || 'Could not get a response from the assistant.',
             });
-            // If the API call fails, we will now leave the user's message in the chat
-            // so they can see what they sent and try again.
+            // On error, we no longer revert the UI state. The user's message remains visible.
         } finally {
             setIsLoading(false);
         }
