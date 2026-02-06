@@ -24,7 +24,7 @@ const supportFlow = ai.defineFlow(
   },
   async (input) => {
     const { output } = await ai.generate({
-        model: 'googleai/gemini-pro',
+        model: googleAI.model('gemini-pro'),
         history: input.history,
         prompt: `You are a helpful and friendly AI assistant for TransConnect, a digital ecosystem for the logistics industry in South Africa.
 

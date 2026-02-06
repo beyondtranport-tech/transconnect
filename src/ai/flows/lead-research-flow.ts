@@ -25,7 +25,7 @@ const leadResearchAIFlow = ai.defineFlow(
   },
   async (input) => {
     const { output } = await ai.generate({
-        model: 'googleai/gemini-pro',
+        model: googleAI.model('gemini-pro'),
         tools: [googleSearchTool],
         prompt: input.prompt,
         output: {
