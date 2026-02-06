@@ -155,10 +155,10 @@ export default function LendingAssumptions() {
                     </div>
                 </fieldset>
             </CardContent>
-            <CardFooter>
+             <CardFooter>
                  <Button className="w-full" type="button" onClick={() => handleGenerateSchedule(name)} disabled={!form.watch(`${name}.enabled`)}>
                     <Calculator className="mr-2 h-4 w-4" />
-                    Generate Repayment Schedule
+                    Repayment Sched.
                 </Button>
             </CardFooter>
         </Card>
