@@ -83,8 +83,9 @@ function InviteDialog({ lead, companyId, onInviteSent }: { lead: any, companyId:
             const nameParts = (lead.contactPerson || '').split(' ');
             const firstName = nameParts[0] || '';
             const lastName = nameParts.slice(1).join(' ') || '';
-
-            const link = `${window.location.origin}/join?email=${encodeURIComponent(lead.email)}&firstName=${encodeURIComponent(firstName)}&lastName=${encodeURIComponent(lastName)}${lead.phone ? `&phone=${encodeURIComponent(lead.phone)}` : ''}`;
+            
+            const baseUrl = 'https://transconnect-v1-39578841-2a857.web.app';
+            const link = `${baseUrl}/join?email=${encodeURIComponent(lead.email)}&firstName=${encodeURIComponent(firstName)}&lastName=${encodeURIComponent(lastName)}${lead.phone ? `&phone=${encodeURIComponent(lead.phone)}` : ''}`;
             
             setInviteLink(link);
             
@@ -283,7 +284,7 @@ function MessageDialog({ lead, companyId }: { lead: any, companyId: string }) {
                         )}
                     </div>
                 </ScrollArea>
-                <div className="mt-auto flex items-center gap-2 pt-4">
+                <div className="mt-auto flex items-center gap-2 pt-4 border-t">
                     <Input 
                         placeholder="Type your message..." 
                         value={message}
@@ -373,7 +374,8 @@ function LeadDialog({ lead, companyId, onSave, children }: { lead?: any, company
     const nameParts = (newLeadInfo.contactPerson || '').split(' ');
     const firstName = nameParts[0] || '';
     const lastName = nameParts.slice(1).join(' ') || '';
-    const signupUrl = `${window.location.origin}/join?email=${encodeURIComponent(newLeadInfo.email)}&firstName=${encodeURIComponent(firstName)}&lastName=${encodeURIComponent(lastName)}${newLeadInfo.phone ? `&phone=${encodeURIComponent(newLeadInfo.phone)}` : ''}`;
+    const baseUrl = 'https://transconnect-v1-39578841-2a857.web.app';
+    const signupUrl = `${baseUrl}/join?email=${encodeURIComponent(newLeadInfo.email)}&firstName=${encodeURIComponent(firstName)}&lastName=${encodeURIComponent(lastName)}${newLeadInfo.phone ? `&phone=${encodeURIComponent(newLeadInfo.phone)}` : ''}`;
 
     navigator.clipboard.writeText(signupUrl);
     toast({
@@ -575,16 +577,3 @@ export default function NetworkContent() {
       </>
     );
 }
-      
-    
-
-    
-
-
-
-
-
-
-
-
-

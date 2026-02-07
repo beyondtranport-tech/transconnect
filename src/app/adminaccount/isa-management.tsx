@@ -41,6 +41,7 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { type ColumnDef } from '@/hooks/use-data-table';
+import Link from 'next/link';
 
 async function performAdminAction(token: string, action: string, payload: any) {
     const response = await fetch('/api/admin', {
@@ -229,8 +230,9 @@ export default function ISAManagement() {
     }
   };
   
-  const inviteLink = dialogState.type === 'invite' && dialogState.data && typeof window !== 'undefined'
-    ? `${window.location.origin}/join?email=${encodeURIComponent(dialogState.data.email)}&firstName=${encodeURIComponent(dialogState.data.firstName)}&lastName=${encodeURIComponent(dialogState.data.lastName)}${dialogState.data.phone ? `&phone=${encodeURIComponent(dialogState.data.phone)}` : ''}`
+  const baseUrl = 'https://transconnect-v1-39578841-2a857.web.app';
+  const inviteLink = dialogState.type === 'invite' && dialogState.data
+    ? `${baseUrl}/join?email=${encodeURIComponent(dialogState.data.email)}&firstName=${encodeURIComponent(dialogState.data.firstName)}&lastName=${encodeURIComponent(dialogState.data.lastName)}${dialogState.data.phone ? `&phone=${encodeURIComponent(dialogState.data.phone)}` : ''}`
     : '';
 
   const copyInviteLink = () => {

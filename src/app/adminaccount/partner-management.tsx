@@ -229,8 +229,9 @@ export default function PartnerManagement() {
     }
   };
   
-  const inviteLink = dialogState.type === 'invite' && dialogState.data && typeof window !== 'undefined'
-    ? `${window.location.origin}/join?email=${encodeURIComponent(dialogState.data.email)}&firstName=${encodeURIComponent(dialogState.data.firstName)}&lastName=${encodeURIComponent(dialogState.data.lastName)}${dialogState.data.phone ? `&phone=${encodeURIComponent(dialogState.data.phone)}` : ''}`
+  const baseUrl = 'https://transconnect-v1-39578841-2a857.web.app';
+  const inviteLink = dialogState.type === 'invite' && dialogState.data
+    ? `${baseUrl}/join?email=${encodeURIComponent(dialogState.data.email)}&firstName=${encodeURIComponent(dialogState.data.firstName)}&lastName=${encodeURIComponent(dialogState.data.lastName)}${dialogState.data.phone ? `&phone=${encodeURIComponent(dialogState.data.phone)}` : ''}`
     : '';
 
   const copyInviteLink = () => {

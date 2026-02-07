@@ -39,7 +39,7 @@ import { EditStaffDialog } from '../backend/EditStaffDialog';
 import { usePermissions } from '@/hooks/use-permissions';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { ShieldAlert } from 'lucide-react';
-import { useMemoFirebase } from '@/hooks/use-memo-firebase';
+import { useMemoFirebase } from '@/hooks/use-config';
 import { useRouter } from 'next/navigation';
 
 const staffFormSchema = z.object({
@@ -140,7 +140,8 @@ function AddStaffDialog({ onStaffAdded }: { onStaffAdded: () => void }) {
   }
 
   const copyInviteLink = () => {
-    const signupUrl = `https://transconnect-v1-39578841-2a857.firebaseapp.com/join?email=${encodeURIComponent(newUserInfo.email)}&firstName=${encodeURIComponent(newUserInfo.firstName)}&lastName=${encodeURIComponent(newUserInfo.lastName)}`;
+    const baseUrl = 'https://transconnect-v1-39578841-2a857.web.app';
+    const signupUrl = `${baseUrl}/join?email=${encodeURIComponent(newUserInfo.email)}&firstName=${encodeURIComponent(newUserInfo.firstName)}&lastName=${encodeURIComponent(newUserInfo.lastName)}`;
     navigator.clipboard.writeText(signupUrl);
     toast({
         title: 'Sign-up Link Copied!',
@@ -384,5 +385,3 @@ export default function StaffManagement() {
         </Card>
     );
 }
-
-    

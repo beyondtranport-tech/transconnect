@@ -165,7 +165,7 @@ const tabs = [
 
 export default function NetworkEmails() {
     const { user } = useUser();
-    const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
+    const baseUrl = 'https://transconnect-v1-39578841-2a857.web.app';
     const referralLink = user?.companyId ? `${baseUrl}/join?ref=${user.companyId}` : `${baseUrl}/join`;
 
     return (
