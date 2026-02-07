@@ -189,7 +189,7 @@ export default function PartnerManagement() {
 
   const [dialogState, setDialogState] = useState<{ type: 'add' | 'edit' | 'delete' | 'invite' | null, data?: any }>({ type: null, data: undefined });
 
-  const handleOpenDialog = useCallback(async (type: 'add' | 'edit' | 'delete' | 'invite', data?: any) => {
+  const handleOpenDialog = async (type: 'add' | 'edit' | 'delete' | 'invite', data?: any) => {
     if (type === 'invite' && data) {
         try {
             const token = await getClientSideAuthToken();
@@ -205,16 +205,16 @@ export default function PartnerManagement() {
         }
     }
     setDialogState({ type, data });
-  }, [forceRefresh, toast]);
+  };
   
-  const handleCloseDialogs = useCallback(() => {
+  const handleCloseDialogs = () => {
     setDialogState({ type: null, data: undefined });
-  }, []);
+  };
 
-  const handleSave = useCallback(() => {
+  const handleSave = () => {
     forceRefresh();
     handleCloseDialogs();
-  }, [forceRefresh, handleCloseDialogs]);
+  };
   
   const handleDelete = async () => {
     if (dialogState.type !== 'delete' || !dialogState.data) return;
@@ -229,7 +229,7 @@ export default function PartnerManagement() {
     }
   };
   
-  const baseUrl = 'https://transconnect-v1-39578841-2a857.web.app';
+  const baseUrl = window.location.origin;
   const inviteLink = dialogState.type === 'invite' && dialogState.data
     ? `${baseUrl}/join?email=${encodeURIComponent(dialogState.data.email)}&firstName=${encodeURIComponent(dialogState.data.firstName)}&lastName=${encodeURIComponent(dialogState.data.lastName)}${dialogState.data.phone ? `&phone=${encodeURIComponent(dialogState.data.phone)}` : ''}`
     : '';
@@ -345,3 +345,5 @@ export default function PartnerManagement() {
     </>
   );
 }
+
+    
