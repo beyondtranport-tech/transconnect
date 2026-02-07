@@ -1,10 +1,9 @@
-
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Bot, Send, Loader2, X } from 'lucide-react';
+import { Bot, Send, Loader2, X, Trash2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { supportQuery } from '@/ai/flows/support-flow';
@@ -32,6 +31,13 @@ export default function AIChatWidget() {
         }
     }, [messages]);
 
+    const handleClearChat = () => {
+        setMessages([]);
+        toast({
+            title: "Chat Cleared",
+            description: "You can start a new conversation now.",
+        });
+    };
 
     const handleSend = async () => {
         if (!input.trim()) return;
@@ -91,9 +97,14 @@ export default function AIChatWidget() {
                             <Bot className="h-5 w-5 text-primary" />
                             AI Assistant
                         </h3>
-                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setIsOpen(false)}>
-                            <X className="h-4 w-4" />
-                        </Button>
+                        <div className="flex items-center">
+                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleClearChat} title="Clear Chat">
+                                <Trash2 className="h-4 w-4" />
+                            </Button>
+                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setIsOpen(false)} title="Close Chat">
+                                <X className="h-4 w-4" />
+                            </Button>
+                        </div>
                     </div>
                     <ScrollArea className="flex-1 p-4" ref={scrollAreaRef as any}>
                         <div className="space-y-4">
