@@ -52,13 +52,18 @@ const supportFlow = ai.defineFlow(
     }
     
     try {
+        // Correctly format history for the Genkit `generate` function.
+        // The incoming history has a `parts` key, but the API expects `content`.
+        const formattedHistory = (history || []).map(msg => ({
+            role: msg.role,
+            content: msg.parts,
+        }));
+
         const response = await ai.generate({
             model: googleAI.model('gemini-2.5-flash'),
             system: systemPrompt,
-            prompt: [
-                ...(history || []),
-                { role: 'user', parts: [{ text: query }] }
-            ], 
+            history: formattedHistory, // Use the 'history' property for previous messages
+            prompt: query,           // Use the 'prompt' property for the latest user query
         });
         
         const textResponse = response.text;
