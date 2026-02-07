@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Bot, Send, Loader2, X, Trash2 } from 'lucide-react';
+import { Bot, Send, Loader2, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { supportQuery } from '@/ai/flows/support-flow';
@@ -31,32 +31,26 @@ export default function AIChatWidget() {
         }
     }, [messages]);
 
-    const handleClearChat = () => {
-        setMessages([]);
-        toast({
-            title: "Chat Cleared",
-            description: "You can start a new conversation now.",
-        });
-    };
 
     const handleSend = async () => {
         if (!input.trim()) return;
 
-        const currentInput = input;
-        const userMessage: Message = { role: 'user', text: currentInput };
+        const userMessage: Message = { role: 'user', text: input };
         
-        // Build history from the state *before* adding the new user message.
-        const historyForApi = messages.map(msg => ({
-            role: msg.role as 'user' | 'model',
-            parts: [{ text: msg.text }],
-        }));
-
-        // Optimistically update the UI with the user's message.
+        // Immediately update the UI with the user's new message.
         setMessages(prev => [...prev, userMessage]);
+        const currentInput = input;
         setInput('');
         setIsLoading(true);
 
         try {
+            // Build history for the API call from the messages state *before* the new user message.
+            const historyForApi = messages.map(msg => ({
+                role: msg.role,
+                parts: [{ text: msg.text }],
+            }));
+            
+            // Call the AI with the old history and the new query.
             const result = await supportQuery({ 
                 history: historyForApi,
                 query: currentInput, 
@@ -71,8 +65,6 @@ export default function AIChatWidget() {
                 title: 'AI Assistant Error',
                 description: error.message || 'Could not get a response from the assistant.',
             });
-            // On error, DO NOT remove the user's message.
-            // Let the user see their message and the error so they can decide what to do.
         } finally {
             setIsLoading(false);
         }
@@ -96,14 +88,9 @@ export default function AIChatWidget() {
                             <Bot className="h-5 w-5 text-primary" />
                             AI Assistant
                         </h3>
-                        <div className="flex items-center">
-                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleClearChat} title="Clear Chat">
-                                <Trash2 className="h-4 w-4" />
-                            </Button>
-                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setIsOpen(false)} title="Close Chat">
-                                <X className="h-4 w-4" />
-                            </Button>
-                        </div>
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setIsOpen(false)}>
+                            <X className="h-4 w-4" />
+                        </Button>
                     </div>
                     <ScrollArea className="flex-1 p-4" ref={scrollAreaRef as any}>
                         <div className="space-y-4">
@@ -117,11 +104,6 @@ export default function AIChatWidget() {
                                     <div className={cn("rounded-lg px-3 py-2 max-w-[80%] text-sm", message.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-muted')}>
                                         <p className="whitespace-pre-wrap">{message.text}</p>
                                     </div>
-                                     {message.role === 'user' && (
-                                        <Avatar className="h-8 w-8">
-                                            <AvatarFallback>YOU</AvatarFallback>
-                                        </Avatar>
-                                    )}
                                 </div>
                             ))}
                              {isLoading && (
