@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview An AI-powered customer support agent.
@@ -56,7 +57,7 @@ const supportFlow = ai.defineFlow(
         const formattedHistory = history || [];
 
         const response = await ai.generate({
-            model: googleAI.model('gemini-2.5-flash'),
+            model: googleAI.model('gemini-pro'),
             system: systemPrompt,
             history: formattedHistory, // Use the 'history' property for previous messages
             prompt: query,           // Use the 'prompt' property for the latest user query
