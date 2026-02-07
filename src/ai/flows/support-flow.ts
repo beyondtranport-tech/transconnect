@@ -52,12 +52,9 @@ const supportFlow = ai.defineFlow(
     }
     
     try {
-        // Correctly format history for the Genkit `generate` function.
-        // The incoming history has a `parts` key, but the API expects `content`.
-        const formattedHistory = (history || []).map(msg => ({
-            role: msg.role,
-            content: msg.parts,
-        }));
+        // The `history` object from the client is already in the correct format.
+        // No re-mapping is needed.
+        const formattedHistory = history || [];
 
         const response = await ai.generate({
             model: googleAI.model('gemini-2.5-flash'),
