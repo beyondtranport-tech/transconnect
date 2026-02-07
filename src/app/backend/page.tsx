@@ -121,6 +121,7 @@ const ConnectPlanPricing = dynamic(() => import('./revenue/connect-plan-pricing'
 const MarketplaceFees = dynamic(() => import('./revenue/marketplace-fees'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const SalesIncentives = dynamic(() => import('./revenue/sales-incentives'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const LoyaltySettings = dynamic(() => import('./loyalty-settings'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const ISAPitchSettings = dynamic(() => import('./revenue/isa-pitch-settings'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 
 // Lending Model
 const LendingAssumptions = dynamic(() => import('./lending-assumptions'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
@@ -223,6 +224,7 @@ function BackendContent() {
       case 'pricing-tech': return <TechPricing />;
       case 'pricing-marketplace': return <MarketplaceFees />;
       case 'commissions-malls': return <MallCommissions />;
+      case 'commissions-isa': return <ISAPitchSettings />;
       case 'incentives-sales': return <SalesIncentives />;
       case 'tasks': return <PlatformTasks />;
       case 'settings-bank': return <PlatformSettingsContent />;
@@ -251,7 +253,7 @@ function BackendContent() {
   const isPartnersActive = activeView.startsWith('partners-');
   const isRevenueActive = [
     'pricing-memberships', 'pricing-connect', 'pricing-tech', 'pricing-marketplace',
-    'commissions-malls', 'incentives-sales'
+    'commissions-malls', 'commissions-isa', 'incentives-sales'
   ].includes(activeView);
   const isPlatformSettingsActive = [
     'permissions', 'loyalty', 'tasks', 'settings-bank'
@@ -349,6 +351,7 @@ function BackendContent() {
                         <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'pricing-tech'} onClick={() => navigate('pricing-tech')}>Tech SaaS Pricing</SidebarMenuSubButton></SidebarMenuSubItem>
                         <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'pricing-marketplace'} onClick={() => navigate('pricing-marketplace')}>Marketplace Fees</SidebarMenuSubButton></SidebarMenuSubItem>
                         <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'commissions-malls'} onClick={() => navigate('commissions-malls')}>Mall Commissions</SidebarMenuSubButton></SidebarMenuSubItem>
+                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'commissions-isa'} onClick={() => navigate('commissions-isa')}>ISA Commissions</SidebarMenuSubButton></SidebarMenuSubItem>
                         <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'incentives-sales'} onClick={() => navigate('incentives-sales')}>Sales Incentives</SidebarMenuSubButton></SidebarMenuSubItem>
                     </SidebarMenuSub>
                 </SidebarMenuItem>

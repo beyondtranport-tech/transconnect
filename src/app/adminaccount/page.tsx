@@ -62,6 +62,7 @@ import {
   Filter,
   Lightbulb,
   ClipboardList,
+  MessageSquare,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -108,7 +109,7 @@ const TTSStudio = dynamic(() => import('./tts-studio'), { loading: () => <Loader
 const PartnerOffer = dynamic(() => import('./partner-offer'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const PartnerElevatorPitch = dynamic(() => import('./partner-elevator-pitch'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const PartnerEmailSequence = dynamic(() => import('./partner-email-sequence'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const ISAPitchSettings = dynamic(() => import('../backend/revenue/isa-pitch-settings'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const ISAEmailSequence = dynamic(() => import('./isa-email-sequence'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 
 
 // Financials & Projections
@@ -207,9 +208,9 @@ function AdminAccountContent() {
 
       // Strategy & Pitching
       case 'partner-offer': return <PartnerOffer />;
-      case 'commissions-isa': return <ISAPitchSettings />;
       case 'partner-pitch': return <PartnerElevatorPitch />;
       case 'partner-emails': return <PartnerEmailSequence />;
+      case 'isa-emails': return <ISAEmailSequence />;
       
       // Financials
       case 'financial-setup': return <FinancialSetup />;
@@ -249,8 +250,8 @@ function AdminAccountContent() {
   
   const isSalesActive = ['leads-agent', 'leads-database', 'marketing-studio', 'investor-studio', 'partner-studio', 'audio-studio', 'asset-gallery'].includes(activeView);
   const isStrategyActive = [
-    'partner-offer', 'commissions-isa', 'member-sales-offer', 'member-sales-emails', 
-    'member-sales-performance', 'partner-pitch', 'partner-emails', 'elevator-pitch', 
+    'partner-offer', 'member-sales-offer', 'member-sales-emails', 
+    'member-sales-performance', 'partner-pitch', 'partner-emails', 'isa-emails', 'elevator-pitch', 
     'investor-offer', 'investor-emails', 'isa-agents', 'members', 'partners', 'staff-management',
     'investors'
   ].includes(activeView);
@@ -312,8 +313,8 @@ function AdminAccountContent() {
                         </SidebarMenuSubButton>
                     </SidebarMenuSubItem>
                     <SidebarMenuSubItem>
-                        <SidebarMenuSubButton isActive={activeView === 'commissions-isa'} onClick={() => navigate('commissions-isa')}>
-                            <Scale /> ISA Commissions
+                        <SidebarMenuSubButton isActive={activeView === 'isa-emails'} onClick={() => navigate('isa-emails')}>
+                            <Mail /> ISA Emails
                         </SidebarMenuSubButton>
                     </SidebarMenuSubItem>
                     <SidebarMenuSeparator />

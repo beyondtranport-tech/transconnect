@@ -20,6 +20,7 @@ import { Loader2, Save, Handshake, Percent } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useFirestore, useDoc, getClientSideAuthToken, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
+import { useConfig } from '@/hooks/use-config';
 
 const formSchema = z.object({
   membershipCommission: z.coerce.number().min(0, "Must be >= 0").max(100, "Must be <= 100"),
@@ -33,11 +34,9 @@ type FormValues = z.infer<typeof formSchema>;
 
 export default function ISAPitchSettings() {
   const { toast } = useToast();
-  const firestore = useFirestore();
   const [isSaving, setIsSaving] = useState(false);
 
-  const configRef = useMemoFirebase(() => firestore ? doc(firestore, 'configuration', 'isaPitch') : null, [firestore]);
-  const { data: configData, isLoading: isConfigLoading, forceRefresh } = useDoc<FormValues>(configRef);
+  const { data: configData, isLoading: isConfigLoading, forceRefresh } = useConfig<FormValues>('isaPitch');
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -57,7 +56,6 @@ export default function ISAPitchSettings() {
   }, [configData, form]);
 
   const onSubmit = async (values: FormValues) => {
-    if (!configRef) return;
     setIsSaving(true);
     
     try {
@@ -67,7 +65,7 @@ export default function ISAPitchSettings() {
         const response = await fetch('/api/updateConfigDoc', {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ path: configRef.path, data: { ...values, updatedAt: { _methodName: 'serverTimestamp' } } }),
+            body: JSON.stringify({ path: 'configuration/isaPitch', data: { ...values, updatedAt: { _methodName: 'serverTimestamp' } } }),
         });
 
         if (!response.ok) {
