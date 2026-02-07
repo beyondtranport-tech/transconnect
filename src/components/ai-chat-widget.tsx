@@ -71,9 +71,8 @@ export default function AIChatWidget() {
                 title: 'AI Assistant Error',
                 description: error.message || 'Could not get a response from the assistant.',
             });
-            // On error, remove the user's last message to allow them to retry without clutter.
-            setMessages(prev => prev.slice(0, -1));
-            setInput(currentInput);
+            // On error, DO NOT remove the user's message.
+            // Let the user see their message and the error so they can decide what to do.
         } finally {
             setIsLoading(false);
         }

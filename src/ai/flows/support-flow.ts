@@ -52,6 +52,7 @@ const supportFlow = ai.defineFlow(
     
     try {
         // The `history` object from the client is already in the correct format.
+        // We ensure it's an array, even if it's undefined for the first message.
         const formattedHistory = history || [];
 
         const response = await ai.generate({
