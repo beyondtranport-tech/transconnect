@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview An AI-powered customer support agent.
@@ -53,7 +52,6 @@ const supportFlow = ai.defineFlow(
     
     try {
         // The `history` object from the client is already in the correct format.
-        // No re-mapping is needed.
         const formattedHistory = history || [];
 
         const response = await ai.generate({
