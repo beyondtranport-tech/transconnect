@@ -52,21 +52,21 @@ const supportFlow = ai.defineFlow(
     }
     
     try {
-        const prompt = [
-            { role: 'system', parts: [{ text: systemPrompt }] },
-            ...history,
-            { role: 'user', parts: [{ text: query }] }
-        ];
+        // The `history` object from the client is already in the correct format.
+        // We ensure it's an array, even if it's undefined for the first message.
+        const formattedHistory = history || [];
 
         const response = await ai.generate({
             model: googleAI.model('gemini-2.5-flash'),
-            prompt: prompt, 
+            system: systemPrompt,
+            history: formattedHistory, // Use the 'history' property for previous messages
+            prompt: query,           // Use the 'prompt' property for the latest user query
         });
         
         const textResponse = response.text;
         
         if (!textResponse) {
-            throw new Error("The AI model returned an empty response.");
+            throw new Error("The AI model returned an empty or invalid response.");
         }
         
         return { response: textResponse };
