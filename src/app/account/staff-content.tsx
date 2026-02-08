@@ -133,7 +133,7 @@ function AddStaffDialog({ companyId, onStaffAdded, canCreate }: { companyId: str
   }
 
   const copyInviteLink = () => {
-    const baseUrl = window.location.origin;
+    const baseUrl = 'https://transconnect-v1-39578841-2a857.web.app';
     const signupUrl = `${baseUrl}/join?email=${encodeURIComponent(newUserInfo.email)}&firstName=${encodeURIComponent(newUserInfo.firstName)}&lastName=${encodeURIComponent(newUserInfo.lastName)}`;
     navigator.clipboard.writeText(signupUrl);
     toast({
@@ -446,5 +446,3 @@ export default function StaffContent({ companyId: propCompanyId }: { companyId?:
     </>
   );
 }
-
-    
