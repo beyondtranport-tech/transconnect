@@ -29,13 +29,13 @@ It may take a moment for your Storage bucket to be created.
 
 ## Step 4: Grant Backend Permissions (The Critical Step)
 
-This is the most important step to solve upload errors. If your bucket exists but uploads are failing with a "Bucket Not Found" error, it is a permissions issue.
+This is the most important step to solve upload and deployment errors. Your App Hosting backend runs using a specific "compute service account," and this account needs permission to manage your Storage bucket.
 
-### 4.1: Find Your Service Account Email
+### 4.1: Find Your App Hosting Service Account Email
 
 1.  Go to the Google Cloud Console's main **IAM** page for your project: **[IAM & Admin](https://console.cloud.google.com/iam-admin/iam?project=transconnect-v1-39578841-2a857)**
-2.  Find the principal (member) that has the name **"Firebase Admin SDK Administrator Service Agent"**.
-3.  Copy its email address. It will look like `firebase-adminsdk-fbsvc@transconnect-v1-39578841-2a857.iam.gserviceaccount.com`.
+2.  Find the principal (member) that has the name **"Firebase App Hosting compute service account"**.
+3.  Copy its email address. It will look like `firebase-app-hosting-compute@...`.
 
 ### 4.2: Grant the Correct "Storage Admin" Role
 
@@ -43,7 +43,7 @@ This is the most important step to solve upload errors. If your bucket exists bu
 
 1.  On the main **IAM** page, click the **+ GRANT ACCESS** button at the top.
 2.  In the **"New principals"** field that appears, paste the service account email you just copied.
-3.  In the **"Select a role"** dropdown, search for and select **"Storage Admin"**. This role provides the necessary permissions for the backend to find and manage the storage bucket, which is required to fix the "Bucket Not Found" error.
+3.  In the **"Select a role"** dropdown, search for and select **"Storage Admin"**. This role provides the necessary permissions for the backend to find and manage the storage bucket, which is required to fix the "Bucket Not Found" error and deployment issues.
 4.  Click **Save**. A "Policy updated" message will appear. It may take a minute or two for permissions to take effect.
 
-After completing these steps, the file upload functionality within your application will work correctly. You do not need to make any further configuration changes.
+After completing these steps, the deployment functionality within your application will work correctly. You do not need to make any further configuration changes.
