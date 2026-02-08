@@ -101,3 +101,16 @@
 [debug] [2026-02-08T11:09:55.673Z] >>> [apiv2][query] GET https://firebaseapphosting.googleapis.com/v1beta/projects/transconnect-v1-39578841-2a857/locations/-/backends 
 [debug] [2026-02-08T11:09:56.969Z] <<< [apiv2][status] GET https://firebaseapphosting.googleapis.com/v1beta/projects/transconnect-v1-39578841-2a857/locations/-/backends 200
 [debug] [2026-02-08T11:09:56.969Z] <<< [apiv2][body] GET https://firebaseapphosting.googleapis.com/v1beta/projects/transconnect-v1-39578841-2a857/locations/-/backends {}
+[debug] [2026-02-08T11:15:42.562Z] TypeError: Cannot read properties of undefined (reading 'name')
+    at /nix/store/c776mhyhgykcld7p90ajrka149ifn61a-firebase-tools-14.26.0/lib/node_modules/firebase-tools/node_modules/@inquirer/checkbox/dist/commonjs/index.js:51:29
+    at Array.map (<anonymous>)
+    at normalizeChoices (/nix/store/c776mhyhgykcld7p90ajrka149ifn61a-firebase-tools-14.26.0/lib/node_modules/firebase-tools/node_modules/@inquirer/checkbox/dist/commonjs/index.js:39:20)
+    at /nix/store/c776mhyhgykcld7p90ajrka149ifn61a-firebase-tools-14.26.0/lib/node_modules/firebase-tools/node_modules/@inquirer/checkbox/dist/commonjs/index.js:69:52
+    at /nix/store/c776mhyhgykcld7p90ajrka149ifn61a-firebase-tools-14.26.0/lib/node_modules/firebase-tools/node_modules/@inquirer/core/dist/commonjs/lib/create-prompt.js:113:38
+    at store.handleChange (/nix/store/c776mhyhgykcld7p90ajrka149ifn61a-firebase-tools-14.26.0/lib/node_modules/firebase-tools/node_modules/@inquirer/core/dist/commonjs/lib/hook-engine.js:31:17)
+    at cycle (/nix/store/c776mhyhgykcld7p90ajrka149ifn61a-firebase-tools-14.26.0/lib/node_modules/firebase-tools/node_modules/@inquirer/core/dist/commonjs/lib/hook-engine.js:33:19)
+    at /nix/store/c776mhyhgykcld7p90ajrka149ifn61a-firebase-tools-14.26.0/lib/node_modules/firebase-tools/node_modules/@inquirer/core/dist/commonjs/lib/create-prompt.js:111:13
+    at /nix/store/c776mhyhgykcld7p90ajrka149ifn61a-firebase-tools-14.26.0/lib/node_modules/firebase-tools/node_modules/@inquirer/core/dist/commonjs/lib/hook-engine.js:35:16
+    at AsyncLocalStorage.run (node:async_hooks:346:14)
+[error] 
+[error] Error: An unexpected error has occurred.
