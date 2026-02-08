@@ -46,12 +46,13 @@ export function Header() {
   const [isSheetOpen, setIsSheetOpen] = React.useState(false);
   const { user, isUserLoading } = useUser();
   const auth = useAuth();
-  const { cartItems } = useCart();
+  const { cartItems, clearCart } = useCart();
 
   const handleSignOut = async () => {
     if (!auth) return;
     try {
         await signOut(auth);
+        clearCart();
         setIsSheetOpen(false);
         router.push('/');
     } catch (error) {
