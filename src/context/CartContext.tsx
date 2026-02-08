@@ -1,8 +1,8 @@
-
 'use client';
 
 import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
+import { useUser } from '@/firebase';
 
 export interface CartItem {
   id: string;
@@ -29,9 +29,11 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 export function CartProvider({ children }: { children: ReactNode }) {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const { toast } = useToast();
+  const { user, isUserLoading } = useUser();
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
 
+  // Load cart from local storage on initial render
   useEffect(() => {
-    // Load cart from local storage on initial render
     try {
       const storedCart = localStorage.getItem('logistics_flow_cart');
       if (storedCart) {
@@ -41,6 +43,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         console.error("Failed to parse cart from localStorage", error);
         localStorage.removeItem('logistics_flow_cart');
     }
+    setIsInitialLoad(false);
   }, []);
 
   const saveCartToLocalStorage = useCallback((items: CartItem[]) => {
@@ -50,6 +53,18 @@ export function CartProvider({ children }: { children: ReactNode }) {
         console.error("Failed to save cart to localStorage", error);
       }
   }, []);
+  
+  const clearCart = useCallback(() => {
+    setCartItems([]);
+    localStorage.removeItem('logistics_flow_cart');
+  }, []);
+
+  // Effect to clear cart on sign-out
+  useEffect(() => {
+    if (!isInitialLoad && !isUserLoading && !user) {
+        clearCart();
+    }
+  }, [user, isUserLoading, isInitialLoad, clearCart]);
   
   const addToCart = (newItem: Omit<CartItem, 'quantity'> & { quantity?: number }) => {
     setCartItems(prevItems => {
@@ -98,11 +113,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
         saveCartToLocalStorage(updatedItems);
         return updatedItems;
     });
-  };
-
-  const clearCart = () => {
-    setCartItems([]);
-    localStorage.removeItem('logistics_flow_cart');
   };
 
   const totalPrice = cartItems.reduce((total, item) => total + item.price * item.quantity, 0);
