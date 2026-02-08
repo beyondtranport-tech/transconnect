@@ -102,9 +102,9 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
     const unsubscribe = onIdTokenChanged(
       auth,
       async (firebaseUser) => {
-        // First, handle the session cookie logic.
+        // First, handle the session cookie logic. Let it run in the background.
         const idToken = firebaseUser ? await getIdToken(firebaseUser) : null;
-        await setSessionCookie(idToken);
+        setSessionCookie(idToken);
         
         // THEN, update the React state. This prevents race conditions.
         setBaseUser(firebaseUser);
