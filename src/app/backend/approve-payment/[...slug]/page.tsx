@@ -5,7 +5,6 @@ import { Suspense, useEffect, useState } from 'react';
 import { notFound, useParams, useRouter } from 'next/navigation';
 import { useDoc, useFirestore, getClientSideAuthToken, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
-import { useState } from 'react';
 import { Loader2, CheckCircle, FileCheck, ArrowLeft, Landmark } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
