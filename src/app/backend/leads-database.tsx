@@ -173,7 +173,7 @@ function InviteDialog({ lead, onInviteSent }: { lead: any; onInviteSent: () => v
             const firstName = nameParts[0] || '';
             const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : '';
             
-            const constructedLink = `${window.location.origin}/join?email=${encodeURIComponent(lead.email || '')}&firstName=${encodeURIComponent(firstName)}&lastName=${encodeURIComponent(lastName)}`;
+            const constructedLink = `https://transconnect-v1-39578841-2a857.web.app/join?email=${encodeURIComponent(lead.email || '')}&firstName=${encodeURIComponent(firstName)}&lastName=${encodeURIComponent(lastName)}`;
             
             setInviteLink(constructedLink);
             onInviteSent();
