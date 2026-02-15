@@ -116,31 +116,25 @@ function SignInFormComponent() {
       const userCredential = await signInWithEmailAndPassword(auth, values.email, values.password);
       const loggedInUser = userCredential.user;
       
+      // Force refresh the token and set the session cookie BEFORE redirecting.
+      const idToken = await getIdToken(loggedInUser, true);
+      await fetch('/api/auth/session', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ idToken }),
+      });
+
       toast({
         title: 'Sign In Successful',
         description: 'Redirecting to your dashboard...',
       });
       
-      const isAdmin = loggedInUser.email === 'beyondtransport@gmail.com' || loggedInUser.email === 'mkoton100@gmail.com';
+      const isAdmin = loggedInUser.email === 'mkoton100@gmail.com';
       const defaultRedirect = isAdmin ? '/adminaccount' : '/account';
       
-      // Use router.replace to navigate and remove sign-in from history.
+      // Now redirect.
       router.replace(redirectParam || defaultRedirect);
 
-      // Perform the user check in the background without blocking navigation.
-      getIdToken(loggedInUser).then(token => {
-        if (token) {
-           fetch('/api/checkAndCreateUser', {
-              method: 'POST',
-              headers: {
-                  'Authorization': `Bearer ${token}`,
-                  'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({}),
-          }).catch(error => console.error("Background user check failed:", error));
-        }
-      });
-      
     } catch (error: any) {
       let title = 'An error occurred.';
       let description = 'Please check your credentials and try again.';
@@ -157,7 +151,7 @@ function SignInFormComponent() {
         title,
         description,
       });
-       setIsLoading(false); // Only set loading to false if there's an error. On success, navigation happens.
+       setIsLoading(false);
     }
   };
 
@@ -204,7 +198,7 @@ function SignInFormComponent() {
                       </FormControl>
                       <button 
                           type="button" 
-                          onClick={() => setShowPassword(!showPassword)}
+                          onClick={() => setShowPassword(prev => !prev)}
                           className="absolute inset-y-0 right-0 z-10 flex items-center pr-3 text-muted-foreground"
                           aria-label={showPassword ? "Hide password" : "Show password"}
                       >
