@@ -115,10 +115,10 @@ export default function BankDetailsSettings() {
                         <FormField control={form.control} name="bankName" render={({ field }) => (<FormItem><FormLabel>Bank Name</FormLabel><FormControl><Input placeholder="e.g., First National Bank" {...field} /></FormControl><FormMessage /></FormItem>)} />
                         <FormField control={form.control} name="branchName" render={({ field }) => (<FormItem><FormLabel>Branch</FormLabel><FormControl><Input placeholder="e.g., Sandton City" {...field} /></FormControl><FormMessage /></FormItem>)} />
                     </div>
-                    <FormField control={form.control} name="accountHolder" render={({ field }) => (<FormItem><FormLabel>Holder</FormLabel><FormControl><Input placeholder="e.g., TransConnect (Pty) Ltd" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                    <FormField control={form.control} name="accountHolder" render={({ field }) => (<FormItem><FormLabel>Account Holder</FormLabel><FormControl><Input placeholder="e.g., TransConnect (Pty) Ltd" {...field} /></FormControl><FormMessage /></FormItem>)} />
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <FormField control={form.control} name="accountType" render={({ field }) => (<FormItem><FormLabel>Account Type</FormLabel><FormControl><Input placeholder="e.g., Cheque" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                        <FormField control={form.control} name="accountNumber" render={({ field }) => (<FormItem><FormLabel>Acc Number</FormLabel><FormControl><Input placeholder="e.g., 62800012345" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                        <FormField control={form.control} name="accountNumber" render={({ field }) => (<FormItem><FormLabel>Account Number</FormLabel><FormControl><Input placeholder="e.g., 62800012345" {...field} /></FormControl><FormMessage /></FormItem>)} />
                     </div>
                     <FormField control={form.control} name="branchCode" render={({ field }) => (<FormItem><FormLabel>Branch Code</FormLabel><FormControl><Input placeholder="e.g., 250655" {...field} /></FormControl><FormMessage /></FormItem>)} />
 
