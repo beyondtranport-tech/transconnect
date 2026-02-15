@@ -90,6 +90,7 @@ const ActivityFeed = dynamic(() => import('./activity-feed'), { loading: () => <
 const MembersList = dynamic(() => import('./members-list'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const CommunicationsContent = dynamic(() => import('./communications-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const SupportChatInbox = dynamic(() => import('./support-chat-inbox'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const UsersList = dynamic(() => import('./users-list'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 
 
 // Lending DMS
@@ -181,6 +182,7 @@ function BackendContent() {
       
       // Operations
       case 'members': return <MembersList />;
+      case 'users': return <UsersList />;
       case 'wallet': return memberId ? <MemberWallet memberId={memberId} /> : <WalletTransactionsList />;
       case 'wallet-transactions': return <WalletTransactionsList />;
       case 'shops': return <ShopsList />;
@@ -248,7 +250,7 @@ function BackendContent() {
 
   const navigate = (view: string) => router.push(`/backend?view=${view}`, { scroll: false });
   
-  const isOperationsActive = ['members', 'wallet', 'wallet-transactions', 'shops', 'reconciliation', 'contributions', 'activity', 'communications', 'support-inbox'].includes(activeView);
+  const isOperationsActive = ['members', 'users', 'wallet', 'wallet-transactions', 'shops', 'reconciliation', 'contributions', 'activity', 'communications', 'support-inbox'].includes(activeView);
   const isLendingDMSActive = activeView.startsWith('lending-');
   const isPartnersActive = activeView.startsWith('partners-');
   const isRevenueActive = [
@@ -285,6 +287,7 @@ function BackendContent() {
                     <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'communications'} onClick={() => navigate('communications')}><MessageSquare />Agent Chats</SidebarMenuSubButton></SidebarMenuSubItem>
                     <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'support-inbox'} onClick={() => navigate('support-inbox')}><MessageSquare />Support Inbox</SidebarMenuSubButton></SidebarMenuSubItem>
                     <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'members'} onClick={() => navigate('members')}><Users />Members</SidebarMenuSubButton></SidebarMenuSubItem>
+                    <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'users'} onClick={() => navigate('users')}><Users />All Users</SidebarMenuSubButton></SidebarMenuSubItem>
                     <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'wallet-transactions'} onClick={() => navigate('wallet-transactions')}><Wallet />Wallet Transactions</SidebarMenuSubButton></SidebarMenuSubItem>
                     <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'contributions'} onClick={() => navigate('contributions')}><ListTodo />Contributions</SidebarMenuSubButton></SidebarMenuSubItem>
                     <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'shops'} onClick={() => navigate('shops')}><Store />Shops</SidebarMenuSubButton></SidebarMenuSubItem>

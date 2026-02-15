@@ -1,5 +1,4 @@
 
-
 import { NextRequest, NextResponse } from 'next/server';
 import { getFirestore, Timestamp, FieldValue, FieldPath } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
@@ -66,6 +65,20 @@ export async function POST(req: NextRequest) {
         // --- END AUTHORIZATION ---
 
         switch (action) {
+            case 'listAllUsers': {
+                const listUsersResult = await getAuth(app).listUsers();
+                const users = listUsersResult.users.map(userRecord => {
+                    return {
+                        uid: userRecord.uid,
+                        email: userRecord.email,
+                        displayName: userRecord.displayName,
+                        disabled: userRecord.disabled,
+                        creationTime: userRecord.metadata.creationTime,
+                        lastSignInTime: userRecord.metadata.lastSignInTime,
+                    };
+                });
+                return NextResponse.json({ success: true, data: users });
+            }
             case 'getPartnersByType': {
                 const { type } = payload;
                 if (!type || !['partner', 'isa', 'investor'].includes(type)) {
