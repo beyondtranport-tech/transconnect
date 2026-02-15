@@ -1,4 +1,3 @@
-
 "use client";
 
 import Link from "next/link";
@@ -99,7 +98,7 @@ export function Header() {
           </Link>
         </div>
 
-        <nav className="hidden md:flex items-center gap-1 text-sm font-medium">
+        <nav className="hidden sm:flex items-center gap-1 text-sm font-medium">
             {navItems.map((item) => (
                 item.isDropdown ? (
                     <DropdownMenu key={item.label}>
@@ -188,7 +187,7 @@ export function Header() {
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (
-              <div className="hidden md:flex items-center gap-2">
+              <div className="hidden sm:flex items-center gap-2">
                 <Button asChild variant="ghost">
                   <Link href="/signin">Sign In</Link>
                 </Button>
@@ -201,7 +200,7 @@ export function Header() {
           
           <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="md:hidden">
+              <Button variant="ghost" size="icon" className="sm:hidden">
                 <Menu className="h-6 w-6" />
                 <span className="sr-only">Toggle navigation menu</span>
               </Button>
