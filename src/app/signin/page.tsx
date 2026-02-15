@@ -27,7 +27,8 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Eye, EyeOff } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
+import { PasswordInput } from '@/components/ui/password-input';
 
 const formSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -41,7 +42,6 @@ function SignInFormComponent() {
   const searchParams = useSearchParams();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
   const auth = useAuth();
   const { user, isUserLoading } = useUser();
   const redirectParam = searchParams.get('redirect');
@@ -119,11 +119,15 @@ function SignInFormComponent() {
       const loggedInUser = userCredential.user;
       
       const idToken = await getIdToken(loggedInUser, true);
-      await fetch('/api/auth/session', {
+      const sessionResponse = await fetch('/api/auth/session', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ idToken }),
       });
+
+      if (!sessionResponse.ok) {
+        throw new Error('Failed to set session cookie.');
+      }
 
       toast({
         title: 'Sign In Successful',
@@ -193,23 +197,12 @@ function SignInFormComponent() {
                           Forgot password?
                       </button>
                   </div>
-                  <div className="relative">
-                      <FormControl>
-                        <Input
-                          type={showPassword ? 'text' : 'password'}
-                          autoComplete="current-password"
-                          {...field}
-                        />
-                      </FormControl>
-                      <button 
-                          type="button" 
-                          onClick={() => setShowPassword(prev => !prev)}
-                          className="absolute inset-y-0 right-0 z-10 flex items-center pr-3 text-muted-foreground"
-                          aria-label={showPassword ? "Hide password" : "Show password"}
-                      >
-                          {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                      </button>
-                  </div>
+                  <FormControl>
+                    <PasswordInput
+                        autoComplete="current-password"
+                        {...field}
+                    />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
