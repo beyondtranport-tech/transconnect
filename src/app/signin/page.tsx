@@ -133,7 +133,8 @@ function SignInFormComponent() {
       const isAdmin = loggedInUser.email === 'mkoton100@gmail.com';
       const defaultRedirect = isAdmin ? '/adminaccount' : '/account';
       
-      router.replace(redirectParam || defaultRedirect);
+      // Use router.push for a client-side navigation that can be handled by Next.js router
+      router.push(redirectParam || defaultRedirect);
 
     } catch (error: any) {
       let title = 'An error occurred.';
@@ -195,8 +196,10 @@ function SignInFormComponent() {
                   <div className="relative">
                       <FormControl>
                         <Input
-                          key={showPassword ? 'text' : 'password'}
-                          type={showPassword ? "text" : "password"} {...field} />
+                          type={showPassword ? 'text' : 'password'}
+                          autoComplete="current-password"
+                          {...field}
+                        />
                       </FormControl>
                       <button 
                           type="button" 
