@@ -43,26 +43,25 @@ import { useUser, useAuth } from '@/firebase';
 import { signOut } from 'firebase/auth';
 import { Loader2 } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import dynamic from 'next/dynamic';
 import React from 'react';
 import AIChatWidget from '@/components/ai-chat-widget';
 
-// Dynamically import all components that are conditionally rendered
-const AccountDashboard = dynamic(() => import('./dashboard'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const StaffContent = dynamic(() => import('./staff-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const ProfileContent = dynamic(() => import('./profile-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const CompanyContent = dynamic(() => import('./company-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const ShopContent = dynamic(() => import('./shop-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const BillingContent = dynamic(() => import('./billing-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const WalletContent = dynamic(() => import('./wallet-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const RewardsContent = dynamic(() => import('./rewards'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const ActivityFeed = dynamic(() => import('./activity-feed'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const NetworkContent = dynamic(() => import('./network-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const PerformanceContent = dynamic(() => import('./performance-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const NetworkOffer = dynamic(() => import('./network-offer'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const NetworkEmails = dynamic(() => import('./network-emails'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const MarketingStudio = dynamic(() => import('./marketing-studio'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const SupportChatContent = dynamic(() => import('./support-chat'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+// Statically import all components that are conditionally rendered
+import AccountDashboard from './dashboard';
+import StaffContent from './staff-content';
+import ProfileContent from './profile-content';
+import CompanyContent from './company-content';
+import ShopContent from './shop-content';
+import BillingContent from './billing-content';
+import WalletContent from './wallet-content';
+import RewardsContent from './rewards';
+import ActivityFeed from './activity-feed';
+import NetworkContent from './network-content';
+import PerformanceContent from './performance-content';
+import NetworkOffer from './network-offer';
+import NetworkEmails from './network-emails';
+import MarketingStudio from './marketing-studio';
+import SupportChatContent from './support-chat';
 
 
 // Placeholder components for sections under construction
@@ -324,5 +323,3 @@ export default function AccountPage() {
     </Suspense>
   );
 }
-
-    
