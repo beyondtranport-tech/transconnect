@@ -139,10 +139,7 @@ export function Header() {
                 </Link>
             </Button>
             {isUserLoading ? (
-               <div className="flex items-center gap-2">
-                 <div className="h-9 w-20 rounded-md bg-muted/50 animate-pulse" />
-                 <div className="h-9 w-24 rounded-md bg-muted/50 animate-pulse" />
-              </div>
+              null
             ) : user ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
