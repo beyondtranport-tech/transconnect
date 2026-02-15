@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, Suspense, useEffect } from 'react';
@@ -33,9 +32,8 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Building2, User } from 'lucide-react';
+import { Loader2, Building2, User, Eye, EyeOff } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { PasswordInput } from '@/components/ui/password-input';
 
 const formSchema = z.object({
   firstName: z.string().min(1, 'First name is required'),
@@ -52,6 +50,7 @@ function JoinFormComponent() {
   const searchParams = useSearchParams();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const auth = useAuth();
   const { user, isUserLoading } = useUser();
   const redirectParam = searchParams.get('redirect');
@@ -149,7 +148,6 @@ function JoinFormComponent() {
         throw new Error("Could not retrieve auth token after user creation.");
       }
       
-      // *** FIX: Set the server-side session cookie ***
       const sessionResponse = await fetch('/api/auth/session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -160,7 +158,6 @@ function JoinFormComponent() {
         throw new Error('Failed to create server session.');
       }
 
-      // *** FIX: API call to create user document in Firestore ***
       const checkAndCreateUserResponse = await fetch('/api/checkAndCreateUser', {
           method: 'POST',
           headers: {
@@ -303,10 +300,23 @@ function JoinFormComponent() {
                       </button>
                   </div>
                   <FormControl>
-                    <PasswordInput
-                        autoComplete="new-password"
-                        {...field}
-                    />
+                    <div className="relative">
+                        <Input
+                            type={showPassword ? "text" : "password"}
+                            className="pr-10"
+                            autoComplete="new-password"
+                            {...field}
+                        />
+                        <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="absolute inset-y-0 right-0 h-full px-3 text-muted-foreground hover:bg-transparent"
+                            onClick={() => setShowPassword((prev) => !prev)}
+                        >
+                            {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                        </Button>
+                    </div>
                   </FormControl>
                   <FormMessage />
                 </FormItem>
