@@ -138,9 +138,8 @@ export function Header() {
                     <span className="sr-only">Shopping Cart</span>
                 </Link>
             </Button>
-            {isUserLoading ? (
-              null
-            ) : user ? (
+            
+            {user ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="relative h-8 w-8 rounded-full">
@@ -184,6 +183,7 @@ export function Header() {
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (
+              // This is the key change: always render the buttons if the user is not logged in.
               <div className="hidden sm:flex items-center gap-2">
                 <Button asChild variant="ghost">
                   <Link href="/signin">Sign In</Link>
