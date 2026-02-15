@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, Suspense, useEffect } from 'react';
@@ -61,7 +60,7 @@ function SignInFormComponent() {
     resolver: zodResolver(formSchema),
     defaultValues: {
       email: searchParams.get('email') || '',
-      password: searchParams.get('password') || '',
+      password: '',
     },
   });
 
@@ -85,6 +84,7 @@ function SignInFormComponent() {
         return;
     }
     
+    setIsLoading(true);
     try {
       await sendPasswordResetEmail(auth, email);
       toast({
@@ -97,6 +97,8 @@ function SignInFormComponent() {
         title: 'Error sending reset email',
         description: 'Please try again later.',
       });
+    } finally {
+        setIsLoading(false);
     }
   };
 
@@ -116,7 +118,6 @@ function SignInFormComponent() {
       const userCredential = await signInWithEmailAndPassword(auth, values.email, values.password);
       const loggedInUser = userCredential.user;
       
-      // Force refresh the token and set the session cookie BEFORE redirecting.
       const idToken = await getIdToken(loggedInUser, true);
       await fetch('/api/auth/session', {
           method: 'POST',
@@ -132,7 +133,6 @@ function SignInFormComponent() {
       const isAdmin = loggedInUser.email === 'mkoton100@gmail.com';
       const defaultRedirect = isAdmin ? '/adminaccount' : '/account';
       
-      // Now redirect.
       router.replace(redirectParam || defaultRedirect);
 
     } catch (error: any) {
@@ -188,13 +188,15 @@ function SignInFormComponent() {
                 <FormItem>
                   <div className="flex items-center justify-between">
                       <FormLabel>Password</FormLabel>
-                      <button type="button" onClick={handlePasswordReset} className="text-sm font-medium text-primary hover:underline">
+                      <button type="button" onClick={handlePasswordReset} className="text-sm font-medium text-primary hover:underline" disabled={isLoading}>
                           Forgot password?
                       </button>
                   </div>
                   <div className="relative">
                       <FormControl>
-                        <Input type={showPassword ? "text" : "password"} {...field} />
+                        <Input
+                          key={showPassword ? 'text' : 'password'}
+                          type={showPassword ? "text" : "password"} {...field} />
                       </FormControl>
                       <button 
                           type="button" 
