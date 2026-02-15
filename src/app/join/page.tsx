@@ -33,8 +33,9 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Eye, EyeOff, Building2, User } from 'lucide-react';
+import { Loader2, Building2, User } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { PasswordInput } from '@/components/ui/password-input';
 
 const formSchema = z.object({
   firstName: z.string().min(1, 'First name is required'),
@@ -51,7 +52,6 @@ function JoinFormComponent() {
   const searchParams = useSearchParams();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
   const auth = useAuth();
   const { user, isUserLoading } = useUser();
   const redirectParam = searchParams.get('redirect');
@@ -59,7 +59,7 @@ function JoinFormComponent() {
   // Redirect if user is already logged in
   useEffect(() => {
     if (!isUserLoading && user) {
-      const isAdmin = user.email === 'beyondtransport@gmail.com' || user.email === 'mkoton100@gmail.com';
+      const isAdmin = user.email === 'mkoton100@gmail.com';
       const defaultRedirect = isAdmin ? '/adminaccount' : '/account';
       router.replace(redirectParam || defaultRedirect);
     }
@@ -144,12 +144,24 @@ function JoinFormComponent() {
         displayName: `${values.firstName} ${values.lastName}`,
       });
       
-      const token = await getIdToken(user);
+      const token = await getIdToken(user, true); // Force refresh to get the latest token
       if (!token) {
         throw new Error("Could not retrieve auth token after user creation.");
       }
       
-      const response = await fetch('/api/checkAndCreateUser', {
+      // *** FIX: Set the server-side session cookie ***
+      const sessionResponse = await fetch('/api/auth/session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ idToken: token }),
+      });
+
+      if (!sessionResponse.ok) {
+        throw new Error('Failed to create server session.');
+      }
+
+      // *** FIX: API call to create user document in Firestore ***
+      const checkAndCreateUserResponse = await fetch('/api/checkAndCreateUser', {
           method: 'POST',
           headers: {
               'Authorization': `Bearer ${token}`,
@@ -158,8 +170,8 @@ function JoinFormComponent() {
           body: JSON.stringify({ referrerId }),
       });
 
-      if (!response.ok) {
-          const result = await response.json();
+      if (!checkAndCreateUserResponse.ok) {
+          const result = await checkAndCreateUserResponse.json();
           throw new Error(result.error || "Failed to create user profile in database.");
       }
 
@@ -168,8 +180,7 @@ function JoinFormComponent() {
         description: "Welcome to Logistics Flow. Redirecting you now...",
       });
       
-      // Explicitly redirect after successful creation.
-      const isAdmin = user.email === 'beyondtransport@gmail.com';
+      const isAdmin = user.email === 'mkoton100@gmail.com';
       const defaultRedirect = isAdmin ? '/adminaccount' : '/account';
       router.push(redirectParam || defaultRedirect);
 
@@ -291,29 +302,12 @@ function JoinFormComponent() {
                           Forgot password?
                       </button>
                   </div>
-                  <div className="relative">
-                      <FormControl>
-                        <Input
-                          type={showPassword ? 'text' : 'password'}
-                          autoComplete="new-password"
-                          {...field}
-                        />
-                      </FormControl>
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(prev => !prev)}
-                        className="absolute inset-y-0 right-0 z-10 flex items-center pr-3 text-muted-foreground"
-                        aria-label={
-                          showPassword ? 'Hide password' : 'Show password'
-                        }
-                      >
-                        {showPassword ? (
-                          <EyeOff className="h-5 w-5" />
-                        ) : (
-                          <Eye className="h-5 w-5" />
-                        )}
-                      </button>
-                  </div>
+                  <FormControl>
+                    <PasswordInput
+                        autoComplete="new-password"
+                        {...field}
+                    />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
