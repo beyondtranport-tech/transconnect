@@ -85,34 +85,6 @@ function JoinFormComponent() {
     },
   });
 
-  useEffect(() => {
-    // This effect runs after the component mounts to override aggressive browser autofill.
-    const timer = setTimeout(() => {
-      // If there are params in the URL from an invite, force them into the form.
-      if (emailParam) {
-        form.setValue('email', emailParam, { shouldValidate: true });
-      }
-      if (firstNameParam) {
-        form.setValue('firstName', firstNameParam, { shouldValidate: true });
-      }
-      if (lastNameParam) {
-        form.setValue('lastName', lastNameParam, { shouldValidate: true });
-      }
-      if (phoneParam) {
-        form.setValue('phone', phoneParam, { shouldValidate: true });
-      }
-
-      // Check if the phone field has been incorrectly autofilled with an email.
-      const phoneValue = form.getValues('phone');
-      if (phoneValue && phoneValue.includes('@') && !phoneParam) {
-        form.setValue('phone', '', { shouldValidate: true });
-      }
-    }, 100); // A small delay gives the browser time to autofill first.
-
-    return () => clearTimeout(timer);
-  }, [emailParam, firstNameParam, lastNameParam, phoneParam, form]);
-
-
   const handlePasswordReset = async () => {
     const email = form.getValues('email');
     if (!email) {
@@ -183,7 +155,7 @@ function JoinFormComponent() {
               'Authorization': `Bearer ${token}`,
               'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ referrerId }), // Pass the referrer ID to the backend
+          body: JSON.stringify({ referrerId }),
       });
 
       if (!response.ok) {
@@ -196,8 +168,10 @@ function JoinFormComponent() {
         description: "Welcome to Logistics Flow. Redirecting you now...",
       });
       
-      // The `useEffect` hook will now handle the redirect when the user state updates.
-      // The component will remain in a loading state until the redirect happens.
+      // Explicitly redirect after successful creation.
+      const isAdmin = user.email === 'beyondtransport@gmail.com';
+      const defaultRedirect = isAdmin ? '/adminaccount' : '/account';
+      router.push(redirectParam || defaultRedirect);
 
     } catch (error: any) {
       let title = 'An error occurred.';
@@ -213,7 +187,8 @@ function JoinFormComponent() {
         title,
         description,
       });
-      setIsLoading(false);
+    } finally {
+        setIsLoading(false);
     }
   };
   
@@ -326,7 +301,7 @@ function JoinFormComponent() {
                       </FormControl>
                       <button
                         type="button"
-                        onClick={() => setShowPassword(!showPassword)}
+                        onClick={() => setShowPassword(prev => !prev)}
                         className="absolute inset-y-0 right-0 z-10 flex items-center pr-3 text-muted-foreground"
                         aria-label={
                           showPassword ? 'Hide password' : 'Show password'
