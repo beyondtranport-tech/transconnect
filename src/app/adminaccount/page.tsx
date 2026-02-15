@@ -73,6 +73,7 @@ import Link from 'next/link';
 import { useUser, useAuth } from '@/firebase';
 import { signOut } from 'firebase/auth';
 
+import dynamic from 'next/dynamic';
 import React from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 
@@ -111,6 +112,7 @@ import LendingLoanBook from './lending-loan-book';
 import LendingIncomeStatement from './lending-income-statement';
 import LendingBalanceSheet from './lending-balance-sheet';
 import LendingCashflow from './lending-cashflow';
+import BankDetailsSettings from './bank-details-settings';
 
 
 function AdminAuthGuard({ children }: { children: React.ReactNode }) {
@@ -124,7 +126,7 @@ function AdminAuthGuard({ children }: { children: React.ReactNode }) {
 
         if (!user) {
             router.replace('/signin?redirect=/adminaccount');
-        } else if (user.email !== 'beyondtransport@gmail.com' && user.email !== 'mkoton100@gmail.com') {
+        } else if (user.email !== 'mkoton100@gmail.com') {
             router.replace('/account'); 
         }
     }, [user, isUserLoading, router]);
@@ -197,6 +199,7 @@ function AdminAccountContent() {
       
       // Financials
       case 'financial-setup': return <FinancialSetup />;
+      case 'financial-bank-details': return <BankDetailsSettings />;
       case 'sales-roadmap': return <SalesRoadmap />;
       case 'targets': return <MonthlyTargets />;
       case 'budget': return <BudgetPage />;
@@ -240,7 +243,7 @@ function AdminAccountContent() {
   ].includes(activeView);
   const isFinancialsActive = [
       'financial-setup', 'sales-roadmap', 'targets', 'budget', 'member-projection', 
-      'turnover', 'income-statement', 'revenue-ledger'
+      'turnover', 'income-statement', 'revenue-ledger', 'financial-bank-details'
   ].includes(activeView);
   const isLendingModelActive = activeView.startsWith('lending-');
 
@@ -343,6 +346,7 @@ function AdminAccountContent() {
                     <SidebarMenuSub>
                         <SidebarMenuSubItem><span className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">Inputs</span></SidebarMenuSubItem>
                         <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'financial-setup'} onClick={() => navigate('financial-setup')}><Settings />Set Up</SidebarMenuSubButton></SidebarMenuSubItem>
+                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'financial-bank-details'} onClick={() => navigate('financial-bank-details')}><Banknote />Bank Details</SidebarMenuSubButton></SidebarMenuSubItem>
                         <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'sales-roadmap'} onClick={() => navigate('sales-roadmap')}><Map />Sales Roadmap</SidebarMenuSubButton></SidebarMenuSubItem>
                         <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'targets'} onClick={() => navigate('targets')}><Target />Monthly Targets</SidebarMenuSubButton></SidebarMenuSubItem>
                         <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'budget'} onClick={() => navigate('budget')}><Calculator />Budget</SidebarMenuSubButton></SidebarMenuSubItem>

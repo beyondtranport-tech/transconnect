@@ -12,7 +12,7 @@ service cloud.firestore {
     function isAdmin() {
       // It's recommended to use custom claims for security and scalability.
       // To set a custom claim, use the Firebase Admin SDK to set {'admin': true} on a user's token.
-      let isSuperAdminByEmail = request.auth != null && (request.auth.token.email == 'beyondtransport@gmail.com' || request.auth.token.email == 'mkoton100@gmail.com');
+      let isSuperAdminByEmail = request.auth != null && request.auth.token.email == 'mkoton100@gmail.com';
       let hasAdminClaim = request.auth != null && request.auth.token.admin == true;
       return isSuperAdminByEmail || hasAdminClaim;
     }
