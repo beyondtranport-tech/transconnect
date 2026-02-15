@@ -27,8 +27,7 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2 } from 'lucide-react';
-import { PasswordInput } from '@/components/ui/password-input';
+import { Loader2, Eye, EyeOff } from 'lucide-react';
 
 const formSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -42,6 +41,7 @@ function SignInFormComponent() {
   const searchParams = useSearchParams();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const auth = useAuth();
   const { user, isUserLoading } = useUser();
   const redirectParam = searchParams.get('redirect');
@@ -49,7 +49,7 @@ function SignInFormComponent() {
   // Redirect if user is already logged in
   useEffect(() => {
     if (!isUserLoading && user) {
-      const isAdmin = user.email === 'beyondtransport@gmail.com' || user.email === 'mkoton100@gmail.com';
+      const isAdmin = user.email === 'mkoton100@gmail.com';
       const defaultRedirect = isAdmin ? '/adminaccount' : '/account';
       router.replace(redirectParam || defaultRedirect);
     }
@@ -137,7 +137,6 @@ function SignInFormComponent() {
       const isAdmin = loggedInUser.email === 'mkoton100@gmail.com';
       const defaultRedirect = isAdmin ? '/adminaccount' : '/account';
       
-      // Use router.push for a client-side navigation that can be handled by Next.js router
       router.push(redirectParam || defaultRedirect);
 
     } catch (error: any) {
@@ -198,10 +197,23 @@ function SignInFormComponent() {
                       </button>
                   </div>
                   <FormControl>
-                    <PasswordInput
-                        autoComplete="current-password"
-                        {...field}
-                    />
+                     <div className="relative">
+                        <Input
+                            type={showPassword ? "text" : "password"}
+                            className="pr-10"
+                            autoComplete="current-password"
+                            {...field}
+                        />
+                        <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="absolute inset-y-0 right-0 h-full px-3 text-muted-foreground hover:bg-transparent"
+                            onClick={() => setShowPassword((prev) => !prev)}
+                        >
+                            {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                        </Button>
+                    </div>
                   </FormControl>
                   <FormMessage />
                 </FormItem>
