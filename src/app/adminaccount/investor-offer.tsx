@@ -18,7 +18,7 @@ export default function InvestorOffer() {
         <div className="space-y-8">
             <div>
                 <h1 className="text-3xl font-bold font-headline">The Two-Part Investment Opportunity</h1>
-                <p className="text-lg text-muted-foreground mt-2">Logistics Flow offers two distinct and independent opportunities for investors: a high-growth equity investment in our platform and a stable, debt-based investment in the loan book we originate.</p>
+                <p className="text-lg text-muted-foreground mt-2">Logistics Flow offers two distinct and independent opportunities for investors: a high-growth equity investment in our platform and a stable, debt-based investment in the debtors book we originate.</p>
             </div>
             
             <div className="grid md:grid-cols-2 gap-8">
@@ -39,15 +39,15 @@ export default function InvestorOffer() {
                 </Card>
                  <Card className="flex flex-col">
                     <CardHeader>
-                        <CardTitle className="flex items-center gap-2"><DatabaseZap className="h-6 w-6 text-primary"/>Opportunity 2: Funding the Loan Book</CardTitle>
+                        <CardTitle className="flex items-center gap-2"><DatabaseZap className="h-6 w-6 text-primary"/>Opportunity 2: Funding the Debtors Book</CardTitle>
                         <CardDescription>Provide the capital for the finance deals originated through our platform.</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4 flex-grow">
-                        <p>This is a debt investment opportunity where you act as a lender, earning returns from the interest and fees on the loans provided to our members.</p>
+                        <p>This is a debt investment opportunity where you act as a lender, earning returns from the interest and fees on the finance provided to our members.</p>
                          <ul className="list-disc list-inside space-y-2 text-sm text-muted-foreground">
                             <li><strong className="text-foreground">Deal Origination Engine:</strong> The platform generates a consistent flow of pre-vetted, data-enriched applications for asset finance and working capital.</li>
                             <li><strong className="text-foreground">De-Risked Lending:</strong> Our ecosystem provides unique, first-party data on a business's real-time performance, allowing for more accurate risk assessment than traditional models.</li>
-                            <li><strong className="text-foreground">Structured Returns:</strong> The complete Lending Model will provide detailed projections on the loan book's performance, returns, and cash flow recycling.</li>
+                            <li><strong className="text-foreground">Structured Returns:</strong> The complete Lending Model will provide detailed projections on the debtors book's performance, returns, and cash flow recycling.</li>
                         </ul>
                     </CardContent>
                 </Card>
@@ -67,7 +67,25 @@ export default function InvestorOffer() {
                         </TableBody>
                     </Table>
                 </CardContent>
-                 <CardFooter><p className="text-xs text-muted-foreground">Disclaimer: These projections are illustrative and not a guarantee of future performance. Projections for the Loan Book (Opportunity 2) are available in the Lending Model.</p></CardFooter>
+                 <CardFooter><p className="text-xs text-muted-foreground">Disclaimer: These projections are illustrative. Projections for the Debtors Book (Opportunity 2) are available below.</p></CardFooter>
+            </Card>
+
+             <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2"><TrendingUp className="h-6 w-6 text-primary"/>Debtors Book Financial Projections (Placeholder)</CardTitle>
+                     <CardDescription>The following projections relate to the <strong className="text-foreground">Debt Opportunity (Opportunity 2)</strong>. These are high-level estimates based on the full lending model.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <Table>
+                        <TableHeader><TableRow><TableHead>Metric</TableHead><TableHead className="text-right">Year 1 Projection</TableHead><TableHead className="text-right">Year 3 Projection</TableHead></TableRow></TableHeader>
+                        <TableBody>
+                            <TableRow><TableCell>Projected Book Value</TableCell><TableCell className="text-right font-semibold">R 50M</TableCell><TableCell className="text-right font-semibold">R 250M</TableCell></TableRow>
+                            <TableRow><TableCell>Average Yield</TableCell><TableCell className="text-right font-semibold">18.5%</TableCell><TableCell className="text-right font-semibold">17.0%</TableCell></TableRow>
+                            <TableRow className="bg-primary/5"><TableCell className="font-bold">Projected Net Interest Margin</TableCell><TableCell className="text-right font-bold text-primary text-lg">R 7.5M</TableCell><TableCell className="text-right font-bold text-primary text-lg">R 37.5M</TableCell></TableRow>
+                        </TableBody>
+                    </Table>
+                </CardContent>
+                 <CardFooter><p className="text-xs text-muted-foreground">Disclaimer: These are high-level projections. A detailed breakdown is available in the full Lending Model.</p></CardFooter>
             </Card>
         </div>
     );
