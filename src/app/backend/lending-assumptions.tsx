@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useCallback } from 'react';
@@ -22,6 +21,7 @@ const agreementSchema = z.object({
     term: z.coerce.number().optional(),
     rate: z.coerce.number().optional(),
     dealsPerMonth: z.coerce.number().optional(),
+    recurring: z.boolean().default(true),
     startDate: z.string().optional(),
     firstInstallmentDate: z.string().optional(),
     paymentsInAdvance: z.boolean().default(false),
@@ -45,10 +45,10 @@ const defaultValues: FormValues = {
     quoteConversionRate: 50,
     enquiryConversionRate: 30,
     applicationConversionRate: 60,
-    loan: { enabled: true, amount: 50000, term: 12, rate: 60, dealsPerMonth: 1, startDate: '2026-02-05', firstInstallmentDate: '2026-03-05', paymentsInAdvance: false },
-    installmentSale: { enabled: true, amount: 750000, term: 60, rate: 15, dealsPerMonth: 1, startDate: '', firstInstallmentDate: '', paymentsInAdvance: false },
-    lease: { enabled: false, amount: 600000, term: 54, rate: 16, dealsPerMonth: 0, startDate: '', firstInstallmentDate: '', paymentsInAdvance: false },
-    factoring: { enabled: true, amount: 100000, term: 3, rate: 5, dealsPerMonth: 2, startDate: '', firstInstallmentDate: '', paymentsInAdvance: false },
+    loan: { enabled: true, amount: 50000, term: 12, rate: 60, dealsPerMonth: 1, recurring: true, startDate: '2026-02-05', firstInstallmentDate: '2026-03-05', paymentsInAdvance: false },
+    installmentSale: { enabled: true, amount: 750000, term: 60, rate: 15, dealsPerMonth: 1, recurring: true, startDate: '', firstInstallmentDate: '', paymentsInAdvance: false },
+    lease: { enabled: false, amount: 600000, term: 54, rate: 16, dealsPerMonth: 0, recurring: true, startDate: '', firstInstallmentDate: '', paymentsInAdvance: false },
+    factoring: { enabled: true, amount: 100000, term: 3, rate: 5, dealsPerMonth: 2, recurring: true, startDate: '', firstInstallmentDate: '', paymentsInAdvance: false },
 };
 
 export default function LendingAssumptions() {
@@ -69,8 +69,6 @@ export default function LendingAssumptions() {
                  for (const key in updated) {
                     if (parsed[key] !== undefined) {
                         if (typeof (updated as any)[key] === 'object' && (updated as any)[key] !== null && !Array.isArray((updated as any)[key])) {
-                            // This ensures old 'recurring' fields are not carried over from localStorage
-                            if (parsed[key]?.recurring) delete parsed[key].recurring;
                             (updated as any)[key] = { ...(updated as any)[key], ...(parsed as any)[key] };
                         } else {
                             (updated as any)[key] = (parsed as any)[key];
@@ -99,8 +97,9 @@ export default function LendingAssumptions() {
     
     const handleGenerateSchedule = (agreementType: "loan" | "installmentSale" | "lease" | "factoring") => {
         const values = watch(agreementType);
+        const principal = (values.amount || 0) * (values.dealsPerMonth || 1);
         const query = new URLSearchParams({
-            principal: values.amount?.toString() || '0',
+            principal: principal.toString(),
             rate: values.rate?.toString() || '0',
             term: values.term?.toString() || '0',
             startDate: values.startDate || '',
@@ -139,7 +138,20 @@ export default function LendingAssumptions() {
                         <FormField control={form.control} name={`${name}.startDate`} render={({ field }) => (<FormItem><FormLabel>Start Date</FormLabel><FormControl><Input type="date" {...field} /></FormControl><FormMessage /></FormItem>)} />
                         <FormField control={form.control} name={`${name}.firstInstallmentDate`} render={({ field }) => (<FormItem><FormLabel>First Installment Date</FormLabel><FormControl><Input type="date" {...field} /></FormControl><FormMessage /></FormItem>)} />
                     </div>
-                     <div className="pt-4 border-t">
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 pt-4 border-t">
+                        <FormField
+                            control={form.control}
+                            name={`${name}.recurring`}
+                            render={({ field }) => (
+                                <FormItem className="flex flex-row items-start space-x-3 space-y-0 pt-2">
+                                    <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl>
+                                    <div className="space-y-1 leading-none">
+                                        <FormLabel>Recurring Monthly Deals</FormLabel>
+                                        <FormDescription className="text-xs">If checked, originate deals every month. If unchecked, originate only in the first month.</FormDescription>
+                                    </div>
+                                </FormItem>
+                            )}
+                        />
                         <FormField
                             control={form.control}
                             name={`${name}.paymentsInAdvance`}
