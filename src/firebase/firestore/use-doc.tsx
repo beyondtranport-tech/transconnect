@@ -6,7 +6,8 @@ import {
   DocumentReference,
   DocumentData,
 } from 'firebase/firestore';
-import { getClientSideAuthToken } from '@/firebase/errors';
+import { getClientSideAuthToken, FirestorePermissionError } from '@/firebase/errors';
+import { errorEmitter } from '@/firebase/error-emitter';
 
 /** Utility type to add an 'id' field to a given type T. */
 type WithId<T> = T & { id: string };
@@ -95,18 +96,32 @@ export function useDoc<T = any>(
 
             if (!response.ok) {
                 let errorMsg = `Failed to fetch document. Status: ${response.status}`;
+                let isPermissionError = response.status === 403;
+
                 try {
                     const errorResult = await response.json();
                     errorMsg = errorResult.error || errorMsg;
+                    if (errorMsg.includes('Forbidden') || errorMsg.includes('permission')) {
+                        isPermissionError = true;
+                    }
                 } catch (e) {
-                    // Response was not JSON, likely an HTML error page.
                     errorMsg = `${errorMsg}. ${response.statusText}`;
                 }
-                throw new Error(errorMsg);
-            }
 
-            const result = await response.json();
-            setData(result.data as WithId<T> | null);
+                if (isPermissionError) {
+                    const permissionError = new FirestorePermissionError({
+                        path: path,
+                        operation: 'get',
+                    });
+                    errorEmitter.emit('permission-error', permissionError);
+                    if (isMounted) setError(permissionError);
+                } else {
+                    throw new Error(errorMsg);
+                }
+            } else {
+                const result = await response.json();
+                setData(result.data as WithId<T> | null);
+            }
 
         } catch (e: any) {
             console.error("useDoc fetch error:", e);
