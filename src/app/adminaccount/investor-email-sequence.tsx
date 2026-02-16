@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
@@ -24,17 +25,17 @@ const EmailTemplate = ({ subject, content }: { subject: string, content: string 
 
 const templates = {
     intro: {
-        subject: "Investment Opportunity in Logistics Tech: TransConnect",
+        subject: "Investment Opportunity in Logistics Tech: Logistics Flow",
         content: `
 Dear [Investor Name],
 
 I hope this email finds you well.
 
-My name is [Your Name], and I'm the founder of TransConnect. We have built a comprehensive digital ecosystem designed to solve the core challenges of the South African transport industry: access to capital, high operational costs, and systemic inefficiencies.
+My name is [Your Name], and I'm the founder of Logistics Flow. We have built a comprehensive digital ecosystem designed to solve the core challenges of the South African transport industry: access to capital, high operational costs, and systemic inefficiencies.
 
 Our platform has multiple revenue streams (subscriptions, transaction fees, SaaS) and is positioned for exponential growth via powerful network effects.
 
-Would you be open to a brief call next week to discuss how TransConnect is set to modernize a critical sector of the economy?
+Would you be open to a brief call next week to discuss how Logistics Flow is set to modernize a critical sector of the economy?
 
 Best regards,
 
@@ -42,17 +43,17 @@ Best regards,
 `
     },
     proposal: {
-        subject: "Following Up: The TransConnect Investment Opportunity",
+        subject: "Following Up: The Logistics Flow Investment Opportunity",
         content: `
 Dear [Investor Name],
 
-Following up on our brief chat, here is a bit more detail on the investment opportunity with TransConnect.
+Following up on our brief chat, here is a bit more detail on the investment opportunity with Logistics Flow.
 
 The Problem:
 The transport sector is fragmented and underserved by traditional finance and technology. This leads to massive inefficiencies, high costs for operators, and missed growth opportunities.
 
 Our Solution:
-TransConnect is an all-in-one platform that provides:
+Logistics Flow is an all-in-one platform that provides:
 - A Funding Division: Connecting transporters with niche lenders.
 - A Network of Malls: Leveraging collective buying power for discounts on parts, tires, and services.
 - A Value-Added Marketplace: For reselling essential third-party products.
@@ -69,7 +70,7 @@ Best regards,
 `
     },
     financials: {
-        subject: "TransConnect: Financial Model & Projections",
+        subject: "Logistics Flow: Financial Model & Projections",
         content: `
 Dear [Investor Name],
 
@@ -105,7 +106,7 @@ export default function InvestorEmailSequence() {
     return (
         <div className="space-y-8">
             <CardHeader className="px-0">
-                <div className="flex items-center gap-4"><Mail className="h-8 w-8 text-primary"/><div><CardTitle>Investor Outreach Email Sequence</CardTitle><CardDescription>Use these templates to introduce, propose, and explain the TransConnect investment opportunity.</CardDescription></div></div>
+                <div className="flex items-center gap-4"><Mail className="h-8 w-8 text-primary"/><div><CardTitle>Investor Outreach Email Sequence</CardTitle><CardDescription>Use these templates to introduce, propose, and explain the Logistics Flow investment opportunity.</CardDescription></div></div>
             </CardHeader>
             <Tabs defaultValue="intro" className="w-full">
                 <TabsList className="grid w-full grid-cols-3">{emailTabs.map(tab => (<TabsTrigger key={tab.value} value={tab.value}>{tab.label}</TabsTrigger>))}</TabsList>

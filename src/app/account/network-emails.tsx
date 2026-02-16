@@ -44,13 +44,13 @@ const EmailTemplate = ({ subject, content, referralLink }: { subject: string, co
 
 const templates = {
     intro: {
-        subject: "Invitation to Join TransConnect",
+        subject: "Invitation to Join Logistics Flow",
         content: `
 Hi [Lead Name],
 
 I hope this email finds you well.
 
-I'm reaching out to invite you to join TransConnect, a digital ecosystem built for transporters like us. It's designed to help us access capital, find more work, and reduce our operational costs.
+I'm reaching out to invite you to join Logistics Flow, a digital ecosystem built for transporters like us. It's designed to help us access capital, find more work, and reduce our operational costs.
 
 I've been using it and think it could be really beneficial for your business.
 
@@ -64,11 +64,11 @@ Best regards,
         `
     },
     proposal: {
-        subject: "How TransConnect Can Benefit Your Business",
+        subject: "How Logistics Flow Can Benefit Your Business",
         content: `
 Hi [Lead Name],
 
-Following up on my previous message, here's a bit more detail on what TransConnect offers:
+Following up on my previous message, here's a bit more detail on what Logistics Flow offers:
 
 - A Funding Division: Access to flexible finance solutions where traditional banks often can't help.
 - A Network of Malls: Specialized marketplaces for parts, vehicles, and services with group-negotiated discounts.
@@ -84,11 +84,11 @@ Best regards,
         `
     },
     revenue: {
-        subject: "How You Can Earn with TransConnect",
+        subject: "How You Can Earn with Logistics Flow",
         content: `
 Hi [Lead Name],
 
-One of the best parts about TransConnect is that you can earn recurring revenue just by helping the network grow.
+One of the best parts about Logistics Flow is that you can earn recurring revenue just by helping the network grow.
 
 Once you become a member, you also get your own referral link. When you invite other businesses and they sign up, you earn a percentage of their membership fees and a share of the revenue they generate on the platform.
 
@@ -106,14 +106,14 @@ Best regards,
         content: `
 Hi [Lead Name],
 
-The transport industry thrives on relationships. You already have a network of transporters, suppliers, and contacts you've built over years. TransConnect provides the tools to turn those relationships into a revenue engine.
+The transport industry thrives on relationships. You already have a network of transporters, suppliers, and contacts you've built over years. Logistics Flow provides the tools to turn those relationships into a revenue engine.
 
 Think about it:
 - Who do you buy parts from?
 - Who do you subcontract loads to?
 - Who asks you for advice on financing?
 
-By introducing them to TransConnect—where they can get better pricing, find more work, or access capital—you are not only helping them, but you are also building your own business within our ecosystem.
+By introducing them to Logistics Flow—where they can get better pricing, find more work, or access capital—you are not only helping them, but you are also building your own business within our ecosystem.
 
 Our platform handles the tracking, the transactions, and the payouts. Your job is to do what you already do best: connect people. We just provide the framework for you to get paid for it.
 
@@ -127,19 +127,19 @@ Best regards,
     howTo: {
         subject: "How to Use Your Network Dashboard",
         content: `
-**Your Guide to Building and Managing Your Referral Network in TransConnect**
+**Your Guide to Building and Managing Your Referral Network in Logistics Flow**
 
 This guide explains how to use the "My Network" section of your account to invite new members and track your referral success.
 
 **Step 1: Access Your Network Dashboard**
-1.  Log in to your TransConnect account.
+1.  Log in to your Logistics Flow account.
 2.  From the main account dashboard, navigate to the "Sales" section in the sidebar and click on "My Network".
 3.  This is your central hub for viewing all the members who have joined using your personal referral link.
 
 **Step 2: Invite New Leads**
 1.  Click the "Invite Lead" button. This will open WhatsApp on your device.
 2.  A pre-written message containing your unique referral link will be ready to send. Your link will look something like this: \`https://[app-url]/join?ref=[your_company_id]\`.
-3.  Send this message to any transporters, suppliers, or other businesses in your network who you think would benefit from TransConnect.
+3.  Send this message to any transporters, suppliers, or other businesses in your network who you think would benefit from Logistics Flow.
 4.  **Important:** They MUST use this specific link for you to be credited as the referrer and earn commissions.
 
 **Step 3: Track Your Referrals**
@@ -176,7 +176,7 @@ export default function NetworkEmails() {
                     <div>
                         <CardTitle>Network Outreach Email Sequence</CardTitle>
                         <CardDescription>
-                            Use these templates to introduce, propose, and explain the TransConnect opportunity to your network. Your personal referral link is automatically included.
+                            Use these templates to introduce, propose, and explain the Logistics Flow opportunity to your network. Your personal referral link is automatically included.
                         </CardDescription>
                     </div>
                 </div>
