@@ -371,7 +371,7 @@ function BackendContent() {
                     </SidebarMenuSubItem>
 
                     <SidebarMenuSubItem>
-                        <SidebarMenuButton size="sm" isActive={['partners', 'partner-pitch', 'partner-offer', 'partner-emails'].some(v => activeView === v)}>
+                        <SidebarMenuButton size="sm" isActive={['partners', 'partner-pitch', 'partner-offer', 'partner-emails'].includes(activeView)}>
                             <Handshake />Partner Pitch
                         </SidebarMenuButton>
                         <SidebarMenuSub>
@@ -490,5 +490,10 @@ export default function AdminAccountPage() {
     </Suspense>
   );
 }
+    
+
+    
+
+    
 
     
