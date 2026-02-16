@@ -15,26 +15,27 @@ export interface MonthlyPayment {
 }
 
 /**
- * Generates an amortization schedule for a standard loan.
+ * Generates an amortization schedule for a standard loan with an optional balloon/residual payment.
  * @param principal The initial loan amount.
  * @param annualRate The annual interest rate (as a percentage, e.g., 15 for 15%).
  * @param termInMonths The total number of months for the loan.
  * @param firstInstallmentDateStr The date of the first payment as a string.
  * @param paymentsInAdvance Whether payments are made at the beginning (advance) or end (arrears) of the period.
+ * @param residualValue The final balloon payment amount.
  * @returns An array of monthly payment details.
  */
 export function generateAmortizationSchedule(
-    principal: number, 
-    annualRate: number, 
+    principal: number,
+    annualRate: number,
     termInMonths: number,
     firstInstallmentDateStr?: string,
-    paymentsInAdvance?: boolean
+    paymentsInAdvance?: boolean,
+    residualValue?: number
 ): MonthlyPayment[] {
     if (principal <= 0 || termInMonths <= 0) {
         return [];
     }
     
-    // Use a default date if the string is invalid or empty
     const firstPaymentDate = new Date(firstInstallmentDateStr || new Date());
     if (isNaN(firstPaymentDate.getTime())) {
         return [];
@@ -43,110 +44,60 @@ export function generateAmortizationSchedule(
     const monthlyRate = annualRate / 100 / 12;
     const schedule: MonthlyPayment[] = [];
     let remainingBalance = principal;
+    const balloon = residualValue || 0;
 
     let pmt = 0;
     if (monthlyRate > 0) {
-        // Standard formula for payments in arrears
-        pmt = (principal * monthlyRate) / (1 - Math.pow(1 + monthlyRate, -termInMonths));
-        if (paymentsInAdvance) {
-            // Adjust payment if in advance
-            pmt = pmt / (1 + monthlyRate);
+        const factor = Math.pow(1 + monthlyRate, termInMonths);
+        if (factor !== 1) {
+            // Standard formula for a loan with a balloon payment
+            pmt = (principal * monthlyRate - (balloon * monthlyRate) / factor) / (1 - (1 / factor));
+        } else {
+             pmt = (principal - balloon) / termInMonths;
         }
     } else {
-        pmt = principal / termInMonths;
+        pmt = (principal - balloon) / termInMonths;
     }
-
-    const totalRepayment = pmt * termInMonths;
-    const totalInterest = totalRepayment - principal;
     
     let cumulativeCapitalPaid = 0;
     let cumulativeInterestPaid = 0;
 
     for (let i = 1; i <= termInMonths; i++) {
-        // The date for this installment
         const paymentDate = new Date(firstPaymentDate);
         paymentDate.setMonth(paymentDate.getMonth() + (i - 1));
+        
+        const interestPayment = remainingBalance * monthlyRate;
+        
+        let principalPayment;
+        let actualPayment;
 
-        // Interest calculation depends on advance/arrears
-        const interestPayment = paymentsInAdvance && i === 1 
-            ? 0 // No interest on the first payment if in advance
-            : remainingBalance * monthlyRate;
+        if (i === termInMonths) {
+            // The final payment must clear the remaining balance to zero.
+            principalPayment = remainingBalance;
+            actualPayment = principalPayment + interestPayment;
+        } else {
+            principalPayment = pmt - interestPayment;
+            actualPayment = pmt;
+        }
 
-        const principalPayment = pmt - interestPayment;
         remainingBalance -= principalPayment;
         
         cumulativeCapitalPaid += principalPayment;
         cumulativeInterestPaid += interestPayment;
 
-        const totalPaid = cumulativeCapitalPaid + cumulativeInterestPaid;
-        const remainingInterest = totalInterest - cumulativeInterestPaid;
-        const totalBalanceOwed = remainingBalance + remainingInterest;
-
         schedule.push({
             month: i,
             date: paymentDate,
-            payment: pmt,
+            payment: actualPayment,
             principal: principalPayment,
             interest: interestPayment,
             remainingBalance: remainingBalance < 0.01 ? 0 : remainingBalance,
             capitalPaid: cumulativeCapitalPaid,
             interestPaid: cumulativeInterestPaid,
-            totalPaid: totalPaid,
-            totalBalanceOwed: totalBalanceOwed < 0.01 ? 0 : totalBalanceOwed,
-        });
-    }
-
-    return schedule;
-}
-
-export function generateAccessFacilitySchedule(
-    principal: number,
-    annualRate: number,
-    termInMonths: number,
-    firstInstallmentDateStr?: string,
-    paymentsInAdvance?: boolean // unused
-): MonthlyPayment[] {
-    if (principal <= 0 || termInMonths <= 0) return [];
-    
-    const firstPaymentDate = new Date(firstInstallmentDateStr || new Date());
-    if (isNaN(firstPaymentDate.getTime())) return [];
-
-    const dailyRate = annualRate / 100 / 365;
-    const schedule: MonthlyPayment[] = [];
-    const daysInMonth = 30.4375; // Average
-
-    let cumulativeInterestPaid = 0;
-    let cumulativeCapitalPaid = 0;
-
-    for (let i = 1; i <= termInMonths; i++) {
-        const paymentDate = new Date(firstPaymentDate);
-        paymentDate.setMonth(paymentDate.getMonth() + (i - 1));
-
-        const interestForMonth = principal * dailyRate * daysInMonth;
-        cumulativeInterestPaid += interestForMonth;
-
-        const isLastMonth = i === termInMonths;
-        const principalPayment = isLastMonth ? principal : 0;
-        const payment = interestForMonth + principalPayment;
-        const remainingBalance = isLastMonth ? 0 : principal;
-        
-        cumulativeCapitalPaid += principalPayment;
-
-        schedule.push({
-            month: i,
-            date: paymentDate,
-            payment: payment,
-            principal: principalPayment,
-            interest: interestForMonth,
-            remainingBalance: remainingBalance,
-            capitalPaid: cumulativeCapitalPaid,
-            interestPaid: cumulativeInterestPaid,
             totalPaid: cumulativeCapitalPaid + cumulativeInterestPaid,
-            totalBalanceOwed: remainingBalance,
+            totalBalanceOwed: remainingBalance, // Simplified.
         });
     }
 
     return schedule;
 }
-
-    

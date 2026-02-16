@@ -6,7 +6,7 @@ import { useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
 import { Sheet, AlertTriangle, ArrowLeft } from 'lucide-react';
-import { generateAmortizationSchedule, generateAccessFacilitySchedule } from '../loan-calculations';
+import { generateAmortizationSchedule } from '../loan-calculations';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 
@@ -29,16 +29,14 @@ function RepaymentScheduleContent() {
     const principal = Number(searchParams.get('principal') || '0');
     const rate = Number(searchParams.get('rate') || '0');
     const term = Number(searchParams.get('term') || '0');
+    const residual = Number(searchParams.get('residual') || '0');
     const firstInstallmentDate = searchParams.get('firstInstallmentDate') || new Date().toISOString().split('T')[0];
     const paymentsInAdvance = searchParams.get('paymentsInAdvance') === 'true';
     const type = searchParams.get('type') || 'Loan';
     
     const schedule = React.useMemo(() => {
-        if (type === 'accessFacility') {
-            return generateAccessFacilitySchedule(principal, rate, term, firstInstallmentDate, paymentsInAdvance);
-        }
-        return generateAmortizationSchedule(principal, rate, term, firstInstallmentDate, paymentsInAdvance);
-    }, [principal, rate, term, firstInstallmentDate, paymentsInAdvance, type]);
+        return generateAmortizationSchedule(principal, rate, term, firstInstallmentDate, paymentsInAdvance, residual);
+    }, [principal, rate, term, firstInstallmentDate, paymentsInAdvance, residual]);
     
     const totalInterest = React.useMemo(() => {
         if (schedule.length === 0) return 0;
@@ -65,7 +63,7 @@ function RepaymentScheduleContent() {
     }
     
     return (
-        <Card className="w-full max-w-7xl mx-auto">
+        <Card className="w-full max-w-7xl mx-auto print:shadow-none print:border-none">
             <CardHeader>
                  <div className="flex justify-between items-start">
                     <div>
@@ -93,6 +91,7 @@ function RepaymentScheduleContent() {
                         <div className="space-y-1"><p className="text-muted-foreground">Current Prime</p><p className="font-semibold font-mono">7.75%</p></div>
                         <div className="space-y-1"><p className="text-muted-foreground"># Instalments</p><p className="font-semibold font-mono">{term}</p></div>
                         <div className="space-y-1"><p className="text-muted-foreground">Current Instalment</p><p className="font-semibold font-mono">{formatCurrency(schedule[0]?.payment || 0)}</p></div>
+                         <div className="space-y-1"><p className="text-muted-foreground">Residual</p><p className="font-semibold font-mono">{formatCurrency(residual || 0)}</p></div>
                     </div>
                 </div>
                 <div className="border rounded-md overflow-x-auto">
@@ -158,5 +157,3 @@ export default function RepaymentSchedulePage() {
         </div>
     )
 }
-
-    

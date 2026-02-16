@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useCallback } from 'react';
@@ -20,6 +21,7 @@ const agreementSchema = z.object({
     amount: z.coerce.number().optional(),
     term: z.coerce.number().optional(),
     rate: z.coerce.number().optional(),
+    residual: z.coerce.number().optional(),
     dealsPerMonth: z.coerce.number().optional(),
     recurring: z.boolean().default(true),
     startDate: z.string().optional(),
@@ -36,7 +38,6 @@ const formSchema = z.object({
     installmentSale: agreementSchema,
     lease: agreementSchema,
     factoring: agreementSchema,
-    accessFacility: agreementSchema,
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -46,11 +47,10 @@ const defaultValues: FormValues = {
     quoteConversionRate: 50,
     enquiryConversionRate: 30,
     applicationConversionRate: 60,
-    loan: { enabled: true, amount: 50000, term: 12, rate: 60, dealsPerMonth: 1, recurring: true, startDate: '2026-02-05', firstInstallmentDate: '2026-03-05', paymentsInAdvance: false },
-    installmentSale: { enabled: true, amount: 750000, term: 60, rate: 15, dealsPerMonth: 1, recurring: true, startDate: '', firstInstallmentDate: '', paymentsInAdvance: false },
-    lease: { enabled: false, amount: 600000, term: 54, rate: 16, dealsPerMonth: 0, recurring: true, startDate: '', firstInstallmentDate: '', paymentsInAdvance: false },
-    factoring: { enabled: true, amount: 100000, term: 3, rate: 5, dealsPerMonth: 2, recurring: true, startDate: '', firstInstallmentDate: '', paymentsInAdvance: false },
-    accessFacility: { enabled: true, amount: 100000, term: 12, rate: 25, dealsPerMonth: 1, recurring: false, startDate: '', firstInstallmentDate: '', paymentsInAdvance: false },
+    loan: { enabled: true, amount: 50000, term: 12, rate: 60, residual: 0, dealsPerMonth: 1, recurring: true, startDate: '2026-02-05', firstInstallmentDate: '2026-03-05', paymentsInAdvance: false },
+    installmentSale: { enabled: true, amount: 750000, term: 60, rate: 15, residual: 0, dealsPerMonth: 1, recurring: true, startDate: '', firstInstallmentDate: '', paymentsInAdvance: false },
+    lease: { enabled: false, amount: 600000, term: 54, rate: 16, residual: 0, dealsPerMonth: 0, recurring: true, startDate: '', firstInstallmentDate: '', paymentsInAdvance: false },
+    factoring: { enabled: true, amount: 100000, term: 3, rate: 5, residual: 0, dealsPerMonth: 2, recurring: true, startDate: '', firstInstallmentDate: '', paymentsInAdvance: false },
 };
 
 export default function LendingAssumptions() {
@@ -77,6 +77,14 @@ export default function LendingAssumptions() {
                         }
                     }
                 }
+                // Ensure residual is a number, default to 0 if not present
+                (Object.keys(updated) as Array<keyof FormValues>).forEach(key => {
+                    if (typeof updated[key] === 'object' && updated[key] !== null && 'enabled' in updated[key]) {
+                        if (typeof (updated[key] as any).residual !== 'number') {
+                            (updated[key] as any).residual = 0;
+                        }
+                    }
+                });
                 return updated;
             }
             return defaultValues;
@@ -97,13 +105,14 @@ export default function LendingAssumptions() {
         }
     };
     
-    const handleGenerateSchedule = (agreementType: "loan" | "installmentSale" | "lease" | "factoring" | "accessFacility") => {
+    const handleGenerateSchedule = (agreementType: "loan" | "installmentSale" | "lease" | "factoring") => {
         const values = watch(agreementType);
         const principal = (values.amount || 0) * (values.dealsPerMonth || 1);
         const query = new URLSearchParams({
             principal: principal.toString(),
             rate: values.rate?.toString() || '0',
             term: values.term?.toString() || '0',
+            residual: values.residual?.toString() || '0',
             startDate: values.startDate || '',
             firstInstallmentDate: values.firstInstallmentDate || '',
             paymentsInAdvance: values.paymentsInAdvance ? 'true' : 'false',
@@ -112,7 +121,7 @@ export default function LendingAssumptions() {
         router.push(`/backend/lending/repayment-schedule?${query.toString()}`);
     }
 
-    const renderAgreementFields = (name: "loan" | "installmentSale" | "lease" | "factoring" | "accessFacility", title: string) => (
+    const renderAgreementFields = (name: "loan" | "installmentSale" | "lease" | "factoring", title: string) => (
         <Card className="flex flex-col">
             <CardHeader>
                 <FormField
@@ -137,6 +146,7 @@ export default function LendingAssumptions() {
                         <FormField control={form.control} name={`${name}.amount`} render={({ field }) => (<FormItem><FormLabel>Avg. Amount (R)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
                         <FormField control={form.control} name={`${name}.term`} render={({ field }) => (<FormItem><FormLabel>Avg. Term (Months)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
                         <FormField control={form.control} name={`${name}.rate`} render={({ field }) => (<FormItem><FormLabel>Avg. Rate (%)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                        <FormField control={form.control} name={`${name}.residual`} render={({ field }) => (<FormItem><FormLabel>Residual Value (R)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
                         <FormField control={form.control} name={`${name}.startDate`} render={({ field }) => (<FormItem><FormLabel>Start Date</FormLabel><FormControl><Input type="date" {...field} /></FormControl><FormMessage /></FormItem>)} />
                         <FormField control={form.control} name={`${name}.firstInstallmentDate`} render={({ field }) => (<FormItem><FormLabel>First Installment Date</FormLabel><FormControl><Input type="date" {...field} /></FormControl><FormMessage /></FormItem>)} />
                     </div>
@@ -213,7 +223,6 @@ export default function LendingAssumptions() {
                             {renderAgreementFields("installmentSale", "Installment Sale")}
                             {renderAgreementFields("lease", "Lease / Rental")}
                             {renderAgreementFields("factoring", "Factoring / Discounting")}
-                            {renderAgreementFields("accessFacility", "Access Facility")}
                         </CardContent>
                     </Card>
                     
