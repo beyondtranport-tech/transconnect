@@ -63,6 +63,7 @@ import {
   Lightbulb,
   ClipboardList,
   MessageSquare,
+  Code,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -81,7 +82,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 
 // Operations
 const AdminDashboardContent = dynamic(() => import('./dashboard-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const MemberWallet = dynamic(() => import('./wallet/[memberId]/member-wallet'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const MemberWallet = dynamic(() => import('@/app/backend/wallet/[memberId]/member-wallet'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const WalletTransactionsList = dynamic(() => import('./wallet-transactions-list'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const ShopsList = dynamic(() => import('./shops-list'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const ReconciliationPage = dynamic(() => import('./reconciliation/page'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
@@ -251,6 +252,7 @@ function BackendContent() {
   const navigate = (view: string) => router.push(`/backend?view=${view}`, { scroll: false });
   
   const isOperationsActive = ['members', 'users', 'wallet', 'wallet-transactions', 'shops', 'reconciliation', 'contributions', 'activity', 'communications', 'support-inbox'].includes(activeView);
+  const isOriginationActive = ['opportunities', 'quotes', 'enquiries', 'application', 'scoring'].includes(activeView);
   const isLendingDMSActive = activeView.startsWith('lending-');
   const isPartnersActive = activeView.startsWith('partners-');
   const isRevenueActive = [
@@ -294,6 +296,17 @@ function BackendContent() {
                     <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'reconciliation'} onClick={() => navigate('reconciliation')}><Scale />Bank Reconciliation</SidebarMenuSubButton></SidebarMenuSubItem>
                   </SidebarMenuSub>
                 </SidebarMenuItem>
+
+                 <SidebarMenuItem>
+                    <SidebarMenuButton tooltip="Origination" isActive={isOriginationActive}><Lightbulb /><span>Origination</span></SidebarMenuButton>
+                    <SidebarMenuSub>
+                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'opportunities'} onClick={() => navigate('opportunities')}><FileSearch />Opportunities</SidebarMenuSubButton></SidebarMenuSubItem>
+                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'quotes'} onClick={() => navigate('quotes')}><FileText />Quotes</SidebarMenuSubButton></SidebarMenuSubItem>
+                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'enquiries'} onClick={() => navigate('enquiries')}><ClipboardList />Enquiries</SidebarMenuSubButton></SidebarMenuSubItem>
+                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'application'} onClick={() => navigate('application')}><FileSignature />Application</SidebarMenuSubButton></SidebarMenuSubItem>
+                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'scoring'} onClick={() => navigate('scoring')}><Star />Scoring</SidebarMenuSubButton></SidebarMenuSubItem>
+                    </SidebarMenuSub>
+                 </SidebarMenuItem>
 
                 <SidebarMenuItem>
                   <SidebarMenuButton tooltip="Lending Management" isActive={isLendingDMSActive}><Landmark /><span>Lending DMS</span></SidebarMenuButton>
