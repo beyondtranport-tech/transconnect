@@ -167,7 +167,6 @@ function InvestorActionMenu({ onInvite, onEdit, onDelete, onPitch, investorId }:
 
 export default function InvestorManagement() {
   const { toast } = useToast();
-
   const [investors, setInvestors] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
