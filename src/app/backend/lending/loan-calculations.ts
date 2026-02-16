@@ -99,4 +99,54 @@ export function generateAmortizationSchedule(
     return schedule;
 }
 
+export function generateAccessFacilitySchedule(
+    principal: number,
+    annualRate: number,
+    termInMonths: number,
+    firstInstallmentDateStr?: string,
+    paymentsInAdvance?: boolean // unused
+): MonthlyPayment[] {
+    if (principal <= 0 || termInMonths <= 0) return [];
+    
+    const firstPaymentDate = new Date(firstInstallmentDateStr || new Date());
+    if (isNaN(firstPaymentDate.getTime())) return [];
+
+    const dailyRate = annualRate / 100 / 365;
+    const schedule: MonthlyPayment[] = [];
+    const daysInMonth = 30.4375; // Average
+
+    let cumulativeInterestPaid = 0;
+    let cumulativeCapitalPaid = 0;
+
+    for (let i = 1; i <= termInMonths; i++) {
+        const paymentDate = new Date(firstPaymentDate);
+        paymentDate.setMonth(paymentDate.getMonth() + (i - 1));
+
+        const interestForMonth = principal * dailyRate * daysInMonth;
+        cumulativeInterestPaid += interestForMonth;
+
+        const isLastMonth = i === termInMonths;
+        const principalPayment = isLastMonth ? principal : 0;
+        const payment = interestForMonth + principalPayment;
+        const remainingBalance = isLastMonth ? 0 : principal;
+        
+        cumulativeCapitalPaid += principalPayment;
+
+        schedule.push({
+            month: i,
+            date: paymentDate,
+            payment: payment,
+            principal: principalPayment,
+            interest: interestForMonth,
+            remainingBalance: remainingBalance,
+            capitalPaid: cumulativeCapitalPaid,
+            interestPaid: cumulativeInterestPaid,
+            totalPaid: cumulativeCapitalPaid + cumulativeInterestPaid,
+            totalBalanceOwed: remainingBalance,
+        });
+    }
+
+    return schedule;
+}
+
     

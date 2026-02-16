@@ -36,6 +36,7 @@ const formSchema = z.object({
     installmentSale: agreementSchema,
     lease: agreementSchema,
     factoring: agreementSchema,
+    accessFacility: agreementSchema,
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -49,6 +50,7 @@ const defaultValues: FormValues = {
     installmentSale: { enabled: true, amount: 750000, term: 60, rate: 15, dealsPerMonth: 1, recurring: true, startDate: '', firstInstallmentDate: '', paymentsInAdvance: false },
     lease: { enabled: false, amount: 600000, term: 54, rate: 16, dealsPerMonth: 0, recurring: true, startDate: '', firstInstallmentDate: '', paymentsInAdvance: false },
     factoring: { enabled: true, amount: 100000, term: 3, rate: 5, dealsPerMonth: 2, recurring: true, startDate: '', firstInstallmentDate: '', paymentsInAdvance: false },
+    accessFacility: { enabled: true, amount: 100000, term: 12, rate: 25, dealsPerMonth: 1, recurring: false, startDate: '', firstInstallmentDate: '', paymentsInAdvance: false },
 };
 
 export default function LendingAssumptions() {
@@ -95,7 +97,7 @@ export default function LendingAssumptions() {
         }
     };
     
-    const handleGenerateSchedule = (agreementType: "loan" | "installmentSale" | "lease" | "factoring") => {
+    const handleGenerateSchedule = (agreementType: "loan" | "installmentSale" | "lease" | "factoring" | "accessFacility") => {
         const values = watch(agreementType);
         const principal = (values.amount || 0) * (values.dealsPerMonth || 1);
         const query = new URLSearchParams({
@@ -110,7 +112,7 @@ export default function LendingAssumptions() {
         router.push(`/backend/lending/repayment-schedule?${query.toString()}`);
     }
 
-    const renderAgreementFields = (name: "loan" | "installmentSale" | "lease" | "factoring", title: string) => (
+    const renderAgreementFields = (name: "loan" | "installmentSale" | "lease" | "factoring" | "accessFacility", title: string) => (
         <Card className="flex flex-col">
             <CardHeader>
                 <FormField
@@ -211,6 +213,7 @@ export default function LendingAssumptions() {
                             {renderAgreementFields("installmentSale", "Installment Sale")}
                             {renderAgreementFields("lease", "Lease / Rental")}
                             {renderAgreementFields("factoring", "Factoring / Discounting")}
+                            {renderAgreementFields("accessFacility", "Access Facility")}
                         </CardContent>
                     </Card>
                     

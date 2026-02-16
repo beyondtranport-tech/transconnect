@@ -6,7 +6,7 @@ import { useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
 import { Sheet, AlertTriangle, ArrowLeft } from 'lucide-react';
-import { generateAmortizationSchedule } from '../loan-calculations';
+import { generateAmortizationSchedule, generateAccessFacilitySchedule } from '../loan-calculations';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 
@@ -34,8 +34,11 @@ function RepaymentScheduleContent() {
     const type = searchParams.get('type') || 'Loan';
     
     const schedule = React.useMemo(() => {
+        if (type === 'accessFacility') {
+            return generateAccessFacilitySchedule(principal, rate, term, firstInstallmentDate, paymentsInAdvance);
+        }
         return generateAmortizationSchedule(principal, rate, term, firstInstallmentDate, paymentsInAdvance);
-    }, [principal, rate, term, firstInstallmentDate, paymentsInAdvance]);
+    }, [principal, rate, term, firstInstallmentDate, paymentsInAdvance, type]);
     
     const totalInterest = React.useMemo(() => {
         if (schedule.length === 0) return 0;
