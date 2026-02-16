@@ -1,4 +1,3 @@
-
 'use client';
     
 import { useState, useEffect, useCallback, useMemo } from 'react';
@@ -124,9 +123,13 @@ export function useDoc<T = any>(
             }
 
         } catch (e: any) {
-            console.error("useDoc fetch error:", e);
              if (isMounted) {
-                setError(e);
+                const permissionError = new FirestorePermissionError({
+                    path: path,
+                    operation: 'get',
+                });
+                errorEmitter.emit('permission-error', permissionError);
+                setError(permissionError);
                 setData(null);
             }
         } finally {

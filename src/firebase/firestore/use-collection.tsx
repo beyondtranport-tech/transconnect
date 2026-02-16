@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
@@ -152,9 +151,13 @@ export function useCollection<T = any>(
                 setData(result.data as StateDataType);
             }
         } catch (e: any) {
-             console.error("useCollection fetch error:", e);
              if (isMounted) {
-                setError(e);
+                const permissionError = new FirestorePermissionError({
+                    path: apiPath,
+                    operation: 'list',
+                });
+                errorEmitter.emit('permission-error', permissionError);
+                setError(permissionError);
                 setData(null);
             }
         } finally {
