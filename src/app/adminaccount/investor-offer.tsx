@@ -1,8 +1,9 @@
+
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { DollarSign, TrendingUp } from 'lucide-react';
+import { DollarSign, TrendingUp, Handshake, AppWindow, DatabaseZap } from 'lucide-react';
 import React from 'react';
 
 const formatCurrency = (amount: number) => {
@@ -16,26 +17,45 @@ export default function InvestorOffer() {
     return (
         <div className="space-y-8">
             <div>
-                <h1 className="text-3xl font-bold font-headline">The Investment Offer</h1>
-                <p className="text-lg text-muted-foreground mt-2">A high-level overview of our financial model and revenue projections.</p>
+                <h1 className="text-3xl font-bold font-headline">The Two-Part Investment Opportunity</h1>
+                <p className="text-lg text-muted-foreground mt-2">Logistics Flow offers two distinct and independent opportunities for investors: a high-growth equity investment in our platform and a stable, debt-based investment in the loan book we originate.</p>
+            </div>
+            
+            <div className="grid md:grid-cols-2 gap-8">
+                <Card className="flex flex-col">
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2"><AppWindow className="h-6 w-6 text-primary"/>Opportunity 1: Equity in the Platform</CardTitle>
+                        <CardDescription>Invest in the technology and ecosystem of Logistics Flow itself.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4 flex-grow">
+                        <p>This is a venture capital-style investment in a high-growth SaaS platform with multiple, diversified revenue streams.</p>
+                        <ul className="list-disc list-inside space-y-2 text-sm text-muted-foreground">
+                            <li><strong className="text-foreground">SaaS Revenue:</strong> Recurring income from tiered membership plans and add-on services like our AI toolkit.</li>
+                            <li><strong className="text-foreground">Commission Revenue:</strong> A percentage fee on all transactions across our Finance, Supplier, and Buy & Sell Malls.</li>
+                            <li><strong className="text-foreground">Marketplace Sales:</strong> Revenue from the sale of value-added third-party products.</li>
+                        </ul>
+                        <p className="pt-2">Your investment fuels platform development, user acquisition, and market expansion, with returns driven by the platform's overall growth and profitability.</p>
+                    </CardContent>
+                </Card>
+                 <Card className="flex flex-col">
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2"><DatabaseZap className="h-6 w-6 text-primary"/>Opportunity 2: Funding the Loan Book</CardTitle>
+                        <CardDescription>Provide the capital for the finance deals originated through our platform.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4 flex-grow">
+                        <p>This is a debt investment opportunity where you act as a lender, earning returns from the interest and fees on the loans provided to our members.</p>
+                         <ul className="list-disc list-inside space-y-2 text-sm text-muted-foreground">
+                            <li><strong className="text-foreground">Deal Origination Engine:</strong> The platform generates a consistent flow of pre-vetted, data-enriched applications for asset finance and working capital.</li>
+                            <li><strong className="text-foreground">De-Risked Lending:</strong> Our ecosystem provides unique, first-party data on a business's real-time performance, allowing for more accurate risk assessment than traditional models.</li>
+                            <li><strong className="text-foreground">Structured Returns:</strong> The complete Lending Model will provide detailed projections on the loan book's performance, returns, and cash flow recycling.</li>
+                        </ul>
+                    </CardContent>
+                </Card>
             </div>
             <Card>
                 <CardHeader>
-                    <CardTitle className="flex items-center gap-2"><DollarSign className="h-6 w-6 text-primary"/>Multi-Stream Revenue Model</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                     <p className="text-muted-foreground">Our platform generates revenue through three primary, diversified streams:</p>
-                    <div className="grid md:grid-cols-3 gap-6">
-                        <div className="p-4 border rounded-lg"><h4 className="font-semibold">1. Membership Subscriptions</h4><p className="text-sm text-muted-foreground mt-1">Recurring revenue from members on paid plans.</p></div>
-                        <div className="p-4 border rounded-lg"><h4 className="font-semibold">2. Transaction Commissions</h4><p className="text-sm text-muted-foreground mt-1">A percentage fee on all mall transactions.</p></div>
-                        <div className="p-4 border rounded-lg"><h4 className="font-semibold">3. SaaS & Value-Added Services</h4><p className="text-sm text-muted-foreground mt-1">Fees for tech tools and Marketplace products.</p></div>
-                    </div>
-                </CardContent>
-            </Card>
-            <Card>
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2"><TrendingUp className="h-6 w-6 text-primary"/>Financial Projections (Illustrative)</CardTitle>
-                     <CardDescription>Based on our sales roadmap and market assumptions.</CardDescription>
+                    <CardTitle className="flex items-center gap-2"><TrendingUp className="h-6 w-6 text-primary"/>Platform Financial Projections (Illustrative)</CardTitle>
+                     <CardDescription>The following projections relate to the <strong className="text-foreground">Equity Opportunity (Opportunity 1)</strong> and demonstrate the platform's revenue-generating potential.</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <Table>
@@ -47,7 +67,7 @@ export default function InvestorOffer() {
                         </TableBody>
                     </Table>
                 </CardContent>
-                 <CardFooter><p className="text-xs text-muted-foreground">Disclaimer: These projections are illustrative and not a guarantee of future performance.</p></CardFooter>
+                 <CardFooter><p className="text-xs text-muted-foreground">Disclaimer: These projections are illustrative and not a guarantee of future performance. Projections for the Loan Book (Opportunity 2) are available in the Lending Model.</p></CardFooter>
             </Card>
         </div>
     );
