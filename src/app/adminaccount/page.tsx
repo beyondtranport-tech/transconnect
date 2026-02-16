@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -163,6 +164,7 @@ const DeveloperElevatorPitch = dynamic(() => import('./developer-elevator-pitch'
 const DeveloperOffer = dynamic(() => import('./developer-offer'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const DeveloperEmailSequence = dynamic(() => import('./developer-email-sequence'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 
+
 function AdminAuthGuard({ children }: { children: React.ReactNode }) {
     const { user, isUserLoading } = useUser();
     const router = useRouter();
@@ -237,6 +239,7 @@ function BackendContent() {
       case 'partners': return <PartnerManagement />;
       case 'isa-agents': return <ISAManagement />;
       case 'investors': return <InvestorManagement />;
+      case 'developer-list': return <DeveloperManagement />;
       case 'partner-pitch': return <PartnerElevatorPitch />;
       case 'partner-offer': return <PartnerOffer />;
       case 'partner-emails': return <PartnerEmailSequence />;
@@ -244,7 +247,6 @@ function BackendContent() {
       case 'investor-pitch': return <InvestorElevatorPitch />;
       case 'investor-offer': return <InvestorOffer />;
       case 'investor-emails': return <InvestorEmailSequence />;
-      case 'developer-list': return <DeveloperManagement />;
       case 'developer-pitch': return <DeveloperElevatorPitch />;
       case 'developer-offer': return <DeveloperOffer />;
       case 'developer-emails': return <DeveloperEmailSequence />;
@@ -381,10 +383,10 @@ function BackendContent() {
                             <Briefcase />Investor Pitch
                         </SidebarMenuButton>
                         <SidebarMenuSub>
-                            <SidebarMenuSubItem><SidebarMenuSubButton size="sm" isActive={activeView === 'investors'} onClick={() => navigate('investors')}>Investor List</SidebarMenuSubButton></SidebarMenuSubItem>
-                            <SidebarMenuSubItem><SidebarMenuSubButton size="sm" isActive={activeView === 'investor-pitch'} onClick={() => navigate('investor-pitch')}>Elevator Pitch</SidebarMenuSubButton></SidebarMenuSubItem>
-                            <SidebarMenuSubItem><SidebarMenuSubButton size="sm" isActive={activeView === 'investor-offer'} onClick={() => navigate('investor-offer')}>Investor Offer</SidebarMenuSubButton></SidebarMenuSubItem>
-                            <SidebarMenuSubItem><SidebarMenuSubButton size="sm" isActive={activeView === 'investor-emails'} onClick={() => navigate('investor-emails')}>Investor Emails</SidebarMenuSubButton></SidebarMenuSubItem>
+                             <SidebarMenuSubItem><SidebarMenuSubButton size="sm" isActive={activeView === 'investors'} onClick={() => navigate('investors')}>Investor List</SidebarMenuSubButton></SidebarMenuSubItem>
+                             <SidebarMenuSubItem><SidebarMenuSubButton size="sm" isActive={activeView === 'investor-pitch'} onClick={() => navigate('investor-pitch')}>Elevator Pitch</SidebarMenuSubButton></SidebarMenuSubItem>
+                             <SidebarMenuSubItem><SidebarMenuSubButton size="sm" isActive={activeView === 'investor-offer'} onClick={() => navigate('investor-offer')}>Investor Offer</SidebarMenuSubButton></SidebarMenuSubItem>
+                             <SidebarMenuSubItem><SidebarMenuSubButton size="sm" isActive={activeView === 'investor-emails'} onClick={() => navigate('investor-emails')}>Investor Emails</SidebarMenuSubButton></SidebarMenuSubItem>
                         </SidebarMenuSub>
                     </SidebarMenuSubItem>
 
@@ -484,3 +486,4 @@ export default function AdminAccountPage() {
     </Suspense>
   );
 }
+    
