@@ -94,12 +94,37 @@ Best regards,
 [Your Name]
 `
     },
+    explanation: {
+        subject: "The \"Why\" Behind Logistics Flow: Our Core Strategy",
+        content: `
+Dear [Investor Name],
+
+Following up on our previous discussions, I wanted to share the core strategic drivers behind the creation of Logistics Flow. This goes beyond just the features; it's about the "why" that fuels our business model.
+
+Our primary objectives are threefold:
+
+1.  **Diversify Our Revenue Model:** We've engineered a platform with multiple, independent revenue streams—from SaaS subscriptions and transaction fees to value-added services. This creates a resilient and scalable business that isn't reliant on a single income source.
+
+2.  **Create an Origination Engine for Simplyfi Flow:** Logistics Flow is a powerful, automated origination mechanism. It is designed to seamlessly channel qualified, data-rich funding applications directly into our specialized lending entity, Simplyfi Flow, dramatically reducing acquisition costs and improving deal flow.
+
+3.  **Generate First-Party Data to De-Risk Lending:** By capturing real-time commercial activity on our platform (e.g., sales, supplier payments, fleet operations), we are building a proprietary, first-party data source. This allows us to dramatically improve our credit risk assessment in the funding division, making smarter, more profitable lending decisions that traditional financiers cannot.
+
+In essence, Logistics Flow is an ecosystem that not only generates its own revenue but also acts as a data-driven engine to fuel and de-risk our core lending operations.
+
+I hope this provides a clearer picture of our long-term vision. I am available to discuss this further at your convenience.
+
+Best regards,
+
+[Your Name]
+`
+    },
 };
 
 const emailTabs = [
     { value: "intro", label: "1. Initial Outreach" },
     { value: "proposal", label: "2. The Proposal" },
     { value: "financials", label: "3. Financials" },
+    { value: "explanation", label: "4. Explanation" },
 ];
 
 export default function InvestorEmailSequence() {
@@ -109,10 +134,11 @@ export default function InvestorEmailSequence() {
                 <div className="flex items-center gap-4"><Mail className="h-8 w-8 text-primary"/><div><CardTitle>Investor Outreach Email Sequence</CardTitle><CardDescription>Use these templates to introduce, propose, and explain the Logistics Flow investment opportunity.</CardDescription></div></div>
             </CardHeader>
             <Tabs defaultValue="intro" className="w-full">
-                <TabsList className="grid w-full grid-cols-3">{emailTabs.map(tab => (<TabsTrigger key={tab.value} value={tab.value}>{tab.label}</TabsTrigger>))}</TabsList>
+                <TabsList className="grid w-full grid-cols-4">{emailTabs.map(tab => (<TabsTrigger key={tab.value} value={tab.value}>{tab.label}</TabsTrigger>))}</TabsList>
                 <TabsContent value="intro"><EmailTemplate subject={templates.intro.subject} content={templates.intro.content} /></TabsContent>
                 <TabsContent value="proposal"><EmailTemplate subject={templates.proposal.subject} content={templates.proposal.content} /></TabsContent>
                 <TabsContent value="financials"><EmailTemplate subject={templates.financials.subject} content={templates.financials.content} /></TabsContent>
+                <TabsContent value="explanation"><EmailTemplate subject={templates.explanation.subject} content={templates.explanation.content} /></TabsContent>
             </Tabs>
         </div>
     );
