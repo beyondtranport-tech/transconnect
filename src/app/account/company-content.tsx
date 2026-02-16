@@ -18,8 +18,9 @@ import { useToast } from '@/hooks/use-toast';
 import { useState, useEffect } from 'react';
 import { Loader2, Building, Save, Banknote, ArrowLeft } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useUser, useFirestore, getClientSideAuthToken, useDoc, useMemoFirebase } from '@/firebase';
-import { doc } from 'firebase/firestore';
+import { useUser, useFirestore, useDoc, useMemoFirebase, errorEmitter } from '@/firebase';
+import { FirestorePermissionError } from '@/firebase/errors';
+import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { Separator } from '@/components/ui/separator';
 import { useRouter, useSearchParams } from 'next/navigation';
 
@@ -97,7 +98,7 @@ export default function CompanyContent() {
 
   const onSubmit = async (values: CompanyFormValues) => {
     setIsSaving(true);
-    if (!user || !userData?.companyId) {
+    if (!companyDocRef) {
       toast({ variant: 'destructive', title: 'Error', description: 'Could not find company information. Please log in again.' });
       setIsSaving(false);
       return;
@@ -105,49 +106,28 @@ export default function CompanyContent() {
 
     const dataToUpdate = {
         ...values,
-        updatedAt: { _methodName: 'serverTimestamp' },
+        updatedAt: serverTimestamp(),
     };
 
-    try {
-        const token = await getClientSideAuthToken();
-        if (!token) {
-            throw new Error('Authentication token not found.');
-        }
-
-        const response = await fetch('/api/updateUserDoc', {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                path: `companies/${userData.companyId}`,
-                data: dataToUpdate
-            }),
+    updateDoc(companyDocRef, dataToUpdate)
+        .then(() => {
+            toast({
+                title: 'Company Info Updated',
+                description: 'Your company information has been saved.',
+            });
+            forceRefresh();
+        })
+        .catch((serverError) => {
+            const permissionError = new FirestorePermissionError({
+                path: companyDocRef.path,
+                operation: 'update',
+                requestResourceData: dataToUpdate,
+            });
+            errorEmitter.emit('permission-error', permissionError);
+        })
+        .finally(() => {
+            setIsSaving(false);
         });
-
-        const result = await response.json();
-
-        if (!response.ok) {
-            throw new Error(result.error || 'Failed to update company information.');
-        }
-
-        forceRefresh(); // Force a refetch of the company data to ensure UI is up to date
-
-        toast({
-            title: 'Company Info Updated',
-            description: 'Your company information has been saved.',
-        });
-    } catch (error: any) {
-        console.error("Error updating company info:", error);
-        toast({
-            variant: 'destructive',
-            title: 'Update Failed',
-            description: error.message || 'An unexpected error occurred.',
-        });
-    } finally {
-        setIsSaving(false);
-    }
   };
 
   const isLoading = isUserLoading || isUserDocLoading || isCompanyLoading;

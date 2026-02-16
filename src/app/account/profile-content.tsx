@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useForm } from 'react-hook-form';
@@ -95,11 +94,6 @@ export default function ProfileContent() {
             requestResourceData: dataToUpdate,
         });
         errorEmitter.emit('permission-error', permissionError);
-        toast({
-            variant: 'destructive',
-            title: 'Update Failed',
-            description: 'You do not have permission to update your profile.',
-        });
       })
       .finally(() => {
         setIsSaving(false);
