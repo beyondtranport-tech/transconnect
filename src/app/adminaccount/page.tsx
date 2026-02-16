@@ -126,7 +126,7 @@ function AdminAuthGuard({ children }: { children: React.ReactNode }) {
 
         if (!user) {
             router.replace('/signin?redirect=/adminaccount');
-        } else if (user.email !== 'mkoton100@gmail.com') {
+        } else if (user.email !== 'mkoton100@gmail.com' && user.email !== 'beyondtransport@gmail.com') {
             router.replace('/account'); 
         }
     }, [user, isUserLoading, router]);
