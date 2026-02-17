@@ -1,4 +1,6 @@
 
+'use client';
+
 import {
   Accordion,
   AccordionContent,
@@ -116,5 +118,3 @@ export default function ResourcesPage() {
     </div>
   );
 }
-
-    
