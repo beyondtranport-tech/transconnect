@@ -1,3 +1,2 @@
-'use server';
-// Consolidating to the single source of truth in /src/ai/flows
-export * from '@/ai/flows/image-edit-flow';
+// This file is intentionally blank to resolve a build conflict.
+// The correct flow is located at /src/ai/flows/image-edit-flow.ts
