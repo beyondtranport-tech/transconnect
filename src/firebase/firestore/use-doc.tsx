@@ -78,8 +78,6 @@ export function useDoc<T = any>(
                 token = await getClientSideAuthToken();
                 if (!token) {
                     if (isMounted) setIsLoading(false);
-                    // Don't throw an error if user is simply not logged in.
-                    // The component using the hook should handle the null user case.
                     return;
                 }
             }
@@ -96,23 +94,18 @@ export function useDoc<T = any>(
             if (!isMounted) return;
 
             if (!response.ok) {
-                // Any failed response is treated as a potential permission error.
-                // This ensures we always generate the contextual error for debugging.
-                const permissionError = new FirestorePermissionError({
-                    path: path,
-                    operation: 'get',
-                });
-                errorEmitter.emit('permission-error', permissionError);
-                if (isMounted) setError(permissionError);
+                // Throw an error to be caught by the catch block, which will generate the contextual error.
+                 const errorData = await response.json().catch(() => ({}));
+                 throw new Error(errorData.error || `API Error: ${response.status} ${response.statusText}`);
+            }
 
-            } else {
-                const result = await response.json();
+            const result = await response.json();
+            if (isMounted) {
                 setData(result.data as WithId<T> | null);
             }
 
         } catch (e: any) {
-            // This will catch network errors or other unexpected issues.
-            // We funnel this into the permission error flow as directed by system instructions.
+            // This single catch block now handles network errors and non-ok responses.
              if (isMounted) {
                 const permissionError = new FirestorePermissionError({
                     path: path,
