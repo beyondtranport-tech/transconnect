@@ -81,7 +81,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 // --- Dynamic Imports for Business Components ---
 
 // Operations
-const AdminDashboardContent = dynamic(() => import('@/app/backend/dashboard-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const AdminDashboardContent = dynamic(() => import('@/app/adminaccount/dashboard-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const MemberWallet = dynamic(() => import('@/app/backend/wallet/[memberId]/member-wallet'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const WalletTransactionsList = dynamic(() => import('@/app/backend/wallet-transactions-list'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const ShopsList = dynamic(() => import('@/app/backend/shops-list'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
