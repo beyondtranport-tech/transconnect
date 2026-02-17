@@ -14,11 +14,10 @@ import * as React from 'react';
 
 export default function RolePage({ params }: { params: { roleId: string } }) {
   const { user } = useUser();
-  const resolvedParams = React.use(params);
   
   const role = useMemo(() => {
-    return roles.find(r => r.id === resolvedParams.roleId);
-  }, [resolvedParams.roleId]);
+    return roles.find(r => r.id === params.roleId);
+  }, [params.roleId]);
 
   if (!role) {
     notFound();

@@ -1,4 +1,6 @@
 
+'use client';
+
 import data from "@/lib/placeholder-images.json";
 import { Wrench, CheckCircle, Star } from "lucide-react";
 import Image from "next/image";

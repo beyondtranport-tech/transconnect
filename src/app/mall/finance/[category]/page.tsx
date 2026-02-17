@@ -1,3 +1,4 @@
+
 'use client';
 
 import data from "@/lib/placeholder-images.json";
@@ -44,7 +45,7 @@ const categoryDetails = {
     "ngos-and-grants": { 
         id: "ngos-and-grants",
         name: "NGOs & Grants", 
-        description: "Access funding from non-governmental organizations and grant programs.",
+        description: "Access funding from non-governmental organizations and grant programs aimed at supporting transport businesses.",
         icon: HandCoins,
         partners: []
     },
