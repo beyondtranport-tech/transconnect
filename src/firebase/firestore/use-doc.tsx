@@ -1,3 +1,4 @@
+
 'use client';
     
 import { useState, useEffect, useCallback, useMemo } from 'react';
@@ -94,9 +95,15 @@ export function useDoc<T = any>(
             if (!isMounted) return;
 
             if (!response.ok) {
-                // Throw an error to be caught by the catch block, which will generate the contextual error.
-                 const errorData = await response.json().catch(() => ({}));
-                 throw new Error(errorData.error || `API Error: ${response.status} ${response.statusText}`);
+                // If the API returns a non-200 status, assume it's a permission error.
+                // Create the specialized error and emit it for the global listener.
+                const permissionError = new FirestorePermissionError({
+                    path: path,
+                    operation: 'get',
+                });
+                errorEmitter.emit('permission-error', permissionError);
+                setError(permissionError); // Also set local error state.
+                return; // Stop further processing.
             }
 
             const result = await response.json();
@@ -105,15 +112,9 @@ export function useDoc<T = any>(
             }
 
         } catch (e: any) {
-            // This single catch block now handles network errors and non-ok responses.
-             if (isMounted) {
-                const permissionError = new FirestorePermissionError({
-                    path: path,
-                    operation: 'get',
-                });
-                errorEmitter.emit('permission-error', permissionError);
-                setError(permissionError);
-                setData(null);
+            // This block catches network errors or other unexpected exceptions.
+            if (isMounted) {
+                setError(e);
             }
         } finally {
              if (isMounted) {
