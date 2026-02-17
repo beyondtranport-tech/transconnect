@@ -134,7 +134,7 @@ const StaffManagement = dynamic(() => import('@/app/backend/staff-content'), { l
 const ISAManagement = dynamic(() => import('./isa-management'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const AnalyticsDashboard = dynamic(() => import('./analytics-dashboard'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const LeadsAgent = dynamic(() => import('./leads-agent'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const CampaignContent = dynamic(() => import('./campaign-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+import CampaignContent from './campaign-content';
 const InvestorAiContent = dynamic(() => import('./investor-ai-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const PartnerAiContent = dynamic(() => import('./partner-ai-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const TTSStudio = dynamic(() => import('./tts-studio'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
@@ -240,9 +240,11 @@ function BackendContent() {
       case 'investors': return <InvestorManagement />;
       case 'developer-list': return <DeveloperManagement />;
       case 'partner-pitch': return <PartnerElevatorPitch />;
+      case 'member-sales-offer': return <NetworkOffer />;
+      case 'member-sales-emails': return <NetworkEmails />;
       case 'partner-offer': return <PartnerOffer />;
-      case 'partner-emails': return <PartnerEmailSequence />;
       case 'isa-emails': return <ISAEmailSequence />;
+      case 'partner-emails': return <PartnerEmailSequence />;
       case 'investor-pitch': return <InvestorElevatorPitch />;
       case 'investor-offer': return <InvestorOffer />;
       case 'investor-emails': return <InvestorEmailSequence />;
