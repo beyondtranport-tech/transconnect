@@ -1,4 +1,3 @@
-
 'use client';
 
 import BankDetailsSettings from "./bank-details-settings";

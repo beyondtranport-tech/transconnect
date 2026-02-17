@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
@@ -67,7 +66,7 @@ export default function InvestorOffer() {
                         </TableBody>
                     </Table>
                 </CardContent>
-                 <CardFooter><p className="text-xs text-muted-foreground">Disclaimer: These projections are illustrative. Projections for the Debtors Book (Opportunity 2) are available below.</p></CardFooter>
+                 <CardFooter><p className="text-xs text-muted-foreground">Disclaimer: These projections are illustrative and not a guarantee of future performance.</p></CardFooter>
             </Card>
 
              <Card>

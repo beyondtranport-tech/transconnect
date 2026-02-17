@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
@@ -188,7 +187,7 @@ export default function PartnerOffer() {
                     </div>
                      <div>
                         <h4 className="font-bold text-lg">Step 2: You Activate Your Network</h4>
-                        <p className="text-muted-foreground">You introduce Logistics Flow to your community. Your pitch is simple: invite them to join an ecosystem that saves them money on parts, helps them find work, and gives them access to better financing. We equip you with offers and materials to make signing up irresistible.</p>
+                        <p className="text-muted-foreground">You introduce Logistics Flow to your community. Your pitch is simple: invite them to join an ecosystem that saves them money, helps them find work, and gives them access to better financing. We equip you with offers and materials to make signing up irresistible.</p>
                     </div>
                      <div>
                         <h4 className="font-bold text-lg">Step 3: You Earn Automatically</h4>
@@ -202,5 +201,4 @@ export default function PartnerOffer() {
         </div>
     );
 }
-
     

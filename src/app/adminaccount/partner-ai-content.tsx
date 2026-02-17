@@ -1,4 +1,3 @@
-
 'use client';
 
 import CampaignContent from "./campaign-content";
