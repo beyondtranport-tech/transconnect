@@ -5,7 +5,7 @@ import React, { useMemo, Suspense } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { TrendingUp, AlertTriangle, Loader2 } from 'lucide-react';
-import { salesRoadmapLogic, budgetLogic } from '../lib/calculations';
+import { salesRoadmapLogic, budgetLogic } from '@/app/adminaccount/forecast/calculations';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 
@@ -46,7 +46,7 @@ function IncomeStatementComponent() {
     
     const { totalProjection } = useMemo(() => {
         if (!salesInputs || !settings) return { totalProjection: [] };
-        return salesRoadmapLogic(setupInputs, salesInputs);
+        return salesRoadmapLogic(settings, salesInputs);
     }, [salesInputs, settings]);
 
     const forecastData = useMemo(() => {

@@ -8,7 +8,7 @@ import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { AlertTriangle, Users, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { salesRoadmapLogic } from '../lib/calculations';
+import { salesRoadmapLogic } from '@/app/adminaccount/forecast/calculations';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 

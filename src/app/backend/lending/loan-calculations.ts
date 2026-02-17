@@ -1,6 +1,4 @@
 
-'use client';
-
 export interface MonthlyPayment {
     month: number;
     date: Date;
