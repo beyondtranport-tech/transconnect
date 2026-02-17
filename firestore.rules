@@ -13,8 +13,9 @@ service cloud.firestore {
       // It's recommended to use custom claims for security and scalability.
       // To set a custom claim, use the Firebase Admin SDK to set {'admin': true} on a user's token.
       let isSuperAdminByEmail = request.auth != null && (request.auth.token.email == 'mkoton100@gmail.com' || request.auth.token.email == 'beyondtransport@gmail.com');
+      let isSuperAdminByUID = request.auth != null && request.auth.uid == '4CH2RmdJHUSE5Zqc8kPoaEaqgCW2';
       let hasAdminClaim = request.auth != null && request.auth.token.admin == true;
-      return isSuperAdminByEmail || hasAdminClaim;
+      return isSuperAdminByEmail || hasAdminClaim || isSuperAdminByUID;
     }
     
     function isCompanyOwner(companyId) {
@@ -29,10 +30,7 @@ service cloud.firestore {
     // --- User Profiles ---
     // A user can read/update their own profile. Admins can read/list all profiles.
     match /users/{userId} {
-      allow read, update: if request.auth.uid == userId
-                          || request.auth.token.email == 'beyondtransport@gmail.com'
-                          || request.auth.token.email == 'mkoton100@gmail.com'
-                          || request.auth.token.admin == true;
+      allow read, update: if isOwner(userId) || isAdmin();
       allow create: if request.auth != null; // Onboarding via API
       allow list: if isAdmin();
     }
