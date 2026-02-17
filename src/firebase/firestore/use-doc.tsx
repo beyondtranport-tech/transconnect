@@ -78,6 +78,8 @@ export function useDoc<T = any>(
                 token = await getClientSideAuthToken();
                 if (!token) {
                     if (isMounted) setIsLoading(false);
+                    // Don't throw an error if user is simply not logged in.
+                    // The component using the hook should handle the null user case.
                     return;
                 }
             }
@@ -94,35 +96,23 @@ export function useDoc<T = any>(
             if (!isMounted) return;
 
             if (!response.ok) {
-                let errorMsg = `Failed to fetch document. Status: ${response.status}`;
-                let isPermissionError = response.status === 403;
+                // Any failed response is treated as a potential permission error.
+                // This ensures we always generate the contextual error for debugging.
+                const permissionError = new FirestorePermissionError({
+                    path: path,
+                    operation: 'get',
+                });
+                errorEmitter.emit('permission-error', permissionError);
+                if (isMounted) setError(permissionError);
 
-                try {
-                    const errorResult = await response.json();
-                    errorMsg = errorResult.error || errorMsg;
-                    if (errorMsg.includes('Forbidden') || errorMsg.includes('permission')) {
-                        isPermissionError = true;
-                    }
-                } catch (e) {
-                    errorMsg = `${errorMsg}. ${response.statusText}`;
-                }
-
-                if (isPermissionError) {
-                    const permissionError = new FirestorePermissionError({
-                        path: path,
-                        operation: 'get',
-                    });
-                    errorEmitter.emit('permission-error', permissionError);
-                    if (isMounted) setError(permissionError);
-                } else {
-                    throw new Error(errorMsg);
-                }
             } else {
                 const result = await response.json();
                 setData(result.data as WithId<T> | null);
             }
 
         } catch (e: any) {
+            // This will catch network errors or other unexpected issues.
+            // We funnel this into the permission error flow as directed by system instructions.
              if (isMounted) {
                 const permissionError = new FirestorePermissionError({
                     path: path,
