@@ -61,15 +61,28 @@ const setSessionCookie = async (idToken: string | null) => {
 };
 
 function useEnrichedUser(baseUser: User | null, firestore: Firestore | null) {
+    const isAdmin = baseUser?.email === 'beyondtransport@gmail.com' || baseUser?.email === 'mkoton100@gmail.com';
+
+    // If the user is an admin, we don't need to fetch their company profile.
     const userDocRef = useMemoFirebase(() => {
-        if (!firestore || !baseUser) return null;
+        if (!firestore || !baseUser || isAdmin) return null;
         return doc(firestore, 'users', baseUser.uid);
-    }, [firestore, baseUser]);
+    }, [firestore, baseUser, isAdmin]);
 
     const { data: userData, isLoading: isUserDataLoading, forceRefresh } = useDoc<{ companyId: string; passwordChangeRequired?: boolean }>(userDocRef);
     
     return useMemo(() => {
         if (!baseUser) return { enrichedUser: null, isEnriching: false, forceRefresh };
+        
+        // If admin, enrichment is done. Just return the base user.
+        if (isAdmin) {
+             return {
+                enrichedUser: baseUser as EnrichedUser,
+                isEnriching: false,
+                forceRefresh: () => {} // No-op refresh for admin, as there's nothing to refresh
+            };
+        }
+
         if (isUserDataLoading) return { enrichedUser: baseUser as EnrichedUser, isEnriching: true, forceRefresh };
         
         return {
@@ -81,7 +94,7 @@ function useEnrichedUser(baseUser: User | null, firestore: Firestore | null) {
             isEnriching: false,
             forceRefresh
         };
-    }, [baseUser, userData, isUserDataLoading, forceRefresh]);
+    }, [baseUser, userData, isUserDataLoading, forceRefresh, isAdmin]);
 }
 
 
