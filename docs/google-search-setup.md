@@ -38,15 +38,20 @@ This is a multi-step process that must be followed exactly, as the Google UI can
     *   **Name your search engine** (e.g., "Logistics Flow Lead Finder v3").
     *   **CRITICAL:** In the "What to search?" section, you will be forced to enter a website. Enter a placeholder like `www.google.com`.
     *   Click **Create**.
+
 4.  **Setup page 2: Configuration (The Important Part)**
-    *   You will be taken to an overview page. On the menu on the **left-hand side**, under "Setup", click **"Sites to search"**.
+    *   You will be taken to a "Congratulations" page with a code snippet. **IGNORE THIS PAGE.**
+    *   Go back to the main control panel by clicking this link: **[https://programmablesearchengine.google.com/controlpanel/all](https://programmablesearchengine.google.com/controlpanel/all)**
+    *   You will see your new engine listed. Click on its name (e.g., "Logistics Flow Lead Finder v3").
+    *   Now you are on the real control panel. On the menu on the **left-hand side**, under "Setup", click **"Sites to search"**.
     *   You will see `www.google.com` listed.
     *   Click the **"Add"** button. A dialog will appear.
     *   In the dialog, select the option **"Search the entire web"**. Do not type anything in the URL box.
     *   Click **Save**.
     *   You should now see two entries in your list: `www.google.com` and `Search the entire web`.
     *   Now, you can safely **delete** the `www.google.com` entry by clicking the trash can icon next to it.
-    *   Your engine is now correctly configured to search the entire web. This is the only way to enable the greyed-out "Search the entire web" toggle on the main page.
+    *   Your engine is now correctly configured to search the entire web.
+
 5.  **Get Your Search Engine ID**
     *   On the same page, go back to the **"Basics"** tab in the left menu.
     *   You will find your **Search engine ID**. Copy this value. This is your `CUSTOM_SEARCH_ENGINE_ID`.
