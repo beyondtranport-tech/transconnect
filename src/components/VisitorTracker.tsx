@@ -47,5 +47,4 @@ export function VisitorTracker() {
 
   return null; // This component does not render anything
 }
-
     

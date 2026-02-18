@@ -60,7 +60,7 @@
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Partner",
       "type": "object",
-      "description": "Represents a strategic partner, Independent Sales Agent (ISA), or Investor in the system.",
+      "description": "Represents a strategic partner, Independent Sales Agent (ISA), Investor, or Developer in the system.",
       "properties": {
         "id": { "type": "string" },
         "firstName": { "type": "string" },
@@ -70,7 +70,7 @@
         "companyName": { "type": "string", "description": "The name of the partner's own company." },
         "status": { "type": "string", "enum": ["active", "inactive"], "description": "The operational status of the partnership." },
         "invitationStatus": { "type": "string", "enum": ["pending", "invited", "registered"], "description": "The status of their invitation to join the platform." },
-        "type": { "type": "string", "enum": ["partner", "isa", "investor"], "description": "The type of partner, e.g., a strategic Partner, ISA, or Investor." },
+        "type": { "type": "string", "enum": ["partner", "isa", "investor", "developer"], "description": "The type of partner, e.g., a strategic Partner, ISA, Investor, or Developer." },
         "createdAt": { "type": "object" },
         "updatedAt": { "type": "object" }
       },
