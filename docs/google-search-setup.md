@@ -36,20 +36,19 @@ This is a multi-step process that must be followed exactly, as the Google UI can
 2.  Click **Add** to create a new search engine.
 3.  **Setup page 1: Basic Information**
     *   **Name your search engine** (e.g., "Logistics Flow Lead Finder v3").
-    *   **CRITICAL:** In the "What to search?" section, you will be forced to enter a website. Enter a placeholder like `www.google.com`. You will remove this later.
+    *   **CRITICAL:** In the "What to search?" section, you will be forced to enter a website. Enter a placeholder like `www.google.com`.
     *   Click **Create**.
-4.  **Setup page 2: Customization**
-    *   You will be taken to a "Congratulations!" page. Click the **Customize** button.
-    *   On the left-hand menu, under "Setup", click on **"Sites to search"**.
+4.  **Setup page 2: Configuration (The Important Part)**
+    *   You will be taken to an overview page. On the menu on the **left-hand side**, under "Setup", click **"Sites to search"**.
     *   You will see `www.google.com` listed.
     *   Click the **"Add"** button. A dialog will appear.
-    *   Under "Site URL", select the option **"Search the entire web"**.
+    *   In the dialog, select the option **"Search the entire web"**. Do not type anything in the URL box.
     *   Click **Save**.
-    *   You should now see two entries: `www.google.com` and `Search the entire web`.
-    *   Now, you can safely delete the `www.google.com` entry by clicking the trash can icon next to it.
-    *   Your engine is now correctly configured to search the entire web.
+    *   You should now see two entries in your list: `www.google.com` and `Search the entire web`.
+    *   Now, you can safely **delete** the `www.google.com` entry by clicking the trash can icon next to it.
+    *   Your engine is now correctly configured to search the entire web. This is the only way to enable the greyed-out "Search the entire web" toggle on the main page.
 5.  **Get Your Search Engine ID**
-    *   On the same page, go back to the **"Basics"** tab.
+    *   On the same page, go back to the **"Basics"** tab in the left menu.
     *   You will find your **Search engine ID**. Copy this value. This is your `CUSTOM_SEARCH_ENGINE_ID`.
 6.  **Final Check**
     *   Verify that on the "Basics" tab, the **"Search the entire web"** toggle is now **ON** and active.
