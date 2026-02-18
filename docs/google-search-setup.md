@@ -31,13 +31,12 @@ To enable the AI Lead Agent to find real-world company data, you need to configu
 
 1.  Go to the [Programmable Search Engine control panel](https://programmablesearchengine.google.com/controlpanel/all).
 2.  Click **Add** to create a new search engine.
-3.  In the "What to search?" section, enter a valid website to search (e.g., `www.google.com`). This is just a starting point.
-4.  Give your search engine a name (e.g., "Logistics Flow Lead Finder").
-5.  Click **Create**.
-6.  If you see a code snippet like `<script ... cx="YOUR_ID" ...>`, your **Search engine ID** is the value inside the `cx` quotes.
-7.  If not, click **Customize** for your new search engine. Under the "Basics" tab, find and copy the **Search engine ID**.
-8.  **Crucially**, in the same section, turn **ON** the "Search the entire web" option.
-9.  Click **Save Changes**.
+3.  **Name your search engine** (e.g., "Logistics Flow Lead Finder"). Leave the "What to search?" field **blank** for now.
+4.  Click **Create**.
+5.  On the next screen, click **Customize**.
+6.  Under the "Basics" tab, you will find your **Search engine ID**. Copy this value.
+7.  **CRITICAL STEP:** Ensure the "Search the entire web" toggle is **ON**. If it is disabled, check the "Sites to search" list above it. If there are any websites listed (like `www.google.com`), you **must delete them**. Once the list is empty, the "Search the entire web" toggle will become active.
+8.  Make sure the toggle is ON, then click **Save Changes**.
 
 ## Final Step: Update Your `.env` File
 
