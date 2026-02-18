@@ -110,17 +110,18 @@ export default function ProfileContent() {
 
         toast({
           title: 'Profile Updated',
-          description: 'Your personal information has been saved.',
+          description: 'Your personal information has been saved. Reloading your session...',
         });
-        forceRefresh();
-        router.push('/account?view=dashboard');
+        
+        // Force a full page reload to ensure the new user state (with companyId) is fetched.
+        window.location.assign('/account?view=dashboard');
+
     } catch (error: any) {
         toast({
             variant: 'destructive',
             title: 'Update Failed',
             description: error.message,
         });
-    } finally {
         setIsSaving(false);
     }
   };
