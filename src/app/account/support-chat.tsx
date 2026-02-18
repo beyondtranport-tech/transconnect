@@ -6,12 +6,14 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Loader2, MessageSquare, Send, Bot } from 'lucide-react';
+import { Loader2, MessageSquare, Send, Bot, AlertTriangle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useUser, useFirestore, useCollection, getClientSideAuthToken, useMemoFirebase } from '@/firebase';
 import { collection, query, orderBy, serverTimestamp } from 'firebase/firestore';
 import { cn } from '@/lib/utils';
 import { supportQuery } from '@/ai/flows/support-flow';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import Link from 'next/link';
 
 const formatDate = (dateValue: any) => {
     if (!dateValue) return 'N/A';
@@ -26,6 +28,7 @@ export default function SupportChatContent() {
     const { toast } = useToast();
     const [message, setMessage] = useState('');
     const [isSending, setIsSending] = useState(false);
+    const [profileError, setProfileError] = useState(false);
     const scrollAreaRef = useRef<HTMLDivElement>(null);
 
     const companyId = user?.companyId;
@@ -50,12 +53,14 @@ export default function SupportChatContent() {
 
     const handleSend = async () => {
         if (!message.trim()) return;
+        setProfileError(false);
 
         if (!user || !companyId) {
+            setProfileError(true);
             toast({
                 variant: 'destructive',
                 title: 'Could not send message',
-                description: 'Your user profile or company ID could not be found. Please try logging in again.',
+                description: 'Your user profile or company ID could not be found. Please complete your profile.',
             });
             return;
         }
@@ -135,6 +140,17 @@ export default function SupportChatContent() {
                     <div className="space-y-4">
                         {isLoading ? (
                              <div className="flex justify-center items-center h-full"><Loader2 className="animate-spin h-8 w-8 text-primary" /></div>
+                        ) : profileError ? (
+                            <Alert variant="destructive">
+                                <AlertTriangle className="h-4 w-4" />
+                                <AlertTitle>Profile Incomplete</AlertTitle>
+                                <AlertDescription>
+                                    We couldn't find your company profile. Please complete your user profile to enable support chat.
+                                    <Button asChild variant="link" className="p-0 h-auto ml-1">
+                                        <Link href="/account?view=profile">Go to My Profile</Link>
+                                    </Button>
+                                </AlertDescription>
+                            </Alert>
                         ) : (
                             messages?.map((msg: any) => {
                                 const isMember = msg.senderId === user?.uid;
@@ -169,7 +185,7 @@ export default function SupportChatContent() {
                                 );
                             })
                         )}
-                         {messages?.length === 0 && !isLoading && (
+                         {messages?.length === 0 && !isLoading && !profileError && (
                             <p className="text-center text-sm text-muted-foreground pt-8">No messages yet. Send a message to start a conversation.</p>
                         )}
                     </div>

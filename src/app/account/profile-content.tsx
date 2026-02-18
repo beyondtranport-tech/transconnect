@@ -17,16 +17,15 @@ import { useToast } from '@/hooks/use-toast';
 import { useState, useEffect } from 'react';
 import { Loader2, User, Save } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useUser, useFirestore, useDoc, errorEmitter, useMemoFirebase } from '@/firebase';
+import { useUser, useFirestore, useDoc, errorEmitter, useMemoFirebase, getClientSideAuthToken } from '@/firebase';
 import { FirestorePermissionError } from '@/firebase/errors';
-import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { doc } from 'firebase/firestore';
 
 
 const profileFormSchema = z.object({
   firstName: z.string().min(1, 'First name is required'),
   lastName: z.string().min(1, 'Last name is required'),
   phone: z.string().min(1, 'Phone number is required'),
-  email: z.string().email(),
 });
 
 type ProfileFormValues = z.infer<typeof profileFormSchema>;
@@ -42,7 +41,7 @@ export default function ProfileContent() {
     return doc(firestore, 'users', user.uid);
   }, [firestore, user]);
 
-  const { data: userData, isLoading: isUserDocLoading } = useDoc(userDocRef);
+  const { data: userData, isLoading: isUserDocLoading, forceRefresh } = useDoc(userDocRef);
 
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileFormSchema),
@@ -50,7 +49,6 @@ export default function ProfileContent() {
       firstName: '',
       lastName: '',
       phone: '',
-      email: '',
     },
   });
 
@@ -60,10 +58,17 @@ export default function ProfileContent() {
         firstName: userData.firstName || '',
         lastName: userData.lastName || '',
         phone: userData.phone || '',
-        email: userData.email || '',
       });
+    } else if (user) {
+       // Pre-fill from auth if DB is empty
+       const nameParts = user.displayName?.split(' ') || ['',''];
+       form.reset({
+            firstName: nameParts[0],
+            lastName: nameParts.slice(1).join(' '),
+            phone: user.phoneNumber || '',
+       });
     }
-  }, [userData, form]);
+  }, [userData, user, form]);
 
   const onSubmit = async (values: ProfileFormValues) => {
     setIsSaving(true);
@@ -77,27 +82,44 @@ export default function ProfileContent() {
         firstName: values.firstName,
         lastName: values.lastName,
         phone: values.phone,
-        updatedAt: serverTimestamp(),
+        updatedAt: { _methodName: 'serverTimestamp' },
     };
     
-    updateDoc(userDocRef, dataToUpdate)
-      .then(() => {
+    try {
+        const token = await getClientSideAuthToken();
+        if (!token) throw new Error("Authentication failed.");
+
+        const response = await fetch('/api/updateUserDoc', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                path: userDocRef.path,
+                data: dataToUpdate
+            }),
+        });
+        
+        const result = await response.json();
+        if (!response.ok) {
+            throw new Error(result.error || 'Failed to update profile.');
+        }
+
         toast({
           title: 'Profile Updated',
           description: 'Your personal information has been saved.',
         });
-      })
-      .catch((serverError) => {
-        const permissionError = new FirestorePermissionError({
-            path: userDocRef.path,
-            operation: 'update',
-            requestResourceData: dataToUpdate,
+        forceRefresh();
+    } catch (error: any) {
+        toast({
+            variant: 'destructive',
+            title: 'Update Failed',
+            description: error.message,
         });
-        errorEmitter.emit('permission-error', permissionError);
-      })
-      .finally(() => {
+    } finally {
         setIsSaving(false);
-      });
+    }
   };
 
   const isLoading = isUserLoading || isUserDocLoading;
@@ -144,19 +166,12 @@ export default function ProfileContent() {
                   )}
                 />
               </div>
-              <FormField
-                control={form.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
+                <FormItem>
                     <FormLabel>Email (Cannot be changed)</FormLabel>
                     <FormControl>
-                      <Input disabled {...field} />
+                        <Input disabled value={user?.email || 'Loading...'} />
                     </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                </FormItem>
               <FormField
                 control={form.control}
                 name="phone"
