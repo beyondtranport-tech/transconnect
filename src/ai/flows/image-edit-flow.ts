@@ -14,7 +14,7 @@ import { ImageEditInputSchema, ImageEditOutputSchema, type ImageEditInput, type 
 
 export async function imageEdit(input: ImageEditInput): Promise<ImageEditOutput> {
   const { media } = await ai.generate({
-    model: googleAI.model('gemini-1.5-pro-latest'),
+    model: googleAI.model('gemini-2.5-flash-image'),
     prompt: [
       { media: { url: input.photoDataUri } },
       { text: input.prompt },
