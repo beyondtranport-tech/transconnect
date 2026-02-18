@@ -1,5 +1,5 @@
 
-import { getFirestore, FieldValue } from 'firebase-admin/firestore';
+import { getFirestore, FieldValue, Timestamp } from 'firebase-admin/firestore';
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuth } from 'firebase-admin/auth';
 import { getAdminApp } from '@/lib/firebase-admin';
@@ -28,8 +28,6 @@ function serializeTimestamps(docData: any): any {
     for (const key in docData) {
         const value = docData[key];
         if (value instanceof FieldValue) {
-            // FieldValues are special objects and cannot be directly serialized to JSON.
-            // We'll represent them with a placeholder string for logging purposes.
             newDocData[key] = `(FieldValue: serverTimestamp)`;
         } else if (value && typeof value.toDate === 'function') { // Check for Timestamp
             newDocData[key] = value.toDate().toISOString();
@@ -65,7 +63,7 @@ export async function POST(req: NextRequest) {
     const adminAuth = getAuth(app);
     const decodedToken = await adminAuth.verifyIdToken(idToken);
     const uid = decodedToken.uid;
-    const isAdmin = decodedToken.email === 'beyondtransport@gmail.com';
+    const isAdmin = decodedToken.email === 'beyondtransport@gmail.com' || decodedToken.email === 'mkoton100@gmail.com';
     
     const db = getFirestore(app);
     const docRef = db.doc(path);
@@ -77,16 +75,13 @@ export async function POST(req: NextRequest) {
     if (isAdmin) {
         isAuthorized = true;
     } else {
-        // User can update their own user doc
         if (pathSegments[0] === 'users' && pathSegments[1] === uid) {
             isAuthorized = true;
-        }
-        // User can update their own company doc or its subcollections
-        else {
-            const userDoc = await db.collection('users').doc(uid).get();
-            const userCompanyId = userDoc.data()?.companyId;
+        } else {
+            const userDocForAuth = await db.collection('users').doc(uid).get();
+            const userCompanyIdForAuth = userDocForAuth.data()?.companyId;
 
-            if (userCompanyId && pathSegments[0] === 'companies' && pathSegments[1] === userCompanyId) {
+            if (userCompanyIdForAuth && pathSegments[0] === 'companies' && pathSegments[1] === userCompanyIdForAuth) {
                 isAuthorized = true;
             }
         }
@@ -98,30 +93,34 @@ export async function POST(req: NextRequest) {
     // --- End Authorization ---
 
     const deserializedData = deserializeData(data);
-    const userDoc = await db.collection('users').doc(uid).get();
-    const userCompanyId = userDoc.data()?.companyId;
-
-    // Use a transaction to update the document and create an audit log entry atomically
+    
     await db.runTransaction(async (transaction) => {
+        const userDocSnap = await transaction.get(db.collection('users').doc(uid));
+        const userCompanyId = userDocSnap.data()?.companyId || null;
+
         const docSnap = await transaction.get(docRef);
         const beforeData = docSnap.exists ? docSnap.data() : null;
 
-        if (!docSnap.exists) {
-             transaction.set(docRef, deserializedData, { merge: true });
+        // The primary action: update or create the document
+        if (docSnap.exists) {
+            transaction.update(docRef, deserializedData);
         } else {
-             transaction.update(docRef, deserializedData);
+            // This handles creating a user profile if it doesn't exist,
+            // which can happen if the initial sign-up flow was interrupted.
+            transaction.set(docRef, deserializedData, { merge: true });
         }
         
+        // The audit log action
         const auditLogRef = db.collection('auditLogs').doc();
         transaction.set(auditLogRef, {
             collectionPath: pathSegments.slice(0, -1).join('/'),
             documentId: pathSegments[pathSegments.length - 1],
             userId: uid,
-            companyId: userCompanyId, // Add companyId for filtering
-            action: 'update',
+            companyId: userCompanyId, // Using the null-safe value.
+            action: beforeData ? 'update' : 'create',
             timestamp: FieldValue.serverTimestamp(),
             before: serializeTimestamps(beforeData),
-            after: serializeTimestamps({ ...beforeData, ...deserializedData }) // Merge for after state
+            after: serializeTimestamps({ ...beforeData, ...deserializedData })
         });
     });
 
