@@ -5,7 +5,7 @@ To enable the AI Lead Agent to find real-world company data, you need to configu
 ## Step 1: Get Your Google Cloud API Key
 
 1.  Go to the [Google Cloud Console](https://console.cloud.google.com/).
-2.  Select your project (e.g., `transconnect-v1-39578841-2a857`) from the top navigation bar.
+2.  Select your project (e.g., `ecosystem-hub`) from the top navigation bar.
 3.  In the navigation menu (hamburger icon), go to **APIs & Services > Credentials**.
 4.  Click **+ CREATE CREDENTIALS** at the top and select **API key**.
 5.  A new API key will be created. **Copy this key immediately** and save it somewhere safe, like a notepad. This is your `GOOGLE_SEARCH_API_KEY`.
@@ -14,7 +14,7 @@ To enable the AI Lead Agent to find real-world company data, you need to configu
 
 **This is a critical step.** The API must be enabled for your project before you can restrict your key to it.
 
-1.  Go directly to the API Library for your project by clicking this link: **[https://console.cloud.google.com/apis/library?project=transconnect-v1-39578841-2a857](https://console.cloud.google.com/apis/library?project=transconnect-v1-39578841-2a857)**
+1.  Go directly to the API Library for your project by clicking this link: **[https://console.cloud.google.com/apis/library?project=ecosystem-hub](https://console.cloud.google.com/apis/library?project=ecosystem-hub)**
 2.  The page will have a search bar at the top. In this search bar, type "**Custom Search API**" and press Enter.
 3.  Click on the "Custom Search API" result from the search.
 4.  Click the **Enable** button. Wait for it to finish. If the button says "Manage", the API is already enabled, and you can proceed to the next step.

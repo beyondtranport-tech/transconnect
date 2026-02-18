@@ -8,7 +8,7 @@ The application uses Firebase Storage to save and manage user-uploaded assets li
 ## Step 1: Go to the Firebase Console
 
 1.  Open the [Firebase Console](https://console.firebase.google.com/).
-2.  Select your project (e.g., `transconnect-v1-39578841-2a857`).
+2.  Select your project (e.g., `ecosystem-hub`).
 
 ## Step 2: Navigate to Storage
 
@@ -23,7 +23,7 @@ The application uses Firebase Storage to save and manage user-uploaded assets li
 
 It may take a moment for your Storage bucket to be created.
 
-**After you click "Done", the setup is complete.** You will be taken to the file browser view. You should see your bucket name (e.g., `transconnect-v1-39578841-2a857.appspot.com`) at the top, and there will be no more "Get Started" button. This means you are finished with this step.
+**After you click "Done", the setup is complete.** You will be taken to the file browser view. You should see your bucket name (e.g., `ecosystem-hub.appspot.com`) at the top, and there will be no more "Get Started" button. This means you are finished with this step.
 
 ---
 
@@ -33,7 +33,7 @@ This is the most important step to solve upload and deployment errors. Your App 
 
 ### 4.1: Find Your App Hosting Service Account Email
 
-1.  Go to the Google Cloud Console's main **IAM** page for your project: **[IAM & Admin](https://console.cloud.google.com/iam-admin/iam?project=transconnect-v1-39578841-2a857)**
+1.  Go to the Google Cloud Console's main **IAM** page for your project: **[IAM & Admin](https://console.cloud.google.com/iam-admin/iam?project=ecosystem-hub)**
 2.  Find the principal (member) that has the name **"Firebase App Hosting compute service account"**.
 3.  Copy its email address. It will look like `firebase-app-hosting-compute@...`.
 

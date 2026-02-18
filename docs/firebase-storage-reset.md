@@ -9,13 +9,13 @@ If you are consistently seeing a "Bucket Not Found" error even after verifying a
 ## Step 1: Go to Firebase Storage
 
 1.  Open the [Firebase Console](https://console.firebase.google.com/).
-2.  Select your project (`transconnect-v1-39578841-2a857`).
+2.  Select your project (`ecosystem-hub`).
 3.  In the left-hand navigation menu, under the **Build** section, click on **Storage**.
 
 ## Step 2: Verify and Delete the Bucket
 
 1.  You should see a file browser. If there are any files you cannot afford to lose, download them now. **Since uploads have been failing, this is likely empty.**
-2.  At the top of the file browser, click the three-dots menu (⋮) next to your bucket name (which looks like `transconnect-v1-....appspot.com`).
+2.  At the top of the file browser, click the three-dots menu (⋮) next to your bucket name (which looks like `ecosystem-hub.appspot.com`).
 3.  From the dropdown, select **"Delete bucket"**.
 4.  A confirmation dialog will appear. You will need to type your bucket's name exactly as shown to confirm the deletion. This is a safety measure.
 5.  Click the final **"Delete"** button.
