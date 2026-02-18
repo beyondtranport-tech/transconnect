@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useForm } from 'react-hook-form';
@@ -49,16 +48,11 @@ export default function CompanyContent() {
   const searchParams = useSearchParams();
   const fromWallet = searchParams.get('from') === 'wallet';
 
-  const userDocRef = useMemoFirebase(() => {
-    if (!firestore || !user) return null;
-    return doc(firestore, 'users', user.uid);
-  }, [firestore, user]);
-  const { data: userData, isLoading: isUserDocLoading } = useDoc<{ companyId: string }>(userDocRef);
-
   const companyDocRef = useMemoFirebase(() => {
-    if (!firestore || !userData?.companyId) return null;
-    return doc(firestore, 'companies', userData.companyId);
-  }, [firestore, userData]);
+    if (!firestore || !user?.companyId) return null;
+    return doc(firestore, 'companies', user.companyId);
+  }, [firestore, user?.companyId]);
+
   const { data: companyData, isLoading: isCompanyLoading, forceRefresh } = useDoc(companyDocRef);
 
   const form = useForm<CompanyFormValues>({
@@ -130,7 +124,7 @@ export default function CompanyContent() {
         });
   };
 
-  const isLoading = isUserLoading || isUserDocLoading || isCompanyLoading;
+  const isLoading = isUserLoading || isCompanyLoading;
 
   return (
     <Card>
