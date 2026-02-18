@@ -34,6 +34,11 @@ const defaultPrompt = `// A simple logo design prompt for a logistics company.
 
 A modern, minimalist logo for a company named 'Logistics Flow'.
 
+// NEW: Add a tagline if you have one.
+// The AI will try to incorporate it into the logo design.
+// Example: with the tagline "Your Partner in Motion".
+with the tagline "Building Networks, Creating Flow".
+
 // Describe the main symbol or icon.
 // Examples: a stylized truck, an abstract arrow, a compass.
 The design should feature an abstract representation of a truck and a forward-pointing arrow, conveying movement and efficiency.
@@ -167,10 +172,10 @@ export default function ImageGeneratorCard({ promptTemplate }: { promptTemplate?
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <ImageIcon /> AI Logo Generator
+            <ImageIcon /> AI Logo & Image Generator
           </CardTitle>
           <CardDescription>
-            Create professional logos for your brand from a text description.
+            Create professional logos and marketing images from a text description.
           </CardDescription>
         </CardHeader>
         <CardContent>
