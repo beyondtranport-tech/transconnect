@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { createContext, useContext, ReactNode, useMemo, useState, useEffect } from 'react';
+import React, { createContext, useContext, ReactNode, useMemo, useState, useEffect, useCallback } from 'react';
 import { FirebaseApp } from 'firebase/app';
 import { Firestore, doc } from 'firebase/firestore';
 import { Auth, User, onIdTokenChanged, getIdToken } from 'firebase/auth';
@@ -116,11 +116,9 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
         await setSessionCookie(idToken);
         
         if (firebaseUser && idToken) {
-          // This ensures a user's profile and company docs are created if they are missing.
           try {
-             // CRITICAL FIX: Await the backend call to ensure database is consistent before client proceeds.
             const referrerId = new URLSearchParams(window.location.search).get('ref');
-            const response = await fetch('/api/checkAndCreateUser', {
+            await fetch('/api/checkAndCreateUser', {
               method: 'POST',
               headers: {
                 'Authorization': `Bearer ${idToken}`,
@@ -128,12 +126,8 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
               },
               body: JSON.stringify({ referrerId }), 
             });
-
-             if (!response.ok) {
-              const result = await response.json();
-              console.error("FirebaseProvider: checkAndCreateUser API call failed:", result.error);
-            }
-
+            // Force a refresh of the user data after the backend check is complete
+            forceRefresh();
           } catch (error) {
             console.error("FirebaseProvider: Failed to call checkAndCreateUser:", error);
           }
@@ -142,12 +136,6 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
         setBaseUser(firebaseUser);
         setIsAuthLoading(false);
         setAuthError(null);
-        
-        // This will now be called AFTER the user doc is (potentially) updated on the backend.
-        if (firebaseUser) {
-           forceRefresh();
-        }
-
       },
       (error) => {
         console.error("FirebaseProvider: onIdTokenChanged error:", error);

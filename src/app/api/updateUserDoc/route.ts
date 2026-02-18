@@ -105,6 +105,8 @@ export async function POST(req: NextRequest) {
         let finalCompanyId = existingCompanyId;
 
         // --- NEW SELF-HEALING LOGIC ---
+        // This is the critical part: if we are updating a user document that doesn't have a companyId,
+        // it means their setup was incomplete. We create the company and link it here.
         if (path.startsWith('users/') && !beforeData?.companyId && !existingCompanyId) {
             console.log(`User ${uid} is missing companyId. Creating new company.`);
             
@@ -132,6 +134,8 @@ export async function POST(req: NextRequest) {
             
             dataToSave.companyId = companyRef.id;
             finalCompanyId = companyRef.id;
+        } else if (path.startsWith('companies/')) {
+            finalCompanyId = pathSegments[1];
         }
         // --- END SELF-HEALING LOGIC ---
 
