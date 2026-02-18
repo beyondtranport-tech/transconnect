@@ -1,10 +1,10 @@
 
 export const firebaseConfig = {
-  "projectId": "transconnect-v1-39578841-2a857",
-  "appId": "1:591619429510:web:5b08ce7c6c6436ef5ced07",
-  "storageBucket": "transconnect-v1-39578841-2a857.firebasestorage.app",
-  "apiKey": "AIzaSyDT677wYN1FlCesOM7abhnnVk5E1ujsjhc",
-  "authDomain": "transconnect-v1-39578841-2a857.firebaseapp.com",
-  "measurementId": "",
-  "messagingSenderId": "591619429510"
+  "projectId": "ecosystem-hub",
+  "appId": "1:204859518196:web:1e61ab7520aa2386c742a1",
+  "storageBucket": "ecosystem-hub.appspot.com",
+  "apiKey": "AIzaSyBdxck-9ewVbdGtR7DuC5GHElv9UfTDL3I",
+  "authDomain": "ecosystem-hub.firebaseapp.com",
+  "measurementId": "G-M2EZDDJ44Y",
+  "messagingSenderId": "204859518196"
 };

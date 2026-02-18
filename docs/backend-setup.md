@@ -1,6 +1,6 @@
 # Connecting Your Backend to the Correct Firebase Project
 
-If you are experiencing a "Bucket Not Found" or "Permission Denied" error on the server even after confirming your bucket exists and IAM permissions are set, it is highly likely that your application's backend is accidentally using credentials from an old or different Firebase project.
+If you are experiencing a "Bucket Not Found", "Permission Denied", or "Incorrect 'aud' (audience) claim" error, it is highly likely that your application's frontend and backend are configured for different Firebase projects.
 
 This guide provides the definitive steps to generate the correct credentials (called a "service account key") for your project and configure your app to use them.
 
@@ -8,10 +8,10 @@ This guide provides the definitive steps to generate the correct credentials (ca
 
 ## Step 1: Go to the Service Account Page
 
-1.  Use this direct link to open the **Service Accounts** page in the Google Cloud Console:
+1.  Open the Google Cloud Console's **Service Accounts** page. A general link is provided below.
     **[https://console.cloud.google.com/iam-admin/serviceaccounts](https://console.cloud.google.com/iam-admin/serviceaccounts)**
 
-2.  **IMPORTANT:** Before proceeding, ensure the correct Google Cloud project is selected at the top of the page. The project name should match the one you intend to use for your application.
+2.  **CRITICAL:** Before proceeding, you **MUST** ensure the correct Google Cloud project is selected at the top of the page. The project name should match the one you intend to use for your application (e.g., `ecosystem-hub`).
 
 ## Step 2: Find Your Admin Service Account
 
@@ -52,4 +52,4 @@ The contents of this JSON file need to be encoded into a single line of text.
 
 4.  Save the `.env.local` file.
 
-That's it! Your application's backend is now configured with the correct credentials and will be able to find your Storage bucket. The upload functionality will now work correctly.
+That's it! Your application's backend is now configured with the correct credentials. If the application's frontend was configured for a different project, this change, combined with a frontend configuration update, will resolve the mismatch.
