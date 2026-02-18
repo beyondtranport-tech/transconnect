@@ -20,6 +20,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useUser, useFirestore, useDoc, errorEmitter, useMemoFirebase, getClientSideAuthToken } from '@/firebase';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { doc } from 'firebase/firestore';
+import { useRouter } from 'next/navigation';
 
 
 const profileFormSchema = z.object({
@@ -35,6 +36,7 @@ export default function ProfileContent() {
   const firestore = useFirestore();
   const { toast } = useToast();
   const [isSaving, setIsSaving] = useState(false);
+  const router = useRouter();
 
   const userDocRef = useMemoFirebase(() => {
     if (!firestore || !user) return null;
@@ -111,6 +113,7 @@ export default function ProfileContent() {
           description: 'Your personal information has been saved.',
         });
         forceRefresh();
+        router.push('/account?view=dashboard');
     } catch (error: any) {
         toast({
             variant: 'destructive',
