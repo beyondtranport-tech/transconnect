@@ -1,24 +1,11 @@
-
 'use client';
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { Sparkles, Handshake, Briefcase, ArrowRight } from "lucide-react";
-import Link from "next/link";
-
-const campaigns = [
-    {
-        title: "Investor Pitch Content",
-        description: "Generate professional content tailored for investor presentations, reports, and outreach.",
-        icon: Briefcase,
-        view: "investor-studio",
-    },
-    {
-        title: "Partner Outreach Content",
-        description: "Create visuals and copy to attract and onboard new strategic and ISA partners.",
-        icon: Handshake,
-        view: "partner-studio",
-    },
-];
+import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Sparkles } from "lucide-react";
+import ImageGeneratorCard from "./image-generator-card";
+import ImageEditorCard from "./image-editor-card";
+import VideoGeneratorCard from "./video-generator-card";
+import VideoAnimatorCard from "./video-animator-card";
 
 export default function MarketingStudio() {
   return (
@@ -29,37 +16,25 @@ export default function MarketingStudio() {
               <div>
                   <CardTitle>AI Content & Branding Studio</CardTitle>
                   <CardDescription>
-                      Select a campaign to generate tailored marketing assets, logos, and branding materials using powerful AI tools.
+                      Create professional marketing assets, logos, and branding materials using powerful AI tools.
                   </CardDescription>
               </div>
           </div>
       </CardHeader>
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        {campaigns.map(campaign => {
-            const Icon = campaign.icon;
-            return (
-                <Link key={campaign.view} href={`/adminaccount?view=${campaign.view}`} className="group block">
-                    <Card className="h-full flex flex-col transition-all group-hover:border-primary group-hover:shadow-lg">
-                        <CardHeader>
-                            <div className="flex items-center gap-3">
-                                <Icon className="h-7 w-7 text-primary" />
-                                <CardTitle>{campaign.title}</CardTitle>
-                            </div>
-                            <CardDescription>{campaign.description}</CardDescription>
-                        </CardHeader>
-                        <CardContent className="flex-grow">
-                            {/* Can add more details here in the future */}
-                        </CardContent>
-                        <CardFooter>
-                            <p className="text-sm font-semibold text-primary flex items-center gap-2">
-                                Open Studio <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-                            </p>
-                        </CardFooter>
-                    </Card>
-                </Link>
-            )
-        })}
+        <ImageGeneratorCard 
+            promptTemplate="A modern, minimalist logo for a logistics company named 'Logistics Flow'. The design should feature an abstract representation of a truck or arrow, conveying movement and efficiency. Use a clean color palette of forest green and charcoal gray."
+        />
+        <ImageEditorCard 
+            promptTemplate="Place the truck on a winding mountain pass at sunset."
+        />
+        <VideoGeneratorCard 
+            promptTemplate="Create a short, dynamic video showcasing a logistics company. Start with a close-up of a truck's wheels turning, then show a variety of trucks on the highway. End with a company logo and contact information."
+        />
+        <VideoAnimatorCard 
+            promptTemplate="Take this image of our company logo. Animate it with a subtle glowing effect and have the abstract arrow element move forward slightly."
+        />
       </div>
     </div>
   );
