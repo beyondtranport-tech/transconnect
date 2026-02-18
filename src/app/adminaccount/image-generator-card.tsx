@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -23,7 +22,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Sparkles, Image as ImageIcon, Download, Save, Copy } from 'lucide-react';
 import Image from 'next/image';
-import { generateImage } from '@/ai/flows/image-generation-flow';
+import { generateImage } from '../../ai/flows/image-generation-flow';
 import { Textarea } from '@/components/ui/textarea';
 import { useUser } from '@/firebase';
 import { Input } from '@/components/ui/input';
