@@ -27,6 +27,7 @@ interface UserAuthState {
   user: EnrichedUser | null;
   isUserLoading: boolean;
   userError: Error | null;
+  forceRefresh: () => void;
 }
 
 export interface FirebaseContextState {
@@ -37,6 +38,7 @@ export interface FirebaseContextState {
   user: EnrichedUser | null;
   isUserLoading: boolean;
   userError: Error | null;
+  forceRefreshUser: () => void;
 }
 
 const FirebaseContext = createContext<FirebaseContextState | undefined>(undefined);
@@ -166,7 +168,8 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
     user: enrichedUser,
     isUserLoading: isAuthLoading || isEnriching,
     userError: authError,
-  }), [firebaseApp, firestore, auth, storage, enrichedUser, isAuthLoading, isEnriching, authError]);
+    forceRefreshUser: forceRefresh,
+  }), [firebaseApp, firestore, auth, storage, enrichedUser, isAuthLoading, isEnriching, authError, forceRefresh]);
 
   return (
     <FirebaseContext.Provider value={contextValue}>
@@ -190,6 +193,6 @@ export const useFirestore = () => useFirebase().firestore;
 export const useFirebaseApp = () => useFirebase().firebaseApp;
 export const useStorage = () => useFirebase().storage;
 export const useUser = (): UserAuthState => {
-    const { user, isUserLoading, userError } = useFirebase();
-    return { user, isUserLoading, userError };
+    const { user, isUserLoading, userError, forceRefreshUser } = useFirebase();
+    return { user, isUserLoading, userError, forceRefresh: forceRefreshUser };
 };

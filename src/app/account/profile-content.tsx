@@ -32,7 +32,7 @@ const profileFormSchema = z.object({
 type ProfileFormValues = z.infer<typeof profileFormSchema>;
 
 export default function ProfileContent() {
-  const { user, isUserLoading } = useUser();
+  const { user, isUserLoading, forceRefresh: forceRefreshUser } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
   const [isSaving, setIsSaving] = useState(false);
@@ -43,7 +43,7 @@ export default function ProfileContent() {
     return doc(firestore, 'users', user.uid);
   }, [firestore, user]);
 
-  const { data: userData, isLoading: isUserDocLoading, forceRefresh } = useDoc(userDocRef);
+  const { data: userData, isLoading: isUserDocLoading } = useDoc(userDocRef);
 
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileFormSchema),
@@ -110,11 +110,11 @@ export default function ProfileContent() {
 
         toast({
           title: 'Profile Updated',
-          description: 'Your personal information has been saved. Reloading your session...',
+          description: 'Your personal information has been saved.',
         });
         
-        // Force a full page reload to ensure the new user state (with companyId) is fetched.
-        window.location.assign('/account?view=dashboard');
+        forceRefreshUser();
+        router.push('/account?view=company');
 
     } catch (error: any) {
         toast({
@@ -122,7 +122,8 @@ export default function ProfileContent() {
             title: 'Update Failed',
             description: error.message,
         });
-        setIsSaving(false);
+    } finally {
+      setIsSaving(false);
     }
   };
 
