@@ -8,8 +8,8 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Loader2, MessageSquare, Send, Bot } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { useUser, useFirestore, useCollection, getClientSideAuthToken, useDoc, useMemoFirebase } from '@/firebase';
-import { collection, query, orderBy, serverTimestamp, doc } from 'firebase/firestore';
+import { useUser, useFirestore, useCollection, getClientSideAuthToken, useMemoFirebase } from '@/firebase';
+import { collection, query, orderBy, serverTimestamp } from 'firebase/firestore';
 import { cn } from '@/lib/utils';
 import { supportQuery } from '@/ai/flows/support-flow';
 
@@ -28,12 +28,7 @@ export default function SupportChatContent() {
     const [isSending, setIsSending] = useState(false);
     const scrollAreaRef = useRef<HTMLDivElement>(null);
 
-    const userDocRef = useMemoFirebase(() => {
-        if (!firestore || !user) return null;
-        return doc(firestore, 'users', user.uid);
-    }, [firestore, user]);
-    const { data: userData, isLoading: isUserDataLoading } = useDoc(userDocRef);
-    const companyId = userData?.companyId;
+    const companyId = user?.companyId;
 
     const messagesQuery = useMemoFirebase(() => {
         if (!firestore || !companyId) return null;
@@ -45,7 +40,7 @@ export default function SupportChatContent() {
 
     const { data: messages, isLoading: areMessagesLoading, forceRefresh } = useCollection(messagesQuery);
 
-    const isLoading = isUserLoading || isUserDataLoading || areMessagesLoading;
+    const isLoading = isUserLoading || areMessagesLoading;
     
     useEffect(() => {
         if (scrollAreaRef.current) {
@@ -54,7 +49,17 @@ export default function SupportChatContent() {
     }, [messages]);
 
     const handleSend = async () => {
-        if (!user || !companyId || !message.trim()) return;
+        if (!message.trim()) return;
+
+        if (!user || !companyId) {
+            toast({
+                variant: 'destructive',
+                title: 'Could not send message',
+                description: 'Your user profile or company ID could not be found. Please try logging in again.',
+            });
+            return;
+        }
+
         setIsSending(true);
 
         const userMessageText = message;
@@ -133,22 +138,22 @@ export default function SupportChatContent() {
                         ) : (
                             messages?.map((msg: any) => {
                                 const isMember = msg.senderId === user?.uid;
-                                const isAdmin = msg.senderId === 'ai-assistant';
+                                const isAI = msg.senderId === 'ai-assistant';
                                 const alignment = isMember ? "justify-end" : "justify-start";
 
                                 return (
                                     <div key={msg.id} className={cn("flex items-end gap-2", alignment)}>
                                         {!isMember && (
                                             <Avatar className="h-8 w-8">
-                                                <AvatarFallback className={isAdmin ? 'bg-secondary' : 'bg-muted'}>
-                                                    {isAdmin ? <Bot className="h-5 w-5" /> : 'AD'}
+                                                <AvatarFallback className={isAI ? 'bg-secondary' : 'bg-muted'}>
+                                                    {isAI ? <Bot className="h-5 w-5" /> : 'AD'}
                                                 </AvatarFallback>
                                             </Avatar>
                                         )}
                                         <div className={cn(
                                             "rounded-lg px-3 py-2 max-w-[80%] text-sm", 
                                             isMember ? "bg-primary text-primary-foreground" : 
-                                            isAdmin ? "bg-secondary text-secondary-foreground" :
+                                            isAI ? "bg-secondary text-secondary-foreground" :
                                             "bg-muted"
                                         )}>
                                             <p className="font-semibold text-xs mb-1">{msg.senderName || 'Support'}</p>
@@ -175,9 +180,9 @@ export default function SupportChatContent() {
                         value={message}
                         onChange={e => setMessage(e.target.value)}
                         onKeyDown={e => e.key === 'Enter' && !isSending && handleSend()}
-                        disabled={isSending}
+                        disabled={isSending || isLoading}
                     />
-                    <Button onClick={handleSend} disabled={isSending || !message.trim()} size="icon">
+                    <Button onClick={handleSend} disabled={isSending || isLoading || !message.trim()} size="icon">
                         {isSending ? <Loader2 className="h-4 w-4 animate-spin"/> : <Send className="h-4 w-4" />}
                     </Button>
                 </div>
