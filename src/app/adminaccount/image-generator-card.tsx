@@ -29,7 +29,7 @@ import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
 import { getClientSideAuthToken } from '@/firebase';
 
-const defaultPrompt = `A cinematic, professional photograph of a futuristic, gleaming white and green Scania truck driving on a high-tech highway at dusk. The road is illuminated with glowing data lines, and the sky has a vibrant sunset. The image should look modern, professional, and convey a sense of speed and efficiency.`;
+const defaultPrompt = `A modern, minimalist logo for a logistics company named 'Logistics Flow'. The design should feature an abstract representation of a truck or arrow, conveying movement and efficiency. Use a clean color palette of forest green and charcoal gray.`;
 
 export default function ImageGeneratorCard({ promptTemplate }: { promptTemplate?: string }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -152,10 +152,10 @@ export default function ImageGeneratorCard({ promptTemplate }: { promptTemplate?
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <ImageIcon /> AI Image Generator
+            <ImageIcon /> AI Logo & Image Generator
           </CardTitle>
           <CardDescription>
-            Create a new image from a text description using Imagen.
+            Create logos, marketing images, and other brand assets from a text prompt using Imagen.
           </CardDescription>
         </CardHeader>
         <CardContent>
