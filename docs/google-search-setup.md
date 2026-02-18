@@ -30,18 +30,29 @@ To enable the AI Lead Agent to find real-world company data, you need to configu
 
 ## Step 4: Create a Programmable Search Engine
 
-This is a multi-step process that must be followed exactly.
+This is a multi-step process that must be followed exactly, as the Google UI can be confusing.
 
-1.  Go to the [Programmable Search Engine control panel](https://programmablesearchengine.google.com/controlpanel/all). If you have an existing engine named "Logistics Flow Lead Finder", **delete it** to start fresh.
+1.  Go to the [Programmable Search Engine control panel](https://programmablesearchengine.google.com/controlpanel/all). If you have an existing engine, **delete it** to start fresh.
 2.  Click **Add** to create a new search engine.
-3.  On the creation page:
-    *   **Name your search engine** (e.g., "Logistics Flow Lead Finder v2").
-    *   **CRITICAL:** In the "What to search?" section, **DO NOT** enter any website into the `www.example.com` text box.
-    *   Directly below the text box, select the option to **"Search the entire web"**. The UI will update.
+3.  **Setup page 1: Basic Information**
+    *   **Name your search engine** (e.g., "Logistics Flow Lead Finder v3").
+    *   **CRITICAL:** In the "What to search?" section, you will be forced to enter a website. Enter a placeholder like `www.google.com`. You will remove this later.
     *   Click **Create**.
-4.  You will be taken to a "Congratulations!" page. Click the **Customize** button.
-5.  On the "Basics" tab, you will find your **Search engine ID**. Copy this value. This is your `CUSTOM_SEARCH_ENGINE_ID`.
-6.  Verify that the **"Search the entire web"** toggle is **ON**. It should be on by default if you followed the steps above.
+4.  **Setup page 2: Customization**
+    *   You will be taken to a "Congratulations!" page. Click the **Customize** button.
+    *   On the left-hand menu, under "Setup", click on **"Sites to search"**.
+    *   You will see `www.google.com` listed.
+    *   Click the **"Add"** button. A dialog will appear.
+    *   Under "Site URL", select the option **"Search the entire web"**.
+    *   Click **Save**.
+    *   You should now see two entries: `www.google.com` and `Search the entire web`.
+    *   Now, you can safely delete the `www.google.com` entry by clicking the trash can icon next to it.
+    *   Your engine is now correctly configured to search the entire web.
+5.  **Get Your Search Engine ID**
+    *   On the same page, go back to the **"Basics"** tab.
+    *   You will find your **Search engine ID**. Copy this value. This is your `CUSTOM_SEARCH_ENGINE_ID`.
+6.  **Final Check**
+    *   Verify that on the "Basics" tab, the **"Search the entire web"** toggle is now **ON** and active.
 
 ## Final Step: Update Your `.env` File
 
