@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { createContext, useContext, ReactNode, useMemo, useState, useEffect } from 'react';
@@ -110,21 +111,29 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
       auth,
       async (firebaseUser) => {
         const idToken = firebaseUser ? await getIdToken(firebaseUser, true) : null; // Force refresh
-        setSessionCookie(idToken);
+        await setSessionCookie(idToken);
         
         if (firebaseUser && idToken) {
           // This ensures a user's profile and company docs are created if they are missing.
           try {
-            await fetch('/api/checkAndCreateUser', {
+             // CRITICAL FIX: Await the backend call to ensure database is consistent before client proceeds.
+            const referrerId = new URLSearchParams(window.location.search).get('ref');
+            const response = await fetch('/api/checkAndCreateUser', {
               method: 'POST',
               headers: {
                 'Authorization': `Bearer ${idToken}`,
                 'Content-Type': 'application/json',
               },
-              body: JSON.stringify({}), 
+              body: JSON.stringify({ referrerId }), 
             });
+
+             if (!response.ok) {
+              const result = await response.json();
+              console.error("FirebaseProvider: checkAndCreateUser API call failed:", result.error);
+            }
+
           } catch (error) {
-            console.error("FirebaseProvider: Failed to ensure user exists on sign-in:", error);
+            console.error("FirebaseProvider: Failed to call checkAndCreateUser:", error);
           }
         }
         
@@ -132,7 +141,7 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
         setIsAuthLoading(false);
         setAuthError(null);
         
-        // After auth state has changed, we might need to refresh user-specific data.
+        // This will now be called AFTER the user doc is (potentially) updated on the backend.
         if (firebaseUser) {
            forceRefresh();
         }
