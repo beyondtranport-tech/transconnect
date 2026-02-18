@@ -1,3 +1,4 @@
+
 # Setting up Google Custom Search API for Lead Generation
 
 To enable the AI Lead Agent to find real-world company data, you need to configure Google's Custom Search API. This requires two things: an **API Key** and a **Programmable Search Engine ID**.
@@ -5,7 +6,7 @@ To enable the AI Lead Agent to find real-world company data, you need to configu
 ## Step 1: Get Your Google Cloud API Key
 
 1.  Go to the [Google Cloud Console](https://console.cloud.google.com/).
-2.  Select your project (e.g., `ecosystem-hub`) from the top navigation bar.
+2.  Select your project (`ecosystem-hub`) from the top navigation bar.
 3.  In the navigation menu (hamburger icon), go to **APIs & Services > Credentials**.
 4.  Click **+ CREATE CREDENTIALS** at the top and select **API key**.
 5.  A new API key will be created. **Copy this key immediately** and save it somewhere safe, like a notepad. This is your `GOOGLE_SEARCH_API_KEY`.
@@ -29,25 +30,29 @@ To enable the AI Lead Agent to find real-world company data, you need to configu
 
 ## Step 4: Create a Programmable Search Engine
 
-1.  Go to the [Programmable Search Engine control panel](https://programmablesearchengine.google.com/controlpanel/all).
+This is a multi-step process that must be followed exactly.
+
+1.  Go to the [Programmable Search Engine control panel](https://programmablesearchengine.google.com/controlpanel/all). If you have an existing engine named "Logistics Flow Lead Finder", **delete it** to start fresh.
 2.  Click **Add** to create a new search engine.
-3.  **Name your search engine** (e.g., "Logistics Flow Lead Finder"). Leave the "What to search?" field **blank** for now.
-4.  Click **Create**.
-5.  On the next screen, click **Customize**.
-6.  Under the "Basics" tab, you will find your **Search engine ID**. Copy this value.
-7.  **CRITICAL STEP:** Ensure the "Search the entire web" toggle is **ON**. If it is disabled, check the "Sites to search" list above it. If there are any websites listed (like `www.google.com`), you **must delete them**. Once the list is empty, the "Search the entire web" toggle will become active.
-8.  Make sure the toggle is ON, then click **Save Changes**.
+3.  On the creation page:
+    *   **Name your search engine** (e.g., "Logistics Flow Lead Finder v2").
+    *   **CRITICAL:** In the "What to search?" section, **DO NOT** enter any website into the `www.example.com` text box.
+    *   Directly below the text box, select the option to **"Search the entire web"**. The UI will update.
+    *   Click **Create**.
+4.  You will be taken to a "Congratulations!" page. Click the **Customize** button.
+5.  On the "Basics" tab, you will find your **Search engine ID**. Copy this value. This is your `CUSTOM_SEARCH_ENGINE_ID`.
+6.  Verify that the **"Search the entire web"** toggle is **ON**. It should be on by default if you followed the steps above.
 
 ## Final Step: Update Your `.env` File
 
 You now have both required values.
-*   **Your `GOOGLE_SEARCH_API_KEY`**: The key you created in Step 1. If you didn't copy it, go back to the **APIs & Services > Credentials** page to find it.
-*   **Your `CUSTOM_SEARCH_ENGINE_ID`**: The ID you copied in Step 4.
+*   **Your `GOOGLE_SEARCH_API_KEY`**: The key you created in Step 1.
+*   **Your `CUSTOM_SEARCH_ENGINE_ID`**: The new ID you copied in Step 4.
 
 Paste both of these values into your `.env` file.
 
 ```
 GOOGLE_SEARCH_API_KEY=YOUR_API_KEY_HERE
-CUSTOM_SEARCH_ENGINE_ID=YOUR_SEARCH_ENGINE_ID_HERE
+CUSTOM_SEARCH_ENGINE_ID=YOUR_NEW_SEARCH_ENGINE_ID_HERE
 ```
 The AI Lead Agent will now be fully functional.
