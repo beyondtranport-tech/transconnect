@@ -8,8 +8,10 @@ This guide provides the definitive steps to generate the correct credentials (ca
 
 ## Step 1: Go to the Service Account Page
 
-1.  Use this direct link to open the **Service Accounts** page for your project in the Google Cloud Console:
-    **[https://console.cloud.google.com/iam-admin/serviceaccounts?project=transconnect-v1-39578841-2a857](https://console.cloud.google.com/iam-admin/serviceaccounts?project=transconnect-v1-39578841-2a857)**
+1.  Use this direct link to open the **Service Accounts** page in the Google Cloud Console:
+    **[https://console.cloud.google.com/iam-admin/serviceaccounts](https://console.cloud.google.com/iam-admin/serviceaccounts)**
+
+2.  **IMPORTANT:** Before proceeding, ensure the correct Google Cloud project is selected at the top of the page. The project name should match the one you intend to use for your application.
 
 ## Step 2: Find Your Admin Service Account
 
@@ -25,7 +27,7 @@ This is the most important step to fix authentication issues.
 2.  Click the **"ADD KEY"** button, then select **"Create new key"** from the dropdown menu.
 3.  A dialog will appear. Make sure **JSON** is selected as the key type.
 4.  Click the **"CREATE"** button.
-5.  A JSON file will be automatically downloaded to your computer. It will have a name similar to `transconnect-v1-....json`. **This file contains your new, correct credential.**
+5.  A JSON file will be automatically downloaded to your computer. It will have a name similar to `your-project-name-....json`. **This file contains your new, correct credential.**
 
 ## Step 4: Convert the Key to Base64
 
@@ -38,9 +40,9 @@ The contents of this JSON file need to be encoded into a single line of text.
 5.  Click the **"ENCODE"** button.
 6.  A long string of text will be generated in the box below. Click the **"Copy to clipboard"** button. This is your encoded key.
 
-## Step 5: Update Your `.env` File
+## Step 5: Update Your `.env.local` File
 
-1.  In your project's code, open the `.env` file located in the root directory.
+1.  In your project's code, open the `.env.local` file located in the root directory.
 2.  You will see a line that starts with `FIREBASE_ADMIN_SDK_CONFIG_B64=`.
 3.  Delete everything after the `=` and paste the new encoded key you just copied. The line should look like this:
 
@@ -48,6 +50,6 @@ The contents of this JSON file need to be encoded into a single line of text.
     FIREBASE_ADMIN_SDK_CONFIG_B64=PASTE_YOUR_NEW_ENCODED_KEY_HERE
     ```
 
-4.  Save the `.env` file.
+4.  Save the `.env.local` file.
 
 That's it! Your application's backend is now configured with the correct credentials and will be able to find your Storage bucket. The upload functionality will now work correctly.
