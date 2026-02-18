@@ -95,32 +95,62 @@ export async function POST(req: NextRequest) {
     const deserializedData = deserializeData(data);
     
     await db.runTransaction(async (transaction) => {
-        const userDocSnap = await transaction.get(db.collection('users').doc(uid));
-        const userCompanyId = userDocSnap.data()?.companyId || null;
+        const userDocForCompanyCheck = await transaction.get(db.collection('users').doc(uid));
+        const existingCompanyId = userDocForCompanyCheck.data()?.companyId || null;
 
         const docSnap = await transaction.get(docRef);
         const beforeData = docSnap.exists ? docSnap.data() : null;
 
-        // The primary action: update or create the document
+        let dataToSave = { ...deserializedData };
+        let finalCompanyId = existingCompanyId;
+
+        // --- NEW SELF-HEALING LOGIC ---
+        if (path.startsWith('users/') && !beforeData?.companyId && !existingCompanyId) {
+            console.log(`User ${uid} is missing companyId. Creating new company.`);
+            
+            const companyRef = db.collection('companies').doc();
+            const newCompanyData: any = {
+                id: companyRef.id,
+                ownerId: uid,
+                companyName: `${deserializedData.firstName || 'New'}'s Company`,
+                membershipId: 'free',
+                isBillable: false,
+                walletBalance: 0,
+                pendingBalance: 0,
+                availableBalance: 0,
+                loyaltyTier: 'bronze',
+                status: 'pending',
+                createdAt: FieldValue.serverTimestamp(),
+                updatedAt: FieldValue.serverTimestamp(),
+            };
+            
+            const loyaltyConfigDoc = await db.collection('configuration').doc('loyaltySettings').get();
+            const signupPoints = loyaltyConfigDoc.data()?.userSignupPoints || 50;
+            newCompanyData.rewardPoints = signupPoints;
+            
+            transaction.set(companyRef, newCompanyData);
+            
+            dataToSave.companyId = companyRef.id;
+            finalCompanyId = companyRef.id;
+        }
+        // --- END SELF-HEALING LOGIC ---
+
         if (docSnap.exists) {
-            transaction.update(docRef, deserializedData);
+            transaction.update(docRef, dataToSave);
         } else {
-            // This handles creating a user profile if it doesn't exist,
-            // which can happen if the initial sign-up flow was interrupted.
-            transaction.set(docRef, deserializedData, { merge: true });
+            transaction.set(docRef, dataToSave, { merge: true });
         }
         
-        // The audit log action
         const auditLogRef = db.collection('auditLogs').doc();
         transaction.set(auditLogRef, {
             collectionPath: pathSegments.slice(0, -1).join('/'),
             documentId: pathSegments[pathSegments.length - 1],
             userId: uid,
-            companyId: userCompanyId, // Using the null-safe value.
+            companyId: finalCompanyId, // Use the determined companyId
             action: beforeData ? 'update' : 'create',
             timestamp: FieldValue.serverTimestamp(),
             before: serializeTimestamps(beforeData),
-            after: serializeTimestamps({ ...beforeData, ...deserializedData })
+            after: serializeTimestamps({ ...beforeData, ...dataToSave })
         });
     });
 
