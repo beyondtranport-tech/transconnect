@@ -88,12 +88,10 @@ export default function SupportChatContent() {
                 parts: [{ text: msg.text }],
             }));
             
-            // Add the new message to the history for the AI call
-            const currentMessageForApi = { role: 'user', parts: [{text: userMessageText}]};
 
             const aiResult = await supportQuery({ 
                 query: userMessageText, 
-                history: [...historyForApi, currentMessageForApi]
+                history: historyForApi
             });
 
             // 3. Save the AI's response
