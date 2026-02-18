@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { createContext, useContext, ReactNode, useMemo, useState, useEffect } from 'react';
@@ -50,12 +49,9 @@ const setSessionCookie = async (idToken: string | null) => {
             body: JSON.stringify({ idToken }),
         });
     } catch (error) {
-        // This specific TypeError is common when a fetch is aborted by page navigation
-        // or during development with Fast Refresh. It's safe to ignore.
         if (error instanceof TypeError && error.message === 'Failed to fetch') {
             return;
         }
-        // Log any other, unexpected errors.
         console.error("FirebaseProvider: Error calling session API:", error);
     }
 };
@@ -63,7 +59,6 @@ const setSessionCookie = async (idToken: string | null) => {
 function useEnrichedUser(baseUser: User | null, firestore: Firestore | null) {
     const isAdmin = baseUser?.email === 'beyondtransport@gmail.com' || baseUser?.email === 'mkoton100@gmail.com';
 
-    // If the user is an admin, we don't need to fetch their company profile.
     const userDocRef = useMemoFirebase(() => {
         if (!firestore || !baseUser || isAdmin) return null;
         return doc(firestore, 'users', baseUser.uid);
@@ -74,12 +69,11 @@ function useEnrichedUser(baseUser: User | null, firestore: Firestore | null) {
     return useMemo(() => {
         if (!baseUser) return { enrichedUser: null, isEnriching: false, forceRefresh };
         
-        // If admin, enrichment is done. Just return the base user.
         if (isAdmin) {
              return {
                 enrichedUser: baseUser as EnrichedUser,
                 isEnriching: false,
-                forceRefresh: () => {} // No-op refresh for admin, as there's nothing to refresh
+                forceRefresh: () => {}
             };
         }
 
@@ -115,18 +109,37 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
     const unsubscribe = onIdTokenChanged(
       auth,
       async (firebaseUser) => {
-        // First, handle the session cookie logic. Let it run in the background.
-        const idToken = firebaseUser ? await getIdToken(firebaseUser) : null;
+        const idToken = firebaseUser ? await getIdToken(firebaseUser, true) : null; // Force refresh
         setSessionCookie(idToken);
         
-        // THEN, update the React state. This prevents race conditions.
+        if (firebaseUser && idToken) {
+          // This ensures a user's profile and company docs are created if they are missing.
+          try {
+            await fetch('/api/checkAndCreateUser', {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${idToken}`,
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({}), 
+            });
+          } catch (error) {
+            console.error("FirebaseProvider: Failed to ensure user exists on sign-in:", error);
+          }
+        }
+        
         setBaseUser(firebaseUser);
         setIsAuthLoading(false);
         setAuthError(null);
+        
+        // After auth state has changed, we might need to refresh user-specific data.
+        if (firebaseUser) {
+           forceRefresh();
+        }
+
       },
       (error) => {
         console.error("FirebaseProvider: onIdTokenChanged error:", error);
-        // Ensure session cookie is cleared on error as well.
         setSessionCookie(null);
         setBaseUser(null);
         setIsAuthLoading(false);
@@ -134,7 +147,7 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
       }
     );
     return () => unsubscribe();
-  }, [auth]);
+  }, [auth, forceRefresh]);
 
   const contextValue = useMemo((): FirebaseContextState => ({
     firebaseApp,
