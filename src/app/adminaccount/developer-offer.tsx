@@ -1,7 +1,8 @@
+
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
-import { Api, Code, Handshake, DollarSign, Store, TrendingUp } from 'lucide-react';
+import { Code, Handshake, DollarSign, Store, TrendingUp } from 'lucide-react';
 import React from 'react';
 
 export default function DeveloperOffer() {
@@ -14,7 +15,7 @@ export default function DeveloperOffer() {
 
             <Card>
                 <CardHeader>
-                    <CardTitle className="flex items-center gap-2"><Api className="h-6 w-6 text-primary"/>Access Our Ecosystem via API</CardTitle>
+                    <CardTitle className="flex items-center gap-2"><Code className="h-6 w-6 text-primary"/>Access Our Ecosystem via API</CardTitle>
                 </CardHeader>
                 <CardContent>
                     <p className="text-lg">Gain programmatic access to the Logistics Flow ecosystem. Our developing API will provide endpoints for:</p>

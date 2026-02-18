@@ -26,8 +26,8 @@ import {
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { useUser, useFirestore, getClientSideAuthToken, useDoc, useCollection } from '@/firebase';
-import { collection, doc, query, collectionGroup } from 'firebase/firestore';
+import { useUser, useFirestore, useDoc, useCollection, errorEmitter, useMemoFirebase } from '@/firebase';
+import { collection, doc, addDoc, serverTimestamp, query, collectionGroup } from 'firebase/firestore';
 import { Loader2, PlusCircle, UserPlus, Users } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import StaffActionMenu from '../backend/staff-action-menu';
@@ -39,7 +39,6 @@ import { EditStaffDialog } from '../backend/EditStaffDialog';
 import { usePermissions } from '@/hooks/use-permissions';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { ShieldAlert } from 'lucide-react';
-import { useMemoFirebase } from '@/hooks/use-config';
 import { useRouter } from 'next/navigation';
 
 const staffFormSchema = z.object({
@@ -140,8 +139,7 @@ function AddStaffDialog({ onStaffAdded }: { onStaffAdded: () => void }) {
   }
 
   const copyInviteLink = () => {
-    const baseUrl = 'https://transconnect-v1-39578841-2a857.web.app';
-    const signupUrl = `${baseUrl}/join?email=${encodeURIComponent(newUserInfo.email)}&firstName=${encodeURIComponent(newUserInfo.firstName)}&lastName=${encodeURIComponent(newUserInfo.lastName)}`;
+    const signupUrl = `${window.location.origin}/join?email=${encodeURIComponent(newUserInfo.email)}&firstName=${encodeURIComponent(newUserInfo.firstName)}&lastName=${encodeURIComponent(newUserInfo.lastName)}`;
     navigator.clipboard.writeText(signupUrl);
     toast({
         title: 'Sign-up Link Copied!',
