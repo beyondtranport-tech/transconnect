@@ -1,4 +1,3 @@
-
 'use server';
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
@@ -52,8 +51,8 @@ export const googleSearchTool = ai.defineTool(
 
     } catch (e: any) {
         console.error("Error calling Google Search API:", e);
-        // Return an empty array on error to allow the flow to continue gracefully
-        return [];
+        // Re-throw the error so the flow catches it and reports it to the user.
+        throw e;
     }
   }
 );
