@@ -57,7 +57,7 @@ export async function POST(req: NextRequest) {
         }
          else if (!isAdmin) {
             // Most other actions in this route are admin-only
-             const allowedUserActions = ['saveCompanyLead', 'acceptCommercialAgreement'];
+             const allowedUserActions = ['saveCompanyLead', 'acceptCommercialAgreement', 'getAuditLogs'];
              if (!allowedUserActions.includes(action)) {
                  throw new Error("Forbidden: Admin access required.");
              }
@@ -310,7 +310,19 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, data: serializeTimestamps(userDoc.data()) });
             }
             case 'getAuditLogs': {
-                let logsQuery = db.collection('auditLogs').orderBy('timestamp', 'desc').limit(200);
+                let logsQuery;
+
+                if (isAdmin) {
+                    logsQuery = db.collection('auditLogs').orderBy('timestamp', 'desc').limit(200);
+                } else {
+                    if (!userCompanyIdForAuth) {
+                        return NextResponse.json({ success: true, data: [] });
+                    }
+                    logsQuery = db.collection('auditLogs')
+                                  .where('companyId', '==', userCompanyIdForAuth)
+                                  .orderBy('timestamp', 'desc')
+                                  .limit(50);
+                }
 
                 const logsSnap = await logsQuery.get();
                 if (logsSnap.empty) {
@@ -814,3 +826,5 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ success: false, error: error.message }, { status });
     }
 }
+
+    
