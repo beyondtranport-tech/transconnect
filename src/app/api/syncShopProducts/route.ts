@@ -33,6 +33,7 @@ export async function POST(req: NextRequest) {
         const publicShopRef = db.doc(`shops/${shopId}`);
 
         await db.runTransaction(async (transaction) => {
+            // --- ALL READS MUST HAPPEN FIRST ---
             const companyDoc = await transaction.get(db.doc(`companies/${companyId}`));
             const isAdmin = decodedToken.email === 'beyondtransport@gmail.com' || decodedToken.email === 'mkoton100@gmail.com';
 
@@ -44,14 +45,16 @@ export async function POST(req: NextRequest) {
             if (!shopDoc.exists || shopDoc.data()?.status !== 'approved') {
                 throw new Error('Shop is not approved or does not exist.');
             }
-            const shopData = shopDoc.data()!;
-
+            
             const memberProductsSnap = await transaction.get(memberShopRef.collection('products'));
-
-            // --- All reads are done ---
-
-            // Update the main public shop document
+            const publicProductsCollection = publicShopRef.collection('products');
+            const existingPublicProductsSnap = await transaction.get(publicProductsCollection);
+            // --- END OF READS ---
+            
+            const shopData = shopDoc.data()!;
             const { createdAt, updatedAt, ...restOfShopData } = shopData;
+
+            // --- ALL WRITES HAPPEN AFTER ---
             transaction.set(publicShopRef, { 
                 ...restOfShopData, 
                 companyId, 
@@ -59,9 +62,12 @@ export async function POST(req: NextRequest) {
                 updatedAt: FieldValue.serverTimestamp() 
             }, { merge: true });
 
-            // Overwrite products in the public subcollection
+            // Delete existing public products
+            existingPublicProductsSnap.docs.forEach(doc => transaction.delete(doc.ref));
+
+            // Set new public products
             memberProductsSnap.docs.forEach(productDoc => {
-                const publicProductRef = publicShopRef.collection('products').doc(productDoc.id);
+                const publicProductRef = publicProductsCollection.doc(productDoc.id);
                 transaction.set(publicProductRef, productDoc.data());
             });
         });

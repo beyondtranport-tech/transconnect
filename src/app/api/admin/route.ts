@@ -735,15 +735,20 @@ export async function POST(req: NextRequest) {
                     if (!shopDoc.exists) {
                         throw new Error(`Shop with ID ${shopId} not found for company ${companyId}.`);
                     }
-                    const shopData = shopDoc.data()!;
-                    const wasAlreadyApproved = shopData.status === 'approved';
-
+                    
                     const memberProductsSnap = await transaction.get(memberShopRef.collection('products'));
                     const loyaltyConfigDoc = await transaction.get(db.collection('configuration').doc('loyaltySettings'));
+                    const publicProductsCollection = publicShopRef.collection('products');
+                    const existingPublicProductsSnap = await transaction.get(publicProductsCollection);
                     // --- END OF READS ---
 
-                    // --- ALL WRITES HAPPEN AFTER ---
+                    const shopData = shopDoc.data()!;
+                    const wasAlreadyApproved = shopData.status === 'approved';
                     const { createdAt, updatedAt, ...restOfShopData } = shopData;
+                    
+                    // --- ALL WRITES HAPPEN AFTER ---
+                    existingPublicProductsSnap.docs.forEach(doc => transaction.delete(doc.ref));
+
                     transaction.set(publicShopRef, {
                         ...restOfShopData,
                         companyId, 
@@ -751,13 +756,11 @@ export async function POST(req: NextRequest) {
                         updatedAt: FieldValue.serverTimestamp()
                     }, { merge: true });
 
-                    // Overwrite products
                     memberProductsSnap.docs.forEach(productDoc => {
-                        const publicProductRef = publicShopRef.collection('products').doc(productDoc.id);
-                        transaction.set(publicProductRef, productDoc.data());
+                        const newPublicProductRef = publicProductsCollection.doc(productDoc.id);
+                        transaction.set(newPublicProductRef, productDoc.data());
                     });
 
-                    // Update the original shop's status and award points if it's a new approval.
                     if (!wasAlreadyApproved) {
                         transaction.update(memberShopRef, { status: 'approved', updatedAt: FieldValue.serverTimestamp() });
                         
