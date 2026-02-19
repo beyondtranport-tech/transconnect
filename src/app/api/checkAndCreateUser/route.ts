@@ -139,10 +139,13 @@ export async function POST(req: NextRequest) {
 
     // Create the company document. This is safe because we already checked if the user has one.
     const companyRef = db.collection('companies').doc();
+    const displayName = firebaseUser.displayName?.trim();
+    const companyName = displayName ? `${displayName}'s Company` : 'My Company';
+
     const newCompanyData: any = {
         id: companyRef.id,
         ownerId: firebaseUser.uid,
-        companyName: firebaseUser.displayName ? `${firebaseUser.displayName}'s Company` : 'My Company',
+        companyName: companyName,
         membershipId: 'free',
         isBillable: false,
         walletBalance: 0,
@@ -159,8 +162,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Prepare user data, preserving existing fields if the user doc already exists.
-    const displayName = firebaseUser.displayName || '';
-    const nameParts = displayName.split(' ');
+    const nameParts = (firebaseUser.displayName || '').split(' ');
     
     const newUserData = {
         id: firebaseUser.uid,

@@ -48,6 +48,13 @@ export default function CompanyContent() {
   const searchParams = useSearchParams();
   const fromWallet = searchParams.get('from') === 'wallet';
 
+  // Fetch user document to get the user's name for a fallback
+  const userDocRefForName = useMemoFirebase(() => {
+    if (!firestore || !user) return null;
+    return doc(firestore, 'users', user.uid);
+  }, [firestore, user]);
+  const { data: userDataForName, isLoading: isUserDataLoading } = useDoc(userDocRefForName);
+
   const companyDocRef = useMemoFirebase(() => {
     if (!firestore || !user?.companyId) return null;
     return doc(firestore, 'companies', user.companyId);
@@ -74,8 +81,14 @@ export default function CompanyContent() {
 
   useEffect(() => {
     if (companyData) {
+      let companyName = companyData.companyName;
+      // If company name is empty or a placeholder, but we have user's name, create a better default.
+      if ((!companyName || companyName === 'My Company') && userDataForName?.firstName) {
+        const ownerName = `${userDataForName.firstName} ${userDataForName.lastName || ''}`.trim();
+        companyName = ownerName ? `${ownerName}'s Company` : 'My Company';
+      }
       form.reset({
-        companyName: companyData.companyName || '',
+        companyName: companyName || '',
         registrationNumber: companyData.registrationNumber || '',
         vatNumber: companyData.vatNumber || '',
         streetAddress: companyData.streetAddress || '',
@@ -88,7 +101,7 @@ export default function CompanyContent() {
         accountHolderName: companyData.accountHolderName || '',
       });
     }
-  }, [companyData, form]);
+  }, [companyData, userDataForName, form]);
 
   const onSubmit = async (values: CompanyFormValues) => {
     setIsSaving(true);
@@ -124,7 +137,7 @@ export default function CompanyContent() {
         });
   };
 
-  const isLoading = isUserLoading || isCompanyLoading;
+  const isLoading = isUserLoading || isCompanyLoading || isUserDataLoading;
 
   return (
     <Card>
