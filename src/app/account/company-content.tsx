@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useForm } from 'react-hook-form';
@@ -48,17 +49,18 @@ export default function CompanyContent() {
   const searchParams = useSearchParams();
   const fromWallet = searchParams.get('from') === 'wallet';
 
-  // Fetch user document to get the user's name for a fallback
-  const userDocRefForName = useMemoFirebase(() => {
+  // Fetch user document directly to get the companyId, ensuring it's up-to-date.
+  const userDocRef = useMemoFirebase(() => {
     if (!firestore || !user) return null;
     return doc(firestore, 'users', user.uid);
   }, [firestore, user]);
-  const { data: userDataForName, isLoading: isUserDataLoading } = useDoc(userDocRefForName);
+  const { data: userData, isLoading: isUserDataLoading } = useDoc(userDocRef);
 
+  // Derive the companyDocRef from the locally-fetched userData.
   const companyDocRef = useMemoFirebase(() => {
-    if (!firestore || !user?.companyId) return null;
-    return doc(firestore, 'companies', user.companyId);
-  }, [firestore, user?.companyId]);
+    if (!firestore || !userData?.companyId) return null;
+    return doc(firestore, 'companies', userData.companyId);
+  }, [firestore, userData?.companyId]);
 
   const { data: companyData, isLoading: isCompanyLoading, forceRefresh } = useDoc(companyDocRef);
 
@@ -83,8 +85,8 @@ export default function CompanyContent() {
     if (companyData) {
       let companyName = companyData.companyName;
       // If company name is empty or a placeholder, but we have user's name, create a better default.
-      if ((!companyName || companyName === 'My Company') && userDataForName?.firstName) {
-        const ownerName = `${userDataForName.firstName} ${userDataForName.lastName || ''}`.trim();
+      if ((!companyName || companyName === 'My Company') && userData?.firstName) {
+        const ownerName = `${userData.firstName} ${userData.lastName || ''}`.trim();
         companyName = ownerName ? `${ownerName}'s Company` : 'My Company';
       }
       form.reset({
@@ -101,7 +103,7 @@ export default function CompanyContent() {
         accountHolderName: companyData.accountHolderName || '',
       });
     }
-  }, [companyData, userDataForName, form]);
+  }, [companyData, userData, form]);
 
   const onSubmit = async (values: CompanyFormValues) => {
     setIsSaving(true);
