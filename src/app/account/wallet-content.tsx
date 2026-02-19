@@ -1,10 +1,9 @@
-
 'use client';
 
 import { useUser, useFirestore, useCollection, useDoc, getClientSideAuthToken } from '@/firebase';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
-import { Loader2, DollarSign, Wallet, Clock, Info, Gem, Send, AlertCircle, Banknote, Edit } from 'lucide-react';
+import { Loader2, DollarSign, Wallet, Clock, Info, Gem, Send, AlertCircle, Banknote, Edit, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { collection, query, orderBy, limit, doc, where } from 'firebase/firestore';
@@ -165,29 +164,31 @@ export default function WalletContent() {
     }, [firestore, user]);
     const { data: userData, isLoading: isUserDocLoading } = useDoc<{ companyId: string }>(userDocRef);
 
+    const companyId = userData?.companyId;
+
     const companyDocRef = useMemoFirebase(() => {
-        if (!firestore || !userData?.companyId) return null;
-        return doc(firestore, 'companies', userData.companyId);
-    }, [firestore, userData]);
+        if (!firestore || !companyId) return null;
+        return doc(firestore, 'companies', companyId);
+    }, [firestore, companyId]);
     const { data: companyData, isLoading: isCompanyLoading, forceRefresh: forceRefreshCompany } = useDoc(companyDocRef);
 
     const transactionsQuery = useMemoFirebase(() => {
-        if (!firestore || !userData?.companyId) return null;
+        if (!firestore || !companyId) return null;
         return query(
-            collection(firestore, `companies/${userData.companyId}/transactions`), 
+            collection(firestore, `companies/${companyId}/transactions`), 
             orderBy('date', 'desc'), 
             limit(5)
         );
-    }, [firestore, userData]);
+    }, [firestore, companyId]);
 
     const pendingPaymentsQuery = useMemoFirebase(() => {
-        if (!firestore || !userData?.companyId) return null;
+        if (!firestore || !companyId) return null;
         return query(
-            collection(firestore, `companies/${userData.companyId}/walletPayments`),
+            collection(firestore, `companies/${companyId}/walletPayments`),
             orderBy('createdAt', 'desc'),
             limit(5)
         );
-    }, [firestore, userData]);
+    }, [firestore, companyId]);
 
     
     const { data: techPricing, isLoading: isTechPricingLoading } = useConfig<{ eftTopUpFee?: number }>('techPricing');
@@ -197,12 +198,12 @@ export default function WalletContent() {
     const { data: pendingPayments, isLoading: isLoadingPayments, error: paymentsError, forceRefresh: forceRefreshPayments } = useCollection(pendingPaymentsQuery);
     
     const { forceRefresh: forceRefreshPayouts } = useCollection(useMemoFirebase(() => {
-        if (!firestore || !userData?.companyId) return null;
+        if (!firestore || !companyId) return null;
         return query(
-            collection(firestore, `companies/${userData.companyId}/payoutRequests`),
+            collection(firestore, `companies/${companyId}/payoutRequests`),
             where('status', '==', 'pending')
         );
-    }, [firestore, userData]));
+    }, [firestore, companyId]));
     
     const availableBalance = companyData?.availableBalance || 0;
 
@@ -221,7 +222,14 @@ export default function WalletContent() {
     }, 0) || 0;
     
     const handleSubmitProofOfPayment = async () => {
-        if (!user || !userData?.companyId) return;
+        if (!user || !companyId) {
+             toast({
+                variant: "destructive",
+                title: "Company Profile Not Found",
+                description: "We couldn't find your company details. This can sometimes happen right after sign-up. Please try refreshing the page.",
+            });
+            return;
+        }
         const amountValue = parseFloat(paymentAmount);
         if (isNaN(amountValue) || amountValue <= 0) {
             toast({ variant: 'destructive', title: "Invalid Amount", description: "Please enter a valid payment amount."});
@@ -235,7 +243,7 @@ export default function WalletContent() {
             
             const paymentData = {
                 userId: user.uid,
-                companyId: userData.companyId,
+                companyId: companyId,
                 status: 'pending',
                 description: 'Wallet Top-up via EFT',
                 amount: amountValue,
@@ -296,59 +304,71 @@ export default function WalletContent() {
                     </div>
                 </div>
 
-                <div className="space-y-4">
-                     <h3 className="text-lg font-semibold">Top-up via EFT</h3>
-                     <Alert>
-                        <Info className="h-4 w-4" />
-                        <AlertTitle>How to Top Up</AlertTitle>
-                        <AlertDescription>
-                           To add funds, make an EFT payment to the bank details below using your Company ID as the reference. Then, enter the amount and click "I've made a payment" to notify us.
-                           {techPricing?.eftTopUpFee && techPricing.eftTopUpFee > 0 && (
-                                <span className="font-semibold block mt-2">Please note: A {formatCurrency(techPricing.eftTopUpFee)} admin fee applies to EFT top-ups.</span>
-                           )}
-                        </AlertDescription>
-                     </Alert>
-                     <Card className="bg-background">
-                         <CardContent className="p-4 text-sm space-y-2">
-                             {isBankDetailsLoading ? (
-                                <div className="flex justify-center p-4">
-                                    <Loader2 className="h-6 w-6 animate-spin"/>
-                                </div>
-                             ) : bankDetails && userData?.companyId ? (
-                                <>
-                                    {Object.entries(bankDetails).filter(([key]) => !['id', 'updatedAt'].includes(key)).map(([key, value]) => (
-                                        <div key={key} className="flex justify-between">
-                                            <span className="text-muted-foreground capitalize">{key.replace(/([A-Z])/g, ' $1').trim()}</span>
-                                            <span className="font-mono">{String(value)}</span>
-                                        </div>
-                                    ))}
-                                    <div className="flex justify-between pt-2 border-t">
-                                        <span className="text-muted-foreground">Reference</span>
-                                        <span className="font-mono text-primary">{userData.companyId}</span>
-                                    </div>
-                                </>
-                            ) : (
-                                <p className="text-muted-foreground text-center">Bank details not configured or user not loaded.</p>
+                <fieldset disabled={!companyId}>
+                    <div className="space-y-4">
+                        <h3 className="text-lg font-semibold">Top-up via EFT</h3>
+                        {!companyId && !isLoading && (
+                             <Alert variant="destructive">
+                                <AlertTriangle className="h-4 w-4" />
+                                <AlertTitle>Company Profile Not Found</AlertTitle>
+                                <AlertDescription>
+                                    We're still setting up your company profile. Please refresh the page in a moment to top-up your wallet.
+                                </AlertDescription>
+                            </Alert>
+                        )}
+                        <Alert>
+                            <Info className="h-4 w-4" />
+                            <AlertTitle>How to Top Up</AlertTitle>
+                            <AlertDescription>
+                            To add funds, make an EFT payment to the bank details below using your Company ID as the reference. Then, enter the amount and click "I've made a payment" to notify us.
+                            {techPricing?.eftTopUpFee && techPricing.eftTopUpFee > 0 && (
+                                    <span className="font-semibold block mt-2">Please note: A {formatCurrency(techPricing.eftTopUpFee)} admin fee applies to EFT top-ups.</span>
                             )}
-                         </CardContent>
-                     </Card>
-                     <div className="flex flex-col sm:flex-row gap-4 items-end">
-                         <div className="w-full sm:w-auto flex-grow">
-                             <Label htmlFor="payment-amount">Payment Amount (R)</Label>
-                            <Input 
-                                id="payment-amount"
-                                type="number" 
-                                placeholder="500.00"
-                                value={paymentAmount}
-                                onChange={(e) => setPaymentAmount(e.target.value)}
-                            />
-                         </div>
-                         <Button onClick={handleSubmitProofOfPayment} disabled={isSubmitting || !paymentAmount}>
-                            {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null}
-                            I've made a payment
-                         </Button>
-                     </div>
-                </div>
+                            </AlertDescription>
+                        </Alert>
+                        <Card className="bg-background">
+                            <CardContent className="p-4 text-sm space-y-2">
+                                {isBankDetailsLoading ? (
+                                    <div className="flex justify-center p-4">
+                                        <Loader2 className="h-6 w-6 animate-spin"/>
+                                    </div>
+                                ) : bankDetails && companyId ? (
+                                    <>
+                                        {Object.entries(bankDetails).filter(([key]) => !['id', 'updatedAt'].includes(key)).map(([key, value]) => (
+                                            <div key={key} className="flex justify-between">
+                                                <span className="text-muted-foreground capitalize">{key.replace(/([A-Z])/g, ' $1').trim()}</span>
+                                                <span className="font-mono">{String(value)}</span>
+                                            </div>
+                                        ))}
+                                        <div className="flex justify-between pt-2 border-t">
+                                            <span className="text-muted-foreground">Reference</span>
+                                            <span className="font-mono text-primary">{companyId}</span>
+                                        </div>
+                                    </>
+                                ) : (
+                                    <p className="text-muted-foreground text-center">Bank details not configured or company not loaded.</p>
+                                )}
+                            </CardContent>
+                        </Card>
+                        <div className="flex flex-col sm:flex-row gap-4 items-end">
+                            <div className="w-full sm:w-auto flex-grow">
+                                <Label htmlFor="payment-amount">Payment Amount (R)</Label>
+                                <Input 
+                                    id="payment-amount"
+                                    type="number" 
+                                    placeholder="500.00"
+                                    value={paymentAmount}
+                                    onChange={(e) => setPaymentAmount(e.target.value)}
+                                    disabled={!companyId}
+                                />
+                            </div>
+                            <Button onClick={handleSubmitProofOfPayment} disabled={isSubmitting || !paymentAmount || !companyId}>
+                                {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null}
+                                I've made a payment
+                            </Button>
+                        </div>
+                    </div>
+                </fieldset>
 
                 {isLoading && (
                     <div className="flex justify-center items-center py-10">
@@ -465,3 +485,4 @@ export default function WalletContent() {
     );
 }
 
+    
