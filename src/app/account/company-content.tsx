@@ -49,10 +49,17 @@ export default function CompanyContent() {
   const searchParams = useSearchParams();
   const fromWallet = searchParams.get('from') === 'wallet';
 
-  // Get companyId directly from the user object in the context
-  const companyId = user?.companyId;
+  // Redundant but safe: fetch the user doc directly within this component
+  // to get the most up-to-date companyId, avoiding stale context state.
+  const ownUserDocRef = useMemoFirebase(() => {
+    if (!firestore || !user?.uid) return null;
+    return doc(firestore, 'users', user.uid);
+  }, [firestore, user?.uid]);
+  const { data: ownUserData, isLoading: isOwnUserDocLoading } = useDoc<{ companyId: string }>(ownUserDocRef);
 
-  // Derive the companyDocRef from the companyId from the user object.
+  // Use the directly fetched companyId if the context one is missing.
+  const companyId = user?.companyId || ownUserData?.companyId;
+
   const companyDocRef = useMemoFirebase(() => {
     if (!firestore || !companyId) return null;
     return doc(firestore, 'companies', companyId);
@@ -134,7 +141,7 @@ export default function CompanyContent() {
         });
   };
 
-  const isLoading = isUserLoading || isCompanyLoading;
+  const isLoading = isUserLoading || isOwnUserDocLoading || isCompanyLoading;
 
   return (
     <Card>
