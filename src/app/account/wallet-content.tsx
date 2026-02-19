@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useUser, useFirestore, useCollection, useDoc, getClientSideAuthToken } from '@/firebase';
@@ -305,15 +306,6 @@ export default function WalletContent() {
 
                 <div className="space-y-4">
                     <h3 className="text-lg font-semibold">Top-up via EFT</h3>
-                    {!companyId && !isCompanyLoading && !isUserDocLoading && (
-                        <Alert variant="default">
-                            <AlertTriangle className="h-4 w-4 text-orange-500" />
-                            <AlertTitle>Account Setup in Progress</AlertTitle>
-                            <AlertDescription>
-                                Your company profile is being created. You can enter payment details below, but you may need to refresh before submitting.
-                            </AlertDescription>
-                        </Alert>
-                    )}
                     <Alert>
                         <Info className="h-4 w-4" />
                         <AlertTitle>How to Top Up</AlertTitle>
@@ -340,7 +332,7 @@ export default function WalletContent() {
                                     ))}
                                     <div className="flex justify-between pt-2 border-t">
                                         <span className="text-muted-foreground">Reference</span>
-                                        <span className="font-mono text-primary">{companyId || '(Available after profile setup)'}</span>
+                                        <span className="font-mono text-primary">{companyId || '(Loading...)'}</span>
                                     </div>
                                 </>
                             ) : (
@@ -357,9 +349,10 @@ export default function WalletContent() {
                                 placeholder="500.00"
                                 value={paymentAmount}
                                 onChange={(e) => setPaymentAmount(e.target.value)}
+                                disabled={isSubmitting}
                             />
                         </div>
-                        <Button onClick={handleSubmitProofOfPayment} disabled={isSubmitting || !paymentAmount}>
+                        <Button onClick={handleSubmitProofOfPayment} disabled={isSubmitting || !paymentAmount || isLoading}>
                             {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null}
                             I've made a payment
                         </Button>

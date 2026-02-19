@@ -33,8 +33,8 @@ export async function POST(req: NextRequest) {
   const idToken = authorization.split('Bearer ')[1];
   
   try {
-    const { data } = await req.json();
-    if (!data) {
+    const { data: paymentPayload } = await req.json();
+    if (!paymentPayload) {
         return NextResponse.json({ success: false, error: 'Bad Request: "data" is required.' }, { status: 400 });
     }
       
@@ -43,34 +43,75 @@ export async function POST(req: NextRequest) {
     const uid = decodedToken.uid;
     
     const db = getFirestore(app);
+    const batch = db.batch();
 
-    // --- NEW LOGIC ---
-    let companyId = data.companyId;
-
-    // If companyId is not provided in the payload, look it up from the user's document.
-    if (!companyId) {
-        const userDoc = await db.collection('users').doc(uid).get();
-        companyId = userDoc.data()?.companyId;
-    }
+    // --- Ensure User and Company exist ---
+    const userDocRef = db.collection('users').doc(uid);
+    const userDocSnap = await userDocRef.get();
+    let companyId = userDocSnap.data()?.companyId;
 
     if (!companyId) {
-        return NextResponse.json({ success: false, error: 'Could not find an associated company for this user. The profile may still be setting up.' }, { status: 404 });
+        console.log(`createWalletPayment: Company ID not found for user ${uid}, creating new company.`);
+        const firebaseUser = {
+            uid: decodedToken.uid,
+            email: decodedToken.email,
+            displayName: decodedToken.name,
+            phoneNumber: decodedToken.phone_number,
+        };
+
+        const companyRef = db.collection('companies').doc();
+        companyId = companyRef.id;
+        const displayName = firebaseUser.displayName?.trim();
+        const companyName = displayName ? `${displayName}'s Company` : 'My Company';
+
+        const newCompanyData = {
+            id: companyRef.id,
+            ownerId: uid,
+            companyName: companyName,
+            membershipId: 'free',
+            isBillable: false,
+            walletBalance: 0,
+            pendingBalance: 0,
+            availableBalance: 0,
+            loyaltyTier: 'bronze',
+            status: 'pending',
+            createdAt: FieldValue.serverTimestamp(),
+            updatedAt: FieldValue.serverTimestamp(),
+        };
+
+        const nameParts = (firebaseUser.displayName || '').split(' ');
+        const newUserData = {
+            id: uid,
+            firstName: nameParts[0] || 'New',
+            lastName: nameParts.length > 1 ? nameParts.slice(1).join(' ') : 'User',
+            email: firebaseUser.email,
+            phone: firebaseUser.phoneNumber || '',
+            companyId: companyRef.id,
+            role: 'owner',
+            createdAt: FieldValue.serverTimestamp(),
+            updatedAt: FieldValue.serverTimestamp(),
+        };
+
+        batch.set(companyRef, newCompanyData);
+        batch.set(userDocRef, newUserData, { merge: true });
     }
-    // --- END NEW LOGIC ---
+    // --- End User and Company check ---
     
     const collectionPath = `companies/${companyId}/walletPayments`;
     const collectionRef = db.collection(collectionPath);
     
     const finalData = {
-        ...deserializeData(data),
+        ...deserializeData(paymentPayload),
         userId: uid,
         companyId: companyId,
     };
     
     const newDocRef = collectionRef.doc();
-    await newDocRef.set({ ...finalData, id: newDocRef.id });
+    batch.set(newDocRef, { ...finalData, id: newDocRef.id });
 
-    return NextResponse.json({ success: true, id: newDocRef.id, message: 'Wallet payment created successfully.' });
+    await batch.commit();
+
+    return NextResponse.json({ success: true, id: newDocRef.id, message: 'Wallet payment request created successfully.' });
 
   } catch (error: any) {
     console.error(`Error in createWalletPayment:`, error);
