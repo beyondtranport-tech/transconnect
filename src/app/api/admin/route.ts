@@ -730,6 +730,7 @@ export async function POST(req: NextRequest) {
                 const publicShopRef = db.doc(`shops/${shopId}`);
 
                 await db.runTransaction(async (transaction) => {
+                    // --- ALL READS MUST HAPPEN FIRST ---
                     const shopDoc = await transaction.get(memberShopRef);
                     if (!shopDoc.exists) {
                         throw new Error(`Shop with ID ${shopId} not found for company ${companyId}.`);
@@ -739,9 +740,9 @@ export async function POST(req: NextRequest) {
 
                     const memberProductsSnap = await transaction.get(memberShopRef.collection('products'));
                     const loyaltyConfigDoc = await transaction.get(db.collection('configuration').doc('loyaltySettings'));
+                    // --- END OF READS ---
 
-                    // --- All reads are done ---
-
+                    // --- ALL WRITES HAPPEN AFTER ---
                     const { createdAt, updatedAt, ...restOfShopData } = shopData;
                     transaction.set(publicShopRef, {
                         ...restOfShopData,
@@ -750,11 +751,13 @@ export async function POST(req: NextRequest) {
                         updatedAt: FieldValue.serverTimestamp()
                     }, { merge: true });
 
+                    // Overwrite products
                     memberProductsSnap.docs.forEach(productDoc => {
                         const publicProductRef = publicShopRef.collection('products').doc(productDoc.id);
                         transaction.set(publicProductRef, productDoc.data());
                     });
 
+                    // Update the original shop's status and award points if it's a new approval.
                     if (!wasAlreadyApproved) {
                         transaction.update(memberShopRef, { status: 'approved', updatedAt: FieldValue.serverTimestamp() });
                         
@@ -767,7 +770,6 @@ export async function POST(req: NextRequest) {
                 const message = wasAlreadyApproved 
                     ? 'Shop products successfully re-synced.'
                     : 'Shop and its products have been approved and published.';
-
                 return NextResponse.json({ success: true, message });
             }
             case 'rejectShop': {
