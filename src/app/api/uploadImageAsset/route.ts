@@ -41,8 +41,9 @@ export async function POST(req: NextRequest) {
         const contentType = providedContentType || matches[1];
         const fileBuffer = Buffer.from(matches[2], 'base64');
         
-        // Get the default bucket associated with the project.
-        const bucket = getStorage(app).bucket();
+        // **DEFINITIVE FIX:** Explicitly specify the bucket name to avoid any configuration ambiguity.
+        const bucketName = "ecosystem-hub.appspot.com";
+        const bucket = getStorage(app).bucket(bucketName);
         
         if (!bucket) {
             console.error("uploadImageAsset: Storage bucket could not be determined. The service account may be missing permissions or the bucket doesn't exist.");
