@@ -313,14 +313,14 @@ function AIGenerateDialog({
     <>
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogTrigger asChild>{children}</DialogTrigger>
-        <DialogContent>
+        <DialogContent className="flex flex-col max-h-[90vh]">
           <DialogHeader>
             <DialogTitle>{title}</DialogTitle>
             <DialogDescription>
               {description}
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-4">
+          <div className="flex-1 overflow-y-auto space-y-4 py-4 pr-4">
             <div className="space-y-2">
               <Label htmlFor="generate-prompt">Prompt</Label>
               <Textarea id="generate-prompt" value={prompt} onChange={(e) => setPrompt(e.target.value)} placeholder="e.g., A shiny chrome truck exhaust pipe" rows={5}/>
@@ -339,7 +339,7 @@ function AIGenerateDialog({
             </div>
             {isApplying && <Progress value={uploadProgress} className="w-full" />}
           </div>
-          <DialogFooter className="sm:justify-between">
+          <DialogFooter className="mt-auto flex-shrink-0 pt-4 sm:justify-between">
              <div className="flex flex-wrap items-center gap-2">
                   {generatedImage && (
                       <>
