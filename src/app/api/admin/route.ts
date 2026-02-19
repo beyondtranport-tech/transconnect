@@ -725,51 +725,57 @@ export async function POST(req: NextRequest) {
                 if (!shopId || !companyId) {
                     throw new Error("Missing shopId or companyId for approveShop action.");
                 }
-
-                const batch = db.batch();
+                
+                // Step 1: Read all data first to avoid transactional errors.
                 const memberShopRef = db.doc(`companies/${companyId}/shops/${shopId}`);
                 const publicShopRef = db.doc(`shops/${shopId}`);
-                
-                // Perform all reads first, outside of the batch logic
                 const shopDoc = await memberShopRef.get();
                 if (!shopDoc.exists) {
                     throw new Error(`Shop with ID ${shopId} not found for company ${companyId}.`);
                 }
-                
                 const shopData = shopDoc.data()!;
                 const wasAlreadyApproved = shopData.status === 'approved';
-
                 const memberProductsSnap = await memberShopRef.collection('products').get();
                 const publicProductsCollection = publicShopRef.collection('products');
                 const existingPublicProductsSnap = await publicProductsCollection.get();
                 const loyaltyConfigDoc = await db.collection('configuration').doc('loyaltySettings').get();
 
-                // Prepare batch writes
-                existingPublicProductsSnap.docs.forEach(doc => batch.delete(doc.ref));
+                // Step 2: Perform all delete operations in a separate batch.
+                if (!existingPublicProductsSnap.empty) {
+                    const deleteBatch = db.batch();
+                    existingPublicProductsSnap.docs.forEach(doc => deleteBatch.delete(doc.ref));
+                    await deleteBatch.commit();
+                }
 
+                // Step 3: Perform all write and update operations in a second batch.
+                const writeBatch = db.batch();
                 const { createdAt, updatedAt, ...restOfShopData } = shopData;
-                batch.set(publicShopRef, {
+
+                // Set public shop document
+                writeBatch.set(publicShopRef, {
                     ...restOfShopData,
                     companyId, 
                     status: 'approved',
                     updatedAt: FieldValue.serverTimestamp()
                 }, { merge: true });
 
+                // Copy products
                 memberProductsSnap.docs.forEach(productDoc => {
                     const newPublicProductRef = publicProductsCollection.doc(productDoc.id);
-                    batch.set(newPublicProductRef, productDoc.data());
+                    writeBatch.set(newPublicProductRef, productDoc.data());
                 });
                 
-                batch.update(memberShopRef, { status: 'approved', updatedAt: FieldValue.serverTimestamp() });
+                // Update private shop status
+                writeBatch.update(memberShopRef, { status: 'approved', updatedAt: FieldValue.serverTimestamp() });
 
+                // Award points on first approval
                 if (!wasAlreadyApproved && loyaltyConfigDoc.exists) {
                     const shopCreationPoints = loyaltyConfigDoc.data()?.shopCreationPoints || 100;
                     const companyRef = db.doc(`companies/${companyId}`);
-                    batch.update(companyRef, { rewardPoints: FieldValue.increment(shopCreationPoints) });
+                    writeBatch.update(companyRef, { rewardPoints: FieldValue.increment(shopCreationPoints) });
                 }
                 
-                // Commit the atomic batch
-                await batch.commit();
+                await writeBatch.commit();
 
                 const message = wasAlreadyApproved 
                     ? 'Shop products successfully re-synced.'

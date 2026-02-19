@@ -29,11 +29,10 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ success: false, error: 'Missing shopId or companyId.' }, { status: 400 });
         }
 
-        const batch = db.batch();
         const memberShopRef = db.doc(`companies/${companyId}/shops/${shopId}`);
         const publicShopRef = db.doc(`shops/${shopId}`);
 
-        // --- READS ---
+        // --- Authorization & Data Reads ---
         const companyDoc = await db.doc(`companies/${companyId}`).get();
         const isAdmin = decodedToken.email === 'beyondtransport@gmail.com' || decodedToken.email === 'mkoton100@gmail.com';
 
@@ -50,31 +49,33 @@ export async function POST(req: NextRequest) {
         const publicProductsCollection = publicShopRef.collection('products');
         const existingPublicProductsSnap = await publicProductsCollection.get();
         
+        // --- Step 1: Delete old public products ---
+        if (!existingPublicProductsSnap.empty) {
+            const deleteBatch = db.batch();
+            existingPublicProductsSnap.docs.forEach(doc => deleteBatch.delete(doc.ref));
+            await deleteBatch.commit();
+        }
+        
+        // --- Step 2: Write new data ---
+        const writeBatch = db.batch();
         const shopData = shopDoc.data()!;
         const { createdAt, updatedAt, ...restOfShopData } = shopData;
-        // --- END READS ---
-        
-        // --- PREPARE BATCH WRITES ---
-        
-        // 1. Update public shop document with latest data and a new timestamp.
-        batch.set(publicShopRef, { 
+
+        // Update public shop document with latest data and a new timestamp.
+        writeBatch.set(publicShopRef, { 
             ...restOfShopData, 
             companyId, 
             status: 'approved', 
             updatedAt: FieldValue.serverTimestamp() 
         }, { merge: true });
 
-        // 2. Delete all existing public products to ensure a clean sync.
-        existingPublicProductsSnap.docs.forEach(doc => batch.delete(doc.ref));
-
-        // 3. Copy all current products to the public collection.
+        // Copy all current products to the public collection.
         memberProductsSnap.docs.forEach(productDoc => {
             const publicProductRef = publicProductsCollection.doc(productDoc.id);
-            batch.set(publicProductRef, productDoc.data());
+            writeBatch.set(publicProductRef, productDoc.data());
         });
-
-        // --- COMMIT BATCH ---
-        await batch.commit();
+        
+        await writeBatch.commit();
 
         return NextResponse.json({ success: true, message: 'Products synced successfully.' });
 
