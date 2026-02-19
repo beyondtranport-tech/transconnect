@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Loader2, Store, PlusCircle, ShieldAlert } from 'lucide-react';
@@ -36,14 +36,17 @@ export default function ShopContent() {
     return doc(firestore, `companies/${userData.companyId}/shops/${companyData.shopId}`);
   }, [firestore, companyData?.shopId, userData?.companyId]);
 
-  const { data: userShop, isLoading: isShopLoading } = useDoc(shopRef);
+  const { data: userShop, isLoading: isShopLoading, forceRefresh: forceRefreshShop } = useDoc(shopRef);
 
   const isLoading = isUserLoading || isUserDataLoading || isCompanyLoading || arePermissionsLoading;
 
-  const forceRefresh = () => {
+  const forceRefreshAll = useCallback(() => {
     forceRefreshUser();
     forceRefreshCompany();
-  };
+    if (forceRefreshShop) {
+      forceRefreshShop();
+    }
+  }, [forceRefreshUser, forceRefreshCompany, forceRefreshShop]);
 
   const handleCreateShop = async () => {
     if (!user || !userData?.companyId) {
@@ -70,7 +73,7 @@ export default function ShopContent() {
 
       if (response.ok && result.success) {
         toast({ title: 'Shop Draft Created!', description: "Let's get started with the details." });
-        forceRefresh();
+        forceRefreshAll();
       } else {
         throw new Error(result.error || 'Failed to create shop.');
       }
@@ -113,7 +116,7 @@ export default function ShopContent() {
                     <p className="ml-4">Loading your shop...</p>
                 </div>
             ) : userShop ? (
-                <ShopWizard shop={userShop} />
+                <ShopWizard shop={userShop} onShopUpdate={forceRefreshAll} />
             ) : (
                  <div className="text-center py-20 border-2 border-dashed rounded-lg">
                     <Store className="mx-auto h-12 w-12 text-muted-foreground" />

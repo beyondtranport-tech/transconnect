@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
@@ -545,7 +546,7 @@ function ProductDialog({ shop, product, onComplete, children, canEdit }: { shop:
                                       <div className="grid grid-cols-3 gap-2">
                                           {(field.value || []).map((url) => (
                                               <div key={url} className="relative aspect-square">
-                                                  <Image src={url} alt="Product image" fill className="object-contain border" />
+                                                  <Image src={url} alt="Product image 1" fill className="object-contain border" />
                                                   <Button
                                                       type="button"
                                                       variant="destructive"
@@ -1441,7 +1442,7 @@ const shopStep7Schema = z.object({
 
 type Step7FormValues = z.infer<typeof shopStep7Schema>;
 
-function Step7SeoAndPublishing({ shop, onSave, canEdit, onSeoGenerated }: { shop: any, onSave: (newData: any) => void, canEdit: boolean, onSeoGenerated: (seoData: any) => void }) {
+function Step7SeoAndPublishing({ shop, onSave, canEdit, onSeoGenerated, onShopUpdate }: { shop: any, onSave: (newData: any) => void, canEdit: boolean, onSeoGenerated: (seoData: any) => void, onShopUpdate: () => void }) {
   const { user } = useUser();
   const { toast } = useToast();
   const [isSaving, setIsSaving] = useState(false);
@@ -1563,7 +1564,7 @@ function Step7SeoAndPublishing({ shop, onSave, canEdit, onSeoGenerated }: { shop
         if (!response.ok) throw new Error((await response.json()).error || 'Failed to submit for review.');
 
         toast({ title: 'Shop Submitted!', description: 'Your shop is now pending review from our team.' });
-        onSave({ status: 'pending_review' }); // Update local state
+        onShopUpdate();
     } catch (error: any) {
          toast({ variant: 'destructive', title: 'Submission Failed', description: error.message });
     } finally {
@@ -1638,12 +1639,16 @@ function Step7SeoAndPublishing({ shop, onSave, canEdit, onSeoGenerated }: { shop
 
 
 // ====== MAIN WIZARD COMPONENT ======
-export function ShopWizard({ shop: initialShop }: { shop: any }) {
+export function ShopWizard({ shop: initialShop, onShopUpdate }: { shop: any, onShopUpdate: () => void }) {
   const [currentStep, setCurrentStep] = useState(0);
   const [shopData, setShopData] = useState(initialShop);
   const { can, isLoading: permissionsLoading } = usePermissions();
   const firestore = useFirestore();
 
+  useEffect(() => {
+    setShopData(initialShop);
+  }, [initialShop]);
+  
   const productsQuery = useMemoFirebase(() => {
     if (!firestore || !shopData?.companyId || !shopData?.id) return null;
     return collection(firestore, `companies/${shopData.companyId}/shops/${shopData.id}/products`);
@@ -1656,7 +1661,7 @@ export function ShopWizard({ shop: initialShop }: { shop: any }) {
     if (currentStep < steps.length - 1) {
       setCurrentStep(currentStep + 1);
     }
-    forceRefreshProducts(); // Refresh products after any step saves
+    forceRefreshProducts();
   };
 
   const handleSeoGenerated = (seoData: any) => {
@@ -1677,7 +1682,7 @@ export function ShopWizard({ shop: initialShop }: { shop: any }) {
     { name: 'Social Links', component: <Step4SocialLinks shop={shopData} onSave={handleSave} canEdit={canEditShop} /> },
     { name: 'Legal Docs', component: <Step5Legal shop={shopData} onSave={handleSave} canEdit={canEditShop} /> },
     { name: 'Commercials', component: <Step6Commercials shop={shopData} onSave={handleSave} canEdit={canEditShop} /> },
-    { name: 'Publishing', component: <Step7SeoAndPublishing shop={shopData} onSave={handleSave} canEdit={canEditShop} onSeoGenerated={handleSeoGenerated} /> },
+    { name: 'Publishing', component: <Step7SeoAndPublishing shop={shopData} onSave={handleSave} canEdit={canEditShop} onSeoGenerated={handleSeoGenerated} onShopUpdate={onShopUpdate} /> },
     { name: 'Preview', component: <ShopPreview shop={shopData} products={products || []} /> },
   ];
 
