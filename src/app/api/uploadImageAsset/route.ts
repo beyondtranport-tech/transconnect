@@ -1,4 +1,5 @@
 
+'use server';
 import { NextRequest, NextResponse } from 'next/server';
 import { getStorage } from 'firebase-admin/storage';
 import { getAdminApp } from '@/lib/firebase-admin';
@@ -41,7 +42,6 @@ export async function POST(req: NextRequest) {
         const contentType = providedContentType || matches[1];
         const fileBuffer = Buffer.from(matches[2], 'base64');
         
-        // DEFINITIVE FIX: Use the custom, unblocked bucket name.
         const bucket = getStorage(app).bucket("ecosystem-hub-files");
         
         console.log(`uploadImageAsset: Explicitly using bucket: ${bucket.name}`);
@@ -52,7 +52,6 @@ export async function POST(req: NextRequest) {
         console.log("uploadImageAsset: Calling file.save()...");
         await file.save(fileBuffer, {
             metadata: { contentType },
-            public: true 
         });
         console.log("uploadImageAsset: file.save() completed successfully.");
 
