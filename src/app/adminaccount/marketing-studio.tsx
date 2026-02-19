@@ -1,9 +1,9 @@
-
 'use client';
 
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Sparkles } from "lucide-react";
 import ImageGeneratorCard from "./image-generator-card";
+import IconGeneratorCard from "./icon-generator-card";
 import ImageEditorCard from "./image-editor-card";
 import VideoGeneratorCard from "./video-generator-card";
 import VideoAnimatorCard from "./video-animator-card";
@@ -25,23 +25,9 @@ export default function MarketingStudio() {
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <ImageGeneratorCard 
-            promptTemplate={`// A prompt for generating a clean, modern icon.
-// Edit the details below to customize your icon.
-
-A simple, modern icon representing [concept, e.g., 'fast delivery' or 'secure storage'].
-
-// Describe the style.
-// Examples: 'flat icon style', 'vector art', 'line art icon'.
-Style: flat icon style, with clean lines and minimal detail.
-
-// Describe the color palette.
-// Example: 'using a palette of blues and grays', 'in the primary brand color of green'.
-Color: using the brand colors of forest green and charcoal gray.
-
-// Add any other details.
-// Example: 'The icon should be on a transparent background', 'It should be easily recognizable at small sizes'.
-The icon should be on a white background, enclosed in a circle with a thin gray border.`}
+            promptTemplate="A cinematic, professional photograph of a futuristic, gleaming white and green Scania truck driving on a high-tech highway at dusk. The road is illuminated with glowing data lines, and the sky has a vibrant sunset."
         />
+        <IconGeneratorCard />
         <ImageEditorCard 
             promptTemplate="Place the truck on a winding mountain pass at sunset."
         />

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -30,22 +29,7 @@ import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
 import { getClientSideAuthToken } from '@/firebase';
 
-const defaultPrompt = `// A prompt for generating a clean, modern icon.
-// Edit the details below to customize your icon.
-
-A simple, modern icon representing [concept, e.g., 'fast delivery' or 'secure storage'].
-
-// Describe the style.
-// Examples: 'flat icon style', 'vector art', 'line art icon'.
-Style: flat icon style, with clean lines and minimal detail.
-
-// Describe the color palette.
-// Example: 'using a palette of blues and grays', 'in the primary brand color of green'.
-Color: using the brand colors of forest green and charcoal gray.
-
-// Add any other details.
-// Example: 'The icon should be on a transparent background', 'It should be easily recognizable at small sizes'.
-The icon should be on a white background, enclosed in a circle with a thin gray border.`;
+const defaultPrompt = `A cinematic, professional photograph of a futuristic, gleaming white and green Scania truck driving on a high-tech highway at dusk. The road is illuminated with glowing data lines, and the sky has a vibrant sunset.`;
 
 export default function ImageGeneratorCard({ promptTemplate }: { promptTemplate?: string }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -168,10 +152,10 @@ export default function ImageGeneratorCard({ promptTemplate }: { promptTemplate?
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <ImageIcon /> AI Logo, Icon & Image Generator
+            <ImageIcon /> AI Image Generator
           </CardTitle>
           <CardDescription>
-            Create professional logos, app icons, and marketing images from a text description.
+            Create brand assets and marketing images from a text description.
           </CardDescription>
         </CardHeader>
         <CardContent>
