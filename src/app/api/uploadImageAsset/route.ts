@@ -41,9 +41,8 @@ export async function POST(req: NextRequest) {
         const contentType = providedContentType || matches[1];
         const fileBuffer = Buffer.from(matches[2], 'base64');
         
-        // Explicitly specify the bucket name here, as it's no longer in the main app init.
-        const bucketName = "transconnect-v1-39578841-2a857.appspot.com";
-        const bucket = getStorage(app).bucket(bucketName);
+        // Get the default bucket associated with the project.
+        const bucket = getStorage(app).bucket();
         
         if (!bucket) {
             console.error("uploadImageAsset: Storage bucket could not be determined. The service account may be missing permissions or the bucket doesn't exist.");
