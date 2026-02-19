@@ -7,22 +7,19 @@ If you are consistently seeing a "Bucket Not Found" error even after verifying a
 
 ---
 
-## Step 1: Go to Firebase Storage and Delete the Bucket
+## Step 1: Delete the Current Bucket (If It Exists)
 
-1.  Open the [Firebase Console](https://console.firebase.google.com/).
-2.  Select your project (`ecosystem-hub`).
-3.  In the left-hand navigation menu, under the **Build** section, click on **Storage**.
-4.  You should see a file browser. If there are any files you cannot afford to lose, download them now.
-5.  At the top of the file browser, click the three-dots menu (⋮) next to your bucket name (which looks like `ecosystem-hub.appspot.com`).
-6.  From the dropdown, select **"Delete bucket"**.
-7.  A confirmation dialog will appear. You will need to type your bucket's name exactly as shown to confirm the deletion. This is a safety measure.
-8.  Click the final **"Delete"** button.
+1.  Open the [Google Cloud Storage Browser for your project](https://console.cloud.google.com/storage/browser?project=ecosystem-hub).
+2.  You will see a list of buckets. If you see a bucket named `ecosystem-hub.appspot.com` or `ecosystem-hub-files`, check the box next to it.
+3.  Click the **"DELETE"** button at the top.
+4.  A confirmation dialog will appear. You will need to type the bucket's name exactly as shown to confirm the deletion. This is a safety measure.
+5.  Click the final **"DELETE"** button.
 
 ---
 
-## Step 2: Re-create the Bucket (Definitive Method)
+## Step 2: Create a New, Custom-Named Bucket (The Definitive Method)
 
-The Firebase Console UI can sometimes fail. This method uses the Google Cloud Console directly and is the most reliable way to create the bucket with the correct settings.
+The Firebase Console UI can sometimes fail. This method uses the Google Cloud Console directly and is the most reliable way to create the bucket with the correct settings. It uses a custom name to avoid project policy errors.
 
 1.  **Go to the Google Cloud Storage Browser:**
     **[https://console.cloud.google.com/storage/browser?project=ecosystem-hub](https://console.cloud.google.com/storage/browser?project=ecosystem-hub)**
@@ -30,7 +27,7 @@ The Firebase Console UI can sometimes fail. This method uses the Google Cloud Co
 2.  Click the **"CREATE BUCKET"** button at the top.
 
 3.  **Name your bucket:** This is the most critical step. You **MUST** name your bucket exactly:
-    `ecosystem-hub.appspot.com`
+    `ecosystem-hub-files`
 
 4.  **Choose where to store your data:** Select a "Region" or "Multi-region" and choose a location (e.g., `us-central1` or `us`). Click **Continue**.
 
