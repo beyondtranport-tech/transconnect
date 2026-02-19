@@ -546,7 +546,7 @@ function ProductDialog({ shop, product, onComplete, children, canEdit }: { shop:
                                   <FormControl>
                                       <div className="grid grid-cols-3 gap-2">
                                           {(field.value || []).map((url, index) => (
-                                              <div key={index} className="relative aspect-square">
+                                              <div key={url} className="relative aspect-square">
                                                   <Image src={url} alt={`Product image ${index + 1}`} fill className="rounded-md object-contain border" />
                                                   <Button
                                                       type="button"
