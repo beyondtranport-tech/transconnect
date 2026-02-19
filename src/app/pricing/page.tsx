@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -65,7 +66,7 @@ export default function MembershipPage() {
     return query(collection(firestore, 'memberships'));
   }, [firestore]);
   
-  const { data: tiers, isLoading } = useCollection(membershipsQuery);
+  const { data: tiers, isLoading, error } = useCollection(membershipsQuery);
 
   // Sort tiers: free, basic, standard, premium, etc.
   const sortedTiers = useMemo(() => {
@@ -75,8 +76,8 @@ export default function MembershipPage() {
           const aIndex = order.indexOf(a.id);
           const bIndex = order.indexOf(b.id);
           
-          const aPrice = (typeof a.price === 'object' && a.price !== null) ? a.price.monthly || 0 : a.price || 0;
-          const bPrice = (typeof b.price === 'object' && b.price !== null) ? b.price.monthly || 0 : b.price || 0;
+          const aPrice = a.price || 0;
+          const bPrice = b.price || 0;
 
           if (aIndex === -1 && bIndex === -1) return aPrice - bPrice;
           if (aIndex === -1) return 1;
@@ -122,10 +123,15 @@ export default function MembershipPage() {
 
         {isLoading ? (
             <div className="flex justify-center py-20"><Loader2 className="h-16 w-16 animate-spin text-primary" /></div>
+        ) : error ? (
+          <div className="text-center py-20 text-destructive bg-destructive/10 rounded-lg">
+            <h3 className="text-xl font-semibold">Could not load Membership Plans</h3>
+            <p className="mt-2 text-sm">{error.message}</p>
+          </div>
         ) : (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-7xl mx-auto">
               {sortedTiers?.map((tier:any) => {
-                  const monthlyPrice = (typeof tier.price === 'object' && tier.price !== null) ? tier.price.monthly || 0 : tier.price || 0;
+                  const monthlyPrice = tier.price || 0;
                   const annualDiscountPercent = tier.annualDiscount || 0;
                   const specialOfferDiscountPercent = tier.specialOfferDiscount || 0;
 
@@ -267,7 +273,7 @@ export default function MembershipPage() {
                 {featureSections.map((section) => (
                     <React.Fragment key={section.name}>
                         <TableRow className="bg-muted/50">
-                            <TableCell colSpan={(sortedTiers?.length || 0) + 1} className="font-semibold text-primary">{section.name}</TableCell>
+                            <TableCell colSpan={((sortedTiers?.length) || 0) + 1} className="font-semibold text-primary">{section.name}</TableCell>
                         </TableRow>
                         {section.features.map((feature) => (
                             <TableRow key={feature.key}>
