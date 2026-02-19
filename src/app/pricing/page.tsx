@@ -1,9 +1,8 @@
-
 'use client';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Check, Star, Minus } from 'lucide-react';
+import { Check, Star, Minus, Info } from 'lucide-react';
 import Link from 'next/link';
 import { useUser, useFirestore, useCollection } from '@/firebase';
 import { cn } from '@/lib/utils';
@@ -128,9 +127,9 @@ export default function MembershipPage() {
             <h3 className="text-xl font-semibold">Could not load Membership Plans</h3>
             <p className="mt-2 text-sm">{error.message}</p>
           </div>
-        ) : (
+        ) : sortedTiers && sortedTiers.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-7xl mx-auto">
-              {sortedTiers?.map((tier:any) => {
+              {sortedTiers.map((tier:any) => {
                   const monthlyPrice = tier.price || 0;
                   const annualDiscountPercent = tier.annualDiscount || 0;
                   const specialOfferDiscountPercent = tier.specialOfferDiscount || 0;
@@ -249,6 +248,19 @@ export default function MembershipPage() {
                   )
               })}
             </div>
+        ) : (
+             <div className="text-center py-20 border-2 border-dashed rounded-lg">
+                <Info className="mx-auto h-12 w-12 text-muted-foreground" />
+                <h2 className="mt-6 text-2xl font-semibold">No Membership Plans Found</h2>
+                <p className="mt-2 text-muted-foreground">
+                    It looks like no membership plans have been configured for the platform yet.
+                </p>
+                <Button asChild className="mt-6">
+                    <Link href="/adminaccount?view=pricing-memberships">
+                        Go to Admin Backend to Create Plans
+                    </Link>
+                </Button>
+            </div>
         )}
       </div>
       <section className="py-16 md:py-24 bg-card">
@@ -259,37 +271,41 @@ export default function MembershipPage() {
               Find the right set of tools to build your online shop and grow your business.
             </p>
           </div>
-          <div className="max-w-5xl mx-auto border rounded-lg overflow-hidden">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-2/5 font-bold text-lg">Features</TableHead>
-                  {sortedTiers?.map((tier:any) => (
-                    <TableHead key={tier.id} className="text-center font-bold text-lg">{tier.name}</TableHead>
-                  ))}
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {featureSections.map((section) => (
-                    <React.Fragment key={section.name}>
-                        <TableRow className="bg-muted/50">
-                            <TableCell colSpan={((sortedTiers?.length) || 0) + 1} className="font-semibold text-primary">{section.name}</TableCell>
-                        </TableRow>
-                        {section.features.map((feature) => (
-                            <TableRow key={feature.key}>
-                                <TableCell className="font-medium pl-8">{feature.name}</TableCell>
-                                {sortedTiers?.map((tier: any) => (
-                                     <TableCell key={`${tier.id}-${feature.key}`} className="text-center">
-                                        {renderCheckmark((tier.features || []).includes(feature.key))}
-                                     </TableCell>
-                                ))}
+          {sortedTiers && sortedTiers.length > 0 ? (
+              <div className="max-w-5xl mx-auto border rounded-lg overflow-hidden">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-2/5 font-bold text-lg">Features</TableHead>
+                      {sortedTiers?.map((tier:any) => (
+                        <TableHead key={tier.id} className="text-center font-bold text-lg">{tier.name}</TableHead>
+                      ))}
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {featureSections.map((section) => (
+                        <React.Fragment key={section.name}>
+                            <TableRow className="bg-muted/50">
+                                <TableCell colSpan={((sortedTiers?.length) || 0) + 1} className="font-semibold text-primary">{section.name}</TableCell>
                             </TableRow>
-                        ))}
-                    </React.Fragment>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
+                            {section.features.map((feature) => (
+                                <TableRow key={feature.key}>
+                                    <TableCell className="font-medium pl-8">{feature.name}</TableCell>
+                                    {sortedTiers?.map((tier: any) => (
+                                        <TableCell key={`${tier.id}-${feature.key}`} className="text-center">
+                                            {renderCheckmark((tier.features || []).includes(feature.key))}
+                                        </TableCell>
+                                    ))}
+                                </TableRow>
+                            ))}
+                        </React.Fragment>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+          ) : (
+            <p className="text-center text-muted-foreground">Feature comparison will be available once plans are created.</p>
+          )}
         </div>
       </section>
     </div>
