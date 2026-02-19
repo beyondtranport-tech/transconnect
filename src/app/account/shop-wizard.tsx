@@ -45,6 +45,7 @@ import { usePermissions } from '@/hooks/use-permissions';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { generateShopSeo } from '@/ai/flows/seo-flow.ts';
 import { generateSocialLinks } from '@/ai/flows/social-link-generator-flow';
+import { useConfig } from '@/hooks/use-config';
 
 const { placeholderImages } = placeholderImageData;
 
@@ -1218,21 +1219,76 @@ function Step5Legal({ shop, onSave, canEdit }: { shop: any, onSave: (newData: an
 }
 
 // ====== STEP 6: Commercials ======
-function Step6Commercials({ shop, canEdit }: { shop: any, onSave: (newData: any) => void, canEdit: boolean }) {
+const proposalSchema = z.object({
+    percentage: z.coerce.number().min(0, "Cannot be negative").max(100, "Cannot be over 100"),
+});
+type ProposalFormValues = z.infer<typeof proposalSchema>;
+
+function Step6Commercials({ shop, canEdit, onSave }: { shop: any, onSave: (newData: any) => void, canEdit: boolean }) {
   const { user } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
   const [isAccepting, setIsAccepting] = useState(false);
+  const [isProposing, setIsProposing] = useState(false);
+  const [isAlertOpen, setIsAlertOpen] = useState(false);
+
+  const { data: mallCommissions, isLoading: areCommissionsLoading } = useConfig<any>('mallCommissions');
 
   const agreementsQuery = useMemoFirebase(() => {
     if (!firestore || !shop.companyId || !shop.id) return null;
     return collection(firestore, `companies/${shop.companyId}/shops/${shop.id}/agreements`);
   }, [firestore, shop.companyId, shop.id]);
 
-  const { data: agreements, isLoading, forceRefresh } = useCollection(agreementsQuery);
+  const { data: agreements, isLoading: areAgreementsLoading, forceRefresh } = useCollection(agreementsQuery);
 
   const activeAgreement = useMemo(() => agreements?.find(a => a.status === 'active'), [agreements]);
   const proposedAgreement = useMemo(() => agreements?.find(a => a.status === 'proposed'), [agreements]);
+
+  const form = useForm<ProposalFormValues>({
+      resolver: zodResolver(proposalSchema),
+      defaultValues: {
+          percentage: mallCommissions?.supplierMall || 2.5
+      }
+  });
+
+  useEffect(() => {
+    if (mallCommissions?.supplierMall) {
+        form.setValue('percentage', mallCommissions.supplierMall);
+    }
+  }, [mallCommissions, form]);
+
+  const handlePropose = async (values: ProposalFormValues) => {
+      if (!user) return;
+      setIsProposing(true);
+      try {
+        const token = await getClientSideAuthToken();
+        if (!token) throw new Error("Authentication failed.");
+
+        const response = await fetch('/api/addUserDoc', {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                collectionPath: `companies/${shop.companyId}/shops/${shop.id}/agreements`,
+                data: {
+                    percentage: values.percentage,
+                    status: 'proposed',
+                    effectiveDate: { _methodName: 'serverTimestamp' }, // will be updated on approval
+                    proposedBy: user.uid,
+                }
+            })
+        });
+
+        if (!response.ok) throw new Error((await response.json()).error || 'Failed to submit proposal.');
+
+        toast({ title: "Proposal Submitted", description: "Your proposed commission rate has been sent for review." });
+        forceRefresh();
+
+      } catch (error: any) {
+         toast({ variant: 'destructive', title: 'Proposal Failed', description: error.message });
+      } finally {
+        setIsProposing(false);
+      }
+  };
 
   const handleAccept = async () => {
     if (!user || !shop.companyId || !proposedAgreement) return;
@@ -1242,12 +1298,9 @@ function Step6Commercials({ shop, canEdit }: { shop: any, onSave: (newData: any)
       const token = await getClientSideAuthToken();
       if (!token) throw new Error('Authentication failed.');
 
-      await fetch('/api/admin', {
+      const response = await fetch('/api/admin', {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({
           action: 'acceptCommercialAgreement',
           payload: {
@@ -1259,6 +1312,8 @@ function Step6Commercials({ shop, canEdit }: { shop: any, onSave: (newData: any)
         }),
       });
 
+      if (!response.ok) throw new Error((await response.json()).error || 'Failed to accept agreement.');
+
       toast({ title: 'Agreement Accepted!', description: `The new commission of ${proposedAgreement.percentage}% is now active.` });
       forceRefresh();
     } catch (error: any) {
@@ -1267,6 +1322,8 @@ function Step6Commercials({ shop, canEdit }: { shop: any, onSave: (newData: any)
       setIsAccepting(false);
     }
   };
+
+  const isLoading = areAgreementsLoading || areCommissionsLoading;
 
   return (
     <div className="space-y-6">
@@ -1286,42 +1343,92 @@ function Step6Commercials({ shop, canEdit }: { shop: any, onSave: (newData: any)
             <p className="text-xs text-muted-foreground">Effective since: {new Date(activeAgreement.effectiveDate).toLocaleDateString()}</p>
           </CardFooter>
         </Card>
-      ) : (
-        <Alert>
-          <AlertTitle>No Active Agreement</AlertTitle>
-          <AlertDescription>There is no active commercial agreement for this shop. The platform will not take a commission on sales until an agreement is accepted.</AlertDescription>
-        </Alert>
-      )}
+      ) : null}
       
-      {proposedAgreement && (
+       {proposedAgreement ? (
         <Card className="border-primary bg-primary/5">
           <CardHeader>
-            <CardTitle>New Agreement Proposed</CardTitle>
-            <CardDescription>A new commercial agreement is awaiting your approval.</CardDescription>
+            <CardTitle>Agreement Proposed</CardTitle>
+            <CardDescription>
+                {proposedAgreement.proposedBy === user?.uid 
+                ? "Your proposal is awaiting review by the platform administrator."
+                : "A new commercial agreement is awaiting your approval."
+                }
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold text-primary">{proposedAgreement.percentage}%</div>
             <p className="text-sm text-muted-foreground mt-1">Proposed Platform Commission</p>
           </CardContent>
-          <CardFooter>
-            <Button onClick={handleAccept} disabled={isAccepting || !canEdit}>
-              {isAccepting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <CheckCircle className="mr-2 h-4 w-4" />}
-              Accept New Agreement
-            </Button>
-          </CardFooter>
+           {proposedAgreement.proposedBy !== user?.uid && (
+               <CardFooter>
+                <Button onClick={() => setIsAlertOpen(true)} disabled={isAccepting || !canEdit}>
+                  {isAccepting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <CheckCircle className="mr-2 h-4 w-4" />}
+                  Accept New Agreement
+                </Button>
+              </CardFooter>
+           )}
         </Card>
-      )}
+      ) : !activeAgreement ? (
+        <Card>
+            <CardHeader>
+                <CardTitle>Propose Commercial Terms</CardTitle>
+                <CardDescription>
+                    The default platform commission for your shop category is {mallCommissions?.supplierMall || 'N/A'}%. You can accept these terms or propose a different rate for review.
+                </CardDescription>
+            </CardHeader>
+            <CardContent>
+                <Form {...form}>
+                    <form onSubmit={form.handleSubmit(handlePropose)} className="space-y-4">
+                        <FormField
+                            control={form.control}
+                            name="percentage"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Proposed Commission Rate (%)</FormLabel>
+                                    <FormControl>
+                                        <Input type="number" step="0.1" {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                         <Button type="submit" disabled={isProposing || !canEdit}>
+                            {isProposing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
+                            Submit Proposal
+                        </Button>
+                    </form>
+                </Form>
+            </CardContent>
+        </Card>
+      ) : null}
+
+        <AlertDialog open={isAlertOpen} onOpenChange={setIsAlertOpen}>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>Accept Agreement?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                        Are you sure you want to accept the proposed commission rate of {proposedAgreement?.percentage}%? This will archive any previous agreements and make this one active.
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleAccept} disabled={isAccepting}>
+                        Yes, Accept Agreement
+                    </AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
+
 
       <div className="pt-6">
-         <Button onClick={() => {}} disabled>
-            Save & Continue
+         <Button onClick={() => onSave({})} disabled={!activeAgreement}>
+            Save & Continue <ArrowRight className="ml-2 h-4 w-4" />
         </Button>
       </div>
     </div>
   );
 }
-
-
 
 
 // ====== STEP 7: SEO & Publishing ======
