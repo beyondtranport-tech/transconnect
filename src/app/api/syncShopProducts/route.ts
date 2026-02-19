@@ -1,4 +1,6 @@
 
+'use server';
+
 import { NextRequest, NextResponse } from 'next/server';
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
@@ -50,7 +52,15 @@ export async function POST(req: NextRequest) {
             const publicProductsSnap = await transaction.get(publicShopRef.collection('products'));
             publicProductsSnap.docs.forEach(doc => transaction.delete(doc.ref));
 
-            transaction.set(publicShopRef, { ...shopData, companyId, status: 'approved', updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+            // Explicitly remove existing timestamps before spreading to avoid conflicts
+            const { createdAt, updatedAt, ...restOfShopData } = shopData;
+
+            transaction.set(publicShopRef, { 
+                ...restOfShopData, 
+                companyId, 
+                status: 'approved', 
+                updatedAt: FieldValue.serverTimestamp() 
+            }, { merge: true });
 
             memberProducts.forEach(product => {
                 const publicProductRef = publicShopRef.collection('products').doc(product.id);

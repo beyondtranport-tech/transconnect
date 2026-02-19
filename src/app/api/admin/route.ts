@@ -193,7 +193,7 @@ export async function POST(req: NextRequest) {
                         };
                     })
                     .filter((agreement: any) => agreement.status === 'proposed')
-                    .sort((a: any, b: any) => {
+                    .sort((a, b) => {
                          const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
                         const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
                         return dateB - dateA;
@@ -730,7 +730,6 @@ export async function POST(req: NextRequest) {
                 const publicShopRef = db.doc(`shops/${shopId}`);
 
                 await db.runTransaction(async (transaction) => {
-                    // --- ALL READS MUST HAPPEN FIRST ---
                     const shopDoc = await transaction.get(memberShopRef);
                     if (!shopDoc.exists) {
                         throw new Error(`Shop with ID ${shopId} not found for company ${companyId}.`);
@@ -741,16 +740,21 @@ export async function POST(req: NextRequest) {
                     const memberProductsSnap = await transaction.get(memberShopRef.collection('products'));
                     const publicProductsSnap = await transaction.get(publicShopRef.collection('products'));
                     
-                    // Read loyalty config early, before any writes.
                     const loyaltyConfigDoc = await transaction.get(db.collection('configuration').doc('loyaltySettings'));
-                    // --- END OF READS ---
-
-                    // --- ALL WRITES HAPPEN AFTER READS ---
+                    
                     const memberProducts = memberProductsSnap.docs.map(doc => ({ id: doc.id, data: doc.data() }));
 
                     publicProductsSnap.docs.forEach(doc => transaction.delete(doc.ref));
+                    
+                    // Explicitly remove any existing timestamp fields before setting new ones.
+                    const { createdAt, updatedAt, ...restOfShopData } = shopData;
 
-                    transaction.set(publicShopRef, { ...shopData, companyId, status: 'approved', updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+                    transaction.set(publicShopRef, { 
+                        ...restOfShopData, 
+                        companyId, 
+                        status: 'approved', 
+                        updatedAt: FieldValue.serverTimestamp() 
+                    }, { merge: true });
 
                     memberProducts.forEach(product => {
                         const publicProductRef = publicShopRef.collection('products').doc(product.id);
