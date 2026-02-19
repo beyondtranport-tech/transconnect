@@ -6,7 +6,7 @@ import { getAuth } from 'firebase-admin/auth';
 import { getFirestore } from 'firebase-admin/firestore';
 
 // Force re-initialization by changing the app name to discard cached broken configs.
-const ADMIN_APP_NAME = 'firebase-admin-app-transconnect-studio-v8';
+const ADMIN_APP_NAME = 'firebase-admin-app-transconnect-studio-v7';
 
 export function getAdminApp(): { app: App | null; error: string | null } {
   const existingApp = getApps().find(app => app.name === ADMIN_APP_NAME);
@@ -31,13 +31,12 @@ export function getAdminApp(): { app: App | null; error: string | null } {
     }
     
     const projectId = serviceAccount.project_id;
-    // This is the definitive fix: Explicitly set the correct storage bucket name during initialization.
-    const storageBucket = "ecosystem-hub.appspot.com";
 
+    // The storageBucket property is removed from here to prevent potential initialization conflicts.
+    // The bucket will be specified explicitly in the routes that need it.
     const app = initializeApp({
       credential: cert(serviceAccount),
       projectId: projectId,
-      storageBucket: storageBucket,
     }, ADMIN_APP_NAME);
 
     return { app, error: null };

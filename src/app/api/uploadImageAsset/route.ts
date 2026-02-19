@@ -41,13 +41,8 @@ export async function POST(req: NextRequest) {
         const contentType = providedContentType || matches[1];
         const fileBuffer = Buffer.from(matches[2], 'base64');
         
-        // This now relies on the correctly initialized app from getAdminApp()
-        const bucket = getStorage(app).bucket();
-        
-        if (!bucket.name) {
-            console.error("uploadImageAsset: Bucket name is STILL not available after app initialization. Check service account permissions for Storage Admin.");
-            return NextResponse.json({ success: false, error: 'Storage bucket could not be determined on the server. Please ensure Firebase Storage is enabled and your service account has "Storage Admin" permissions.' }, { status: 500 });
-        }
+        // This is the definitive fix: Explicitly pass the bucket name to the bucket() method.
+        const bucket = getStorage(app).bucket("ecosystem-hub.appspot.com");
         
         console.log(`uploadImageAsset: Using bucket: ${bucket.name}`);
         const filePath = `${folder}/${fileName}`;
