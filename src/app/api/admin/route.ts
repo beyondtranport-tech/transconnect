@@ -1,4 +1,6 @@
 
+'use server';
+
 import { NextRequest, NextResponse } from 'next/server';
 import { getFirestore, Timestamp, FieldValue, FieldPath } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
@@ -81,8 +83,8 @@ export async function POST(req: NextRequest) {
             }
             case 'getPartnersByType': {
                 const { type } = payload;
-                if (!type || !['partner', 'isa', 'investor'].includes(type)) {
-                    throw new Error("A valid partner type ('partner', 'isa', 'investor') is required.");
+                if (!type || !['partner', 'isa', 'investor', 'developer'].includes(type)) {
+                    throw new Error("A valid partner type ('partner', 'isa', 'investor', 'developer') is required.");
                 }
                 const partnersSnap = await db.collection('partners').where('type', '==', type).get();
                 const data = partnersSnap.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
@@ -222,7 +224,7 @@ export async function POST(req: NextRequest) {
                         };
                     })
                     .filter((agreement: any) => agreement.status === 'proposed')
-                    .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+                    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
                 
                 return NextResponse.json({ success: true, data: proposedAgreements });
             }
@@ -566,6 +568,7 @@ export async function POST(req: NextRequest) {
                     const docData = doc.data();
                     const pathSegments = doc.ref.path.split('/');
                     
+                    // This logic ensures we only get shops from the private company subcollections
                     if (pathSegments.length < 4 || pathSegments[0] !== 'companies' || pathSegments[2] !== 'shops') {
                         return null;
                     }
@@ -725,7 +728,6 @@ export async function POST(req: NextRequest) {
 
                 const memberShopRef = db.doc(`companies/${companyId}/shops/${shopId}`);
                 const publicShopRef = db.doc(`shops/${shopId}`);
-                let wasAlreadyApproved = false;
 
                 await db.runTransaction(async (transaction) => {
                     const shopDoc = await transaction.get(memberShopRef);
@@ -733,8 +735,8 @@ export async function POST(req: NextRequest) {
                         throw new Error(`Shop with ID ${shopId} not found for company ${companyId}.`);
                     }
                     const shopData = shopDoc.data()!;
-                    wasAlreadyApproved = shopData.status === 'approved';
-
+                    const wasAlreadyApproved = shopData.status === 'approved';
+                    
                     const memberProductsSnap = await transaction.get(memberShopRef.collection('products'));
                     const memberProducts = memberProductsSnap.docs.map(doc => ({ id: doc.id, data: doc.data() }));
 
@@ -806,5 +808,3 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ success: false, error: error.message }, { status });
     }
 }
-
-    
