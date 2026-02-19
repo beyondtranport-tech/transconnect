@@ -1,10 +1,9 @@
-
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Loader2, Wallet, Trash2, ShieldAlert } from 'lucide-react';
+import { Loader2, Wallet, Trash2, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
@@ -19,7 +18,8 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { getClientSideAuthToken, useUser } from '@/firebase';
+import { getClientSideAuthToken, useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { collection, query } from 'firebase/firestore';
 
 const statusColors: { [key: string]: 'default' | 'secondary' | 'destructive' | 'outline' } = {
   pending: 'secondary',
@@ -32,53 +32,80 @@ const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(amount);
 };
 
-const formatDate = (isoString: string | undefined) => {
+const formatDate = (isoString: any) => {
     if (!isoString) return 'N/A';
-    return new Date(isoString).toLocaleString('en-ZA', { dateStyle: 'short', timeStyle: 'short' });
+    const date = isoString.toDate ? isoString.toDate() : new Date(isoString);
+    if (isNaN(date.getTime())) return 'Invalid Date';
+    return date.toLocaleString('en-ZA', { dateStyle: 'short', timeStyle: 'short' });
 };
+
+async function performAdminAction(token: string, action: string, payload?: any) {
+    const response = await fetch('/api/admin', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action, payload }),
+    });
+
+    const result = await response.json();
+    if (!response.ok || !result.success) {
+        throw new Error(result.error || `API Error for action: ${action}`);
+    }
+    return result;
+}
 
 
 export default function MemberWalletPayments({ companyId, onUpdate }: { companyId: string, onUpdate: () => void }) {
-    const { user, isUserLoading: isAdminLoading } = useUser();
-    const [payments, setPayments] = useState<any[] | null>(null);
+    const firestore = useFirestore();
+    const [payments, setPayments] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [isDeleting, setIsDeleting] = useState<string | null>(null);
+    const [isProcessing, setIsProcessing] = useState<string | null>(null);
     const { toast } = useToast();
 
-    const fetchPayments = useCallback(async () => {
-        if (isAdminLoading) return; // Don't fetch if admin user isn't loaded
-        setIsLoading(true);
-        setError(null);
-        try {
-             const token = await getClientSideAuthToken();
-             if (!token) throw new Error("Authentication token not found.");
-            
-            const response = await fetch('/api/getUserSubcollection', {
-                method: 'POST',
-                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ path: `companies/${companyId}/walletPayments`, type: 'collection' }),
-            });
-            
-            const result = await response.json();
+    const paymentsQuery = useMemoFirebase(() => {
+        if (!firestore) return null;
+        return query(collection(firestore, `companies/${companyId}/walletPayments`));
+    }, [firestore, companyId]);
 
-            if (result.success) {
-                setPayments(result.data || []);
-            } else {
-                setError(result.error || 'Failed to load wallet payments.');
-            }
-        } catch(e: any) {
-            setError(e.message);
-        }
-        setIsLoading(false);
-    }, [companyId, isAdminLoading]);
+    const { data: fetchedPayments, forceRefresh } = useCollection(paymentsQuery);
 
     useEffect(() => {
-        fetchPayments();
-    }, [fetchPayments]);
+        if (fetchedPayments) {
+            setPayments(fetchedPayments.filter(p => p.status === 'pending').sort((a,b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
+        }
+        setIsLoading(false);
+    }, [fetchedPayments]);
+    
+    useEffect(() => {
+        forceRefresh();
+    }, [companyId, forceRefresh]);
+    
+    const handleApprove = async (payment: any) => {
+        setIsProcessing(payment.id);
+        try {
+            const token = await getClientSideAuthToken();
+            if (!token) throw new Error("Authentication failed.");
+
+            await performAdminAction(token, 'approveWalletPayment', {
+                companyId: payment.companyId,
+                paymentId: payment.id,
+                amount: payment.amount,
+                description: payment.description,
+            });
+
+            toast({ title: 'Payment Approved', description: `Wallet credited successfully.` });
+            forceRefresh();
+            onUpdate();
+        } catch (e: any) {
+             toast({ variant: 'destructive', title: 'Approval Failed', description: e.message });
+        } finally {
+            setIsProcessing(null);
+        }
+    }
+
 
     const handleDelete = async (paymentId: string) => {
-        setIsDeleting(paymentId);
+        setIsProcessing(paymentId);
          try {
             const token = await getClientSideAuthToken();
             if (!token) throw new Error("Authentication token not found.");
@@ -97,16 +124,16 @@ export default function MemberWalletPayments({ companyId, onUpdate }: { companyI
             }
 
             toast({ title: 'Record Deleted', description: 'The wallet payment record has been permanently removed.' });
-            fetchPayments();
+            forceRefresh();
             onUpdate();
         } catch (e: any) {
             toast({ variant: 'destructive', title: 'Deletion Failed', description: e.message });
         } finally {
-             setIsDeleting(null);
+             setIsProcessing(null);
         }
     };
     
-    if (isLoading || isAdminLoading) {
+    if (isLoading) {
         return (
             <Card>
                 <CardHeader>
@@ -124,7 +151,7 @@ export default function MemberWalletPayments({ companyId, onUpdate }: { companyI
             <CardHeader>
                 <CardTitle className="flex items-center gap-2"><Wallet /> Pending Wallet Payments</CardTitle>
                 <CardDescription>
-                    A list of all pending wallet top-ups and membership payments logged by this member via EFT. Approve these by making a manual wallet adjustment above.
+                    EFT payments logged by the member that are awaiting admin approval. Approving a payment will credit the member's wallet.
                 </CardDescription>
             </CardHeader>
             <CardContent>
@@ -158,18 +185,22 @@ export default function MemberWalletPayments({ companyId, onUpdate }: { companyI
                                                 {p.status?.replace(/_/g, ' ')}
                                             </Badge>
                                         </TableCell>
-                                        <TableCell className="text-right">
+                                        <TableCell className="text-right space-x-1">
+                                             <Button size="sm" onClick={() => handleApprove(p)} disabled={isProcessing === p.id}>
+                                                {isProcessing === p.id ? <Loader2 className="h-4 w-4 animate-spin"/> : <CheckCircle className="mr-2 h-4 w-4" />}
+                                                Approve
+                                            </Button>
                                             <AlertDialog>
                                                 <AlertDialogTrigger asChild>
-                                                    <Button variant="destructive" size="sm" disabled={!!isDeleting}>
-                                                        {isDeleting === p.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                                                    <Button variant="destructive" size="sm" disabled={!!isProcessing}>
+                                                        {isProcessing === p.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
                                                     </Button>
                                                 </AlertDialogTrigger>
                                                 <AlertDialogContent>
                                                     <AlertDialogHeader>
                                                         <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
                                                         <AlertDialogDescription>
-                                                            This action cannot be undone. This will permanently delete this payment record.
+                                                            This action cannot be undone. This will permanently delete this payment record without crediting the user.
                                                         </AlertDialogDescription>
                                                     </AlertDialogHeader>
                                                     <AlertDialogFooter>
