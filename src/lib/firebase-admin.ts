@@ -31,10 +31,10 @@ export function getAdminApp(): { app: App | null; error: string | null } {
     }
     
     const projectId = serviceAccount.project_id;
-    const storageBucket = `${projectId}.appspot.com`;
+    // This is the definitive fix: Explicitly set the correct storage bucket name.
+    const storageBucket = "ecosystem-hub.appspot.com";
 
     // The storageBucket property is REQUIRED for the Admin SDK to know which bucket to interact with.
-    // My previous attempt to remove it was incorrect. This will resolve the "Bucket not specified" error.
     const app = initializeApp({
       credential: cert(serviceAccount),
       projectId: projectId,
