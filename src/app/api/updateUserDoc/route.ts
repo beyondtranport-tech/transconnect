@@ -101,43 +101,13 @@ export async function POST(req: NextRequest) {
         const docSnap = await transaction.get(docRef);
         const beforeData = docSnap.exists ? docSnap.data() : null;
 
-        let dataToSave = { ...deserializedData };
+        const dataToSave = { ...deserializedData };
         let finalCompanyId = existingCompanyId;
 
-        // --- NEW SELF-HEALING LOGIC ---
-        // This is the critical part: if we are updating a user document that doesn't have a companyId,
-        // it means their setup was incomplete. We create the company and link it here.
-        if (path.startsWith('users/') && !beforeData?.companyId && !existingCompanyId) {
-            console.log(`User ${uid} is missing companyId. Creating new company.`);
-            
-            const companyRef = db.collection('companies').doc();
-            const newCompanyData: any = {
-                id: companyRef.id,
-                ownerId: uid,
-                companyName: `${deserializedData.firstName || 'New'}'s Company`,
-                membershipId: 'free',
-                isBillable: false,
-                walletBalance: 0,
-                pendingBalance: 0,
-                availableBalance: 0,
-                loyaltyTier: 'bronze',
-                status: 'pending',
-                createdAt: FieldValue.serverTimestamp(),
-                updatedAt: FieldValue.serverTimestamp(),
-            };
-            
-            const loyaltyConfigDoc = await db.collection('configuration').doc('loyaltySettings').get();
-            const signupPoints = loyaltyConfigDoc.data()?.userSignupPoints || 50;
-            newCompanyData.rewardPoints = signupPoints;
-            
-            transaction.set(companyRef, newCompanyData);
-            
-            dataToSave.companyId = companyRef.id;
-            finalCompanyId = companyRef.id;
-        } else if (path.startsWith('companies/')) {
+        // Determine the companyId for auditing
+        if (path.startsWith('companies/')) {
             finalCompanyId = pathSegments[1];
         }
-        // --- END SELF-HEALING LOGIC ---
 
         if (docSnap.exists) {
             transaction.update(docRef, dataToSave);

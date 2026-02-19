@@ -41,7 +41,7 @@ const companyFormSchema = z.object({
 type CompanyFormValues = z.infer<typeof companyFormSchema>;
 
 export default function CompanyContent() {
-  const { user, isUserLoading } = useUser();
+  const { user, isUserLoading: isAuthLoading } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
   const [isSaving, setIsSaving] = useState(false);
@@ -49,17 +49,15 @@ export default function CompanyContent() {
   const searchParams = useSearchParams();
   const fromWallet = searchParams.get('from') === 'wallet';
 
-  // Redundant but safe: fetch the user doc directly within this component
-  // to get the most up-to-date companyId, avoiding stale context state.
-  const ownUserDocRef = useMemoFirebase(() => {
+  // 1. Get user document to find the companyId. This is the source of truth.
+  const userDocRef = useMemoFirebase(() => {
     if (!firestore || !user?.uid) return null;
     return doc(firestore, 'users', user.uid);
   }, [firestore, user?.uid]);
-  const { data: ownUserData, isLoading: isOwnUserDocLoading } = useDoc<{ companyId: string }>(ownUserDocRef);
+  const { data: userData, isLoading: isUserDocLoading } = useDoc<{ companyId: string }>(userDocRef);
 
-  // Use the directly fetched companyId if the context one is missing.
-  const companyId = user?.companyId || ownUserData?.companyId;
-
+  // 2. Use the companyId from the user document to get the company document.
+  const companyId = userData?.companyId;
   const companyDocRef = useMemoFirebase(() => {
     if (!firestore || !companyId) return null;
     return doc(firestore, 'companies', companyId);
@@ -109,28 +107,34 @@ export default function CompanyContent() {
 
   const onSubmit = async (values: CompanyFormValues) => {
     setIsSaving(true);
-    if (!companyDocRef) {
-      toast({ variant: 'destructive', title: 'Error', description: 'Could not find company information. Please try refreshing the page.' });
+    // CRITICAL CHANGE: Use the companyId fetched directly from the user document.
+    if (!companyId || !firestore) {
+      toast({ variant: 'destructive', title: 'Error', description: 'Your company profile is still being created. Please refresh the page in a moment and try again.' });
       setIsSaving(false);
       return;
     }
+
+    const docRefToUpdate = doc(firestore, 'companies', companyId);
 
     const dataToUpdate = {
         ...values,
         updatedAt: serverTimestamp(),
     };
 
-    updateDoc(companyDocRef, dataToUpdate)
+    updateDoc(docRefToUpdate, dataToUpdate)
         .then(() => {
             toast({
                 title: 'Company Info Updated',
                 description: 'Your company information has been saved.',
             });
             forceRefresh();
+            if (fromWallet) {
+                router.push('/account?view=wallet');
+            }
         })
         .catch((serverError) => {
             const permissionError = new FirestorePermissionError({
-                path: companyDocRef.path,
+                path: docRefToUpdate.path,
                 operation: 'update',
                 requestResourceData: dataToUpdate,
             });
@@ -141,7 +145,7 @@ export default function CompanyContent() {
         });
   };
 
-  const isLoading = isUserLoading || isOwnUserDocLoading || isCompanyLoading;
+  const isLoading = isAuthLoading || isUserDocLoading || (!!companyId && isCompanyLoading);
 
   return (
     <Card>

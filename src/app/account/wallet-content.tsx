@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useUser, useFirestore, useCollection, useDoc, getClientSideAuthToken } from '@/firebase';
@@ -304,71 +305,69 @@ export default function WalletContent() {
                     </div>
                 </div>
 
-                <fieldset disabled={!companyId}>
-                    <div className="space-y-4">
-                        <h3 className="text-lg font-semibold">Top-up via EFT</h3>
-                        {!companyId && !isLoading && (
-                             <Alert variant="destructive">
-                                <AlertTriangle className="h-4 w-4" />
-                                <AlertTitle>Company Profile Not Found</AlertTitle>
-                                <AlertDescription>
-                                    We're still setting up your company profile. Please refresh the page in a moment to top-up your wallet.
-                                </AlertDescription>
-                            </Alert>
-                        )}
-                        <Alert>
-                            <Info className="h-4 w-4" />
-                            <AlertTitle>How to Top Up</AlertTitle>
+                <div className="space-y-4">
+                    <h3 className="text-lg font-semibold">Top-up via EFT</h3>
+                    {!companyId && !isLoading && (
+                            <Alert variant="destructive">
+                            <AlertTriangle className="h-4 w-4" />
+                            <AlertTitle>Company Profile Not Found</AlertTitle>
                             <AlertDescription>
-                            To add funds, make an EFT payment to the bank details below using your Company ID as the reference. Then, enter the amount and click "I've made a payment" to notify us.
-                            {techPricing?.eftTopUpFee && techPricing.eftTopUpFee > 0 && (
-                                    <span className="font-semibold block mt-2">Please note: A {formatCurrency(techPricing.eftTopUpFee)} admin fee applies to EFT top-ups.</span>
-                            )}
+                                We're still setting up your company profile. Please refresh the page in a moment to top-up your wallet.
                             </AlertDescription>
                         </Alert>
-                        <Card className="bg-background">
-                            <CardContent className="p-4 text-sm space-y-2">
-                                {isBankDetailsLoading ? (
-                                    <div className="flex justify-center p-4">
-                                        <Loader2 className="h-6 w-6 animate-spin"/>
-                                    </div>
-                                ) : bankDetails && companyId ? (
-                                    <>
-                                        {Object.entries(bankDetails).filter(([key]) => !['id', 'updatedAt'].includes(key)).map(([key, value]) => (
-                                            <div key={key} className="flex justify-between">
-                                                <span className="text-muted-foreground capitalize">{key.replace(/([A-Z])/g, ' $1').trim()}</span>
-                                                <span className="font-mono">{String(value)}</span>
-                                            </div>
-                                        ))}
-                                        <div className="flex justify-between pt-2 border-t">
-                                            <span className="text-muted-foreground">Reference</span>
-                                            <span className="font-mono text-primary">{companyId}</span>
+                    )}
+                    <Alert>
+                        <Info className="h-4 w-4" />
+                        <AlertTitle>How to Top Up</AlertTitle>
+                        <AlertDescription>
+                        To add funds, make an EFT payment to the bank details below using your Company ID as the reference. Then, enter the amount and click "I've made a payment" to notify us.
+                        {techPricing?.eftTopUpFee && techPricing.eftTopUpFee > 0 && (
+                                <span className="font-semibold block mt-2">Please note: A {formatCurrency(techPricing.eftTopUpFee)} admin fee applies to EFT top-ups.</span>
+                        )}
+                        </AlertDescription>
+                    </Alert>
+                    <Card className="bg-background">
+                        <CardContent className="p-4 text-sm space-y-2">
+                            {isBankDetailsLoading ? (
+                                <div className="flex justify-center p-4">
+                                    <Loader2 className="h-6 w-6 animate-spin"/>
+                                </div>
+                            ) : bankDetails && companyId ? (
+                                <>
+                                    {Object.entries(bankDetails).filter(([key]) => !['id', 'updatedAt'].includes(key)).map(([key, value]) => (
+                                        <div key={key} className="flex justify-between">
+                                            <span className="text-muted-foreground capitalize">{key.replace(/([A-Z])/g, ' $1').trim()}</span>
+                                            <span className="font-mono">{String(value)}</span>
                                         </div>
-                                    </>
-                                ) : (
-                                    <p className="text-muted-foreground text-center">Bank details not configured or company not loaded.</p>
-                                )}
-                            </CardContent>
-                        </Card>
-                        <div className="flex flex-col sm:flex-row gap-4 items-end">
-                            <div className="w-full sm:w-auto flex-grow">
-                                <Label htmlFor="payment-amount">Payment Amount (R)</Label>
-                                <Input 
-                                    id="payment-amount"
-                                    type="number" 
-                                    placeholder="500.00"
-                                    value={paymentAmount}
-                                    onChange={(e) => setPaymentAmount(e.target.value)}
-                                    disabled={!companyId}
-                                />
-                            </div>
-                            <Button onClick={handleSubmitProofOfPayment} disabled={isSubmitting || !paymentAmount || !companyId}>
-                                {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null}
-                                I've made a payment
-                            </Button>
+                                    ))}
+                                    <div className="flex justify-between pt-2 border-t">
+                                        <span className="text-muted-foreground">Reference</span>
+                                        <span className="font-mono text-primary">{companyId}</span>
+                                    </div>
+                                </>
+                            ) : (
+                                <p className="text-muted-foreground text-center">Bank details not configured or company not loaded.</p>
+                            )}
+                        </CardContent>
+                    </Card>
+                    <div className="flex flex-col sm:flex-row gap-4 items-end">
+                        <div className="w-full sm:w-auto flex-grow">
+                            <Label htmlFor="payment-amount">Payment Amount (R)</Label>
+                            <Input 
+                                id="payment-amount"
+                                type="number" 
+                                placeholder="500.00"
+                                value={paymentAmount}
+                                onChange={(e) => setPaymentAmount(e.target.value)}
+                                disabled={!companyId}
+                            />
                         </div>
+                        <Button onClick={handleSubmitProofOfPayment} disabled={isSubmitting || !paymentAmount || !companyId}>
+                            {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null}
+                            I've made a payment
+                        </Button>
                     </div>
-                </fieldset>
+                </div>
 
                 {isLoading && (
                     <div className="flex justify-center items-center py-10">
