@@ -725,58 +725,38 @@ export async function POST(req: NextRequest) {
 
                 const memberShopRef = db.doc(`companies/${companyId}/shops/${shopId}`);
                 const publicShopRef = db.doc(`shops/${shopId}`);
+                let wasAlreadyApproved = false;
 
-                const shopDoc = await memberShopRef.get();
-                if (!shopDoc.exists) {
-                    throw new Error(`Shop with ID ${shopId} not found for company ${companyId}.`);
-                }
+                await db.runTransaction(async (transaction) => {
+                    const shopDoc = await transaction.get(memberShopRef);
+                    if (!shopDoc.exists) {
+                        throw new Error(`Shop with ID ${shopId} not found for company ${companyId}.`);
+                    }
+                    const shopData = shopDoc.data()!;
+                    wasAlreadyApproved = shopData.status === 'approved';
 
-                const shopData = shopDoc.data();
-                if (!shopData) {
-                    throw new Error(`Shop data is empty for shop ${shopId}.`);
-                }
-                
-                const wasAlreadyApproved = shopData.status === 'approved';
+                    const memberProductsSnap = await transaction.get(memberShopRef.collection('products'));
+                    const memberProducts = memberProductsSnap.docs.map(doc => ({ id: doc.id, data: doc.data() }));
 
-                // Get all products from the private draft shop
-                const memberProductsCollectionRef = memberShopRef.collection('products');
-                const memberProductsSnap = await memberProductsCollectionRef.get();
-                const memberProducts = memberProductsSnap.docs.map(doc => ({ id: doc.id, data: doc.data() }));
+                    const publicProductsSnap = await transaction.get(publicShopRef.collection('products'));
+                    publicProductsSnap.docs.forEach(doc => transaction.delete(doc.ref));
 
-                const batch = db.batch();
+                    transaction.set(publicShopRef, { ...shopData, companyId, status: 'approved', updatedAt: FieldValue.serverTimestamp() }, { merge: true });
 
-                // 1. Update the main public shop document. This also creates it if it doesn't exist.
-                const publicShopData = { ...shopData, companyId, status: 'approved', updatedAt: FieldValue.serverTimestamp() };
-                batch.set(publicShopRef, publicShopData, { merge: true });
+                    memberProducts.forEach(product => {
+                        const publicProductRef = publicShopRef.collection('products').doc(product.id);
+                        transaction.set(publicProductRef, product.data);
+                    });
 
-                // 2. Clear out all old products in the public shop to ensure a clean sync.
-                const publicProductsCollectionRef = publicShopRef.collection('products');
-                const publicProductsSnap = await publicProductsCollectionRef.get();
-                publicProductsSnap.docs.forEach(doc => {
-                    batch.delete(doc.ref);
+                    if (!wasAlreadyApproved) {
+                        transaction.update(memberShopRef, { status: 'approved', updatedAt: FieldValue.serverTimestamp() });
+                        
+                        const loyaltyConfigDoc = await transaction.get(db.collection('configuration').doc('loyaltySettings'));
+                        const shopCreationPoints = loyaltyConfigDoc.data()?.shopCreationPoints || 100;
+                        const companyRef = db.doc(`companies/${companyId}`);
+                        transaction.update(companyRef, { rewardPoints: FieldValue.increment(shopCreationPoints) });
+                    }
                 });
-                
-                // 3. Add all current products from the draft to the public shop.
-                memberProducts.forEach(product => {
-                    const publicProductRef = publicProductsCollectionRef.doc(product.id);
-                    batch.set(publicProductRef, product.data);
-                });
-
-                // 4. Update the member's private shop status if it wasn't already approved
-                if (!wasAlreadyApproved) {
-                    batch.update(memberShopRef, { status: 'approved', updatedAt: FieldValue.serverTimestamp() });
-                }
-
-                // 5. Award points for shop creation, ONLY if this is the first time it's being approved
-                if (!wasAlreadyApproved) {
-                    const loyaltyConfigDoc = await db.collection('configuration').doc('loyaltySettings').get();
-                    const shopCreationPoints = loyaltyConfigDoc.data()?.shopCreationPoints || 100;
-                    const companyRef = db.doc(`companies/${companyId}`);
-                    batch.update(companyRef, { rewardPoints: FieldValue.increment(shopCreationPoints) });
-                }
-                
-                // Commit all operations at once
-                await batch.commit();
 
                 const message = wasAlreadyApproved 
                     ? 'Shop products successfully re-synced.'

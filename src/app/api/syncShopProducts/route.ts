@@ -27,51 +27,36 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ success: false, error: 'Missing shopId or companyId.' }, { status: 400 });
         }
 
-        // Authorization: Verify the user is the owner of the company.
-        const companyDoc = await db.doc(`companies/${companyId}`).get();
-        const isAdmin = decodedToken.email === 'beyondtransport@gmail.com' || decodedToken.email === 'mkoton100@gmail.com';
-        
-        if (!companyDoc.exists || (companyDoc.data()?.ownerId !== uid && !isAdmin)) {
-            return NextResponse.json({ success: false, error: 'Forbidden: You are not the owner of this shop.' }, { status: 403 });
-        }
-
         const memberShopRef = db.doc(`companies/${companyId}/shops/${shopId}`);
         const publicShopRef = db.doc(`shops/${shopId}`);
-        const shopSnap = await memberShopRef.get();
-        const shopData = shopSnap.data();
 
-        if (!shopSnap.exists || !shopData) {
-             return NextResponse.json({ success: false, error: 'Shop not found in your company records.' }, { status: 404 });
-        }
+        await db.runTransaction(async (transaction) => {
+            const companyDoc = await transaction.get(db.doc(`companies/${companyId}`));
+            const isAdmin = decodedToken.email === 'beyondtransport@gmail.com' || decodedToken.email === 'mkoton100@gmail.com';
 
-        // Only allow syncing for approved shops.
-        if (shopData.status !== 'approved') {
-             return NextResponse.json({ success: false, error: 'Shop must be approved to sync products.' }, { status: 400 });
-        }
+            if (!companyDoc.exists || (companyDoc.data()?.ownerId !== uid && !isAdmin)) {
+                throw new Error('Forbidden: You are not the owner of this shop.');
+            }
 
-        const memberProductsCollectionRef = memberShopRef.collection('products');
-        const memberProductsSnap = await memberProductsCollectionRef.get();
-        const memberProducts = memberProductsSnap.docs.map(doc => ({ id: doc.id, data: doc.data() }));
+            const shopDoc = await transaction.get(memberShopRef);
+            if (!shopDoc.exists || shopDoc.data()?.status !== 'approved') {
+                throw new Error('Shop is not approved or does not exist.');
+            }
+            const shopData = shopDoc.data()!;
 
-        const publicProductsCollectionRef = publicShopRef.collection('products');
-        const publicProductsSnap = await publicProductsCollectionRef.get();
+            const memberProductsSnap = await transaction.get(memberShopRef.collection('products'));
+            const memberProducts = memberProductsSnap.docs.map(doc => ({ id: doc.id, data: doc.data() }));
 
-        const batch = db.batch();
+            const publicProductsSnap = await transaction.get(publicShopRef.collection('products'));
+            publicProductsSnap.docs.forEach(doc => transaction.delete(doc.ref));
 
-        // Delete old public products
-        publicProductsSnap.docs.forEach(doc => batch.delete(doc.ref));
+            transaction.set(publicShopRef, { ...shopData, companyId, status: 'approved', updatedAt: FieldValue.serverTimestamp() }, { merge: true });
 
-        // Add current products to public collection
-        memberProducts.forEach(product => {
-            const publicProductRef = publicProductsCollectionRef.doc(product.id);
-            batch.set(publicProductRef, product.data);
+            memberProducts.forEach(product => {
+                const publicProductRef = publicShopRef.collection('products').doc(product.id);
+                transaction.set(publicProductRef, product.data);
+            });
         });
-        
-        // Also re-sync the main shop data to ensure it's up to date
-        const publicShopData = { ...shopData, companyId, status: 'approved', updatedAt: FieldValue.serverTimestamp() };
-        batch.set(publicShopRef, publicShopData, { merge: true });
-
-        await batch.commit();
 
         return NextResponse.json({ success: true, message: 'Products synced successfully.' });
 
