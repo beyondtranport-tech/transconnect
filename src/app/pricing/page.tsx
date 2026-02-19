@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -222,7 +221,7 @@ export default function MembershipPage() {
                       </CardHeader>
                       <CardContent className="flex-grow">
                         <ul className="space-y-3">
-                          {tier.features.slice(0, 5).map((featureKey: string) => {
+                          {(tier.features || []).slice(0, 5).map((featureKey: string) => {
                             const feature = allFeatures.find(f => f.key === featureKey);
                             return (
                                 <li key={featureKey} className="flex items-start">
@@ -275,7 +274,7 @@ export default function MembershipPage() {
                                 <TableCell className="font-medium pl-8">{feature.name}</TableCell>
                                 {sortedTiers?.map((tier: any) => (
                                      <TableCell key={`${tier.id}-${feature.key}`} className="text-center">
-                                        {renderCheckmark(tier.features.includes(feature.key))}
+                                        {renderCheckmark((tier.features || []).includes(feature.key))}
                                      </TableCell>
                                 ))}
                             </TableRow>
@@ -290,5 +289,3 @@ export default function MembershipPage() {
     </div>
   );
 }
-
-    
