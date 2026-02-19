@@ -1,3 +1,4 @@
+
 # How to Safely Reset Firebase Storage
 
 If you are consistently seeing a "Bucket Not Found" error even after verifying all code and permissions, the underlying storage resource in Firebase may not have been provisioned correctly. A hard reset can fix this.
@@ -22,18 +23,9 @@ If you are consistently seeing a "Bucket Not Found" error even after verifying a
 
 ## Step 3: Re-create the Bucket
 
-After deletion, the Firebase Console should prompt you to "Get started" with creating a new bucket.
+If the "Get started" button in the Firebase Console does not work after deletion, use the Google Cloud Console method below. This is the most reliable way.
 
-### **Primary Method (Firebase Console)**
-
-1.  On the main Storage page, you should see a "Get started" button. Click it.
-2.  A dialog will appear to guide you through setting up security rules. It is critical to select **Production mode**. Click **Next**.
-3.  You will be asked to choose a Cloud Storage location. **It is very important to select the same location you used previously.** The default selected for you is usually the correct one.
-4.  Click **Done**.
-
-### **Alternative Method (If Firebase Console Fails)**
-
-If clicking "Get started" in the Firebase Console does not work or brings you back to the same screen, use the Google Cloud Console directly:
+### **Definitive Method (Google Cloud Console)**
 
 1.  **Go to the Google Cloud Storage Browser:**
     **[https://console.cloud.google.com/storage/browser?project=ecosystem-hub](https://console.cloud.google.com/storage/browser?project=ecosystem-hub)**
@@ -43,18 +35,19 @@ If clicking "Get started" in the Firebase Console does not work or brings you ba
 3.  **Name your bucket:** This is the most critical step. You **MUST** name your bucket exactly:
     `ecosystem-hub.appspot.com`
 
-4.  **Choose where to store your data:** Select a "Region" for location type and choose a location (e.g., `us-central1`). Click **Continue**.
+4.  **Choose where to store your data:** Select a "Region" or "Multi-region" and choose a location (e.g., `us-central1` or `us`). Click **Continue**.
 
 5.  **Choose a storage class:** You can leave the "Standard" default. Click **Continue**.
 
-6.  **Choose how to control access:** Select "Uniform" and uncheck "Enforce public access prevention". Click **Create**.
+6.  **CRITICAL: Choose how to control access:**
+    *   Select **"Uniform"**.
+    *   **UNCHECK** the box that says **"Enforce public access prevention on this bucket"**. This is required for your app to display uploaded images.
+    *   Click **Create**.
 
-7.  **IMPORTANT:** You will be prompted to confirm that the bucket will be public. Click **"CONFIRM"**. This is necessary for images to be viewable in your app. Your `storage.rules` file will still protect writes.
-
-This creates the default bucket that Firebase expects.
+7.  **FINAL CONFIRMATION:** You will be prompted to confirm that the bucket will be public. Click **"CONFIRM"**. This is necessary for images to be viewable in your app. Your `storage.rules` file will still protect against unauthorized writes.
 
 ## Step 4: Wait and Retry
 
-After either method, please wait at least **5 minutes** for all permissions and settings to propagate across Google's systems.
+After following the steps above, please wait at least **5 minutes** for all permissions and settings to propagate across Google's systems.
 
-After waiting, please return to the application and try uploading an image again. This process should have cleared any underlying configuration errors.
+After waiting, please return to the application and try uploading an image again. This process will have cleared any underlying configuration errors.
