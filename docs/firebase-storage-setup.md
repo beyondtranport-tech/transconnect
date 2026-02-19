@@ -29,13 +29,13 @@ It may take a moment for your Storage bucket to be created.
 
 ## Step 4: Grant Backend Permissions (The Critical Step)
 
-This is the most important step to solve upload and deployment errors. Your App Hosting backend runs using a specific "compute service account," and this account needs permission to manage your Storage bucket.
+This is the most important step to solve upload and deployment errors. Your App Hosting backend runs using a specific service account, and this account needs permission to manage your Storage bucket.
 
-### 4.1: Find Your App Hosting Service Account Email
+### 4.1: Find Your Backend's Service Account Email
 
 1.  Go to the Google Cloud Console's main **IAM** page for your project: **[IAM & Admin](https://console.cloud.google.com/iam-admin/iam?project=ecosystem-hub)**
-2.  Find the principal (member) that has the name **"Firebase App Hosting compute service account"**.
-3.  Copy its email address. It will look like `firebase-app-hosting-compute@...`.
+2.  In the list of principals (members), find the one named **"Compute Engine default service account"**. This is the service account your backend code uses by default.
+3.  Its email address will look like `[your-project-number]-compute@developer.gserviceaccount.com`. Copy this email address.
 
 ### 4.2: Grant the Correct "Storage Admin" Role
 
