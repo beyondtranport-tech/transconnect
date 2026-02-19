@@ -5,8 +5,8 @@ import { NextRequest } from 'next/server';
 import { getAuth } from 'firebase-admin/auth';
 import { getFirestore } from 'firebase-admin/firestore';
 
-// Reverting to v7 initialization to fix potential hangs.
-const ADMIN_APP_NAME = 'firebase-admin-app-transconnect-studio-v7';
+// Force re-initialization by changing the app name to discard cached broken configs.
+const ADMIN_APP_NAME = 'firebase-admin-app-transconnect-studio-v8';
 
 export function getAdminApp(): { app: App | null; error: string | null } {
   const existingApp = getApps().find(app => app.name === ADMIN_APP_NAME);
@@ -31,10 +31,9 @@ export function getAdminApp(): { app: App | null; error: string | null } {
     }
     
     const projectId = serviceAccount.project_id;
-    // This is the definitive fix: Explicitly set the correct storage bucket name.
+    // This is the definitive fix: Explicitly set the correct storage bucket name during initialization.
     const storageBucket = "ecosystem-hub.appspot.com";
 
-    // The storageBucket property is REQUIRED for the Admin SDK to know which bucket to interact with.
     const app = initializeApp({
       credential: cert(serviceAccount),
       projectId: projectId,
