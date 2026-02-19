@@ -8,7 +8,7 @@ The application uses Firebase Storage to save and manage user-uploaded assets li
 ## Step 1: Go to the Firebase Console
 
 1.  Open the [Firebase Console](https://console.firebase.google.com/).
-2.  Select your project (e.g., `ecosystem-hub`).
+2.  Select your project (`ecosystem-hub`).
 
 ## Step 2: Navigate to Storage
 

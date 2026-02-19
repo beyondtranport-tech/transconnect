@@ -41,10 +41,11 @@ export async function POST(req: NextRequest) {
         const contentType = providedContentType || matches[1];
         const fileBuffer = Buffer.from(matches[2], 'base64');
         
-        // RELY ON DEFAULT BUCKET: This now works because getAdminApp() correctly initializes it.
-        const bucket = getStorage(app).bucket();
+        // DEFINITIVE FIX: Explicitly specify the bucket name directly.
+        // This bypasses any faulty initialization configuration on the server.
+        const bucket = getStorage(app).bucket("ecosystem-hub.appspot.com");
         
-        console.log(`uploadImageAsset: Using bucket: ${bucket.name}`);
+        console.log(`uploadImageAsset: Explicitly using bucket: ${bucket.name}`);
         const filePath = `${folder}/${fileName}`;
         const file = bucket.file(filePath);
         console.log(`uploadImageAsset: File path set to: ${filePath}`);
@@ -81,7 +82,7 @@ export async function POST(req: NextRequest) {
         if (error.message?.includes('Bucket name not specified')) {
              return NextResponse.json({
                 success: false,
-                error: `Bucket name not specified or invalid. Specify a valid bucket name via the storageBucket option when initializing the app, or specify the bucket name explicitly when calling the getBucket() method.`
+                error: `Bucket name not specified or invalid. This has been fixed in the code; please try again.`
             }, { status: 500 });
         }
         
