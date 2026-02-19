@@ -1,4 +1,3 @@
-
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuth } from 'firebase-admin/auth';
@@ -35,26 +34,41 @@ export async function POST(req: NextRequest) {
   
   try {
     const { data } = await req.json();
-    if (!data || !data.userId || !data.companyId) {
-        return NextResponse.json({ success: false, error: 'Bad Request: "data" object with "userId" and "companyId" is required.' }, { status: 400 });
+    if (!data) {
+        return NextResponse.json({ success: false, error: 'Bad Request: "data" is required.' }, { status: 400 });
     }
-
+      
     const adminAuth = getAuth(app);
     const decodedToken = await adminAuth.verifyIdToken(idToken);
     const uid = decodedToken.uid;
     
-    if (uid !== data.userId) {
-        return NextResponse.json({ success: false, error: 'Forbidden: You can only create payments for your own account.' }, { status: 403 });
-    }
-    
     const db = getFirestore(app);
+
+    // --- NEW LOGIC ---
+    let companyId = data.companyId;
+
+    // If companyId is not provided in the payload, look it up from the user's document.
+    if (!companyId) {
+        const userDoc = await db.collection('users').doc(uid).get();
+        companyId = userDoc.data()?.companyId;
+    }
+
+    if (!companyId) {
+        return NextResponse.json({ success: false, error: 'Could not find an associated company for this user. The profile may still be setting up.' }, { status: 404 });
+    }
+    // --- END NEW LOGIC ---
     
-    const collectionPath = `companies/${data.companyId}/walletPayments`;
+    const collectionPath = `companies/${companyId}/walletPayments`;
     const collectionRef = db.collection(collectionPath);
     
-    const deserializedData = deserializeData(data);
+    const finalData = {
+        ...deserializeData(data),
+        userId: uid,
+        companyId: companyId,
+    };
     
-    const newDocRef = await collectionRef.add(deserializedData);
+    const newDocRef = collectionRef.doc();
+    await newDocRef.set({ ...finalData, id: newDocRef.id });
 
     return NextResponse.json({ success: true, id: newDocRef.id, message: 'Wallet payment created successfully.' });
 

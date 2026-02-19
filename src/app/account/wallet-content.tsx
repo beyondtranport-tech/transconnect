@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useUser, useFirestore, useCollection, useDoc, getClientSideAuthToken } from '@/firebase';
@@ -223,11 +222,11 @@ export default function WalletContent() {
     }, 0) || 0;
     
     const handleSubmitProofOfPayment = async () => {
-        if (!user || !companyId) {
+        if (!user) {
              toast({
                 variant: "destructive",
-                title: "Company Profile Not Found",
-                description: "We couldn't find your company details. This can sometimes happen right after sign-up. Please try refreshing the page.",
+                title: "Not Logged In",
+                description: "You must be logged in to make a payment.",
             });
             return;
         }
@@ -243,8 +242,6 @@ export default function WalletContent() {
             if (!token) throw new Error("Authentication failed");
             
             const paymentData = {
-                userId: user.uid,
-                companyId: companyId,
                 status: 'pending',
                 description: 'Wallet Top-up via EFT',
                 amount: amountValue,
@@ -257,7 +254,8 @@ export default function WalletContent() {
                 body: JSON.stringify({ data: paymentData }),
             });
 
-            if (!response.ok) throw new Error((await response.json()).error || 'Failed to submit.');
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.error || 'Failed to submit.');
 
             toast({ title: "Proof Submitted!", description: "An admin will review and credit your wallet shortly."});
             setPaymentAmount('');
@@ -307,7 +305,7 @@ export default function WalletContent() {
 
                 <div className="space-y-4">
                     <h3 className="text-lg font-semibold">Top-up via EFT</h3>
-                    {!companyId && !isLoading && (
+                    {!companyId && !isCompanyLoading && !isUserDocLoading && (
                         <Alert variant="default">
                             <AlertTriangle className="h-4 w-4 text-orange-500" />
                             <AlertTitle>Account Setup in Progress</AlertTitle>
