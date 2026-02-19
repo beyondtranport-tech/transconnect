@@ -120,7 +120,7 @@ function PayoutRequestDialog({ companyData, availableBalance, onPayoutRequested 
                              <Label htmlFor="payout-amount">Amount (Available: {formatCurrency(availableBalance)})</Label>
                              <Input 
                                 id="payout-amount"
-                                type="number"
+                                type="number" 
                                 placeholder={`Max ${formatCurrency(availableBalance)}`}
                                 value={amount}
                                 onChange={(e) => setAmount(e.target.value)}
@@ -308,11 +308,11 @@ export default function WalletContent() {
                 <div className="space-y-4">
                     <h3 className="text-lg font-semibold">Top-up via EFT</h3>
                     {!companyId && !isLoading && (
-                            <Alert variant="destructive">
-                            <AlertTriangle className="h-4 w-4" />
-                            <AlertTitle>Company Profile Not Found</AlertTitle>
+                        <Alert variant="default">
+                            <AlertTriangle className="h-4 w-4 text-orange-500" />
+                            <AlertTitle>Account Setup in Progress</AlertTitle>
                             <AlertDescription>
-                                We're still setting up your company profile. Please refresh the page in a moment to top-up your wallet.
+                                Your company profile is being created. You can enter payment details below, but you may need to refresh before submitting.
                             </AlertDescription>
                         </Alert>
                     )}
@@ -332,7 +332,7 @@ export default function WalletContent() {
                                 <div className="flex justify-center p-4">
                                     <Loader2 className="h-6 w-6 animate-spin"/>
                                 </div>
-                            ) : bankDetails && companyId ? (
+                            ) : bankDetails ? (
                                 <>
                                     {Object.entries(bankDetails).filter(([key]) => !['id', 'updatedAt'].includes(key)).map(([key, value]) => (
                                         <div key={key} className="flex justify-between">
@@ -342,11 +342,11 @@ export default function WalletContent() {
                                     ))}
                                     <div className="flex justify-between pt-2 border-t">
                                         <span className="text-muted-foreground">Reference</span>
-                                        <span className="font-mono text-primary">{companyId}</span>
+                                        <span className="font-mono text-primary">{companyId || '(Available after profile setup)'}</span>
                                     </div>
                                 </>
                             ) : (
-                                <p className="text-muted-foreground text-center">Bank details not configured or company not loaded.</p>
+                                <p className="text-muted-foreground text-center">Bank details not configured.</p>
                             )}
                         </CardContent>
                     </Card>
@@ -359,10 +359,9 @@ export default function WalletContent() {
                                 placeholder="500.00"
                                 value={paymentAmount}
                                 onChange={(e) => setPaymentAmount(e.target.value)}
-                                disabled={!companyId}
                             />
                         </div>
-                        <Button onClick={handleSubmitProofOfPayment} disabled={isSubmitting || !paymentAmount || !companyId}>
+                        <Button onClick={handleSubmitProofOfPayment} disabled={isSubmitting || !paymentAmount}>
                             {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null}
                             I've made a payment
                         </Button>
