@@ -333,7 +333,8 @@ function AIGenerateDialog({
                   <p className="mt-2 text-sm text-muted-foreground">Generating...</p>
                 </div>
               ) : generatedImage ? (
-                <Image src={generatedImage} alt="Generated" fill className="rounded-md object-contain" />
+                 // eslint-disable-next-line @next/next/no-img-element
+                <img src={generatedImage} alt="Generated" className="absolute inset-0 h-full w-full rounded-md object-contain" />
               ) : (
                 <p className="text-sm text-muted-foreground">Generated image will appear here.</p>
               )}
@@ -545,9 +546,10 @@ function ProductDialog({ shop, product, onComplete, children, canEdit }: { shop:
                                   <FormLabel>Product Images</FormLabel>
                                   <FormControl>
                                       <div className="grid grid-cols-3 gap-2">
-                                          {(field.value || []).map((url, index) => (
+                                          {(field.value || []).map((url) => (
                                               <div key={url} className="relative aspect-square">
-                                                  <Image src={url} alt={`Product image ${index + 1}`} fill className="rounded-md object-contain border" />
+                                                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                                                  <img src={url} alt="Product image" className="absolute inset-0 h-full w-full rounded-md object-contain border" />
                                                   <Button
                                                       type="button"
                                                       variant="destructive"
@@ -555,7 +557,10 @@ function ProductDialog({ shop, product, onComplete, children, canEdit }: { shop:
                                                       className="absolute -top-2 -right-2 h-6 w-6 rounded-full"
                                                       onClick={() => {
                                                           const newUrls = [...(field.value || [])];
-                                                          newUrls.splice(index, 1);
+                                                          const indexToRemove = newUrls.indexOf(url);
+                                                          if (indexToRemove > -1) {
+                                                              newUrls.splice(indexToRemove, 1);
+                                                          }
                                                           form.setValue('imageUrls', newUrls);
                                                       }}
                                                       disabled={!canEdit}
@@ -697,7 +702,8 @@ function Step2Products({ shop, canEdit }: { shop: any, canEdit: boolean }) {
                                 <TableCell>
                                     <div className="relative h-12 w-12 rounded-md bg-muted flex items-center justify-center">
                                         {(product.imageUrls && product.imageUrls[0]) ? (
-                                            <Image src={product.imageUrls[0]} alt={product.name} fill className="object-contain border" />
+                                            // eslint-disable-next-line @next/next/no-img-element
+                                            <img src={product.imageUrls[0]} alt={product.name} className="absolute inset-0 h-full w-full object-contain border" />
                                         ) : (
                                             <ImageIcon className="h-6 w-6 text-muted-foreground" />
                                         )}
@@ -873,7 +879,8 @@ function Step3Appearance({ shop, onSave, canEdit }: { shop: any, onSave: (newDat
                         <FormControl>
                             <div className="relative aspect-video w-full rounded-md border border-dashed flex items-center justify-center bg-muted">
                                 {field.value ? (
-                                    <Image src={field.value} alt="Hero Banner" fill className="rounded-md object-cover" />
+                                    // eslint-disable-next-line @next/next/no-img-element
+                                    <img src={field.value} alt="Hero Banner" className="absolute inset-0 h-full w-full rounded-md object-cover" />
                                 ) : (
                                     <p className="text-sm text-muted-foreground">No hero banner generated yet.</p>
                                 )}
@@ -1744,5 +1751,3 @@ export function ShopWizard({ shop: initialShop }: { shop: any }) {
     </div>
   );
 }
-
-    
