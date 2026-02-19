@@ -41,10 +41,11 @@ export async function POST(req: NextRequest) {
         const contentType = providedContentType || matches[1];
         const fileBuffer = Buffer.from(matches[2], 'base64');
         
-        // This is the definitive fix: Explicitly pass the bucket name to the bucket() method.
-        const bucket = getStorage(app).bucket("ecosystem-hub.appspot.com");
+        // DEFINITIVE FIX 2: Use the default bucket configured during app initialization.
+        // Do NOT specify the bucket name here to avoid conflicts.
+        const bucket = getStorage(app).bucket();
         
-        console.log(`uploadImageAsset: Using bucket: ${bucket.name}`);
+        console.log(`uploadImageAsset: Using default bucket: ${bucket.name}`);
         const filePath = `${folder}/${fileName}`;
         const file = bucket.file(filePath);
         console.log(`uploadImageAsset: File path set to: ${filePath}`);
@@ -64,7 +65,7 @@ export async function POST(req: NextRequest) {
     } catch (error: any) {
         console.error("CRITICAL ERROR in /api/uploadImageAsset:", error);
         
-        if (error.code === 403 || error.message?.includes('does not have storage.objects.create access')) {
+        if (error.code === 403 || error.message?.includes('storage.objects.create access')) {
             return NextResponse.json({
                 success: false,
                 error: 'Permission Denied on Server: This can happen if the backend service account does not have the "Storage Object Admin" role in Google Cloud IAM, or if Firebase Storage is not fully enabled. Please check the setup guide.'

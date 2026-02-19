@@ -6,7 +6,7 @@ import { getAuth } from 'firebase-admin/auth';
 import { getFirestore } from 'firebase-admin/firestore';
 
 // Force re-initialization by changing the app name to discard cached broken configs.
-const ADMIN_APP_NAME = 'firebase-admin-app-transconnect-studio-v7';
+const ADMIN_APP_NAME = 'firebase-admin-app-transconnect-studio-v8'; // <-- Incremented version
 
 export function getAdminApp(): { app: App | null; error: string | null } {
   const existingApp = getApps().find(app => app.name === ADMIN_APP_NAME);
@@ -32,11 +32,12 @@ export function getAdminApp(): { app: App | null; error: string | null } {
     
     const projectId = serviceAccount.project_id;
 
-    // The storageBucket property is removed from here to prevent potential initialization conflicts.
-    // The bucket will be specified explicitly in the routes that need it.
+    // DEFINITIVE FIX: Explicitly set the storageBucket during initialization.
+    // This is the single source of truth for the storage configuration.
     const app = initializeApp({
       credential: cert(serviceAccount),
       projectId: projectId,
+      storageBucket: "ecosystem-hub.appspot.com", // <-- The critical fix is here.
     }, ADMIN_APP_NAME);
 
     return { app, error: null };
