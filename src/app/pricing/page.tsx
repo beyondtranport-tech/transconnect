@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -11,7 +12,7 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import * as React from 'react';
-import { collection, query } from 'firebase/firestore';
+import { collection } from 'firebase/firestore';
 import { Loader2 } from 'lucide-react';
 import { useMemoFirebase } from '@/hooks/use-memo-firebase';
 import featuresData from '@/lib/features.json';
@@ -62,7 +63,7 @@ export default function MembershipPage() {
 
   const membershipsQuery = useMemoFirebase(() => {
     if (!firestore) return null;
-    return query(collection(firestore, 'memberships'));
+    return collection(firestore, 'memberships');
   }, [firestore]);
   
   const { data: tiers, isLoading, error } = useCollection(membershipsQuery);
