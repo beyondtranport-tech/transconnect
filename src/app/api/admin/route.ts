@@ -738,27 +738,21 @@ export async function POST(req: NextRequest) {
                     const wasAlreadyApproved = shopData.status === 'approved';
 
                     const memberProductsSnap = await transaction.get(memberShopRef.collection('products'));
-                    const publicProductsSnap = await transaction.get(publicShopRef.collection('products'));
-                    
                     const loyaltyConfigDoc = await transaction.get(db.collection('configuration').doc('loyaltySettings'));
-                    
-                    const memberProducts = memberProductsSnap.docs.map(doc => ({ id: doc.id, data: doc.data() }));
 
-                    publicProductsSnap.docs.forEach(doc => transaction.delete(doc.ref));
-                    
-                    // Explicitly remove any existing timestamp fields before setting new ones.
+                    // --- All reads are done ---
+
                     const { createdAt, updatedAt, ...restOfShopData } = shopData;
-
-                    transaction.set(publicShopRef, { 
-                        ...restOfShopData, 
+                    transaction.set(publicShopRef, {
+                        ...restOfShopData,
                         companyId, 
-                        status: 'approved', 
-                        updatedAt: FieldValue.serverTimestamp() 
+                        status: 'approved',
+                        updatedAt: FieldValue.serverTimestamp()
                     }, { merge: true });
 
-                    memberProducts.forEach(product => {
-                        const publicProductRef = publicShopRef.collection('products').doc(product.id);
-                        transaction.set(publicProductRef, product.data);
+                    memberProductsSnap.docs.forEach(productDoc => {
+                        const publicProductRef = publicShopRef.collection('products').doc(productDoc.id);
+                        transaction.set(publicProductRef, productDoc.data());
                     });
 
                     if (!wasAlreadyApproved) {

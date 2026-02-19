@@ -47,14 +47,11 @@ export async function POST(req: NextRequest) {
             const shopData = shopDoc.data()!;
 
             const memberProductsSnap = await transaction.get(memberShopRef.collection('products'));
-            const memberProducts = memberProductsSnap.docs.map(doc => ({ id: doc.id, data: doc.data() }));
 
-            const publicProductsSnap = await transaction.get(publicShopRef.collection('products'));
-            publicProductsSnap.docs.forEach(doc => transaction.delete(doc.ref));
+            // --- All reads are done ---
 
-            // Explicitly remove existing timestamps before spreading to avoid conflicts
+            // Update the main public shop document
             const { createdAt, updatedAt, ...restOfShopData } = shopData;
-
             transaction.set(publicShopRef, { 
                 ...restOfShopData, 
                 companyId, 
@@ -62,9 +59,10 @@ export async function POST(req: NextRequest) {
                 updatedAt: FieldValue.serverTimestamp() 
             }, { merge: true });
 
-            memberProducts.forEach(product => {
-                const publicProductRef = publicShopRef.collection('products').doc(product.id);
-                transaction.set(publicProductRef, product.data);
+            // Overwrite products in the public subcollection
+            memberProductsSnap.docs.forEach(productDoc => {
+                const publicProductRef = publicShopRef.collection('products').doc(productDoc.id);
+                transaction.set(publicProductRef, productDoc.data());
             });
         });
 
