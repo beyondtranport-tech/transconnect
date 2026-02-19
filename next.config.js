@@ -1,9 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   /* config options here */
-  experimental: {
-    serverComponentsExternalPackages: ['@opentelemetry/instrumentation'],
-  },
   images: {
     remotePatterns: [
       {
@@ -39,9 +36,7 @@ const nextConfig = {
     ],
   },
   webpack: (config, { isServer }) => {
-    if (!isServer) {
-      config.externals.push("@opentelemetry/instrumentation");
-    }
+    config.externals.push("@opentelemetry/instrumentation");
     return config;
   },
 };
