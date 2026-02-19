@@ -6,7 +6,7 @@ import { getAuth } from 'firebase-admin/auth';
 import { getFirestore } from 'firebase-admin/firestore';
 
 // Force re-initialization by changing the app name to discard cached broken configs.
-const ADMIN_APP_NAME = 'firebase-admin-app-transconnect-studio-v10'; // <-- Incremented version
+const ADMIN_APP_NAME = 'firebase-admin-app-transconnect-studio-v12'; // <-- Incremented version
 
 export function getAdminApp(): { app: App | null; error: string | null } {
   const existingApp = getApps().find(app => app.name === ADMIN_APP_NAME);

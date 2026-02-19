@@ -41,8 +41,7 @@ export async function POST(req: NextRequest) {
         const contentType = providedContentType || matches[1];
         const fileBuffer = Buffer.from(matches[2], 'base64');
         
-        // DEFINITIVE FIX: Explicitly specify the bucket name when getting the bucket object.
-        // This bypasses any initialization or caching issues.
+        // DEFINITIVE FIX #2: Explicitly specify the bucket name when getting the bucket object as a redundancy.
         const bucket = getStorage(app).bucket("ecosystem-hub.appspot.com");
         
         console.log(`uploadImageAsset: Using explicit bucket: ${bucket.name}`);
