@@ -58,8 +58,7 @@
       ]
     },
     {
-      "collectionGroup": "auditLogs",
-      "queryScope": "COLLECTION_GROUP",
+      "collectionId": "auditLogs",
       "fields": [
         { "fieldPath": "companyId", "order": "ASCENDING" },
         { "fieldPath": "timestamp", "order": "DESCENDING" }
