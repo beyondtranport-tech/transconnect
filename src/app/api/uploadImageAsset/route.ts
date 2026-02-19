@@ -41,11 +41,11 @@ export async function POST(req: NextRequest) {
         const contentType = providedContentType || matches[1];
         const fileBuffer = Buffer.from(matches[2], 'base64');
         
-        // DEFINITIVE FIX 2: Use the default bucket configured during app initialization.
-        // Do NOT specify the bucket name here to avoid conflicts.
-        const bucket = getStorage(app).bucket();
+        // DEFINITIVE FIX: Explicitly specify the bucket name when getting the bucket object.
+        // This bypasses any initialization or caching issues.
+        const bucket = getStorage(app).bucket("ecosystem-hub.appspot.com");
         
-        console.log(`uploadImageAsset: Using default bucket: ${bucket.name}`);
+        console.log(`uploadImageAsset: Using explicit bucket: ${bucket.name}`);
         const filePath = `${folder}/${fileName}`;
         const file = bucket.file(filePath);
         console.log(`uploadImageAsset: File path set to: ${filePath}`);
