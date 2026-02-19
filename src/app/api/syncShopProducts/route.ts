@@ -29,50 +29,52 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ success: false, error: 'Missing shopId or companyId.' }, { status: 400 });
         }
 
+        const batch = db.batch();
         const memberShopRef = db.doc(`companies/${companyId}/shops/${shopId}`);
         const publicShopRef = db.doc(`shops/${shopId}`);
 
-        await db.runTransaction(async (transaction) => {
-            // --- ALL READS MUST HAPPEN FIRST ---
-            const companyDoc = await transaction.get(db.doc(`companies/${companyId}`));
-            const isAdmin = decodedToken.email === 'beyondtransport@gmail.com' || decodedToken.email === 'mkoton100@gmail.com';
+        // --- READS ---
+        const companyDoc = await db.doc(`companies/${companyId}`).get();
+        const isAdmin = decodedToken.email === 'beyondtransport@gmail.com' || decodedToken.email === 'mkoton100@gmail.com';
 
-            if (!companyDoc.exists || (companyDoc.data()?.ownerId !== uid && !isAdmin)) {
-                throw new Error('Forbidden: You are not the owner of this shop.');
-            }
+        if (!companyDoc.exists || (companyDoc.data()?.ownerId !== uid && !isAdmin)) {
+            throw new Error('Forbidden: You are not the owner of this shop.');
+        }
 
-            const shopDoc = await transaction.get(memberShopRef);
-            if (!shopDoc.exists || shopDoc.data()?.status !== 'approved') {
-                throw new Error('Shop is not approved or does not exist.');
-            }
-            
-            const memberProductsSnap = await transaction.get(memberShopRef.collection('products'));
-            const publicProductsCollection = publicShopRef.collection('products');
-            const existingPublicProductsSnap = await transaction.get(publicProductsCollection);
-            // --- END OF READS ---
-            
-            const shopData = shopDoc.data()!;
-            const { createdAt, updatedAt, ...restOfShopData } = shopData;
+        const shopDoc = await memberShopRef.get();
+        if (!shopDoc.exists || shopDoc.data()?.status !== 'approved') {
+            throw new Error('Shop is not approved or does not exist.');
+        }
+        
+        const memberProductsSnap = await memberShopRef.collection('products').get();
+        const publicProductsCollection = publicShopRef.collection('products');
+        const existingPublicProductsSnap = await publicProductsCollection.get();
+        
+        const shopData = shopDoc.data()!;
+        const { createdAt, updatedAt, ...restOfShopData } = shopData;
+        // --- END READS ---
+        
+        // --- PREPARE BATCH WRITES ---
+        
+        // 1. Update public shop document with latest data and a new timestamp.
+        batch.set(publicShopRef, { 
+            ...restOfShopData, 
+            companyId, 
+            status: 'approved', 
+            updatedAt: FieldValue.serverTimestamp() 
+        }, { merge: true });
 
-            // --- ALL WRITES HAPPEN AFTER ---
-            
-            // 1. Update public shop document with latest data and a new timestamp.
-            transaction.set(publicShopRef, { 
-                ...restOfShopData, 
-                companyId, 
-                status: 'approved', 
-                updatedAt: FieldValue.serverTimestamp() 
-            }, { merge: true });
+        // 2. Delete all existing public products to ensure a clean sync.
+        existingPublicProductsSnap.docs.forEach(doc => batch.delete(doc.ref));
 
-            // 2. Delete all existing public products to ensure a clean sync.
-            existingPublicProductsSnap.docs.forEach(doc => transaction.delete(doc.ref));
-
-            // 3. Copy all current products to the public collection.
-            memberProductsSnap.docs.forEach(productDoc => {
-                const publicProductRef = publicProductsCollection.doc(productDoc.id);
-                transaction.set(publicProductRef, productDoc.data());
-            });
+        // 3. Copy all current products to the public collection.
+        memberProductsSnap.docs.forEach(productDoc => {
+            const publicProductRef = publicProductsCollection.doc(productDoc.id);
+            batch.set(publicProductRef, productDoc.data());
         });
+
+        // --- COMMIT BATCH ---
+        await batch.commit();
 
         return NextResponse.json({ success: true, message: 'Products synced successfully.' });
 

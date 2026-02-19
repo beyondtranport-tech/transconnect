@@ -726,57 +726,50 @@ export async function POST(req: NextRequest) {
                     throw new Error("Missing shopId or companyId for approveShop action.");
                 }
 
+                const batch = db.batch();
                 const memberShopRef = db.doc(`companies/${companyId}/shops/${shopId}`);
                 const publicShopRef = db.doc(`shops/${shopId}`);
+                
+                // Perform all reads first, outside of the batch logic
+                const shopDoc = await memberShopRef.get();
+                if (!shopDoc.exists) {
+                    throw new Error(`Shop with ID ${shopId} not found for company ${companyId}.`);
+                }
+                
+                const shopData = shopDoc.data()!;
+                const wasAlreadyApproved = shopData.status === 'approved';
 
-                await db.runTransaction(async (transaction) => {
-                    // --- ALL READS MUST HAPPEN FIRST ---
-                    const shopDoc = await transaction.get(memberShopRef);
-                    if (!shopDoc.exists) {
-                        throw new Error(`Shop with ID ${shopId} not found for company ${companyId}.`);
-                    }
-                    
-                    const memberProductsSnap = await transaction.get(memberShopRef.collection('products'));
-                    const loyaltyConfigDoc = await transaction.get(db.collection('configuration').doc('loyaltySettings'));
-                    const publicProductsCollection = publicShopRef.collection('products');
-                    const existingPublicProductsSnap = await transaction.get(publicProductsCollection);
-                    // --- END OF READS ---
+                const memberProductsSnap = await memberShopRef.collection('products').get();
+                const publicProductsCollection = publicShopRef.collection('products');
+                const existingPublicProductsSnap = await publicProductsCollection.get();
+                const loyaltyConfigDoc = await db.collection('configuration').doc('loyaltySettings').get();
 
-                    const shopData = shopDoc.data()!;
-                    const wasAlreadyApproved = shopData.status === 'approved';
-                    
-                    // Exclude timestamps from the data being copied to the public record.
-                    const { createdAt, updatedAt, ...restOfShopData } = shopData;
-                    
-                    // --- ALL WRITES HAPPEN AFTER ---
-                    
-                    // 1. Delete all existing public products to ensure a clean sync.
-                    existingPublicProductsSnap.docs.forEach(doc => transaction.delete(doc.ref));
+                // Prepare batch writes
+                existingPublicProductsSnap.docs.forEach(doc => batch.delete(doc.ref));
 
-                    // 2. Set the main public shop document, adding a fresh server timestamp.
-                    transaction.set(publicShopRef, {
-                        ...restOfShopData,
-                        companyId, 
-                        status: 'approved',
-                        updatedAt: FieldValue.serverTimestamp()
-                    }, { merge: true });
+                const { createdAt, updatedAt, ...restOfShopData } = shopData;
+                batch.set(publicShopRef, {
+                    ...restOfShopData,
+                    companyId, 
+                    status: 'approved',
+                    updatedAt: FieldValue.serverTimestamp()
+                }, { merge: true });
 
-                    // 3. Copy all current products to the public collection.
-                    memberProductsSnap.docs.forEach(productDoc => {
-                        const newPublicProductRef = publicProductsCollection.doc(productDoc.id);
-                        transaction.set(newPublicProductRef, productDoc.data());
-                    });
-                    
-                    // 4. Update the private shop's status.
-                    transaction.update(memberShopRef, { status: 'approved', updatedAt: FieldValue.serverTimestamp() });
-
-                    // 5. Award points ONLY if this is the first time the shop is being approved.
-                    if (!wasAlreadyApproved) {
-                        const shopCreationPoints = loyaltyConfigDoc.data()?.shopCreationPoints || 100;
-                        const companyRef = db.doc(`companies/${companyId}`);
-                        transaction.update(companyRef, { rewardPoints: FieldValue.increment(shopCreationPoints) });
-                    }
+                memberProductsSnap.docs.forEach(productDoc => {
+                    const newPublicProductRef = publicProductsCollection.doc(productDoc.id);
+                    batch.set(newPublicProductRef, productDoc.data());
                 });
+                
+                batch.update(memberShopRef, { status: 'approved', updatedAt: FieldValue.serverTimestamp() });
+
+                if (!wasAlreadyApproved && loyaltyConfigDoc.exists) {
+                    const shopCreationPoints = loyaltyConfigDoc.data()?.shopCreationPoints || 100;
+                    const companyRef = db.doc(`companies/${companyId}`);
+                    batch.update(companyRef, { rewardPoints: FieldValue.increment(shopCreationPoints) });
+                }
+                
+                // Commit the atomic batch
+                await batch.commit();
 
                 const message = wasAlreadyApproved 
                     ? 'Shop products successfully re-synced.'
@@ -794,14 +787,9 @@ export async function POST(req: NextRequest) {
                 
                 const batch = db.batch();
                 
-                // Update private shop status
                 batch.update(memberShopRef, { status: 'rejected' });
-                // Delete public shop if it exists
                 batch.delete(publicShopRef);
-                // Note: Deleting a document does not delete its subcollections automatically in client/admin SDKs.
-                // For a full cleanup, a Cloud Function would be needed, but for this app's purpose,
-                // making the shop inaccessible is sufficient.
-
+                
                 await batch.commit();
 
                 return NextResponse.json({ success: true, message: "Shop has been rejected." });
