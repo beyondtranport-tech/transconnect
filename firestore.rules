@@ -5,6 +5,10 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     // --- Helper Functions ---
+    function isOwner(userId) {
+      return request.auth != null && request.auth.uid == userId;
+    }
+
     function isAdmin() {
       // It's recommended to use custom claims for security and scalability.
       // To set a custom claim, use the Firebase Admin SDK to set {'admin': true} on a user's token.
@@ -20,10 +24,8 @@ service cloud.firestore {
     }
 
     // --- User Profiles ---
-    // Temporarily allowing public read for debugging the permission error.
     match /users/{userId} {
-      allow read: if true; 
-      allow update: if request.auth.uid == userId;
+      allow get, update: if isOwner(userId) || isAdmin();
       allow create: if request.auth != null; // Onboarding via API
       allow list: if isAdmin();
     }

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useForm } from 'react-hook-form';
@@ -19,7 +20,7 @@ import { Loader2, User, Save } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useUser, useFirestore, useDoc, errorEmitter, useMemoFirebase } from '@/firebase';
 import { FirestorePermissionError } from '@/firebase/errors';
-import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 
 
@@ -87,7 +88,7 @@ export default function ProfileContent() {
         updatedAt: serverTimestamp(),
     };
     
-    updateDoc(userDocRef, dataToUpdate)
+    setDoc(userDocRef, dataToUpdate, { merge: true })
       .then(() => {
         toast({
           title: 'Profile Updated',
