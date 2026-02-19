@@ -35,13 +35,6 @@ const nextConfig = {
       },
     ],
   },
-  webpack: (config, { isServer }) => {
-    // This is the correct logic. The issue is with the server-side build.
-    if (isServer) {
-        config.externals.push("@opentelemetry/instrumentation");
-    }
-    return config;
-  },
 };
 
 module.exports = nextConfig;
