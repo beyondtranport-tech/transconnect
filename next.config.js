@@ -36,7 +36,9 @@ const nextConfig = {
     ],
   },
   webpack: (config, { isServer }) => {
-    config.externals.push("@opentelemetry/instrumentation");
+    if (isServer) {
+        config.externals.push("@opentelemetry/instrumentation");
+    }
     return config;
   },
 };
