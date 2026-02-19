@@ -3,6 +3,7 @@
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Sparkles } from "lucide-react";
 import ImageGeneratorCard from "@/app/adminaccount/image-generator-card";
+import IconGeneratorCard from "@/app/adminaccount/icon-generator-card";
 import ImageEditorCard from "@/app/adminaccount/image-editor-card";
 import VideoGeneratorCard from "@/app/adminaccount/video-generator-card";
 import VideoAnimatorCard from "@/app/adminaccount/video-animator-card";
@@ -26,6 +27,7 @@ export default function MarketingStudio() {
         <ImageGeneratorCard 
             promptTemplate="A cinematic, professional photograph of a futuristic, gleaming white and green Scania truck driving on a high-tech highway at dusk. The road is illuminated with glowing data lines, and the sky has a vibrant sunset."
         />
+        <IconGeneratorCard />
         <ImageEditorCard 
             promptTemplate="Place the truck on a winding mountain pass at sunset."
         />
