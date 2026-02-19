@@ -75,7 +75,11 @@ export default function MembershipPage() {
       return [...tiers].sort((a, b) => {
           const aIndex = order.indexOf(a.id);
           const bIndex = order.indexOf(b.id);
-          if (aIndex === -1 && bIndex === -1) return (a.price?.monthly || a.price || 0) - (b.price?.monthly || b.price || 0);
+          
+          const aPrice = (typeof a.price === 'object' && a.price !== null) ? a.price.monthly || 0 : a.price || 0;
+          const bPrice = (typeof b.price === 'object' && b.price !== null) ? b.price.monthly || 0 : b.price || 0;
+
+          if (aIndex === -1 && bIndex === -1) return aPrice - bPrice;
           if (aIndex === -1) return 1;
           if (bIndex === -1) return -1;
           return aIndex - bIndex;
@@ -122,7 +126,7 @@ export default function MembershipPage() {
         ) : (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-7xl mx-auto">
               {sortedTiers?.map((tier:any) => {
-                  const monthlyPrice = tier.price || 0;
+                  const monthlyPrice = (typeof tier.price === 'object' && tier.price !== null) ? tier.price.monthly || 0 : tier.price || 0;
                   const annualDiscountPercent = tier.annualDiscount || 0;
                   const specialOfferDiscountPercent = tier.specialOfferDiscount || 0;
 
@@ -286,3 +290,5 @@ export default function MembershipPage() {
     </div>
   );
 }
+
+    
