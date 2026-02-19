@@ -730,17 +730,24 @@ export async function POST(req: NextRequest) {
                 const publicShopRef = db.doc(`shops/${shopId}`);
 
                 await db.runTransaction(async (transaction) => {
+                    // --- ALL READS MUST HAPPEN FIRST ---
                     const shopDoc = await transaction.get(memberShopRef);
                     if (!shopDoc.exists) {
                         throw new Error(`Shop with ID ${shopId} not found for company ${companyId}.`);
                     }
                     const shopData = shopDoc.data()!;
                     const wasAlreadyApproved = shopData.status === 'approved';
-                    
+
                     const memberProductsSnap = await transaction.get(memberShopRef.collection('products'));
+                    const publicProductsSnap = await transaction.get(publicShopRef.collection('products'));
+                    
+                    // Read loyalty config early, before any writes.
+                    const loyaltyConfigDoc = await transaction.get(db.collection('configuration').doc('loyaltySettings'));
+                    // --- END OF READS ---
+
+                    // --- ALL WRITES HAPPEN AFTER READS ---
                     const memberProducts = memberProductsSnap.docs.map(doc => ({ id: doc.id, data: doc.data() }));
 
-                    const publicProductsSnap = await transaction.get(publicShopRef.collection('products'));
                     publicProductsSnap.docs.forEach(doc => transaction.delete(doc.ref));
 
                     transaction.set(publicShopRef, { ...shopData, companyId, status: 'approved', updatedAt: FieldValue.serverTimestamp() }, { merge: true });
@@ -753,7 +760,6 @@ export async function POST(req: NextRequest) {
                     if (!wasAlreadyApproved) {
                         transaction.update(memberShopRef, { status: 'approved', updatedAt: FieldValue.serverTimestamp() });
                         
-                        const loyaltyConfigDoc = await transaction.get(db.collection('configuration').doc('loyaltySettings'));
                         const shopCreationPoints = loyaltyConfigDoc.data()?.shopCreationPoints || 100;
                         const companyRef = db.doc(`companies/${companyId}`);
                         transaction.update(companyRef, { rewardPoints: FieldValue.increment(shopCreationPoints) });
