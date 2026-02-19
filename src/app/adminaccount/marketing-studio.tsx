@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -24,7 +25,22 @@ export default function MarketingStudio() {
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <ImageGeneratorCard 
-            promptTemplate="A modern, minimalist logo for a logistics company named 'Logistics Flow'. The design should feature an abstract representation of a truck or arrow, conveying movement and efficiency. Use a clean color palette of forest green and charcoal gray."
+            promptTemplate={`// A prompt for generating a clean, modern icon.
+// Edit the details below to customize your icon.
+
+A simple, modern icon representing [concept, e.g., 'fast delivery' or 'secure storage'].
+
+// Describe the style.
+// Examples: 'flat icon style', 'vector art', 'line art icon'.
+Style: flat icon style, with clean lines and minimal detail.
+
+// Describe the color palette.
+// Example: 'using a palette of blues and grays', 'in the primary brand color of green'.
+Color: using the brand colors of forest green and charcoal gray.
+
+// Add any other details.
+// Example: 'The icon should be on a transparent background', 'It should be easily recognizable at small sizes'.
+The icon should be on a white background, enclosed in a circle with a thin gray border.`}
         />
         <ImageEditorCard 
             promptTemplate="Place the truck on a winding mountain pass at sunset."

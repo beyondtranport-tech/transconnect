@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -29,27 +30,22 @@ import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
 import { getClientSideAuthToken } from '@/firebase';
 
-const defaultPrompt = `// A simple logo design prompt for a logistics company.
-// Edit the details below to customize your logo.
+const defaultPrompt = `// A prompt for generating a clean, modern icon.
+// Edit the details below to customize your icon.
 
-A modern, minimalist logo for a company named 'Logistics Flow'.
+A simple, modern icon representing [concept, e.g., 'fast delivery' or 'secure storage'].
 
-// NEW: Add a tagline if you have one.
-// The AI will try to incorporate it into the logo design.
-// Example: with the tagline "Your Partner in Motion".
-with the tagline "Building Networks, Creating Flow".
-
-// Describe the main symbol or icon.
-// Examples: a stylized truck, an abstract arrow, a compass.
-The design should feature an abstract representation of a truck and a forward-pointing arrow, conveying movement and efficiency.
+// Describe the style.
+// Examples: 'flat icon style', 'vector art', 'line art icon'.
+Style: flat icon style, with clean lines and minimal detail.
 
 // Describe the color palette.
-// Examples: 'blue and white', 'green and charcoal gray', 'orange and black'.
-Use a clean color palette of forest green and charcoal gray.
+// Example: 'using a palette of blues and grays', 'in the primary brand color of green'.
+Color: using the brand colors of forest green and charcoal gray.
 
 // Add any other details.
-// Examples: 'The logo should be on a clean white background', 'It should be simple and memorable'.
-The logo should be suitable for use on a website and company documents.`;
+// Example: 'The icon should be on a transparent background', 'It should be easily recognizable at small sizes'.
+The icon should be on a white background, enclosed in a circle with a thin gray border.`;
 
 export default function ImageGeneratorCard({ promptTemplate }: { promptTemplate?: string }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -172,10 +168,10 @@ export default function ImageGeneratorCard({ promptTemplate }: { promptTemplate?
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <ImageIcon /> AI Logo & Image Generator
+            <ImageIcon /> AI Logo, Icon & Image Generator
           </CardTitle>
           <CardDescription>
-            Create professional logos and marketing images from a text description.
+            Create professional logos, app icons, and marketing images from a text description.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -185,9 +181,9 @@ export default function ImageGeneratorCard({ promptTemplate }: { promptTemplate?
             </DialogTrigger>
             <DialogContent className="sm:max-w-[725px] flex h-full max-h-[90vh] flex-col">
               <DialogHeader>
-                <DialogTitle>AI Logo Generator (Text-to-Logo)</DialogTitle>
+                <DialogTitle>AI Content Generator (Text-to-Image)</DialogTitle>
                 <DialogDescription>
-                  Use the template below or write your own detailed prompt to create a logo.
+                  Use the template below or write your own detailed prompt to create a logo, icon, or image.
                 </DialogDescription>
               </DialogHeader>
               <div className="grid flex-1 grid-cols-1 gap-6 overflow-y-auto py-4 pr-4 md:grid-cols-2">
@@ -198,11 +194,11 @@ export default function ImageGeneratorCard({ promptTemplate }: { promptTemplate?
                     </div>
                      <Button onClick={handleGenerate} disabled={isLoading} className="w-full">
                       {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
-                      Generate Logo
+                      Generate Image
                     </Button>
                   </div>
                   <div className="space-y-4">
-                      <Label>Generated Logo</Label>
+                      <Label>Generated Image</Label>
                       <div className="relative aspect-square w-full rounded-md border border-dashed flex items-center justify-center bg-muted">
                           {isLoading ? (
                               <div className="text-center">
@@ -212,7 +208,7 @@ export default function ImageGeneratorCard({ promptTemplate }: { promptTemplate?
                           ) : generatedImage ? (
                               <Image src={generatedImage} alt="Generated" fill className="rounded-md object-contain" />
                           ) : (
-                              <p className="text-sm text-muted-foreground">Your generated logo will appear here.</p>
+                              <p className="text-sm text-muted-foreground">Your generated image will appear here.</p>
                           )}
                       </div>
                       {isSaving && (
