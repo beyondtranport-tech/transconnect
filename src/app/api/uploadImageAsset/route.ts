@@ -41,10 +41,10 @@ export async function POST(req: NextRequest) {
         const contentType = providedContentType || matches[1];
         const fileBuffer = Buffer.from(matches[2], 'base64');
         
-        // DEFINITIVE FIX #2: Explicitly specify the bucket name when getting the bucket object as a redundancy.
-        const bucket = getStorage(app).bucket("ecosystem-hub.appspot.com");
+        // RELY ON DEFAULT BUCKET: This now works because getAdminApp() correctly initializes it.
+        const bucket = getStorage(app).bucket();
         
-        console.log(`uploadImageAsset: Using explicit bucket: ${bucket.name}`);
+        console.log(`uploadImageAsset: Using bucket: ${bucket.name}`);
         const filePath = `${folder}/${fileName}`;
         const file = bucket.file(filePath);
         console.log(`uploadImageAsset: File path set to: ${filePath}`);
@@ -76,6 +76,13 @@ export async function POST(req: NextRequest) {
                 success: false,
                 error: `Bucket Not Found on Server. The backend tried to access the Storage bucket but it could not be found. Please ensure Firebase Storage is enabled and the bucket name in the code is correct.`
             }, { status: 404 });
+        }
+        
+        if (error.message?.includes('Bucket name not specified')) {
+             return NextResponse.json({
+                success: false,
+                error: `Bucket name not specified or invalid. Specify a valid bucket name via the storageBucket option when initializing the app, or specify the bucket name explicitly when calling the getBucket() method.`
+            }, { status: 500 });
         }
         
         return NextResponse.json({ success: false, error: error.message }, { status: 500 });
