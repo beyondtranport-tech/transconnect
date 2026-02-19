@@ -55,6 +55,8 @@ export async function POST(req: NextRequest) {
             const { createdAt, updatedAt, ...restOfShopData } = shopData;
 
             // --- ALL WRITES HAPPEN AFTER ---
+            
+            // 1. Update public shop document with latest data and a new timestamp.
             transaction.set(publicShopRef, { 
                 ...restOfShopData, 
                 companyId, 
@@ -62,10 +64,10 @@ export async function POST(req: NextRequest) {
                 updatedAt: FieldValue.serverTimestamp() 
             }, { merge: true });
 
-            // Delete existing public products
+            // 2. Delete all existing public products to ensure a clean sync.
             existingPublicProductsSnap.docs.forEach(doc => transaction.delete(doc.ref));
 
-            // Set new public products
+            // 3. Copy all current products to the public collection.
             memberProductsSnap.docs.forEach(productDoc => {
                 const publicProductRef = publicProductsCollection.doc(productDoc.id);
                 transaction.set(publicProductRef, productDoc.data());
