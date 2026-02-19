@@ -3,18 +3,20 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Loader2, Users, Target, TrendingUp, Handshake, UserCheck } from 'lucide-react';
+import { Loader2, Users, Target, TrendingUp, Handshake, UserCheck, Download } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { getClientSideAuthToken, useUser } from '@/firebase';
+import { useToast } from '@/hooks/use-toast';
 
 export default function PerformanceContent() {
     const { user, isUserLoading } = useUser();
     const [networkData, setNetworkData] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const { toast } = useToast();
 
     const loadNetworkData = useCallback(async () => {
         setIsLoading(true);
@@ -64,6 +66,54 @@ export default function PerformanceContent() {
         .sort((a,b) => new Date(a.name).getTime() - new Date(b.name).getTime())
         .slice(-6); // Last 6 months
 
+    const downloadAsCSV = (data: any[], filename: string) => {
+        if (!data || data.length === 0) {
+            toast({
+                variant: "destructive",
+                title: "No data to export",
+            });
+            return;
+        }
+        const header = Object.keys(data[0]);
+        const csv = [
+            header.join(','),
+            ...data.map(row => header.map(fieldName => {
+                let value = row[fieldName];
+                if (value === null || value === undefined) return '';
+                let stringValue = String(value);
+                if (/[",\n]/.test(stringValue)) {
+                    stringValue = `"${stringValue.replace(/"/g, '""')}"`;
+                }
+                return stringValue;
+            }).join(','))
+        ].join('\r\n');
+
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement("a");
+        if (link.download !== undefined) {
+            const url = URL.createObjectURL(blob);
+            link.setAttribute("href", url);
+            link.setAttribute("download", filename);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+    };
+
+    const handleExport = () => {
+        const dataToExport = networkData.map(member => ({
+            'Member ID': member.id,
+            'Company Name': member.companyName,
+            'Owner Name': member.ownerName,
+            'Owner Email': member.ownerEmail,
+            'Membership': member.membershipId,
+            'Status': member.status,
+            'Joined At': new Date(member.createdAt).toLocaleDateString(),
+        }));
+        downloadAsCSV(dataToExport, 'my-network.csv');
+    };
+
 
     if (isLoading || isUserLoading) {
         return (
@@ -85,7 +135,7 @@ export default function PerformanceContent() {
 
     return (
         <div className="space-y-8">
-            <CardHeader className="px-0">
+            <CardHeader className="px-0 flex flex-row items-center justify-between">
                 <div className="flex items-center gap-4">
                     <TrendingUp className="h-8 w-8 text-primary"/>
                     <div>
@@ -95,6 +145,11 @@ export default function PerformanceContent() {
                         </CardDescription>
                     </div>
                 </div>
+                 {networkData.length > 0 && (
+                    <Button variant="outline" onClick={handleExport}>
+                        <Download className="mr-2 h-4 w-4" /> Export Network
+                    </Button>
+                )}
             </CardHeader>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <Card>

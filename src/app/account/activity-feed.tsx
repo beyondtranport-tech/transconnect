@@ -1,14 +1,14 @@
-
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, Activity, User, Building, FileText, ShoppingCart, Users } from 'lucide-react';
+import { Loader2, Activity, User, Building, FileText, ShoppingCart, Users, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { formatDistanceToNow } from 'date-fns';
 import { useUser, getClientSideAuthToken } from '@/firebase';
+import { useToast } from '@/hooks/use-toast';
 
 const getSubjectInfo = (log: any) => {
     const pathSegments = log.collectionPath.split('/');
@@ -36,6 +36,7 @@ export default function ActivityFeed() {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const { user, isUserLoading } = useUser();
+    const { toast } = useToast();
 
     const loadLogs = useCallback(async () => {
         setIsLoading(true);
@@ -71,17 +72,48 @@ export default function ActivityFeed() {
     }, []);
 
     useEffect(() => {
-        // This is the crucial check. Only attempt to load logs if:
-        // 1. The initial user loading process is complete.
-        // 2. A user object actually exists (meaning they are logged in).
         if (!isUserLoading && user) {
             loadLogs();
         } else if (!isUserLoading && !user) {
-            // If loading is done and there's no user, show an appropriate message.
             setError("You must be logged in to view the activity feed.");
             setIsLoading(false);
         }
     }, [user, isUserLoading, loadLogs]);
+
+    const downloadAsCSV = (data: any[], filename: string) => {
+        if (!data || data.length === 0) {
+            toast({
+                variant: "destructive",
+                title: "No data to export",
+            });
+            return;
+        }
+        const header = Object.keys(data[0]);
+        const csv = [
+            header.join(','),
+            ...data.map(row => header.map(fieldName => {
+                let value = row[fieldName];
+                if (value === null || value === undefined) return '';
+                let stringValue = String(value);
+                if (/[",\n]/.test(stringValue)) {
+                    stringValue = `"${stringValue.replace(/"/g, '""')}"`;
+                }
+                return stringValue;
+            }).join(','))
+        ].join('\r\n');
+
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement("a");
+        if (link.download !== undefined) {
+            const url = URL.createObjectURL(blob);
+            link.setAttribute("href", url);
+            link.setAttribute("download", filename);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+    };
     
     const formatDate = (isoString?: string) => {
         if (!isoString) return 'N/A';
@@ -90,6 +122,17 @@ export default function ActivityFeed() {
         } catch {
             return 'Invalid Date';
         }
+    };
+
+     const handleExport = () => {
+        const dataToExport = logs.map(log => ({
+            Timestamp: formatDate(log.timestamp),
+            User: log.userName || 'A user',
+            Action: log.action,
+            Subject: getSubjectInfo(log).name,
+            Company: log.companyName
+        }));
+        downloadAsCSV(dataToExport, 'company-activity-feed.csv');
     };
     
     const actionConfig: { [key: string]: { color: 'default' | 'destructive' | 'secondary' | 'outline', text: string } } = {
@@ -118,12 +161,19 @@ export default function ActivityFeed() {
 
     return (
         <Card>
-            <CardHeader className="px-6 pt-6">
-                <div className="flex items-center gap-2">
-                    <Activity className="h-6 w-6" />
-                    <CardTitle>My Company's Activity Feed</CardTitle>
+            <CardHeader className="px-6 pt-6 flex flex-row items-start justify-between">
+                <div>
+                    <div className="flex items-center gap-2">
+                        <Activity className="h-6 w-6" />
+                        <CardTitle>My Company's Activity Feed</CardTitle>
+                    </div>
+                    <CardDescription>A real-time overview of actions performed on your business account.</CardDescription>
                 </div>
-                <CardDescription>A real-time overview of actions performed on your business account.</CardDescription>
+                 {logs.length > 0 && (
+                    <Button variant="outline" onClick={handleExport}>
+                        <Download className="mr-2 h-4 w-4" /> Export as CSV
+                    </Button>
+                )}
             </CardHeader>
             <CardContent className="p-6">
              {logs.length > 0 ? (
