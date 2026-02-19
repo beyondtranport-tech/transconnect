@@ -1,7 +1,7 @@
 
 'use server';
 import { NextRequest, NextResponse } from 'next/server';
-import { getStorage } from 'firebase-admin/storage';
+import { getStorage, getDownloadURL } from 'firebase-admin/storage';
 import { getAdminApp } from '@/lib/firebase-admin';
 import { getAuth } from 'firebase-admin/auth';
 
@@ -55,10 +55,11 @@ export async function POST(req: NextRequest) {
         });
         console.log("uploadImageAsset: file.save() completed successfully.");
 
-        const publicUrl = `https://storage.googleapis.com/${bucket.name}/${filePath}`;
-        console.log(`uploadImageAsset: Generated public URL: ${publicUrl}`);
+        // NEW: Instead of constructing a public URL, get a long-lived, token-based download URL.
+        const downloadUrl = await getDownloadURL(file);
+        console.log(`uploadImageAsset: Generated download URL: ${downloadUrl}`);
         
-        return NextResponse.json({ success: true, url: publicUrl });
+        return NextResponse.json({ success: true, url: downloadUrl });
 
     } catch (error: any) {
         console.error("CRITICAL ERROR in /api/uploadImageAsset:", error);
