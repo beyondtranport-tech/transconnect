@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
@@ -333,8 +331,7 @@ function AIGenerateDialog({
                   <p className="mt-2 text-sm text-muted-foreground">Generating...</p>
                 </div>
               ) : generatedImage ? (
-                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={generatedImage} alt="Generated" className="absolute inset-0 h-full w-full rounded-md object-contain" />
+                <Image src={generatedImage} alt="Generated" fill className="rounded-md object-contain" />
               ) : (
                 <p className="text-sm text-muted-foreground">Generated image will appear here.</p>
               )}
@@ -548,8 +545,7 @@ function ProductDialog({ shop, product, onComplete, children, canEdit }: { shop:
                                       <div className="grid grid-cols-3 gap-2">
                                           {(field.value || []).map((url) => (
                                               <div key={url} className="relative aspect-square">
-                                                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                                                  <img src={url} alt="Product image" className="absolute inset-0 h-full w-full rounded-md object-contain border" />
+                                                  <Image src={url} alt="Product image" fill className="object-contain border" />
                                                   <Button
                                                       type="button"
                                                       variant="destructive"
@@ -702,8 +698,7 @@ function Step2Products({ shop, canEdit }: { shop: any, canEdit: boolean }) {
                                 <TableCell>
                                     <div className="relative h-12 w-12 rounded-md bg-muted flex items-center justify-center">
                                         {(product.imageUrls && product.imageUrls[0]) ? (
-                                            // eslint-disable-next-line @next/next/no-img-element
-                                            <img src={product.imageUrls[0]} alt={product.name} className="absolute inset-0 h-full w-full object-contain border" />
+                                            <Image src={product.imageUrls[0]} alt={product.name} fill className="object-contain border" />
                                         ) : (
                                             <ImageIcon className="h-6 w-6 text-muted-foreground" />
                                         )}
@@ -879,8 +874,7 @@ function Step3Appearance({ shop, onSave, canEdit }: { shop: any, onSave: (newDat
                         <FormControl>
                             <div className="relative aspect-video w-full rounded-md border border-dashed flex items-center justify-center bg-muted">
                                 {field.value ? (
-                                    // eslint-disable-next-line @next/next/no-img-element
-                                    <img src={field.value} alt="Hero Banner" className="absolute inset-0 h-full w-full rounded-md object-cover" />
+                                    <Image src={field.value} alt="Hero Banner" fill className="object-cover" />
                                 ) : (
                                     <p className="text-sm text-muted-foreground">No hero banner generated yet.</p>
                                 )}

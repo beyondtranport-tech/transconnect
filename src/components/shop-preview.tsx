@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
@@ -50,8 +48,7 @@ export function ShopPreview({ shop, products }: { shop: any, products: any[] }) 
                 <Card key={product.id} className="overflow-hidden bg-white">
                     <div className="relative aspect-square bg-gray-200">
                         {(product.imageUrls && product.imageUrls[0]) ? 
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img src={product.imageUrls[0]} alt={product.name} className="absolute inset-0 h-full w-full object-cover" /> :
+                            <Image src={product.imageUrls[0]} alt={product.name} fill className="object-cover" /> :
                             <div className="w-full h-full flex items-center justify-center"><ShoppingCart className="h-12 w-12 text-gray-400"/></div>
                         }
                     </div>
@@ -76,8 +73,7 @@ export function ShopPreview({ shop, products }: { shop: any, products: any[] }) 
                  <Card key={product.id} className="flex items-center bg-white">
                     <div className="relative h-24 w-24 flex-shrink-0 bg-gray-200">
                        {(product.imageUrls && product.imageUrls[0]) ? 
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img src={product.imageUrls[0]} alt={product.name} className="absolute inset-0 h-full w-full object-cover rounded-l-lg" /> :
+                            <Image src={product.imageUrls[0]} alt={product.name} fill className="absolute inset-0 h-full w-full object-cover rounded-l-lg" /> :
                             <div className="w-full h-full flex items-center justify-center"><ShoppingCart className="h-8 w-8 text-gray-400"/></div>
                         }
                     </div>
@@ -110,8 +106,7 @@ export function ShopPreview({ shop, products }: { shop: any, products: any[] }) 
             <main className="container mx-auto px-6 py-12">
                 <section id="hero" className="relative w-full h-80 rounded-lg overflow-hidden mb-12">
                     {shop.heroBannerUrl ? (
-                         // eslint-disable-next-line @next/next/no-img-element
-                         <img src={shop.heroBannerUrl} alt={`${shop.shopName} hero banner`} className="absolute inset-0 h-full w-full object-cover" />
+                         <Image src={shop.heroBannerUrl} alt={`${shop.shopName} hero banner`} fill className="object-cover" />
                     ) : (
                         <div className="bg-gray-300 h-full w-full flex items-center justify-center">
                             <ImageIcon className="h-24 w-24 text-gray-500" />
@@ -131,8 +126,7 @@ export function ShopPreview({ shop, products }: { shop: any, products: any[] }) 
                             {shop.promotions.filter((p:any) => p.title && p.imageUrl).map((promo: any, index: number) => (
                                 <Card key={index} className="overflow-hidden bg-white">
                                     <div className="relative aspect-video">
-                                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                                        <img src={promo.imageUrl} alt={promo.title} className="absolute inset-0 h-full w-full object-cover" />
+                                        <Image src={promo.imageUrl} alt={promo.title} fill className="object-cover" />
                                     </div>
                                     <CardHeader>
                                         <CardTitle className="text-lg">{promo.title}</CardTitle>
