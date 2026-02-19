@@ -49,18 +49,14 @@ export default function CompanyContent() {
   const searchParams = useSearchParams();
   const fromWallet = searchParams.get('from') === 'wallet';
 
-  // Fetch user document directly to get the companyId, ensuring it's up-to-date.
-  const userDocRef = useMemoFirebase(() => {
-    if (!firestore || !user) return null;
-    return doc(firestore, 'users', user.uid);
-  }, [firestore, user]);
-  const { data: userData, isLoading: isUserDataLoading } = useDoc(userDocRef);
+  // Get companyId directly from the user object in the context
+  const companyId = user?.companyId;
 
-  // Derive the companyDocRef from the locally-fetched userData.
+  // Derive the companyDocRef from the companyId from the user object.
   const companyDocRef = useMemoFirebase(() => {
-    if (!firestore || !userData?.companyId) return null;
-    return doc(firestore, 'companies', userData.companyId);
-  }, [firestore, userData?.companyId]);
+    if (!firestore || !companyId) return null;
+    return doc(firestore, 'companies', companyId);
+  }, [firestore, companyId]);
 
   const { data: companyData, isLoading: isCompanyLoading, forceRefresh } = useDoc(companyDocRef);
 
@@ -85,9 +81,8 @@ export default function CompanyContent() {
     if (companyData) {
       let companyName = companyData.companyName;
       // If company name is empty or a placeholder, but we have user's name, create a better default.
-      if ((!companyName || companyName === 'My Company') && userData?.firstName) {
-        const ownerName = `${userData.firstName} ${userData.lastName || ''}`.trim();
-        companyName = ownerName ? `${ownerName}'s Company` : 'My Company';
+      if ((!companyName || companyName === 'My Company') && user?.displayName) {
+        companyName = `${user.displayName}'s Company`;
       }
       form.reset({
         companyName: companyName || '',
@@ -103,12 +98,12 @@ export default function CompanyContent() {
         accountHolderName: companyData.accountHolderName || '',
       });
     }
-  }, [companyData, userData, form]);
+  }, [companyData, user, form]);
 
   const onSubmit = async (values: CompanyFormValues) => {
     setIsSaving(true);
     if (!companyDocRef) {
-      toast({ variant: 'destructive', title: 'Error', description: 'Could not find company information. Please log in again.' });
+      toast({ variant: 'destructive', title: 'Error', description: 'Could not find company information. Please try refreshing the page.' });
       setIsSaving(false);
       return;
     }
@@ -139,7 +134,7 @@ export default function CompanyContent() {
         });
   };
 
-  const isLoading = isUserLoading || isCompanyLoading || isUserDataLoading;
+  const isLoading = isUserLoading || isCompanyLoading;
 
   return (
     <Card>

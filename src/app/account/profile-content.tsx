@@ -18,7 +18,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useState, useEffect } from 'react';
 import { Loader2, User, Save } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useUser, useFirestore, useDoc, errorEmitter, useMemoFirebase } from '@/firebase';
+import { useUser, useFirestore, errorEmitter, useMemoFirebase } from '@/firebase';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
@@ -44,8 +44,6 @@ export default function ProfileContent() {
     return doc(firestore, 'users', user.uid);
   }, [firestore, user]);
 
-  const { data: userData, isLoading: isUserDocLoading, forceRefresh: forceRefreshDoc } = useDoc(userDocRef);
-
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileFormSchema),
     defaultValues: {
@@ -56,22 +54,15 @@ export default function ProfileContent() {
   });
 
   useEffect(() => {
-    if (userData) {
-      form.reset({
-        firstName: userData.firstName || '',
-        lastName: userData.lastName || '',
-        phone: userData.phone || '',
-      });
-    } else if (user) {
-       // Pre-fill from auth if DB is empty
+    if (user) {
        const nameParts = user.displayName?.split(' ') || ['',''];
        form.reset({
-            firstName: nameParts[0],
-            lastName: nameParts.slice(1).join(' '),
+            firstName: nameParts[0] || '',
+            lastName: nameParts.slice(1).join(' ') || '',
             phone: user.phoneNumber || '',
        });
     }
-  }, [userData, user, form]);
+  }, [user, form]);
 
   const onSubmit = async (values: ProfileFormValues) => {
     setIsSaving(true);
@@ -95,7 +86,6 @@ export default function ProfileContent() {
           description: 'Your personal information has been saved.',
         });
         forceRefreshUser();
-        forceRefreshDoc();
         router.push('/account?view=company');
       })
       .catch((serverError) => {
@@ -111,7 +101,7 @@ export default function ProfileContent() {
       });
   };
 
-  const isLoading = isUserLoading || isUserDocLoading;
+  const isLoading = isUserLoading;
 
   return (
     <Card>
