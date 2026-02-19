@@ -31,13 +31,14 @@ export function getAdminApp(): { app: App | null; error: string | null } {
     }
     
     const projectId = serviceAccount.project_id;
+    const storageBucket = `${projectId}.appspot.com`;
 
-    // The storageBucket property is removed from here to prevent the main app initialization from
-    // hanging if there's a problem connecting to the bucket. This makes Auth and Firestore
-    // operations more reliable. Storage will be handled specifically in the upload route.
+    // The storageBucket property is REQUIRED for the Admin SDK to know which bucket to interact with.
+    // My previous attempt to remove it was incorrect. This will resolve the "Bucket not specified" error.
     const app = initializeApp({
       credential: cert(serviceAccount),
       projectId: projectId,
+      storageBucket: storageBucket,
     }, ADMIN_APP_NAME);
 
     return { app, error: null };
