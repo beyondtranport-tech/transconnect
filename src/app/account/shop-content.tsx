@@ -1,22 +1,31 @@
-
 'use client';
 
 import { useState, useCallback } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, Store, PlusCircle, ShieldAlert } from 'lucide-react';
-import { useUser, useFirestore, getClientSideAuthToken, useDoc, useMemoFirebase } from '@/firebase';
-import { doc } from 'firebase/firestore';
+import { Loader2, Store, PlusCircle, ShieldAlert, Edit, Eye, ArrowLeft } from 'lucide-react';
+import { useUser, useFirestore, getClientSideAuthToken, useDoc, useMemoFirebase, useCollection } from '@/firebase';
+import { doc, collection } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { ShopWizard } from './shop-wizard';
 import { usePermissions } from '@/hooks/use-permissions';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Badge } from '@/components/ui/badge';
+import Link from 'next/link';
+
+const statusColors: { [key: string]: 'default' | 'secondary' | 'destructive' | 'outline' } = {
+  draft: 'secondary',
+  pending_review: 'outline',
+  approved: 'default',
+  rejected: 'destructive',
+};
 
 export default function ShopContent() {
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
   const [isCreating, setIsCreating] = useState(false);
+  const [isEditing, setIsEditing] = useState(false); // New state
   const { can, isLoading: arePermissionsLoading } = usePermissions();
 
   const userDocRef = useMemoFirebase(() => {
@@ -37,6 +46,12 @@ export default function ShopContent() {
   }, [firestore, companyData?.shopId, userData?.companyId]);
 
   const { data: userShop, isLoading: isShopLoading, forceRefresh: forceRefreshShop } = useDoc(shopRef);
+
+  const productsQuery = useMemoFirebase(() => {
+      if (!firestore || !companyData?.shopId || !userData?.companyId) return null;
+      return collection(firestore, `companies/${userData.companyId}/shops/${companyData.shopId}/products`);
+  }, [firestore, companyData?.shopId, userData?.companyId]);
+  const { data: products } = useCollection(productsQuery);
 
   const isLoading = isUserLoading || isUserDataLoading || isCompanyLoading || arePermissionsLoading;
 
@@ -74,6 +89,7 @@ export default function ShopContent() {
       if (response.ok && result.success) {
         toast({ title: 'Shop Draft Created!', description: "Let's get started with the details." });
         forceRefreshAll();
+        setIsEditing(true); // Go directly to editing after creation
       } else {
         throw new Error(result.error || 'Failed to create shop.');
       }
@@ -93,16 +109,64 @@ export default function ShopContent() {
   const canCreateShop = can('create', 'shop');
   const shopExists = !!companyData?.shopId;
 
+  const shopStatus = userShop?.status || 'draft';
+
+  const renderShopOverview = () => (
+    <div className="space-y-6">
+        <div className="p-6 border rounded-lg bg-muted/50">
+            <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
+                 <div>
+                    <h3 className="text-xl font-semibold">{userShop?.shopName}</h3>
+                    <p className="text-muted-foreground">{userShop?.category}</p>
+                 </div>
+                 <div className="flex items-center gap-2">
+                     <span className="text-sm font-medium">Status:</span>
+                     <Badge variant={statusColors[shopStatus] || 'secondary'} className="capitalize text-base">
+                        {shopStatus.replace(/_/g, ' ')}
+                    </Badge>
+                 </div>
+            </div>
+            <div className="flex flex-col sm:flex-row justify-between sm:items-end gap-4 mt-4 pt-4 border-t">
+                 <div>
+                    <p className="text-sm font-medium">Products Listed</p>
+                    <p className="text-2xl font-bold">{products?.length || 0}</p>
+                 </div>
+                 <div className="flex gap-2">
+                    {userShop?.status === 'approved' && (
+                        <Button asChild variant="outline">
+                            <Link href={`/shops/${userShop.id}`} target="_blank">
+                                <Eye className="mr-2 h-4 w-4" /> View Live Shop
+                            </Link>
+                        </Button>
+                    )}
+                    <Button onClick={() => setIsEditing(true)}>
+                        <Edit className="mr-2 h-4 w-4" /> Manage Shop
+                    </Button>
+                 </div>
+            </div>
+        </div>
+    </div>
+  );
+
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2"><Store /> My Shop</CardTitle>
-        <CardDescription>
-          {shopExists && userShop
-            ? `Manage your shop: ${userShop.shopName}`
-            : "Create and manage your public-facing shop on TransConnect."
-          }
-        </CardDescription>
+        <div className="flex justify-between items-start">
+            <div>
+                <CardTitle className="flex items-center gap-2"><Store /> My Shop</CardTitle>
+                <CardDescription>
+                {shopExists
+                    ? `Manage your shop: ${userShop?.shopName || '...'}`
+                    : "Create and manage your public-facing shop on TransConnect."
+                }
+                </CardDescription>
+            </div>
+            {isEditing && (
+                 <Button variant="outline" onClick={() => setIsEditing(false)}>
+                    <ArrowLeft className="mr-2 h-4 w-4" /> Back to Overview
+                </Button>
+            )}
+        </div>
       </CardHeader>
       <CardContent>
         {isLoading ? (
@@ -116,7 +180,11 @@ export default function ShopContent() {
                     <p className="ml-4">Loading your shop...</p>
                 </div>
             ) : userShop ? (
-                <ShopWizard shop={userShop} onShopUpdate={forceRefreshAll} />
+                isEditing ? (
+                    <ShopWizard shop={userShop} onShopUpdate={forceRefreshAll} />
+                ) : (
+                    renderShopOverview()
+                )
             ) : (
                  <div className="text-center py-20 border-2 border-dashed rounded-lg">
                     <Store className="mx-auto h-12 w-12 text-muted-foreground" />
@@ -147,7 +215,6 @@ export default function ShopContent() {
                 )}
               </Tooltip>
             </TooltipProvider>
-
           </div>
         )}
       </CardContent>
