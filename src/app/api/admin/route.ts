@@ -215,39 +215,42 @@ export async function POST(req: NextRequest) {
                     shopMap.set(doc.id, doc.data().shopName || 'Unnamed Shop');
                 });
             
-                // Simplified Query: Remove the orderBy clause
-                const allAgreementsSnap = await db.collectionGroup('agreements')
-                    .where('status', '==', 'proposed')
-                    .get();
-            
-                // Group by shopId and find the most recent proposal for each
-                const latestProposals = new Map<string, any>();
-                allAgreementsSnap.docs.forEach(doc => {
+                // Fetch ALL agreements, regardless of status. This is inefficient but avoids index issues.
+                const allAgreementsSnap = await db.collectionGroup('agreements').get();
+                
+                // Filter for "proposed" status in application code.
+                const proposedAgreements = allAgreementsSnap.docs.map(doc => {
                     const data = doc.data();
                     const pathSegments = doc.ref.path.split('/');
                     const companyId = pathSegments.length > 1 ? pathSegments[1] : null;
                     const shopId = pathSegments.length > 3 ? pathSegments[3] : null;
-                    if (!shopId) return;
-            
-                    const docTimestamp = data.createdAt?.toMillis ? data.createdAt.toMillis() : new Date(data.createdAt).getTime();
+                    
+                    return {
+                        ...serializeTimestamps(data),
+                        id: doc.id,
+                        shopId: shopId,
+                        companyId: companyId,
+                        shopName: shopMap.get(shopId || ''),
+                    };
+                }).filter(agreement => agreement.status === 'proposed');
 
-                    const existing = latestProposals.get(shopId);
-                    if (!existing || docTimestamp > (existing.createdAt?.toMillis ? existing.createdAt.toMillis() : new Date(existing.createdAt).getTime())) {
-                        latestProposals.set(shopId, {
-                            ...serializeTimestamps(data),
-                            id: doc.id,
-                            shopId: shopId,
-                            shopName: shopMap.get(shopId),
-                            companyId: companyId,
-                        });
+                // Group by shopId to get only the most recent proposal for each shop
+                const latestProposals = new Map<string, any>();
+                proposedAgreements.forEach(agreement => {
+                    if (!agreement.shopId) return;
+                    const existing = latestProposals.get(agreement.shopId);
+                    const docTimestamp = agreement.createdAt ? new Date(agreement.createdAt).getTime() : 0;
+                    
+                    if (!existing || docTimestamp > (existing.createdAt ? new Date(existing.createdAt).getTime() : 0)) {
+                        latestProposals.set(agreement.shopId, agreement);
                     }
                 });
-            
-                // Sort in application code instead of the database
-                const proposedAgreements = Array.from(latestProposals.values())
+                
+                // Sort the final list of unique, latest proposals
+                const sortedAgreements = Array.from(latestProposals.values())
                     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
                 
-                return NextResponse.json({ success: true, data: proposedAgreements });
+                return NextResponse.json({ success: true, data: sortedAgreements });
             }
             case 'acceptCommercialAgreement': {
                 const { companyId, shopId, agreementId, userId } = payload;
@@ -261,7 +264,7 @@ export async function POST(req: NextRequest) {
                     const agreementsSnap = await transaction.get(agreementsRef);
                     
                     // Archive all other active or proposed agreements for this shop
-                    agreementsSnap.forEach(doc => {
+                    agreementsSnap.docs.forEach(doc => {
                         if (doc.id !== agreementId && (doc.data().status === 'active' || doc.data().status === 'proposed')) {
                             transaction.update(doc.ref, { status: 'archived', updatedAt: FieldValue.serverTimestamp() });
                         }
@@ -851,5 +854,3 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ success: false, error: error.message }, { status });
     }
 }
-
-  
