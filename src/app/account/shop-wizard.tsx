@@ -12,7 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useFirestore, useUser, useStorage, useCollection, getClientSideAuthToken, useMemoFirebase } from '@/firebase';
 import { doc, collection, query, orderBy, deleteDoc } from 'firebase/firestore';
 import { ref, uploadBytesResumable, getDownloadURL, deleteObject } from 'firebase/storage';
-import { Loader2, Save, CheckCircle, LayoutGrid, List, Image as ImageIcon, Sparkles, PlusCircle, Edit, Trash2, Send, Eye, ShoppingCart, Mail, Phone, UploadCloud, Wand2, Video, Search, ShieldAlert, Download, Copy, FileText, View, DollarSign, ArrowRight, RefreshCcw, AlertTriangle, XCircle } from 'lucide-react';
+import { Loader2, Save, CheckCircle, LayoutGrid, List, Image as ImageIcon, Sparkles, PlusCircle, Edit, Trash2, Send, Eye, ShoppingCart, Mail, Phone, UploadCloud, Wand2, Video, Search, ShieldAlert, Download, Copy, FileText, View, DollarSign, ArrowRight, RefreshCcw, AlertTriangle, XCircle, FileUp } from 'lucide-react';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -43,7 +43,7 @@ import { ShopPreview } from '@/components/shop-preview';
 import { usePermissions } from '@/hooks/use-permissions';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { generateShopSeo } from '@/ai/flows/seo-flow.ts';
-import { generateSocialLinks } from '@/ai/flows/social-link-generator-flow';
+import { generateSocialLinks } from '@/ai/flows/social-link-generator-flow.ts';
 import { useConfig } from '@/hooks/use-config';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useRouter } from 'next/navigation';
@@ -224,7 +224,7 @@ function AIGenerateDialog({
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   const { toast } = useToast();
   
-  const { user } = useUser();
+    const { user } = useUser();
   const [uploadProgress, setUploadProgress] = useState(0);
 
   useEffect(() => {
@@ -780,43 +780,570 @@ const shopStep3Schema = z.object({
 type Step3FormValues = z.infer<typeof shopStep3Schema>;
 
 function StepAppearance({ shop, onSave, canEdit }: { shop: any, onSave: (newData: any) => void, canEdit: boolean }) {
-    // This will be implemented in a future step.
-    return <div>Appearance Step</div>;
+    const { toast } = useToast();
+    const { user } = useUser();
+    const [isSaving, setIsSaving] = useState(false);
+    const [isUploading, setIsUploading] = useState(false);
+    const [uploadProgress, setUploadProgress] = useState(0);
+
+    const form = useForm<Step3FormValues>({
+        resolver: zodResolver(shopStep3Schema),
+        defaultValues: {
+            heroBannerUrl: shop.heroBannerUrl || '',
+            theme: shop.theme || 'forest-green',
+            template: shop.template || 'classic-grid',
+        }
+    });
+
+    useEffect(() => {
+        form.reset({
+            heroBannerUrl: shop.heroBannerUrl || '',
+            theme: shop.theme || 'forest-green',
+            template: shop.template || 'classic-grid',
+        })
+    }, [shop, form]);
+    
+    const onSubmit = async (values: Step3FormValues) => {
+        if (!user || !shop.companyId) return;
+        setIsSaving(true);
+        
+        try {
+            const token = await getClientSideAuthToken();
+            if (!token) throw new Error("Authentication token not found.");
+            
+            await fetch('/api/updateUserDoc', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    path: `companies/${shop.companyId}/shops/${shop.id}`,
+                    data: { ...values, updatedAt: { _methodName: 'serverTimestamp' } }
+                }),
+            });
+
+            toast({ title: 'Step 3 Saved!', description: 'Your shop appearance settings have been updated.' });
+            onSave(values);
+        } catch (error: any) {
+            toast({ variant: 'destructive', title: 'Update Failed', description: error.message });
+        } finally {
+            setIsSaving(false);
+        }
+    };
+    
+    const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file || !user) return;
+
+        setIsUploading(true);
+        setUploadProgress(10);
+
+        try {
+            const token = await getClientSideAuthToken();
+            if (!token) throw new Error("Authentication failed.");
+
+            const fileDataUri = await fileToDataUri(file);
+            setUploadProgress(30);
+
+            const folder = `user-assets/${user.uid}/hero-images`;
+            const fileName = `${Date.now()}_${file.name}`;
+            
+            const response = await fetch('/api/uploadImageAsset', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ fileDataUri, folder, fileName }),
+            });
+
+            setUploadProgress(80);
+            const result = await response.json();
+            if (!response.ok || !result.success) throw new Error(result.error || 'Failed to upload image.');
+            
+            form.setValue('heroBannerUrl', result.url, { shouldValidate: true });
+            setUploadProgress(100);
+            toast({ title: 'Image Uploaded!', description: 'Your new hero banner is ready.' });
+        } catch (error: any) {
+            toast({ variant: 'destructive', title: 'Upload Failed', description: error.message });
+        } finally {
+            setIsUploading(false);
+            setUploadProgress(0);
+        }
+    };
+    
+    const handleHeroGenerated = (newUrl: string) => {
+        form.setValue('heroBannerUrl', newUrl);
+    };
+
+    const heroBannerUrl = form.watch('heroBannerUrl');
+
+    return (
+        <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+                 <fieldset disabled={!canEdit} className="space-y-6">
+                    <div>
+                        <Label>Hero Banner Image</Label>
+                        <div className="mt-2 space-y-4">
+                            <div className="relative aspect-video w-full rounded-md border border-dashed flex items-center justify-center bg-muted">
+                                {heroBannerUrl ? (
+                                    <Image src={heroBannerUrl} alt="Hero Banner Preview" fill className="object-cover rounded-md" />
+                                ) : (
+                                    <div className="text-center p-4">
+                                        <ImageIcon className="h-10 w-10 text-muted-foreground mx-auto" />
+                                        <p className="mt-2 text-sm text-muted-foreground">No banner uploaded.</p>
+                                    </div>
+                                )}
+                            </div>
+                            {isUploading && <Progress value={uploadProgress} />}
+                            <div className="flex items-center justify-between">
+                                <Button type="button" variant="outline" onClick={() => document.getElementById('hero-upload')?.click()} disabled={isUploading}>
+                                    <FileUp className="mr-2 h-4 w-4" /> Upload Banner
+                                </Button>
+                                <Input id="hero-upload" type="file" className="hidden" onChange={handleFileUpload} disabled={isUploading} accept="image/*"/>
+                                <AIGenerateDialog 
+                                  onGenerate={handleHeroGenerated} 
+                                  canEdit={canEdit}
+                                  title="AI Hero Banner Generator"
+                                  description="Describe the hero banner you want for your shop. Think about your brand and what you sell."
+                                  promptTemplate={`A professional, wide-angle hero banner for a truck parts shop named "${shop.shopName}". The image should look clean and modern. Maybe show a specific truck brand if relevant.`}
+                                  shop={shop}
+                                >
+                                  <Button type="button" variant="secondary">
+                                      <Wand2 className="mr-2 h-4 w-4" /> Generate Banner
+                                  </Button>
+                                </AIGenerateDialog>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <FormField name="theme" control={form.control} render={({field}) => (
+                        <FormItem>
+                            <FormLabel>Color Theme</FormLabel>
+                             <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="grid grid-cols-2 gap-4">
+                                <FormItem><FormControl><RadioGroupItem value="forest-green" className="sr-only" /></FormControl><FormLabel className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"><div className="flex gap-2"><div className="w-5 h-5 rounded-full bg-green-900"/><div className="w-5 h-5 rounded-full bg-green-600"/><div className="w-5 h-5 rounded-full bg-green-300"/></div>Forest Green</FormLabel></FormItem>
+                                <FormItem><FormControl><RadioGroupItem value="ocean-blue" className="sr-only" /></FormControl><FormLabel className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"><div className="flex gap-2"><div className="w-5 h-5 rounded-full bg-blue-900"/><div className="w-5 h-5 rounded-full bg-blue-600"/><div className="w-5 h-5 rounded-full bg-blue-300"/></div>Ocean Blue</FormLabel></FormItem>
+                                <FormItem><FormControl><RadioGroupItem value="industrial-grey" className="sr-only" /></FormControl><FormLabel className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"><div className="flex gap-2"><div className="w-5 h-5 rounded-full bg-gray-900"/><div className="w-5 h-5 rounded-full bg-gray-600"/><div className="w-5 h-5 rounded-full bg-gray-300"/></div>Industrial Grey</FormLabel></FormItem>
+                                <FormItem><FormControl><RadioGroupItem value="sunset-orange" className="sr-only" /></FormControl><FormLabel className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"><div className="flex gap-2"><div className="w-5 h-5 rounded-full bg-orange-900"/><div className="w-5 h-5 rounded-full bg-orange-600"/><div className="w-5 h-5 rounded-full bg-orange-300"/></div>Sunset Orange</FormLabel></FormItem>
+                            </RadioGroup>
+                        </FormItem>
+                    )}/>
+                    
+                     <FormField name="template" control={form.control} render={({field}) => (
+                        <FormItem>
+                            <FormLabel>Product Layout</FormLabel>
+                             <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex gap-4">
+                                <FormItem><FormControl><RadioGroupItem value="classic-grid" className="sr-only" /></FormControl><FormLabel className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary w-full"><LayoutGrid className="h-8 w-8 mb-2"/>Grid View</FormLabel></FormItem>
+                                <FormItem><FormControl><RadioGroupItem value="classic-list" className="sr-only" /></FormControl><FormLabel className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary w-full"><List className="h-8 w-8 mb-2"/>List View</FormLabel></FormItem>
+                            </RadioGroup>
+                        </FormItem>
+                    )}/>
+                </fieldset>
+                <Button type="submit" disabled={isSaving || isUploading || !canEdit}>
+                    {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                    Save & Continue
+                </Button>
+            </form>
+        </Form>
+    );
 }
 
 // ====== STEP 4: Social Links ======
+const shopStep4Schema = z.object({
+  facebookLink: z.string().url("Must be a valid URL").optional().or(z.literal('')),
+  instagramLink: z.string().url("Must be a valid URL").optional().or(z.literal('')),
+  twitterLink: z.string().url("Must be a valid URL").optional().or(z.literal('')),
+  linkedinLink: z.string().url("Must be a valid URL").optional().or(z.literal('')),
+  youtubeLink: z.string().url("Must be a valid URL").optional().or(z.literal('')),
+});
+
+type Step4FormValues = z.infer<typeof shopStep4Schema>;
+
 function StepSocialLinks({ shop, onSave, canEdit }: { shop: any, onSave: (newData: any) => void, canEdit: boolean }) {
-    return <div>Social Links Step</div>;
+    const [isSaving, setIsSaving] = useState(false);
+    const [isGenerating, setIsGenerating] = useState(false);
+    const { toast } = useToast();
+    const { user } = useUser();
+
+     const form = useForm<Step4FormValues>({
+        resolver: zodResolver(shopStep4Schema),
+        defaultValues: {
+            facebookLink: shop.facebookLink || '',
+            instagramLink: shop.instagramLink || '',
+            twitterLink: shop.twitterLink || '',
+            linkedinLink: shop.linkedinLink || '',
+            youtubeLink: shop.youtubeLink || '',
+        }
+    });
+
+    const handleGenerateLinks = async () => {
+        setIsGenerating(true);
+        try {
+            const result = await generateSocialLinks({ shopName: shop.shopName });
+            form.reset(result);
+            toast({ title: "AI Suggestions Applied", description: "The AI has generated plausible social media links for you."});
+        } catch (e: any) {
+             toast({ variant: 'destructive', title: 'Generation Failed', description: e.message });
+        } finally {
+            setIsGenerating(false);
+        }
+    };
+    
+     const onSubmit = async (values: Step4FormValues) => {
+        if (!user || !shop.companyId) return;
+        setIsSaving(true);
+        try {
+            const token = await getClientSideAuthToken();
+            if (!token) throw new Error("Authentication token not found.");
+            await fetch('/api/updateUserDoc', { method: 'POST', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ path: `companies/${shop.companyId}/shops/${shop.id}`, data: { ...values, updatedAt: { _methodName: 'serverTimestamp' } } }) });
+            toast({ title: 'Step 4 Saved!', description: 'Your social media links have been updated.' });
+            onSave(values);
+        } catch (error: any) {
+            toast({ variant: 'destructive', title: 'Update Failed', description: error.message });
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+
+    return (
+         <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                <div className="flex justify-between items-center">
+                    <h3 className="text-lg font-semibold">Social Media & Website Links</h3>
+                    <Button type="button" variant="outline" size="sm" onClick={handleGenerateLinks} disabled={isGenerating || !canEdit}>
+                        {isGenerating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Wand2 className="mr-2 h-4 w-4" />}
+                        Generate with AI
+                    </Button>
+                </div>
+                 <fieldset disabled={!canEdit} className="space-y-4">
+                    <FormField control={form.control} name="facebookLink" render={({ field }) => (<FormItem><FormLabel>Facebook</FormLabel><FormControl><Input placeholder="https://facebook.com/your-shop" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                    <FormField control={form.control} name="instagramLink" render={({ field }) => (<FormItem><FormLabel>Instagram</FormLabel><FormControl><Input placeholder="https://instagram.com/your-shop" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                    <FormField control={form.control} name="twitterLink" render={({ field }) => (<FormItem><FormLabel>X (Twitter)</FormLabel><FormControl><Input placeholder="https://x.com/your-shop" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                    <FormField control={form.control} name="linkedinLink" render={({ field }) => (<FormItem><FormLabel>LinkedIn</FormLabel><FormControl><Input placeholder="https://linkedin.com/company/your-shop" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                    <FormField control={form.control} name="youtubeLink" render={({ field }) => (<FormItem><FormLabel>YouTube</FormLabel><FormControl><Input placeholder="https://youtube.com/your-shop" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                 </fieldset>
+                 <Button type="submit" disabled={isSaving || !canEdit}>
+                    {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                    Save & Continue
+                </Button>
+            </form>
+         </Form>
+    );
 }
 
 // ====== STEP 5: SEO ======
+const shopStep5Schema = z.object({
+  metaTitle: z.string().optional(),
+  metaDescription: z.string().optional(),
+  tags: z.array(z.string()).optional(),
+});
+type Step5FormValues = z.infer<typeof shopStep5Schema>;
+
 function StepSeo({ shop, onSave, canEdit, onSeoGenerated }: { shop: any, onSave: (newData: any) => void, canEdit: boolean, onSeoGenerated: (seoData: any) => void }) {
-    return <div>SEO Step</div>;
+    const { toast } = useToast();
+    const { user } = useUser();
+    const [isSaving, setIsSaving] = useState(false);
+    const [isGenerating, setIsGenerating] = useState(false);
+
+    const form = useForm<Step5FormValues>({
+        resolver: zodResolver(shopStep5Schema),
+        defaultValues: {
+            metaTitle: shop.metaTitle || '',
+            metaDescription: shop.metaDescription || '',
+            tags: shop.tags || [],
+        },
+    });
+
+    const handleGenerateSeo = async () => {
+        setIsGenerating(true);
+        try {
+            const result = await generateShopSeo({
+                shopName: shop.shopName,
+                shopDescription: shop.shopDescription,
+            });
+            form.reset(result);
+            onSeoGenerated(result);
+            toast({ title: "AI SEO Applied!", description: "SEO content has been generated and filled in for you."});
+        } catch (e: any) {
+            toast({ variant: 'destructive', title: 'Generation Failed', description: e.message });
+        } finally {
+            setIsGenerating(false);
+        }
+    };
+    
+    const onSubmit = async (values: Step5FormValues) => {
+        if (!user || !shop.companyId) return;
+        setIsSaving(true);
+        try {
+            const token = await getClientSideAuthToken();
+            if (!token) throw new Error("Authentication failed.");
+            await fetch('/api/updateUserDoc', { method: 'POST', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ path: `companies/${shop.companyId}/shops/${shop.id}`, data: { ...values, updatedAt: { _methodName: 'serverTimestamp' } } }) });
+            toast({ title: 'Step 5 Saved!', description: 'Your SEO settings have been updated.' });
+            onSave(values);
+        } catch (error: any) {
+            toast({ variant: 'destructive', title: 'Update Failed', description: error.message });
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    return (
+        <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                 <div className="flex justify-between items-center">
+                    <h3 className="text-lg font-semibold">Search Engine Optimization</h3>
+                    <Button type="button" variant="outline" size="sm" onClick={handleGenerateSeo} disabled={isGenerating || !canEdit}>
+                        {isGenerating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Wand2 className="mr-2 h-4 w-4" />}
+                        Generate with AI
+                    </Button>
+                </div>
+                 <fieldset disabled={!canEdit} className="space-y-4">
+                    <FormField control={form.control} name="metaTitle" render={({ field }) => (<FormItem><FormLabel>Meta Title</FormLabel><FormControl><Input placeholder="Your Shop Name | Keywords" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                    <FormField control={form.control} name="metaDescription" render={({ field }) => (<FormItem><FormLabel>Meta Description</FormLabel><FormControl><Textarea placeholder="A brief, compelling summary for search results." {...field} /></FormControl><FormMessage /></FormItem>)} />
+                    <FormField control={form.control} name="tags" render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Keywords / Tags</FormLabel>
+                            <FormControl><Input placeholder="e.g., truck parts, scania spares, johannesburg" {...field} onChange={(e) => field.onChange(e.target.value.split(',').map(s => s.trim()))} value={Array.isArray(field.value) ? field.value.join(', ') : ''} /></FormControl>
+                            <FormDescription>Separate tags with commas.</FormDescription>
+                            <FormMessage />
+                        </FormItem>
+                    )} />
+                </fieldset>
+                <Button type="submit" disabled={isSaving || !canEdit}>
+                    {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                    Save & Continue
+                </Button>
+            </form>
+        </Form>
+    );
 }
 
 // ====== STEP 6: Legal Docs ======
+const shopStep6Schema = z.object({
+  termsUrl: z.string().url("Must be a valid URL").optional().or(z.literal('')),
+  returnsPolicyUrl: z.string().url("Must be a valid URL").optional().or(z.literal('')),
+  privacyPolicyUrl: z.string().url("Must be a valid URL").optional().or(z.literal('')),
+});
+type Step6FormValues = z.infer<typeof shopStep6Schema>;
+
 function StepLegal({ shop, onSave, canEdit }: { shop: any, onSave: (newData: any) => void, canEdit: boolean }) {
-    return <div>Legal Docs Step</div>;
+    const { toast } = useToast();
+    const { user } = useUser();
+    const [isSaving, setIsSaving] = useState(false);
+    
+     const form = useForm<Step6FormValues>({
+        resolver: zodResolver(shopStep6Schema),
+        defaultValues: {
+            termsUrl: shop.termsUrl || '',
+            returnsPolicyUrl: shop.returnsPolicyUrl || '',
+            privacyPolicyUrl: shop.privacyPolicyUrl || '',
+        }
+    });
+
+    const onSubmit = async (values: Step6FormValues) => {
+        if (!user || !shop.companyId) return;
+        setIsSaving(true);
+        try {
+            const token = await getClientSideAuthToken();
+            if (!token) throw new Error("Authentication failed.");
+            await fetch('/api/updateUserDoc', { method: 'POST', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ path: `companies/${shop.companyId}/shops/${shop.id}`, data: { ...values, updatedAt: { _methodName: 'serverTimestamp' } } }) });
+            toast({ title: 'Step 6 Saved!', description: 'Your legal document links have been updated.' });
+            onSave(values);
+        } catch (error: any) {
+            toast({ variant: 'destructive', title: 'Update Failed', description: error.message });
+        } finally {
+            setIsSaving(false);
+        }
+    };
+    
+    return (
+        <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                 <fieldset disabled={!canEdit} className="space-y-4">
+                    <FormField control={form.control} name="termsUrl" render={({ field }) => (<FormItem><FormLabel>Terms & Conditions URL</FormLabel><FormControl><Input type="url" placeholder="https://your-site.com/terms.pdf" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                    <FormField control={form.control} name="returnsPolicyUrl" render={({ field }) => (<FormItem><FormLabel>Returns Policy URL</FormLabel><FormControl><Input type="url" placeholder="https://your-site.com/returns.pdf" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                    <FormField control={form.control} name="privacyPolicyUrl" render={({ field }) => (<FormItem><FormLabel>Privacy Policy URL</FormLabel><FormControl><Input type="url" placeholder="https://your-site.com/privacy.pdf" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                 </fieldset>
+                 <Button type="submit" disabled={isSaving || !canEdit}>
+                    {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                    Save & Continue
+                </Button>
+            </form>
+        </Form>
+    );
 }
 
 // ====== STEP 7: Commercials ======
-function StepCommercials({ shop, onSave, canEdit }: { shop: any, onSave: (newData: any) => void, canEdit: boolean }) {
-    return <div>Commercials Step</div>;
+const commercialSchema = z.object({
+  percentage: z.coerce.number().min(0, "Must be >= 0").max(100, "Must be <= 100"),
+});
+type CommercialFormValues = z.infer<typeof commercialSchema>;
+
+function StepCommercials({ shop, onSave, canEdit, agreements, activeAgreement }: { shop: any, onSave: (newData: any) => void, canEdit: boolean, agreements: any[], activeAgreement: any }) {
+    const { toast } = useToast();
+    const { user } = useUser();
+    const [isSaving, setIsSaving] = useState(false);
+    
+    const form = useForm<CommercialFormValues>({
+        resolver: zodResolver(commercialSchema),
+        defaultValues: { percentage: 2.5 }
+    });
+    
+    const onSubmit = async (values: CommercialFormValues) => {
+        setIsSaving(true);
+        try {
+            const token = await getClientSideAuthToken();
+            if (!token) throw new Error("Authentication failed.");
+            
+             const response = await fetch('/api/proposeCommercialAgreement', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ companyId: shop.companyId, shopId: shop.id, percentage: values.percentage }),
+            });
+            
+            if (!response.ok) throw new Error((await response.json()).error || 'Failed to submit proposal.');
+
+            toast({ title: 'Proposal Submitted!', description: 'Your new commission proposal has been sent for review.' });
+            onSave({});
+        } catch (error: any) {
+            toast({ variant: 'destructive', title: 'Proposal Failed', description: error.message });
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    return (
+        <div className="space-y-8">
+            <Card>
+                <CardHeader>
+                    <CardTitle>Active Agreement</CardTitle>
+                    <CardDescription>This is your current commercial agreement with the platform.</CardDescription>
+                </CardHeader>
+                 <CardContent>
+                    {activeAgreement ? (
+                        <div className="text-4xl font-bold text-primary">{activeAgreement.percentage}%</div>
+                    ) : (
+                        <p className="text-muted-foreground">No active agreement found. A default of 2.5% will apply.</p>
+                    )}
+                 </CardContent>
+            </Card>
+            
+             <Card>
+                <CardHeader>
+                    <CardTitle>Propose New Terms</CardTitle>
+                    <CardDescription>If you wish to negotiate a different commission rate, submit your proposal below.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <Form {...form}>
+                         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                             <FormField control={form.control} name="percentage" render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Proposed Platform Commission (%)</FormLabel>
+                                    <FormControl><Input type="number" {...field} /></FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )} />
+                            <Button type="submit" disabled={isSaving || !canEdit}>
+                                {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
+                                Submit Proposal
+                            </Button>
+                         </form>
+                    </Form>
+                </CardContent>
+            </Card>
+            <Button onClick={() => onSave({})}>Next Step</Button>
+        </div>
+    );
 }
 
 // ====== STEP 8: Terms ======
-function StepTerms({ onSave, onTermsAgreed, canEdit }: { onSave: (newData: any) => void, onTermsAgreed: (agreed: boolean) => void, canEdit: boolean }) {
-    return <div>Terms Step</div>;
+function StepTerms({ onTermsAgreed, canEdit }: { onTermsAgreed: (agreed: boolean) => void, canEdit: boolean }) {
+    const [agreed, setAgreed] = useState(false);
+    return (
+        <div className="space-y-6">
+            <h3 className="font-semibold text-lg">Platform Terms & Conditions</h3>
+            <div className="p-4 border rounded-md h-64 overflow-y-auto text-sm text-muted-foreground space-y-2">
+                <p>By publishing your shop, you agree to the Logistics Flow Vendor Terms of Service.</p>
+                <p>You agree to accurately represent your products and services, fulfill orders in a timely manner, and adhere to our community guidelines.</p>
+                <p>Logistics Flow will charge a commission on all sales made through the platform as per your active commercial agreement. Payouts from your wallet are processed on a weekly basis.</p>
+                <p>You are responsible for all content, including images and descriptions, uploaded to your shop. Ensure you have the rights to use any content you publish.</p>
+            </div>
+            <div className="flex items-center space-x-2">
+                <Checkbox id="terms" checked={agreed} onCheckedChange={(checked) => { setAgreed(!!checked); onTermsAgreed(!!checked); }} disabled={!canEdit} />
+                <Label htmlFor="terms" className="text-sm font-medium leading-none">I agree to the terms and conditions</Label>
+            </div>
+        </div>
+    );
 }
 
 // ====== STEP 9: Preview ======
 function StepPreview({ shop, products, onApprove, onMakeChanges }: { shop: any, products: any[], onApprove: () => void, onMakeChanges: () => void }) {
-    return <div>Preview Step</div>;
+    return (
+        <div className="space-y-6">
+            <h3 className="text-xl font-semibold">Final Preview</h3>
+            <p className="text-muted-foreground">This is how your shop will appear to customers. Review all details carefully before submitting.</p>
+            <div className="border-4 rounded-xl overflow-hidden h-[70vh]">
+                <ScrollArea className="h-full w-full">
+                     <ShopPreview shop={shop} products={products} />
+                </ScrollArea>
+            </div>
+             <div className="flex justify-between items-center pt-4">
+                <Button variant="outline" onClick={onMakeChanges}>
+                    <Edit className="mr-2 h-4 w-4" /> Make Changes
+                </Button>
+                <Button onClick={onApprove}>
+                    Looks Good, Continue <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+            </div>
+        </div>
+    );
 }
 
 // ====== STEP 10: Publish ======
 function StepPublish({ shop, onPublish, onUnpublish, isPublishing, isUnpublishing, allStepsComplete, canEdit }: { shop: any, onPublish: () => void, onUnpublish: () => void, isPublishing: boolean, isUnpublishing: boolean, allStepsComplete: boolean, canEdit: boolean }) {
-    return <div>Publish Step</div>;
+     const isLive = shop.status === 'approved';
+    const isPending = shop.status === 'pending_review';
+    
+    if (isLive) {
+         return (
+             <div className="text-center py-10">
+                <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
+                <h3 className="text-2xl font-bold">Your Shop is Live!</h3>
+                <p className="text-muted-foreground mt-2 mb-6">Your shop is published and visible to everyone in the marketplace.</p>
+                <Button variant="outline" onClick={onUnpublish} disabled={isUnpublishing || !canEdit}>
+                    {isUnpublishing ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <XCircle className="mr-2 h-4 w-4"/>}
+                    Unpublish to Make Edits
+                </Button>
+            </div>
+         )
+    }
+
+    if (isPending) {
+        return (
+             <div className="text-center py-10">
+                <Loader2 className="h-12 w-12 text-amber-500 mx-auto mb-4 animate-spin" />
+                <h3 className="text-2xl font-bold">Pending Review</h3>
+                <p className="text-muted-foreground mt-2">Your shop has been submitted and is awaiting admin approval.</p>
+            </div>
+        )
+    }
+
+    // Default: Shop is a draft
+    return (
+        <div className="text-center py-10">
+            {!allStepsComplete && (
+                 <Alert variant="destructive" className="mb-6 text-left">
+                    <AlertTriangle className="h-4 w-4" />
+                    <AlertTitle>Incomplete Steps</AlertTitle>
+                    <AlertDescription>
+                        Please complete all previous steps before submitting your shop for review.
+                    </AlertDescription>
+                </Alert>
+            )}
+            <h3 className="text-2xl font-bold">You're Ready to Go!</h3>
+            <p className="text-muted-foreground mt-2 mb-6">Once you submit your shop, our team will review it. You will be notified upon approval.</p>
+            <Button onClick={onPublish} disabled={isPublishing || !canEdit || !allStepsComplete}>
+                {isPublishing ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Send className="mr-2 h-4 w-4"/>}
+                Submit for Review
+            </Button>
+        </div>
+    )
 }
 
 
@@ -942,7 +1469,7 @@ export function ShopWizard({ shop: initialShop, onShopUpdate }: { shop: any, onS
   
   const allStepsComplete = useMemo(() => {
     // Check all steps *except* the final publish step.
-    const requiredSteps = Object.keys(stepCompleteness).filter(s => s !== 'Publish');
+    const requiredSteps = Object.keys(stepCompleteness).filter(s => s !== 'Publish' && s !== 'Preview' && s !== 'Terms');
     return requiredSteps.every(step => stepCompleteness[step as keyof typeof stepCompleteness]);
   }, [stepCompleteness]);
 
@@ -970,8 +1497,8 @@ export function ShopWizard({ shop: initialShop, onShopUpdate }: { shop: any, onS
     { id: 'Social Links', component: <StepSocialLinks shop={shopData} onSave={handleSave} canEdit={canEditShop} /> },
     { id: 'SEO', component: <StepSeo shop={shopData} onSave={handleSave} canEdit={canEditShop} onSeoGenerated={handleSeoGenerated} /> },
     { id: 'Legal Docs', component: <StepLegal shop={shopData} onSave={handleSave} canEdit={canEditShop} /> },
-    { id: 'Commercials', component: <StepCommercials shop={shopData} onSave={handleSave} canEdit={canEditShop} /> },
-    { id: 'Terms', component: <StepTerms onSave={handleSave} onTermsAgreed={setTermsAgreed} canEdit={canEditShop} /> },
+    { id: 'Commercials', component: <StepCommercials shop={shopData} onSave={handleSave} canEdit={canEditShop} agreements={agreements || []} activeAgreement={activeAgreement} /> },
+    { id: 'Terms', component: <StepTerms onTermsAgreed={setTermsAgreed} canEdit={canEditShop} /> },
     { id: 'Preview', component: <StepPreview shop={shopData} products={products || []} onApprove={handleApprovePreview} onMakeChanges={handleMakeChanges} /> },
     { id: 'Publish', component: <StepPublish shop={shopData} onPublish={handlePublish} onUnpublish={handleUnpublish} isPublishing={isPublishing} isUnpublishing={isUnpublishing} allStepsComplete={allStepsComplete} canEdit={canEditShop} /> },
   ];
