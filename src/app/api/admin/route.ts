@@ -1,4 +1,3 @@
-
 'use server';
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -56,10 +55,14 @@ export async function POST(req: NextRequest) {
             if (payload.companyId !== userCompanyIdForAuth && !isAdmin) {
                 throw new Error("Forbidden: You can only manage agreements for your own company.");
             }
+        } else if (action === 'unpublishShop') { // Authorization for new action
+            if (payload.companyId !== userCompanyIdForAuth && !isAdmin) {
+                throw new Error("Forbidden: You can only unpublish your own shop.");
+            }
         }
          else if (!isAdmin) {
             // Most other actions in this route are admin-only
-             const allowedUserActions = ['saveCompanyLead', 'acceptCommercialAgreement', 'getAuditLogs'];
+             const allowedUserActions = ['saveCompanyLead', 'acceptCommercialAgreement', 'getAuditLogs', 'unpublishShop'];
              if (!allowedUserActions.includes(action)) {
                  throw new Error("Forbidden: Admin access required.");
              }
@@ -67,6 +70,32 @@ export async function POST(req: NextRequest) {
         // --- END AUTHORIZATION ---
 
         switch (action) {
+            case 'unpublishShop': {
+                const { companyId, shopId } = payload;
+                if (!companyId || !shopId) {
+                    throw new Error("Missing companyId or shopId.");
+                }
+
+                const memberShopRef = db.doc(`companies/${companyId}/shops/${shopId}`);
+                const publicShopRef = db.doc(`shops/${shopId}`);
+                const batch = db.batch();
+
+                // 1. Revert member's shop status to 'draft'
+                batch.update(memberShopRef, { status: 'draft', updatedAt: FieldValue.serverTimestamp() });
+
+                // 2. Delete all products in the public subcollection
+                const publicProductsSnap = await publicShopRef.collection('products').get();
+                if (!publicProductsSnap.empty) {
+                    publicProductsSnap.docs.forEach(doc => batch.delete(doc.ref));
+                }
+
+                // 3. Delete the main public shop document
+                batch.delete(publicShopRef);
+
+                await batch.commit();
+                
+                return NextResponse.json({ success: true, message: 'Shop has been unpublished and reverted to a draft.' });
+            }
             case 'saveLendingClient': {
                 if (!isAdmin) {
                     throw new Error("Forbidden: Admin access required.");
