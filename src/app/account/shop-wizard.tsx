@@ -47,6 +47,7 @@ import { generateShopSeo } from '@/ai/flows/seo-flow.ts';
 import { generateSocialLinks } from '@/ai/flows/social-link-generator-flow';
 import { useConfig } from '@/hooks/use-config';
 import { Checkbox } from '@/components/ui/checkbox';
+import { useRouter } from 'next/navigation';
 
 
 const { placeholderImages } = placeholderImageData;
@@ -182,7 +183,7 @@ function StepCoreIdentity({ shop, onSave, canEdit }: { shop: any, onSave: (newDa
 
         <Button type="submit" disabled={isSaving || !canEdit}>
           {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-          Save &amp; Continue
+          Save & Continue
         </Button>
       </form>
     </Form>
@@ -920,7 +921,7 @@ function StepAppearance({ shop, onSave, canEdit }: { shop: any, onSave: (newData
 
         <Button type="submit" disabled={isSaving || !canEdit}>
           {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-          Save &amp; Continue
+          Save & Continue
         </Button>
       </form>
     </Form>
@@ -1070,7 +1071,7 @@ function StepSocialLinks({ shop, onSave, canEdit }: { shop: any, onSave: (newDat
 
         <Button type="submit" disabled={isSaving || !canEdit}>
           {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-          Save &amp; Continue
+          Save & Continue
         </Button>
       </form>
     </Form>
@@ -1192,7 +1193,7 @@ function StepSeo({ shop, onSave, canEdit, onSeoGenerated }: { shop: any, onSave:
 
         <Button type="submit" disabled={isSaving || !canEdit}>
             {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-            Save &amp; Continue
+            Save & Continue
         </Button>
       </form>
     </Form>
@@ -1550,7 +1551,7 @@ function StepCommercials({ shop, canEdit, onSave }: { shop: any, onSave: (newDat
 
       <div className="pt-6">
          <Button onClick={() => onSave({})} disabled={!activeAgreement}>
-            Save &amp; Continue <ArrowRight className="ml-2 h-4 w-4" />
+            Save & Continue <ArrowRight className="ml-2 h-4 w-4" />
         </Button>
       </div>
     </div>
@@ -1675,6 +1676,31 @@ function StepPreview({
   );
 }
 
+function ShopPublishedDialog({ shopId }: { shopId: string; }) {
+  const router = useRouter();
+
+  return (
+    <Card className="text-center py-10">
+      <CardHeader>
+        <div className="mx-auto bg-green-100 p-4 rounded-full w-fit">
+          <CheckCircle className="h-10 w-10 text-green-600" />
+        </div>
+        <CardTitle className="mt-4">Shop Published Successfully!</CardTitle>
+        <CardDescription>
+          Your shop is now live on the Logistics Flow platform. What would you like to do next?
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="flex justify-center gap-4">
+        <Button variant="outline" onClick={() => router.push('/account')}>
+          Back to Account Dashboard
+        </Button>
+        <Button onClick={() => router.push(`/shops/${shopId}`)}>
+          View Your Live Shop <ArrowRight className="ml-2 h-4 w-4" />
+        </Button>
+      </CardContent>
+    </Card>
+  );
+}
 
 // ====== MAIN WIZARD COMPONENT ======
 export function ShopWizard({ shop: initialShop, onShopUpdate }: { shop: any, onShopUpdate: () => void }) {
@@ -1686,9 +1712,13 @@ export function ShopWizard({ shop: initialShop, onShopUpdate }: { shop: any, onS
   const firestore = useFirestore();
   const { toast } = useToast();
   const [isPublishing, setIsPublishing] = useState(false);
+  const [showSuccessScreen, setShowSuccessScreen] = useState(false);
 
   useEffect(() => {
     setShopData(initialShop);
+    // If the shop is already approved, don't show the setup wizard, show the success state.
+    // However, this component is designed for setup. Let's keep the user request in mind.
+    // They want a better post-publish experience. `showSuccessScreen` will handle this.
   }, [initialShop]);
   
   const productsQuery = useMemoFirebase(() => {
@@ -1745,8 +1775,8 @@ export function ShopWizard({ shop: initialShop, onShopUpdate }: { shop: any, onS
         });
         if (!syncResponse.ok) throw new Error((await syncResponse.json()).error || 'Failed to publish shop.');
 
-        toast({ title: 'Shop Published!', description: 'Your shop is now live on the platform.' });
         onShopUpdate();
+        setShowSuccessScreen(true);
     } catch (error: any) {
         toast({ variant: 'destructive', title: 'Publishing Failed', description: error.message });
     } finally {
@@ -1767,11 +1797,13 @@ export function ShopWizard({ shop: initialShop, onShopUpdate }: { shop: any, onS
         'Commercials': !!activeAgreement,
         'Terms': termsAgreed,
         'Preview': previewApproved,
+        'Publish': shopData.status === 'approved',
     };
   }, [shopData, products, activeAgreement, termsAgreed, previewApproved]);
   
   const allStepsComplete = useMemo(() => {
-    const requiredSteps = Object.keys(stepCompleteness);
+    // Publish step doesn't count towards the initial completion check
+    const requiredSteps = Object.keys(stepCompleteness).filter(s => s !== 'Publish');
     return requiredSteps.every(step => stepCompleteness[step as keyof typeof stepCompleteness]);
   }, [stepCompleteness]);
 
@@ -1786,6 +1818,11 @@ export function ShopWizard({ shop: initialShop, onShopUpdate }: { shop: any, onS
     setPreviewApproved(true);
     setCurrentStep(currentStep + 1);
   };
+  
+  const handleMakeChanges = () => {
+    setPreviewApproved(false);
+    setCurrentStep(0);
+  }
 
   const steps = [
     { id: 'Core Identity', component: <StepCoreIdentity shop={shopData} onSave={handleSave} canEdit={canEditShop} /> },
@@ -1796,13 +1833,18 @@ export function ShopWizard({ shop: initialShop, onShopUpdate }: { shop: any, onS
     { id: 'Legal Docs', component: <StepLegal shop={shopData} onSave={handleSave} canEdit={canEditShop} /> },
     { id: 'Commercials', component: <StepCommercials shop={shopData} onSave={handleSave} canEdit={canEditShop} /> },
     { id: 'Terms', component: <StepTerms onSave={handleSave} onTermsAgreed={setTermsAgreed} canEdit={canEditShop} /> },
-    { id: 'Preview', component: <StepPreview shop={shopData} products={products || []} onApprove={handleApprovePreview} onMakeChanges={() => { setPreviewApproved(false); setCurrentStep(0); }} /> },
+    { id: 'Preview', component: <StepPreview shop={shopData} products={products || []} onApprove={handleApprovePreview} onMakeChanges={handleMakeChanges} /> },
     { id: 'Publish', component: <StepPublish onPublish={handlePublish} isPublishing={isPublishing} allStepsComplete={allStepsComplete} canEdit={canEditShop} /> },
   ];
 
   const handleStepClick = (index: number) => {
     setCurrentStep(index);
   }
+  
+  if (showSuccessScreen) {
+    return <ShopPublishedDialog shopId={shopData.id} />;
+  }
+
 
   return (
     <div className="space-y-6">
@@ -1841,9 +1883,7 @@ export function ShopWizard({ shop: initialShop, onShopUpdate }: { shop: any, onS
                             onClick={() => handleStepClick(index)}
                             className="justify-start gap-2"
                         >
-                            {step.id !== 'Publish' ? (
-                                isCompleted ? <CheckCircle className="h-4 w-4 text-green-500" /> : <div className="h-4 w-4"/>
-                            ) : null }
+                            {isCompleted ? <CheckCircle className="h-4 w-4 text-green-500" /> : <div className="h-4 w-4"/>}
                             {step.id}
                         </Button>
                     )
@@ -1856,3 +1896,4 @@ export function ShopWizard({ shop: initialShop, onShopUpdate }: { shop: any, onS
     </div>
   );
 }
+
