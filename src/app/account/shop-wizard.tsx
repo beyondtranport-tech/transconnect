@@ -37,6 +37,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import Image from 'next/image';
+import Link from 'next/link';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import placeholderImageData from '@/lib/placeholder-images.json';
 import { ShopPreview } from '@/components/shop-preview';
