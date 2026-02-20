@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -67,7 +66,7 @@ const bankAccountSchema = z.object({
     address: z.string().optional(),
     postCode: z.string().optional(),
     phone: z.string().optional(),
-    email: z.string().optional(),
+    email: z.string().email().optional().or(z.literal('')),
     contact: z.string().optional(),
 });
 
@@ -316,17 +315,55 @@ const StepManagement = () => {
     );
 }
 
-
 const StepBanking = () => {
     const { control } = useFormContext();
     const { fields, append, remove } = useFieldArray({ control, name: "bankAccounts" });
+    
+    // The default values for a new bank account entry
+    const newBankAccount = {
+        bank: '',
+        branchCode: '',
+        accountNo: '',
+        branchName: '',
+        bankCode: '',
+        address: '',
+        postCode: '',
+        phone: '',
+        email: '',
+        contact: '',
+    };
+
     return (
         <div className="space-y-6">
-             <Button type="button" variant="outline" size="sm" onClick={() => append({ bank: '', accountNo: '' })}><PlusCircle className="mr-2 h-4 w-4" /> Add Bank Account</Button>
+             <Button type="button" variant="outline" size="sm" onClick={() => append(newBankAccount)}><PlusCircle className="mr-2 h-4 w-4" /> Add Bank Account</Button>
             {fields.map((field, index) => (
                  <div key={field.id} className="p-4 border rounded-lg relative space-y-4">
                     <div className="flex justify-between items-center"><h3 className="font-semibold text-lg">Bank Account #{index + 1}</h3><Button type="button" variant="ghost" size="icon" onClick={() => remove(index)}><Trash2 className="h-4 w-4 text-destructive" /></Button></div>
-                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4"><FormField control={control} name={`bankAccounts.${index}.bank`} render={({ field }) => (<FormItem><FormLabel>Bank</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} /><FormField control={control} name={`bankAccounts.${index}.accountNo`} render={({ field }) => (<FormItem><FormLabel>Account Number</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} /></div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <FormField control={control} name={`bankAccounts.${index}.bank`} render={({ field }) => (<FormItem><FormLabel>Bank</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
+                        <FormField control={control} name={`bankAccounts.${index}.accountNo`} render={({ field }) => (<FormItem><FormLabel>Account No</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
+                        <FormField control={control} name={`bankAccounts.${index}.branchCode`} render={({ field }) => (<FormItem><FormLabel>Branch Code</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <FormField control={control} name={`bankAccounts.${index}.branchName`} render={({ field }) => (<FormItem><FormLabel>Branch Name</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
+                        <FormField control={control} name={`bankAccounts.${index}.bankCode`} render={({ field }) => (<FormItem><FormLabel>Bank Code</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
+                    </div>
+
+                    <Separator />
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <FormField control={control} name={`bankAccounts.${index}.address`} render={({ field }) => (<FormItem><FormLabel>Address</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
+                        <FormField control={control} name={`bankAccounts.${index}.postCode`} render={({ field }) => (<FormItem><FormLabel>Post Code</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
+                    </div>
+                    
+                    <Separator />
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <FormField control={control} name={`bankAccounts.${index}.phone`} render={({ field }) => (<FormItem><FormLabel>Phone</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
+                        <FormField control={control} name={`bankAccounts.${index}.email`} render={({ field }) => (<FormItem><FormLabel>Email</FormLabel><FormControl><Input type="email" {...field} /></FormControl></FormItem>)} />
+                        <FormField control={control} name={`bankAccounts.${index}.contact`} render={({ field }) => (<FormItem><FormLabel>Contact</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
+                    </div>
                 </div>
             ))}
         </div>
@@ -402,9 +439,9 @@ const ClientWizard = ({ clientData, onBack, onSaveSuccess }: { clientData?: Part
     };
 
     const isStepValid = (stepIndex: number) => {
-        if (stepIndex < 0) return true; // Can always go back from step 0
+        if (stepIndex < 0) return true;
         const step = steps[stepIndex];
-        if (!step || !step.fields) return true; // Steps without fields are always "valid" for navigation
+        if (!step.fields) return true;
         const fields = step.fields as (keyof ClientFormValues)[];
         return fields.every(field => !methods.formState.errors[field as keyof typeof methods.formState.errors]);
     };
