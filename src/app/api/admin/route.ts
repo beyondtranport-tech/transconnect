@@ -215,34 +215,33 @@ export async function POST(req: NextRequest) {
                     shopMap.set(doc.id, doc.data().shopName || 'Unnamed Shop');
                 });
             
-                const allAgreementsSnap = await db.collectionGroup('agreements').where('status', '==', 'proposed').get();
+                const allAgreementsSnap = await db.collectionGroup('agreements')
+                    .where('status', '==', 'proposed')
+                    .orderBy('createdAt', 'desc')
+                    .get();
             
                 // Group by shopId and find the most recent proposal for each
                 const latestProposals = new Map<string, any>();
-                allAgreementsSnap.forEach(doc => {
+                allAgreementsSnap.docs.forEach(doc => {
                     const data = doc.data();
                     const pathSegments = doc.ref.path.split('/');
                     const companyId = pathSegments.length > 1 ? pathSegments[1] : null;
                     const shopId = pathSegments.length > 3 ? pathSegments[3] : null;
                     if (!shopId) return; // Skip if we can't identify the shop
             
-                    const currentDoc = {
-                        ...serializeTimestamps(data),
-                        id: doc.id,
-                        shopId: shopId,
-                        shopName: shopMap.get(shopId),
-                        companyId: companyId,
-                    };
-            
-                    const existing = latestProposals.get(shopId);
-                    const currentTimestamp = new Date(currentDoc.createdAt).getTime();
-            
-                    if (!existing || currentTimestamp > new Date(existing.createdAt).getTime()) {
-                        latestProposals.set(shopId, currentDoc);
+                    // Since the query is ordered by date descending, the first one we see for a shop is the latest one.
+                    if (!latestProposals.has(shopId)) {
+                        latestProposals.set(shopId, {
+                            ...serializeTimestamps(data),
+                            id: doc.id,
+                            shopId: shopId,
+                            shopName: shopMap.get(shopId),
+                            companyId: companyId,
+                        });
                     }
                 });
             
-                // Convert map values to array and sort
+                // Convert map values to array and sort (optional, but good for consistency of display)
                 const proposedAgreements = Array.from(latestProposals.values())
                     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
                 
@@ -764,24 +763,25 @@ export async function POST(req: NextRequest) {
                 
                 const memberShopRef = db.doc(`companies/${companyId}/shops/${shopId}`);
                 const publicShopRef = db.doc(`shops/${shopId}`);
-                const shopDoc = await memberShopRef.get();
-                if (!shopDoc.exists) {
-                    throw new Error(`Shop with ID ${shopId} not found for company ${companyId}.`);
-                }
                 
+                const shopDoc = await memberShopRef.get();
+                if (!shopDoc.exists) throw new Error(`Shop with ID ${shopId} not found for company ${companyId}.`);
                 const shopData = shopDoc.data()!;
                 const wasAlreadyApproved = shopData.status === 'approved';
                 const memberProductsSnap = await memberShopRef.collection('products').get();
                 const publicProductsCollection = publicShopRef.collection('products');
+                
                 const loyaltyConfigDoc = await db.collection('configuration').doc('loyaltySettings').get();
 
-                const deleteBatch = db.batch();
+                // Step 1: Delete all old products in a separate batch.
                 const existingPublicProductsSnap = await publicProductsCollection.get();
                 if (!existingPublicProductsSnap.empty) {
+                    const deleteBatch = db.batch();
                     existingPublicProductsSnap.docs.forEach(doc => deleteBatch.delete(doc.ref));
+                    await deleteBatch.commit();
                 }
-                await deleteBatch.commit();
                 
+                // Step 2: Write all new data in a second batch.
                 const writeBatch = db.batch();
                 const { createdAt, updatedAt, ...restOfShopData } = shopData;
                 
@@ -849,5 +849,3 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ success: false, error: error.message }, { status });
     }
 }
-
-    
