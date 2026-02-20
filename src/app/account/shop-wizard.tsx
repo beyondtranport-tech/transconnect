@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
@@ -1253,8 +1254,14 @@ function StepCommercials({ shop, onSave, canEdit, agreements, activeAgreement }:
 }
 
 // ====== STEP 8: Terms ======
-function StepTerms({ onTermsAgreed, canEdit }: { onTermsAgreed: (agreed: boolean) => void, canEdit: boolean }) {
+function StepTerms({ onTermsAgreed, canEdit, onContinue }: { onTermsAgreed: (agreed: boolean) => void, canEdit: boolean, onContinue: () => void }) {
     const [agreed, setAgreed] = useState(false);
+
+    const handleAgreementChange = (checked: boolean) => {
+        setAgreed(checked);
+        onTermsAgreed(checked);
+    }
+
     return (
         <div className="space-y-6">
             <h3 className="font-semibold text-lg">Platform Terms & Conditions</h3>
@@ -1265,12 +1272,21 @@ function StepTerms({ onTermsAgreed, canEdit }: { onTermsAgreed: (agreed: boolean
                 <p>You are responsible for all content, including images and descriptions, uploaded to your shop. Ensure you have the rights to use any content you publish.</p>
             </div>
             <div className="flex items-center space-x-2">
-                <Checkbox id="terms" checked={agreed} onCheckedChange={(checked) => { setAgreed(!!checked); onTermsAgreed(!!checked); }} disabled={!canEdit} />
+                <Checkbox id="terms" checked={agreed} onCheckedChange={(checked) => handleAgreementChange(!!checked)} disabled={!canEdit} />
                 <Label htmlFor="terms" className="text-sm font-medium leading-none">I agree to the terms and conditions</Label>
+            </div>
+             <div className="flex justify-between pt-4 border-t">
+                <Button variant="outline" disabled={!agreed || !canEdit}>
+                    Previous Step
+                </Button>
+                <Button onClick={onContinue} disabled={!agreed || !canEdit}>
+                    Next Step <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
             </div>
         </div>
     );
 }
+
 
 // ====== STEP 9: Preview ======
 function StepPreview({ shop, products, onApprove, onMakeChanges }: { shop: any, products: any[], onApprove: () => void, onMakeChanges: () => void }) {
@@ -1393,6 +1409,12 @@ export function ShopWizard({ shop: initialShop, onShopUpdate }: { shop: any, onS
       tags: seoData.tags,
     });
   };
+
+  const handleContinue = () => {
+    if (currentStep < steps.length - 1) {
+      setCurrentStep(currentStep + 1);
+    }
+  };
   
   const handlePublish = async () => {
     setIsPublishing(true);
@@ -1498,7 +1520,7 @@ export function ShopWizard({ shop: initialShop, onShopUpdate }: { shop: any, onS
     { id: 'SEO', component: <StepSeo shop={shopData} onSave={handleSave} canEdit={canEditShop} onSeoGenerated={handleSeoGenerated} /> },
     { id: 'Legal Docs', component: <StepLegal shop={shopData} onSave={handleSave} canEdit={canEditShop} /> },
     { id: 'Commercials', component: <StepCommercials shop={shopData} onSave={handleSave} canEdit={canEditShop} agreements={agreements || []} activeAgreement={activeAgreement} /> },
-    { id: 'Terms', component: <StepTerms onTermsAgreed={setTermsAgreed} canEdit={canEditShop} /> },
+    { id: 'Terms', component: <StepTerms onTermsAgreed={setTermsAgreed} canEdit={canEditShop} onContinue={handleContinue} /> },
     { id: 'Preview', component: <StepPreview shop={shopData} products={products || []} onApprove={handleApprovePreview} onMakeChanges={handleMakeChanges} /> },
     { id: 'Publish', component: <StepPublish shop={shopData} onPublish={handlePublish} onUnpublish={handleUnpublish} isPublishing={isPublishing} isUnpublishing={isUnpublishing} allStepsComplete={allStepsComplete} canEdit={canEditShop} /> },
   ];
@@ -1557,4 +1579,6 @@ export function ShopWizard({ shop: initialShop, onShopUpdate }: { shop: any, onS
     </div>
   );
 }
+    
+
     
