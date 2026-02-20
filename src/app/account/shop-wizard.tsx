@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
@@ -1680,6 +1681,7 @@ export function ShopWizard({ shop: initialShop, onShopUpdate }: { shop: any, onS
   const [currentStep, setCurrentStep] = useState(0);
   const [shopData, setShopData] = useState(initialShop);
   const [termsAgreed, setTermsAgreed] = useState(false);
+  const [previewApproved, setPreviewApproved] = useState(false);
   const { can, isLoading: permissionsLoading } = usePermissions();
   const firestore = useFirestore();
   const { toast } = useToast();
@@ -1764,8 +1766,9 @@ export function ShopWizard({ shop: initialShop, onShopUpdate }: { shop: any, onS
         'Legal Docs': !!(shopData.termsUrl || shopData.returnsPolicyUrl || shopData.privacyPolicyUrl),
         'Commercials': !!activeAgreement,
         'Terms': termsAgreed,
+        'Preview': previewApproved,
     };
-  }, [shopData, products, activeAgreement, termsAgreed]);
+  }, [shopData, products, activeAgreement, termsAgreed, previewApproved]);
   
   const allStepsComplete = useMemo(() => {
     const requiredSteps = Object.keys(stepCompleteness);
@@ -1779,6 +1782,11 @@ export function ShopWizard({ shop: initialShop, onShopUpdate }: { shop: any, onS
     return (completedCount / totalSteps) * 100;
   }, [stepCompleteness]);
 
+  const handleApprovePreview = () => {
+    setPreviewApproved(true);
+    setCurrentStep(currentStep + 1);
+  };
+
   const steps = [
     { id: 'Core Identity', component: <StepCoreIdentity shop={shopData} onSave={handleSave} canEdit={canEditShop} /> },
     { id: 'Products', component: <StepProducts shop={shopData} canEdit={canEditShop} /> },
@@ -1788,7 +1796,7 @@ export function ShopWizard({ shop: initialShop, onShopUpdate }: { shop: any, onS
     { id: 'Legal Docs', component: <StepLegal shop={shopData} onSave={handleSave} canEdit={canEditShop} /> },
     { id: 'Commercials', component: <StepCommercials shop={shopData} onSave={handleSave} canEdit={canEditShop} /> },
     { id: 'Terms', component: <StepTerms onSave={handleSave} onTermsAgreed={setTermsAgreed} canEdit={canEditShop} /> },
-    { id: 'Preview', component: <StepPreview shop={shopData} products={products || []} onApprove={() => setCurrentStep(currentStep + 1)} onMakeChanges={() => setCurrentStep(0)} /> },
+    { id: 'Preview', component: <StepPreview shop={shopData} products={products || []} onApprove={handleApprovePreview} onMakeChanges={() => { setPreviewApproved(false); setCurrentStep(0); }} /> },
     { id: 'Publish', component: <StepPublish onPublish={handlePublish} isPublishing={isPublishing} allStepsComplete={allStepsComplete} canEdit={canEditShop} /> },
   ];
 
@@ -1825,7 +1833,7 @@ export function ShopWizard({ shop: initialShop, onShopUpdate }: { shop: any, onS
         <div className="grid grid-cols-1 md:grid-cols-[200px_1fr] gap-8">
             <div className="flex flex-col gap-1">
                  {steps.map((step, index) => {
-                    const isCompleted = (step.id === 'Publish' || step.id === 'Preview') ? true : stepCompleteness[step.id as keyof typeof stepCompleteness];
+                    const isCompleted = stepCompleteness[step.id as keyof typeof stepCompleteness];
                      return (
                         <Button 
                             key={step.id} 
@@ -1833,9 +1841,9 @@ export function ShopWizard({ shop: initialShop, onShopUpdate }: { shop: any, onS
                             onClick={() => handleStepClick(index)}
                             className="justify-start gap-2"
                         >
-                            {step.id !== 'Publish' && step.id !== 'Preview' && (
+                            {step.id !== 'Publish' ? (
                                 isCompleted ? <CheckCircle className="h-4 w-4 text-green-500" /> : <div className="h-4 w-4"/>
-                            )}
+                            ) : null }
                             {step.id}
                         </Button>
                     )
