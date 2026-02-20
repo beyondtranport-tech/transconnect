@@ -128,7 +128,7 @@ const defaultValues: ClientFormValues = {
   regId: '',
   isVatRegistered: false,
   usePhysicalForPostal: false,
-  owners: [{ name: '', address: '', suburb: '', city: '', province: '', postCode: '', idNo: '', cell: '', position: '', qualification: '', since: '', held: 0 }],
+  owners: [],
   management: [],
   bankAccounts: [],
 };
@@ -247,7 +247,7 @@ const StepOwners = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                          <FormField control={control} name={`owners.${index}.position`} render={({ field }) => (<FormItem><FormLabel>Position</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
                         <FormField control={control} name={`owners.${index}.qualification`} render={({ field }) => (<FormItem><FormLabel>Qualification</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
-                        <FormField control={control} name={`owners.${index}.since`} render={({ field }) => (<FormItem><FormLabel>Since</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
+                        <FormField control={control} name={`owners.${index}.since`} render={({ field }) => (<FormItem><FormLabel>Since</FormLabel><FormControl><Input type="date" {...field} /></FormControl></FormItem>)} />
                         <FormField control={control} name={`owners.${index}.held`} render={({ field }) => (<FormItem><FormLabel>% Held</FormLabel><FormControl><Input type="number" {...field} /></FormControl></FormItem>)} />
                     </div>
                 </div>
@@ -260,17 +260,63 @@ const StepManagement = () => {
     const { control } = useFormContext();
     const { fields, append, remove } = useFieldArray({ control, name: "management" });
     return (
-         <div className="space-y-6">
-            <Button type="button" variant="outline" size="sm" onClick={() => append({ name: '', position: '' })}><PlusCircle className="mr-2 h-4 w-4" /> Add Manager</Button>
+        <div className="space-y-6">
+            <Button type="button" variant="outline" size="sm" onClick={() => append({ name: '', address: '', suburb: '', city: '', province: '', postCode: '', idNo: '', cell: '', position: '', qualification: '', since: '', title: '', description: '' })}><PlusCircle className="mr-2 h-4 w-4" /> Add Manager</Button>
             {fields.map((field, index) => (
                 <div key={field.id} className="p-4 border rounded-lg relative space-y-4">
                     <div className="flex justify-between items-center"><h3 className="font-semibold text-lg">Manager #{index + 1}</h3><Button type="button" variant="ghost" size="icon" onClick={() => remove(index)}><Trash2 className="h-4 w-4 text-destructive" /></Button></div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4"><FormField control={control} name={`management.${index}.name`} render={({ field }) => (<FormItem><FormLabel>Name</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} /><FormField control={control} name={`management.${index}.position`} render={({ field }) => (<FormItem><FormLabel>Position</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} /></div>
-                    <FormField control={control} name={`management.${index}.description`} render={({ field }) => (<FormItem><FormLabel>Description / Role</FormLabel><FormControl><Textarea {...field} /></FormControl></FormItem>)} />
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <FormField control={control} name={`management.${index}.name`} render={({ field }) => (<FormItem><FormLabel>Name</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
+                        <FormField control={control} name={`management.${index}.idNo`} render={({ field }) => (<FormItem><FormLabel>ID No</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
+                    </div>
+
+                    <FormField control={control} name={`management.${index}.address`} render={({ field }) => (<FormItem><FormLabel>Address</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <FormField control={control} name={`management.${index}.suburb`} render={({ field }) => (<FormItem><FormLabel>Suburb</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
+                        <FormField control={control} name={`management.${index}.city`} render={({ field }) => (<FormItem><FormLabel>City</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
+                        <FormField control={control} name={`management.${index}.postCode`} render={({ field }) => (<FormItem><FormLabel>Post Code</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <FormField control={control} name={`management.${index}.province`} render={({ field }) => (<FormItem><FormLabel>Province</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
+                        <FormField control={control} name={`management.${index}.cell`} render={({ field }) => (<FormItem><FormLabel>Cell</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
+                    </div>
+
+                    <Separator />
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <FormField control={control} name={`management.${index}.position`} render={({ field }) => (<FormItem><FormLabel>Position</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
+                         <FormField control={control} name={`management.${index}.title`} render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Title</FormLabel>
+                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                    <FormControl>
+                                        <SelectTrigger><SelectValue placeholder="Select title" /></SelectTrigger>
+                                    </FormControl>
+                                    <SelectContent>
+                                        <SelectItem value="Mr.">Mr.</SelectItem>
+                                        <SelectItem value="Mrs.">Mrs.</SelectItem>
+                                        <SelectItem value="Ms.">Ms.</SelectItem>
+                                        <SelectItem value="Miss">Miss</SelectItem>
+                                        <SelectItem value="Dr.">Dr.</SelectItem>
+                                        <SelectItem value="Prof.">Prof.</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </FormItem>
+                        )} />
+                         <FormField control={control} name={`management.${index}.qualification`} render={({ field }) => (<FormItem><FormLabel>Qualification</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t">
+                        <FormField control={control} name={`management.${index}.since`} render={({ field }) => (<FormItem><FormLabel>Since</FormLabel><FormControl><Input type="date" {...field} /></FormControl></FormItem>)} />
+                        <FormField control={control} name={`management.${index}.description`} render={({ field }) => (<FormItem className="md:col-span-1"><FormLabel>Description / Role</FormLabel><FormControl><Textarea {...field} placeholder="e.g., Handles all invoice queries."/></FormControl></FormItem>)} />
+                    </div>
                 </div>
             ))}
         </div>
-    )
+    );
 }
 
 const StepBanking = () => {
