@@ -31,7 +31,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: 'Bad Request: Missing required purchase data.' }, { status: 400 });
     }
     
-    // Authorization: Make sure the user making the request belongs to the buyer's company
     const buyerUserDoc = await db.collection('users').doc(buyerUid).get();
     if(buyerUserDoc.data()?.companyId !== buyerCompanyId) {
         return NextResponse.json({ success: false, error: 'Forbidden: You can only make purchases for your own company.' }, { status: 403 });
@@ -40,10 +39,7 @@ export async function POST(req: NextRequest) {
     const buyerCompanyRef = db.collection('companies').doc(buyerCompanyId);
     const sellerCompanyRef = db.collection('companies').doc(sellerCompanyId);
     
-    // Fetch the active commercial agreement for the seller's shop
-    const shopRef = db.collection(`companies/${sellerCompanyId}/shops`).doc(items[0].shopId);
-    const agreementsRef = shopRef.collection('agreements');
-    const activeAgreementQuery = agreementsRef.where('status', '==', 'active').limit(1);
+    const activeAgreementQuery = db.collection(`companies/${sellerCompanyId}/shops/${items[0].shopId}/agreements`).where('status', '==', 'active').limit(1);
     
     await db.runTransaction(async (transaction) => {
       const buyerCompanyDoc = await transaction.get(buyerCompanyRef);
@@ -58,26 +54,38 @@ export async function POST(req: NextRequest) {
       
       const mallCommissionsDoc = await transaction.get(db.doc('configuration/mallCommissions'));
       const activeAgreementSnap = await transaction.get(activeAgreementQuery);
-      let platformDiscountPercent = 0;
       
+      let platformDiscountPercent = 2.5; // Default commission
       if (!activeAgreementSnap.empty && activeAgreementSnap.docs[0].data().percentage > 0) {
         platformDiscountPercent = activeAgreementSnap.docs[0].data().percentage;
       } else if (mallCommissionsDoc.exists && mallCommissionsDoc.data()?.supplierMall > 0) {
         platformDiscountPercent = mallCommissionsDoc.data()?.supplierMall;
-      } else {
-        platformDiscountPercent = 2.5; 
       }
       
       const platformCommission = totalAmount * (platformDiscountPercent / 100);
       const sellerAmount = totalAmount - platformCommission;
 
-      // 1. Debit buyer's wallet (both total and available)
+      for (const item of items) {
+          const privateProductRef = db.doc(`companies/${sellerCompanyId}/shops/${item.shopId}/products/${item.id}`);
+          const publicProductRef = db.doc(`shops/${item.shopId}/products/${item.id}`);
+          
+          const productDoc = await transaction.get(privateProductRef);
+          if (!productDoc.exists) {
+              throw new Error(`Product ${item.name} not found.`);
+          }
+          const productData = productDoc.data();
+          if (productData?.stock === undefined || productData.stock < item.quantity) {
+              throw new Error(`Insufficient stock for ${item.name}. Available: ${productData?.stock || 0}, Requested: ${item.quantity}.`);
+          }
+          transaction.update(privateProductRef, { stock: FieldValue.increment(-item.quantity) });
+          transaction.update(publicProductRef, { stock: FieldValue.increment(-item.quantity) });
+      }
+
       transaction.update(buyerCompanyRef, { 
           walletBalance: FieldValue.increment(-totalAmount),
           availableBalance: FieldValue.increment(-totalAmount) 
       });
 
-      // 2. Credit seller's wallet (total and pending, but not available)
       transaction.update(sellerCompanyRef, { 
           walletBalance: FieldValue.increment(sellerAmount),
           pendingBalance: FieldValue.increment(sellerAmount)
@@ -85,7 +93,6 @@ export async function POST(req: NextRequest) {
       
       const productNames = items.map((item:any) => `${item.name} (x${item.quantity})`).join(', ');
 
-      // 3. Create debit transaction log for buyer
       const buyerTxRef = db.collection('companies').doc(buyerCompanyId).collection('transactions').doc();
       transaction.set(buyerTxRef, {
         transactionId: buyerTxRef.id,
@@ -94,10 +101,9 @@ export async function POST(req: NextRequest) {
         date: FieldValue.serverTimestamp(),
         description: `Purchase from ${items[0].shopName}: ${productNames}`,
         status: 'allocated',
-        chartOfAccountsCode: '6010', // Cost of Goods Sold
+        chartOfAccountsCode: '6010',
       });
 
-      // 4. Create credit transaction log for seller
       const sellerTxRef = db.collection('companies').doc(sellerCompanyId).collection('transactions').doc();
       transaction.set(sellerTxRef, {
         transactionId: sellerTxRef.id,
@@ -106,10 +112,9 @@ export async function POST(req: NextRequest) {
         date: FieldValue.serverTimestamp(),
         description: `Sale to ${buyerCompanyDoc.data()?.companyName}: ${productNames}`,
         status: 'allocated',
-        chartOfAccountsCode: '4000', // Sales Revenue
+        chartOfAccountsCode: '4000',
       });
 
-      // 5. Create credit transaction log for platform commission
       if (platformCommission > 0) {
         const platformTxRef = db.collection('platformTransactions').doc();
         transaction.set(platformTxRef, {
@@ -119,8 +124,8 @@ export async function POST(req: NextRequest) {
             date: FieldValue.serverTimestamp(),
             description: `Commission from ${items[0].shopName} on sale to ${buyerCompanyDoc.data()?.companyName}`,
             status: 'allocated',
-            chartOfAccountsCode: '4220', // Mall Commission Revenue
-            companyId: sellerCompanyId, // Link to the seller for reporting
+            chartOfAccountsCode: '4220',
+            companyId: sellerCompanyId,
         });
       }
     });
@@ -135,5 +140,3 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: false, error: `Internal Server Error: ${error.message}` }, { status: 500 });
   }
 }
-
-  

@@ -196,6 +196,7 @@ const productSchema = z.object({
   description: z.string().min(1, 'Description is required'),
   price: z.coerce.number().positive('Price must be a positive number'),
   sku: z.string().optional(),
+  stock: z.coerce.number().min(0, "Stock can't be negative.").optional(),
   imageUrls: z.array(z.string()).optional(),
 });
 type ProductFormValues = z.infer<typeof productSchema>;
@@ -385,6 +386,7 @@ function ProductDialog({ shop, product, onComplete, children, canEdit }: { shop:
       description: product?.description || '',
       price: product?.price || 0,
       sku: product?.sku || '',
+      stock: product?.stock ?? 0,
       imageUrls: product?.imageUrls || [],
     },
   });
@@ -396,6 +398,7 @@ function ProductDialog({ shop, product, onComplete, children, canEdit }: { shop:
             description: product?.description || '',
             price: product?.price || 0,
             sku: product?.sku || '',
+            stock: product?.stock ?? 0,
             imageUrls: product?.imageUrls || [],
         });
     }
@@ -418,6 +421,7 @@ function ProductDialog({ shop, product, onComplete, children, canEdit }: { shop:
         
         const dataToSave = {
             ...values,
+            stock: Number(values.stock || 0),
             imageUrls: values.imageUrls || [],
         }
 
@@ -525,7 +529,7 @@ function ProductDialog({ shop, product, onComplete, children, canEdit }: { shop:
                           <FormMessage />
                           </FormItem>
                       )} />
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                           <FormField control={form.control} name="price" render={({ field }) => (
                           <FormItem>
                               <FormLabel>Price</FormLabel>
@@ -540,6 +544,13 @@ function ProductDialog({ shop, product, onComplete, children, canEdit }: { shop:
                               <FormMessage />
                           </FormItem>
                           )} />
+                           <FormField control={form.control} name="stock" render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Units in Stock</FormLabel>
+                                <FormControl><Input type="number" placeholder="0" {...field} /></FormControl>
+                                <FormMessage />
+                            </FormItem>
+                            )} />
                       </div>
 
                       <div className="border rounded-md p-4 bg-muted/50 space-y-4">
@@ -694,6 +705,7 @@ function StepProducts({ shop, canEdit }: { shop: any, canEdit: boolean }) {
                             <TableHead>Name</TableHead>
                             <TableHead>Price</TableHead>
                             <TableHead>SKU</TableHead>
+                            <TableHead>Stock</TableHead>
                             <TableHead className="text-right">Actions</TableHead>
                         </TableRow>
                     </TableHeader>
@@ -712,6 +724,7 @@ function StepProducts({ shop, canEdit }: { shop: any, canEdit: boolean }) {
                                 <TableCell>{product.name}</TableCell>
                                 <TableCell>R {product.price.toFixed(2)}</TableCell>
                                 <TableCell>{product.sku || '-'}</TableCell>
+                                <TableCell>{product.stock ?? 0}</TableCell>
                                 <TableCell className="text-right">
                                     <div className="flex justify-end gap-2">
                                         <ProductDialog shop={shop} product={product} onComplete={forceRefresh} canEdit={canEdit && canManageProducts}>
@@ -1716,6 +1729,9 @@ export function ShopWizard({ shop: initialShop, onShopUpdate }: { shop: any, onS
 
   useEffect(() => {
     setShopData(initialShop);
+     if (initialShop?.status === 'approved') {
+        setShowSuccessScreen(true);
+    }
   }, [initialShop]);
   
   const productsQuery = useMemoFirebase(() => {

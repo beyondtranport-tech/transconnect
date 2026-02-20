@@ -150,6 +150,7 @@
         "description": { "type": "string" },
         "price": { "type": "number" },
         "sku": { "type": "string" },
+        "stock": { "type": "number", "description": "Number of units available in stock." },
         "imageUrls": { "type": "array", "items": { "type": "string" } },
         "createdAt": { "type": "object" },
         "updatedAt": { "type": "object" }

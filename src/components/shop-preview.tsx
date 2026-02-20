@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
@@ -7,6 +8,7 @@ import Image from 'next/image';
 import { ShoppingCart, Mail, Phone, ImageIcon } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { useToast } from '@/hooks/use-toast';
+import { Badge } from '@/components/ui/badge';
 
 const formatPrice = (price: number) => {
     if (typeof price !== 'number') return 'N/A';
@@ -57,10 +59,17 @@ export function ShopPreview({ shop, products }: { shop: any, products: any[] }) 
                     </CardHeader>
                     <CardContent>
                         <p className="text-sm text-gray-600 line-clamp-2">{product.description}</p>
+                         <div className="mt-2">
+                            {typeof product.stock === 'number' ? (
+                                <Badge variant={product.stock > 0 ? 'default' : 'destructive'}>
+                                    {product.stock > 0 ? `${product.stock} in stock` : 'Out of Stock'}
+                                </Badge>
+                            ) : null}
+                        </div>
                     </CardContent>
                     <CardFooter className="flex justify-between items-center">
                         <p className={cn("font-bold", theme.primary)}>{formatPrice(product.price)}</p>
-                        <Button size="sm" onClick={() => handleAddToCart(product)}>Add to Cart</Button>
+                        <Button size="sm" onClick={() => handleAddToCart(product)} disabled={!product.stock || product.stock <= 0}>Add to Cart</Button>
                     </CardFooter>
                 </Card>
             ))}
@@ -80,10 +89,17 @@ export function ShopPreview({ shop, products }: { shop: any, products: any[] }) 
                     <CardContent className="p-4 flex-grow">
                         <h3 className="font-semibold">{product.name}</h3>
                         <p className="text-sm text-gray-600 line-clamp-1">{product.description}</p>
+                         <div className="mt-2">
+                             {typeof product.stock === 'number' ? (
+                                <Badge variant={product.stock > 0 ? 'default' : 'destructive'}>
+                                    {product.stock > 0 ? `${product.stock} in stock` : 'Out of Stock'}
+                                </Badge>
+                            ) : null}
+                        </div>
                     </CardContent>
                     <div className="p-4 text-right">
                          <p className={cn("font-bold", theme.primary)}>{formatPrice(product.price)}</p>
-                         <Button size="sm" className="mt-1" onClick={() => handleAddToCart(product)}>Add to Cart</Button>
+                         <Button size="sm" className="mt-1" onClick={() => handleAddToCart(product)} disabled={!product.stock || product.stock <= 0}>Add to Cart</Button>
                     </div>
                 </Card>
             ))}
