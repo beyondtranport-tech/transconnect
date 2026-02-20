@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -163,16 +164,20 @@ const StepMain = () => (
 const StepAddress = () => {
     const { control, watch, setValue } = useFormContext();
     const usePhysicalForPostal = watch('usePhysicalForPostal');
-    const physicalAddress = watch(['physicalStreet', 'physicalSuburb', 'physicalCity', 'physicalPostCode']);
+    // Watch individual fields to get stable primitive values to prevent infinite loops
+    const physicalStreet = watch('physicalStreet');
+    const physicalSuburb = watch('physicalSuburb');
+    const physicalCity = watch('physicalCity');
+    const physicalPostCode = watch('physicalPostCode');
 
     useEffect(() => {
         if (usePhysicalForPostal) {
-            setValue('postalStreet', physicalAddress[0] || '');
-            setValue('postalSuburb', physicalAddress[1] || '');
-            setValue('postalCity', physicalAddress[2] || '');
-            setValue('postalPostCode', physicalAddress[3] || '');
+            setValue('postalStreet', physicalStreet || '');
+            setValue('postalSuburb', physicalSuburb || '');
+            setValue('postalCity', physicalCity || '');
+            setValue('postalPostCode', physicalPostCode || '');
         }
-    }, [usePhysicalForPostal, physicalAddress, setValue]);
+    }, [usePhysicalForPostal, physicalStreet, physicalSuburb, physicalCity, physicalPostCode, setValue]);
 
     return (
         <div className="space-y-8">
@@ -183,7 +188,7 @@ const StepAddress = () => {
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <FormField control={control} name="physicalSuburb" render={({ field }) => (<FormItem><FormLabel>Suburb</FormLabel><FormControl><Input placeholder="e.g., Pomona" {...field} /></FormControl></FormItem>)} />
                         <FormField control={control} name="physicalCity" render={({ field }) => (<FormItem><FormLabel>City</FormLabel><FormControl><Input placeholder="e.g., Kempton Park" {...field} /></FormControl></FormItem>)} />
-                        <FormField control={control} name="physicalPostCode" render={({ field }) => (<FormItem><FormLabel>Postal Code</FormLabel><FormControl><Input placeholder="e.g., 1619" {...field} /></FormControl></FormItem>)} />
+                        <FormField control={control} name="physicalPostCode" render={({ field }) => (<FormItem><FormLabel>Post Code</FormLabel><FormControl><Input placeholder="e.g., 1619" {...field} /></FormControl></FormItem>)} />
                     </div>
                 </div>
             </div>
@@ -196,7 +201,7 @@ const StepAddress = () => {
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <FormField control={control} name="postalSuburb" render={({ field }) => (<FormItem><FormLabel>Suburb</FormLabel><FormControl><Input placeholder="e.g., Pomona" {...field} disabled={usePhysicalForPostal} /></FormControl></FormItem>)} />
                         <FormField control={control} name="postalCity" render={({ field }) => (<FormItem><FormLabel>City</FormLabel><FormControl><Input placeholder="e.g., Kempton Park" {...field} disabled={usePhysicalForPostal} /></FormControl></FormItem>)} />
-                        <FormField control={control} name="postalPostCode" render={({ field }) => (<FormItem><FormLabel>Postal Code</FormLabel><FormControl><Input placeholder="e.g., 1619" {...field} disabled={usePhysicalForPostal} /></FormControl></FormItem>)} />
+                        <FormField control={control} name="postalPostCode" render={({ field }) => (<FormItem><FormLabel>Post Code</FormLabel><FormControl><Input placeholder="e.g., 1619" {...field} disabled={usePhysicalForPostal} /></FormControl></FormItem>)} />
                     </div>
                 </div>
             </div>
@@ -536,7 +541,7 @@ const StepCreditReports = () => {
                         <CardTitle className="flex items-center gap-2 text-base"><Upload className="h-5 w-5" /> Upload PDF Report</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <p className="text-xs text-muted-foreground mb-2">Upload a previously downloaded credit report in PDF format.</p>
+                         <p className="text-xs text-muted-foreground mb-2">Upload a previously downloaded credit report in PDF format.</p>
                         <Button variant="outline" className="w-full" onClick={() => fileInputRef.current?.click()}>
                             <Input ref={fileInputRef} type="file" className="hidden" accept=".pdf" />
                             Upload PDF
@@ -715,10 +720,9 @@ const ClientWizard = ({ clientData, onBack, onSaveSuccess }: { clientData?: Part
 };
 
 export default function ClientsContent() {
-    const firestore = useFirestore();
     const [view, setView] = useState<'list' | 'create' | 'edit'>('list');
     const [selectedClient, setSelectedClient] = useState<any | null>(null);
-
+    const firestore = useFirestore();
     const clientsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'lendingClients')) : null, [firestore]);
     const { data: clients, isLoading, forceRefresh } = useCollection(clientsQuery);
     
@@ -778,3 +782,4 @@ export default function ClientsContent() {
         </Card>
     );
 }
+
