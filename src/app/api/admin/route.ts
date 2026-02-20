@@ -181,11 +181,14 @@ export async function POST(req: NextRequest) {
                         return dateB - dateA;
                     });
                 
-                const allAgreementsSnap = await db.collectionGroup('agreements').where('status', '==', 'proposed').get();
+                // Brute-force fetch all agreements and filter in code to avoid index issues.
+                const allAgreementsSnap = await db.collectionGroup('agreements').get();
                 
                 const latestProposals = new Map<string, any>();
                 allAgreementsSnap.docs.forEach(doc => {
                     const data = doc.data();
+                    if (data.status !== 'proposed') return;
+
                     const pathSegments = doc.ref.path.split('/');
                     const shopId = pathSegments.length >= 4 ? pathSegments[3] : null;
                     if (!shopId) return;
@@ -215,7 +218,7 @@ export async function POST(req: NextRequest) {
                     shopMap.set(doc.id, doc.data().shopName || 'Unnamed Shop');
                 });
             
-                // Fetch ALL agreements, regardless of status. This is inefficient but avoids index issues.
+                // Brute-force fetch ALL agreements to avoid indexing issues.
                 const allAgreementsSnap = await db.collectionGroup('agreements').get();
                 
                 // Filter for "proposed" status in application code.
