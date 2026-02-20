@@ -82,55 +82,6 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 
 // Operations
 const AdminDashboardContent = dynamic(() => import('@/app/adminaccount/dashboard-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const MemberWallet = dynamic(() => import('@/app/backend/wallet/[memberId]/member-wallet'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const WalletTransactionsList = dynamic(() => import('@/app/backend/wallet-transactions-list'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const ShopsList = dynamic(() => import('@/app/backend/shops-list'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const ReconciliationPage = dynamic(() => import('@/app/backend/reconciliation/page'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const ContributionsList = dynamic(() => import('@/app/backend/contributions-list'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const ActivityFeed = dynamic(() => import('@/app/backend/activity-feed'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const MembersList = dynamic(() => import('@/app/backend/members-list'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const CommunicationsContent = dynamic(() => import('@/app/backend/communications-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const SupportChatInbox = dynamic(() => import('@/app/backend/support-chat-inbox'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const UsersList = dynamic(() => import('@/app/backend/users-list'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-
-
-// Lending DMS
-const ClientsContent = dynamic(() => import('@/app/backend/lending/clients-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const AgreementsContent = dynamic(() => import('@/app/backend/lending/agreements-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const FacilitiesContent = dynamic(() => import('@/app/backend/lending/facilities-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const LendingTransactionsContent = dynamic(() => import('@/app/backend/lending/transactions-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const AssetsContent = dynamic(() => import('@/app/backend/lending/assets-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const SecurityContent = dynamic(() => import('@/app/backend/lending/security-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const CollateralContent = dynamic(() => import('@/app/backend/lending/collateral-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const PaymentsContent = dynamic(() => import('@/app/backend/lending/payments-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const LendingPartnersContent = dynamic(() => import('@/app/backend/lending/partners-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const PartnerDetails = dynamic(() => import('@/app/backend/lending/partner-details'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const DiscoveryContent = dynamic(() => import('@/app/backend/lending/discovery-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const ScoringContent = dynamic(() => import('@/app/backend/lending/scoring-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const FundingDivisionContent = dynamic(() => import('@/app/backend/funding-division-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const LeadsDatabase = dynamic(() => import('@/app/backend/leads-database'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-
-
-
-// Platform Settings
-const PermissionsContent = dynamic(() => import('@/app/backend/permissions-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const PricingManagement = dynamic(() => import('@/app/backend/revenue/pricing-management'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const TechPricing = dynamic(() => import('@/app/backend/revenue/tech-pricing'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const PlatformTasks = dynamic(() => import('@/app/backend/platform-tasks'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const PlatformSettingsContent = dynamic(() => import('@/app/backend/platform-settings'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const MallCommissions = dynamic(() => import('@/app/backend/revenue/mall-commissions'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const ConnectPlanPricing = dynamic(() => import('@/app/backend/revenue/connect-plan-pricing'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const MarketplaceFees = dynamic(() => import('@/app/backend/revenue/marketplace-fees'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const SalesIncentives = dynamic(() => import('@/app/backend/revenue/sales-incentives'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const LoyaltySettings = dynamic(() => import('@/app/backend/loyalty-settings'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const ISAPitchSettings = dynamic(() => import('@/app/backend/revenue/isa-pitch-settings'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-
-// Lending Model
-const LendingAssumptions = dynamic(() => import('@/app/adminaccount/lending-assumptions'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const LendingLoanBook = dynamic(() => import('@/app/adminaccount/lending-loan-book'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const LendingIncomeStatement = dynamic(() => import('@/app/adminaccount/lending-income-statement'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const LendingCashflow = dynamic(() => import('@/app/adminaccount/lending-cashflow'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const LendingBalanceSheet = dynamic(() => import('@/app/adminaccount/lending-balance-sheet'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 
 // Admin-specific pages
 const MarketingStudio = dynamic(() => import('./marketing-studio'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
@@ -140,6 +91,7 @@ const StaffManagement = dynamic(() => import('@/app/backend/staff-content'), { l
 const ISAManagement = dynamic(() => import('./isa-management'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const AnalyticsDashboard = dynamic(() => import('./analytics-dashboard'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const LeadsAgent = dynamic(() => import('./leads-agent'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const LeadsDatabase = dynamic(() => import('@/app/backend/leads-database'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const TTSStudio = dynamic(() => import('./tts-studio'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const AssetGallery = dynamic(() => import('./asset-gallery'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const NetworkOffer = dynamic(() => import('../account/network-offer'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
@@ -165,6 +117,7 @@ const DeveloperManagement = dynamic(() => import('./developer-management'), { lo
 const DeveloperElevatorPitch = dynamic(() => import('./developer-elevator-pitch'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const DeveloperOffer = dynamic(() => import('./developer-offer'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const DeveloperEmailSequence = dynamic(() => import('./developer-email-sequence'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const MembersList = dynamic(() => import('@/app/backend/members-list'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 
 
 function AdminAuthGuard({ children }: { children: React.ReactNode }) {
@@ -238,8 +191,6 @@ function BackendContent() {
       case 'investors': return <InvestorManagement />;
       case 'developer-list': return <DeveloperManagement />;
       case 'partner-pitch': return <PartnerElevatorPitch />;
-      case 'member-sales-offer': return <NetworkOffer />;
-      case 'member-sales-emails': return <NetworkEmails />;
       case 'partner-offer': return <PartnerOffer />;
       case 'isa-emails': return <ISAEmailSequence />;
       case 'partner-emails': return <PartnerEmailSequence />;
@@ -261,13 +212,6 @@ function BackendContent() {
       case 'income-statement': return <IncomeStatementProjection />;
       case 'revenue-ledger': return <PlatformTransactions />;
 
-      // Lending Model
-      case 'lending-assumptions': return <LendingAssumptions />;
-      case 'lending-loan-book': return <LendingLoanBook />;
-      case 'lending-income-statement': return <LendingIncomeStatement />;
-      case 'lending-cashflow': return <LendingCashflow />;
-      case 'lending-balance-sheet': return <LendingBalanceSheet />;
-      
       default: return <AdminDashboardContent />;
     }
   }, [activeView, memberId]);
@@ -299,10 +243,6 @@ function BackendContent() {
       'financial-setup', 'sales-roadmap', 'targets', 'budget', 'member-projection', 
       'turnover', 'income-statement', 'revenue-ledger', 'financial-bank-details'
   ].includes(activeView);
-  const isLendingModelActive = [
-    'lending-assumptions', 'lending-loan-book', 'lending-income-statement',
-    'lending-cashflow', 'lending-balance-sheet'
-  ].includes(activeView);
   const isAdminOnlyActive = ['investors'].includes(activeView);
 
   return (
@@ -313,7 +253,7 @@ function BackendContent() {
             <div className="flex items-center gap-2">
               <Shield className="h-6 w-6 text-primary" />
               <h2 className="text-lg font-semibold text-sidebar-foreground">
-                App Backend
+                Admin Account
               </h2>
             </div>
           </SidebarHeader>
@@ -424,18 +364,6 @@ function BackendContent() {
                         <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'revenue-ledger'} onClick={() => navigate('revenue-ledger')}><DollarSign />Revenue Ledger</SidebarMenuSubButton></SidebarMenuSubItem>
                     </SidebarMenuSub>
                 </SidebarMenuItem>
-                 <SidebarMenuItem>
-                    <SidebarMenuButton tooltip="Lending Model" isActive={isLendingModelActive}>
-                        <Scale /><span>Lending Model</span>
-                    </SidebarMenuButton>
-                    <SidebarMenuSub>
-                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'lending-assumptions'} onClick={() => navigate('lending-assumptions')}><Calculator />Assumptions</SidebarMenuSubButton></SidebarMenuSubItem>
-                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'lending-loan-book'} onClick={() => navigate('lending-loan-book')}><Database />Loan Book</SidebarMenuSubButton></SidebarMenuSubItem>
-                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'lending-income-statement'} onClick={() => navigate('lending-income-statement')}><TrendingUp />Income Statement</SidebarMenuSubButton></SidebarMenuSubItem>
-                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'lending-cashflow'} onClick={() => navigate('lending-cashflow')}><DollarSign />Cashflow</SidebarMenuSubButton></SidebarMenuSubItem>
-                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'lending-balance-sheet'} onClick={() => navigate('lending-balance-sheet')}><FinancialSheetIcon />Balance Sheet</SidebarMenuSubButton></SidebarMenuSubItem>
-                    </SidebarMenuSub>
-                </SidebarMenuItem>
             </SidebarGroup>
           </SidebarContent>
           <SidebarFooter>
@@ -485,12 +413,3 @@ export default function AdminAccountPage() {
     </Suspense>
   );
 }
-    
-
-    
-
-    
-
-    
-
-
