@@ -1,9 +1,8 @@
-
 'use client';
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, Handshake, Eye, Check, X, MessageSquare, Save, User, Bot, AlertTriangle } from 'lucide-react';
+import { Loader2, Handshake, Eye, Check, X, MessageSquare, Save, User, Bot, AlertTriangle, MoreVertical } from 'lucide-react';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
 import { Badge } from '@/components/ui/badge';
