@@ -1716,9 +1716,6 @@ export function ShopWizard({ shop: initialShop, onShopUpdate }: { shop: any, onS
 
   useEffect(() => {
     setShopData(initialShop);
-    // If the shop is already approved, don't show the setup wizard, show the success state.
-    // However, this component is designed for setup. Let's keep the user request in mind.
-    // They want a better post-publish experience. `showSuccessScreen` will handle this.
   }, [initialShop]);
   
   const productsQuery = useMemoFirebase(() => {
@@ -1774,9 +1771,18 @@ export function ShopWizard({ shop: initialShop, onShopUpdate }: { shop: any, onS
             body: JSON.stringify({ shopId: shopData.id, companyId: shopData.companyId })
         });
         if (!syncResponse.ok) throw new Error((await syncResponse.json()).error || 'Failed to publish shop.');
-
-        onShopUpdate();
+        
+        toast({
+            title: "Shop Published Successfully!",
+            description: "Your shop is now live on the Logistics Flow platform.",
+        });
+        
+        // Update local state to reflect the publish action
+        setShopData({ ...shopData, status: 'approved' });
+        
+        // Show the success screen
         setShowSuccessScreen(true);
+
     } catch (error: any) {
         toast({ variant: 'destructive', title: 'Publishing Failed', description: error.message });
     } finally {
@@ -1896,4 +1902,3 @@ export function ShopWizard({ shop: initialShop, onShopUpdate }: { shop: any, onS
     </div>
   );
 }
-
