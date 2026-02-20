@@ -129,8 +129,8 @@ const defaultValues: ClientFormValues = {
   isVatRegistered: false,
   usePhysicalForPostal: false,
   owners: [{ name: '', address: '', suburb: '', city: '', province: '', postCode: '', idNo: '', cell: '', position: '', qualification: '', since: '', held: 0 }],
-  management: [{ name: '', address: '', suburb: '', city: '', province: '', postCode: '', idNo: '', cell: '', position: '', qualification: '', since: '', held: 0, title: '', description: '' }],
-  bankAccounts: [{ bank: '', branchCode: '', accountNo: '', branchName: '', bankCode: '', address: '', postCode: '', phone: '', email: '', contact: '' }],
+  management: [],
+  bankAccounts: [],
 };
 
 
@@ -316,6 +316,8 @@ const ClientWizard = ({ clientData, onBack, onSaveSuccess }: { clientData?: Part
 
     const handleNext = async () => {
         const currentStepConfig = steps[currentStep];
+        if (!currentStepConfig) return;
+
         let isValid = false;
         if (currentStepConfig.fields) {
             isValid = await methods.trigger(currentStepConfig.fields as (keyof ClientFormValues)[]);
@@ -356,6 +358,7 @@ const ClientWizard = ({ clientData, onBack, onSaveSuccess }: { clientData?: Part
     };
 
     const isStepValid = (stepIndex: number) => {
+        if (stepIndex < 0) return true;
         const step = steps[stepIndex];
         if (!step || !step.fields) return true;
         const fields = step.fields as (keyof ClientFormValues)[];
@@ -480,4 +483,3 @@ export default function ClientsContent() {
         </Card>
     );
 }
-
