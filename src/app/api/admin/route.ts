@@ -181,7 +181,6 @@ export async function POST(req: NextRequest) {
                         return dateB - dateA;
                     });
                 
-                // Brute-force fetch all agreements and filter in code to avoid index issues.
                 const allAgreementsSnap = await db.collectionGroup('agreements').get();
                 
                 const latestProposals = new Map<string, any>();
@@ -195,8 +194,10 @@ export async function POST(req: NextRequest) {
 
                     const existing = latestProposals.get(shopId);
                     const docTimestamp = data.createdAt.toMillis();
+                    
+                    const existingTimestamp = existing ? new Date(existing.createdAt).getTime() : 0;
 
-                    if (!existing || docTimestamp > existing.createdAt.toMillis()) {
+                    if (!existing || docTimestamp > existingTimestamp) {
                         latestProposals.set(shopId, {
                             ...serializeTimestamps(data),
                             id: doc.id,
@@ -218,10 +219,8 @@ export async function POST(req: NextRequest) {
                     shopMap.set(doc.id, doc.data().shopName || 'Unnamed Shop');
                 });
             
-                // Brute-force fetch ALL agreements to avoid indexing issues.
                 const allAgreementsSnap = await db.collectionGroup('agreements').get();
                 
-                // Filter for "proposed" status in application code.
                 const proposedAgreements = allAgreementsSnap.docs.map(doc => {
                     const data = doc.data();
                     const pathSegments = doc.ref.path.split('/');
@@ -237,7 +236,6 @@ export async function POST(req: NextRequest) {
                     };
                 }).filter(agreement => agreement.status === 'proposed');
 
-                // Group by shopId to get only the most recent proposal for each shop
                 const latestProposals = new Map<string, any>();
                 proposedAgreements.forEach(agreement => {
                     if (!agreement.shopId) return;
@@ -249,7 +247,6 @@ export async function POST(req: NextRequest) {
                     }
                 });
                 
-                // Sort the final list of unique, latest proposals
                 const sortedAgreements = Array.from(latestProposals.values())
                     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
                 
@@ -266,14 +263,12 @@ export async function POST(req: NextRequest) {
                 await db.runTransaction(async (transaction) => {
                     const agreementsSnap = await transaction.get(agreementsRef);
                     
-                    // Archive all other active or proposed agreements for this shop
                     agreementsSnap.docs.forEach(doc => {
                         if (doc.id !== agreementId && (doc.data().status === 'active' || doc.data().status === 'proposed')) {
                             transaction.update(doc.ref, { status: 'archived', updatedAt: FieldValue.serverTimestamp() });
                         }
                     });
                     
-                    // Activate the chosen agreement
                     const newAgreementRef = agreementsRef.doc(agreementId);
                     transaction.update(newAgreementRef, { 
                         status: 'active',
@@ -294,7 +289,7 @@ export async function POST(req: NextRequest) {
                 
                 await agreementRef.update({
                     percentage: newPercentage,
-                    proposedBy: adminId, // Now the admin is the one proposing
+                    proposedBy: adminId,
                     updatedAt: FieldValue.serverTimestamp()
                 });
                 return NextResponse.json({ success: true, message: `Counter-offer of ${newPercentage}% submitted.` });
@@ -312,7 +307,6 @@ export async function POST(req: NextRequest) {
                 
                 if (!email) throw new Error("Partner does not have an email to invite.");
                 
-                // This action simply updates the status. User creation happens on the /join page.
                 await partnerDocRef.update({
                     invitationStatus: 'invited',
                     updatedAt: FieldValue.serverTimestamp(),
@@ -331,12 +325,12 @@ export async function POST(req: NextRequest) {
                 let docRef;
                 let data;
                 
-                if (lead.id) { // Update
+                if (lead.id) {
                     docRef = leadsCollectionRef.doc(lead.id);
                     data = { ...lead, updatedAt: FieldValue.serverTimestamp() };
                     delete data.id;
                     await docRef.set(data, { merge: true });
-                } else { // Create
+                } else {
                     docRef = leadsCollectionRef.doc();
                     data = { ...lead, id: docRef.id, createdAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp() };
                     await docRef.set(data);
