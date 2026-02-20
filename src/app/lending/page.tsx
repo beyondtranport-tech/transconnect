@@ -51,7 +51,6 @@ import dynamic from 'next/dynamic';
 import React from 'react';
 
 // --- Dynamic Imports for Lending Components ---
-const LendingModelDashboard = dynamic(() => import('@/app/backend/lending-model-dashboard'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const DiscoveryContent = dynamic(() => import('@/app/backend/lending/discovery-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const ScoringContent = dynamic(() => import('@/app/backend/lending/scoring-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const ClientsContent = dynamic(() => import('@/app/backend/lending/clients-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
@@ -122,7 +121,6 @@ function LendingPortalContent() {
       case 'collateral': return <CollateralContent />;
       case 'payments': return <PaymentsContent />;
       case 'partners': return <LendingPartnersContent />;
-      case 'lending-model': return <LendingModelDashboard />;
       default: return <LendingDashboard />;
     }
   }, [activeView]);
@@ -187,11 +185,6 @@ function LendingPortalContent() {
                 <SidebarMenuItem>
                     <SidebarMenuButton tooltip="Partners" isActive={activeView === 'partners'} onClick={() => navigate('partners')}>
                         <Handshake /><span>Partners</span>
-                    </SidebarMenuButton>
-                </SidebarMenuItem>
-                 <SidebarMenuItem>
-                    <SidebarMenuButton tooltip="Lending Model" isActive={activeView === 'lending-model'} onClick={() => navigate('lending-model')}>
-                        <Calculator /><span>Lending Model</span>
                     </SidebarMenuButton>
                 </SidebarMenuItem>
             </SidebarGroup>

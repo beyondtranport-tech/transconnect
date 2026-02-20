@@ -118,6 +118,7 @@ const DeveloperElevatorPitch = dynamic(() => import('./developer-elevator-pitch'
 const DeveloperOffer = dynamic(() => import('./developer-offer'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const DeveloperEmailSequence = dynamic(() => import('./developer-email-sequence'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const MembersList = dynamic(() => import('@/app/backend/members-list'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const LendingModelDashboard = dynamic(() => import('@/app/backend/lending-model-dashboard'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 
 
 function AdminAuthGuard({ children }: { children: React.ReactNode }) {
@@ -211,6 +212,7 @@ function BackendContent() {
       case 'turnover': return <TurnoverProjection />;
       case 'income-statement': return <IncomeStatementProjection />;
       case 'revenue-ledger': return <PlatformTransactions />;
+      case 'lending-model': return <LendingModelDashboard />;
 
       default: return <AdminDashboardContent />;
     }
@@ -241,7 +243,7 @@ function BackendContent() {
   ].includes(activeView);
   const isFinancialsActive = [
       'financial-setup', 'sales-roadmap', 'targets', 'budget', 'member-projection', 
-      'turnover', 'income-statement', 'revenue-ledger', 'financial-bank-details'
+      'turnover', 'income-statement', 'revenue-ledger', 'financial-bank-details', 'lending-model'
   ].includes(activeView);
   const isAdminOnlyActive = ['investors'].includes(activeView);
 
@@ -360,6 +362,8 @@ function BackendContent() {
                         <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'member-projection'} onClick={() => navigate('member-projection')}><Users />Members</SidebarMenuSubButton></SidebarMenuSubItem>
                         <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'turnover'} onClick={() => navigate('turnover')}><DollarSign />Turnover</SidebarMenuSubButton></SidebarMenuSubItem>
                         <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'income-statement'} onClick={() => navigate('income-statement')}><TrendingUp />Income Statement</SidebarMenuSubButton></SidebarMenuSubItem>
+                        <SidebarMenuSeparator />
+                         <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'lending-model'} onClick={() => navigate('lending-model')}><Calculator />Lending Model</SidebarMenuSubButton></SidebarMenuSubItem>
                         <SidebarMenuSeparator />
                         <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'revenue-ledger'} onClick={() => navigate('revenue-ledger')}><DollarSign />Revenue Ledger</SidebarMenuSubButton></SidebarMenuSubItem>
                     </SidebarMenuSub>
