@@ -13,7 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useFirestore, useUser, useStorage, useCollection, getClientSideAuthToken, useMemoFirebase } from '@/firebase';
 import { doc, collection, query, orderBy, deleteDoc } from 'firebase/firestore';
 import { ref, uploadBytesResumable, getDownloadURL, deleteObject } from 'firebase/storage';
-import { Loader2, Save, CheckCircle, LayoutGrid, List, Image as ImageIcon, Sparkles, PlusCircle, Edit, Trash2, Send, Eye, ShoppingCart, Mail, Phone, UploadCloud, Wand2, Video, Search, ShieldAlert, Download, Copy, FileText, View, DollarSign, ArrowRight, RefreshCcw } from 'lucide-react';
+import { Loader2, Save, CheckCircle, LayoutGrid, List, Image as ImageIcon, Sparkles, PlusCircle, Edit, Trash2, Send, Eye, ShoppingCart, Mail, Phone, UploadCloud, Wand2, Video, Search, ShieldAlert, Download, Copy, FileText, View, DollarSign, ArrowRight, RefreshCcw, AlertTriangle } from 'lucide-react';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -45,6 +45,8 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { generateShopSeo } from '@/ai/flows/seo-flow.ts';
 import { generateSocialLinks } from '@/ai/flows/social-link-generator-flow';
 import { useConfig } from '@/hooks/use-config';
+import { Checkbox } from '@/components/ui/checkbox';
+
 
 const { placeholderImages } = placeholderImageData;
 
@@ -1433,7 +1435,7 @@ function Step6Commercials({ shop, canEdit, onSave }: { shop: any, onSave: (newDa
 }
 
 
-// ====== STEP 7: SEO & Publishing ======
+// ====== STEP 7: SEO ======
 const shopStep7Schema = z.object({
   metaTitle: z.string().optional(),
   metaDescription: z.string().optional(),
@@ -1442,13 +1444,10 @@ const shopStep7Schema = z.object({
 
 type Step7FormValues = z.infer<typeof shopStep7Schema>;
 
-function Step7SeoAndPublishing({ shop, onSave, canEdit, onSeoGenerated, onShopUpdate }: { shop: any, onSave: (newData: any) => void, canEdit: boolean, onSeoGenerated: (seoData: any) => void, onShopUpdate: () => void }) {
-  const { user } = useUser();
+function Step7Seo({ shop, onSave, canEdit, onSeoGenerated }: { shop: any, onSave: (newData: any) => void, canEdit: boolean, onSeoGenerated: (seoData: any) => void }) {
   const { toast } = useToast();
   const [isSaving, setIsSaving] = useState(false);
-  const [isPublishing, setIsPublishing] = useState(false);
   const [isGeneratingSeo, setIsGeneratingSeo] = useState(false);
-  const [isSyncing, setIsSyncing] = useState(false);
 
   const form = useForm<Step7FormValues>({
     resolver: zodResolver(shopStep7Schema),
@@ -1485,54 +1484,20 @@ function Step7SeoAndPublishing({ shop, onSave, canEdit, onSeoGenerated, onShopUp
     }
   };
 
-  const handleSyncProducts = async () => {
-    if (!shop.id || !shop.companyId) return;
-    setIsSyncing(true);
-    try {
-        const token = await getClientSideAuthToken();
-        if (!token) throw new Error("Authentication failed.");
-
-        const response = await fetch('/api/syncShopProducts', {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ shopId: shop.id, companyId: shop.companyId })
-        });
-
-        const result = await response.json();
-        if (!response.ok) throw new Error(result.error || 'Failed to re-sync products.');
-
-        toast({ title: 'Products Re-synced!', description: 'Your public shop has been updated with your latest products.' });
-    } catch (error: any) {
-        toast({ variant: 'destructive', title: 'Sync Failed', description: error.message });
-    } finally {
-        setIsSyncing(false);
-    }
-  };
-
   const onSubmit = async (values: Step7FormValues) => {
-    if (!user || !shop.companyId) return;
     setIsSaving(true);
-    
     try {
         const token = await getClientSideAuthToken();
         if (!token) throw new Error("Authentication token not found.");
         
-        const response = await fetch('/api/updateUserDoc', {
+        await fetch('/api/updateUserDoc', {
             method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json',
-            },
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 path: `companies/${shop.companyId}/shops/${shop.id}`,
                 data: { ...values, updatedAt: { _methodName: 'serverTimestamp' } }
             }),
         });
-
-        const result = await response.json();
-        if (!response.ok) {
-          throw new Error(result.error || 'Failed to update shop.');
-        }
 
         toast({ title: 'Step 7 Saved!', description: 'Your SEO details have been updated.' });
         onSave(values);
@@ -1542,36 +1507,7 @@ function Step7SeoAndPublishing({ shop, onSave, canEdit, onSeoGenerated, onShopUp
         setIsSaving(false);
     }
   };
-
-  const handlePublish = async () => {
-    setIsPublishing(true);
-     try {
-        const token = await getClientSideAuthToken();
-        if (!token) throw new Error("Authentication token not found.");
-        
-        const response = await fetch('/api/updateUserDoc', {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                path: `companies/${shop.companyId}/shops/${shop.id}`,
-                data: { status: 'pending_review', updatedAt: { _methodName: 'serverTimestamp' } }
-            }),
-        });
-        
-        if (!response.ok) throw new Error((await response.json()).error || 'Failed to submit for review.');
-
-        toast({ title: 'Shop Submitted!', description: 'Your shop is now pending review from our team.' });
-        onShopUpdate();
-    } catch (error: any) {
-         toast({ variant: 'destructive', title: 'Submission Failed', description: error.message });
-    } finally {
-        setIsPublishing(false);
-    }
-  }
-
+  
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
@@ -1612,31 +1548,70 @@ function Step7SeoAndPublishing({ shop, onSave, canEdit, onSeoGenerated, onShopUp
             </div>
         </fieldset>
 
-        <div className="flex justify-between items-center flex-wrap gap-4">
-            <Button type="submit" disabled={isSaving || !canEdit}>
-                {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                Save SEO Settings
-            </Button>
-            
-            {shop.status === 'approved' && (
-                <Button type="button" onClick={handleSyncProducts} disabled={isSyncing || !canEdit} variant="secondary">
-                    {isSyncing ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <RefreshCcw className="mr-2 h-4 w-4" />}
-                    Re-sync Live Products
-                </Button>
-            )}
-
-            {shop.status === 'draft' && (
-                 <Button onClick={handlePublish} disabled={isPublishing || !canEdit}>
-                    {isPublishing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
-                    Submit for Review
-                </Button>
-            )}
-        </div>
+        <Button type="submit" disabled={isSaving || !canEdit}>
+            {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+            Save & Continue
+        </Button>
       </form>
     </Form>
   );
 }
 
+// ====== NEW PUBLISH STEP ======
+function Step8Publish({ onPublish, isPublishing, allStepsComplete, canEdit }: { onPublish: () => void; isPublishing: boolean; allStepsComplete: boolean; canEdit: boolean; }) {
+    const [agreeTerms, setAgreeTerms] = useState(false);
+    const [agreeReturns, setAgreeReturns] = useState(false);
+    const [agreePrivacy, setAgreePrivacy] = useState(false);
+
+    const canPublish = agreeTerms && agreeReturns && agreePrivacy && allStepsComplete;
+
+    return (
+        <div className="space-y-6">
+            <CardHeader className="px-0">
+                <CardTitle>Publish Your Shop</CardTitle>
+                <CardDescription>
+                    By publishing your shop, you agree to our terms and policies. Your shop will be live and visible to all members of the TransConnect ecosystem.
+                </CardDescription>
+            </CardHeader>
+            
+            {!allStepsComplete && (
+                <Alert variant="destructive">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertTitle>Incomplete Setup</AlertTitle>
+                <AlertDescription>
+                    You must complete all previous steps before you can publish your shop. Please review the sidebar for incomplete steps.
+                </AlertDescription>
+                </Alert>
+            )}
+
+            <div className="space-y-4 rounded-md border p-4">
+                <div className="flex items-start space-x-3">
+                    <Checkbox id="terms" checked={agreeTerms} onCheckedChange={(checked) => setAgreeTerms(!!checked)} disabled={!canEdit} />
+                    <Label htmlFor="terms" className="text-sm font-normal leading-relaxed">
+                        I have read and agree to the TransConnect <Link href="/terms" target="_blank" className="underline text-primary">Terms of Service</Link>.
+                    </Label>
+                </div>
+                <div className="flex items-start space-x-3">
+                    <Checkbox id="returns" checked={agreeReturns} onCheckedChange={(checked) => setAgreeReturns(!!checked)} disabled={!canEdit} />
+                    <Label htmlFor="returns" className="text-sm font-normal leading-relaxed">
+                        I confirm that my shop will adhere to the platform's standard <Link href="/terms#returns" target="_blank" className="underline text-primary">Return Policy</Link>, unless my own is provided.
+                    </Label>
+                </div>
+                <div className="flex items-start space-x-3">
+                    <Checkbox id="privacy" checked={agreePrivacy} onCheckedChange={(checked) => setAgreePrivacy(!!checked)} disabled={!canEdit} />
+                    <Label htmlFor="privacy" className="text-sm font-normal leading-relaxed">
+                        I understand and agree to the TransConnect <Link href="/privacy" target="_blank" className="underline text-primary">Privacy Policy</Link> regarding the handling of customer data.
+                    </Label>
+                </div>
+            </div>
+
+            <Button onClick={onPublish} disabled={!canPublish || isPublishing || !canEdit}>
+                {isPublishing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
+                Publish Shop
+            </Button>
+        </div>
+    );
+}
 
 // ====== MAIN WIZARD COMPONENT ======
 export function ShopWizard({ shop: initialShop, onShopUpdate }: { shop: any, onShopUpdate: () => void }) {
@@ -1644,6 +1619,8 @@ export function ShopWizard({ shop: initialShop, onShopUpdate }: { shop: any, onS
   const [shopData, setShopData] = useState(initialShop);
   const { can, isLoading: permissionsLoading } = usePermissions();
   const firestore = useFirestore();
+  const { toast } = useToast();
+  const [isPublishing, setIsPublishing] = useState(false);
 
   useEffect(() => {
     setShopData(initialShop);
@@ -1653,8 +1630,15 @@ export function ShopWizard({ shop: initialShop, onShopUpdate }: { shop: any, onS
     if (!firestore || !shopData?.companyId || !shopData?.id) return null;
     return collection(firestore, `companies/${shopData.companyId}/shops/${shopData.id}/products`);
   }, [firestore, shopData.companyId, shopData.id]);
-  
   const { data: products, forceRefresh: forceRefreshProducts } = useCollection(productsQuery);
+
+  const agreementsQuery = useMemoFirebase(() => {
+    if (!firestore || !shopData?.companyId || !shopData?.id) return null;
+    return collection(firestore, `companies/${shopData.companyId}/shops/${shopData.id}/agreements`);
+  }, [firestore, shopData.companyId, shopData.id]);
+  const { data: agreements } = useCollection(agreementsQuery);
+  const activeAgreement = useMemo(() => agreements?.find(a => a.status === 'active'), [agreements]);
+
 
   const handleSave = (newData: any) => {
     setShopData({ ...shopData, ...newData });
@@ -1673,33 +1657,74 @@ export function ShopWizard({ shop: initialShop, onShopUpdate }: { shop: any, onS
     });
   };
   
+  const handlePublish = async () => {
+    setIsPublishing(true);
+    try {
+        const token = await getClientSideAuthToken();
+        if (!token) throw new Error("Authentication failed.");
+
+        const updateStatusResponse = await fetch('/api/updateUserDoc', {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                path: `companies/${shopData.companyId}/shops/${shopData.id}`,
+                data: { status: 'approved', updatedAt: { _methodName: 'serverTimestamp' } }
+            }),
+        });
+        if (!updateStatusResponse.ok) throw new Error((await updateStatusResponse.json()).error || 'Failed to update shop status.');
+
+        const syncResponse = await fetch('/api/syncShopProducts', {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ shopId: shopData.id, companyId: shopData.companyId })
+        });
+        if (!syncResponse.ok) throw new Error((await syncResponse.json()).error || 'Failed to publish shop.');
+
+        toast({ title: 'Shop Published!', description: 'Your shop is now live on the platform.' });
+        onShopUpdate();
+    } catch (error: any) {
+        toast({ variant: 'destructive', title: 'Publishing Failed', description: error.message });
+    } finally {
+        setIsPublishing(false);
+    }
+  };
+  
   const canEditShop = can('edit', 'shop');
 
+  const stepCompleteness = useMemo(() => {
+    return {
+        'Core Identity': !!(shopData.shopName && shopData.shopDescription && shopData.category),
+        'Products': !!(products && products.length > 0),
+        'Appearance': !!shopData.heroBannerUrl,
+        'Social Links': !!(shopData.facebookLink || shopData.instagramLink || shopData.twitterLink),
+        'SEO': !!(shopData.metaTitle && shopData.metaDescription && shopData.tags?.length > 0),
+        'Legal Docs': !!(shopData.termsUrl || shopData.returnsPolicyUrl || shopData.privacyPolicyUrl),
+        'Commercials': !!activeAgreement,
+    };
+  }, [shopData, products, activeAgreement]);
+  
+  const allStepsComplete = useMemo(() => {
+    return Object.values(stepCompleteness).every(Boolean);
+  }, [stepCompleteness]);
+
+  const completenessPercentage = useMemo(() => {
+    const completedCount = Object.values(stepCompleteness).filter(Boolean).length;
+    const totalSteps = Object.keys(stepCompleteness).length;
+    return (completedCount / totalSteps) * 100;
+  }, [stepCompleteness]);
+
   const steps = [
-    { name: 'Core Identity', component: <Step1CoreIdentity shop={shopData} onSave={handleSave} canEdit={canEditShop} /> },
-    { name: 'Products', component: <Step2Products shop={shopData} canEdit={canEditShop} /> },
-    { name: 'Appearance', component: <Step3Appearance shop={shopData} onSave={handleSave} canEdit={canEditShop} /> },
-    { name: 'Social Links', component: <Step4SocialLinks shop={shopData} onSave={handleSave} canEdit={canEditShop} /> },
-    { name: 'Legal Docs', component: <Step5Legal shop={shopData} onSave={handleSave} canEdit={canEditShop} /> },
-    { name: 'Commercials', component: <Step6Commercials shop={shopData} onSave={handleSave} canEdit={canEditShop} /> },
-    { name: 'Publishing', component: <Step7SeoAndPublishing shop={shopData} onSave={handleSave} canEdit={canEditShop} onSeoGenerated={handleSeoGenerated} onShopUpdate={onShopUpdate} /> },
-    { name: 'Preview', component: <ShopPreview shop={shopData} products={products || []} /> },
+    { id: 'Core Identity', component: <Step1CoreIdentity shop={shopData} onSave={handleSave} canEdit={canEditShop} /> },
+    { id: 'Products', component: <Step2Products shop={shopData} canEdit={canEditShop} /> },
+    { id: 'Appearance', component: <Step3Appearance shop={shopData} onSave={handleSave} canEdit={canEditShop} /> },
+    { id: 'Social Links', component: <Step4SocialLinks shop={shopData} onSave={handleSave} canEdit={canEditShop} /> },
+    { id: 'SEO', component: <Step7Seo shop={shopData} onSave={handleSave} canEdit={canEditShop} onSeoGenerated={handleSeoGenerated} /> },
+    { id: 'Legal Docs', component: <Step5Legal shop={shopData} onSave={handleSave} canEdit={canEditShop} /> },
+    { id: 'Commercials', component: <Step6Commercials shop={shopData} onSave={handleSave} canEdit={canEditShop} /> },
+    { id: 'Publish', component: <Step8Publish onPublish={handlePublish} isPublishing={isPublishing} allStepsComplete={allStepsComplete} canEdit={canEditShop} /> },
+    { id: 'Preview', component: <ShopPreview shop={shopData} products={products || []} /> },
   ];
 
-  const completeness = useMemo(() => {
-    const totalFields = 7;
-    let completedFields = 0;
-    if (shopData.shopName && shopData.shopDescription && shopData.category) completedFields++;
-    if (products && products.length > 0) completedFields++;
-    if (shopData.heroBannerUrl) completedFields++;
-    if (shopData.facebookLink || shopData.instagramLink) completedFields++;
-    if (shopData.termsUrl) completedFields++;
-    if (shopData.metaTitle) completedFields++;
-    if (shopData.status === 'approved' || shopData.status === 'pending_review') completedFields++;
-
-    return (completedFields / totalFields) * 100;
-  }, [shopData, products]);
-  
   const handleStepClick = (index: number) => {
     setCurrentStep(index);
   }
@@ -1710,7 +1735,7 @@ export function ShopWizard({ shop: initialShop, onShopUpdate }: { shop: any, onS
             <h3 className="text-xl font-semibold">Shop Status: <Badge variant={statusColors[shopData.status] || 'secondary'} className="capitalize text-base">{shopData.status.replace(/_/g, ' ')}</Badge></h3>
             <div className="text-right">
                 <p className="text-sm font-medium">Profile Completeness</p>
-                <Progress value={completeness} className="w-40 mt-1" />
+                <Progress value={completenessPercentage} className="w-40 mt-1" />
             </div>
         </div>
         
@@ -1731,17 +1756,21 @@ export function ShopWizard({ shop: initialShop, onShopUpdate }: { shop: any, onS
         )}
         
         <div className="grid grid-cols-1 md:grid-cols-[200px_1fr] gap-8">
-            <div className="flex flex-col gap-2">
-                 {steps.map((step, index) => (
-                    <Button 
-                        key={step.name} 
-                        variant={currentStep === index ? 'default' : 'ghost'}
-                        onClick={() => handleStepClick(index)}
-                        className="justify-start"
-                    >
-                        {step.name}
-                    </Button>
-                ))}
+            <div className="flex flex-col gap-1">
+                 {steps.map((step, index) => {
+                    const isCompleted = stepCompleteness[step.id as keyof typeof stepCompleteness];
+                     return (
+                        <Button 
+                            key={step.id} 
+                            variant={currentStep === index ? 'default' : 'ghost'}
+                            onClick={() => handleStepClick(index)}
+                            className="justify-start gap-2"
+                        >
+                            {isCompleted ? <CheckCircle className="h-4 w-4 text-green-500" /> : <div className="h-4 w-4"/>}
+                            {step.id}
+                        </Button>
+                    )
+                 })}
             </div>
             <div className="md:border-l md:pl-8">
                 {steps[currentStep].component}
