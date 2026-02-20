@@ -1,7 +1,7 @@
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, PlusCircle, Trash2, Loader2, Check, ArrowLeft, ArrowRight } from "lucide-react";
+import { Users, PlusCircle, Trash2, Loader2, Check, ArrowLeft, ArrowRight, Banknote, Upload, BarChart, FileCheck, Link as LinkIcon, BrainCircuit } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { useForm, useFieldArray, FormProvider, useFormContext } from "react-hook-form";
 import { Button } from "@/components/ui/button";
@@ -23,6 +23,7 @@ import { type ColumnDef } from "@/hooks/use-data-table";
 import { Label } from "@/components/ui/label";
 import BalanceSheetContent from './balance-sheet-content';
 import IncomeStatementContent from './income-statement-content';
+import Link from 'next/link';
 
 
 // --- Zod Schema ---
@@ -114,6 +115,8 @@ const steps = [
     { id: 'owners', name: 'Owners & Directors', fields: ['owners'] },
     { id: 'management', name: 'Management', fields: ['management'] },
     { id: 'banking', name: 'Bank Accounts', fields: ['bankAccounts'] },
+    { id: 'bank-statement', name: 'Bank Statement', fields: [] },
+    { id: 'credit-report', name: 'Credit Report', fields: [] },
     { id: 'balance-sheet', name: 'Balance Sheet' },
     { id: 'income-statement', name: 'Income Statement' },
     { id: 'agreements', name: 'Agreements & Submit' },
@@ -370,6 +373,77 @@ const StepBanking = () => {
     )
 }
 
+const StepBankStatement = () => {
+    return (
+        <div className="space-y-6">
+            <h3 className="text-lg font-semibold">Bank Statement Analysis</h3>
+            <div className="p-8 border-2 border-dashed rounded-lg text-center">
+                <p className="text-muted-foreground">This section will contain the CSV upload and analysis functionality.</p>
+            </div>
+        </div>
+    )
+};
+
+const StepCreditReports = () => {
+    const { toast } = useToast();
+    const handlePlaceholderClick = (featureName: string) => {
+        toast({
+            title: `${featureName} Feature Coming Soon`,
+            description: `This functionality is planned for a future update.`,
+        });
+    };
+    const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+
+    return (
+        <div className="space-y-6">
+            <h3 className="text-lg font-semibold">Credit Bureau Reports</h3>
+            <p className="text-sm text-muted-foreground">
+                Upload existing credit reports for this client or connect directly to a credit bureau to fetch their latest report.
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2 text-base"><Upload className="h-5 w-5" /> Upload PDF Report</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <p className="text-xs text-muted-foreground mb-2">Upload a previously downloaded credit report in PDF format.</p>
+                        <Button variant="outline" className="w-full" onClick={() => fileInputRef.current?.click()}>
+                            <Input ref={fileInputRef} type="file" className="hidden" accept=".pdf" />
+                            Upload PDF
+                        </Button>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2 text-base"><LinkIcon className="h-5 w-5" /> Connect to Bureau</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                         <p className="text-xs text-muted-foreground mb-2">Connect directly to bureaus like TransUnion or Experian.</p>
+                        <Button variant="outline" className="w-full" onClick={() => handlePlaceholderClick('API Connection')}>Connect API</Button>
+                    </CardContent>
+                </Card>
+                 <Card>
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2 text-base"><BrainCircuit className="h-5 w-5" /> Analyze Report</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                         <p className="text-xs text-muted-foreground mb-2">Use AI to analyze the report and extract key credit metrics.</p>
+                        <Button variant="default" className="w-full" onClick={() => handlePlaceholderClick('AI Analysis')}>Analyze with AI</Button>
+                    </CardContent>
+                </Card>
+            </div>
+             <div className="pt-6 border-t">
+                <h4 className="font-semibold mb-2">Uploaded Reports</h4>
+                 <div className="p-8 border-2 border-dashed rounded-lg text-center">
+                    <p className="text-muted-foreground">Uploaded reports will be listed here.</p>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+
 const StepAgreements = ({ onSubmit, isLoading }: { onSubmit: () => void, isLoading: boolean }) => (
     <div className="text-center">
         <h3 className="text-xl font-semibold">Agreements & Final Submission</h3>
@@ -441,7 +515,7 @@ const ClientWizard = ({ clientData, onBack, onSaveSuccess }: { clientData?: Part
     const isStepValid = (stepIndex: number) => {
         if (stepIndex < 0) return true;
         const step = steps[stepIndex];
-        if (!step.fields) return true;
+        if (!step.fields) return true; // Steps without fields are always "valid" for navigation
         const fields = step.fields as (keyof ClientFormValues)[];
         return fields.every(field => !methods.formState.errors[field as keyof typeof methods.formState.errors]);
     };
@@ -456,6 +530,8 @@ const ClientWizard = ({ clientData, onBack, onSaveSuccess }: { clientData?: Part
             case 'owners': return <StepOwners />;
             case 'management': return <StepManagement />;
             case 'banking': return <StepBanking />;
+            case 'bank-statement': return <StepBankStatement />;
+            case 'credit-report': return <StepCreditReports />;
             case 'balance-sheet': return <BalanceSheetContent />;
             case 'income-statement': return <IncomeStatementContent />;
             case 'agreements': return <StepAgreements onSubmit={methods.handleSubmit(onSubmit)} isLoading={isLoading} />;
