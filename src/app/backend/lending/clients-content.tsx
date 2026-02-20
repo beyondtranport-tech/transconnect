@@ -22,6 +22,8 @@ import { cn } from "@/lib/utils";
 import { DataTable } from "@/components/ui/data-table";
 import { type ColumnDef } from "@/hooks/use-data-table";
 import { Label } from "@/components/ui/label";
+import BalanceSheetContent from './balance-sheet-content';
+import IncomeStatementContent from './income-statement-content';
 
 
 // --- Zod Schema ---
@@ -114,6 +116,8 @@ const steps = [
     { id: 'owners', name: 'Owners & Directors', fields: ['owners'] },
     { id: 'management', name: 'Management', fields: ['management'] },
     { id: 'banking', name: 'Bank Accounts', fields: ['bankAccounts'] },
+    { id: 'balance-sheet', name: 'Balance Sheet' },
+    { id: 'income-statement', name: 'Income Statement' },
     { id: 'agreements', name: 'Agreements & Submit' },
 ];
 
@@ -407,10 +411,11 @@ const ClientWizard = ({ clientData, onBack, onSaveSuccess }: { clientData?: Part
     const isStepValid = (stepIndex: number) => {
         if (stepIndex < 0) return true;
         const step = steps[stepIndex];
-        if (!step.fields) return true;
+        if (!step || !step.fields) return true; // Steps without fields are always "valid" for navigation
         const fields = step.fields as (keyof ClientFormValues)[];
         return fields.every(field => !methods.formState.errors[field as keyof typeof methods.formState.errors]);
     };
+
 
     const renderStepContent = () => {
         const stepId = steps[currentStep]?.id;
@@ -421,6 +426,8 @@ const ClientWizard = ({ clientData, onBack, onSaveSuccess }: { clientData?: Part
             case 'owners': return <StepOwners />;
             case 'management': return <StepManagement />;
             case 'banking': return <StepBanking />;
+            case 'balance-sheet': return <BalanceSheetContent />;
+            case 'income-statement': return <IncomeStatementContent />;
             case 'agreements': return <StepAgreements onSubmit={methods.handleSubmit(onSubmit)} isLoading={isLoading} />;
             default: return null;
         }
@@ -503,7 +510,7 @@ export default function ClientsContent() {
         { accessorKey: 'name', header: 'Client Name' },
         { accessorKey: 'status', header: 'Status', cell: ({row}) => <Badge className="capitalize">{row.original.status}</Badge>},
         { accessorKey: 'globalFacilityLimit', header: 'Facility Limit', cell: ({row}) => <span>{formatCurrency(row.original.globalFacilityLimit)}</span> },
-        { id: 'actions', header: () => <div className="text-right">Actions</div>, cell: ({row}) => <div className="text-right"><Button variant="ghost" size="sm" onClick={() => handleEdit(row.original)}>Edit</Button></div> }
+        { id: 'actions', header: () => <div className="text-right">Actions</div>, cell: ({ row }) => <div className="text-right"><Button variant="ghost" size="sm" onClick={() => handleEdit(row.original)}>Edit</Button></div> }
     ], []);
 
 
