@@ -2,62 +2,322 @@
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, PlusCircle, Trash2, Loader2 } from "lucide-react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
+import { Users, PlusCircle, Trash2, Loader2, Check, ArrowLeft } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
-import { useForm, useFieldArray, FormProvider } from "react-hook-form";
+import { useForm, useFieldArray, FormProvider, useFormContext } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import * as React from "react";
 import { useEffect, useMemo, useState, useCallback } from 'react';
 import { Textarea } from "@/components/ui/textarea";
-import { provinces } from "@/lib/geodata";
 import { useCollection, useFirestore, useMemoFirebase, getClientSideAuthToken } from '@/firebase';
 import { collection, query } from 'firebase/firestore';
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from 'zod';
 import { useToast } from "@/hooks/use-toast";
-import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import { cn } from "@/lib/utils";
+import { DataTable } from "@/components/ui/data-table";
+import { type ColumnDef } from "@/hooks/use-data-table";
 
+// --- Zod Schema ---
+const ownerSchema = z.object({
+  name: z.string().optional(),
+  idNo: z.string().optional(),
+  address: z.string().optional(),
+  suburb: z.string().optional(),
+  city: z.string().optional(),
+  postCode: z.string().optional(),
+  province: z.string().optional(),
+  cell: z.string().optional(),
+  position: z.string().optional(),
+  qualification: z.string().optional(),
+  since: z.string().optional(),
+  held: z.coerce.number().optional(),
+});
 
-const clientTabs = [
-    { value: "dashboard", label: "Dashboard" },
-    { value: "main", label: "Main" },
-    { value: "address", label: "Address" },
-    { value: "contact", label: "Contact" },
-    { value: "owners", label: "Owners" },
-    { value: "management", label: "Management" },
-    { value: "bank-accounts", label: "Bank Accounts" },
-    { value: "balance-sheet", label: "Balance Sheet" },
-    { value: "income-statement", label: "Income Statement" },
-    { value: "sub-facilities", label: "Sub-Facilities" },
-];
+const managementSchema = z.object({
+    name: z.string().optional(),
+    idNo: z.string().optional(),
+    address: z.string().optional(),
+    suburb: z.string().optional(),
+    city: z.string().optional(),
+    postCode: z.string().optional(),
+    province: z.string().optional(),
+    cell: z.string().optional(),
+    position: z.string().optional(),
+    title: z.string().optional(),
+    qualification: z.string().optional(),
+    since: z.string().optional(),
+    description: z.string().optional(),
+});
+
+const bankAccountSchema = z.object({
+    bank: z.string().optional(),
+    branchCode: z.string().optional(),
+    accountNo: z.string().optional(),
+    branchName: z.string().optional(),
+    bankCode: z.string().optional(),
+    address: z.string().optional(),
+    postCode: z.string().optional(),
+    phone: z.string().optional(),
+    email: z.string().optional(),
+    contact: z.string().optional(),
+});
+
 
 const clientSchema = z.object({
   name: z.string().min(1, "Client name is required."),
   status: z.enum(['active', 'inactive', 'pending']),
   globalFacilityLimit: z.coerce.number().min(0, "Limit must be non-negative."),
+  type: z.string().optional(),
+  category: z.string().optional(),
+  language: z.string().optional(),
+  regId: z.string().optional(),
+  isVatRegistered: z.boolean().default(false),
+  
+  physicalStreet: z.string().optional(),
+  physicalSuburb: z.string().optional(),
+  physicalCity: z.string().optional(),
+  physicalPostCode: z.string().optional(),
+  
+  usePhysicalForPostal: z.boolean().default(false),
+  postalStreet: z.string().optional(),
+  postalSuburb: z.string().optional(),
+  postalCity: z.string().optional(),
+  postalPostCode: z.string().optional(),
+  
+  telW: z.string().optional(),
+  telH: z.string().optional(),
+  fax: z.string().optional(),
+  cell: z.string().optional(),
+  email: z.string().optional(),
+  url: z.string().optional(),
+  primaryContact: z.string().optional(),
+  
+  owners: z.array(ownerSchema).optional(),
+  management: z.array(managementSchema).optional(),
+  bankAccounts: z.array(bankAccountSchema).optional(),
 });
+
 type ClientFormValues = z.infer<typeof clientSchema>;
 
-function AddClientDialog({ onSave }: { onSave: () => void }) {
-    const [isOpen, setIsOpen] = useState(false);
+const steps = [
+    { id: 'main', name: 'Main Details', fields: ['name', 'status', 'globalFacilityLimit'] },
+    { id: 'address', name: 'Address', fields: ['physicalStreet', 'physicalCity'] },
+    { id: 'contact', name: 'Contact Info', fields: ['email', 'cell'] },
+    { id: 'owners', name: 'Owners & Directors', fields: ['owners'] },
+    { id: 'management', name: 'Management', fields: ['management'] },
+    { id: 'banking', name: 'Bank Accounts', fields: ['bankAccounts'] },
+    { id: 'agreements', name: 'Agreements & Submit' },
+];
+
+const defaultValues: ClientFormValues = {
+  name: '',
+  status: 'pending',
+  globalFacilityLimit: 0,
+  usePhysicalForPostal: false,
+  owners: [{ name: '', address: '', suburb: '', city: '', province: '', postCode: '', idNo: '', cell: '', position: '', qualification: '', since: '', held: 0 }],
+  management: [{ name: '', address: '', suburb: '', city: '', province: '', postCode: '', idNo: '', cell: '', position: '', qualification: '', since: '', held: 0, title: '', description: '' }],
+  bankAccounts: [{ bank: '', branchCode: '', accountNo: '', branchName: '', bankCode: '', address: '', postCode: '', phone: '', email: '', contact: '' }],
+};
+
+
+// --- Sub-components for each step ---
+
+const StepMain = () => (
+    <div className="space-y-4 max-w-2xl">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <FormField control={useFormContext().control} name="name" render={({ field }) => (<FormItem><FormLabel>Client Name</FormLabel><FormControl><Input placeholder="Client Legal Name" {...field} /></FormControl><FormMessage /></FormItem>)} />
+            <FormField control={useFormContext().control} name="regId" render={({ field }) => (<FormItem><FormLabel>Reg. ID</FormLabel><FormControl><Input placeholder="Registration ID" {...field} /></FormControl></FormItem>)} />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <FormField control={useFormContext().control} name="status" render={({ field }) => (<FormItem><FormLabel>Status</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue/></SelectTrigger></FormControl><SelectContent><SelectItem value="active">Active</SelectItem><SelectItem value="inactive">Inactive</SelectItem><SelectItem value="pending">Pending</SelectItem></SelectContent></Select></FormItem>)} />
+            <FormField control={useFormContext().control} name="type" render={({ field }) => (<FormItem><FormLabel>Type</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select..."/></SelectTrigger></FormControl><SelectContent><SelectItem value="individual">Individual</SelectItem><SelectItem value="company">Company</SelectItem></SelectContent></Select></FormItem>)} />
+            <FormField control={useFormContext().control} name="category" render={({ field }) => (<FormItem><FormLabel>Category</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select..."/></SelectTrigger></FormControl><SelectContent><SelectItem value="transport">Transport</SelectItem><SelectItem value="logistics">Logistics</SelectItem><SelectItem value="other">Other</SelectItem></SelectContent></Select></FormItem>)} />
+        </div>
+         <Separator className="my-6" />
+        <h3 className="text-lg font-semibold">Financials</h3>
+        <div className="space-y-4 max-w-sm">
+            <FormField control={useFormContext().control} name="globalFacilityLimit" render={({ field }) => (<FormItem><FormLabel>Global Facility Limit</FormLabel><FormControl><Input type="number" placeholder="R 0.00" {...field} /></FormControl><FormMessage /></FormItem>)} />
+             <FormField
+                control={useFormContext().control}
+                name="isVatRegistered"
+                render={({ field }) => (
+                <FormItem className="flex flex-row items-center space-x-3 space-y-0 pt-2">
+                    <FormControl>
+                    <Checkbox checked={field.value} onCheckedChange={field.onChange} />
+                    </FormControl>
+                    <div className="space-y-1 leading-none">
+                    <FormLabel>
+                        VAT Registered?
+                    </FormLabel>
+                    </div>
+                </FormItem>
+                )}
+            />
+        </div>
+    </div>
+);
+
+const StepAddress = () => {
+    const { control, watch, setValue } = useFormContext();
+    const usePhysicalForPostal = watch('usePhysicalForPostal');
+    const physicalAddress = watch(['physicalStreet', 'physicalSuburb', 'physicalCity', 'physicalPostCode']);
+
+    useEffect(() => {
+        if (usePhysicalForPostal) {
+            setValue('postalStreet', physicalAddress[0] || '');
+            setValue('postalSuburb', physicalAddress[1] || '');
+            setValue('postalCity', physicalAddress[2] || '');
+            setValue('postalPostCode', physicalAddress[3] || '');
+        }
+    }, [usePhysicalForPostal, physicalAddress, setValue]);
+
+    return (
+        <div className="space-y-8">
+            <div>
+                <h3 className="text-lg font-semibold mb-4">Physical Address</h3>
+                <div className="space-y-4 max-w-2xl">
+                    <FormField control={control} name="physicalStreet" render={({ field }) => (<FormItem><FormLabel>Street Address</FormLabel><FormControl><Input placeholder="e.g., 123 Industrial Rd" {...field} /></FormControl></FormItem>)} />
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <FormField control={control} name="physicalSuburb" render={({ field }) => (<FormItem><FormLabel>Suburb</FormLabel><FormControl><Input placeholder="e.g., Pomona" {...field} /></FormControl></FormItem>)} />
+                        <FormField control={control} name="physicalCity" render={({ field }) => (<FormItem><FormLabel>City</FormLabel><FormControl><Input placeholder="e.g., Kempton Park" {...field} /></FormControl></FormItem>)} />
+                        <FormField control={control} name="physicalPostCode" render={({ field }) => (<FormItem><FormLabel>Postal Code</FormLabel><FormControl><Input placeholder="e.g., 1619" {...field} /></FormControl></FormItem>)} />
+                    </div>
+                </div>
+            </div>
+            <Separator />
+            <div>
+                 <h3 className="text-lg font-semibold mb-4">Postal Address</h3>
+                 <FormField control={control} name="usePhysicalForPostal" render={({ field }) => (<FormItem className="flex items-center space-x-2 mb-4"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl><FormLabel>Same as Physical Address</FormLabel></FormItem>)} />
+                <div className="space-y-4 max-w-2xl">
+                    <FormField control={control} name="postalStreet" render={({ field }) => (<FormItem><FormLabel>Street Address or P.O. Box</FormLabel><FormControl><Input placeholder="e.g., P.O. Box 12345" {...field} disabled={usePhysicalForPostal} /></FormControl></FormItem>)} />
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <FormField control={control} name="postalSuburb" render={({ field }) => (<FormItem><FormLabel>Suburb</FormLabel><FormControl><Input placeholder="e.g., Pomona" {...field} disabled={usePhysicalForPostal} /></FormControl></FormItem>)} />
+                        <FormField control={control} name="postalCity" render={({ field }) => (<FormItem><FormLabel>City</FormLabel><FormControl><Input placeholder="e.g., Kempton Park" {...field} disabled={usePhysicalForPostal} /></FormControl></FormItem>)} />
+                        <FormField control={control} name="postalPostCode" render={({ field }) => (<FormItem><FormLabel>Postal Code</FormLabel><FormControl><Input placeholder="e.g., 1619" {...field} disabled={usePhysicalForPostal} /></FormControl></FormItem>)} />
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+const StepContact = () => (
+     <div className="space-y-4 max-w-2xl">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <FormField control={useFormContext().control} name="telW" render={({ field }) => (<FormItem><FormLabel>Tel (Work)</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
+            <FormField control={useFormContext().control} name="telH" render={({ field }) => (<FormItem><FormLabel>Tel (Home)</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <FormField control={useFormContext().control} name="fax" render={({ field }) => (<FormItem><FormLabel>Fax</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
+            <FormField control={useFormContext().control} name="cell" render={({ field }) => (<FormItem><FormLabel>Cell</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <FormField control={useFormContext().control} name="email" render={({ field }) => (<FormItem><FormLabel>Email</FormLabel><FormControl><Input type="email" {...field} /></FormControl></FormItem>)} />
+            <FormField control={useFormContext().control} name="url" render={({ field }) => (<FormItem><FormLabel>Website URL</FormLabel><FormControl><Input type="url" {...field} /></FormControl></FormItem>)} />
+        </div>
+        <FormField control={useFormContext().control} name="primaryContact" render={({ field }) => (<FormItem><FormLabel>Primary Contact Person</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
+    </div>
+);
+
+const StepOwners = () => {
+    const { control } = useFormContext();
+    const { fields, append, remove } = useFieldArray({ control, name: "owners" });
+
+    return (
+        <div className="space-y-6">
+            <Button type="button" variant="outline" size="sm" onClick={() => append({ name: '', idNo: '', address: '' })}><PlusCircle className="mr-2 h-4 w-4" /> Add Owner</Button>
+            {fields.map((field, index) => (
+                <div key={field.id} className="p-4 border rounded-lg relative space-y-4">
+                    <div className="flex justify-between items-center"><h3 className="font-semibold text-lg">Owner #{index + 1}</h3><Button type="button" variant="ghost" size="icon" onClick={() => remove(index)}><Trash2 className="h-4 w-4 text-destructive" /></Button></div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4"><FormField control={control} name={`owners.${index}.name`} render={({ field }) => (<FormItem><FormLabel>Name</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} /><FormField control={control} name={`owners.${index}.idNo`} render={({ field }) => (<FormItem><FormLabel>ID No</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} /></div>
+                    <FormField control={control} name={`owners.${index}.address`} render={({ field }) => (<FormItem><FormLabel>Address</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
+                </div>
+            ))}
+        </div>
+    );
+};
+
+const StepManagement = () => {
+    const { control } = useFormContext();
+    const { fields, append, remove } = useFieldArray({ control, name: "management" });
+    return (
+         <div className="space-y-6">
+            <Button type="button" variant="outline" size="sm" onClick={() => append({ name: '', position: '' })}><PlusCircle className="mr-2 h-4 w-4" /> Add Manager</Button>
+            {fields.map((field, index) => (
+                <div key={field.id} className="p-4 border rounded-lg relative space-y-4">
+                    <div className="flex justify-between items-center"><h3 className="font-semibold text-lg">Manager #{index + 1}</h3><Button type="button" variant="ghost" size="icon" onClick={() => remove(index)}><Trash2 className="h-4 w-4 text-destructive" /></Button></div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4"><FormField control={control} name={`management.${index}.name`} render={({ field }) => (<FormItem><FormLabel>Name</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} /><FormField control={control} name={`management.${index}.position`} render={({ field }) => (<FormItem><FormLabel>Position</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} /></div>
+                    <FormField control={control} name={`management.${index}.description`} render={({ field }) => (<FormItem><FormLabel>Description / Role</FormLabel><FormControl><Textarea {...field} /></FormControl></FormItem>)} />
+                </div>
+            ))}
+        </div>
+    )
+}
+
+const StepBanking = () => {
+    const { control } = useFormContext();
+    const { fields, append, remove } = useFieldArray({ control, name: "bankAccounts" });
+    return (
+        <div className="space-y-6">
+             <Button type="button" variant="outline" size="sm" onClick={() => append({ bank: '', accountNo: '' })}><PlusCircle className="mr-2 h-4 w-4" /> Add Bank Account</Button>
+            {fields.map((field, index) => (
+                 <div key={field.id} className="p-4 border rounded-lg relative space-y-4">
+                    <div className="flex justify-between items-center"><h3 className="font-semibold text-lg">Bank Account #{index + 1}</h3><Button type="button" variant="ghost" size="icon" onClick={() => remove(index)}><Trash2 className="h-4 w-4 text-destructive" /></Button></div>
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4"><FormField control={control} name={`bankAccounts.${index}.bank`} render={({ field }) => (<FormItem><FormLabel>Bank</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} /><FormField control={control} name={`bankAccounts.${index}.accountNo`} render={({ field }) => (<FormItem><FormLabel>Account Number</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} /></div>
+                </div>
+            ))}
+        </div>
+    )
+}
+
+const StepAgreements = ({ onSubmit, isLoading }: { onSubmit: () => void, isLoading: boolean }) => (
+    <div className="text-center">
+        <h3 className="text-xl font-semibold">Agreements & Final Submission</h3>
+        <p className="text-muted-foreground mt-2">The client needs to sign the necessary application and lending agreements. This step is a placeholder for that workflow.</p>
+        <div className="mt-8 flex justify-center">
+             <Button type="button" onClick={onSubmit} disabled={isLoading}>
+                {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null}
+                Save Client Profile
+            </Button>
+        </div>
+    </div>
+);
+
+
+const ClientWizard = ({ clientData, onBack, onSaveSuccess }: { clientData?: Partial<ClientFormValues>, onBack: () => void, onSaveSuccess: () => void }) => {
+    const [currentStep, setCurrentStep] = useState(0);
     const [isLoading, setIsLoading] = useState(false);
     const { toast } = useToast();
-
-    const form = useForm<ClientFormValues>({
+    
+    const methods = useForm<ClientFormValues>({
         resolver: zodResolver(clientSchema),
-        defaultValues: {
-            name: '',
-            status: 'pending',
-            globalFacilityLimit: 0,
-        }
+        mode: 'onChange',
+        defaultValues: clientData || defaultValues
     });
 
+    const handleNext = async () => {
+        const currentStepConfig = steps[currentStep];
+        let isValid = false;
+        if (currentStepConfig.fields) {
+            isValid = await methods.trigger(currentStepConfig.fields as (keyof ClientFormValues)[]);
+        } else {
+            isValid = true;
+        }
+
+        if (isValid) {
+            setCurrentStep(prev => prev + 1);
+        } else {
+            toast({ variant: 'destructive', title: 'Validation Error', description: 'Please fill in all required fields for this step.' });
+        }
+    };
+
+    const handleBack = () => setCurrentStep(prev => prev - 1);
+    
     const onSubmit = async (values: ClientFormValues) => {
         setIsLoading(true);
         try {
@@ -67,632 +327,139 @@ function AddClientDialog({ onSave }: { onSave: () => void }) {
             const response = await fetch('/api/admin', {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action: 'saveLendingClient', payload: { client: values } }),
+                body: JSON.stringify({ action: 'saveLendingClient', payload: { client: { id: clientData?.id, ...values } } }),
             });
             const result = await response.json();
             if (!response.ok) throw new Error(result.error);
             
-            toast({ title: 'Client Created', description: `Client "${values.name}" has been added.` });
-            onSave();
-            setIsOpen(false);
-            form.reset();
+            toast({ title: clientData?.id ? 'Client Updated' : 'Client Created', description: `Client "${values.name}" has been saved.` });
+            onSaveSuccess();
         } catch (e: any) {
-            toast({ variant: 'destructive', title: 'Error creating client', description: e.message });
+            toast({ variant: 'destructive', title: 'Error saving client', description: e.message });
         } finally {
             setIsLoading(false);
         }
     };
-    
-    return (
-        <Dialog open={isOpen} onOpenChange={setIsOpen}>
-            <DialogTrigger asChild>
-                 <Button>
-                    <PlusCircle className="mr-2 h-4 w-4" /> Add Client
-                </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-md">
-                <DialogHeader>
-                    <DialogTitle>Add New Client</DialogTitle>
-                    <DialogDescription>Enter the details for the new lending client (debtor).</DialogDescription>
-                </DialogHeader>
-                <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
-                        <FormField control={form.control} name="name" render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Client Name</FormLabel>
-                                <FormControl><Input placeholder="e.g., Sample Transport Co." {...field} /></FormControl>
-                                <FormMessage />
-                            </FormItem>
-                        )} />
-                        <div className="grid grid-cols-2 gap-4">
-                            <FormField control={form.control} name="status" render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Status</FormLabel>
-                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                        <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
-                                        <SelectContent>
-                                            <SelectItem value="pending">Pending</SelectItem>
-                                            <SelectItem value="active">Active</SelectItem>
-                                            <SelectItem value="inactive">Inactive</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                    <FormMessage />
-                                </FormItem>
-                            )} />
-                            <FormField control={form.control} name="globalFacilityLimit" render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Global Facility Limit</FormLabel>
-                                    <FormControl><Input type="number" placeholder="R 0.00" {...field} /></FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )} />
-                        </div>
-                        <DialogFooter>
-                            <Button type="submit" disabled={isLoading}>
-                                {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : 'Save Client'}
-                            </Button>
-                        </DialogFooter>
-                    </form>
-                </Form>
-            </DialogContent>
-        </Dialog>
-    );
-}
 
-export default function ClientsContent() {
+    const isStepValid = (stepIndex: number) => {
+        const step = steps[stepIndex];
+        if (!step.fields) return true; // Steps without fields are always "valid" for navigation
+        const fields = step.fields as (keyof ClientFormValues)[];
+        return fields.every(field => !methods.formState.errors[field]);
+    };
 
-    const defaultValues = useMemo(() => ({
-        usePhysicalForPostal: false,
-        physicalStreet: '',
-        physicalSuburb: '',
-        physicalCity: '',
-        physicalPostCode: '',
-        postalStreet: '',
-        postalSuburb: '',
-        postalCity: '',
-        postalPostCode: '',
-        telW: '',
-        telH: '',
-        fax: '',
-        cell: '',
-        email: '',
-        url: '',
-        primaryContact: '',
-        owners: [{ name: '', address: '', suburb: '', city: '', province: '', postCode: '', idNo: '', cell: '', position: '', qualification: '', since: '', held: 0 }],
-        management: [{ name: '', address: '', suburb: '', city: '', province: '', postCode: '', idNo: '', cell: '', position: '', qualification: '', since: '', held: 0, title: '', description: '' }],
-        bankAccounts: [{ bank: '', branchCode: '', accountNo: '', branchName: '', bankCode: '', address: '', postCode: '', phone: '', email: '', contact: '' }],
-        balanceSheets: [{ statementDate: '', propertyPlantEquipment: 0, intangibleAssets: 0, financialAssets: 0, inventories: 0, tradeReceivables: 0, cashEquivalents: 0, shareCapital: 0, retainedEarnings: 0, longTermBorrowings: 0, leaseLiabilities: 0, tradePayables: 0, shortTermBorrowings: 0, currentTaxPayable: 0 }],
-        incomeStatements: [{ statementDate: '', revenue: 0, costOfSales: 0, grossProfit: 0, otherIncome: 0, operatingExpenses: 0, operatingProfit: 0, financeCosts: 0, profitBeforeTax: 0, incomeTaxExpense: 0, profitForThePeriod: 0 }],
-    }), []);
-
-    const formMethods = useForm({
-        defaultValues
-    });
-
-    const firestore = useFirestore();
-    const clientsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'lendingClients')) : null, [firestore]);
-    const { data: clients, isLoading: areClientsLoading, forceRefresh } = useCollection(clientsQuery);
-
-    const { control, watch, setValue } = formMethods;
-
-    const { fields: ownerFields, append: appendOwner, remove: removeOwner } = useFieldArray({
-        control,
-        name: "owners"
-    });
-
-    const { fields: managementFields, append: appendManagement, remove: removeManagement } = useFieldArray({
-        control,
-        name: "management"
-    });
-    
-    const { fields: bankAccountFields, append: appendBankAccount, remove: removeBankAccount } = useFieldArray({
-        control,
-        name: "bankAccounts"
-    });
-
-    const { fields: balanceSheetFields, append: appendBalanceSheet, remove: removeBalanceSheet } = useFieldArray({
-        control,
-        name: "balanceSheets"
-    });
-
-    const { fields: incomeStatementFields, append: appendIncomeStatement, remove: removeIncomeStatement } = useFieldArray({
-        control,
-        name: "incomeStatements"
-    });
-    
-    const usePhysicalForPostal = watch('usePhysicalForPostal');
-    const physicalStreet = watch('physicalStreet');
-    const physicalSuburb = watch('physicalSuburb');
-    const physicalCity = watch('physicalCity');
-    const physicalPostCode = watch('physicalPostCode');
-
-    useEffect(() => {
-        if (usePhysicalForPostal) {
-            setValue('postalStreet', physicalStreet || '');
-            setValue('postalSuburb', physicalSuburb || '');
-            setValue('postalCity', physicalCity || '');
-            setValue('postalPostCode', physicalPostCode || '');
+    const renderStepContent = () => {
+        const stepId = steps[currentStep]?.id;
+        switch (stepId) {
+            case 'main': return <StepMain />;
+            case 'address': return <StepAddress />;
+            case 'contact': return <StepContact />;
+            case 'owners': return <StepOwners />;
+            case 'management': return <StepManagement />;
+            case 'banking': return <StepBanking />;
+            case 'agreements': return <StepAgreements onSubmit={methods.handleSubmit(onSubmit)} isLoading={isLoading} />;
+            default: return null;
         }
-    }, [usePhysicalForPostal, physicalStreet, physicalSuburb, physicalCity, physicalPostCode, setValue]);
+    };
 
     return (
-        <FormProvider {...formMethods}>
-            <form>
-                <Card>
-                    <CardHeader>
-                        <div className="flex justify-between items-start">
-                            <div>
-                                <CardTitle className="flex items-center gap-2">
-                                    <Users /> Clients Management
-                                </CardTitle>
-                                <CardDescription>
-                                    Manage your lending clients (debtors).
-                                </CardDescription>
-                            </div>
-                            <AddClientDialog onSave={forceRefresh} />
-                        </div>
-                    </CardHeader>
-                    <CardContent>
-                        <Tabs defaultValue="dashboard" className="w-full">
-                            <TabsList className="flex flex-wrap h-auto">
-                                {clientTabs.map((tab) => (
-                                    <TabsTrigger key={tab.value} value={tab.value}>{tab.label}</TabsTrigger>
-                                ))}
-                            </TabsList>
-                            <TabsContent value="dashboard">
-                                {/* Dashboard content remains as is */}
-                            </TabsContent>
-                            <TabsContent value="main">
-                                <Card className="mt-4">
-                                    <CardHeader><CardTitle>Main Details</CardTitle></CardHeader>
-                                    <CardContent>
-                                        <div className="space-y-4 max-w-2xl">
-                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                <div className="space-y-2">
-                                                    <Label htmlFor="client-code">Client Code</Label>
-                                                    <Input id="client-code" placeholder="Client Code" />
-                                                </div>
-                                                <div className="space-y-2">
-                                                    <Label htmlFor="client-name">Name</Label>
-                                                    <Input id="client-name" placeholder="Client Name" />
-                                                </div>
-                                            </div>
-                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                                <div className="space-y-2">
-                                                    <Label htmlFor="client-status">Status</Label>
-                                                    <Select>
-                                                        <SelectTrigger id="client-status"><SelectValue placeholder="Select Status" /></SelectTrigger>
-                                                        <SelectContent>
-                                                            <SelectItem value="active">Active</SelectItem>
-                                                            <SelectItem value="inactive">Inactive</SelectItem>
-                                                            <SelectItem value="pending">Pending</SelectItem>
-                                                        </SelectContent>
-                                                    </Select>
-                                                </div>
-                                                <div className="space-y-2">
-                                                    <Label htmlFor="client-type">Type</Label>
-                                                    <Select>
-                                                        <SelectTrigger id="client-type"><SelectValue placeholder="Select Type" /></SelectTrigger>
-                                                        <SelectContent>
-                                                            <SelectItem value="individual">Individual</SelectItem>
-                                                            <SelectItem value="company">Company</SelectItem>
-                                                        </SelectContent>
-                                                    </Select>
-                                                </div>
-                                                <div className="space-y-2">
-                                                    <Label htmlFor="client-category">Category</Label>
-                                                    <Select>
-                                                        <SelectTrigger id="client-category"><SelectValue placeholder="Select Category" /></SelectTrigger>
-                                                        <SelectContent>
-                                                            <SelectItem value="transport">Transport</SelectItem>
-                                                            <SelectItem value="logistics">Logistics</SelectItem>
-                                                            <SelectItem value="other">Other</SelectItem>
-                                                        </SelectContent>
-                                                    </Select>
-                                                </div>
-                                            </div>
-                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                <div className="space-y-2">
-                                                    <Label htmlFor="client-language">Language</Label>
-                                                    <Select>
-                                                        <SelectTrigger id="client-language"><SelectValue placeholder="Select Language" /></SelectTrigger>
-                                                        <SelectContent>
-                                                            <SelectItem value="en">English</SelectItem>
-                                                            <SelectItem value="af">Afrikaans</SelectItem>
-                                                        </SelectContent>
-                                                    </Select>
-                                                </div>
-                                                <div className="space-y-2">
-                                                    <Label htmlFor="reg-id">Reg. ID</Label>
-                                                    <Input id="reg-id" placeholder="Registration ID" />
-                                                </div>
-                                            </div>
-                                            <Separator className="my-6" />
-                                            <div>
-                                                <h3 className="text-lg font-semibold">Financial Limits</h3>
-                                                <div className="space-y-2 mt-4 max-w-sm">
-                                                    <Label htmlFor="global-facility-limit">Global Facility Limit</Label>
-                                                    <Input id="global-facility-limit" type="number" placeholder="e.g., 1000000" />
-                                                </div>
-                                            </div>
-                                            <div className="flex items-center space-x-2 pt-4">
-                                                <Checkbox id="vat-registered" />
-                                                <label
-                                                    htmlFor="vat-registered"
-                                                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                                                >
-                                                    Vat registered?
-                                                </label>
-                                            </div>
-                                        </div>
-                                    </CardContent>
-                                </Card>
-                            </TabsContent>
-                            <TabsContent value="address">
-                                <Card className="mt-4">
-                                    <CardHeader><CardTitle>Address Details</CardTitle></CardHeader>
-                                    <CardContent className="space-y-8">
-                                        <div>
-                                            <h3 className="text-lg font-semibold mb-4">Physical Address</h3>
-                                            <div className="space-y-4 max-w-2xl">
-                                                <div className="space-y-2">
-                                                    <Label htmlFor="physical-street">Street Address</Label>
-                                                    <Input id="physical-street" placeholder="e.g., 123 Industrial Rd" />
-                                                </div>
-                                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                                    <div className="space-y-2">
-                                                        <Label htmlFor="physical-suburb">Suburb</Label>
-                                                        <Input id="physical-suburb" placeholder="e.g., Pomona" />
-                                                    </div>
-                                                    <div className="space-y-2">
-                                                        <Label htmlFor="physical-city">City</Label>
-                                                        <Input id="physical-city" placeholder="e.g., Kempton Park" />
-                                                    </div>
-                                                    <div className="space-y-2">
-                                                        <Label htmlFor="physical-postal">Postal Code</Label>
-                                                        <Input id="physical-postal" placeholder="e.g., 1619" />
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <Separator />
-                                        <div>
-                                            <h3 className="text-lg font-semibold mb-4">Postal Address</h3>
-                                            <div className="space-y-4 max-w-2xl">
-                                                <div className="space-y-2">
-                                                    <Label htmlFor="postal-street">Street Address or P.O. Box</Label>
-                                                    <Input id="postal-street" placeholder="e.g., P.O. Box 12345" />
-                                                </div>
-                                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                                    <div className="space-y-2">
-                                                        <Label htmlFor="postal-suburb">Suburb</Label>
-                                                        <Input id="postal-suburb" placeholder="e.g., Pomona" />
-                                                    </div>
-                                                    <div className="space-y-2">
-                                                        <Label htmlFor="postal-city">City</Label>
-                                                        <Input id="postal-city" placeholder="e.g., Kempton Park" />
-                                                    </div>
-                                                    <div className="space-y-2">
-                                                        <Label htmlFor="postal-postal">Postal Code</Label>
-                                                        <Input id="postal-postal" placeholder="e.g., 1619" />
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </CardContent>
-                                </Card>
-                            </TabsContent>
-                            <TabsContent value="contact">
-                                <Card className="mt-4">
-                                    <CardHeader><CardTitle>Contact Information</CardTitle></CardHeader>
-                                    <CardContent>
-                                        <div className="space-y-4 max-w-2xl">
-                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                <div className="space-y-2">
-                                                    <Label htmlFor="tel-w">Tel (w)</Label>
-                                                    <Input id="tel-w" placeholder="Work Telephone" />
-                                                </div>
-                                                <div className="space-y-2">
-                                                    <Label htmlFor="tel-h">Tel (h)</Label>
-                                                    <Input id="tel-h" placeholder="Home Telephone" />
-                                                </div>
-                                            </div>
-                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                <div className="space-y-2">
-                                                    <Label htmlFor="fax">Fax</Label>
-                                                    <Input id="fax" placeholder="Fax Number" />
-                                                </div>
-                                                <div className="space-y-2">
-                                                    <Label htmlFor="cell">Cell</Label>
-                                                    <Input id="cell" placeholder="Mobile Number" />
-                                                </div>
-                                            </div>
-                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                <div className="space-y-2">
-                                                    <Label htmlFor="email">Email</Label>
-                                                    <Input id="email" type="email" placeholder="client@example.com" />
-                                                </div>
-                                                <div className="space-y-2">
-                                                    <Label htmlFor="url">URL</Label>
-                                                    <Input id="url" type="url" placeholder="https://example.com" />
-                                                </div>
-                                            </div>
-                                            <div className="space-y-2">
-                                                <Label htmlFor="contact-person">Contact Person</Label>
-                                                <Input id="contact-person" placeholder="Primary Contact Name" />
-                                            </div>
-                                        </div>
-                                    </CardContent>
-                                </Card>
-                            </TabsContent>
-                            <TabsContent value="owners">
-                                <Card className="mt-4">
-                                    <CardHeader className="flex flex-row items-center justify-between">
-                                        <CardTitle>Owners / Directors</CardTitle>
-                                        <Button type="button" variant="outline" size="sm" onClick={() => appendOwner({ name: '', address: '', suburb: '', city: '', province: '', postCode: '', idNo: '', cell: '', position: '', qualification: '', since: '', held: 0 })}>
-                                            <PlusCircle className="mr-2 h-4 w-4" /> Add Owner
-                                        </Button>
-                                    </CardHeader>
-                                    <CardContent className="space-y-6">
-                                        {ownerFields.map((field, index) => (
-                                            <div key={field.id} className="p-4 border rounded-lg relative space-y-4">
-                                                <div className="flex justify-between items-center">
-                                                    <h3 className="font-semibold text-lg">Owner #{index + 1}</h3>
-                                                    <Button type="button" variant="ghost" size="icon" onClick={() => removeOwner(index)}>
-                                                        <Trash2 className="h-4 w-4 text-destructive" />
-                                                    </Button>
-                                                </div>
-                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                    <FormField control={control} name={`owners.${index}.name`} render={({ field }) => (<FormItem><FormLabel>Name</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
-                                                    <FormField control={control} name={`owners.${index}.idNo`} render={({ field }) => (<FormItem><FormLabel>ID No</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
-                                                </div>
-                                                <FormField control={control} name={`owners.${index}.address`} render={({ field }) => (<FormItem><FormLabel>Address</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
-                                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                                    <FormField control={control} name={`owners.${index}.suburb`} render={({ field }) => (<FormItem><FormLabel>Suburb</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
-                                                    <FormField control={control} name={`owners.${index}.city`} render={({ field }) => (<FormItem><FormLabel>City</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
-                                                    <FormField control={control} name={`owners.${index}.postCode`} render={({ field }) => (<FormItem><FormLabel>Post Code</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
-                                                </div>
-                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                    <FormField control={control} name={`owners.${index}.province`} render={({ field }) => (<FormItem><FormLabel>Province</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
-                                                    <FormField control={control} name={`owners.${index}.cell`} render={({ field }) => (<FormItem><FormLabel>Cell</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
-                                                </div>
-                                                <Separator />
-                                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                                                     <FormField control={control} name={`owners.${index}.position`} render={({ field }) => (<FormItem><FormLabel>Position</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
-                                                    <FormField control={control} name={`owners.${index}.qualification`} render={({ field }) => (<FormItem><FormLabel>Qualification</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
-                                                    <FormField control={control} name={`owners.${index}.since`} render={({ field }) => (<FormItem><FormLabel>Since</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
-                                                    <FormField control={control} name={`owners.${index}.held`} render={({ field }) => (<FormItem><FormLabel>% Held</FormLabel><FormControl><Input type="number" {...field} /></FormControl></FormItem>)} />
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </CardContent>
-                                </Card>
-                            </TabsContent>
-                             <TabsContent value="management">
-                                <Card className="mt-4">
-                                    <CardHeader className="flex flex-row items-center justify-between">
-                                        <CardTitle>Management Team</CardTitle>
-                                         <Button type="button" variant="outline" size="sm" onClick={() => appendManagement({ name: '', address: '', suburb: '', city: '', province: '', postCode: '', idNo: '', cell: '', position: '', qualification: '', since: '', held: 0, title: '', description: '' })}>
-                                            <PlusCircle className="mr-2 h-4 w-4" /> Add Manager
-                                        </Button>
-                                    </CardHeader>
-                                    <CardContent className="space-y-6">
-                                        {managementFields.map((field, index) => (
-                                            <div key={field.id} className="p-4 border rounded-lg relative space-y-4">
-                                                <div className="flex justify-between items-center">
-                                                    <h3 className="font-semibold text-lg">Manager #{index + 1}</h3>
-                                                    <Button type="button" variant="ghost" size="icon" onClick={() => removeManagement(index)}>
-                                                        <Trash2 className="h-4 w-4 text-destructive" />
-                                                    </Button>
-                                                </div>
-                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                    <FormField control={control} name={`management.${index}.name`} render={({ field }) => (<FormItem><FormLabel>Name</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
-                                                    <FormField control={control} name={`management.${index}.idNo`} render={({ field }) => (<FormItem><FormLabel>ID No</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
-                                                </div>
-                                                <FormField control={control} name={`management.${index}.address`} render={({ field }) => (<FormItem><FormLabel>Address</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
-                                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                                    <FormField control={control} name={`management.${index}.suburb`} render={({ field }) => (<FormItem><FormLabel>Suburb</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
-                                                    <FormField control={control} name={`management.${index}.city`} render={({ field }) => (<FormItem><FormLabel>City</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
-                                                    <FormField control={control} name={`management.${index}.postCode`} render={({ field }) => (<FormItem><FormLabel>Post Code</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
-                                                </div>
-                                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                    <FormField control={control} name={`management.${index}.province`} render={({ field }) => (<FormItem><FormLabel>Province</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
-                                                    <FormField control={control} name={`management.${index}.cell`} render={({ field }) => (<FormItem><FormLabel>Cell</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
-                                                </div>
-                                                <Separator />
-                                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                                    <FormField control={control} name={`management.${index}.position`} render={({ field }) => (<FormItem><FormLabel>Position</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
-                                                     <FormField control={control} name={`management.${index}.title`} render={({ field }) => (
-                                                        <FormItem>
-                                                            <FormLabel>Title</FormLabel>
-                                                            <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                                                <FormControl>
-                                                                    <SelectTrigger><SelectValue placeholder="Select title" /></SelectTrigger>
-                                                                </FormControl>
-                                                                <SelectContent>
-                                                                    <SelectItem value="Mr.">Mr.</SelectItem>
-                                                                    <SelectItem value="Mrs.">Mrs.</SelectItem>
-                                                                    <SelectItem value="Ms.">Ms.</SelectItem>
-                                                                    <SelectItem value="Miss">Miss</SelectItem>
-                                                                    <SelectItem value="Dr.">Dr.</SelectItem>
-                                                                    <SelectItem value="Prof.">Prof.</SelectItem>
-                                                                </SelectContent>
-                                                            </Select>
-                                                        </FormItem>
-                                                    )} />
-                                                     <FormField control={control} name={`management.${index}.qualification`} render={({ field }) => (<FormItem><FormLabel>Qualification</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
-                                                </div>
-                                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t">
-                                                     <FormField control={control} name={`management.${index}.since`} render={({ field }) => (<FormItem><FormLabel>Since</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
-                                                     <FormField control={control} name={`management.${index}.description`} render={({ field }) => (<FormItem className="md:col-span-2"><FormLabel>Description / Role</FormLabel><FormControl><Textarea {...field} placeholder="e.g., Handles all invoice queries."/></FormControl></FormItem>)} />
-                                                 </div>
-                                            </div>
-                                        ))}
-                                    </CardContent>
-                                </Card>
-                            </TabsContent>
-                            <TabsContent value="bank-accounts">
-                                <Card className="mt-4">
-                                    <CardHeader><CardTitle>Bank Account Details</CardTitle></CardHeader>
-                                    <CardContent>
-                                        <p className="text-muted-foreground">Bank account form will go here.</p>
-                                    </CardContent>
-                                </Card>
-                            </TabsContent>
-                             <TabsContent value="balance-sheet">
-                                <Card className="mt-4">
-                                    <CardHeader className="flex flex-row items-center justify-between">
-                                        <CardTitle>Statement of Financial Position (Balance Sheet)</CardTitle>
-                                        <Button type="button" variant="outline" size="sm" onClick={() => appendBalanceSheet({ statementDate: '', propertyPlantEquipment: 0, intangibleAssets: 0, financialAssets: 0, inventories: 0, tradeReceivables: 0, cashEquivalents: 0, shareCapital: 0, retainedEarnings: 0, longTermBorrowings: 0, leaseLiabilities: 0, tradePayables: 0, shortTermBorrowings: 0, currentTaxPayable: 0 })}>
-                                            <PlusCircle className="mr-2 h-4 w-4" /> Add Instance
-                                        </Button>
-                                    </CardHeader>
-                                    <CardContent className="space-y-6">
-                                        {balanceSheetFields.map((field, index) => (
-                                            <Card key={field.id} className="p-4 relative">
-                                                <div className="flex justify-between items-center mb-4">
-                                                    <FormField control={control} name={`balanceSheets.${index}.statementDate`} render={({ field }) => (
-                                                        <FormItem className="flex-grow max-w-xs">
-                                                            <FormLabel>Statement Date</FormLabel>
-                                                            <FormControl><Input type="date" {...field} /></FormControl>
-                                                        </FormItem>
-                                                    )} />
-                                                    <Button type="button" variant="ghost" size="icon" onClick={() => removeBalanceSheet(index)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
-                                                </div>
-                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                                    <div className="space-y-4">
-                                                        <h3 className="font-semibold text-lg border-b pb-2">Assets</h3>
-                                                        <h4 className="font-medium text-muted-foreground">Non-Current Assets</h4>
-                                                        <div className="space-y-2 pl-4">
-                                                            <FormField control={control} name={`balanceSheets.${index}.propertyPlantEquipment`} render={({ field }) => (<FormItem><FormLabel>Property, Plant and Equipment</FormLabel><FormControl><Input type="number" placeholder="R 0.00" {...field} /></FormControl></FormItem>)} />
-                                                            <FormField control={control} name={`balanceSheets.${index}.intangibleAssets`} render={({ field }) => (<FormItem><FormLabel>Intangible Assets</FormLabel><FormControl><Input type="number" placeholder="R 0.00" {...field} /></FormControl></FormItem>)} />
-                                                            <FormField control={control} name={`balanceSheets.${index}.financialAssets`} render={({ field }) => (<FormItem><FormLabel>Financial Assets</FormLabel><FormControl><Input type="number" placeholder="R 0.00" {...field} /></FormControl></FormItem>)} />
-                                                        </div>
-                                                        <h4 className="font-medium text-muted-foreground pt-2">Current Assets</h4>
-                                                        <div className="space-y-2 pl-4">
-                                                             <FormField control={control} name={`balanceSheets.${index}.inventories`} render={({ field }) => (<FormItem><FormLabel>Inventories</FormLabel><FormControl><Input type="number" placeholder="R 0.00" {...field} /></FormControl></FormItem>)} />
-                                                            <FormField control={control} name={`balanceSheets.${index}.tradeReceivables`} render={({ field }) => (<FormItem><FormLabel>Trade and Other Receivables</FormLabel><FormControl><Input type="number" placeholder="R 0.00" {...field} /></FormControl></FormItem>)} />
-                                                            <FormField control={control} name={`balanceSheets.${index}.cashEquivalents`} render={({ field }) => (<FormItem><FormLabel>Cash and Cash Equivalents</FormLabel><FormControl><Input type="number" placeholder="R 0.00" {...field} /></FormControl></FormItem>)} />
-                                                        </div>
-                                                    </div>
-                                                    <div className="space-y-4">
-                                                        <h3 className="font-semibold text-lg border-b pb-2">Equity and Liabilities</h3>
-                                                        <h4 className="font-medium text-muted-foreground">Equity</h4>
-                                                        <div className="space-y-2 pl-4">
-                                                            <FormField control={control} name={`balanceSheets.${index}.shareCapital`} render={({ field }) => (<FormItem><FormLabel>Share Capital</FormLabel><FormControl><Input type="number" placeholder="R 0.00" {...field} /></FormControl></FormItem>)} />
-                                                            <FormField control={control} name={`balanceSheets.${index}.retainedEarnings`} render={({ field }) => (<FormItem><FormLabel>Retained Earnings</FormLabel><FormControl><Input type="number" placeholder="R 0.00" {...field} /></FormControl></FormItem>)} />
-                                                        </div>
-                                                        <h4 className="font-medium text-muted-foreground pt-2">Non-Current Liabilities</h4>
-                                                        <div className="space-y-2 pl-4">
-                                                            <FormField control={control} name={`balanceSheets.${index}.longTermBorrowings`} render={({ field }) => (<FormItem><FormLabel>Long-Term Borrowings</FormLabel><FormControl><Input type="number" placeholder="R 0.00" {...field} /></FormControl></FormItem>)} />
-                                                            <FormField control={control} name={`balanceSheets.${index}.leaseLiabilities`} render={({ field }) => (<FormItem><FormLabel>Lease Liabilities</FormLabel><FormControl><Input type="number" placeholder="R 0.00" {...field} /></FormControl></FormItem>)} />
-                                                        </div>
-                                                        <h4 className="font-medium text-muted-foreground pt-2">Current Liabilities</h4>
-                                                        <div className="space-y-2 pl-4">
-                                                             <FormField control={control} name={`balanceSheets.${index}.tradePayables`} render={({ field }) => (<FormItem><FormLabel>Trade and Other Payables</FormLabel><FormControl><Input type="number" placeholder="R 0.00" {...field} /></FormControl></FormItem>)} />
-                                                            <FormField control={control} name={`balanceSheets.${index}.shortTermBorrowings`} render={({ field }) => (<FormItem><FormLabel>Short-Term Borrowings</FormLabel><FormControl><Input type="number" placeholder="R 0.00" {...field} /></FormControl></FormItem>)} />
-                                                            <FormField control={control} name={`balanceSheets.${index}.currentTaxPayable`} render={({ field }) => (<FormItem><FormLabel>Current Tax Payable</FormLabel><FormControl><Input type="number" placeholder="R 0.00" {...field} /></FormControl></FormItem>)} />
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </Card>
-                                        ))}
-                                    </CardContent>
-                                </Card>
-                            </TabsContent>
-                            <TabsContent value="income-statement">
-                               <Card className="mt-4">
-                                    <CardHeader className="flex flex-row items-center justify-between">
-                                        <CardTitle>Statement of Comprehensive Income (Income Statement)</CardTitle>
-                                        <Button type="button" variant="outline" size="sm" onClick={() => appendIncomeStatement({ statementDate: '', revenue: 0, costOfSales: 0, grossProfit: 0, otherIncome: 0, operatingExpenses: 0, operatingProfit: 0, financeCosts: 0, profitBeforeTax: 0, incomeTaxExpense: 0, profitForThePeriod: 0 })}>
-                                            <PlusCircle className="mr-2 h-4 w-4" /> Add Instance
-                                        </Button>
-                                    </CardHeader>
-                                    <CardContent className="space-y-6">
-                                        {incomeStatementFields.map((field, index) => (
-                                            <Card key={field.id} className="p-4 relative max-w-2xl mx-auto">
-                                                <div className="flex justify-between items-center mb-4">
-                                                    <FormField control={control} name={`incomeStatements.${index}.statementDate`} render={({ field }) => (
-                                                        <FormItem className="flex-grow max-w-xs">
-                                                            <FormLabel>Statement Date</FormLabel>
-                                                            <FormControl><Input type="date" {...field} /></FormControl>
-                                                        </FormItem>
-                                                    )} />
-                                                    <Button type="button" variant="ghost" size="icon" onClick={() => removeIncomeStatement(index)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
-                                                </div>
-                                                <div className="space-y-4">
-                                                    <FormField control={control} name={`incomeStatements.${index}.revenue`} render={({ field }) => (<FormItem><FormLabel>Revenue</FormLabel><FormControl><Input type="number" placeholder="R 0.00" {...field} /></FormControl></FormItem>)} />
-                                                    <FormField control={control} name={`incomeStatements.${index}.costOfSales`} render={({ field }) => (<FormItem><FormLabel>Cost of Sales</FormLabel><FormControl><Input type="number" placeholder="R 0.00" {...field} /></FormControl></FormItem>)} />
-                                                    <FormField control={control} name={`incomeStatements.${index}.grossProfit`} render={({ field }) => (<FormItem><FormLabel>Gross Profit</FormLabel><FormControl><Input type="number" placeholder="R 0.00" disabled className="font-bold" {...field} /></FormControl></FormItem>)} />
-                                                    <Separator />
-                                                    <FormField control={control} name={`incomeStatements.${index}.otherIncome`} render={({ field }) => (<FormItem><FormLabel>Other Income</FormLabel><FormControl><Input type="number" placeholder="R 0.00" {...field} /></FormControl></FormItem>)} />
-                                                    <FormField control={control} name={`incomeStatements.${index}.operatingExpenses`} render={({ field }) => (<FormItem><FormLabel>Operating Expenses</FormLabel><FormControl><Input type="number" placeholder="R 0.00" {...field} /></FormControl></FormItem>)} />
-                                                    <FormField control={control} name={`incomeStatements.${index}.operatingProfit`} render={({ field }) => (<FormItem><FormLabel>Operating Profit</FormLabel><FormControl><Input type="number" placeholder="R 0.00" disabled className="font-bold" {...field} /></FormControl></FormItem>)} />
-                                                    <Separator />
-                                                    <FormField control={control} name={`incomeStatements.${index}.financeCosts`} render={({ field }) => (<FormItem><FormLabel>Finance Costs</FormLabel><FormControl><Input type="number" placeholder="R 0.00" {...field} /></FormControl></FormItem>)} />
-                                                    <FormField control={control} name={`incomeStatements.${index}.profitBeforeTax`} render={({ field }) => (<FormItem><FormLabel>Profit Before Tax</FormLabel><FormControl><Input type="number" placeholder="R 0.00" disabled className="font-bold" {...field} /></FormControl></FormItem>)} />
-                                                    <FormField control={control} name={`incomeStatements.${index}.incomeTaxExpense`} render={({ field }) => (<FormItem><FormLabel>Income Tax Expense</FormLabel><FormControl><Input type="number" placeholder="R 0.00" {...field} /></FormControl></FormItem>)} />
-                                                    <FormField control={control} name={`incomeStatements.${index}.profitForThePeriod`} render={({ field }) => (<FormItem><FormLabel>Profit for the Period</FormLabel><FormControl><Input type="number" placeholder="R 0.00" disabled className="font-bold text-primary" {...field} /></FormControl></FormItem>)} />
-                                                </div>
-                                            </Card>
-                                        ))}
-                                    </CardContent>
-                                </Card>
-                            </TabsContent>
-                             <TabsContent value="sub-facilities">
-                                <Card className="mt-4">
-                                    <CardHeader>
-                                        <CardTitle>Sub-Facilities Management</CardTitle>
-                                        <CardDescription>Manage sub-facilities associated with this partner.</CardDescription>
-                                    </CardHeader>
-                                    <CardContent>
-                                        <Tabs defaultValue="facilities" className="w-full">
-                                            <TabsList>
-                                                <TabsTrigger value="facilities">Facilities</TabsTrigger>
-                                                <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
-                                                <TabsTrigger value="main">Main</TabsTrigger>
-                                                <TabsTrigger value="statements">Statements</TabsTrigger>
-                                            </TabsList>
-                                            <TabsContent value="facilities">
-                                                <Card className="mt-4">
-                                                    <CardHeader><CardTitle>Facilities List</CardTitle></CardHeader>
-                                                    <CardContent>
-                                                        <p className="text-muted-foreground">A list of sub-facilities will be displayed here.</p>
-                                                    </CardContent>
-                                                </Card>
-                                            </TabsContent>
-                                            <TabsContent value="dashboard">
-                                                 <Card className="mt-4">
-                                                    <CardHeader><CardTitle>Sub-Facilities Dashboard</CardTitle></CardHeader>
-                                                    <CardContent>
-                                                        <p className="text-muted-foreground">Dashboard content for sub-facilities will go here.</p>
-                                                    </CardContent>
-                                                </Card>
-                                            </TabsContent>
-                                            <TabsContent value="main">
-                                                 <Card className="mt-4">
-                                                    <CardHeader><CardTitle>Main Sub-Facility Details</CardTitle></CardHeader>
-                                                    <CardContent>
-                                                        <p className="text-muted-foreground">Main details for sub-facilities will go here.</p>
-                                                    </CardContent>
-                                                </Card>
-                                            </TabsContent>
-                                            <TabsContent value="statements">
-                                                 <Card className="mt-4">
-                                                    <CardHeader><CardTitle>Sub-Facility Statements</CardTitle></CardHeader>
-                                                    <CardContent>
-                                                        <p className="text-muted-foreground">Statements for sub-facilities will go here.</p>
-                                                    </CardContent>
-                                                </Card>
-                                            </TabsContent>
-                                        </Tabs>
-                                    </CardContent>
-                                </Card>
-                            </TabsContent>
-                        </Tabs>
-                    </CardContent>
-                </Card>
-            </form>
+        <FormProvider {...methods}>
+            <div className="grid grid-cols-1 md:grid-cols-[250px_1fr] gap-8">
+                {/* Stepper */}
+                <div className="flex flex-col gap-2 border-r pr-4">
+                    {steps.map((step, index) => {
+                        const isCompleted = index < currentStep && isStepValid(index);
+                        return (
+                             <Button 
+                                key={step.id} 
+                                variant={currentStep === index ? 'default' : 'ghost'} 
+                                className="justify-start gap-2"
+                                onClick={() => setCurrentStep(index)}
+                                disabled={index > currentStep && !isStepValid(currentStep)}
+                            >
+                                {isCompleted ? <Check className="h-5 w-5 text-green-500" /> : <div className="h-5 w-5" />}
+                                {step.name}
+                            </Button>
+                        )
+                    })}
+                </div>
+
+                {/* Form Content */}
+                <div className="space-y-6">
+                    <h2 className="text-2xl font-bold">{steps[currentStep].name}</h2>
+                    {renderStepContent()}
+                    <div className="flex justify-between pt-8 mt-8 border-t">
+                        <Button type="button" variant="outline" onClick={currentStep === 0 ? onBack : handleBack}>
+                            <ArrowLeft className="mr-2 h-4 w-4" /> {currentStep === 0 ? 'Back to List' : 'Back'}
+                        </Button>
+                         {currentStep < steps.length - 1 && (
+                            <Button type="button" onClick={handleNext}>Next <ArrowRight className="ml-2 h-4 w-4" /></Button>
+                        )}
+                    </div>
+                </div>
+            </div>
         </FormProvider>
     );
+};
+
+export default function ClientsContent() {
+    const firestore = useFirestore();
+    const [view, setView] = useState<'list' | 'create' | 'edit'>('list');
+    const [selectedClient, setSelectedClient] = useState<any | null>(null);
+
+    const clientsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'lendingClients')) : null, [firestore]);
+    const { data: clients, isLoading, forceRefresh } = useCollection(clientsQuery);
+    
+    const handleEdit = (client: any) => {
+        setSelectedClient(client);
+        setView('edit');
+    };
+    
+    const handleAdd = () => {
+        setSelectedClient(null);
+        setView('create');
+    };
+    
+    const handleBackToList = () => {
+        setView('list');
+        setSelectedClient(null);
+    };
+
+    const handleSaveSuccess = () => {
+        forceRefresh();
+        handleBackToList();
+    }
+    
+    const columns: ColumnDef<any>[] = useMemo(() => [
+        { accessorKey: 'name', header: 'Client Name' },
+        { accessorKey: 'status', header: 'Status', cell: ({row}) => <Badge className="capitalize">{row.original.status}</Badge>},
+        { accessorKey: 'globalFacilityLimit', header: 'Facility Limit', cell: ({row}) => <span>{formatCurrency(row.original.globalFacilityLimit)}</span> },
+        { id: 'actions', header: () => <div className="text-right">Actions</div>, cell: ({row}) => <div className="text-right"><Button variant="ghost" size="sm" onClick={() => handleEdit(row.original)}>Edit</Button></div> }
+    ], []);
+
+
+    if (view === 'create' || view === 'edit') {
+        return <ClientWizard clientData={selectedClient} onBack={handleBackToList} onSaveSuccess={handleSaveSuccess} />;
+    }
+
+    return (
+        <Card>
+            <CardHeader className="flex flex-row justify-between items-start">
+                <div>
+                    <CardTitle className="flex items-center gap-2"><Users /> Clients Management</CardTitle>
+                    <CardDescription>Manage your lending clients (debtors).</CardDescription>
+                </div>
+                <Button onClick={handleAdd}><PlusCircle className="mr-2 h-4 w-4" /> Add Client</Button>
+            </CardHeader>
+            <CardContent>
+                {isLoading ? (
+                    <div className="flex justify-center items-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
+                ) : (
+                    <DataTable columns={columns} data={clients || []} />
+                )}
+            </CardContent>
+        </Card>
+    );
 }
+
+```
