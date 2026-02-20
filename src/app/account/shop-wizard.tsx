@@ -49,7 +49,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useRouter } from 'next/navigation';
 
 
-const { placeholderImages } = data;
+const { placeholderImages } = placeholderImageData;
 
 
 const statusColors: { [key: string]: 'default' | 'secondary' | 'destructive' | 'outline' } = {
@@ -414,7 +414,7 @@ function ProductDialog({ shop, product, onComplete, children, canEdit }: { shop:
     
     try {
         const token = await getClientSideAuthToken();
-        if (!token) throw new Error("Authentication token not found.");
+        if (!token) throw new Error("Authentication failed.");
         
         const path = product ? `companies/${shop.companyId}/shops/${shop.id}/products/${product.id}` : `companies/${shop.companyId}/shops/${shop.id}/products`;
         
@@ -1725,10 +1725,12 @@ export function ShopWizard({ shop: initialShop, onShopUpdate }: { shop: any, onS
 
   useEffect(() => {
     setShopData(initialShop);
-     if (initialShop?.status === 'approved') {
+     if (initialShop?.status === 'approved' && !showSuccessScreen) {
+        // If the shop is already approved when the component loads,
+        // and we haven't just shown the success screen, consider it published.
         setShowSuccessScreen(true);
     }
-  }, [initialShop]);
+  }, [initialShop, showSuccessScreen]);
   
   const productsQuery = useMemoFirebase(() => {
     if (!firestore || !shopData?.companyId || !shopData?.id) return null;
