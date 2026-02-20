@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
@@ -50,7 +49,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useRouter } from 'next/navigation';
 
 
-const { placeholderImages } = placeholderImageData;
+const { placeholderImages } = data;
 
 
 const statusColors: { [key: string]: 'default' | 'secondary' | 'destructive' | 'outline' } = {
@@ -1399,37 +1398,34 @@ function StepCommercials({ shop, canEdit, onSave }: { shop: any, onSave: (newDat
   }, [mallCommissions, form]);
 
   const handlePropose = async (values: ProposalFormValues) => {
-      if (!user) return;
-      setIsProposing(true);
-      try {
-        const token = await getClientSideAuthToken();
-        if (!token) throw new Error("Authentication failed.");
+    if (!user) return;
+    setIsProposing(true);
+    try {
+      const token = await getClientSideAuthToken();
+      if (!token) throw new Error("Authentication failed.");
 
-        const response = await fetch('/api/addUserDoc', {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                collectionPath: `companies/${shop.companyId}/shops/${shop.id}/agreements`,
-                data: {
-                    percentage: values.percentage,
-                    status: 'proposed',
-                    effectiveDate: { _methodName: 'serverTimestamp' }, // will be updated on approval
-                    proposedBy: user.uid,
-                }
-            })
-        });
+      const response = await fetch('/api/proposeCommercialAgreement', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            companyId: shop.companyId,
+            shopId: shop.id,
+            percentage: values.percentage,
+        }),
+      });
 
-        if (!response.ok) throw new Error((await response.json()).error || 'Failed to submit proposal.');
+      if (!response.ok) throw new Error((await response.json()).error || 'Failed to submit proposal.');
 
-        toast({ title: "Proposal Submitted", description: "Your proposed commission rate has been sent for review." });
-        forceRefresh();
+      toast({ title: "Proposal Submitted", description: "Your proposed commission rate has been sent for review." });
+      forceRefresh();
 
-      } catch (error: any) {
-         toast({ variant: 'destructive', title: 'Proposal Failed', description: error.message });
-      } finally {
-        setIsProposing(false);
-      }
+    } catch (error: any) {
+       toast({ variant: 'destructive', title: 'Proposal Failed', description: error.message });
+    } finally {
+      setIsProposing(false);
+    }
   };
+
 
   const handleAccept = async () => {
     if (!user || !shop.companyId || !proposedAgreement) return;
