@@ -62,7 +62,9 @@ const SecurityContent = dynamic(() => import('@/app/backend/lending/security-con
 const CollateralContent = dynamic(() => import('@/app/backend/lending/collateral-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const PaymentsContent = dynamic(() => import('@/app/backend/lending/payments-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const LendingPartnersContent = dynamic(() => import('@/app/backend/lending/partners-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const PartnerDetails = dynamic(() => import('@/app/backend/lending/partner-details'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const BalanceSheetContent = dynamic(() => import('@/app/backend/lending/balance-sheet-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const IncomeStatementContent = dynamic(() => import('@/app/backend/lending/income-statement-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+
 const LendingDashboard = () => <div>Lending Dashboard Content...</div>; // Placeholder
 
 function AdminAuthGuard({ children }: { children: React.ReactNode }) {
@@ -121,6 +123,8 @@ function LendingPortalContent() {
       case 'collateral': return <CollateralContent />;
       case 'payments': return <PaymentsContent />;
       case 'partners': return <LendingPartnersContent />;
+      case 'balance-sheet': return <BalanceSheetContent />;
+      case 'income-statement': return <IncomeStatementContent />;
       default: return <LendingDashboard />;
     }
   }, [activeView]);
@@ -140,7 +144,7 @@ function LendingPortalContent() {
 
   const navigate = (view: string) => router.push(`/lending?view=${view}`, { scroll: false });
   
-  const isDMSActive = ['clients', 'agreements', 'facilities', 'transactions', 'assets', 'security', 'collateral', 'payments'].includes(activeView);
+  const isDMSActive = ['clients', 'agreements', 'facilities', 'transactions', 'assets', 'security', 'collateral', 'payments', 'balance-sheet', 'income-statement'].includes(activeView);
   const isOriginationActive = ['discovery', 'scoring'].includes(activeView);
 
   return (
@@ -180,6 +184,9 @@ function LendingPortalContent() {
                     <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'security'} onClick={() => navigate('security')}>Security</SidebarMenuSubButton></SidebarMenuSubItem>
                     <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'collateral'} onClick={() => navigate('collateral')}>Collateral</SidebarMenuSubButton></SidebarMenuSubItem>
                     <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'payments'} onClick={() => navigate('payments')}>Payments</SidebarMenuSubButton></SidebarMenuSubItem>
+                    <SidebarMenuSeparator />
+                    <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'balance-sheet'} onClick={() => navigate('balance-sheet')}>Balance Sheet</SidebarMenuSubButton></SidebarMenuSubItem>
+                    <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'income-statement'} onClick={() => navigate('income-statement')}>Income Statement</SidebarMenuSubButton></SidebarMenuSubItem>
                   </SidebarMenuSub>
                 </SidebarMenuItem>
                 <SidebarMenuItem>

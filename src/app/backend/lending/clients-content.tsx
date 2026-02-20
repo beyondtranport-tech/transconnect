@@ -261,7 +261,7 @@ const StepManagement = () => {
     const { fields, append, remove } = useFieldArray({ control, name: "management" });
     return (
         <div className="space-y-6">
-            <Button type="button" variant="outline" size="sm" onClick={() => append({ name: '', address: '', suburb: '', city: '', province: '', postCode: '', idNo: '', cell: '', position: '', qualification: '', since: '', title: '', description: '' })}><PlusCircle className="mr-2 h-4 w-4" /> Add Manager</Button>
+            <Button type="button" variant="outline" size="sm" onClick={() => append({ name: '', address: '', suburb: '', city: '', province: '', postCode: '', idNo: '', cell: '', position: '', qualification: '', since: '', held: 0, title: '', description: '' })}><PlusCircle className="mr-2 h-4 w-4" /> Add Manager</Button>
             {fields.map((field, index) => (
                 <div key={field.id} className="p-4 border rounded-lg relative space-y-4">
                     <div className="flex justify-between items-center"><h3 className="font-semibold text-lg">Manager #{index + 1}</h3><Button type="button" variant="ghost" size="icon" onClick={() => remove(index)}><Trash2 className="h-4 w-4 text-destructive" /></Button></div>
@@ -279,7 +279,7 @@ const StepManagement = () => {
                         <FormField control={control} name={`management.${index}.postCode`} render={({ field }) => (<FormItem><FormLabel>Post Code</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <FormField control={control} name={`management.${index}.province`} render={({ field }) => (<FormItem><FormLabel>Province</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
                         <FormField control={control} name={`management.${index}.cell`} render={({ field }) => (<FormItem><FormLabel>Cell</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
                     </div>
@@ -310,14 +310,15 @@ const StepManagement = () => {
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t">
-                        <FormField control={control} name={`management.${index}.since`} render={({ field }) => (<FormItem><FormLabel>Since</FormLabel><FormControl><Input type="date" {...field} /></FormControl></FormItem>)} />
-                        <FormField control={control} name={`management.${index}.description`} render={({ field }) => (<FormItem className="md:col-span-1"><FormLabel>Description / Role</FormLabel><FormControl><Textarea {...field} placeholder="e.g., Handles all invoice queries."/></FormControl></FormItem>)} />
+                         <FormField control={control} name={`management.${index}.since`} render={({ field }) => (<FormItem><FormLabel>Since</FormLabel><FormControl><Input type="date" {...field} /></FormControl></FormItem>)} />
+                         <FormField control={control} name={`management.${index}.description`} render={({ field }) => (<FormItem className="md:col-span-1"><FormLabel>Description / Role</FormLabel><FormControl><Textarea {...field} placeholder="e.g., Handles all invoice queries."/></FormControl></FormItem>)} />
                     </div>
                 </div>
             ))}
         </div>
     );
 }
+
 
 const StepBanking = () => {
     const { control } = useFormContext();
@@ -404,9 +405,10 @@ const ClientWizard = ({ clientData, onBack, onSaveSuccess }: { clientData?: Part
     };
 
     const isStepValid = (stepIndex: number) => {
-        if (stepIndex < 0) return true;
+        if (stepIndex < 0) return true; // Always allow going back from step 0
         const step = steps[stepIndex];
-        if (!step || !step.fields) return true;
+        // The step for agreements has no fields, so it is always "valid" for nav purposes
+        if (!step.fields) return true;
         const fields = step.fields as (keyof ClientFormValues)[];
         return fields.every(field => !methods.formState.errors[field as keyof typeof methods.formState.errors]);
     };
