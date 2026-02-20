@@ -181,7 +181,7 @@ export default function CommercialNegotiations() {
     }, [forceRefresh]);
 
     const columns: ColumnDef<any>[] = useMemo(() => [
-        { accessorKey: 'shopName', header: 'Shop' },
+        { accessorKey: 'shopName', header: 'Shop', cell: ({ row }) => <div>{row.original.shopName}</div> },
         { 
             accessorKey: 'percentage', 
             header: 'Member Proposal',
