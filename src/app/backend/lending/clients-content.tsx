@@ -71,6 +71,7 @@ const bankAccountSchema = z.object({
 
 
 const clientSchema = z.object({
+  clientCode: z.string().optional(),
   name: z.string().min(1, "Client name is required."),
   status: z.enum(['active', 'inactive', 'pending']),
   globalFacilityLimit: z.coerce.number().min(0, "Limit must be non-negative."),
@@ -107,9 +108,9 @@ const clientSchema = z.object({
 type ClientFormValues = z.infer<typeof clientSchema>;
 
 const steps = [
-    { id: 'main', name: 'Main Details', fields: ['name', 'status', 'globalFacilityLimit'] },
-    { id: 'address', name: 'Address', fields: ['physicalStreet', 'physicalCity'] },
-    { id: 'contact', name: 'Contact Info', fields: ['email', 'cell'] },
+    { id: 'main', name: 'Main Details', fields: ['name', 'status', 'globalFacilityLimit', 'clientCode', 'regId', 'type', 'category', 'language'] },
+    { id: 'address', name: 'Address', fields: ['physicalStreet', 'physicalCity', 'physicalPostCode', 'postalStreet', 'postalCity', 'postalPostCode'] },
+    { id: 'contact', name: 'Contact Info', fields: ['email', 'cell', 'telW'] },
     { id: 'owners', name: 'Owners & Directors', fields: ['owners'] },
     { id: 'management', name: 'Management', fields: ['management'] },
     { id: 'banking', name: 'Bank Accounts', fields: ['bankAccounts'] },
@@ -117,12 +118,18 @@ const steps = [
 ];
 
 const defaultValues: ClientFormValues = {
+  clientCode: '',
   name: '',
   status: 'pending',
   globalFacilityLimit: 0,
+  type: '',
+  category: '',
+  language: '',
+  regId: '',
+  isVatRegistered: false,
   usePhysicalForPostal: false,
   owners: [{ name: '', address: '', suburb: '', city: '', province: '', postCode: '', idNo: '', cell: '', position: '', qualification: '', since: '', held: 0 }],
-  management: [{ name: '', address: '', suburb: '', city: '', province: '', postCode: '', idNo: '', cell: '', position: '', qualification: '', since: '', description: '' }],
+  management: [{ name: '', address: '', suburb: '', city: '', province: '', postCode: '', idNo: '', cell: '', position: '', qualification: '', since: '', held: 0, title: '', description: '' }],
   bankAccounts: [{ bank: '', branchCode: '', accountNo: '', branchName: '', bankCode: '', address: '', postCode: '', phone: '', email: '', contact: '' }],
 };
 
@@ -132,34 +139,23 @@ const defaultValues: ClientFormValues = {
 const StepMain = () => (
     <div className="space-y-4 max-w-2xl">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <FormField control={useFormContext().control} name="name" render={({ field }) => (<FormItem><FormLabel>Client Name</FormLabel><FormControl><Input placeholder="Client Legal Name" {...field} /></FormControl><FormMessage /></FormItem>)} />
-            <FormField control={useFormContext().control} name="regId" render={({ field }) => (<FormItem><FormLabel>Reg. ID</FormLabel><FormControl><Input placeholder="Registration ID" {...field} /></FormControl></FormItem>)} />
+            <FormField control={useFormContext().control} name="clientCode" render={({ field }) => (<FormItem><FormLabel>Client Code</FormLabel><FormControl><Input placeholder="Client Code" {...field} /></FormControl><FormMessage /></FormItem>)} />
+            <FormField control={useFormContext().control} name="name" render={({ field }) => (<FormItem><FormLabel>Name</FormLabel><FormControl><Input placeholder="Client Legal Name" {...field} /></FormControl><FormMessage /></FormItem>)} />
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <FormField control={useFormContext().control} name="status" render={({ field }) => (<FormItem><FormLabel>Status</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue/></SelectTrigger></FormControl><SelectContent><SelectItem value="active">Active</SelectItem><SelectItem value="inactive">Inactive</SelectItem><SelectItem value="pending">Pending</SelectItem></SelectContent></Select></FormItem>)} />
             <FormField control={useFormContext().control} name="type" render={({ field }) => (<FormItem><FormLabel>Type</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select..."/></SelectTrigger></FormControl><SelectContent><SelectItem value="individual">Individual</SelectItem><SelectItem value="company">Company</SelectItem></SelectContent></Select></FormItem>)} />
             <FormField control={useFormContext().control} name="category" render={({ field }) => (<FormItem><FormLabel>Category</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select..."/></SelectTrigger></FormControl><SelectContent><SelectItem value="transport">Transport</SelectItem><SelectItem value="logistics">Logistics</SelectItem><SelectItem value="other">Other</SelectItem></SelectContent></Select></FormItem>)} />
         </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <FormField control={useFormContext().control} name="language" render={({ field }) => (<FormItem><FormLabel>Language</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select..."/></SelectTrigger></FormControl><SelectContent><SelectItem value="english">English</SelectItem><SelectItem value="afrikaans">Afrikaans</SelectItem></SelectContent></Select></FormItem>)} />
+            <FormField control={useFormContext().control} name="regId" render={({ field }) => (<FormItem><FormLabel>Reg. ID</FormLabel><FormControl><Input placeholder="Registration ID" {...field} /></FormControl></FormItem>)} />
+        </div>
+        <FormField control={useFormContext().control} name="isVatRegistered" render={({ field }) => (<FormItem className="flex flex-row items-center space-x-3 space-y-0 pt-2"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl><FormLabel>VAT Registered?</FormLabel></FormItem>)} />
          <Separator className="my-6" />
         <h3 className="text-lg font-semibold">Financials</h3>
         <div className="space-y-4 max-w-sm">
             <FormField control={useFormContext().control} name="globalFacilityLimit" render={({ field }) => (<FormItem><FormLabel>Global Facility Limit</FormLabel><FormControl><Input type="number" placeholder="R 0.00" {...field} /></FormControl><FormMessage /></FormItem>)} />
-             <FormField
-                control={useFormContext().control}
-                name="isVatRegistered"
-                render={({ field }) => (
-                <FormItem className="flex flex-row items-center space-x-3 space-y-0 pt-2">
-                    <FormControl>
-                    <Checkbox checked={field.value} onCheckedChange={field.onChange} />
-                    </FormControl>
-                    <div className="space-y-1 leading-none">
-                    <FormLabel>
-                        VAT Registered?
-                    </FormLabel>
-                    </div>
-                </FormItem>
-                )}
-            />
         </div>
     </div>
 );
@@ -363,7 +359,7 @@ const ClientWizard = ({ clientData, onBack, onSaveSuccess }: { clientData?: Part
         const step = steps[stepIndex];
         if (!step.fields) return true; // Steps without fields are always "valid" for navigation
         const fields = step.fields as (keyof ClientFormValues)[];
-        return fields.every(field => !methods.formState.errors[field]);
+        return fields.every(field => !methods.formState.errors[field as keyof typeof methods.formState.errors]);
     };
 
     const renderStepContent = () => {
@@ -393,7 +389,7 @@ const ClientWizard = ({ clientData, onBack, onSaveSuccess }: { clientData?: Part
                                 variant={currentStep === index ? 'default' : 'ghost'} 
                                 className="justify-start gap-2"
                                 onClick={() => setCurrentStep(index)}
-                                disabled={index > currentStep && !isStepValid(currentStep)}
+                                disabled={index > currentStep && !isStepValid(currentStep - 1)}
                             >
                                 {isCompleted ? <Check className="h-5 w-5 text-green-500" /> : <div className="h-5 w-5" />}
                                 {step.name}
