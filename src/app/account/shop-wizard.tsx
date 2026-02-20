@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
@@ -78,7 +77,7 @@ const shopStep1Schema = z.object({
 
 type Step1FormValues = z.infer<typeof shopStep1Schema>;
 
-function Step1CoreIdentity({ shop, onSave, canEdit }: { shop: any, onSave: (newData: any) => void, canEdit: boolean }) {
+function StepCoreIdentity({ shop, onSave, canEdit }: { shop: any, onSave: (newData: any) => void, canEdit: boolean }) {
   const { user } = useUser();
   const { toast } = useToast();
   const [isSaving, setIsSaving] = useState(false);
@@ -624,7 +623,7 @@ function ProductDialog({ shop, product, onComplete, children, canEdit }: { shop:
 }
 
 
-function Step2Products({ shop, canEdit }: { shop: any, canEdit: boolean }) {
+function StepProducts({ shop, canEdit }: { shop: any, canEdit: boolean }) {
   const firestore = useFirestore();
   const { toast } = useToast();
   const [productToDelete, setProductToDelete] = useState<any>(null);
@@ -764,7 +763,7 @@ const shopStep3Schema = z.object({
 
 type Step3FormValues = z.infer<typeof shopStep3Schema>;
 
-function Step3Appearance({ shop, onSave, canEdit }: { shop: any, onSave: (newData: any) => void, canEdit: boolean }) {
+function StepAppearance({ shop, onSave, canEdit }: { shop: any, onSave: (newData: any) => void, canEdit: boolean }) {
   const { user } = useUser();
   const { toast } = useToast();
   const [isSaving, setIsSaving] = useState(false);
@@ -938,7 +937,7 @@ const shopStep4Schema = z.object({
 
 type Step4FormValues = z.infer<typeof shopStep4Schema>;
 
-function Step4SocialLinks({ shop, onSave, canEdit }: { shop: any, onSave: (newData: any) => void, canEdit: boolean }) {
+function StepSocialLinks({ shop, onSave, canEdit }: { shop: any, onSave: (newData: any) => void, canEdit: boolean }) {
   const { user } = useUser();
   const { toast } = useToast();
   const [isSaving, setIsSaving] = useState(false);
@@ -1077,24 +1076,146 @@ function Step4SocialLinks({ shop, onSave, canEdit }: { shop: any, onSave: (newDa
   );
 }
 
-// ====== STEP 5: Legal Documents ======
+// ====== STEP 5: SEO ======
 const shopStep5Schema = z.object({
+  metaTitle: z.string().optional(),
+  metaDescription: z.string().optional(),
+  tags: z.array(z.string()).optional(),
+});
+
+type Step5FormValues = z.infer<typeof shopStep5Schema>;
+
+function StepSeo({ shop, onSave, canEdit, onSeoGenerated }: { shop: any, onSave: (newData: any) => void, canEdit: boolean, onSeoGenerated: (seoData: any) => void }) {
+  const { toast } = useToast();
+  const [isSaving, setIsSaving] = useState(false);
+  const [isGeneratingSeo, setIsGeneratingSeo] = useState(false);
+
+  const form = useForm<Step5FormValues>({
+    resolver: zodResolver(shopStep5Schema),
+    defaultValues: {
+      metaTitle: shop.metaTitle || '',
+      metaDescription: shop.metaDescription || '',
+      tags: shop.tags || [],
+    },
+  });
+
+   useEffect(() => {
+    form.reset({
+      metaTitle: shop.metaTitle || '',
+      metaDescription: shop.metaDescription || '',
+      tags: shop.tags || [],
+    });
+  }, [shop, form]);
+
+   const handleGenerateSeo = async () => {
+    setIsGeneratingSeo(true);
+    try {
+        const result = await generateShopSeo({
+            shopName: shop.shopName,
+            shopDescription: shop.shopDescription,
+        });
+        if (result) {
+            onSeoGenerated(result);
+            toast({ title: 'SEO Content Generated!', description: 'Your new meta title, description, and tags have been populated.' });
+        }
+    } catch(e: any) {
+        toast({ variant: 'destructive', title: 'AI Generation Failed', description: e.message });
+    } finally {
+        setIsGeneratingSeo(false);
+    }
+  };
+
+  const onSubmit = async (values: Step5FormValues) => {
+    setIsSaving(true);
+    try {
+        const token = await getClientSideAuthToken();
+        if (!token) throw new Error("Authentication token not found.");
+        
+        await fetch('/api/updateUserDoc', {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                path: `companies/${shop.companyId}/shops/${shop.id}`,
+                data: { ...values, updatedAt: { _methodName: 'serverTimestamp' } }
+            }),
+        });
+
+        toast({ title: 'Step 5 Saved!', description: 'Your SEO details have been updated.' });
+        onSave(values);
+    } catch (error: any) {
+        toast({ variant: 'destructive', title: 'Update Failed', description: error.message });
+    } finally {
+        setIsSaving(false);
+    }
+  };
+  
+  return (
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <fieldset disabled={!canEdit} className="space-y-6">
+             <div className="p-4 bg-primary/5 border border-primary/20 rounded-lg space-y-4">
+                <h3 className="font-semibold flex items-center gap-2"><Search className="h-5 w-5 text-primary"/> AI SEO Booster</h3>
+                <p className="text-sm text-muted-foreground">
+                   Let our AI assistant generate an SEO-friendly title, description, and tags for your shop based on the name and description from Step 1.
+                </p>
+                <Button type="button" onClick={handleGenerateSeo} disabled={isGeneratingSeo || !canEdit}>
+                    {isGeneratingSeo ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Sparkles className="mr-2 h-4 w-4" />}
+                    Generate SEO Content
+                </Button>
+                <Separator />
+                <div className="space-y-4 pt-2">
+                    <FormField control={form.control} name="metaTitle" render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Meta Title</FormLabel>
+                            <FormControl><Input placeholder="Your SEO Title" {...field} /></FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )} />
+                    <FormField control={form.control} name="metaDescription" render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Meta Description</FormLabel>
+                            <FormControl><Textarea placeholder="Your SEO Description" {...field} /></FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )} />
+                    <FormField control={form.control} name="tags" render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Keywords / Tags</FormLabel>
+                            <FormControl><Input placeholder="e.g. truck parts, diesel mechanic, scania" defaultValue={Array.isArray(field.value) ? field.value.join(', ') : ''} onChange={(e) => field.onChange(e.target.value.split(',').map(s => s.trim()))} /></FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )} />
+                </div>
+            </div>
+        </fieldset>
+
+        <Button type="submit" disabled={isSaving || !canEdit}>
+            {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+            Save & Continue
+        </Button>
+      </form>
+    </Form>
+  );
+}
+
+// ====== STEP 6: Legal Documents ======
+const shopStep6Schema = z.object({
     termsUrl: z.string().url().optional().or(z.literal('')),
     returnsPolicyUrl: z.string().url().optional().or(z.literal('')),
     privacyPolicyUrl: z.string().url().optional().or(z.literal('')),
 });
 
-type Step5FormValues = z.infer<typeof shopStep5Schema>;
+type Step6FormValues = z.infer<typeof shopStep6Schema>;
 
-function Step5Legal({ shop, onSave, canEdit }: { shop: any, onSave: (newData: any) => void, canEdit: boolean }) {
+function StepLegal({ shop, onSave, canEdit }: { shop: any, onSave: (newData: any) => void, canEdit: boolean }) {
     const { user } = useUser();
     const { toast } = useToast();
     const [isSaving, setIsSaving] = useState(false);
     const [uploading, setUploading] = useState<string | null>(null);
     const [progress, setProgress] = useState(0);
 
-    const form = useForm<Step5FormValues>({
-        resolver: zodResolver(shopStep5Schema),
+    const form = useForm<Step6FormValues>({
+        resolver: zodResolver(shopStep6Schema),
         defaultValues: {
             termsUrl: shop.termsUrl || '',
             returnsPolicyUrl: shop.returnsPolicyUrl || '',
@@ -1110,7 +1231,7 @@ function Step5Legal({ shop, onSave, canEdit }: { shop: any, onSave: (newData: an
         });
     }, [shop, form]);
 
-    const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, fieldName: keyof Step5FormValues) => {
+    const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, fieldName: keyof Step6FormValues) => {
         const file = e.target.files?.[0];
         if (!file || !user) return;
         if (file.type !== 'application/pdf') {
@@ -1155,7 +1276,7 @@ function Step5Legal({ shop, onSave, canEdit }: { shop: any, onSave: (newData: an
         }
     };
     
-    const onSubmit = async (values: Step5FormValues) => {
+    const onSubmit = async (values: Step6FormValues) => {
         if (!user || !shop.companyId) return;
         setIsSaving(true);
         
@@ -1172,7 +1293,7 @@ function Step5Legal({ shop, onSave, canEdit }: { shop: any, onSave: (newData: an
                 }),
             });
 
-            toast({ title: 'Step 5 Saved!', description: 'Your legal documents have been linked.' });
+            toast({ title: 'Step 6 Saved!', description: 'Your legal documents have been linked.' });
             onSave(values);
         } catch (error: any) {
             toast({ variant: 'destructive', title: 'Update Failed', description: error.message });
@@ -1181,7 +1302,7 @@ function Step5Legal({ shop, onSave, canEdit }: { shop: any, onSave: (newData: an
         }
     };
     
-    const DocumentField = ({ fieldName, label }: { fieldName: keyof Step5FormValues; label: string; }) => {
+    const DocumentField = ({ fieldName, label }: { fieldName: keyof Step6FormValues; label: string; }) => {
         const fileInputRef = React.useRef<HTMLInputElement>(null);
         const url = form.watch(fieldName);
 
@@ -1223,13 +1344,13 @@ function Step5Legal({ shop, onSave, canEdit }: { shop: any, onSave: (newData: an
     );
 }
 
-// ====== STEP 6: Commercials ======
+// ====== STEP 7: Commercials ======
 const proposalSchema = z.object({
     percentage: z.coerce.number().min(0, "Cannot be negative").max(100, "Cannot be over 100"),
 });
 type ProposalFormValues = z.infer<typeof proposalSchema>;
 
-function Step6Commercials({ shop, canEdit, onSave }: { shop: any, onSave: (newData: any) => void, canEdit: boolean }) {
+function StepCommercials({ shop, canEdit, onSave }: { shop: any, onSave: (newData: any) => void, canEdit: boolean }) {
   const { user } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
@@ -1435,137 +1556,56 @@ function Step6Commercials({ shop, canEdit, onSave }: { shop: any, onSave: (newDa
   );
 }
 
-
-// ====== STEP 7: SEO ======
-const shopStep7Schema = z.object({
-  metaTitle: z.string().optional(),
-  metaDescription: z.string().optional(),
-  tags: z.array(z.string()).optional(),
-});
-
-type Step7FormValues = z.infer<typeof shopStep7Schema>;
-
-function Step7Seo({ shop, onSave, canEdit, onSeoGenerated }: { shop: any, onSave: (newData: any) => void, canEdit: boolean, onSeoGenerated: (seoData: any) => void }) {
-  const { toast } = useToast();
-  const [isSaving, setIsSaving] = useState(false);
-  const [isGeneratingSeo, setIsGeneratingSeo] = useState(false);
-
-  const form = useForm<Step7FormValues>({
-    resolver: zodResolver(shopStep7Schema),
-    defaultValues: {
-      metaTitle: shop.metaTitle || '',
-      metaDescription: shop.metaDescription || '',
-      tags: shop.tags || [],
-    },
-  });
-
-   useEffect(() => {
-    form.reset({
-      metaTitle: shop.metaTitle || '',
-      metaDescription: shop.metaDescription || '',
-      tags: shop.tags || [],
-    });
-  }, [shop, form]);
-
-   const handleGenerateSeo = async () => {
-    setIsGeneratingSeo(true);
-    try {
-        const result = await generateShopSeo({
-            shopName: shop.shopName,
-            shopDescription: shop.shopDescription,
-        });
-        if (result) {
-            onSeoGenerated(result);
-            toast({ title: 'SEO Content Generated!', description: 'Your new meta title, description, and tags have been populated.' });
-        }
-    } catch(e: any) {
-        toast({ variant: 'destructive', title: 'AI Generation Failed', description: e.message });
-    } finally {
-        setIsGeneratingSeo(false);
-    }
-  };
-
-  const onSubmit = async (values: Step7FormValues) => {
-    setIsSaving(true);
-    try {
-        const token = await getClientSideAuthToken();
-        if (!token) throw new Error("Authentication token not found.");
-        
-        await fetch('/api/updateUserDoc', {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                path: `companies/${shop.companyId}/shops/${shop.id}`,
-                data: { ...values, updatedAt: { _methodName: 'serverTimestamp' } }
-            }),
-        });
-
-        toast({ title: 'Step 7 Saved!', description: 'Your SEO details have been updated.' });
-        onSave(values);
-    } catch (error: any) {
-        toast({ variant: 'destructive', title: 'Update Failed', description: error.message });
-    } finally {
-        setIsSaving(false);
-    }
-  };
-  
-  return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        <fieldset disabled={!canEdit} className="space-y-6">
-             <div className="p-4 bg-primary/5 border border-primary/20 rounded-lg space-y-4">
-                <h3 className="font-semibold flex items-center gap-2"><Search className="h-5 w-5 text-primary"/> AI SEO Booster</h3>
-                <p className="text-sm text-muted-foreground">
-                   Let our AI assistant generate an SEO-friendly title, description, and tags for your shop based on the name and description from Step 1.
-                </p>
-                <Button type="button" onClick={handleGenerateSeo} disabled={isGeneratingSeo || !canEdit}>
-                    {isGeneratingSeo ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Sparkles className="mr-2 h-4 w-4" />}
-                    Generate SEO Content
-                </Button>
-                <Separator />
-                <div className="space-y-4 pt-2">
-                    <FormField control={form.control} name="metaTitle" render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Meta Title</FormLabel>
-                            <FormControl><Input placeholder="Your SEO Title" {...field} /></FormControl>
-                            <FormMessage />
-                        </FormItem>
-                    )} />
-                    <FormField control={form.control} name="metaDescription" render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Meta Description</FormLabel>
-                            <FormControl><Textarea placeholder="Your SEO Description" {...field} /></FormControl>
-                            <FormMessage />
-                        </FormItem>
-                    )} />
-                    <FormField control={form.control} name="tags" render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Keywords / Tags</FormLabel>
-                            <FormControl><Input placeholder="e.g. truck parts, diesel mechanic, scania" defaultValue={Array.isArray(field.value) ? field.value.join(', ') : ''} onChange={(e) => field.onChange(e.target.value.split(',').map(s => s.trim()))} /></FormControl>
-                            <FormMessage />
-                        </FormItem>
-                    )} />
-                </div>
-            </div>
-        </fieldset>
-
-        <Button type="submit" disabled={isSaving || !canEdit}>
-            {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-            Save & Continue
-        </Button>
-      </form>
-    </Form>
-  );
-}
-
-// ====== NEW PUBLISH STEP ======
-function Step8Publish({ onPublish, isPublishing, allStepsComplete, canEdit }: { onPublish: () => void; isPublishing: boolean; allStepsComplete: boolean; canEdit: boolean; }) {
+// ====== NEW Terms STEP ======
+function StepTerms({ onSave, onTermsAgreed, canEdit }: { onSave: (newData: any) => void; onTermsAgreed: (agreed: boolean) => void; canEdit: boolean; }) {
     const [agreeTerms, setAgreeTerms] = useState(false);
     const [agreeReturns, setAgreeReturns] = useState(false);
     const [agreePrivacy, setAgreePrivacy] = useState(false);
 
-    const canPublish = agreeTerms && agreeReturns && agreePrivacy && allStepsComplete;
+    useEffect(() => {
+        onTermsAgreed(agreeTerms && agreeReturns && agreePrivacy);
+    }, [agreeTerms, agreeReturns, agreePrivacy, onTermsAgreed]);
+    
+    return (
+        <div className="space-y-6">
+            <CardHeader className="px-0">
+                <CardTitle>Terms & Policies</CardTitle>
+                <CardDescription>
+                    Please review and agree to our terms and policies. Accepting these is required to publish your shop.
+                </CardDescription>
+            </CardHeader>
+            
+            <div className="space-y-4 rounded-md border p-6">
+                <div className="flex items-start space-x-3">
+                    <Checkbox id="terms" checked={agreeTerms} onCheckedChange={(checked) => setAgreeTerms(!!checked)} disabled={!canEdit} />
+                    <Label htmlFor="terms" className="text-sm font-normal leading-relaxed">
+                        I have read and agree to the TransConnect <Link href="/terms" target="_blank" className="underline text-primary">Terms of Service</Link>.
+                    </Label>
+                </div>
+                <div className="flex items-start space-x-3">
+                    <Checkbox id="returns" checked={agreeReturns} onCheckedChange={(checked) => setAgreeReturns(!!checked)} disabled={!canEdit} />
+                    <Label htmlFor="returns" className="text-sm font-normal leading-relaxed">
+                        I confirm that my shop will adhere to the platform's standard <Link href="/terms#returns" target="_blank" className="underline text-primary">Return Policy</Link>, unless my own is provided in the Legal Docs step.
+                    </Label>
+                </div>
+                <div className="flex items-start space-x-3">
+                    <Checkbox id="privacy" checked={agreePrivacy} onCheckedChange={(checked) => setAgreePrivacy(!!checked)} disabled={!canEdit} />
+                    <Label htmlFor="privacy" className="text-sm font-normal leading-relaxed">
+                        I understand and agree to the TransConnect <Link href="/privacy" target="_blank" className="underline text-primary">Privacy Policy</Link> regarding the handling of customer data.
+                    </Label>
+                </div>
+            </div>
 
+            <Button onClick={() => onSave({})} disabled={!canEdit || !(agreeTerms && agreeReturns && agreePrivacy)}>
+                Agree & Continue
+                <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
+        </div>
+    );
+}
+
+// ====== NEW PUBLISH STEP ======
+function StepPublish({ onPublish, isPublishing, allStepsComplete, canEdit }: { onPublish: () => void; isPublishing: boolean; allStepsComplete: boolean; canEdit: boolean; }) {
     return (
         <div className="space-y-6">
             <CardHeader className="px-0">
@@ -1577,36 +1617,15 @@ function Step8Publish({ onPublish, isPublishing, allStepsComplete, canEdit }: { 
             
             {!allStepsComplete && (
                 <Alert variant="destructive">
-                <AlertTriangle className="h-4 w-4" />
-                <AlertTitle>Incomplete Setup</AlertTitle>
-                <AlertDescription>
-                    You must complete all previous steps before you can publish your shop. Please review the sidebar for incomplete steps.
-                </AlertDescription>
+                    <AlertTriangle className="h-4 w-4" />
+                    <AlertTitle>Incomplete Setup</AlertTitle>
+                    <AlertDescription>
+                        You must complete all previous steps before you can publish your shop. A checkmark will appear next to each completed step in the sidebar.
+                    </AlertDescription>
                 </Alert>
             )}
 
-            <div className="space-y-4 rounded-md border p-4">
-                <div className="flex items-start space-x-3">
-                    <Checkbox id="terms" checked={agreeTerms} onCheckedChange={(checked) => setAgreeTerms(!!checked)} disabled={!canEdit} />
-                    <Label htmlFor="terms" className="text-sm font-normal leading-relaxed">
-                        I have read and agree to the TransConnect <Link href="/terms" target="_blank" className="underline text-primary">Terms of Service</Link>.
-                    </Label>
-                </div>
-                <div className="flex items-start space-x-3">
-                    <Checkbox id="returns" checked={agreeReturns} onCheckedChange={(checked) => setAgreeReturns(!!checked)} disabled={!canEdit} />
-                    <Label htmlFor="returns" className="text-sm font-normal leading-relaxed">
-                        I confirm that my shop will adhere to the platform's standard <Link href="/terms#returns" target="_blank" className="underline text-primary">Return Policy</Link>, unless my own is provided.
-                    </Label>
-                </div>
-                <div className="flex items-start space-x-3">
-                    <Checkbox id="privacy" checked={agreePrivacy} onCheckedChange={(checked) => setAgreePrivacy(!!checked)} disabled={!canEdit} />
-                    <Label htmlFor="privacy" className="text-sm font-normal leading-relaxed">
-                        I understand and agree to the TransConnect <Link href="/privacy" target="_blank" className="underline text-primary">Privacy Policy</Link> regarding the handling of customer data.
-                    </Label>
-                </div>
-            </div>
-
-            <Button onClick={onPublish} disabled={!canPublish || isPublishing || !canEdit}>
+            <Button onClick={onPublish} disabled={!allStepsComplete || isPublishing || !canEdit}>
                 {isPublishing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
                 Publish Shop
             </Button>
@@ -1614,10 +1633,12 @@ function Step8Publish({ onPublish, isPublishing, allStepsComplete, canEdit }: { 
     );
 }
 
+
 // ====== MAIN WIZARD COMPONENT ======
 export function ShopWizard({ shop: initialShop, onShopUpdate }: { shop: any, onShopUpdate: () => void }) {
   const [currentStep, setCurrentStep] = useState(0);
   const [shopData, setShopData] = useState(initialShop);
+  const [termsAgreed, setTermsAgreed] = useState(false);
   const { can, isLoading: permissionsLoading } = usePermissions();
   const firestore = useFirestore();
   const { toast } = useToast();
@@ -1701,12 +1722,16 @@ export function ShopWizard({ shop: initialShop, onShopUpdate }: { shop: any, onS
         'SEO': !!(shopData.metaTitle && shopData.metaDescription && shopData.tags?.length > 0),
         'Legal Docs': !!(shopData.termsUrl || shopData.returnsPolicyUrl || shopData.privacyPolicyUrl),
         'Commercials': !!activeAgreement,
+        'Terms': termsAgreed,
     };
-  }, [shopData, products, activeAgreement]);
+  }, [shopData, products, activeAgreement, termsAgreed]);
   
   const allStepsComplete = useMemo(() => {
-    return Object.values(stepCompleteness).every(Boolean);
+    // Exclude 'Preview' and 'Publish' from the completeness check
+    const requiredSteps = Object.keys(stepCompleteness);
+    return requiredSteps.every(step => stepCompleteness[step as keyof typeof stepCompleteness]);
   }, [stepCompleteness]);
+
 
   const completenessPercentage = useMemo(() => {
     const completedCount = Object.values(stepCompleteness).filter(Boolean).length;
@@ -1715,15 +1740,16 @@ export function ShopWizard({ shop: initialShop, onShopUpdate }: { shop: any, onS
   }, [stepCompleteness]);
 
   const steps = [
-    { id: 'Core Identity', component: <Step1CoreIdentity shop={shopData} onSave={handleSave} canEdit={canEditShop} /> },
-    { id: 'Products', component: <Step2Products shop={shopData} canEdit={canEditShop} /> },
-    { id: 'Appearance', component: <Step3Appearance shop={shopData} onSave={handleSave} canEdit={canEditShop} /> },
-    { id: 'Social Links', component: <Step4SocialLinks shop={shopData} onSave={handleSave} canEdit={canEditShop} /> },
-    { id: 'SEO', component: <Step7Seo shop={shopData} onSave={handleSave} canEdit={canEditShop} onSeoGenerated={handleSeoGenerated} /> },
-    { id: 'Legal Docs', component: <Step5Legal shop={shopData} onSave={handleSave} canEdit={canEditShop} /> },
-    { id: 'Commercials', component: <Step6Commercials shop={shopData} onSave={handleSave} canEdit={canEditShop} /> },
-    { id: 'Publish', component: <Step8Publish onPublish={handlePublish} isPublishing={isPublishing} allStepsComplete={allStepsComplete} canEdit={canEditShop} /> },
+    { id: 'Core Identity', component: <StepCoreIdentity shop={shopData} onSave={handleSave} canEdit={canEditShop} /> },
+    { id: 'Products', component: <StepProducts shop={shopData} canEdit={canEditShop} /> },
+    { id: 'Appearance', component: <StepAppearance shop={shopData} onSave={handleSave} canEdit={canEditShop} /> },
+    { id: 'Social Links', component: <StepSocialLinks shop={shopData} onSave={handleSave} canEdit={canEditShop} /> },
+    { id: 'SEO', component: <StepSeo shop={shopData} onSave={handleSave} canEdit={canEditShop} onSeoGenerated={handleSeoGenerated} /> },
+    { id: 'Legal Docs', component: <StepLegal shop={shopData} onSave={handleSave} canEdit={canEditShop} /> },
+    { id: 'Commercials', component: <StepCommercials shop={shopData} onSave={handleSave} canEdit={canEditShop} /> },
+    { id: 'Terms', component: <StepTerms onSave={handleSave} onTermsAgreed={setTermsAgreed} canEdit={canEditShop} initialAgreements={{terms: false, returns: false, privacy: false}} /> },
     { id: 'Preview', component: <ShopPreview shop={shopData} products={products || []} /> },
+    { id: 'Publish', component: <StepPublish onPublish={handlePublish} isPublishing={isPublishing} allStepsComplete={allStepsComplete} canEdit={canEditShop} /> },
   ];
 
   const handleStepClick = (index: number) => {
@@ -1759,7 +1785,7 @@ export function ShopWizard({ shop: initialShop, onShopUpdate }: { shop: any, onS
         <div className="grid grid-cols-1 md:grid-cols-[200px_1fr] gap-8">
             <div className="flex flex-col gap-1">
                  {steps.map((step, index) => {
-                    const isCompleted = stepCompleteness[step.id as keyof typeof stepCompleteness];
+                    const isCompleted = (step.id === 'Publish' || step.id === 'Preview') ? true : stepCompleteness[step.id as keyof typeof stepCompleteness];
                      return (
                         <Button 
                             key={step.id} 
@@ -1767,7 +1793,9 @@ export function ShopWizard({ shop: initialShop, onShopUpdate }: { shop: any, onS
                             onClick={() => handleStepClick(index)}
                             className="justify-start gap-2"
                         >
-                            {isCompleted ? <CheckCircle className="h-4 w-4 text-green-500" /> : <div className="h-4 w-4"/>}
+                            {step.id !== 'Publish' && step.id !== 'Preview' && (
+                                isCompleted ? <CheckCircle className="h-4 w-4 text-green-500" /> : <div className="h-4 w-4"/>
+                            )}
                             {step.id}
                         </Button>
                     )
