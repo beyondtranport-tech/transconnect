@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useCart } from '@/context/CartContext';
@@ -161,13 +160,32 @@ export default function CartPage() {
                             {isProcessing ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Wallet className="mr-2 h-4 w-4"/>}
                             {hasSufficientFunds ? 'Pay with Wallet' : 'Insufficient Funds'}
                         </Button>
+                        <div className="relative w-full my-2">
+                            <div className="absolute inset-0 flex items-center">
+                                <span className="w-full border-t" />
+                            </div>
+                            <div className="relative flex justify-center text-xs uppercase">
+                                <span className="bg-card px-2 text-muted-foreground">
+                                Or pay with
+                                </span>
+                            </div>
+                        </div>
+
+                        <Button className="w-full" variant="outline" disabled>
+                            Facility with Simplyfi Flow
+                        </Button>
+                        <Button className="w-full" variant="outline" disabled>
+                            EFT
+                        </Button>
+                        <Button className="w-full" variant="outline" disabled>
+                            Direct Debit
+                        </Button>
                     </>
                 ) : (
                     <Button asChild className="w-full">
                         <Link href={`/signin?redirect=/cart`}>Sign In to Check Out</Link>
                     </Button>
                 )}
-                
               </CardFooter>
             </Card>
           </div>
