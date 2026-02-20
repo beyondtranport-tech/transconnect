@@ -1,3 +1,4 @@
+
 'use server';
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -180,56 +181,69 @@ export async function POST(req: NextRequest) {
                         return dateB - dateA;
                     });
                 
-                const allAgreementsSnap = await db.collectionGroup('agreements').get();
+                const allAgreementsSnap = await db.collectionGroup('agreements').where('status', '==', 'proposed').get();
+                
+                const latestProposals = new Map<string, any>();
+                allAgreementsSnap.docs.forEach(doc => {
+                    const data = doc.data();
+                    const pathSegments = doc.ref.path.split('/');
+                    const shopId = pathSegments.length >= 4 ? pathSegments[3] : null;
+                    if (!shopId) return;
 
-                const proposedAgreements = allAgreementsSnap.docs
-                    .map(doc => {
-                        const data = doc.data();
-                        const pathSegments = doc.ref.path.split('/');
-                        // Path: companies/{companyId}/shops/{shopId}/agreements/{agreementId}
-                        const shopId = pathSegments.length >= 4 ? pathSegments[3] : null;
+                    const existing = latestProposals.get(shopId);
+                    const docTimestamp = data.createdAt.toMillis();
 
-                        return {
+                    if (!existing || docTimestamp > existing.createdAt.toMillis()) {
+                        latestProposals.set(shopId, {
                             ...serializeTimestamps(data),
                             id: doc.id,
-                            shopId: shopId, // Add shopId for mapping
-                            shopName: shopId ? shopMap.get(shopId) || 'Unknown Shop' : 'Unknown Shop',
-                        };
-                    })
-                    .filter((agreement: any) => agreement.status === 'proposed')
-                    .sort((a, b) => {
-                         const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
-                        const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
-                        return dateB - dateA;
-                    });
+                            shopId: shopId,
+                            shopName: shopMap.get(shopId) || 'Unknown Shop',
+                        });
+                    }
+                });
+
+                const proposedAgreements = Array.from(latestProposals.values())
+                    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
                 return NextResponse.json({ success: true, data: { pendingShops, proposedAgreements } });
             }
             case 'getPendingAgreements': {
-                 const allShopsSnap = await db.collectionGroup('shops').get();
+                const allShopsSnap = await db.collectionGroup('shops').get();
                 const shopMap = new Map<string, string>();
                 allShopsSnap.forEach(doc => {
                     shopMap.set(doc.id, doc.data().shopName || 'Unnamed Shop');
                 });
-
-                const allAgreementsSnap = await db.collectionGroup('agreements').get();
-
-                const proposedAgreements = allAgreementsSnap.docs
-                    .map(doc => {
-                        const data = doc.data();
-                        const pathSegments = doc.ref.path.split('/');
-                        const companyId = pathSegments.length > 1 ? pathSegments[1] : null;
-                        const shopId = pathSegments.length > 3 ? pathSegments[3] : null;
-
-                        return {
-                            ...serializeTimestamps(data),
-                            id: doc.id,
-                            shopId: shopId,
-                            shopName: shopId ? shopMap.get(shopId) : 'Unknown Shop',
-                            companyId: companyId,
-                        };
-                    })
-                    .filter((agreement: any) => agreement.status === 'proposed')
+            
+                const allAgreementsSnap = await db.collectionGroup('agreements').where('status', '==', 'proposed').get();
+            
+                // Group by shopId and find the most recent proposal for each
+                const latestProposals = new Map<string, any>();
+                allAgreementsSnap.forEach(doc => {
+                    const data = doc.data();
+                    const pathSegments = doc.ref.path.split('/');
+                    const companyId = pathSegments.length > 1 ? pathSegments[1] : null;
+                    const shopId = pathSegments.length > 3 ? pathSegments[3] : null;
+                    if (!shopId) return; // Skip if we can't identify the shop
+            
+                    const currentDoc = {
+                        ...serializeTimestamps(data),
+                        id: doc.id,
+                        shopId: shopId,
+                        shopName: shopMap.get(shopId),
+                        companyId: companyId,
+                    };
+            
+                    const existing = latestProposals.get(shopId);
+                    const currentTimestamp = new Date(currentDoc.createdAt).getTime();
+            
+                    if (!existing || currentTimestamp > new Date(existing.createdAt).getTime()) {
+                        latestProposals.set(shopId, currentDoc);
+                    }
+                });
+            
+                // Convert map values to array and sort
+                const proposedAgreements = Array.from(latestProposals.values())
                     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
                 
                 return NextResponse.json({ success: true, data: proposedAgreements });
@@ -239,18 +253,20 @@ export async function POST(req: NextRequest) {
                 if (!companyId || !shopId || !agreementId || !userId) {
                     throw new Error("Missing required data for accepting agreement.");
                 }
-
+            
                 const agreementsRef = db.collection(`companies/${companyId}/shops/${shopId}/agreements`);
                 
                 await db.runTransaction(async (transaction) => {
                     const agreementsSnap = await transaction.get(agreementsRef);
                     
+                    // Archive all other active or proposed agreements for this shop
                     agreementsSnap.forEach(doc => {
-                        if (doc.id !== agreementId && doc.data().status === 'active') {
+                        if (doc.id !== agreementId && (doc.data().status === 'active' || doc.data().status === 'proposed')) {
                             transaction.update(doc.ref, { status: 'archived', updatedAt: FieldValue.serverTimestamp() });
                         }
                     });
                     
+                    // Activate the chosen agreement
                     const newAgreementRef = agreementsRef.doc(agreementId);
                     transaction.update(newAgreementRef, { 
                         status: 'active',
@@ -757,10 +773,10 @@ export async function POST(req: NextRequest) {
                 const wasAlreadyApproved = shopData.status === 'approved';
                 const memberProductsSnap = await memberShopRef.collection('products').get();
                 const publicProductsCollection = publicShopRef.collection('products');
-                const existingPublicProductsSnap = await publicProductsCollection.get();
                 const loyaltyConfigDoc = await db.collection('configuration').doc('loyaltySettings').get();
 
                 const deleteBatch = db.batch();
+                const existingPublicProductsSnap = await publicProductsCollection.get();
                 if (!existingPublicProductsSnap.empty) {
                     existingPublicProductsSnap.docs.forEach(doc => deleteBatch.delete(doc.ref));
                 }
@@ -833,3 +849,5 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ success: false, error: error.message }, { status });
     }
 }
+
+    

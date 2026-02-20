@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
@@ -38,12 +39,20 @@ const formatDate = (isoString?: string) => {
     }
 };
 
+const statusColors: { [key: string]: 'default' | 'secondary' | 'destructive' | 'outline' } = {
+  proposed: 'secondary',
+  active: 'default',
+  archived: 'destructive',
+};
+
 function NegotiationActionMenu({ agreement, onUpdate }: { agreement: any; onUpdate: () => void }) {
     const [isProcessing, setIsProcessing] = useState(false);
     const [dialog, setDialog] = useState<'accept' | 'counter' | 'view' | null>(null);
     const [counterOffer, setCounterOffer] = useState<number | string>(agreement.percentage);
     const { user } = useUser();
     const { toast } = useToast();
+    
+    const canAccept = agreement.status === 'proposed';
 
     const handleAction = async (actionType: 'accept' | 'counter') => {
         setIsProcessing(true);
@@ -93,7 +102,7 @@ function NegotiationActionMenu({ agreement, onUpdate }: { agreement: any; onUpda
                     <AlertDialogHeader>
                         <AlertDialogTitle>Accept Proposal?</AlertDialogTitle>
                         <AlertDialogDescription>
-                            Are you sure you want to accept the proposed {agreement.percentage}% commission for {agreement.shopName}? This will make the new rate active immediately.
+                            Are you sure you want to accept the proposed {agreement.percentage}% commission for {agreement.shopName}? This will make the new rate active immediately and archive any other proposals.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
@@ -147,7 +156,7 @@ function NegotiationActionMenu({ agreement, onUpdate }: { agreement: any; onUpda
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                     <DropdownMenuItem onSelect={() => setDialog('view')}><Eye className="mr-2 h-4 w-4"/> View Details</DropdownMenuItem>
-                    <DropdownMenuItem onSelect={() => setDialog('accept')}><Check className="mr-2 h-4 w-4"/> Accept Offer</DropdownMenuItem>
+                    <DropdownMenuItem onSelect={() => setDialog('accept')} disabled={!canAccept}><Check className="mr-2 h-4 w-4"/> Accept Offer</DropdownMenuItem>
                     <DropdownMenuItem onSelect={() => setDialog('counter')}><MessageSquare className="mr-2 h-4 w-4"/> Counter-Offer</DropdownMenuItem>
                 </DropdownMenuContent>
             </DropdownMenu>
@@ -193,7 +202,12 @@ export default function CommercialNegotiations() {
         },
         { 
             accessorKey: 'status', 
-            header: 'Negotiation Status',
+            header: 'Status',
+            cell: ({ row }) => <Badge variant={statusColors[row.original.status] || 'secondary'} className="capitalize">{row.original.status}</Badge>
+        },
+        { 
+            id: 'aiStatus',
+            header: 'AI Agent Status',
             cell: ({ row }) => <Badge variant="outline">Awaiting AI Action</Badge>
         },
         { 
@@ -240,3 +254,5 @@ export default function CommercialNegotiations() {
         </Card>
     );
 }
+
+    
