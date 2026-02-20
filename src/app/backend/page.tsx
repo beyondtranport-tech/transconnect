@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -126,9 +127,8 @@ const LoyaltySettings = dynamic(() => import('@/app/backend/loyalty-settings'), 
 const ISAPitchSettings = dynamic(() => import('@/app/backend/revenue/isa-pitch-settings'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 
 // Lending Model
-const LendingAssumptions = dynamic(() => import('@/app/adminaccount/lending-assumptions'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-// Admin-specific pages
-const InvestorManagement = dynamic(() => import('@/app/adminaccount/investor-management'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const LendingModelDashboard = dynamic(() => import('@/app/backend/lending-model-dashboard'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+
 
 function AdminAuthGuard({ children }: { children: React.ReactNode }) {
     const { user, isUserLoading } = useUser();
@@ -146,7 +146,7 @@ function AdminAuthGuard({ children }: { children: React.ReactNode }) {
         }
     }, [user, isUserLoading, router]);
 
-    if (isUserLoading || !user) {
+    if (isUserLoading || !user || (user.email !== 'mkoton100@gmail.com' && user.email !== 'beyondtransport@gmail.com')) {
         return (
             <div className="flex flex-col justify-center items-center min-h-[calc(100vh-8rem)]">
                 <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -212,7 +212,9 @@ function BackendContent() {
       case 'lending-collateral': return <CollateralContent />;
       case 'lending-payments': return <PaymentsContent />;
       case 'lending-partners': return <LendingPartnersContent />;
-      case 'lending-assumptions': return <LendingAssumptions />;
+      
+      // Lending Model (New)
+      case 'lending-model': return <LendingModelDashboard />;
 
       // Partners
       case 'partners-suppliers': return <PartnerDetails partnerType="Suppliers" />;
@@ -233,9 +235,6 @@ function BackendContent() {
       case 'incentives-sales': return <SalesIncentives />;
       case 'tasks': return <PlatformTasks />;
       case 'settings-bank': return <PlatformSettingsContent />;
-
-      // Admin-only pages
-      case 'investors': return <InvestorManagement />;
 
       default: return <AdminDashboardContent />;
     }
@@ -258,7 +257,8 @@ function BackendContent() {
   
   const isOperationsActive = ['members', 'users', 'wallet', 'wallet-transactions', 'shops', 'reconciliation', 'contributions', 'activity', 'communications', 'support-inbox', 'commercial-negotiations'].includes(activeView);
   const isOriginationActive = ['opportunities', 'quotes', 'enquiries', 'application', 'scoring'].includes(activeView);
-  const isLendingDMSActive = activeView.startsWith('lending-');
+  const isLendingDMSActive = activeView.startsWith('lending-') && activeView !== 'lending-model';
+  const isLendingModelActive = activeView === 'lending-model';
   const isPartnersActive = activeView.startsWith('partners-');
   const isRevenueActive = [
     'pricing-memberships', 'pricing-connect', 'pricing-tech', 'pricing-marketplace',
@@ -267,7 +267,6 @@ function BackendContent() {
   const isPlatformSettingsActive = [
     'permissions', 'loyalty', 'tasks', 'settings-bank'
   ].includes(activeView);
-  const isAdminOnlyActive = ['investors'].includes(activeView);
 
   return (
     <AdminAuthGuard>
@@ -316,31 +315,20 @@ function BackendContent() {
                  </SidebarMenuItem>
 
                 <SidebarMenuItem>
-                  <SidebarMenuButton tooltip="Lending Management" isActive={isLendingDMSActive}><Landmark /><span>Lending DMS</span></SidebarMenuButton>
+                  <SidebarMenuButton tooltip="Lending Management" isActive={isLendingDMSActive || isLendingModelActive}><Landmark /><span>Lending</span></SidebarMenuButton>
                   <SidebarMenuSub>
-                    <SidebarMenuSubItem>
-                        <SidebarMenuButton tooltip="Client Onboarding" isActive={['lending-clients', 'lending-discovery', 'lending-scoring'].includes(activeView)}>
-                            <UserPlus /><span>Client Onboarding</span>
-                        </SidebarMenuButton>
-                        <SidebarMenuSub>
-                             <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'lending-clients'} onClick={() => navigate('lending-clients')}><Users/>Application</SidebarMenuSubButton></SidebarMenuSubItem>
-                             <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'lending-discovery'} onClick={() => navigate('lending-discovery')}><FileSearch/>Discovery</SidebarMenuSubButton></SidebarMenuSubItem>
-                             <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'lending-scoring'} onClick={() => navigate('lending-scoring')}><Star />Scoring</SidebarMenuSubButton></SidebarMenuSubItem>
-                        </SidebarMenuSub>
-                    </SidebarMenuSubItem>
                      <SidebarMenuSubItem>
-                        <SidebarMenuButton tooltip="Agreement Onboarding" isActive={['lending-agreements', 'agreement-discovery', 'agreement-scoring'].includes(activeView)}>
-                            <FileText /><span>Agreement Onboarding</span>
+                        <SidebarMenuButton tooltip="Lending Model" isActive={isLendingModelActive} onClick={() => navigate('lending-model')}>
+                            <Calculator /><span>Lending Model</span>
                         </SidebarMenuButton>
-                         <SidebarMenuSub>
-                            <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'lending-agreements'} onClick={() => navigate('lending-agreements')}><Users/>Application</SidebarMenuSubButton></SidebarMenuSubItem>
-                             <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'agreement-discovery'} onClick={() => navigate('agreement-discovery')}><FileSearch/>Discovery</SidebarMenuSubButton></SidebarMenuSubItem>
-                             <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'agreement-scoring'} onClick={() => navigate('agreement-scoring')}><Star />Scoring</SidebarMenuSubButton></SidebarMenuSubItem>
-                        </SidebarMenuSub>
                     </SidebarMenuSubItem>
-                    
                     <SidebarMenuSeparator />
-                    <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'lending-assumptions'} onClick={() => navigate('lending-assumptions')}><Calculator />Assumptions</SidebarMenuSubButton></SidebarMenuSubItem>
+                    <SidebarMenuSubItem><span className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">Debtor Management</span></SidebarMenuSubItem>
+                    <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'lending-clients'} onClick={() => navigate('lending-clients')}><Users/>Application</SidebarMenuSubButton></SidebarMenuSubItem>
+                    <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'lending-discovery'} onClick={() => navigate('lending-discovery')}><FileSearch/>Discovery</SidebarMenuSubButton></SidebarMenuSubItem>
+                    <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'lending-scoring'} onClick={() => navigate('lending-scoring')}><Star />Scoring</SidebarMenuSubButton></SidebarMenuSubItem>
+                    <SidebarMenuSeparator />
+                    <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'lending-agreements'} onClick={() => navigate('lending-agreements')}><FileText />Agreements</SidebarMenuSubButton></SidebarMenuSubItem>
                     <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'lending-facilities'} onClick={() => navigate('lending-facilities')}><Landmark />Facilities</SidebarMenuSubButton></SidebarMenuSubItem>
                     <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'lending-transactions'} onClick={() => navigate('lending-transactions')}><DollarSign />Transactions</SidebarMenuSubButton></SidebarMenuSubItem>
                     <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'lending-assets'} onClick={() => navigate('lending-assets')}><Truck />Assets</SidebarMenuSubButton></SidebarMenuSubItem>
@@ -385,12 +373,6 @@ function BackendContent() {
                      <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'loyalty'} onClick={() => navigate('loyalty')}><Star />Loyalty & Points</SidebarMenuSubButton></SidebarMenuSubItem>
                      <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'settings-bank'} onClick={() => navigate('settings-bank')}><Banknote />Bank Details</SidebarMenuSubButton></SidebarMenuSubItem>
                      <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'tasks'} onClick={() => navigate('tasks')}><Wrench />Platform Tasks</SidebarMenuSubButton></SidebarMenuSubItem>
-                  </SidebarMenuSub>
-                </SidebarMenuItem>
-                <SidebarMenuItem>
-                  <SidebarMenuButton tooltip="Admin" isActive={isAdminOnlyActive}><Shield /><span>Admin Only</span></SidebarMenuButton>
-                  <SidebarMenuSub>
-                    <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'investors'} onClick={() => navigate('investors')}>Investor Management</SidebarMenuSubButton></SidebarMenuSubItem>
                   </SidebarMenuSub>
                 </SidebarMenuItem>
             </SidebarGroup>
