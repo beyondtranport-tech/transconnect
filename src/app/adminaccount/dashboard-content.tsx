@@ -3,7 +3,7 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Loader2, Users, FileText, HeartHandshake, DollarSign, UserCheck, Clock } from 'lucide-react';
+import { Loader2, Users, FileText, HeartHandshake, DollarSign, UserCheck, Clock, FileSignature } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -35,6 +35,7 @@ export default function DashboardContent() {
     const [stats, setStats] = useState({ members: 0, applications: 0, contributions: 0, totalFunded: 0 });
     const [recentMembers, setRecentMembers] = useState<any[]>([]);
     const [pendingApplications, setPendingApplications] = useState<any[]>([]);
+    const [pendingAgreements, setPendingAgreements] = useState<any[]>([]);
     const [memberGrowthData, setMemberGrowthData] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -46,14 +47,15 @@ export default function DashboardContent() {
             const token = await getClientSideAuthToken();
             if (!token) throw new Error("Authentication failed: User token not found.");
             
-            const [membersRes, financeRes, contributionsRes] = await Promise.all([
+            const [membersRes, financeRes, contributionsRes, queuesRes] = await Promise.all([
                 fetchFromAdminAPI(token, 'getMembers').catch(e => ({ error: e, data: [] })),
                 fetchFromAdminAPI(token, 'getFinanceApplications').catch(e => ({ error: e, data: [] })),
                 fetchFromAdminAPI(token, 'getContributions').catch(e => ({ error: e, data: [] })),
+                fetchFromAdminAPI(token, 'getDashboardQueues').catch(e => ({ error: e, data: { pendingShops: [], proposedAgreements: [] } }))
             ]);
             
-            if (membersRes.error || financeRes.error || contributionsRes.error) {
-                 throw new Error(membersRes.error?.message || financeRes.error?.message || contributionsRes.error?.message || "An error occurred fetching dashboard data.");
+            if (membersRes.error || financeRes.error || contributionsRes.error || queuesRes.error) {
+                 throw new Error(membersRes.error?.message || financeRes.error?.message || contributionsRes.error?.message || queuesRes.error?.message || "An error occurred fetching dashboard data.");
             }
 
             // Process Stats
@@ -72,6 +74,9 @@ export default function DashboardContent() {
             // Process Pending Applications
             const pending = (financeRes.data || []).filter((app: any) => app.status === 'pending');
             setPendingApplications(pending.slice(0, 5));
+
+            // Process Queues
+            setPendingAgreements(queuesRes.data.proposedAgreements || []);
             
             // Process Member Growth
             const growth: { [key: string]: number } = {};
@@ -243,6 +248,45 @@ export default function DashboardContent() {
                                 )) : (
                                      <TableRow>
                                         <TableCell colSpan={3} className="text-center h-24 text-muted-foreground">No pending funding applications.</TableCell>
+                                    </TableRow>
+                                )}
+                            </TableBody>
+                        </Table>
+                    </CardContent>
+                </Card>
+                 <Card>
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2"><FileSignature className="h-5 w-5" /> Automated Commercial Negotiations</CardTitle>
+                        <CardDescription>Proposals from members are automatically negotiated by the AI agent.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Shop</TableHead>
+                                    <TableHead>Member's Proposal</TableHead>
+                                    <TableHead>Negotiation Status</TableHead>
+                                    <TableHead className="text-right">Actions</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {pendingAgreements.length > 0 ? pendingAgreements.map(agreement => (
+                                    <TableRow key={agreement.id}>
+                                        <TableCell>
+                                            <div className="font-medium">{agreement.shopName}</div>
+                                            <div className="text-sm text-muted-foreground">{formatDate(agreement.createdAt)}</div>
+                                        </TableCell>
+                                        <TableCell className="font-semibold text-lg text-primary">{agreement.percentage}%</TableCell>
+                                        <TableCell>
+                                            <Badge variant="outline">Pending AI Action</Badge>
+                                        </TableCell>
+                                        <TableCell className="text-right">
+                                             <Button variant="outline" size="sm" disabled>Intervene</Button>
+                                        </TableCell>
+                                    </TableRow>
+                                )) : (
+                                     <TableRow>
+                                        <TableCell colSpan={4} className="text-center h-24 text-muted-foreground">No pending agreements.</TableCell>
                                     </TableRow>
                                 )}
                             </TableBody>
