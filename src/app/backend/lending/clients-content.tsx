@@ -323,9 +323,9 @@ const ClientWizard = ({ clientData, onBack, onSaveSuccess }: { clientData?: Part
             isValid = true;
         }
 
-        if (isValid) {
+        if (isValid && currentStep < steps.length - 1) {
             setCurrentStep(prev => prev + 1);
-        } else {
+        } else if (!isValid) {
             toast({ variant: 'destructive', title: 'Validation Error', description: 'Please fill in all required fields for this step.' });
         }
     };
@@ -357,7 +357,7 @@ const ClientWizard = ({ clientData, onBack, onSaveSuccess }: { clientData?: Part
 
     const isStepValid = (stepIndex: number) => {
         const step = steps[stepIndex];
-        if (!step.fields) return true; // Steps without fields are always "valid" for navigation
+        if (!step || !step.fields) return true;
         const fields = step.fields as (keyof ClientFormValues)[];
         return fields.every(field => !methods.formState.errors[field as keyof typeof methods.formState.errors]);
     };
