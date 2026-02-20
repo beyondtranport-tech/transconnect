@@ -1,7 +1,7 @@
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, PlusCircle, Trash2, Loader2, Check, ArrowLeft, ArrowRight, Banknote, Upload, BarChart, FileCheck, Link as LinkIcon, BrainCircuit } from "lucide-react";
+import { Users, PlusCircle, Trash2, Loader2, Check, ArrowLeft, ArrowRight, Banknote, Upload, BarChart, FileCheck, Link as LinkIcon, BrainCircuit, UploadCloud } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { useForm, useFieldArray, FormProvider, useFormContext } from "react-hook-form";
 import { Button } from "@/components/ui/button";
@@ -24,6 +24,7 @@ import { Label } from "@/components/ui/label";
 import BalanceSheetContent from './balance-sheet-content';
 import IncomeStatementContent from './income-statement-content';
 import Link from 'next/link';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 
 // --- Zod Schema ---
@@ -115,7 +116,7 @@ const steps = [
     { id: 'owners', name: 'Owners & Directors', fields: ['owners'] },
     { id: 'management', name: 'Management', fields: ['management'] },
     { id: 'banking', name: 'Bank Accounts', fields: ['bankAccounts'] },
-    { id: 'bank-statement', name: 'Bank Statement', fields: [] },
+    { id: 'bank-statement', name: 'Bank Statement' },
     { id: 'credit-report', name: 'Credit Report', fields: [] },
     { id: 'balance-sheet', name: 'Balance Sheet' },
     { id: 'income-statement', name: 'Income Statement' },
@@ -322,7 +323,6 @@ const StepBanking = () => {
     const { control } = useFormContext();
     const { fields, append, remove } = useFieldArray({ control, name: "bankAccounts" });
     
-    // The default values for a new bank account entry
     const newBankAccount = {
         bank: '',
         branchCode: '',
@@ -373,16 +373,145 @@ const StepBanking = () => {
     )
 }
 
+const formatCurrency = (value: number) => {
+    if (typeof value !== 'number' || isNaN(value)) return 'R 0';
+    return new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR', maximumFractionDigits: 0 }).format(value);
+};
+
 const StepBankStatement = () => {
+    const [transactions, setTransactions] = useState<any[]>([]);
+    const [fileName, setFileName] = useState<string | null>(null);
+    const [isLoading, setIsLoading] = useState(false);
+    const { toast } = useToast();
+    const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+    const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+
+        setIsLoading(true);
+        setFileName(file.name);
+        const reader = new FileReader();
+
+        reader.onload = (e) => {
+            try {
+                const text = e.target?.result as string;
+                const rows = text.split('\n').slice(1); // Assume header row
+                const parsedTransactions = rows.map((row, index) => {
+                    const [date, description, reference, amountStr] = row.split(',');
+                    const amount = parseFloat(amountStr);
+                    return {
+                        id: index,
+                        date,
+                        description,
+                        reference,
+                        amount: isNaN(amount) ? 0 : amount,
+                        type: amount >= 0 ? 'credit' : 'debit'
+                    };
+                }).filter(tx => tx.date && tx.description && !isNaN(tx.amount)); // Basic validation
+
+                if (parsedTransactions.length === 0) {
+                    throw new Error("No valid transactions found in the file. Ensure it's a CSV with columns: Date, Description, Reference, Amount.");
+                }
+
+                setTransactions(parsedTransactions);
+                toast({ title: "Statement Processed", description: `${parsedTransactions.length} transactions loaded.` });
+            } catch (err: any) {
+                toast({ variant: 'destructive', title: "Error Parsing File", description: err.message });
+                setTransactions([]);
+                setFileName(null);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        reader.readAsText(file);
+    };
+
+    const totals = useMemo(() => {
+        const credits = transactions.filter(t => t.type === 'credit').reduce((sum, t) => sum + t.amount, 0);
+        const debits = transactions.filter(t => t.type === 'debit').reduce((sum, t) => sum + Math.abs(t.amount), 0);
+        return {
+            credits,
+            debits,
+            net: credits - debits
+        };
+    }, [transactions]);
+
     return (
         <div className="space-y-6">
             <h3 className="text-lg font-semibold">Bank Statement Analysis</h3>
-            <div className="p-8 border-2 border-dashed rounded-lg text-center">
-                <p className="text-muted-foreground">This section will contain the CSV upload and analysis functionality.</p>
-            </div>
+            <Card>
+                <CardHeader>
+                    <CardTitle>Upload Bank Statement</CardTitle>
+                    <CardDescription>Upload a CSV file of bank transactions to analyze the client's cash flow.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <div className="flex items-center gap-4">
+                        <Input
+                            ref={fileInputRef}
+                            type="file"
+                            className="hidden"
+                            accept=".csv"
+                            onChange={handleFileChange}
+                        />
+                        <Button type="button" onClick={() => fileInputRef.current?.click()} disabled={isLoading}>
+                            <UploadCloud className="mr-2 h-4 w-4" />
+                            {isLoading ? 'Processing...' : 'Upload CSV'}
+                        </Button>
+                        {fileName && <p className="text-sm text-muted-foreground">File: {fileName}</p>}
+                    </div>
+                </CardContent>
+            </Card>
+
+            {transactions.length > 0 && (
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Transaction Analysis</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="grid grid-cols-3 gap-4 mb-4 text-center">
+                            <div className="p-3 bg-green-100 dark:bg-green-900/30 rounded-md">
+                                <p className="text-sm font-medium text-green-800 dark:text-green-200">Total Credits</p>
+                                <p className="text-lg font-bold text-green-600">{formatCurrency(totals.credits)}</p>
+                            </div>
+                            <div className="p-3 bg-red-100 dark:bg-red-900/30 rounded-md">
+                                <p className="text-sm font-medium text-red-800 dark:text-red-200">Total Debits</p>
+                                <p className="text-lg font-bold text-red-600">{formatCurrency(totals.debits)}</p>
+                            </div>
+                            <div className="p-3 bg-muted rounded-md">
+                                <p className="text-sm font-medium">Net Movement</p>
+                                <p className={cn("text-lg font-bold", totals.net >= 0 ? "text-green-600" : "text-red-600")}>{formatCurrency(totals.net)}</p>
+                            </div>
+                        </div>
+                        <div className="border rounded-md max-h-[400px] overflow-y-auto">
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>Date</TableHead>
+                                        <TableHead>Description</TableHead>
+                                        <TableHead className="text-right">Amount</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {transactions.map(tx => (
+                                        <TableRow key={tx.id}>
+                                            <TableCell>{tx.date}</TableCell>
+                                            <TableCell>{tx.description}</TableCell>
+                                            <TableCell className={cn("text-right font-mono", tx.type === 'credit' ? 'text-green-600' : 'text-red-600')}>
+                                                {formatCurrency(tx.amount)}
+                                            </TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </div>
+                    </CardContent>
+                </Card>
+            )}
         </div>
     )
 };
+
 
 const StepCreditReports = () => {
     const { toast } = useToast();
@@ -487,7 +616,13 @@ const ClientWizard = ({ clientData, onBack, onSaveSuccess }: { clientData?: Part
         }
     };
 
-    const handleBack = () => setCurrentStep(prev => prev - 1);
+    const handleBack = () => {
+      if (currentStep > 0) {
+        setCurrentStep(prev => prev - 1);
+      } else {
+        onBack();
+      }
+    };
     
     const onSubmit = async (values: ClientFormValues) => {
         setIsLoading(true);
@@ -515,7 +650,7 @@ const ClientWizard = ({ clientData, onBack, onSaveSuccess }: { clientData?: Part
     const isStepValid = (stepIndex: number) => {
         if (stepIndex < 0) return true;
         const step = steps[stepIndex];
-        if (!step.fields) return true; // Steps without fields are always "valid" for navigation
+        if (!step.fields) return true;
         const fields = step.fields as (keyof ClientFormValues)[];
         return fields.every(field => !methods.formState.errors[field as keyof typeof methods.formState.errors]);
     };
@@ -566,7 +701,7 @@ const ClientWizard = ({ clientData, onBack, onSaveSuccess }: { clientData?: Part
                     <h2 className="text-2xl font-bold">{steps[currentStep].name}</h2>
                     {renderStepContent()}
                     <div className="flex justify-between pt-8 mt-8 border-t">
-                        <Button type="button" variant="outline" onClick={currentStep === 0 ? onBack : handleBack}>
+                        <Button type="button" variant="outline" onClick={handleBack}>
                             <ArrowLeft className="mr-2 h-4 w-4" /> {currentStep === 0 ? 'Back to List' : 'Back'}
                         </Button>
                          {currentStep < steps.length - 1 && (
