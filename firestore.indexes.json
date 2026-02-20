@@ -2,24 +2,6 @@
 {
   "indexes": [
     {
-      "collectionGroup": "agreements",
-      "queryScope": "COLLECTION_GROUP",
-      "fields": [
-        {
-          "fieldPath": "status",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "createdAt",
-          "order": "DESCENDING"
-        },
-        {
-          "fieldPath": "__name__",
-          "order": "ASCENDING"
-        }
-      ]
-    },
-    {
       "collectionGroup": "walletPayments",
       "queryScope": "COLLECTION_GROUP",
       "fields": [
@@ -137,3 +119,5 @@
     }
   ]
 }
+
+  

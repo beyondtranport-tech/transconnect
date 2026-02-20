@@ -215,9 +215,9 @@ export async function POST(req: NextRequest) {
                     shopMap.set(doc.id, doc.data().shopName || 'Unnamed Shop');
                 });
             
+                // Simplified Query: Remove the orderBy clause
                 const allAgreementsSnap = await db.collectionGroup('agreements')
                     .where('status', '==', 'proposed')
-                    .orderBy('createdAt', 'desc')
                     .get();
             
                 // Group by shopId and find the most recent proposal for each
@@ -227,10 +227,12 @@ export async function POST(req: NextRequest) {
                     const pathSegments = doc.ref.path.split('/');
                     const companyId = pathSegments.length > 1 ? pathSegments[1] : null;
                     const shopId = pathSegments.length > 3 ? pathSegments[3] : null;
-                    if (!shopId) return; // Skip if we can't identify the shop
+                    if (!shopId) return;
             
-                    // Since the query is ordered by date descending, the first one we see for a shop is the latest one.
-                    if (!latestProposals.has(shopId)) {
+                    const docTimestamp = data.createdAt?.toMillis ? data.createdAt.toMillis() : new Date(data.createdAt).getTime();
+
+                    const existing = latestProposals.get(shopId);
+                    if (!existing || docTimestamp > (existing.createdAt?.toMillis ? existing.createdAt.toMillis() : new Date(existing.createdAt).getTime())) {
                         latestProposals.set(shopId, {
                             ...serializeTimestamps(data),
                             id: doc.id,
@@ -241,7 +243,7 @@ export async function POST(req: NextRequest) {
                     }
                 });
             
-                // Convert map values to array and sort (optional, but good for consistency of display)
+                // Sort in application code instead of the database
                 const proposedAgreements = Array.from(latestProposals.values())
                     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
                 
@@ -849,3 +851,5 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ success: false, error: error.message }, { status });
     }
 }
+
+  
