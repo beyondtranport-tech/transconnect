@@ -181,7 +181,7 @@ function StepCoreIdentity({ shop, onSave, canEdit }: { shop: any, onSave: (newDa
 
         <Button type="submit" disabled={isSaving || !canEdit}>
           {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-          Save & Continue
+          Save &amp; Continue
         </Button>
       </form>
     </Form>
@@ -919,7 +919,7 @@ function StepAppearance({ shop, onSave, canEdit }: { shop: any, onSave: (newData
 
         <Button type="submit" disabled={isSaving || !canEdit}>
           {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-          Save & Continue
+          Save &amp; Continue
         </Button>
       </form>
     </Form>
@@ -1069,7 +1069,7 @@ function StepSocialLinks({ shop, onSave, canEdit }: { shop: any, onSave: (newDat
 
         <Button type="submit" disabled={isSaving || !canEdit}>
           {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-          Save & Continue
+          Save &amp; Continue
         </Button>
       </form>
     </Form>
@@ -1191,7 +1191,7 @@ function StepSeo({ shop, onSave, canEdit, onSeoGenerated }: { shop: any, onSave:
 
         <Button type="submit" disabled={isSaving || !canEdit}>
             {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-            Save & Continue
+            Save &amp; Continue
         </Button>
       </form>
     </Form>
@@ -1331,13 +1331,13 @@ function StepLegal({ shop, onSave, canEdit }: { shop: any, onSave: (newData: any
         <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
                  <div className="space-y-6">
-                    <DocumentField fieldName="termsUrl" label="Terms & Conditions" />
+                    <DocumentField fieldName="termsUrl" label="Terms &amp; Conditions" />
                     <DocumentField fieldName="returnsPolicyUrl" label="Returns Policy" />
                     <DocumentField fieldName="privacyPolicyUrl" label="Privacy Policy" />
                 </div>
                 <Button type="submit" disabled={isSaving || !!uploading || !canEdit}>
                   {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                  Save & Continue
+                  Save &amp; Continue
                 </Button>
             </form>
         </Form>
@@ -1549,7 +1549,7 @@ function StepCommercials({ shop, canEdit, onSave }: { shop: any, onSave: (newDat
 
       <div className="pt-6">
          <Button onClick={() => onSave({})} disabled={!activeAgreement}>
-            Save & Continue <ArrowRight className="ml-2 h-4 w-4" />
+            Save &amp; Continue <ArrowRight className="ml-2 h-4 w-4" />
         </Button>
       </div>
     </div>
@@ -1569,7 +1569,7 @@ function StepTerms({ onSave, onTermsAgreed, canEdit }: { onSave: (newData: any) 
     return (
         <div className="space-y-6">
             <CardHeader className="px-0">
-                <CardTitle>Terms & Policies</CardTitle>
+                <CardTitle>Terms &amp; Policies</CardTitle>
                 <CardDescription>
                     Please review and agree to our terms and policies. Accepting these is required to publish your shop.
                 </CardDescription>
@@ -1597,7 +1597,7 @@ function StepTerms({ onSave, onTermsAgreed, canEdit }: { onSave: (newData: any) 
             </div>
 
             <Button onClick={() => onSave({})} disabled={!canEdit || !(agreeTerms && agreeReturns && agreePrivacy)}>
-                Agree & Continue
+                Agree &amp; Continue
                 <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
         </div>
@@ -1631,6 +1631,47 @@ function StepPublish({ onPublish, isPublishing, allStepsComplete, canEdit }: { o
             </Button>
         </div>
     );
+}
+
+// NEW PREVIEW STEP COMPONENT
+function StepPreview({
+  shop,
+  products,
+  onApprove,
+  onMakeChanges,
+}: {
+  shop: any;
+  products: any[];
+  onApprove: () => void;
+  onMakeChanges: () => void;
+}) {
+  return (
+    <div className="space-y-6">
+      <CardHeader className="px-0">
+        <CardTitle>Shop Preview</CardTitle>
+        <CardDescription>
+          This is how your shop will appear to customers. Review everything
+          carefully before publishing.
+        </CardDescription>
+      </CardHeader>
+
+      <div className="border-2 border-dashed rounded-lg p-2 bg-muted">
+        <div className="h-[60vh] overflow-y-auto">
+            <ShopPreview shop={shop} products={products} />
+        </div>
+      </div>
+
+      <div className="flex justify-between items-center pt-6 mt-6 border-t">
+        <Button variant="outline" onClick={onMakeChanges}>
+          <Edit className="mr-2 h-4 w-4" />
+          Make Changes
+        </Button>
+        <Button onClick={onApprove}>
+          Looks Good, Continue <ArrowRight className="ml-2 h-4 w-4" />
+        </Button>
+      </div>
+    </div>
+  );
 }
 
 
@@ -1727,7 +1768,6 @@ export function ShopWizard({ shop: initialShop, onShopUpdate }: { shop: any, onS
   }, [shopData, products, activeAgreement, termsAgreed]);
   
   const allStepsComplete = useMemo(() => {
-    // Exclude 'Preview' and 'Publish' from the completeness check
     const requiredSteps = Object.keys(stepCompleteness);
     return requiredSteps.every(step => stepCompleteness[step as keyof typeof stepCompleteness]);
   }, [stepCompleteness]);
@@ -1747,8 +1787,8 @@ export function ShopWizard({ shop: initialShop, onShopUpdate }: { shop: any, onS
     { id: 'SEO', component: <StepSeo shop={shopData} onSave={handleSave} canEdit={canEditShop} onSeoGenerated={handleSeoGenerated} /> },
     { id: 'Legal Docs', component: <StepLegal shop={shopData} onSave={handleSave} canEdit={canEditShop} /> },
     { id: 'Commercials', component: <StepCommercials shop={shopData} onSave={handleSave} canEdit={canEditShop} /> },
-    { id: 'Terms', component: <StepTerms onSave={handleSave} onTermsAgreed={setTermsAgreed} canEdit={canEditShop} initialAgreements={{terms: false, returns: false, privacy: false}} /> },
-    { id: 'Preview', component: <ShopPreview shop={shopData} products={products || []} /> },
+    { id: 'Terms', component: <StepTerms onSave={handleSave} onTermsAgreed={setTermsAgreed} canEdit={canEditShop} /> },
+    { id: 'Preview', component: <StepPreview shop={shopData} products={products || []} onApprove={() => setCurrentStep(currentStep + 1)} onMakeChanges={() => setCurrentStep(0)} /> },
     { id: 'Publish', component: <StepPublish onPublish={handlePublish} isPublishing={isPublishing} allStepsComplete={allStepsComplete} canEdit={canEditShop} /> },
   ];
 
