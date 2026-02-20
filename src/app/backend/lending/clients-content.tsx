@@ -2,7 +2,7 @@
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, PlusCircle, Trash2 } from "lucide-react";
+import { Users, PlusCircle, Trash2, Loader2 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -11,11 +11,17 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
 import { useForm, useFieldArray, FormProvider } from "react-hook-form";
 import { Button } from "@/components/ui/button";
-import { Form, FormControl, FormField, FormItem, FormLabel } from "@/components/ui/form";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import * as React from "react";
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState, useCallback } from 'react';
 import { Textarea } from "@/components/ui/textarea";
 import { provinces } from "@/lib/geodata";
+import { useCollection, useFirestore, useMemoFirebase, getClientSideAuthToken } from '@/firebase';
+import { collection, query } from 'firebase/firestore';
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from 'zod';
+import { useToast } from "@/hooks/use-toast";
+import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 
 
 const clientTabs = [
@@ -30,6 +36,108 @@ const clientTabs = [
     { value: "income-statement", label: "Income Statement" },
     { value: "sub-facilities", label: "Sub-Facilities" },
 ];
+
+const clientSchema = z.object({
+  name: z.string().min(1, "Client name is required."),
+  status: z.enum(['active', 'inactive', 'pending']),
+  globalFacilityLimit: z.coerce.number().min(0, "Limit must be non-negative."),
+});
+type ClientFormValues = z.infer<typeof clientSchema>;
+
+function AddClientDialog({ onSave }: { onSave: () => void }) {
+    const [isOpen, setIsOpen] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
+    const { toast } = useToast();
+
+    const form = useForm<ClientFormValues>({
+        resolver: zodResolver(clientSchema),
+        defaultValues: {
+            name: '',
+            status: 'pending',
+            globalFacilityLimit: 0,
+        }
+    });
+
+    const onSubmit = async (values: ClientFormValues) => {
+        setIsLoading(true);
+        try {
+            const token = await getClientSideAuthToken();
+            if (!token) throw new Error("Authentication failed.");
+
+            const response = await fetch('/api/admin', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'saveLendingClient', payload: { client: values } }),
+            });
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.error);
+            
+            toast({ title: 'Client Created', description: `Client "${values.name}" has been added.` });
+            onSave();
+            setIsOpen(false);
+            form.reset();
+        } catch (e: any) {
+            toast({ variant: 'destructive', title: 'Error creating client', description: e.message });
+        } finally {
+            setIsLoading(false);
+        }
+    };
+    
+    return (
+        <Dialog open={isOpen} onOpenChange={setIsOpen}>
+            <DialogTrigger asChild>
+                 <Button>
+                    <PlusCircle className="mr-2 h-4 w-4" /> Add Client
+                </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                    <DialogTitle>Add New Client</DialogTitle>
+                    <DialogDescription>Enter the details for the new lending client (debtor).</DialogDescription>
+                </DialogHeader>
+                <Form {...form}>
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
+                        <FormField control={form.control} name="name" render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Client Name</FormLabel>
+                                <FormControl><Input placeholder="e.g., Sample Transport Co." {...field} /></FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )} />
+                        <div className="grid grid-cols-2 gap-4">
+                            <FormField control={form.control} name="status" render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Status</FormLabel>
+                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                        <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                                        <SelectContent>
+                                            <SelectItem value="pending">Pending</SelectItem>
+                                            <SelectItem value="active">Active</SelectItem>
+                                            <SelectItem value="inactive">Inactive</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                    <FormMessage />
+                                </FormItem>
+                            )} />
+                            <FormField control={form.control} name="globalFacilityLimit" render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Global Facility Limit</FormLabel>
+                                    <FormControl><Input type="number" placeholder="R 0.00" {...field} /></FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )} />
+                        </div>
+                        <DialogFooter>
+                            <Button type="submit" disabled={isLoading}>
+                                {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : 'Save Client'}
+                            </Button>
+                        </DialogFooter>
+                    </form>
+                </Form>
+            </DialogContent>
+        </Dialog>
+    );
+}
 
 export default function ClientsContent() {
 
@@ -60,6 +168,10 @@ export default function ClientsContent() {
     const formMethods = useForm({
         defaultValues
     });
+
+    const firestore = useFirestore();
+    const clientsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'lendingClients')) : null, [firestore]);
+    const { data: clients, isLoading: areClientsLoading, forceRefresh } = useCollection(clientsQuery);
 
     const { control, watch, setValue } = formMethods;
 
@@ -108,12 +220,17 @@ export default function ClientsContent() {
             <form>
                 <Card>
                     <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                            <Users /> Clients Management
-                        </CardTitle>
-                        <CardDescription>
-                            Manage your lending clients (debtors).
-                        </CardDescription>
+                        <div className="flex justify-between items-start">
+                            <div>
+                                <CardTitle className="flex items-center gap-2">
+                                    <Users /> Clients Management
+                                </CardTitle>
+                                <CardDescription>
+                                    Manage your lending clients (debtors).
+                                </CardDescription>
+                            </div>
+                            <AddClientDialog onSave={forceRefresh} />
+                        </div>
                     </CardHeader>
                     <CardContent>
                         <Tabs defaultValue="dashboard" className="w-full">
@@ -579,5 +696,3 @@ export default function ClientsContent() {
         </FormProvider>
     );
 }
-
-    

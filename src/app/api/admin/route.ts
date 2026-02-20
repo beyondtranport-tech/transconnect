@@ -67,6 +67,29 @@ export async function POST(req: NextRequest) {
         // --- END AUTHORIZATION ---
 
         switch (action) {
+            case 'saveLendingClient': {
+                if (!isAdmin) {
+                    throw new Error("Forbidden: Admin access required.");
+                }
+                const { client } = payload;
+                if (!client) throw new Error("Client data is required.");
+
+                const clientsCollection = db.collection('lendingClients');
+                let docRef;
+                let data;
+
+                if (client.id) { // Update
+                    docRef = clientsCollection.doc(client.id);
+                    data = { ...client, updatedAt: FieldValue.serverTimestamp() };
+                    delete data.id;
+                    await docRef.set(data, { merge: true });
+                } else { // Create
+                    docRef = clientsCollection.doc();
+                    data = { ...client, id: docRef.id, createdAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp() };
+                    await docRef.set(data);
+                }
+                return NextResponse.json({ success: true, id: docRef.id });
+            }
             case 'listAllUsers': {
                 const listUsersResult = await getAuth(app).listUsers();
                 const users = listUsersResult.users.map(userRecord => {
@@ -193,7 +216,7 @@ export async function POST(req: NextRequest) {
                     if (!shopId) return;
 
                     const existing = latestProposals.get(shopId);
-                    const docTimestamp = data.createdAt.toMillis();
+                    const docTimestamp = data.createdAt ? new Date(serializeTimestamps(data).createdAt).getTime() : 0;
                     
                     const existingTimestamp = existing ? new Date(existing.createdAt).getTime() : 0;
 
@@ -851,5 +874,3 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ success: false, error: error.message }, { status });
     }
 }
-
-    
