@@ -1,4 +1,3 @@
-
 'use server';
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -52,9 +51,9 @@ export async function POST(req: NextRequest) {
             if (payload.companyId !== userCompanyIdForAuth && !isAdmin) {
                  throw new Error("Forbidden: You can only manage leads for your own company.");
             }
-        } else if (action === 'acceptCommercialAgreement') {
+        } else if (action === 'acceptCommercialAgreement' || action === 'proposeCounterOffer') {
             if (payload.companyId !== userCompanyIdForAuth && !isAdmin) {
-                throw new Error("Forbidden: You can only accept agreements for your own company.");
+                throw new Error("Forbidden: You can only manage agreements for your own company.");
             }
         }
          else if (!isAdmin) {
@@ -208,9 +207,9 @@ export async function POST(req: NextRequest) {
             }
             case 'getPendingAgreements': {
                  const allShopsSnap = await db.collectionGroup('shops').get();
-                const shopMap = new Map();
+                const shopMap = new Map<string, string>();
                 allShopsSnap.forEach(doc => {
-                    shopMap.set(doc.id, doc.data().shopName);
+                    shopMap.set(doc.id, doc.data().shopName || 'Unnamed Shop');
                 });
 
                 const allAgreementsSnap = await db.collectionGroup('agreements').get();
@@ -220,11 +219,13 @@ export async function POST(req: NextRequest) {
                         const data = doc.data();
                         const pathSegments = doc.ref.path.split('/');
                         const companyId = pathSegments.length > 1 ? pathSegments[1] : null;
+                        const shopId = pathSegments.length > 3 ? pathSegments[3] : null;
 
                         return {
                             ...serializeTimestamps(data),
                             id: doc.id,
-                            shopName: shopMap.get(data.shopId) || 'Unknown Shop',
+                            shopId: shopId,
+                            shopName: shopId ? shopMap.get(shopId) : 'Unknown Shop',
                             companyId: companyId,
                         };
                     })
@@ -243,11 +244,10 @@ export async function POST(req: NextRequest) {
                 
                 await db.runTransaction(async (transaction) => {
                     const agreementsSnap = await transaction.get(agreementsRef);
-                    let foundActive = false;
+                    
                     agreementsSnap.forEach(doc => {
                         if (doc.id !== agreementId && doc.data().status === 'active') {
-                            transaction.update(doc.ref, { status: 'archived' });
-                            foundActive = true;
+                            transaction.update(doc.ref, { status: 'archived', updatedAt: FieldValue.serverTimestamp() });
                         }
                     });
                     
@@ -255,11 +255,26 @@ export async function POST(req: NextRequest) {
                     transaction.update(newAgreementRef, { 
                         status: 'active',
                         acceptedBy: userId,
+                        effectiveDate: FieldValue.serverTimestamp(),
                         updatedAt: FieldValue.serverTimestamp() 
                     });
                 });
                 
                 return NextResponse.json({ success: true, message: 'Agreement accepted.' });
+            }
+             case 'proposeCounterOffer': {
+                const { companyId, shopId, agreementId, newPercentage, adminId } = payload;
+                if (!companyId || !shopId || !agreementId || typeof newPercentage !== 'number' || !adminId) {
+                    throw new Error("Missing required data for counter offer.");
+                }
+                const agreementRef = db.doc(`companies/${companyId}/shops/${shopId}/agreements/${agreementId}`);
+                
+                await agreementRef.update({
+                    percentage: newPercentage,
+                    proposedBy: adminId, // Now the admin is the one proposing
+                    updatedAt: FieldValue.serverTimestamp()
+                });
+                return NextResponse.json({ success: true, message: `Counter-offer of ${newPercentage}% submitted.` });
             }
             case 'invitePartner': {
                  const { partnerId } = payload;
@@ -731,13 +746,13 @@ export async function POST(req: NextRequest) {
                     throw new Error("Missing shopId or companyId for approveShop action.");
                 }
                 
-                // Step 1: Read all data first to avoid transactional errors.
                 const memberShopRef = db.doc(`companies/${companyId}/shops/${shopId}`);
                 const publicShopRef = db.doc(`shops/${shopId}`);
                 const shopDoc = await memberShopRef.get();
                 if (!shopDoc.exists) {
                     throw new Error(`Shop with ID ${shopId} not found for company ${companyId}.`);
                 }
+                
                 const shopData = shopDoc.data()!;
                 const wasAlreadyApproved = shopData.status === 'approved';
                 const memberProductsSnap = await memberShopRef.collection('products').get();
@@ -745,18 +760,15 @@ export async function POST(req: NextRequest) {
                 const existingPublicProductsSnap = await publicProductsCollection.get();
                 const loyaltyConfigDoc = await db.collection('configuration').doc('loyaltySettings').get();
 
-                // Step 2: Perform all delete operations in a separate batch.
+                const deleteBatch = db.batch();
                 if (!existingPublicProductsSnap.empty) {
-                    const deleteBatch = db.batch();
                     existingPublicProductsSnap.docs.forEach(doc => deleteBatch.delete(doc.ref));
-                    await deleteBatch.commit();
                 }
-
-                // Step 3: Perform all write and update operations in a second batch.
+                await deleteBatch.commit();
+                
                 const writeBatch = db.batch();
                 const { createdAt, updatedAt, ...restOfShopData } = shopData;
-
-                // Set public shop document
+                
                 writeBatch.set(publicShopRef, {
                     ...restOfShopData,
                     companyId, 
@@ -764,16 +776,13 @@ export async function POST(req: NextRequest) {
                     updatedAt: FieldValue.serverTimestamp()
                 }, { merge: true });
 
-                // Copy products
                 memberProductsSnap.docs.forEach(productDoc => {
                     const newPublicProductRef = publicProductsCollection.doc(productDoc.id);
                     writeBatch.set(newPublicProductRef, productDoc.data());
                 });
                 
-                // Update private shop status
                 writeBatch.update(memberShopRef, { status: 'approved', updatedAt: FieldValue.serverTimestamp() });
 
-                // Award points on first approval
                 if (!wasAlreadyApproved && loyaltyConfigDoc.exists) {
                     const shopCreationPoints = loyaltyConfigDoc.data()?.shopCreationPoints || 100;
                     const companyRef = db.doc(`companies/${companyId}`);

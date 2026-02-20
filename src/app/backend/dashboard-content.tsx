@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
@@ -32,10 +31,9 @@ async function fetchFromAdminAPI(token: string, action: string, payload?: any) {
 
 export default function DashboardContent() {
     const { user, isUserLoading } = useUser();
-    const [stats, setStats] = useState({ members: 0, applications: 0, contributions: 0, totalFunded: 0 });
+    const [stats, setStats] = useState({ members: 0, applications: 0, contributions: 0, totalFunded: 0, pendingAgreements: 0 });
     const [recentMembers, setRecentMembers] = useState<any[]>([]);
     const [pendingApplications, setPendingApplications] = useState<any[]>([]);
-    const [pendingAgreements, setPendingAgreements] = useState<any[]>([]);
     const [memberGrowthData, setMemberGrowthData] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -65,6 +63,7 @@ export default function DashboardContent() {
                 applications: (financeRes.data || []).length,
                 contributions: (contributionsRes.data || []).length,
                 totalFunded: totalFunded,
+                pendingAgreements: (queuesRes.data.proposedAgreements || []).length,
             });
 
             // Process Recent Members
@@ -74,9 +73,6 @@ export default function DashboardContent() {
             // Process Pending Applications
             const pending = (financeRes.data || []).filter((app: any) => app.status === 'pending');
             setPendingApplications(pending.slice(0, 5));
-
-            // Process Queues
-            setPendingAgreements(queuesRes.data.proposedAgreements || []);
             
             // Process Member Growth
             const growth: { [key: string]: number } = {};
@@ -147,7 +143,7 @@ export default function DashboardContent() {
                 <p className="text-muted-foreground">A high-level overview of platform activity and performance.</p>
             </div>
             
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
                 <Link href="/backend?view=members">
                     <Card className="hover:bg-accent transition-colors">
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -187,6 +183,17 @@ export default function DashboardContent() {
                         </CardHeader>
                         <CardContent>
                             <div className="text-2xl font-bold">{stats.contributions}</div>
+                        </CardContent>
+                    </Card>
+                </Link>
+                <Link href="/backend?view=commercial-negotiations">
+                    <Card className="hover:bg-accent transition-colors border-amber-500 bg-amber-500/10">
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">Pending Negotiations</CardTitle>
+                            <FileSignature className="h-4 w-4 text-amber-600" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold text-amber-700">{stats.pendingAgreements}</div>
                         </CardContent>
                     </Card>
                 </Link>
@@ -248,45 +255,6 @@ export default function DashboardContent() {
                                 )) : (
                                      <TableRow>
                                         <TableCell colSpan={3} className="text-center h-24 text-muted-foreground">No pending funding applications.</TableCell>
-                                    </TableRow>
-                                )}
-                            </TableBody>
-                        </Table>
-                    </CardContent>
-                </Card>
-                 <Card>
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2"><FileSignature className="h-5 w-5" /> Automated Commercial Negotiations</CardTitle>
-                        <CardDescription>Proposals from members are automatically negotiated by the AI agent.</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Shop</TableHead>
-                                    <TableHead>Member's Proposal</TableHead>
-                                    <TableHead>Negotiation Status</TableHead>
-                                    <TableHead className="text-right">Actions</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {pendingAgreements.length > 0 ? pendingAgreements.map(agreement => (
-                                    <TableRow key={agreement.id}>
-                                        <TableCell>
-                                            <div className="font-medium">{agreement.shopName}</div>
-                                            <div className="text-sm text-muted-foreground">{formatDate(agreement.createdAt)}</div>
-                                        </TableCell>
-                                        <TableCell className="font-semibold text-lg text-primary">{agreement.percentage}%</TableCell>
-                                        <TableCell>
-                                            <Badge variant="outline">Pending AI Action</Badge>
-                                        </TableCell>
-                                        <TableCell className="text-right">
-                                             <Button variant="outline" size="sm" disabled>Intervene</Button>
-                                        </TableCell>
-                                    </TableRow>
-                                )) : (
-                                     <TableRow>
-                                        <TableCell colSpan={4} className="text-center h-24 text-muted-foreground">No pending agreements.</TableCell>
                                     </TableRow>
                                 )}
                             </TableBody>
