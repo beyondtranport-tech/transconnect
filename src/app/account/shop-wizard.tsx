@@ -770,6 +770,56 @@ function StepProducts({ shop, canEdit }: { shop: any, canEdit: boolean }) {
   );
 }
 
+// ====== STEP 3: Appearance ======
+const shopStep3Schema = z.object({
+  heroBannerUrl: z.string().optional(),
+  theme: z.string().optional(),
+  template: z.string().optional(),
+});
+
+type Step3FormValues = z.infer<typeof shopStep3Schema>;
+
+function StepAppearance({ shop, onSave, canEdit }: { shop: any, onSave: (newData: any) => void, canEdit: boolean }) {
+    // This will be implemented in a future step.
+    return <div>Appearance Step</div>;
+}
+
+// ====== STEP 4: Social Links ======
+function StepSocialLinks({ shop, onSave, canEdit }: { shop: any, onSave: (newData: any) => void, canEdit: boolean }) {
+    return <div>Social Links Step</div>;
+}
+
+// ====== STEP 5: SEO ======
+function StepSeo({ shop, onSave, canEdit, onSeoGenerated }: { shop: any, onSave: (newData: any) => void, canEdit: boolean, onSeoGenerated: (seoData: any) => void }) {
+    return <div>SEO Step</div>;
+}
+
+// ====== STEP 6: Legal Docs ======
+function StepLegal({ shop, onSave, canEdit }: { shop: any, onSave: (newData: any) => void, canEdit: boolean }) {
+    return <div>Legal Docs Step</div>;
+}
+
+// ====== STEP 7: Commercials ======
+function StepCommercials({ shop, onSave, canEdit }: { shop: any, onSave: (newData: any) => void, canEdit: boolean }) {
+    return <div>Commercials Step</div>;
+}
+
+// ====== STEP 8: Terms ======
+function StepTerms({ onSave, onTermsAgreed, canEdit }: { onSave: (newData: any) => void, onTermsAgreed: (agreed: boolean) => void, canEdit: boolean }) {
+    return <div>Terms Step</div>;
+}
+
+// ====== STEP 9: Preview ======
+function StepPreview({ shop, products, onApprove, onMakeChanges }: { shop: any, products: any[], onApprove: () => void, onMakeChanges: () => void }) {
+    return <div>Preview Step</div>;
+}
+
+// ====== STEP 10: Publish ======
+function StepPublish({ shop, onPublish, onUnpublish, isPublishing, isUnpublishing, allStepsComplete, canEdit }: { shop: any, onPublish: () => void, onUnpublish: () => void, isPublishing: boolean, isUnpublishing: boolean, allStepsComplete: boolean, canEdit: boolean }) {
+    return <div>Publish Step</div>;
+}
+
+
 // ====== MAIN WIZARD COMPONENT ======
 export function ShopWizard({ shop: initialShop, onShopUpdate }: { shop: any, onShopUpdate: () => void }) {
   const [currentStep, setCurrentStep] = useState(0);
@@ -980,3 +1030,4 @@ export function ShopWizard({ shop: initialShop, onShopUpdate }: { shop: any, onS
     </div>
   );
 }
+    
