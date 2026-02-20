@@ -405,9 +405,8 @@ const ClientWizard = ({ clientData, onBack, onSaveSuccess }: { clientData?: Part
     };
 
     const isStepValid = (stepIndex: number) => {
-        if (stepIndex < 0) return true; // Always allow going back from step 0
+        if (stepIndex < 0) return true;
         const step = steps[stepIndex];
-        // The step for agreements has no fields, so it is always "valid" for nav purposes
         if (!step.fields) return true;
         const fields = step.fields as (keyof ClientFormValues)[];
         return fields.every(field => !methods.formState.errors[field as keyof typeof methods.formState.errors]);
