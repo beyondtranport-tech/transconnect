@@ -76,7 +76,6 @@ const clientSchema = z.object({
   clientCode: z.string().optional(),
   name: z.string().min(1, "Client name is required."),
   status: z.enum(['active', 'inactive', 'pending']),
-  globalFacilityLimit: z.coerce.number().min(0, "Limit must be non-negative."),
   type: z.string().optional(),
   category: z.string().optional(),
   language: z.string().optional(),
@@ -110,7 +109,7 @@ const clientSchema = z.object({
 type ClientFormValues = z.infer<typeof clientSchema>;
 
 const steps = [
-    { id: 'main', name: 'Main Details', fields: ['name', 'status', 'globalFacilityLimit', 'clientCode', 'regId', 'type', 'category', 'language'] },
+    { id: 'main', name: 'Main Details', fields: ['name', 'status', 'clientCode', 'regId', 'type', 'category', 'language'] },
     { id: 'address', name: 'Address', fields: ['physicalStreet', 'physicalCity', 'physicalPostCode', 'postalStreet', 'postalCity', 'postalPostCode'] },
     { id: 'contact', name: 'Contact Info', fields: ['email', 'cell', 'telW'] },
     { id: 'owners', name: 'Owners & Directors', fields: ['owners'] },
@@ -121,11 +120,10 @@ const steps = [
     { id: 'agreements', name: 'Agreements & Submit' },
 ];
 
-const defaultValues: ClientFormValues = {
+const defaultValues: Omit<ClientFormValues, 'globalFacilityLimit'> = {
   clientCode: '',
   name: '',
   status: 'pending',
-  globalFacilityLimit: 0,
   type: '',
   category: '',
   language: '',
@@ -156,11 +154,6 @@ const StepMain = () => (
             <FormField control={useFormContext().control} name="regId" render={({ field }) => (<FormItem><FormLabel>Reg. ID</FormLabel><FormControl><Input placeholder="Registration ID" {...field} /></FormControl></FormItem>)} />
         </div>
         <FormField control={useFormContext().control} name="isVatRegistered" render={({ field }) => (<FormItem className="flex flex-row items-center space-x-3 space-y-0 pt-2"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl><FormLabel>VAT Registered?</FormLabel></FormItem>)} />
-         <Separator className="my-6" />
-        <h3 className="text-lg font-semibold">Financials</h3>
-        <div className="space-y-4 max-w-sm">
-            <FormField control={useFormContext().control} name="globalFacilityLimit" render={({ field }) => (<FormItem><FormLabel>Global Facility Limit</FormLabel><FormControl><Input type="number" placeholder="R 0.00" {...field} /></FormControl><FormMessage /></FormItem>)} />
-        </div>
     </div>
 );
 
@@ -409,7 +402,7 @@ const ClientWizard = ({ clientData, onBack, onSaveSuccess }: { clientData?: Part
     };
 
     const isStepValid = (stepIndex: number) => {
-        if (stepIndex < 0) return true;
+        if (stepIndex < 0) return true; // Can always go back from step 0
         const step = steps[stepIndex];
         if (!step || !step.fields) return true; // Steps without fields are always "valid" for navigation
         const fields = step.fields as (keyof ClientFormValues)[];
