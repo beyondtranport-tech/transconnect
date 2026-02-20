@@ -166,7 +166,7 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, message: "Payout request has been rejected." });
             }
             case 'getDashboardQueues': {
-                 const allShopsSnap = await db.collectionGroup('shops').get();
+                const allShopsSnap = await db.collectionGroup('shops').get();
                 const shopMap = new Map();
                 allShopsSnap.forEach(doc => {
                     shopMap.set(doc.id, doc.data().shopName);
@@ -186,10 +186,15 @@ export async function POST(req: NextRequest) {
                 const proposedAgreements = allAgreementsSnap.docs
                     .map(doc => {
                         const data = doc.data();
+                        const pathSegments = doc.ref.path.split('/');
+                        // Path: companies/{companyId}/shops/{shopId}/agreements/{agreementId}
+                        const shopId = pathSegments.length >= 4 ? pathSegments[3] : null;
+
                         return {
                             ...serializeTimestamps(data),
                             id: doc.id,
-                            shopName: shopMap.get(data.shopId) || 'Unknown Shop',
+                            shopId: shopId, // Add shopId for mapping
+                            shopName: shopId ? shopMap.get(shopId) || 'Unknown Shop' : 'Unknown Shop',
                         };
                     })
                     .filter((agreement: any) => agreement.status === 'proposed')
