@@ -26,6 +26,7 @@ import BalanceSheetContent from './balance-sheet-content';
 import IncomeStatementContent from './income-statement-content';
 import Link from 'next/link';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { provinces } from "@/lib/geodata";
 
 
 // --- Zod Schema ---
@@ -88,12 +89,14 @@ const clientSchema = z.object({
   physicalSuburb: z.string().optional(),
   physicalCity: z.string().optional(),
   physicalPostCode: z.string().optional(),
+  physicalProvince: z.string().optional(),
   
   usePhysicalForPostal: z.boolean().default(false),
   postalStreet: z.string().optional(),
   postalSuburb: z.string().optional(),
   postalCity: z.string().optional(),
   postalPostCode: z.string().optional(),
+  postalProvince: z.string().optional(),
   
   telW: z.string().optional(),
   telH: z.string().optional(),
@@ -164,11 +167,32 @@ const StepMain = () => (
 const StepAddress = () => {
     const { control, watch, setValue } = useFormContext();
     const usePhysicalForPostal = watch('usePhysicalForPostal');
-    // Watch individual fields to get stable primitive values to prevent infinite loops
+    
+    // Physical Address
     const physicalStreet = watch('physicalStreet');
     const physicalSuburb = watch('physicalSuburb');
     const physicalCity = watch('physicalCity');
     const physicalPostCode = watch('physicalPostCode');
+    const physicalProvince = watch('physicalProvince');
+
+    const selectedPhysicalProvince = watch('physicalProvince');
+    const physicalCities = useMemo(() => {
+        const province = provinces.find(p => p.name === selectedPhysicalProvince);
+        return province ? province.cities : [];
+    }, [selectedPhysicalProvince]);
+
+    // Postal Address
+    const postalStreet = watch('postalStreet');
+    const postalSuburb = watch('postalSuburb');
+    const postalCity = watch('postalCity');
+    const postalPostCode = watch('postalPostCode');
+    const postalProvince = watch('postalProvince');
+
+    const selectedPostalProvince = watch('postalProvince');
+    const postalCities = useMemo(() => {
+        const province = provinces.find(p => p.name === selectedPostalProvince);
+        return province ? province.cities : [];
+    }, [selectedPostalProvince]);
 
     useEffect(() => {
         if (usePhysicalForPostal) {
@@ -176,8 +200,22 @@ const StepAddress = () => {
             setValue('postalSuburb', physicalSuburb || '');
             setValue('postalCity', physicalCity || '');
             setValue('postalPostCode', physicalPostCode || '');
+            setValue('postalProvince', physicalProvince || '');
         }
-    }, [usePhysicalForPostal, physicalStreet, physicalSuburb, physicalCity, physicalPostCode, setValue]);
+    }, [usePhysicalForPostal, physicalStreet, physicalSuburb, physicalCity, physicalPostCode, physicalProvince, setValue]);
+
+    useEffect(() => {
+        if (physicalCities.length > 0 && !physicalCities.includes(watch('physicalCity'))) {
+            setValue('physicalCity', '');
+        }
+    }, [selectedPhysicalProvince, physicalCities, setValue, watch]);
+    
+    useEffect(() => {
+        if (postalCities.length > 0 && !postalCities.includes(watch('postalCity'))) {
+            setValue('postalCity', '');
+        }
+    }, [selectedPostalProvince, postalCities, setValue, watch]);
+
 
     return (
         <div className="space-y-8">
@@ -185,9 +223,28 @@ const StepAddress = () => {
                 <h3 className="text-lg font-semibold mb-4">Physical Address</h3>
                 <div className="space-y-4 max-w-2xl">
                     <FormField control={control} name="physicalStreet" render={({ field }) => (<FormItem><FormLabel>Street Address</FormLabel><FormControl><Input placeholder="e.g., 123 Industrial Rd" {...field} /></FormControl></FormItem>)} />
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <FormField control={control} name="physicalProvince" render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Province</FormLabel>
+                                <Select onValueChange={field.onChange} value={field.value || ''}>
+                                    <FormControl><SelectTrigger><SelectValue placeholder="Select province..." /></SelectTrigger></FormControl>
+                                    <SelectContent>{provinces.map(p => <SelectItem key={p.name} value={p.name}>{p.name}</SelectItem>)}</SelectContent>
+                                </Select>
+                            </FormItem>
+                        )} />
+                        <FormField control={control} name="physicalCity" render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>City</FormLabel>
+                                <Select onValueChange={field.onChange} value={field.value || ''} disabled={!selectedPhysicalProvince}>
+                                    <FormControl><SelectTrigger><SelectValue placeholder="Select city..." /></SelectTrigger></FormControl>
+                                    <SelectContent>{physicalCities.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+                                </Select>
+                            </FormItem>
+                        )} />
+                    </div>
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <FormField control={control} name="physicalSuburb" render={({ field }) => (<FormItem><FormLabel>Suburb</FormLabel><FormControl><Input placeholder="e.g., Pomona" {...field} /></FormControl></FormItem>)} />
-                        <FormField control={control} name="physicalCity" render={({ field }) => (<FormItem><FormLabel>City</FormLabel><FormControl><Input placeholder="e.g., Kempton Park" {...field} /></FormControl></FormItem>)} />
                         <FormField control={control} name="physicalPostCode" render={({ field }) => (<FormItem><FormLabel>Post Code</FormLabel><FormControl><Input placeholder="e.g., 1619" {...field} /></FormControl></FormItem>)} />
                     </div>
                 </div>
@@ -198,9 +255,28 @@ const StepAddress = () => {
                  <FormField control={control} name="usePhysicalForPostal" render={({ field }) => (<FormItem className="flex items-center space-x-2 mb-4"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl><FormLabel>Same as Physical Address</FormLabel></FormItem>)} />
                 <div className="space-y-4 max-w-2xl">
                     <FormField control={control} name="postalStreet" render={({ field }) => (<FormItem><FormLabel>Street Address or P.O. Box</FormLabel><FormControl><Input placeholder="e.g., P.O. Box 12345" {...field} disabled={usePhysicalForPostal} /></FormControl></FormItem>)} />
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <FormField control={control} name="postalProvince" render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Province</FormLabel>
+                                <Select onValueChange={field.onChange} value={field.value || ''} disabled={usePhysicalForPostal}>
+                                    <FormControl><SelectTrigger><SelectValue placeholder="Select province..." /></SelectTrigger></FormControl>
+                                    <SelectContent>{provinces.map(p => <SelectItem key={p.name} value={p.name}>{p.name}</SelectItem>)}</SelectContent>
+                                </Select>
+                            </FormItem>
+                        )} />
+                        <FormField control={control} name="postalCity" render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>City</FormLabel>
+                                <Select onValueChange={field.onChange} value={field.value || ''} disabled={usePhysicalForPostal || !selectedPostalProvince}>
+                                    <FormControl><SelectTrigger><SelectValue placeholder="Select city..." /></SelectTrigger></FormControl>
+                                    <SelectContent>{postalCities.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+                                </Select>
+                            </FormItem>
+                        )} />
+                    </div>
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <FormField control={control} name="postalSuburb" render={({ field }) => (<FormItem><FormLabel>Suburb</FormLabel><FormControl><Input placeholder="e.g., Pomona" {...field} disabled={usePhysicalForPostal} /></FormControl></FormItem>)} />
-                        <FormField control={control} name="postalCity" render={({ field }) => (<FormItem><FormLabel>City</FormLabel><FormControl><Input placeholder="e.g., Kempton Park" {...field} disabled={usePhysicalForPostal} /></FormControl></FormItem>)} />
                         <FormField control={control} name="postalPostCode" render={({ field }) => (<FormItem><FormLabel>Post Code</FormLabel><FormControl><Input placeholder="e.g., 1619" {...field} disabled={usePhysicalForPostal} /></FormControl></FormItem>)} />
                     </div>
                 </div>
@@ -745,11 +821,6 @@ export default function ClientsContent() {
         forceRefresh();
         handleBackToList();
     }
-    
-    const formatCurrency = (amount: number) => {
-        if (typeof amount !== 'number' || isNaN(amount)) return 'R 0';
-        return new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR', maximumFractionDigits: 0 }).format(amount);
-    };
     
     const columns: ColumnDef<any>[] = useMemo(() => [
         { accessorKey: 'name', header: 'Client Name' },
