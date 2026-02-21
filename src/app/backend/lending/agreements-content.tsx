@@ -1,8 +1,9 @@
+
 'use client';
 
 import { useState, useMemo, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { Landmark, FileText, Repeat, Briefcase, Handshake, Users, Truck, PlusCircle, ArrowLeft, ArrowRight, Loader2 } from "lucide-react";
+import { Landmark, FileText, Repeat, Briefcase, Handshake, Users, Truck, PlusCircle, ArrowLeft, ArrowRight, Loader2, Save, AlertTriangle } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
@@ -14,6 +15,11 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import { useForm, FormProvider } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import { Form, FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form';
+import { useToast } from '@/hooks/use-toast';
 
 const agreementTypes = [
     { id: 'loan-pv', label: 'Loan pv' },
@@ -23,25 +29,85 @@ const agreementTypes = [
     { id: 'discounting', label: 'Factoring' },
 ];
 
+const agreementSchema = z.object({
+  type: z.string(),
+  status: z.string(),
+  amount: z.coerce.number().optional(),
+  term: z.coerce.number().optional(),
+  rate: z.coerce.number().optional(),
+});
+
+type AgreementFormValues = z.infer<typeof agreementSchema>;
+
 const AgreementWizard = ({ agreement, client, onBack, onSaveSuccess }: { agreement: any, client: any, onBack: () => void, onSaveSuccess: () => void }) => {
+    const isEditable = agreement.status.toLowerCase() === 'pending';
+    const { toast } = useToast();
+    const [isSaving, setIsSaving] = useState(false);
+    
+    const methods = useForm<AgreementFormValues>({
+        resolver: zodResolver(agreementSchema),
+        defaultValues: {
+            type: agreement.type || '',
+            status: agreement.status || '',
+            amount: agreement.amount || 0,
+            term: agreement.term || 0,
+            rate: agreement.rate || 0,
+        },
+    });
+
+    const onSubmit = async (values: AgreementFormValues) => {
+        setIsSaving(true);
+        // Placeholder for API call
+        console.log("Saving agreement:", { id: agreement.id, ...values });
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        toast({ title: 'Agreement Updated' });
+        setIsSaving(false);
+        onSaveSuccess();
+    };
+
     return (
         <div>
             <h3 className="text-lg font-semibold mb-4">
                 Managing Agreement: <span className="font-mono text-primary">{agreement.id}</span>
             </h3>
-            <Card>
-                <CardHeader><CardTitle>Agreement Details</CardTitle></CardHeader>
-                <CardContent>
-                    <p className="text-muted-foreground">Editing form for this agreement would go here.</p>
-                </CardContent>
-                <CardFooter className="flex justify-between">
-                    <Button variant="outline" onClick={onBack}>Back to List</Button>
-                    <Button onClick={onSaveSuccess}>Save Changes</Button>
-                </CardFooter>
-            </Card>
+            <FormProvider {...methods}>
+                <form onSubmit={methods.handleSubmit(onSubmit)}>
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Agreement Details</CardTitle>
+                            {!isEditable && (
+                                <CardDescription className="text-amber-600 flex items-center gap-2">
+                                    <AlertTriangle className="h-4 w-4" /> This agreement is not in a 'Pending' state and cannot be edited.
+                                </CardDescription>
+                            )}
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <fieldset disabled={!isEditable} className="space-y-4">
+                                <div className="grid grid-cols-2 gap-4">
+                                    <FormField control={methods.control} name="type" render={({ field }) => (<FormItem><FormLabel>Type</FormLabel><FormControl><Input {...field} disabled /></FormControl></FormItem>)} />
+                                    <FormField control={methods.control} name="status" render={({ field }) => (<FormItem><FormLabel>Status</FormLabel><FormControl><Input {...field} disabled /></FormControl></FormItem>)} />
+                                </div>
+                                <div className="grid grid-cols-3 gap-4">
+                                    <FormField control={methods.control} name="amount" render={({ field }) => (<FormItem><FormLabel>Amount</FormLabel><FormControl><Input type="number" {...field} /></FormControl></FormItem>)} />
+                                    <FormField control={methods.control} name="term" render={({ field }) => (<FormItem><FormLabel>Term (Months)</FormLabel><FormControl><Input type="number" {...field} /></FormControl></FormItem>)} />
+                                    <FormField control={methods.control} name="rate" render={({ field }) => (<FormItem><FormLabel>Rate (%)</FormLabel><FormControl><Input type="number" {...field} /></FormControl></FormItem>)} />
+                                </div>
+                            </fieldset>
+                        </CardContent>
+                        <CardFooter className="flex justify-between">
+                            <Button variant="outline" onClick={onBack} type="button">Back to List</Button>
+                            <Button type="submit" disabled={!isEditable || isSaving}>
+                                {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                                Save Changes
+                            </Button>
+                        </CardFooter>
+                    </Card>
+                </form>
+            </FormProvider>
         </div>
     );
 };
+
 
 export default function AgreementsContent() {
     const firestore = useFirestore();
