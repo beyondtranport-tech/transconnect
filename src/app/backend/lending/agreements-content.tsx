@@ -9,8 +9,6 @@ import { Label } from '@/components/ui/label';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query } from 'firebase/firestore';
 import { Input } from '@/components/ui/input';
-import { Separator } from '@/components/ui/separator';
-import { Checkbox } from '@/components/ui/checkbox';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -20,6 +18,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Form, FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
+import { Separator } from '@/components/ui/separator';
 
 const agreementTypes = [
     { id: 'loan-pv', label: 'Loan pv' },
@@ -93,6 +92,33 @@ const AgreementWizard = ({ agreement, client, onBack, onSaveSuccess }: { agreeme
                                     <FormField control={methods.control} name="rate" render={({ field }) => (<FormItem><FormLabel>Rate (%)</FormLabel><FormControl><Input type="number" {...field} /></FormControl></FormItem>)} />
                                 </div>
                             </fieldset>
+
+                            {agreement.type === 'installment-sale' && (
+                                <>
+                                    <Separator className="my-6" />
+                                    <div>
+                                        <h3 className="text-base font-semibold flex items-center gap-2 mb-4">
+                                            <Truck className="h-5 w-5 text-muted-foreground" />
+                                            Associated Asset
+                                        </h3>
+                                        {agreement.assetId ? (
+                                            <div className="flex justify-between items-center">
+                                                <p className="text-sm text-muted-foreground">Asset linked: <span className="font-mono text-foreground">{agreement.assetId}</span></p>
+                                                <Button asChild variant="outline" size="sm">
+                                                    <Link href={`/lending?view=assets&assetId=${agreement.assetId}`}>View Asset</Link>
+                                                </Button>
+                                            </div>
+                                        ) : (
+                                            <div className="flex justify-between items-center">
+                                                <p className="text-sm text-muted-foreground">No asset has been linked to this agreement yet.</p>
+                                                <Button asChild>
+                                                    <Link href={`/lending?view=assets&clientId=${client?.id}&agreementId=${agreement.id}`}>Add Asset</Link>
+                                                </Button>
+                                            </div>
+                                        )}
+                                    </div>
+                                </>
+                            )}
                         </CardContent>
                         <CardFooter className="flex justify-between">
                             <Button variant="outline" onClick={onBack} type="button">Back to List</Button>
@@ -274,3 +300,4 @@ export default function AgreementsContent() {
         </Card>
     );
 }
+
