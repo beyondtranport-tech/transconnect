@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -882,10 +883,10 @@ export default function ClientsContent() {
     const clientsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'lendingClients')) : null, [firestore]);
     const { data: clients, isLoading, forceRefresh } = useCollection(clientsQuery);
     
-    const handleEdit = (client: any) => {
+    const handleEdit = useCallback((client: any) => {
         setSelectedClient(client);
         setView('edit');
-    };
+    }, []);
     
     const handleAdd = () => {
         setSelectedClient(null);
@@ -903,11 +904,27 @@ export default function ClientsContent() {
     }
     
     const columns: ColumnDef<any>[] = useMemo(() => [
-        { accessorKey: 'name', header: 'Client Name' },
-        { accessorKey: 'status', header: 'Status', cell: ({row}) => <Badge className="capitalize">{row.original.status}</Badge>},
-        { accessorKey: 'globalFacilityLimit', header: 'Facility Limit', cell: ({row}) => <span>{formatCurrency(row.original.globalFacilityLimit)}</span> },
-        { id: 'actions', header: () => <div className="text-right">Actions</div>, cell: ({ row }) => <div className="text-right"><Button variant="ghost" size="sm" onClick={() => handleEdit(row.original)}>Edit</Button></div> }
-    ], []);
+        { 
+            accessorKey: 'name', 
+            header: 'Client Name',
+            cell: ({ row }) => <div>{row.original.name}</div>
+        },
+        { 
+            accessorKey: 'status', 
+            header: 'Status', 
+            cell: ({row}) => <Badge className="capitalize">{row.original.status}</Badge>
+        },
+        { 
+            accessorKey: 'globalFacilityLimit', 
+            header: 'Facility Limit', 
+            cell: ({row}) => <span>{formatCurrency(row.original.globalFacilityLimit)}</span> 
+        },
+        { 
+            id: 'actions', 
+            header: () => <div className="text-right">Actions</div>, 
+            cell: ({ row }) => <div className="text-right"><Button variant="ghost" size="sm" onClick={() => handleEdit(row.original)}>Edit</Button></div> 
+        }
+    ], [handleEdit]);
 
 
     if (view === 'create' || view === 'edit') {
@@ -933,4 +950,3 @@ export default function ClientsContent() {
         </Card>
     );
 }
-

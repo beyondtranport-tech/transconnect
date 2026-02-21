@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Handshake, Loader2, PlusCircle, ArrowLeft } from "lucide-react";
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query } from 'firebase/firestore';
@@ -105,11 +105,27 @@ export default function PartnersContent() {
     }
     
     const columns: ColumnDef<any>[] = useMemo(() => [
-        { accessorKey: 'name', header: 'Partner Name' },
-        { accessorKey: 'type', header: 'Type', cell: ({row}) => <span className="capitalize">{row.original.type}</span>},
-        { accessorKey: 'globalFacilityLimit', header: 'Global Limit', cell: ({row}) => <span>{formatCurrency(row.original.globalFacilityLimit)}</span> },
-        { id: 'actions', header: () => <div className="text-right">Actions</div>, cell: ({ row }) => <div className="text-right"><Button variant="ghost" size="sm" onClick={() => handleEdit(row.original)}>Edit</Button></div> }
-    ], []);
+        { 
+            accessorKey: 'name', 
+            header: 'Partner Name',
+            cell: ({row}) => <div>{row.original.name}</div>
+        },
+        { 
+            accessorKey: 'type', 
+            header: 'Type', 
+            cell: ({row}) => <span className="capitalize">{row.original.type}</span>
+        },
+        { 
+            accessorKey: 'globalFacilityLimit', 
+            header: 'Global Limit', 
+            cell: ({row}) => <span>{formatCurrency(row.original.globalFacilityLimit)}</span> 
+        },
+        { 
+            id: 'actions', 
+            header: () => <div className="text-right">Actions</div>, 
+            cell: ({ row }) => <div className="text-right"><Button variant="ghost" size="sm" onClick={() => handleEdit(row.original)}>Edit</Button></div> 
+        }
+    ], [handleEdit]);
 
     if (view === 'create' || view === 'edit') {
         return <Card><PartnerWizard partner={selectedPartner} onBack={handleBackToList} onSaveSuccess={handleSaveSuccess} /></Card>;
