@@ -1,9 +1,8 @@
-
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { Landmark, FileText, Repeat, Briefcase, Handshake, Users, Truck, PlusCircle, ArrowLeft, ArrowRight } from "lucide-react";
+import { Landmark, FileText, Repeat, Briefcase, Handshake, Users, Truck, PlusCircle, ArrowLeft, ArrowRight, Loader2 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
@@ -14,6 +13,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
 
 const agreementTypes = [
     { id: 'loan-pv', label: 'Loan pv' },
