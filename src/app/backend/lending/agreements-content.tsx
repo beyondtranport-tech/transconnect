@@ -23,11 +23,32 @@ const agreementTypes = [
     { id: 'discounting', label: 'Factoring' },
 ];
 
+const AgreementWizard = ({ agreement, client, onBack, onSaveSuccess }: { agreement: any, client: any, onBack: () => void, onSaveSuccess: () => void }) => {
+    return (
+        <div>
+            <h3 className="text-lg font-semibold mb-4">
+                Managing Agreement: <span className="font-mono text-primary">{agreement.id}</span>
+            </h3>
+            <Card>
+                <CardHeader><CardTitle>Agreement Details</CardTitle></CardHeader>
+                <CardContent>
+                    <p className="text-muted-foreground">Editing form for this agreement would go here.</p>
+                </CardContent>
+                <CardFooter className="flex justify-between">
+                    <Button variant="outline" onClick={onBack}>Back to List</Button>
+                    <Button onClick={onSaveSuccess}>Save Changes</Button>
+                </CardFooter>
+            </Card>
+        </div>
+    );
+};
+
 export default function AgreementsContent() {
     const firestore = useFirestore();
     const [selectedClient, setSelectedClient] = useState<string | null>(null);
-    const [view, setView] = useState<'list' | 'create'>('list');
+    const [view, setView] = useState<'list' | 'create' | 'edit'>('list');
     const [selectedAgreementType, setSelectedAgreementType] = useState<string | null>(null);
+    const [selectedAgreement, setSelectedAgreement] = useState<any | null>(null);
 
     const clientsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'lendingClients')) : null, [firestore]);
     const { data: clients, isLoading: areClientsLoading } = useCollection(clientsQuery);
@@ -36,7 +57,7 @@ export default function AgreementsContent() {
         if (!firestore || !selectedClient) return null;
         return query(collection(firestore, `lendingClients/${selectedClient}/agreements`));
     }, [firestore, selectedClient]);
-    const { data: agreements, isLoading: areAgreementsLoading } = useCollection(agreementsQuery);
+    const { data: agreements, isLoading: areAgreementsLoading, forceRefresh } = useCollection(agreementsQuery);
 
     const sampleClients = [{ id: 'sample-client-1', name: 'Sample Transport Co.' }];
     const sampleAgreements = [{ id: 'AG-101', type: 'loan-pv', status: 'Active' }, {id: 'AG-102', type: 'installment-sale', status: 'Pending'}];
@@ -44,15 +65,34 @@ export default function AgreementsContent() {
     const displayClients = (clients && clients.length > 0) ? clients : sampleClients;
     const displayAgreements = (agreements && agreements.length > 0) ? agreements : (selectedClient ? sampleAgreements : []);
     
+    const clientForAgreement = clients?.find(c => c.id === selectedClient);
+
     const handleSelectClient = (clientId: string) => {
         setSelectedClient(clientId);
         setView('list');
+        setSelectedAgreement(null);
     }
     
     const handleCreateNew = () => {
         setView('create');
         setSelectedAgreementType(null);
+        setSelectedAgreement(null);
     }
+    
+    const handleEdit = (agreement: any) => {
+        setSelectedAgreement(agreement);
+        setView('edit');
+    };
+    
+    const handleBackToList = () => {
+        setView('list');
+        setSelectedAgreement(null);
+    };
+
+    const handleSaveSuccess = () => {
+        forceRefresh();
+        handleBackToList();
+    };
     
     return (
         <Card>
@@ -101,7 +141,14 @@ export default function AgreementsContent() {
                                         <TableRow><TableCell colSpan={4} className="text-center"><Loader2 className="animate-spin"/></TableCell></TableRow>
                                     ) : displayAgreements.length > 0 ? (
                                         displayAgreements.map((agreement: any) => (
-                                            <TableRow key={agreement.id}><TableCell className="font-mono">{agreement.id}</TableCell><TableCell className="capitalize">{agreement.type?.replace('-', ' ')}</TableCell><TableCell><Badge>{agreement.status}</Badge></TableCell><TableCell className="text-right"><Button variant="outline" size="sm">Manage</Button></TableCell></TableRow>
+                                            <TableRow key={agreement.id}>
+                                                <TableCell className="font-mono">{agreement.id}</TableCell>
+                                                <TableCell className="capitalize">{agreement.type?.replace('-', ' ')}</TableCell>
+                                                <TableCell><Badge>{agreement.status}</Badge></TableCell>
+                                                <TableCell className="text-right">
+                                                    <Button variant="outline" size="sm" onClick={() => handleEdit(agreement)}>Manage</Button>
+                                                </TableCell>
+                                            </TableRow>
                                         ))
                                     ) : (
                                         <TableRow><TableCell colSpan={4} className="text-center">No agreements found for this client.</TableCell></TableRow>
@@ -144,6 +191,17 @@ export default function AgreementsContent() {
                                 </div>
                             </div>
                         )}
+                    </div>
+                )}
+
+                 {view === 'edit' && selectedAgreement && (
+                    <div className="pt-6">
+                        <AgreementWizard
+                            agreement={selectedAgreement}
+                            client={clientForAgreement}
+                            onBack={handleBackToList}
+                            onSaveSuccess={handleSaveSuccess}
+                        />
                     </div>
                 )}
             </CardContent>
