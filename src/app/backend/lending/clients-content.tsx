@@ -30,6 +30,13 @@ import { provinces } from "@/lib/geodata";
 import { Badge } from "@/components/ui/badge";
 
 
+// --- Helper Functions ---
+const formatCurrency = (amount: number) => {
+    if (typeof amount !== 'number') return 'R 0';
+    return new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(amount);
+};
+
+
 // --- Zod Schema ---
 const ownerSchema = z.object({
   name: z.string().optional(),
@@ -115,7 +122,7 @@ const clientSchema = z.object({
 type ClientFormValues = z.infer<typeof clientSchema>;
 
 const steps = [
-    { id: 'main', name: 'Main Details', fields: ['name', 'clientCode', 'regId', 'type', 'category', 'language'] },
+    { id: 'main', name: 'Main Details', fields: ['name', 'clientCode', 'regId', 'type', 'category', 'language', 'vatNo'] },
     { id: 'address', name: 'Address', fields: ['physicalStreet', 'physicalCity', 'physicalPostCode', 'postalStreet', 'postalCity', 'postalPostCode'] },
     { id: 'contact', name: 'Contact Info', fields: ['email', 'cell', 'telW'] },
     { id: 'owners', name: 'Owners & Directors', fields: ['owners'] },
