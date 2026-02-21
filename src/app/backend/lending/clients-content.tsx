@@ -27,6 +27,7 @@ import IncomeStatementContent from './income-statement-content';
 import Link from 'next/link';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { provinces } from "@/lib/geodata";
+import { Badge } from "@/components/ui/badge";
 
 
 // --- Zod Schema ---
@@ -534,11 +535,6 @@ const StepBanking = () => {
         </div>
     )
 }
-
-const formatCurrency = (value: number) => {
-    if (typeof value !== 'number' || isNaN(value)) return 'R 0';
-    return new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR', maximumFractionDigits: 0 }).format(value);
-};
 
 const StepBankStatement = () => {
     const [transactions, setTransactions] = useState<any[]>([]);
