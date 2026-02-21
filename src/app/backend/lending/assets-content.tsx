@@ -1,318 +1,118 @@
 
 'use client';
 
-import { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Truck, FileText, FileQuestion, Tractor, Construction } from "lucide-react";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
+import { useState, useMemo } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Button } from "@/components/ui/button";
+import { ArrowLeft, Link as LinkIcon, PlusCircle, Truck } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import Link from 'next/link';
 
-const assetTypes = [
-    { id: 'motorised', label: 'Motorised Vehicles', icon: Truck },
-    { id: 'drawn', label: 'Drawn Vehicles', icon: Tractor },
-    { id: 'invoices', label: 'Invoices', icon: FileText },
-    { id: 'rights', label: 'Rights', icon: FileQuestion },
-    { id: 'equipment', label: 'Equipment', icon: Construction },
+// Dummy data as the backend doesn't save assets yet
+const dummyAssets = [
+    { id: 'ASSET-001', description: '2022 Scania R560', clientId: 'sample-client-1' },
+    { id: 'ASSET-002', description: 'Henred Fruehauf Tautliner', clientId: 'sample-client-1' },
+    { id: 'ASSET-003', description: 'CAT 320D Excavator', clientId: 'another-client-ltd' },
 ];
-
-const motorisedVehicleTypes = [
-    "Truck Tractor (Semi-truck)",
-    "Rigid Truck (Straight Truck)",
-    "Box Truck",
-    "Flatbed Truck",
-    "Refrigerated Truck (Reefer)",
-    "Dump Truck",
-    "Tanker Truck",
-    "Tow Truck",
-    "Garbage Truck",
-    "Cement Mixer",
-    "Crane Truck",
-    "Pickup Truck / Bakkie",
-    "Panel Van",
-    "Step Van",
-    "Other"
-];
-
-const drawnVehicleTypes = [
-    "Flatbed Trailer",
-    "Tautliner / Curtain-side Trailer",
-    "Refrigerated Trailer (Reefer)",
-    "Lowbed / Step-deck Trailer",
-    "Dry Van / Box Trailer",
-    "Tanker Trailer",
-    "Tipper Trailer",
-    "Interlink Trailer",
-    "Superlink Trailer",
-    "Other"
-];
-
-const equipmentTypes = [
-    "Excavator",
-    "Bulldozer",
-    "Grader",
-    "Front-end Loader",
-    "Backhoe Loader",
-    "Forklift",
-    "Crane",
-    "Compactor / Roller",
-    "Generator",
-    "Welding Machine",
-    "Tractor (Agricultural)",
-    "Harvester",
-    "Computer",
-    "Server Equipment",
-    "Printer/Copier",
-    "Medical Scanner",
-    "Office Equipment",
-    "Construction Equipment",
-    "Engineering Equipment",
-    "Other"
-];
-
 
 export default function AssetsContent() {
-    const [selectedAssetType, setSelectedAssetType] = useState<string | null>(null);
+    const searchParams = useSearchParams();
+    const router = useRouter();
+    const { toast } = useToast();
+
+    const clientId = searchParams.get('clientId');
+    const agreementId = searchParams.get('agreementId');
+
+    const assetsForClient = useMemo(() => {
+        if (!clientId) return dummyAssets; // Show all if no client is specified
+        return dummyAssets.filter(asset => asset.clientId === clientId);
+    }, [clientId]);
+    
+    const handleLinkAsset = (assetId: string) => {
+        if (!agreementId) return;
+
+        // In a real application, this would be an API call to update the Firestore document
+        console.log(`Linking asset ${assetId} to agreement ${agreementId}`);
+
+        toast({
+            title: "Asset Linked",
+            description: `Asset ${assetId} has been successfully linked to agreement ${agreementId}.`
+        });
+
+        // Navigate back to the client list or agreement list
+        router.push(`/lending?view=agreements`);
+    };
 
     return (
         <Card>
-            <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                    <Truck /> Asset Management
-                </CardTitle>
-                <CardDescription>
-                    Add and manage assets that are being financed. Start by selecting the type of asset.
-                </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-                <div className="max-w-sm space-y-2">
-                    <Label htmlFor="asset-type-select">Asset Type</Label>
-                    <Select onValueChange={setSelectedAssetType} value={selectedAssetType || ''}>
-                        <SelectTrigger id="asset-type-select">
-                            <SelectValue placeholder="Select an asset type..." />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {assetTypes.map(type => (
-                                <SelectItem key={type.id} value={type.id}>
-                                    <div className="flex items-center gap-2">
-                                        <type.icon className="h-4 w-4" />
-                                        <span>{type.label}</span>
-                                    </div>
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
+            <CardHeader className="flex flex-row justify-between items-start">
+                <div>
+                    <CardTitle className="flex items-center gap-2">
+                        <Truck /> Asset Register
+                    </CardTitle>
+                    {clientId && agreementId ? (
+                        <CardDescription>
+                            Select an asset below to link it to agreement <span className="font-mono text-foreground">{agreementId}</span>.
+                        </CardDescription>
+                    ) : (
+                         <CardDescription>
+                            Manage all financed assets. You can add new assets or view existing ones.
+                        </CardDescription>
+                    )}
                 </div>
-
-                {selectedAssetType === 'motorised' && (
-                    <div className="pt-6 border-t">
-                        <h3 className="text-lg font-semibold mb-4">
-                            Details for: <span className="text-primary">Motorised Vehicle</span>
-                        </h3>
-                        <div className="space-y-4">
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                                <div className="space-y-2">
-                                    <Label htmlFor="vehicle-register-no">Vehicle register #</Label>
-                                    <Input id="vehicle-register-no" placeholder="Vehicle Register #" />
-                                </div>
-                                 <div className="space-y-2">
-                                    <Label htmlFor="motorised-type">Type</Label>
-                                    <Select>
-                                        <SelectTrigger id="motorised-type"><SelectValue placeholder="Select type..." /></SelectTrigger>
-                                        <SelectContent>
-                                            {motorisedVehicleTypes.map(type => <SelectItem key={type} value={type}>{type}</SelectItem>)}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="make">Make</Label>
-                                    <Input id="make" placeholder="e.g., Scania" />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="model">Model</Label>
-                                    <Input id="model" placeholder="e.g., R 560" />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="year">Year</Label>
-                                    <Input id="year" placeholder="e.g., 2022" />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="vin">Vin #</Label>
-                                    <Input id="vin" placeholder="Vehicle Identification Number" />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="engine-no">Engine #</Label>
-                                    <Input id="engine-no" placeholder="Engine Number" />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="colour">Colour</Label>
-                                    <Input id="colour" placeholder="e.g., White" />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="quantity">Quantity</Label>
-                                    <Input id="quantity" type="number" defaultValue="1" />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="motorised-cost">Cost (ex. VAT)</Label>
-                                    <Input id="motorised-cost" type="number" placeholder="R 0.00" />
-                                </div>
-                            </div>
-                            <div className="flex justify-end mt-4">
-                                <Button>Save Asset</Button>
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                {selectedAssetType === 'drawn' && (
-                    <div className="pt-6 border-t">
-                        <h3 className="text-lg font-semibold mb-4">
-                            Details for: <span className="text-primary">Drawn Vehicle</span>
-                        </h3>
-                        <div className="space-y-4">
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                <div className="space-y-2">
-                                    <Label htmlFor="drawn-register-no">Vehicle register #</Label>
-                                    <Input id="drawn-register-no" placeholder="Vehicle Register #" />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="drawn-type">Type</Label>
-                                    <Select>
-                                        <SelectTrigger id="drawn-type"><SelectValue placeholder="Select type..." /></SelectTrigger>
-                                        <SelectContent>
-                                            {drawnVehicleTypes.map(type => <SelectItem key={type} value={type}>{type}</SelectItem>)}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="drawn-make">Make</Label>
-                                    <Input id="drawn-make" placeholder="e.g., Henred Fruehauf" />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="drawn-model">Model</Label>
-                                    <Input id="drawn-model" placeholder="e.g., Tautliner" />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="drawn-year">Year</Label>
-                                    <Input id="drawn-year" placeholder="e.g., 2020" />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="drawn-vin">Vin #</Label>
-                                    <Input id="drawn-vin" placeholder="Vehicle Identification Number" />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="drawn-colour">Colour</Label>
-                                    <Input id="drawn-colour" placeholder="e.g., Blue" />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="drawn-quantity">Quantity</Label>
-                                    <Input id="drawn-quantity" type="number" defaultValue="1" />
-                                </div>
-                                 <div className="space-y-2">
-                                    <Label htmlFor="drawn-cost">Cost (ex. VAT)</Label>
-                                    <Input id="drawn-cost" type="number" placeholder="R 0.00" />
-                                </div>
-                            </div>
-                             <div className="flex justify-end mt-4">
-                                <Button>Save Asset</Button>
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                {selectedAssetType === 'equipment' && (
-                    <div className="pt-6 border-t">
-                        <h3 className="text-lg font-semibold mb-4">
-                            Details for: <span className="text-primary">Equipment</span>
-                        </h3>
-                        <div className="space-y-4">
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                                 <div className="space-y-2">
-                                    <Label htmlFor="equipment-type">Type</Label>
-                                    <Select>
-                                        <SelectTrigger id="equipment-type"><SelectValue placeholder="Select type..." /></SelectTrigger>
-                                        <SelectContent>
-                                            {equipmentTypes.map(type => <SelectItem key={type} value={type}>{type}</SelectItem>)}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="equipment-make">Make</Label>
-                                    <Input id="equipment-make" placeholder="e.g., CAT" />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="equipment-model">Model</Label>
-                                    <Input id="equipment-model" placeholder="e.g., 320D" />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="equipment-serial">Serial #</Label>
-                                    <Input id="equipment-serial" placeholder="Serial Number" />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="equipment-year">Year</Label>
-                                    <Input id="equipment-year" placeholder="e.g., 2019" />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="equipment-colour">Colour</Label>
-                                    <Input id="equipment-colour" placeholder="e.g., Yellow" />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="equipment-quantity">Quantity</Label>
-                                    <Input id="equipment-quantity" type="number" defaultValue="1" />
-                                </div>
-                                 <div className="space-y-2">
-                                    <Label htmlFor="equipment-cost">Cost (ex. VAT)</Label>
-                                    <Input id="equipment-cost" type="number" placeholder="R 0.00" />
-                                </div>
-                            </div>
-                             <div className="flex justify-end mt-4">
-                                <Button>Save Asset</Button>
-                            </div>
-                        </div>
-                    </div>
-                )}
-                
-                {selectedAssetType === 'rights' && (
-                    <div className="pt-6 border-t">
-                        <h3 className="text-lg font-semibold mb-4">
-                            Details for: <span className="text-primary">Rights</span>
-                        </h3>
-                        <div className="space-y-4">
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                <div className="space-y-2">
-                                    <Label htmlFor="rights-type">Type</Label>
-                                    <Select>
-                                        <SelectTrigger id="rights-type"><SelectValue placeholder="Select type..." /></SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="property-bridging">Property Bridging</SelectItem>
-                                            <SelectItem value="salary">Salary</SelectItem>
-                                            <SelectItem value="brokering">Brokering</SelectItem>
-                                            <SelectItem value="other">Other</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                            </div>
-                            <div className="flex justify-end mt-4">
-                                <Button>Save Asset</Button>
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                {selectedAssetType && !['motorised', 'drawn', 'equipment', 'rights'].includes(selectedAssetType) && (
-                    <div className="pt-6 border-t">
-                        <h3 className="text-lg font-semibold mb-4">
-                            Details for: <span className="text-primary">{assetTypes.find(t => t.id === selectedAssetType)?.label}</span>
-                        </h3>
-                        <div className="p-8 border-2 border-dashed rounded-lg text-center">
-                            <p className="text-muted-foreground">Please specify the fields for this asset type.</p>
-                        </div>
-                    </div>
-                )}
+                 <div className="flex items-center gap-2">
+                    {agreementId && (
+                        <Button variant="outline" onClick={() => router.back()}>
+                            <ArrowLeft className="mr-2 h-4 w-4" /> Cancel
+                        </Button>
+                    )}
+                    <Button>
+                        <PlusCircle className="mr-2 h-4 w-4" /> Add New Asset
+                    </Button>
+                </div>
+            </CardHeader>
+            <CardContent>
+                <div className="border rounded-lg">
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Asset ID</TableHead>
+                                <TableHead>Description</TableHead>
+                                <TableHead>Client</TableHead>
+                                <TableHead className="text-right">Actions</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {assetsForClient.length > 0 ? (
+                                assetsForClient.map(asset => (
+                                    <TableRow key={asset.id}>
+                                        <TableCell className="font-mono">{asset.id}</TableCell>
+                                        <TableCell>{asset.description}</TableCell>
+                                        <TableCell>{asset.clientId}</TableCell>
+                                        <TableCell className="text-right">
+                                            {agreementId ? (
+                                                <Button size="sm" onClick={() => handleLinkAsset(asset.id)}>
+                                                    <LinkIcon className="mr-2 h-4 w-4" /> Link to Agreement
+                                                </Button>
+                                            ) : (
+                                                <Button variant="ghost" size="sm">View Details</Button>
+                                            )}
+                                        </TableCell>
+                                    </TableRow>
+                                ))
+                            ) : (
+                                <TableRow>
+                                    <TableCell colSpan={4} className="h-24 text-center">
+                                        No assets found for this client.
+                                    </TableCell>
+                                </TableRow>
+                            )}
+                        </TableBody>
+                    </Table>
+                </div>
             </CardContent>
         </Card>
     );
 }
-
-    
