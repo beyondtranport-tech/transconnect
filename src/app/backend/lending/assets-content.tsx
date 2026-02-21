@@ -18,19 +18,26 @@ import { Label } from '@/components/ui/label';
 
 // --- Zod Schema for Asset Form ---
 const assetSchema = z.object({
-  description: z.string().min(1, "Asset description is required."),
-  vin: z.string().optional(),
-  registerNumber: z.string().optional(),
-  // In a real scenario, you'd want to link this to a client
-  // clientId: z.string().min(1, "Client must be selected."), 
+  make: z.string().min(1, 'Vehicle make is required'),
+  model: z.string().min(1, 'Model/Series is required'),
+  year: z.string().min(4, 'Enter a valid year').max(4, 'Enter a valid year'),
+  vin: z.string().min(1, 'VIN is required'),
+  engineNumber: z.string().optional(),
+  tare: z.string().min(1, 'Tare weight is required'),
+  gvm: z.string().min(1, 'GVM is required'),
+  registerNumber: z.string().min(1, 'Register number is required'),
+  titleholder: z.string().min(1, 'Titleholder is required'),
+  owner: z.string().min(1, 'Owner is required'),
+  firstRegistrationDate: z.string().min(1, 'Date of first registration is required'),
+  classification: z.string().min(1, 'Classification is required'),
 });
 type AssetFormValues = z.infer<typeof assetSchema>;
 
 // Dummy data as the backend doesn't save assets yet
 const dummyAssets = [
-    { id: 'ASSET-001', description: '2022 Scania R560 (FVH123GP)', clientId: 'sample-client-1' },
-    { id: 'ASSET-002', description: 'Henred Fruehauf Tautliner', clientId: 'sample-client-1' },
-    { id: 'ASSET-003', description: 'CAT 320D Excavator', clientId: 'another-client-ltd' },
+    { id: 'ASSET-001', make: 'Scania', model: 'R560', year: '2022', registerNumber: 'FVH123GP', vin: 'YS2R6X20001234567', tare: '9000', gvm: '26000', titleholder: 'Wesbank', owner: 'Sample Transport Co.', firstRegistrationDate: '2022-01-15', classification: 'Truck-Tractor', clientId: 'sample-client-1' },
+    { id: 'ASSET-002', make: 'Henred Fruehauf', model: 'Tautliner', year: '2021', registerNumber: 'ABC789GP', vin: 'AHTF9T40001234567', tare: '7500', gvm: '34000', titleholder: 'Client Owned', owner: 'Sample Transport Co.', firstRegistrationDate: '2021-03-20', classification: 'Trailer', clientId: 'sample-client-1' },
+    { id: 'ASSET-003', make: 'CAT', model: '320D', year: '2020', registerNumber: 'N/A', vin: 'CAT00320DVP012345', tare: '21000', gvm: '21000', titleholder: 'Yellow Plant Hire', owner: 'Another Client Ltd', firstRegistrationDate: '2020-05-10', classification: 'Excavator', clientId: 'another-client-ltd' },
 ];
 
 // --- Wizard Component for Adding/Editing Assets ---
@@ -39,7 +46,10 @@ function AssetWizard({ asset, onBack, onSaveSuccess }: { asset?: any, onBack: ()
     const { toast } = useToast();
     const methods = useForm<AssetFormValues>({
         resolver: zodResolver(assetSchema),
-        defaultValues: asset || { description: '', vin: '', registerNumber: '' },
+        defaultValues: asset || {
+            make: '', model: '', year: '', vin: '', engineNumber: '', tare: '', gvm: '',
+            registerNumber: '', titleholder: '', owner: '', firstRegistrationDate: '', classification: ''
+        },
     });
 
     const onSubmit = async (values: AssetFormValues) => {
@@ -58,44 +68,22 @@ function AssetWizard({ asset, onBack, onSaveSuccess }: { asset?: any, onBack: ()
                 <form onSubmit={methods.handleSubmit(onSubmit)}>
                     <CardHeader>
                         <CardTitle>{asset ? 'Edit Asset' : 'Add New Asset'}</CardTitle>
+                        <CardDescription>Enter the asset details as they appear on the RC1 certificate.</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                        <FormField
-                            control={methods.control}
-                            name="description"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Asset Description</FormLabel>
-                                    <FormControl>
-                                        <Input placeholder="e.g., 2023 Scania R560" {...field} />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                        <div className="grid grid-cols-2 gap-4">
-                            <FormField
-                                control={methods.control}
-                                name="vin"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>VIN (Optional)</FormLabel>
-                                        <FormControl><Input {...field} /></FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                            <FormField
-                                control={methods.control}
-                                name="registerNumber"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Register Number (Optional)</FormLabel>
-                                        <FormControl><Input {...field} /></FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            <FormField control={methods.control} name="make" render={({ field }) => (<FormItem><FormLabel>Vehicle Make</FormLabel><FormControl><Input placeholder="e.g., Scania" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                            <FormField control={methods.control} name="model" render={({ field }) => (<FormItem><FormLabel>Model / Series</FormLabel><FormControl><Input placeholder="e.g., R 560" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                            <FormField control={methods.control} name="year" render={({ field }) => (<FormItem><FormLabel>Year of Manufacture</FormLabel><FormControl><Input placeholder="e.g., 2018" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                            <FormField control={methods.control} name="vin" render={({ field }) => (<FormItem><FormLabel>Vehicle Identification Number (VIN)</FormLabel><FormControl><Input placeholder="Vehicle VIN" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                            <FormField control={methods.control} name="engineNumber" render={({ field }) => (<FormItem><FormLabel>Engine Number</FormLabel><FormControl><Input placeholder="Engine Number" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                            <FormField control={methods.control} name="tare" render={({ field }) => (<FormItem><FormLabel>Tare (kg)</FormLabel><FormControl><Input placeholder="e.g., 9000" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                            <FormField control={methods.control} name="gvm" render={({ field }) => (<FormItem><FormLabel>Gross Vehicle Mass (GVM - kg)</FormLabel><FormControl><Input placeholder="e.g., 26000" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                            <FormField control={methods.control} name="registerNumber" render={({ field }) => (<FormItem><FormLabel>Register #</FormLabel><FormControl><Input placeholder="Register Number" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                            <FormField control={methods.control} name="titleholder" render={({ field }) => (<FormItem><FormLabel>Titleholder</FormLabel><FormControl><Input placeholder="Titleholder" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                            <FormField control={methods.control} name="owner" render={({ field }) => (<FormItem><FormLabel>Owner</FormLabel><FormControl><Input placeholder="Owner" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                            <FormField control={methods.control} name="firstRegistrationDate" render={({ field }) => (<FormItem><FormLabel>Date of First Registration</FormLabel><FormControl><Input type="date" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                            <FormField control={methods.control} name="classification" render={({ field }) => (<FormItem><FormLabel>Classification</FormLabel><FormControl><Input placeholder="e.g., Goods Vehicle" {...field} /></FormControl><FormMessage /></FormItem>)} />
                         </div>
                     </CardContent>
                     <CardFooter className="flex justify-between">
@@ -187,7 +175,8 @@ export default function AssetsContent() {
                         <TableHeader>
                             <TableRow>
                                 <TableHead>Asset ID</TableHead>
-                                <TableHead>Description</TableHead>
+                                <TableHead>Make & Model</TableHead>
+                                <TableHead>Year</TableHead>
                                 <TableHead>Client</TableHead>
                                 <TableHead className="text-right">Actions</TableHead>
                             </TableRow>
@@ -197,7 +186,8 @@ export default function AssetsContent() {
                                 assetsForClient.map(asset => (
                                     <TableRow key={asset.id}>
                                         <TableCell className="font-mono">{asset.id}</TableCell>
-                                        <TableCell>{asset.description}</TableCell>
+                                        <TableCell>{asset.make} {asset.model}</TableCell>
+                                        <TableCell>{asset.year}</TableCell>
                                         <TableCell>{asset.clientId}</TableCell>
                                         <TableCell className="text-right">
                                             {agreementId ? (
@@ -212,7 +202,7 @@ export default function AssetsContent() {
                                 ))
                             ) : (
                                 <TableRow>
-                                    <TableCell colSpan={4} className="h-24 text-center">
+                                    <TableCell colSpan={5} className="h-24 text-center">
                                         No assets found for this client.
                                     </TableCell>
                                 </TableRow>
