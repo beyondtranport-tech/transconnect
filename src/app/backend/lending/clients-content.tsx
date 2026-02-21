@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -78,7 +77,6 @@ const bankAccountSchema = z.object({
 const clientSchema = z.object({
   clientCode: z.string().optional(),
   name: z.string().min(1, "Client name is required."),
-  status: z.enum(['active', 'inactive', 'pending']),
   type: z.string().optional(),
   category: z.string().optional(),
   language: z.string().optional(),
@@ -114,7 +112,7 @@ const clientSchema = z.object({
 type ClientFormValues = z.infer<typeof clientSchema>;
 
 const steps = [
-    { id: 'main', name: 'Main Details', fields: ['name', 'status', 'clientCode', 'regId', 'type', 'category', 'language'] },
+    { id: 'main', name: 'Main Details', fields: ['name', 'clientCode', 'regId', 'type', 'category', 'language'] },
     { id: 'address', name: 'Address', fields: ['physicalStreet', 'physicalCity', 'physicalPostCode', 'postalStreet', 'postalCity', 'postalPostCode'] },
     { id: 'contact', name: 'Contact Info', fields: ['email', 'cell', 'telW'] },
     { id: 'owners', name: 'Owners & Directors', fields: ['owners'] },
@@ -130,7 +128,6 @@ const steps = [
 const defaultValues: Omit<ClientFormValues, 'globalFacilityLimit'> = {
   clientCode: '',
   name: '',
-  status: 'pending',
   type: '',
   category: '',
   language: '',
@@ -151,8 +148,7 @@ const StepMain = () => (
             <FormField control={useFormContext().control} name="clientCode" render={({ field }) => (<FormItem><FormLabel>Client Code</FormLabel><FormControl><Input placeholder="Client Code" {...field} /></FormControl><FormMessage /></FormItem>)} />
             <FormField control={useFormContext().control} name="name" render={({ field }) => (<FormItem><FormLabel>Name</FormLabel><FormControl><Input placeholder="Client Legal Name" {...field} /></FormControl><FormMessage /></FormItem>)} />
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <FormField control={useFormContext().control} name="status" render={({ field }) => (<FormItem><FormLabel>Status</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue/></SelectTrigger></FormControl><SelectContent><SelectItem value="active">Active</SelectItem><SelectItem value="inactive">Inactive</SelectItem><SelectItem value="pending">Pending</SelectItem></SelectContent></Select></FormItem>)} />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <FormField control={useFormContext().control} name="type" render={({ field }) => (<FormItem><FormLabel>Type</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select..."/></SelectTrigger></FormControl><SelectContent><SelectItem value="individual">Individual</SelectItem><SelectItem value="company">Company</SelectItem></SelectContent></Select></FormItem>)} />
             <FormField control={useFormContext().control} name="category" render={({ field }) => (<FormItem><FormLabel>Category</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select..."/></SelectTrigger></FormControl><SelectContent><SelectItem value="transport">Transport</SelectItem><SelectItem value="logistics">Logistics</SelectItem><SelectItem value="other">Other</SelectItem></SelectContent></Select></FormItem>)} />
         </div>
@@ -853,4 +849,3 @@ export default function ClientsContent() {
         </Card>
     );
 }
-
