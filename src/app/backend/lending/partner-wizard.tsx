@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { useForm, useFieldArray, FormProvider, useFormContext } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { ArrowLeft, ArrowRight, Loader2, Save, Check, PlusCircle, Trash2 } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Loader2, Save, Check, PlusCircle, Trash2, Sheet, TrendingUp } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken } from '@/firebase';
 import { cn } from '@/lib/utils';
@@ -18,10 +18,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
 import { provinces } from '@/lib/geodata';
-import BalanceSheetContent from './balance-sheet-content';
-import IncomeStatementContent from './income-statement-content';
+import { Label } from '@/components/ui/label';
 
 // --- Zod Schemas ---
+
 const ownerSchema = z.object({
   name: z.string().optional(), idNo: z.string().optional(), address: z.string().optional(),
   suburb: z.string().optional(), city: z.string().optional(), postCode: z.string().optional(),
@@ -44,6 +44,33 @@ const bankAccountSchema = z.object({
     contact: z.string().optional(),
 });
 
+const balanceSheetEntrySchema = z.object({
+  statementDate: z.string().optional(),
+  ppe: z.coerce.number().optional(),
+  intangibleAssets: z.coerce.number().optional(),
+  financialAssets: z.coerce.number().optional(),
+  inventories: z.coerce.number().optional(),
+  receivables: z.coerce.number().optional(),
+  cash: z.coerce.number().optional(),
+  shareCapital: z.coerce.number().optional(),
+  retainedEarnings: z.coerce.number().optional(),
+  longTermDebt: z.coerce.number().optional(),
+  leaseLiabilities: z.coerce.number().optional(),
+  payables: z.coerce.number().optional(),
+  shortTermDebt: z.coerce.number().optional(),
+  taxPayable: z.coerce.number().optional(),
+});
+
+const incomeStatementEntrySchema = z.object({
+  statementDate: z.string().optional(),
+  revenue: z.coerce.number().optional(),
+  cogs: z.coerce.number().optional(),
+  otherIncome: z.coerce.number().optional(),
+  opex: z.coerce.number().optional(),
+  financeCosts: z.coerce.number().optional(),
+  tax: z.coerce.number().optional(),
+});
+
 const partnerSchema = z.object({
   name: z.string().min(1, "Partner name is required."),
   globalFacilityLimit: z.coerce.number().min(0).optional(),
@@ -60,10 +87,13 @@ const partnerSchema = z.object({
   owners: z.array(ownerSchema).optional(),
   management: z.array(managementSchema).optional(),
   bankAccounts: z.array(bankAccountSchema).optional(),
+  balanceSheets: z.array(balanceSheetEntrySchema).optional(),
+  incomeStatements: z.array(incomeStatementEntrySchema).optional(),
 });
 type PartnerFormValues = z.infer<typeof partnerSchema>;
 
-// Step Definitions
+
+// --- Step Definitions ---
 const steps = [
     { id: 'main', name: 'Main Details', fields: ['name', 'type', 'category', 'language', 'regId', 'vatNo'] },
     { id: 'address', name: 'Address', fields: ['physicalStreet', 'physicalCity', 'postalStreet', 'postalCity'] },
@@ -71,8 +101,8 @@ const steps = [
     { id: 'owners', name: 'Owners & Directors', fields: ['owners'] },
     { id: 'management', name: 'Management', fields: ['management'] },
     { id: 'banking', name: 'Bank Accounts', fields: ['bankAccounts'] },
-    { id: 'balance-sheet', name: 'Balance Sheet' },
-    { id: 'income-statement', name: 'Income Statement' },
+    { id: 'balance-sheet', name: 'Balance Sheet', fields: ['balanceSheets'] },
+    { id: 'income-statement', name: 'Income Statement', fields: ['incomeStatements'] },
     { id: 'review', name: 'Review & Save' },
 ];
 
@@ -80,9 +110,12 @@ const defaultValues: Partial<PartnerFormValues> = {
   name: '', type: '', category: '', language: '', regId: '',
   isVatRegistered: false, vatNo: '', usePhysicalForPostal: false,
   owners: [], management: [], bankAccounts: [],
+  balanceSheets: [], incomeStatements: [],
 };
 
-// --- Sub-components ---
+
+// --- Sub-components for each step ---
+
 const StepMain = () => {
     const { control, watch } = useFormContext();
     const isVatRegistered = watch('isVatRegistered');
@@ -108,15 +141,19 @@ const StepAddress = () => {
     const { control, watch, setValue } = useFormContext();
     const usePhysicalForPostal = watch('usePhysicalForPostal');
     
-    const physicalValues = watch(['physicalStreet', 'physicalSuburb', 'physicalCity', 'physicalPostCode', 'physicalProvince']);
+    const physicalStreet = watch('physicalStreet');
+    const physicalSuburb = watch('physicalSuburb');
+    const physicalCity = watch('physicalCity');
+    const physicalPostCode = watch('physicalPostCode');
+    const physicalProvince = watch('physicalProvince');
+    
     const selectedPhysicalProvince = watch('physicalProvince');
-    const selectedPostalProvince = watch('postalProvince');
-
     const physicalCities = useMemo(() => {
         const province = provinces.find(p => p.name === selectedPhysicalProvince);
         return province ? province.cities : [];
     }, [selectedPhysicalProvince]);
 
+    const selectedPostalProvince = watch('postalProvince');
     const postalCities = useMemo(() => {
         const province = provinces.find(p => p.name === selectedPostalProvince);
         return province ? province.cities : [];
@@ -124,13 +161,13 @@ const StepAddress = () => {
 
     useEffect(() => {
         if (usePhysicalForPostal) {
-            setValue('postalStreet', physicalValues[0] || '');
-            setValue('postalSuburb', physicalValues[1] || '');
-            setValue('postalCity', physicalValues[2] || '');
-            setValue('postalPostCode', physicalValues[3] || '');
-            setValue('postalProvince', physicalValues[4] || '');
+            setValue('postalStreet', physicalStreet || '');
+            setValue('postalSuburb', physicalSuburb || '');
+            setValue('postalCity', physicalCity || '');
+            setValue('postalPostCode', physicalPostCode || '');
+            setValue('postalProvince', physicalProvince || '');
         }
-    }, [usePhysicalForPostal, ...physicalValues, setValue]);
+    }, [usePhysicalForPostal, physicalStreet, physicalSuburb, physicalCity, physicalPostCode, physicalProvince, setValue]);
 
     return (
         <div className="space-y-8">
@@ -183,7 +220,7 @@ const StepAddress = () => {
 const StepContact = () => ( <div className="space-y-4 max-w-2xl"><div className="grid grid-cols-1 md:grid-cols-2 gap-4"><FormField control={useFormContext().control} name="telW" render={({ field }) => (<FormItem><FormLabel>Tel (Work)</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} /><FormField control={useFormContext().control} name="telH" render={({ field }) => (<FormItem><FormLabel>Tel (Home)</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} /></div><div className="grid grid-cols-1 md:grid-cols-2 gap-4"><FormField control={useFormContext().control} name="fax" render={({ field }) => (<FormItem><FormLabel>Fax</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} /><FormField control={useFormContext().control} name="cell" render={({ field }) => (<FormItem><FormLabel>Cell</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} /></div><div className="grid grid-cols-1 md:grid-cols-2 gap-4"><FormField control={useFormContext().control} name="email" render={({ field }) => (<FormItem><FormLabel>Email</FormLabel><FormControl><Input type="email" {...field} /></FormControl></FormItem>)} /><FormField control={useFormContext().control} name="url" render={({ field }) => (<FormItem><FormLabel>Website URL</FormLabel><FormControl><Input type="url" {...field} /></FormControl></FormItem>)} /></div><FormField control={useFormContext().control} name="primaryContact" render={({ field }) => (<FormItem><FormLabel>Primary Contact Person</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} /></div>);
 
 const OwnerFormFields = ({ index, remove }: { index: number; remove: (index: number) => void }) => {
-    const { control, watch, setValue } = useFormContext();
+    const { control, setValue, watch } = useFormContext();
     const provinceValue = watch(`owners.${index}.province`);
 
     const cities = useMemo(() => {
@@ -192,7 +229,7 @@ const OwnerFormFields = ({ index, remove }: { index: number; remove: (index: num
     }, [provinceValue]);
 
     return (
-        <div className="p-4 border rounded-lg relative space-y-4">
+        <div key={`owner-${index}`} className="p-4 border rounded-lg relative space-y-4">
             <div className="flex justify-between items-center"><h3 className="font-semibold text-lg">Owner #{index + 1}</h3><Button type="button" variant="ghost" size="icon" onClick={() => remove(index)}><Trash2 className="h-4 w-4 text-destructive" /></Button></div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4"><FormField control={control} name={`owners.${index}.name`} render={({ field }) => (<FormItem><FormLabel>Name</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} /><FormField control={control} name={`owners.${index}.idNo`} render={({ field }) => (<FormItem><FormLabel>ID No</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} /></div>
             <FormField control={control} name={`owners.${index}.address`} render={({ field }) => (<FormItem><FormLabel>Street Address</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
@@ -327,6 +364,45 @@ const StepBanking = () => {
     )
 }
 
+const BalanceSheetEntryForm = ({ index, remove }: { index: number, remove: (index: number) => void }) => {
+    const { register } = useFormContext();
+    return (
+        <Card className="relative"><CardHeader><CardTitle>Balance Sheet #{index + 1}</CardTitle><Button variant="ghost" size="icon" className="absolute top-2 right-2" onClick={() => remove(index)}><Trash2 className="h-4 w-4 text-destructive" /></Button></CardHeader>
+            <CardContent className="space-y-4">
+                <div className="space-y-2"><Label>Statement Date</Label><Input type="date" {...register(`balanceSheets.${index}.statementDate`)} /></div>
+                <div className="grid md:grid-cols-2 gap-x-8 gap-y-4"><div className="space-y-4"><h4 className="font-semibold text-lg text-primary">Assets</h4><div><div className="pl-4 space-y-2 mt-2"><div className="space-y-1"><Label>Property, Plant & Equipment</Label><Input type="number" placeholder="0.00" {...register(`balanceSheets.${index}.ppe`)} /></div><div className="space-y-1"><Label>Intangible Assets</Label><Input type="number" placeholder="0.00" {...register(`balanceSheets.${index}.intangibleAssets`)} /></div><div className="space-y-1"><Label>Financial Assets</Label><Input type="number" placeholder="0.00" {...register(`balanceSheets.${index}.financialAssets`)} /></div></div></div><div><div className="pl-4 space-y-2 mt-2"><div className="space-y-1"><Label>Inventories</Label><Input type="number" placeholder="0.00" {...register(`balanceSheets.${index}.inventories`)} /></div><div className="space-y-1"><Label>Trade & Other Receivables</Label><Input type="number" placeholder="0.00" {...register(`balanceSheets.${index}.receivables`)} /></div><div className="space-y-1"><Label>Cash & Cash Equivalents</Label><Input type="number" placeholder="0.00" {...register(`balanceSheets.${index}.cash`)} /></div></div></div></div><div className="font-bold text-lg border-t pt-2 mt-4 flex justify-between"><span>Total Assets</span><span>R 0.00</span></div></div><div className="space-y-4"><h4 className="font-semibold text-lg text-primary">Equity & Liabilities</h4><div><div className="pl-4 space-y-2 mt-2"><div className="space-y-1"><Label>Share Capital</Label><Input type="number" placeholder="0.00" {...register(`balanceSheets.${index}.shareCapital`)} /></div><div className="space-y-1"><Label>Retained Earnings</Label><Input type="number" placeholder="0.00" {...register(`balanceSheets.${index}.retainedEarnings`)} /></div></div></div><div><div className="pl-4 space-y-2 mt-2"><div className="space-y-1"><Label>Long-Term Borrowings</Label><Input type="number" placeholder="0.00" {...register(`balanceSheets.${index}.longTermDebt`)} /></div><div className="space-y-1"><Label>Lease Liabilities</Label><Input type="number" placeholder="0.00" {...register(`balanceSheets.${index}.leaseLiabilities`)} /></div></div></div><div><div className="pl-4 space-y-2 mt-2"><div className="space-y-1"><Label>Trade & Other Payables</Label><Input type="number" placeholder="0.00" {...register(`balanceSheets.${index}.payables`)} /></div><div className="space-y-1"><Label>Short-Term Borrowings</Label><Input type="number" placeholder="0.00" {...register(`balanceSheets.${index}.shortTermDebt`)} /></div><div className="space-y-1"><Label>Current Tax Payable</Label><Input type="number" placeholder="0.00" {...register(`balanceSheets.${index}.taxPayable`)} /></div></div></div></div><div className="font-bold text-lg border-t pt-2 mt-4 flex justify-between"><span>Total Equity & Liabilities</span><span>R 0.00</span></div></div></div>
+            </CardContent>
+        </Card>
+    );
+};
+const StepBalanceSheet = () => {
+    const { control } = useFormContext();
+    const { fields, append, remove } = useFieldArray({ name: 'balanceSheets', control });
+    return <div className="space-y-6"><Button type="button" variant="outline" size="sm" onClick={() => append({})}><PlusCircle className="mr-2 h-4 w-4" />Add Balance Sheet</Button>{fields.map((field, index) => <BalanceSheetEntryForm key={field.id} index={index} remove={remove} />)}</div>;
+};
+
+const IncomeStatementEntryForm = ({ index, remove }: { index: number, remove: (index: number) => void }) => {
+    const { register } = useFormContext();
+    return (
+        <Card className="relative"><CardHeader><CardTitle>Income Statement #{index + 1}</CardTitle><Button variant="ghost" size="icon" className="absolute top-2 right-2" onClick={() => remove(index)}><Trash2 className="h-4 w-4 text-destructive" /></Button></CardHeader>
+            <CardContent className="space-y-4">
+                <div className="space-y-2"><Label>Statement Date</Label><Input type="date" {...register(`incomeStatements.${index}.statementDate`)} /></div>
+                <div className="space-y-2"><Label>Revenue</Label><Input type="number" placeholder="0.00" {...register(`incomeStatements.${index}.revenue`)} /></div>
+                <div className="space-y-2"><Label>Cost of Sales</Label><Input type="number" placeholder="0.00" {...register(`incomeStatements.${index}.cogs`)} /></div>
+                <div className="space-y-2"><Label>Other Income</Label><Input type="number" placeholder="0.00" {...register(`incomeStatements.${index}.otherIncome`)} /></div>
+                <div className="space-y-2"><Label>Operating Expenses</Label><Input type="number" placeholder="0.00" {...register(`incomeStatements.${index}.opex`)} /></div>
+                <div className="space-y-2"><Label>Finance Costs</Label><Input type="number" placeholder="0.00" {...register(`incomeStatements.${index}.financeCosts`)} /></div>
+                <div className="space-y-2"><Label>Income Tax Expense</Label><Input type="number" placeholder="0.00" {...register(`incomeStatements.${index}.tax`)} /></div>
+            </CardContent>
+        </Card>
+    );
+};
+const StepIncomeStatement = () => {
+    const { control } = useFormContext();
+    const { fields, append, remove } = useFieldArray({ name: 'incomeStatements', control });
+    return <div className="space-y-6"><Button type="button" variant="outline" size="sm" onClick={() => append({})}><PlusCircle className="mr-2 h-4 w-4" />Add Income Statement</Button>{fields.map((field, index) => <IncomeStatementEntryForm key={field.id} index={index} remove={remove} />)}</div>;
+};
+
 const StepReview = () => {
     const { getValues } = useFormContext();
     return <pre className="whitespace-pre-wrap bg-muted p-4 rounded-md">{JSON.stringify(getValues(), null, 2)}</pre>;
@@ -409,8 +485,8 @@ export default function PartnerWizard({ partnerData, partnerType, onBack, onSave
             case 'owners': return <StepOwners />;
             case 'management': return <StepManagement />;
             case 'banking': return <StepBanking />;
-            case 'balance-sheet': return <BalanceSheetContent />;
-            case 'income-statement': return <IncomeStatementContent />;
+            case 'balance-sheet': return <StepBalanceSheet />;
+            case 'income-statement': return <StepIncomeStatement />;
             case 'review': return <StepReview />;
             default: return null;
         }
@@ -448,5 +524,3 @@ export default function PartnerWizard({ partnerData, partnerType, onBack, onSave
         </FormProvider>
     );
 }
-
-    
