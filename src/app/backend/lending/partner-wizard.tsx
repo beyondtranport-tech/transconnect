@@ -82,7 +82,7 @@ const defaultValues: Partial<PartnerFormValues> = {
   owners: [], management: [], bankAccounts: [],
 };
 
-// --- Step Sub-components ---
+// --- Sub-components ---
 const StepMain = () => {
     const { control, watch } = useFormContext();
     const isVatRegistered = watch('isVatRegistered');
@@ -108,9 +108,8 @@ const StepAddress = () => {
     const { control, watch, setValue } = useFormContext();
     const usePhysicalForPostal = watch('usePhysicalForPostal');
     
-    const [physicalStreet, physicalSuburb, physicalCity, physicalPostCode, physicalProvince, selectedPhysicalProvince] = watch([
-        'physicalStreet', 'physicalSuburb', 'physicalCity', 'physicalPostCode', 'physicalProvince', 'physicalProvince'
-    ]);
+    const physicalValues = watch(['physicalStreet', 'physicalSuburb', 'physicalCity', 'physicalPostCode', 'physicalProvince']);
+    const selectedPhysicalProvince = watch('physicalProvince');
     const selectedPostalProvince = watch('postalProvince');
 
     const physicalCities = useMemo(() => {
@@ -122,26 +121,16 @@ const StepAddress = () => {
         const province = provinces.find(p => p.name === selectedPostalProvince);
         return province ? province.cities : [];
     }, [selectedPostalProvince]);
-    
-    // Stable subscription to handle cascading updates.
+
     useEffect(() => {
-        const subscription = watch((value, { name, type }) => {
-            if (name === 'physicalProvince') {
-                setValue('physicalCity', '');
-            }
-            if (name === 'postalProvince') {
-                 setValue('postalCity', '');
-            }
-            if (name === 'usePhysicalForPostal' && value.usePhysicalForPostal) {
-                setValue('postalStreet', value.physicalStreet || '');
-                setValue('postalSuburb', value.physicalSuburb || '');
-                setValue('postalCity', value.physicalCity || '');
-                setValue('postalPostCode', value.physicalPostCode || '');
-                setValue('postalProvince', value.physicalProvince || '');
-            }
-        });
-        return () => subscription.unsubscribe();
-    }, [watch, setValue]);
+        if (usePhysicalForPostal) {
+            setValue('postalStreet', physicalValues[0] || '');
+            setValue('postalSuburb', physicalValues[1] || '');
+            setValue('postalCity', physicalValues[2] || '');
+            setValue('postalPostCode', physicalValues[3] || '');
+            setValue('postalProvince', physicalValues[4] || '');
+        }
+    }, [usePhysicalForPostal, ...physicalValues, setValue]);
 
     return (
         <div className="space-y-8">
@@ -151,7 +140,13 @@ const StepAddress = () => {
                     <FormField control={control} name="physicalStreet" render={({ field }) => (<FormItem><FormLabel>Street Address</FormLabel><FormControl><Input placeholder="e.g., 123 Industrial Rd" {...field} /></FormControl></FormItem>)} />
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <FormField control={control} name="physicalProvince" render={({ field }) => (
-                            <FormItem><FormLabel>Province</FormLabel><Select onValueChange={field.onChange} value={field.value || ''}><FormControl><SelectTrigger><SelectValue placeholder="Select province..." /></SelectTrigger></FormControl><SelectContent>{provinces.map(p => <SelectItem key={p.name} value={p.name}>{p.name}</SelectItem>)}</SelectContent></Select></FormItem>
+                            <FormItem>
+                                <FormLabel>Province</FormLabel>
+                                <Select onValueChange={(value) => { field.onChange(value); setValue('physicalCity', ''); }} value={field.value || ''}>
+                                    <FormControl><SelectTrigger><SelectValue placeholder="Select province..." /></SelectTrigger></FormControl>
+                                    <SelectContent>{provinces.map(p => <SelectItem key={p.name} value={p.name}>{p.name}</SelectItem>)}</SelectContent>
+                                </Select>
+                            </FormItem>
                         )} />
                         <FormField control={control} name="physicalCity" render={({ field }) => (
                             <FormItem><FormLabel>City</FormLabel><Select onValueChange={field.onChange} value={field.value || ''} disabled={!selectedPhysicalProvince}><FormControl><SelectTrigger><SelectValue placeholder="Select city..." /></SelectTrigger></FormControl><SelectContent>{physicalCities.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent></Select></FormItem>
@@ -170,7 +165,9 @@ const StepAddress = () => {
                 <div className="space-y-4 max-w-2xl">
                     <FormField control={control} name="postalStreet" render={({ field }) => (<FormItem><FormLabel>Street Address or P.O. Box</FormLabel><FormControl><Input placeholder="e.g., P.O. Box 12345" {...field} disabled={usePhysicalForPostal} /></FormControl></FormItem>)} />
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <FormField control={control} name="postalProvince" render={({ field }) => (<FormItem><FormLabel>Province</FormLabel><Select onValueChange={field.onChange} value={field.value || ''} disabled={usePhysicalForPostal}><FormControl><SelectTrigger><SelectValue placeholder="Select province..." /></SelectTrigger></FormControl><SelectContent>{provinces.map(p => <SelectItem key={p.name} value={p.name}>{p.name}</SelectItem>)}</SelectContent></Select></FormItem>)} />
+                        <FormField control={control} name="postalProvince" render={({ field }) => (
+                            <FormItem><FormLabel>Province</FormLabel><Select onValueChange={(value) => { field.onChange(value); setValue('postalCity', ''); }} value={field.value || ''} disabled={usePhysicalForPostal}><FormControl><SelectTrigger><SelectValue placeholder="Select province..." /></SelectTrigger></FormControl><SelectContent>{provinces.map(p => <SelectItem key={p.name} value={p.name}>{p.name}</SelectItem>)}</SelectContent></Select></FormItem>
+                        )} />
                         <FormField control={control} name="postalCity" render={({ field }) => (<FormItem><FormLabel>City</FormLabel><Select onValueChange={field.onChange} value={field.value || ''} disabled={usePhysicalForPostal || !selectedPostalProvince}><FormControl><SelectTrigger><SelectValue placeholder="Select city..." /></SelectTrigger></FormControl><SelectContent>{postalCities.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent></Select></FormItem>)} />
                     </div>
                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -187,31 +184,21 @@ const StepContact = () => ( <div className="space-y-4 max-w-2xl"><div className=
 
 const OwnerFormFields = ({ index, remove }: { index: number; remove: (index: number) => void }) => {
     const { control, watch, setValue } = useFormContext();
-    
-    // This effect now correctly listens only for changes on the specific province field.
-    useEffect(() => {
-        const subscription = watch((value, { name }) => {
-            if (name === `owners.${index}.province`) {
-                setValue(`owners.${index}.city`, '');
-            }
-        });
-        return () => subscription.unsubscribe();
-    }, [watch, setValue, index]);
-
     const provinceValue = watch(`owners.${index}.province`);
+
     const cities = useMemo(() => {
         const province = provinces.find(p => p.name === provinceValue);
         return province ? province.cities : [];
     }, [provinceValue]);
 
     return (
-        <div key={`owner-${index}`} className="p-4 border rounded-lg relative space-y-4">
+        <div className="p-4 border rounded-lg relative space-y-4">
             <div className="flex justify-between items-center"><h3 className="font-semibold text-lg">Owner #{index + 1}</h3><Button type="button" variant="ghost" size="icon" onClick={() => remove(index)}><Trash2 className="h-4 w-4 text-destructive" /></Button></div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4"><FormField control={control} name={`owners.${index}.name`} render={({ field }) => (<FormItem><FormLabel>Name</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} /><FormField control={control} name={`owners.${index}.idNo`} render={({ field }) => (<FormItem><FormLabel>ID No</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} /></div>
             <FormField control={control} name={`owners.${index}.address`} render={({ field }) => (<FormItem><FormLabel>Street Address</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField control={control} name={`owners.${index}.province`} render={({ field }) => (
-                    <FormItem><FormLabel>Province</FormLabel><Select onValueChange={field.onChange} value={field.value || ''}><FormControl><SelectTrigger><SelectValue placeholder="Select province..." /></SelectTrigger></FormControl><SelectContent>{provinces.map(p => <SelectItem key={p.name} value={p.name}>{p.name}</SelectItem>)}</SelectContent></Select></FormItem>
+                    <FormItem><FormLabel>Province</FormLabel><Select onValueChange={(value) => { field.onChange(value); setValue(`owners.${index}.city`, ''); }} value={field.value || ''}><FormControl><SelectTrigger><SelectValue placeholder="Select province..." /></SelectTrigger></FormControl><SelectContent>{provinces.map(p => <SelectItem key={p.name} value={p.name}>{p.name}</SelectItem>)}</SelectContent></Select></FormItem>
                 )} />
                 <FormField control={control} name={`owners.${index}.city`} render={({ field }) => (
                     <FormItem><FormLabel>City</FormLabel><Select onValueChange={field.onChange} value={field.value || ''} disabled={!provinceValue}><FormControl><SelectTrigger><SelectValue placeholder="Select city..." /></SelectTrigger></FormControl><SelectContent>{cities.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent></Select></FormItem>
@@ -248,16 +235,6 @@ const StepOwners = () => {
 
 const ManagementFormFields = ({ index, remove }: { index: number; remove: (index: number) => void }) => {
     const { control, watch, setValue } = useFormContext();
-    
-    useEffect(() => {
-        const subscription = watch((value, { name }) => {
-            if (name === `management.${index}.province`) {
-                setValue(`management.${index}.city`, '');
-            }
-        });
-        return () => subscription.unsubscribe();
-    }, [watch, setValue, index]);
-
     const provinceValue = watch(`management.${index}.province`);
     const cities = useMemo(() => {
         const province = provinces.find(p => p.name === provinceValue);
@@ -265,7 +242,7 @@ const ManagementFormFields = ({ index, remove }: { index: number; remove: (index
     }, [provinceValue]);
 
     return (
-        <div key={`manager-${index}`} className="p-4 border rounded-lg relative space-y-4">
+        <div className="p-4 border rounded-lg relative space-y-4">
             <div className="flex justify-between items-center"><h3 className="font-semibold text-lg">Manager #{index + 1}</h3><Button type="button" variant="ghost" size="icon" onClick={() => remove(index)}><Trash2 className="h-4 w-4 text-destructive" /></Button></div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField control={control} name={`management.${index}.name`} render={({ field }) => (<FormItem><FormLabel>Name</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
@@ -274,7 +251,7 @@ const ManagementFormFields = ({ index, remove }: { index: number; remove: (index
             <FormField control={control} name={`management.${index}.address`} render={({ field }) => (<FormItem><FormLabel>Street Address</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField control={control} name={`management.${index}.province`} render={({ field }) => (
-                    <FormItem><FormLabel>Province</FormLabel><Select onValueChange={field.onChange} value={field.value || ''}><FormControl><SelectTrigger><SelectValue placeholder="Select province..." /></SelectTrigger></FormControl><SelectContent>{provinces.map(p => <SelectItem key={p.name} value={p.name}>{p.name}</SelectItem>)}</SelectContent></Select></FormItem>
+                    <FormItem><FormLabel>Province</FormLabel><Select onValueChange={(value) => { field.onChange(value); setValue(`management.${index}.city`, ''); }} value={field.value || ''}><FormControl><SelectTrigger><SelectValue placeholder="Select province..." /></SelectTrigger></FormControl><SelectContent>{provinces.map(p => <SelectItem key={p.name} value={p.name}>{p.name}</SelectItem>)}</SelectContent></Select></FormItem>
                 )} />
                 <FormField control={control} name={`management.${index}.city`} render={({ field }) => (
                     <FormItem><FormLabel>City</FormLabel><Select onValueChange={field.onChange} value={field.value || ''} disabled={!provinceValue}><FormControl><SelectTrigger><SelectValue placeholder="Select city..." /></SelectTrigger></FormControl><SelectContent>{cities.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent></Select></FormItem>
