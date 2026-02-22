@@ -1,114 +1,134 @@
 
 'use client';
 
-import React, { useState, useMemo, useEffect, useCallback } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Loader2, Save } from 'lucide-react';
+import { PlusCircle, Loader2 } from 'lucide-react';
+import { useToast } from "@/hooks/use-toast";
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
-import { useForm, FormProvider } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
-import { useToast } from '@/hooks/use-toast';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useCollection, useFirestore, useMemoFirebase, getClientSideAuthToken } from '@/firebase';
+import { collection, query, where } from 'firebase/firestore';
+import PartnerWizard from './partner-wizard';
+import { Badge } from '@/components/ui/badge';
 
-const partnerSchema = z.object({
-  name: z.string().min(1, 'Partner name is required.'),
-  type: z.string(), // e.g., 'Supplier', 'Vendor'
-  status: z.string(),
-  globalFacilityLimit: z.coerce.number().optional(),
-});
-
-type PartnerFormValues = z.infer<typeof partnerSchema>;
-
-const dummyData = {
-    Suppliers: [{ id: 'sup-1', name: 'Parts Inc.', type: 'Supplier', status: 'Active', globalFacilityLimit: 1000000 }],
-    Vendors: [{ id: 'ven-1', name: 'Trucks Galore', type: 'Vendor', status: 'Active', globalFacilityLimit: 5000000 }],
-    Associates: [{ id: 'asc-1', name: 'Logistics Connect', type: 'Associate', status: 'Active', globalFacilityLimit: 0 }],
-    Debtors: [{ id: 'deb-1', name: 'Debtor One', type: 'Debtor', status: 'Active', globalFacilityLimit: 50000 }],
+const formatCurrency = (amount: number) => {
+    if (typeof amount !== 'number') return 'R 0';
+    return new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(amount);
 };
 
-const PartnerWizard = ({ partnerData, partnerType, onBack, onSaveSuccess }: { partnerData?: any; partnerType: string; onBack: () => void; onSaveSuccess: () => void; }) => {
-    const [isLoading, setIsLoading] = useState(false);
-    const { toast } = useToast();
-    const methods = useForm<PartnerFormValues>({
-        resolver: zodResolver(partnerSchema),
-        defaultValues: partnerData ? { ...partnerData, type: partnerType } : { name: '', type: partnerType, status: 'Active', globalFacilityLimit: 0 },
-    });
-
-    const onSubmit = async (values: PartnerFormValues) => {
-        setIsLoading(true);
-        console.log("Saving partner:", { id: partnerData?.id, ...values });
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        toast({ title: partnerData ? 'Partner Updated' : 'Partner Created' });
-        setIsLoading(false);
-        onSaveSuccess();
-    };
-
-    return (
-        <FormProvider {...methods}>
-            <form onSubmit={methods.handleSubmit(onSubmit)}>
-                <Card>
-                    <CardHeader>
-                        <CardTitle>{partnerData ? 'Edit' : 'Add New'} {partnerType.slice(0, -1)}</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        <FormField control={methods.control} name="name" render={({ field }) => (<FormItem><FormLabel>Name</FormLabel><FormControl><Input placeholder={`${partnerType.slice(0, -1)} Name`} {...field} /></FormControl><FormMessage /></FormItem>)} />
-                        <FormField control={methods.control} name="status" render={({ field }) => (<FormItem><FormLabel>Status</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="Active">Active</SelectItem><SelectItem value="Inactive">Inactive</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
-                        <FormField control={methods.control} name="globalFacilityLimit" render={({ field }) => (<FormItem><FormLabel>Global Facility Limit</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                    </CardContent>
-                    <CardFooter className="justify-between">
-                        <Button variant="ghost" onClick={onBack}>Cancel</Button>
-                        <Button type="submit" disabled={isLoading}>{isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Save className="mr-2 h-4 w-4"/>} Save</Button>
-                    </CardFooter>
-                </Card>
-            </form>
-        </FormProvider>
-    );
-};
-
-export default function PartnerDetails({ partnerType }: { partnerType: 'Suppliers' | 'Vendors' | 'Associates' | 'Debtors' }) {
-    const [view, setView] = useState<'list' | 'create' | 'edit'>('list');
+export default function PartnerDetails({ partnerType, initialAction }: { partnerType: 'Suppliers' | 'Vendors' | 'Associates' | 'Debtors', initialAction?: string | null }) {
+    const [view, setView] = useState<'list' | 'create' | 'edit'>(initialAction === 'add' ? 'create' : 'list');
     const [selectedPartner, setSelectedPartner] = useState<any | null>(null);
+    const firestore = useFirestore();
+    const { toast } = useToast();
 
-    const partners = dummyData[partnerType] || [];
-    
+    const isDebtor = partnerType === 'Debtors';
+    const collectionName = isDebtor ? 'lendingClients' : 'lendingPartners';
+    const partnerTypeEnum = partnerType.slice(0, -1).toLowerCase();
+
+    const partnersQuery = useMemoFirebase(() => {
+        if (!firestore) return null;
+        if (isDebtor) {
+            return query(collection(firestore, collectionName));
+        }
+        return query(collection(firestore, collectionName), where('type', '==', partnerTypeEnum));
+    }, [firestore, collectionName, isDebtor, partnerTypeEnum]);
+
+    const { data: partners, isLoading, forceRefresh } = useCollection(partnersQuery);
+
+    useEffect(() => {
+        // If initialAction is 'add', immediately switch to create view.
+        if (initialAction === 'add') {
+            setView('create');
+        }
+    }, [initialAction]);
+
     const handleEdit = useCallback((partner: any) => {
         setSelectedPartner(partner);
         setView('edit');
     }, []);
 
-    const columns: ColumnDef<any>[] = useMemo(() => [
-        { accessorKey: 'name', header: `${partnerType.slice(0, -1)} Name` },
-        { accessorKey: 'status', header: 'Status' },
-        { accessorKey: 'globalFacilityLimit', header: 'Facility Limit', cell: ({ row }) => <span>{formatCurrency(row.original.globalFacilityLimit)}</span> },
-        { id: 'actions', header: () => <div className="text-right">Actions</div>, cell: ({ row }) => <div className="text-right"><Button variant="ghost" size="sm" onClick={() => handleEdit(row.original)}>Edit</Button></div> },
-    ], [handleEdit, partnerType]);
-    
-    if (view === 'create' || view === 'edit') {
-        return <PartnerWizard partnerData={selectedPartner} partnerType={partnerType} onBack={() => setView('list')} onSaveSuccess={() => setView('list')} />;
-    }
+    const handleAdd = () => {
+        setSelectedPartner(null);
+        setView('create');
+    };
 
+    const handleBackToList = () => {
+        setView('list');
+        setSelectedPartner(null);
+    };
+
+    const handleSaveSuccess = () => {
+        forceRefresh();
+        handleBackToList();
+    };
+    
+    const handleDelete = async (partnerId: string) => {
+         try {
+            const token = await getClientSideAuthToken();
+            if (!token) throw new Error("Authentication failed.");
+            
+            const response = await fetch('/api/admin', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'deleteLendingPartner', payload: { partnerId: partnerId, collection: collectionName } }),
+            });
+            if (!response.ok) throw new Error((await response.json()).error || 'Failed to delete partner.');
+            
+            toast({ title: 'Partner Deleted' });
+            forceRefresh();
+        } catch(e: any) {
+            toast({ variant: 'destructive', title: 'Delete Failed', description: e.message });
+        }
+    }
+    
+    const columns: ColumnDef<any>[] = useMemo(() => [
+        { 
+            accessorKey: 'name', 
+            header: `${partnerType.slice(0, -1)} Name`,
+            cell: ({ row }) => <div>{row.original.name}</div>
+        },
+        { 
+            accessorKey: 'status', 
+            header: 'Status', 
+            cell: ({row}) => <Badge className="capitalize">{row.original.status || 'Active'}</Badge>
+        },
+        { 
+            accessorKey: 'globalFacilityLimit', 
+            header: 'Facility Limit', 
+            cell: ({row}) => <span>{formatCurrency(row.original.globalFacilityLimit || 0)}</span> 
+        },
+        { 
+            id: 'actions', 
+            header: () => <div className="text-right">Actions</div>, 
+            cell: ({ row }) => <div className="text-right"><Button variant="ghost" size="sm" onClick={() => handleEdit(row.original)}>Edit</Button></div> 
+        }
+    ], [handleEdit, partnerType]);
+
+    if (view === 'create' || view === 'edit') {
+        return <PartnerWizard partnerData={selectedPartner} partnerType={partnerType} onBack={handleBackToList} onSaveSuccess={handleSaveSuccess} />;
+    }
+    
     return (
         <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
+            <CardHeader className="flex flex-row justify-between items-start">
                 <div>
-                    <CardTitle>{partnerType} Management</CardTitle>
-                    <CardDescription>Manage all {partnerType.toLowerCase()} in the system.</CardDescription>
+                    <CardTitle>Manage {partnerType}</CardTitle>
                 </div>
-                <Button onClick={() => setView('create')}><PlusCircle className="mr-2 h-4 w-4"/> Add {partnerType.slice(0, -1)}</Button>
+                <Button onClick={handleAdd}><PlusCircle className="mr-2 h-4 w-4"/> Add {partnerType.slice(0,-1)}</Button>
             </CardHeader>
             <CardContent>
-                <DataTable columns={columns} data={partners} />
+                 {isLoading ? (
+                    <div className="flex justify-center items-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
+                ) : (
+                    <DataTable columns={columns} data={partners || []} />
+                )}
             </CardContent>
         </Card>
     );
 }
 
-function formatCurrency(amount: number) {
-    if (typeof amount !== 'number') return 'R 0';
-    return new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(amount);
-}
+    

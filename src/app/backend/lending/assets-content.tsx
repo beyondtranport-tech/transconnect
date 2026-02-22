@@ -66,11 +66,11 @@ const wizardSteps = [
 const StepSupplier = () => {
     const firestore = useFirestore();
     const { control } = useFormContext();
+    const router = useRouter();
 
     const partnersQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'lendingPartners')) : null, [firestore]);
     const { data: partners, isLoading } = useCollection(partnersQuery);
 
-    // TODO: Implement "Add New Supplier" dialog
     return (
         <div className="max-w-md space-y-4">
             <FormField
@@ -80,9 +80,7 @@ const StepSupplier = () => {
                     <FormItem>
                         <FormLabel>Select Supplier</FormLabel>
                         <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isLoading}>
-                            <FormControl>
-                                <SelectTrigger><SelectValue placeholder={isLoading ? "Loading..." : "Select a supplier..."} /></SelectTrigger>
-                            </FormControl>
+                            <FormControl><SelectTrigger><SelectValue placeholder={isLoading ? "Loading..." : "Select a supplier..."} /></SelectTrigger></FormControl>
                             <SelectContent>
                                 <SelectItem value="internal_stock">-- Internal Stock (Repossessed) --</SelectItem>
                                 {(partners || []).map((p: any) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
@@ -92,7 +90,7 @@ const StepSupplier = () => {
                     </FormItem>
                 )}
             />
-            <Button type="button" variant="outline" size="sm" onClick={() => alert("'Add Supplier' feature coming soon.")}>
+            <Button type="button" variant="outline" size="sm" onClick={() => router.push('/lending?view=partners&action=add&type=Suppliers')}>
                 <PlusCircle className="mr-2 h-4 w-4"/> Add New Supplier
             </Button>
         </div>
@@ -388,3 +386,5 @@ export default function AssetsContent() {
         </Card>
     );
 }
+
+    
