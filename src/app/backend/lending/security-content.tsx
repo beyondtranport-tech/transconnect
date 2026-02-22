@@ -1,10 +1,10 @@
 
 'use client';
 
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
-import { PlusCircle, FileSignature, Loader2, Save } from 'lucide-react';
+import { PlusCircle, FileSignature, Loader2, Save, Trash2, ArrowLeft, ArrowRight, Check } from 'lucide-react';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -15,7 +15,11 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Trash2 } from 'lucide-react';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { collection, query } from 'firebase/firestore';
+import { Label } from '@/components/ui/label';
+import { cn } from '@/lib/utils';
+import { Textarea } from "@/components/ui/textarea";
 
 
 const dummySecurityDocs = [
@@ -26,54 +30,123 @@ const dummySecurityDocs = [
 const docStatusOptions = ["Generated", "Sent", "Received", "Checked", "Signed In"];
 
 const securitySchema = z.object({
-  name: z.string().min(1, 'Agreement type is required.'),
-  client: z.string().min(1, 'Client is required.'),
-  agreement: z.string().min(1, 'Agreement is required.'),
-  clientCode: z.string().optional(),
-  docStatus: z.string().optional(),
-  recordStatus: z.string().optional(),
+  clientId: z.string().min(1, "Client is required."),
+  agreementId: z.string().min(1, "Agreement is required."),
+  securityType: z.string().min(1, "A type is required (e.g., Cession of Debtors)."),
+  description: z.string().optional(),
+  docStatus: z.string().optional().default("Generated"),
 });
 
 type SecurityFormValues = z.infer<typeof securitySchema>;
 
+const wizardSteps = [
+  { id: 'client', name: 'Select Client', fields: ['clientId'] },
+  { id: 'agreement', name: 'Select Agreement', fields: ['agreementId'] },
+  { id: 'details', name: 'Security Details', fields: ['securityType', 'description'] },
+  { id: 'status', name: 'Document Status', fields: ['docStatus'] },
+  { id: 'review', name: 'Review & Save' },
+];
+
 function SecurityWizard({ securityDoc, onBack, onSaveSuccess }: { securityDoc?: any; onBack: () => void; onSaveSuccess: () => void; }) {
+    const [currentStep, setCurrentStep] = useState(0);
     const [isLoading, setIsLoading] = useState(false);
     const { toast } = useToast();
+    const firestore = useFirestore();
+
     const methods = useForm<SecurityFormValues>({
         resolver: zodResolver(securitySchema),
-        defaultValues: securityDoc || { name: '', client: '', agreement: '', clientCode: '', docStatus: 'Generated', recordStatus: 'Unconfirmed' },
+        mode: 'onChange',
+        defaultValues: securityDoc || { clientId: '', agreementId: '', securityType: '', description: '', docStatus: 'Generated' },
     });
+    
+    const { control, watch, trigger } = methods;
+
+    const selectedClientId = watch('clientId');
+
+    const clientsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'lendingClients')) : null, [firestore]);
+    const { data: clients, isLoading: areClientsLoading } = useCollection(clientsQuery);
+    
+    const agreementsQuery = useMemoFirebase(() => {
+        if (!firestore || !selectedClientId) return null;
+        return query(collection(firestore, `lendingClients/${selectedClientId}/agreements`));
+    }, [firestore, selectedClientId]);
+    const { data: agreements, isLoading: areAgreementsLoading } = useCollection(agreementsQuery);
+
+    const handleNext = async () => {
+        const currentStepConfig = wizardSteps[currentStep];
+        const isValid = currentStepConfig.fields ? await trigger(currentStepConfig.fields as any) : true;
+        
+        if (isValid && currentStep < wizardSteps.length - 1) {
+            setCurrentStep(prev => prev + 1);
+        } else if (!isValid) {
+            toast({ variant: 'destructive', title: 'Validation Error', description: 'Please complete the current step.' });
+        }
+    };
+    
+    const handleBack = () => {
+        currentStep > 0 ? setCurrentStep(prev => prev - 1) : onBack();
+    };
 
     const onSubmit = async (values: SecurityFormValues) => {
         setIsLoading(true);
-        console.log("Saving security doc:", { id: securityDoc?.id, ...values });
+        console.log("Saving security agreement:", values);
         await new Promise(resolve => setTimeout(resolve, 1000));
-        toast({ title: securityDoc ? 'Document Updated' : 'Document Added' });
+        toast({ title: 'Security Agreement Saved', description: 'This is a demo save.' });
         setIsLoading(false);
         onSaveSuccess();
     };
 
+    const renderStepContent = () => {
+        switch (wizardSteps[currentStep].id) {
+            case 'client':
+                return <FormField control={control} name="clientId" render={({field}) => <FormItem><FormLabel>Client</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value} disabled={areClientsLoading}><FormControl><SelectTrigger><SelectValue placeholder="Select a client..." /></SelectTrigger></FormControl><SelectContent>{(clients || []).map((c: any) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>} />;
+            case 'agreement':
+                return <FormField control={control} name="agreementId" render={({field}) => <FormItem><FormLabel>Agreement</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value} disabled={!selectedClientId || areAgreementsLoading}><FormControl><SelectTrigger><SelectValue placeholder="Select an agreement..." /></SelectTrigger></FormControl><SelectContent>{(agreements || []).map((a: any) => <SelectItem key={a.id} value={a.id}>{a.id}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>} />;
+            case 'details':
+                return <div className="space-y-4"><FormField control={control} name="securityType" render={({ field }) => (<FormItem><FormLabel>Type of Security</FormLabel><FormControl><Input placeholder="e.g., Cession of Book Debts" {...field} /></FormControl><FormMessage /></FormItem>)} /><FormField control={control} name="description" render={({ field }) => (<FormItem><FormLabel>Description (Optional)</FormLabel><FormControl><Textarea placeholder="Add any relevant details..." {...field} /></FormControl><FormMessage /></FormItem>)} /></div>;
+            case 'status':
+                return <FormField control={control} name="docStatus" render={({ field }) => (<FormItem><FormLabel>Document Status</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select status..."/></SelectTrigger></FormControl><SelectContent>{docStatusOptions.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)} />;
+            case 'review':
+                return <div className="space-y-2"><p>Client: {watch('clientId')}</p><p>Agreement: {watch('agreementId')}</p><p>Type: {watch('securityType')}</p><p>Status: {watch('docStatus')}</p></div>;
+            default: return null;
+        }
+    };
+
     return (
-        <FormProvider {...methods}>
-            <form onSubmit={methods.handleSubmit(onSubmit)}>
-                <Card>
+        <Card>
+            <FormProvider {...methods}>
+                <form onSubmit={methods.handleSubmit(onSubmit)}>
                     <CardHeader>
-                        <CardTitle>{securityDoc ? 'Edit' : 'Add'} Security Agreement</CardTitle>
+                        <CardTitle>{securityDoc ? 'Edit' : 'Create'} Security Agreement</CardTitle>
+                        <CardDescription>Follow the steps to link a security document to an agreement.</CardDescription>
                     </CardHeader>
-                    <CardContent className="space-y-4">
-                        <FormField control={methods.control} name="name" render={({ field }) => (<FormItem><FormLabel>Agreement Type</FormLabel><FormControl><Input placeholder="e.g., Cession of Book Debts" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                        <FormField control={methods.control} name="client" render={({ field }) => (<FormItem><FormLabel>Client</FormLabel><FormControl><Input placeholder="Client Name" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                        <FormField control={methods.control} name="clientCode" render={({ field }) => (<FormItem><FormLabel>Client Code</FormLabel><FormControl><Input placeholder="e.g., STC001" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                        <FormField control={methods.control} name="agreement" render={({ field }) => (<FormItem><FormLabel>Main Agreement ID</FormLabel><FormControl><Input placeholder="e.g., AG-101" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                        <FormField control={methods.control} name="docStatus" render={({ field }) => (<FormItem><FormLabel>Document Status</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent>{docStatusOptions.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent></Select></FormItem>)} />
+                    <CardContent>
+                         <div className="flex items-center gap-4 mb-8">
+                            {wizardSteps.map((step, index) => (
+                                <React.Fragment key={step.id}>
+                                    <div className="flex flex-col items-center">
+                                        <div className={cn("h-8 w-8 rounded-full flex items-center justify-center font-bold", currentStep >= index ? "bg-primary text-primary-foreground" : "bg-muted")}>{currentStep > index ? <Check className="h-5 w-5"/> : index+1}</div>
+                                        <p className={cn("text-xs mt-1 text-center", currentStep >= index ? "font-semibold text-primary" : "text-muted-foreground")}>{step.name}</p>
+                                    </div>
+                                    {index < wizardSteps.length - 1 && <div className={cn("flex-1 h-0.5 mb-4", currentStep > index ? "bg-primary" : "bg-muted")} />}
+                                </React.Fragment>
+                            ))}
+                        </div>
+                        <div className="min-h-[200px]">
+                            {renderStepContent()}
+                        </div>
                     </CardContent>
                     <CardFooter className="justify-between">
-                        <Button variant="ghost" onClick={onBack}>Cancel</Button>
-                        <Button type="submit" disabled={isLoading}>{isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Save className="mr-2 h-4 w-4"/>} Save</Button>
+                        <Button type="button" variant="outline" onClick={handleBack}><ArrowLeft className="mr-2 h-4 w-4" /> Back</Button>
+                        {currentStep < wizardSteps.length - 1 ? (
+                            <Button type="button" onClick={handleNext}>Next <ArrowRight className="ml-2 h-4 w-4"/></Button>
+                        ) : (
+                            <Button type="submit" disabled={isLoading}>{isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />} Save Agreement</Button>
+                        )}
                     </CardFooter>
-                </Card>
-            </form>
-        </FormProvider>
+                </form>
+            </FormProvider>
+        </Card>
     );
 }
 
