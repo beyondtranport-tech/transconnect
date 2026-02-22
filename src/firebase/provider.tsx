@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { createContext, useContext, ReactNode, useMemo, useState, useEffect, useCallback } from 'react';
@@ -60,28 +59,26 @@ const setSessionCookie = async (idToken: string | null) => {
 };
 
 function useEnrichedUser(baseUser: User | null, firestore: Firestore | null) {
-    const isAdmin = baseUser?.email === 'beyondtransport@gmail.com' || baseUser?.email === 'mkoton100@gmail.com';
+    const isAdmin = baseUser?.email === 'mkoton100@gmail.com' || baseUser?.email === 'beyondtransport@gmail.com';
+    const uid = baseUser?.uid; // Use the stable UID for dependencies
 
     const userDocRef = useMemoFirebase(() => {
-        // Only create a doc ref if the user is not an admin and exists
-        if (!firestore || !baseUser || isAdmin) {
+        // Only create a doc ref if the user is not an admin and the UID is present
+        if (!firestore || !uid || isAdmin) {
             return null;
         }
-        return doc(firestore, 'users', baseUser.uid);
-    }, [firestore, baseUser, isAdmin]);
+        return doc(firestore, 'users', uid);
+    }, [firestore, uid, isAdmin]); // Depend on the stable uid string
 
-    // Always call useDoc, it handles the null case gracefully and returns a stable forceRefresh
     const { data: userData, isLoading: isUserDataLoading, forceRefresh } = useDoc<{ companyId: string; passwordChangeRequired?: boolean }>(userDocRef);
 
     const enrichedUser = useMemo(() => {
         if (!baseUser) {
             return null;
         }
-        // Admin user doesn't need data from the 'users' collection
         if (isAdmin) {
             return baseUser as EnrichedUser;
         }
-        // For regular users, combine the auth user with the Firestore data
         return {
             ...baseUser,
             companyId: userData?.companyId,
@@ -89,10 +86,8 @@ function useEnrichedUser(baseUser: User | null, firestore: Firestore | null) {
         } as EnrichedUser;
     }, [baseUser, userData, isAdmin]);
 
-    // The user is "enriching" if they are not an admin and the user document is loading
     const isEnriching = !isAdmin && !!baseUser && isUserDataLoading;
     
-    // Memoize the final returned object from the hook to ensure its stability
     return useMemo(() => ({
         enrichedUser,
         isEnriching,
@@ -132,8 +127,6 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
               },
               body: JSON.stringify({ referrerId }), 
             });
-            // The re-render from setBaseUser will cause useDoc to re-fetch the user profile if needed.
-            // No manual forceRefresh() is required here, which was part of the loop problem.
           } catch (error) {
             console.error("FirebaseProvider: Failed to call checkAndCreateUser:", error);
           }
@@ -152,7 +145,7 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
       }
     );
     return () => unsubscribe();
-  }, [auth]); // This effect should only run once to set up the listener.
+  }, [auth]);
 
   const contextValue = useMemo((): FirebaseContextState => ({
     firebaseApp,
