@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useForm, useFieldArray, FormProvider, useFormContext } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -21,7 +21,6 @@ import { provinces } from '@/lib/geodata';
 import { Label } from '@/components/ui/label';
 
 // --- Zod Schemas ---
-
 const ownerSchema = z.object({
   name: z.string().optional(), idNo: z.string().optional(), address: z.string().optional(),
   suburb: z.string().optional(), city: z.string().optional(), postCode: z.string().optional(),
@@ -92,7 +91,6 @@ const partnerSchema = z.object({
 });
 type PartnerFormValues = z.infer<typeof partnerSchema>;
 
-
 // --- Step Definitions ---
 const steps = [
     { id: 'main', name: 'Main Details', fields: ['name', 'type', 'category', 'language', 'regId', 'vatNo'] },
@@ -112,7 +110,6 @@ const defaultValues: Partial<PartnerFormValues> = {
   owners: [], management: [], bankAccounts: [],
   balanceSheets: [], incomeStatements: [],
 };
-
 
 // --- Sub-components for each step ---
 
@@ -141,7 +138,6 @@ const StepAddress = () => {
     const { control, watch, setValue } = useFormContext();
     const usePhysicalForPostal = watch('usePhysicalForPostal');
     
-    // Watch all physical address fields to copy them over
     const physicalAddressFields = watch(['physicalStreet', 'physicalSuburb', 'physicalCity', 'physicalPostCode', 'physicalProvince']);
 
     useEffect(() => {
@@ -226,7 +222,7 @@ const OwnerFormFields = ({ index, remove }: { index: number; remove: (index: num
     }, [provinceValue]);
 
     return (
-        <div className="p-4 border rounded-lg relative space-y-4">
+        <div key={`owner-${index}`} className="p-4 border rounded-lg relative space-y-4">
             <div className="flex justify-between items-center"><h3 className="font-semibold text-lg">Owner #{index + 1}</h3><Button type="button" variant="ghost" size="icon" className="absolute top-2 right-2" onClick={() => remove(index)}><Trash2 className="h-4 w-4 text-destructive" /></Button></div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4"><FormField control={control} name={`owners.${index}.name`} render={({ field }) => (<FormItem><FormLabel>Name</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} /><FormField control={control} name={`owners.${index}.idNo`} render={({ field }) => (<FormItem><FormLabel>ID No</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} /></div>
             <FormField control={control} name={`owners.${index}.address`} render={({ field }) => (<FormItem><FormLabel>Street Address</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
@@ -371,64 +367,64 @@ const StepBanking = () => {
 const BalanceSheetEntryForm = ({ index, remove }: { index: number, remove: (index: number) => void }) => {
     const { register } = useFormContext();
     return (
-      <Card className="relative">
-        <CardHeader>
-          <CardTitle>Balance Sheet Entry #{index + 1}</CardTitle>
-          <Button variant="ghost" size="icon" className="absolute top-2 right-2" onClick={() => remove(index)}>
-            <Trash2 className="h-4 w-4 text-destructive" />
-          </Button>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label>Statement Date</Label>
-            <Input type="date" {...register(`balanceSheets.${index}.statementDate`)} />
-          </div>
-          <div className="grid md:grid-cols-2 gap-x-8 gap-y-4">
-            {/* Assets Column */}
-            <div className="space-y-4">
-              <h4 className="font-semibold text-lg text-primary">Assets</h4>
-              <div className="pl-4 border-l-2 border-primary/50 space-y-4">
-                <h5 className="font-medium">Non-Current Assets</h5>
-                <div className="pl-4 space-y-2 mt-2">
-                  <div className="space-y-1"><Label>Property, Plant & Equipment</Label><Input type="number" placeholder="0.00" {...register(`balanceSheets.${index}.ppe`)} /></div>
-                  <div className="space-y-1"><Label>Intangible Assets</Label><Input type="number" placeholder="0.00" {...register(`balanceSheets.${index}.intangibleAssets`)} /></div>
-                  <div className="space-y-1"><Label>Financial Assets</Label><Input type="number" placeholder="0.00" {...register(`balanceSheets.${index}.financialAssets`)} /></div>
+        <Card className="relative">
+            <CardHeader>
+                <CardTitle>Balance Sheet #{index + 1}</CardTitle>
+                <Button variant="ghost" size="icon" className="absolute top-2 right-2" onClick={() => remove(index)}>
+                    <Trash2 className="h-4 w-4 text-destructive" />
+                </Button>
+            </CardHeader>
+            <CardContent className="space-y-4">
+                <div className="space-y-2">
+                    <Label>Statement Date</Label>
+                    <Input type="date" {...register(`balanceSheets.${index}.statementDate`)} />
                 </div>
-                <h5 className="font-medium">Current Assets</h5>
-                <div className="pl-4 space-y-2 mt-2">
-                  <div className="space-y-1"><Label>Inventories</Label><Input type="number" placeholder="0.00" {...register(`balanceSheets.${index}.inventories`)} /></div>
-                  <div className="space-y-1"><Label>Trade & Other Receivables</Label><Input type="number" placeholder="0.00" {...register(`balanceSheets.${index}.receivables`)} /></div>
-                  <div className="space-y-1"><Label>Cash & Cash Equivalents</Label><Input type="number" placeholder="0.00" {...register(`balanceSheets.${index}.cash`)} /></div>
+                <div className="grid md:grid-cols-2 gap-x-8 gap-y-4">
+                    {/* Assets Column */}
+                    <div className="space-y-4">
+                        <h4 className="font-semibold text-lg text-primary">Assets</h4>
+                        <div className="pl-4 border-l-2 border-primary/50 space-y-4">
+                            <h5 className="font-medium">Non-Current Assets</h5>
+                            <div className="pl-4 space-y-2 mt-2">
+                                <div className="space-y-1"><Label>Property, Plant & Equipment</Label><Input type="number" placeholder="0.00" {...register(`balanceSheets.${index}.ppe`)} /></div>
+                                <div className="space-y-1"><Label>Intangible Assets</Label><Input type="number" placeholder="0.00" {...register(`balanceSheets.${index}.intangibleAssets`)} /></div>
+                                <div className="space-y-1"><Label>Financial Assets</Label><Input type="number" placeholder="0.00" {...register(`balanceSheets.${index}.financialAssets`)} /></div>
+                            </div>
+                            <h5 className="font-medium">Current Assets</h5>
+                            <div className="pl-4 space-y-2 mt-2">
+                                <div className="space-y-1"><Label>Inventories</Label><Input type="number" placeholder="0.00" {...register(`balanceSheets.${index}.inventories`)} /></div>
+                                <div className="space-y-1"><Label>Trade & Other Receivables</Label><Input type="number" placeholder="0.00" {...register(`balanceSheets.${index}.receivables`)} /></div>
+                                <div className="space-y-1"><Label>Cash & Cash Equivalents</Label><Input type="number" placeholder="0.00" {...register(`balanceSheets.${index}.cash`)} /></div>
+                            </div>
+                        </div>
+                        <div className="font-bold text-lg border-t pt-2 mt-4 flex justify-between"><span>Total Assets</span><span>R 0.00</span></div>
+                    </div>
+                    {/* Equity & Liabilities Column */}
+                    <div className="space-y-4">
+                        <h4 className="font-semibold text-lg text-primary">Equity & Liabilities</h4>
+                        <div className="pl-4 border-l-2 border-primary/50 space-y-4">
+                            <h5 className="font-medium">Equity</h5>
+                            <div className="pl-4 space-y-2 mt-2">
+                                <div className="space-y-1"><Label>Share Capital</Label><Input type="number" placeholder="0.00" {...register(`balanceSheets.${index}.shareCapital`)} /></div>
+                                <div className="space-y-1"><Label>Retained Earnings</Label><Input type="number" placeholder="0.00" {...register(`balanceSheets.${index}.retainedEarnings`)} /></div>
+                            </div>
+                            <h5 className="font-medium">Non-Current Liabilities</h5>
+                            <div className="pl-4 space-y-2 mt-2">
+                                <div className="space-y-1"><Label>Long-Term Borrowings</Label><Input type="number" placeholder="0.00" {...register(`balanceSheets.${index}.longTermDebt`)} /></div>
+                                <div className="space-y-1"><Label>Lease Liabilities</Label><Input type="number" placeholder="0.00" {...register(`balanceSheets.${index}.leaseLiabilities`)} /></div>
+                            </div>
+                            <h5 className="font-medium">Current Liabilities</h5>
+                            <div className="pl-4 space-y-2 mt-2">
+                                <div className="space-y-1"><Label>Trade & Other Payables</Label><Input type="number" placeholder="0.00" {...register(`balanceSheets.${index}.payables`)} /></div>
+                                <div className="space-y-1"><Label>Short-Term Borrowings</Label><Input type="number" placeholder="0.00" {...register(`balanceSheets.${index}.shortTermDebt`)} /></div>
+                                <div className="space-y-1"><Label>Current Tax Payable</Label><Input type="number" placeholder="0.00" {...register(`balanceSheets.${index}.taxPayable`)} /></div>
+                            </div>
+                        </div>
+                        <div className="font-bold text-lg border-t pt-2 mt-4 flex justify-between"><span>Total Equity & Liabilities</span><span>R 0.00</span></div>
+                    </div>
                 </div>
-              </div>
-              <div className="font-bold text-lg border-t pt-2 mt-4 flex justify-between"><span>Total Assets</span><span>R 0.00</span></div>
-            </div>
-            {/* Equity & Liabilities Column */}
-            <div className="space-y-4">
-              <h4 className="font-semibold text-lg text-primary">Equity & Liabilities</h4>
-              <div className="pl-4 border-l-2 border-primary/50 space-y-4">
-                <h5 className="font-medium">Equity</h5>
-                <div className="pl-4 space-y-2 mt-2">
-                  <div className="space-y-1"><Label>Share Capital</Label><Input type="number" placeholder="0.00" {...register(`balanceSheets.${index}.shareCapital`)} /></div>
-                  <div className="space-y-1"><Label>Retained Earnings</Label><Input type="number" placeholder="0.00" {...register(`balanceSheets.${index}.retainedEarnings`)} /></div>
-                </div>
-                <h5 className="font-medium">Non-Current Liabilities</h5>
-                <div className="pl-4 space-y-2 mt-2">
-                  <div className="space-y-1"><Label>Long-Term Borrowings</Label><Input type="number" placeholder="0.00" {...register(`balanceSheets.${index}.longTermDebt`)} /></div>
-                  <div className="space-y-1"><Label>Lease Liabilities</Label><Input type="number" placeholder="0.00" {...register(`balanceSheets.${index}.leaseLiabilities`)} /></div>
-                </div>
-                <h5 className="font-medium">Current Liabilities</h5>
-                <div className="pl-4 space-y-2 mt-2">
-                  <div className="space-y-1"><Label>Trade & Other Payables</Label><Input type="number" placeholder="0.00" {...register(`balanceSheets.${index}.payables`)} /></div>
-                  <div className="space-y-1"><Label>Short-Term Borrowings</Label><Input type="number" placeholder="0.00" {...register(`balanceSheets.${index}.shortTermDebt`)} /></div>
-                  <div className="space-y-1"><Label>Current Tax Payable</Label><Input type="number" placeholder="0.00" {...register(`balanceSheets.${index}.taxPayable`)} /></div>
-                </div>
-              </div>
-              <div className="font-bold text-lg border-t pt-2 mt-4 flex justify-between"><span>Total Equity & Liabilities</span><span>R 0.00</span></div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+            </CardContent>
+        </Card>
     );
 };
 
@@ -442,8 +438,7 @@ const IncomeStatementEntryForm = ({ index, remove }: { index: number, remove: (i
     const { register } = useFormContext();
     return (
         <Card className="relative">
-            <Button variant="ghost" size="icon" className="absolute top-2 right-2" onClick={() => remove(index)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
-            <CardHeader><CardTitle>Income Statement #{index + 1}</CardTitle></CardHeader>
+            <CardHeader><CardTitle>Income Statement #{index + 1}</CardTitle><Button variant="ghost" size="icon" className="absolute top-2 right-2" onClick={() => remove(index)}><Trash2 className="h-4 w-4 text-destructive" /></Button></CardHeader>
             <CardContent className="space-y-4">
                 <div className="space-y-2"><Label>Statement Date</Label><Input type="date" {...register(`incomeStatements.${index}.statementDate`)} /></div>
                 <div className="space-y-2"><Label>Revenue</Label><Input type="number" placeholder="0.00" {...register(`incomeStatements.${index}.revenue`)} /></div>
@@ -454,10 +449,10 @@ const IncomeStatementEntryForm = ({ index, remove }: { index: number, remove: (i
                 <div className="space-y-2"><Label>Operating Expenses</Label><Input type="number" placeholder="0.00" {...register(`incomeStatements.${index}.opex`)} /></div>
                 <p className="flex justify-between font-semibold"><span>Operating Profit</span><span>R 0.00</span></p>
                 <Separator />
-                <div className="space-y-2"><Label>Finance Costs</Label><Input type="number" placeholder="0.00" {...register(`incomeStatements.${index}.financeCosts`)} /></div>
+                 <div className="space-y-2"><Label>Finance Costs</Label><Input type="number" placeholder="0.00" {...register(`incomeStatements.${index}.financeCosts`)} /></div>
                 <p className="flex justify-between font-semibold"><span>Profit Before Tax</span><span>R 0.00</span></p>
                 <Separator />
-                <div className="space-y-2"><Label>Income Tax Expense</Label><Input type="number" placeholder="0.00" {...register(`incomeStatements.${index}.tax`)} /></div>
+                  <div className="space-y-2"><Label>Income Tax Expense</Label><Input type="number" placeholder="0.00" {...register(`incomeStatements.${index}.tax`)} /></div>
                 <p className="flex justify-between font-bold text-lg text-primary border-t pt-2 mt-2"><span>Profit for the Period</span><span>R 0.00</span></p>
             </CardContent>
         </Card>
@@ -472,7 +467,7 @@ const StepIncomeStatement = () => {
 
 const StepReview = () => {
     const { getValues } = useFormContext();
-    return <pre className="whitespace-pre-wrap bg-muted p-4 rounded-md">{JSON.stringify(getValues(), null, 2)}</pre>;
+    return <pre className="whitespace-pre-wrap bg-muted p-4 rounded-md text-xs">{JSON.stringify(getValues(), null, 2)}</pre>;
 };
 
 // --- Wizard Component ---
@@ -591,5 +586,3 @@ export default function PartnerWizard({ partnerData, partnerType, onBack, onSave
         </FormProvider>
     );
 }
-
-    
