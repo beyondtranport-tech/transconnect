@@ -78,7 +78,7 @@ const defaultValues: Partial<PartnerFormValues> = {
   owners: [], management: [], bankAccounts: [],
 };
 
-// --- Step Sub-components (copied and adapted from client-wizard) ---
+// --- Step Sub-components ---
 const StepMain = () => {
     const { control, watch } = useFormContext();
     const isVatRegistered = watch('isVatRegistered');
@@ -167,10 +167,73 @@ const StepAddress = () => {
 
 const StepContact = () => ( <div className="space-y-4 max-w-2xl"><div className="grid grid-cols-1 md:grid-cols-2 gap-4"><FormField control={useFormContext().control} name="telW" render={({ field }) => (<FormItem><FormLabel>Tel (Work)</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} /><FormField control={useFormContext().control} name="telH" render={({ field }) => (<FormItem><FormLabel>Tel (Home)</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} /></div><div className="grid grid-cols-1 md:grid-cols-2 gap-4"><FormField control={useFormContext().control} name="fax" render={({ field }) => (<FormItem><FormLabel>Fax</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} /><FormField control={useFormContext().control} name="cell" render={({ field }) => (<FormItem><FormLabel>Cell</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} /></div><div className="grid grid-cols-1 md:grid-cols-2 gap-4"><FormField control={useFormContext().control} name="email" render={({ field }) => (<FormItem><FormLabel>Email</FormLabel><FormControl><Input type="email" {...field} /></FormControl></FormItem>)} /><FormField control={useFormContext().control} name="url" render={({ field }) => (<FormItem><FormLabel>Website URL</FormLabel><FormControl><Input type="url" {...field} /></FormControl></FormItem>)} /></div><FormField control={useFormContext().control} name="primaryContact" render={({ field }) => (<FormItem><FormLabel>Primary Contact Person</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} /></div>);
 
+const OwnerFormFields = ({ index, remove }: { index: number; remove: (index: number) => void }) => {
+    const { control, watch, setValue } = useFormContext();
+    const provinceValue = watch(`owners.${index}.province`);
+
+    const cities = useMemo(() => {
+        const province = provinces.find(p => p.name === provinceValue);
+        return province ? province.cities : [];
+    }, [provinceValue]);
+
+    useEffect(() => {
+        if (cities.length > 0 && !cities.includes(watch(`owners.${index}.city`))) {
+            setValue(`owners.${index}.city`, '');
+        }
+    }, [provinceValue, cities, setValue, watch, index]);
+
+    return (
+        <div key={`owner-${index}`} className="p-4 border rounded-lg relative space-y-4">
+            <div className="flex justify-between items-center"><h3 className="font-semibold text-lg">Owner #{index + 1}</h3><Button type="button" variant="ghost" size="icon" onClick={() => remove(index)}><Trash2 className="h-4 w-4 text-destructive" /></Button></div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4"><FormField control={control} name={`owners.${index}.name`} render={({ field }) => (<FormItem><FormLabel>Name</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} /><FormField control={control} name={`owners.${index}.idNo`} render={({ field }) => (<FormItem><FormLabel>ID No</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} /></div>
+            <FormField control={control} name={`owners.${index}.address`} render={({ field }) => (<FormItem><FormLabel>Street Address</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField control={control} name={`owners.${index}.province`} render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Province</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value || ''}>
+                            <FormControl><SelectTrigger><SelectValue placeholder="Select province..." /></SelectTrigger></FormControl>
+                            <SelectContent>{provinces.map(p => <SelectItem key={p.name} value={p.name}>{p.name}</SelectItem>)}</SelectContent>
+                        </Select>
+                    </FormItem>
+                )} />
+                <FormField control={control} name={`owners.${index}.city`} render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>City</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value || ''} disabled={!provinceValue}>
+                            <FormControl><SelectTrigger><SelectValue placeholder="Select city..." /></SelectTrigger></FormControl>
+                            <SelectContent>{cities.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+                        </Select>
+                    </FormItem>
+                )} />
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField control={control} name={`owners.${index}.suburb`} render={({ field }) => (<FormItem><FormLabel>Suburb</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
+                <FormField control={control} name={`owners.${index}.postCode`} render={({ field }) => (<FormItem><FormLabel>Post Code</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
+            </div>
+            <FormField control={control} name={`owners.${index}.cell`} render={({ field }) => (<FormItem><FormLabel>Cell</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
+            <Separator />
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                 <FormField control={control} name={`owners.${index}.position`} render={({ field }) => (<FormItem><FormLabel>Position</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
+                <FormField control={control} name={`owners.${index}.qualification`} render={({ field }) => (<FormItem><FormLabel>Qualification</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
+                <FormField control={control} name={`owners.${index}.since`} render={({ field }) => (<FormItem><FormLabel>Since</FormLabel><FormControl><Input type="date" {...field} /></FormControl></FormItem>)} />
+                <FormField control={control} name={`owners.${index}.held`} render={({ field }) => (<FormItem><FormLabel>% Held</FormLabel><FormControl><Input type="number" {...field} /></FormControl></FormItem>)} />
+            </div>
+        </div>
+    );
+};
+
 const StepOwners = () => {
     const { control } = useFormContext();
     const { fields, append, remove } = useFieldArray({ control, name: "owners" });
-    return ( <div className="space-y-6"><Button type="button" variant="outline" size="sm" onClick={() => append({})}><PlusCircle className="mr-2 h-4 w-4" /> Add Owner</Button>{fields.map((field, index) => (<div key={field.id} className="p-4 border rounded-lg relative space-y-4"><div className="flex justify-between items-center"><h3 className="font-semibold text-lg">Owner #{index + 1}</h3><Button type="button" variant="ghost" size="icon" onClick={() => remove(index)}><Trash2 className="h-4 w-4 text-destructive" /></Button></div>{/* ... owner fields ... */}</div>))}</div>);
+    return (
+        <div className="space-y-6">
+            <Button type="button" variant="outline" size="sm" onClick={() => append({ name: '', address: '', suburb: '', city: '', province: '', postCode: '', idNo: '', cell: '', position: '', qualification: '', since: '', held: 0 })}><PlusCircle className="mr-2 h-4 w-4" /> Add Owner</Button>
+            {fields.map((field, index) => (
+                <OwnerFormFields key={field.id} index={index} remove={remove} />
+            ))}
+        </div>
+    );
 };
 
 const StepManagement = () => {
@@ -203,7 +266,16 @@ export default function PartnerWizard({ partnerData, partnerType, onBack, onSave
     });
 
     const handleNext = async () => {
-        const isValid = await methods.trigger(steps[currentStep].fields as any);
+        const currentStepConfig = steps[currentStep];
+        if (!currentStepConfig) return;
+
+        let isValid = false;
+        if (currentStepConfig.fields) {
+            isValid = await methods.trigger(currentStepConfig.fields as (keyof PartnerFormValues)[]);
+        } else {
+            isValid = true;
+        }
+
         if (isValid && currentStep < steps.length - 1) {
             setCurrentStep(prev => prev + 1);
         }
@@ -216,12 +288,16 @@ export default function PartnerWizard({ partnerData, partnerType, onBack, onSave
             const token = await getClientSideAuthToken();
             if (!token) throw new Error("Authentication failed.");
 
-            const payload = { partner: { id: partnerData?.id, type: partnerType.slice(0, -1).toLowerCase(), ...values } };
+            const collectionName = partnerType === 'Debtors' ? 'lendingClients' : 'lendingPartners';
+            const action = partnerType === 'Debtors' ? 'saveLendingClient' : 'saveLendingPartner';
+            const payloadKey = partnerType === 'Debtors' ? 'client' : 'partner';
+
+            const payload = { [payloadKey]: { id: partnerData?.id, type: partnerType.slice(0, -1).toLowerCase(), ...values } };
             
             const response = await fetch('/api/admin', {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action: 'saveLendingPartner', payload }),
+                body: JSON.stringify({ action, payload }),
             });
             const result = await response.json();
             if (!response.ok) throw new Error(result.error);
@@ -242,7 +318,8 @@ export default function PartnerWizard({ partnerData, partnerType, onBack, onSave
     };
     
     const renderStepContent = () => {
-        switch(steps[currentStep]?.id) {
+        const stepId = steps[currentStep]?.id;
+        switch (stepId) {
             case 'main': return <StepMain />;
             case 'address': return <StepAddress />;
             case 'contact': return <StepContact />;
@@ -283,4 +360,3 @@ export default function PartnerWizard({ partnerData, partnerType, onBack, onSave
         </FormProvider>
     );
 }
-
