@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, ReactNode, useMemo, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, ReactNode, useMemo, useState, useEffect, useCallback, useRef } from 'react';
 import { FirebaseApp } from 'firebase/app';
 import { Firestore, doc } from 'firebase/firestore';
 import { Auth, User, onIdTokenChanged, getIdToken } from 'firebase/auth';
@@ -107,7 +107,7 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
   const [baseUser, setBaseUser] = useState<User | null>(auth.currentUser);
   const [isAuthLoading, setIsAuthLoading] = useState(true);
   const [authError, setAuthError] = useState<Error | null>(null);
-  const [userCheckPerformed, setUserCheckPerformed] = useState(false);
+  const userCheckPerformed = useRef(false);
 
   const { enrichedUser, isEnriching, forceRefresh } = useEnrichedUser(baseUser, firestore);
 
@@ -118,8 +118,8 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
         const idToken = firebaseUser ? await firebaseUser.getIdToken() : null;
         await setSessionCookie(idToken);
         
-        if (firebaseUser && idToken && !userCheckPerformed) {
-          setUserCheckPerformed(true);
+        if (firebaseUser && idToken && !userCheckPerformed.current) {
+          userCheckPerformed.current = true;
           try {
             const referrerId = new URLSearchParams(window.location.search).get('ref');
             await fetch('/api/checkAndCreateUser', {
@@ -136,7 +136,7 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
         }
         
         if (!firebaseUser) {
-          setUserCheckPerformed(false);
+          userCheckPerformed.current = false;
         }
         
         setBaseUser(firebaseUser);
@@ -147,13 +147,13 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
         console.error("FirebaseProvider: onIdTokenChanged error:", error);
         setSessionCookie(null);
         setBaseUser(null);
-        setUserCheckPerformed(false);
+        userCheckPerformed.current = false;
         setIsAuthLoading(false);
         setAuthError(error);
       }
     );
     return () => unsubscribe();
-  }, [auth, userCheckPerformed]);
+  }, [auth]);
 
   const contextValue = useMemo((): FirebaseContextState => ({
     firebaseApp,
