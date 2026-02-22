@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -21,11 +21,12 @@ const assetSchema = z.object({
   make: z.string().min(1, 'Vehicle make is required'),
   model: z.string().min(1, 'Model/Series is required'),
   year: z.string().min(4, 'Enter a valid year').max(4, 'Enter a valid year'),
+  registrationNumber: z.string().min(1, 'Registration number is required'),
   vin: z.string().min(1, 'VIN is required'),
   engineNumber: z.string().optional(),
   tare: z.string().min(1, 'Tare weight is required'),
   gvm: z.string().min(1, 'GVM is required'),
-  registerNumber: z.string().min(1, 'Register number is required'),
+  registerNumber: z.string().min(1, 'Register # is required'),
   titleholder: z.string().min(1, 'Titleholder is required'),
   owner: z.string().min(1, 'Owner is required'),
   firstRegistrationDate: z.string().min(1, 'Date of first registration is required'),
@@ -35,9 +36,9 @@ type AssetFormValues = z.infer<typeof assetSchema>;
 
 // Dummy data as the backend doesn't save assets yet
 const dummyAssets = [
-    { id: 'ASSET-001', make: 'Scania', model: 'R560', year: '2022', registerNumber: 'FVH123GP', vin: 'YS2R6X20001234567', tare: '9000', gvm: '26000', titleholder: 'Wesbank', owner: 'Sample Transport Co.', firstRegistrationDate: '2022-01-15', classification: 'Truck-Tractor', clientId: 'sample-client-1' },
-    { id: 'ASSET-002', make: 'Henred Fruehauf', model: 'Tautliner', year: '2021', registerNumber: 'ABC789GP', vin: 'AHTF9T40001234567', tare: '7500', gvm: '34000', titleholder: 'Client Owned', owner: 'Sample Transport Co.', firstRegistrationDate: '2021-03-20', classification: 'Trailer', clientId: 'sample-client-1' },
-    { id: 'ASSET-003', make: 'CAT', model: '320D', year: '2020', registerNumber: 'N/A', vin: 'CAT00320DVP012345', tare: '21000', gvm: '21000', titleholder: 'Yellow Plant Hire', owner: 'Another Client Ltd', firstRegistrationDate: '2020-05-10', classification: 'Excavator', clientId: 'another-client-ltd' },
+    { id: 'ASSET-001', make: 'Scania', model: 'R560', year: '2022', registrationNumber: 'FVH123GP', registerNumber: '123456789', vin: 'YS2R6X20001234567', tare: '9000', gvm: '26000', titleholder: 'Wesbank', owner: 'Sample Transport Co.', firstRegistrationDate: '2022-01-15', classification: 'Truck-Tractor', clientId: 'sample-client-1' },
+    { id: 'ASSET-002', make: 'Henred Fruehauf', model: 'Tautliner', year: '2021', registrationNumber: 'ABC789GP', registerNumber: '987654321', vin: 'AHTF9T40001234567', tare: '7500', gvm: '34000', titleholder: 'Client Owned', owner: 'Sample Transport Co.', firstRegistrationDate: '2021-03-20', classification: 'Trailer', clientId: 'sample-client-1' },
+    { id: 'ASSET-003', make: 'CAT', model: '320D', year: '2020', registrationNumber: 'N/A', registerNumber: 'N/A', vin: 'CAT00320DVP012345', tare: '21000', gvm: '21000', titleholder: 'Yellow Plant Hire', owner: 'Another Client Ltd', firstRegistrationDate: '2020-05-10', classification: 'Excavator', clientId: 'another-client-ltd' },
 ];
 
 // --- Wizard Component for Adding/Editing Assets ---
@@ -47,7 +48,7 @@ function AssetWizard({ asset, onBack, onSaveSuccess }: { asset?: any, onBack: ()
     const methods = useForm<AssetFormValues>({
         resolver: zodResolver(assetSchema),
         defaultValues: asset || {
-            make: '', model: '', year: '', vin: '', engineNumber: '', tare: '', gvm: '',
+            make: '', model: '', year: '', registrationNumber: '', vin: '', engineNumber: '', tare: '', gvm: '',
             registerNumber: '', titleholder: '', owner: '', firstRegistrationDate: '', classification: ''
         },
     });
@@ -75,6 +76,7 @@ function AssetWizard({ asset, onBack, onSaveSuccess }: { asset?: any, onBack: ()
                             <FormField control={methods.control} name="make" render={({ field }) => (<FormItem><FormLabel>Vehicle Make</FormLabel><FormControl><Input placeholder="e.g., Scania" {...field} /></FormControl><FormMessage /></FormItem>)} />
                             <FormField control={methods.control} name="model" render={({ field }) => (<FormItem><FormLabel>Model / Series</FormLabel><FormControl><Input placeholder="e.g., R 560" {...field} /></FormControl><FormMessage /></FormItem>)} />
                             <FormField control={methods.control} name="year" render={({ field }) => (<FormItem><FormLabel>Year of Manufacture</FormLabel><FormControl><Input placeholder="e.g., 2018" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                            <FormField control={methods.control} name="registrationNumber" render={({ field }) => (<FormItem><FormLabel>Registration Number</FormLabel><FormControl><Input placeholder="e.g., AB 12 CD GP" {...field} /></FormControl><FormMessage /></FormItem>)} />
                             <FormField control={methods.control} name="vin" render={({ field }) => (<FormItem><FormLabel>Vehicle Identification Number (VIN)</FormLabel><FormControl><Input placeholder="Vehicle VIN" {...field} /></FormControl><FormMessage /></FormItem>)} />
                             <FormField control={methods.control} name="engineNumber" render={({ field }) => (<FormItem><FormLabel>Engine Number</FormLabel><FormControl><Input placeholder="Engine Number" {...field} /></FormControl><FormMessage /></FormItem>)} />
                             <FormField control={methods.control} name="tare" render={({ field }) => (<FormItem><FormLabel>Tare (kg)</FormLabel><FormControl><Input placeholder="e.g., 9000" {...field} /></FormControl><FormMessage /></FormItem>)} />
@@ -104,7 +106,8 @@ export default function AssetsContent() {
     const searchParams = useSearchParams();
     const router = useRouter();
     const { toast } = useToast();
-    const [view, setView] = useState<'list' | 'create'>('list');
+    const [view, setView] = useState<'list' | 'create' | 'edit'>('list');
+    const [selectedAsset, setSelectedAsset] = useState<any | null>(null);
 
     const clientId = searchParams.get('clientId');
     const agreementId = searchParams.get('agreementId');
@@ -130,15 +133,65 @@ export default function AssetsContent() {
     
     const handleBackToList = () => {
         setView('list');
+        setSelectedAsset(null);
     };
     
     const handleSaveSuccess = () => {
         // In a real app, you would force a re-fetch of the assets list here.
         setView('list');
+        setSelectedAsset(null);
     };
 
-    if (view === 'create') {
-        return <AssetWizard onBack={handleBackToList} onSaveSuccess={handleSaveSuccess} />;
+    const handleEdit = useCallback((asset: any) => {
+        setSelectedAsset(asset);
+        setView('edit');
+    }, []);
+
+    const columns: ColumnDef<any>[] = useMemo(() => [
+        { 
+            accessorKey: 'id', 
+            header: 'Asset ID',
+            cell: ({ row }) => <div className="font-mono">{row.original.id}</div>
+        },
+        { 
+            accessorKey: 'make', 
+            header: 'Make & Model',
+            cell: ({ row }) => <div>{row.original.make} {row.original.model}</div>
+        },
+        { 
+            accessorKey: 'year', 
+            header: 'Year',
+            cell: ({ row }) => <div>{row.original.year}</div>
+        },
+        {
+            accessorKey: 'registrationNumber',
+            header: 'Reg. Number',
+            cell: ({ row }) => <div>{row.original.registrationNumber}</div>
+        },
+        { 
+            accessorKey: 'clientId', 
+            header: 'Client',
+            cell: ({ row }) => <div>{row.original.clientId}</div>
+        },
+        { 
+            id: 'actions', 
+            header: () => <div className="text-right">Actions</div>, 
+            cell: ({ row }) => (
+                <div className="text-right">
+                    {agreementId ? (
+                        <Button size="sm" onClick={() => handleLinkAsset(row.original.id)}>
+                            <LinkIcon className="mr-2 h-4 w-4" /> Link to Agreement
+                        </Button>
+                    ) : (
+                        <Button variant="ghost" size="sm" onClick={() => handleEdit(row.original)}>Edit Details</Button>
+                    )}
+                </div>
+            )
+        }
+    ], [agreementId, handleLinkAsset, handleEdit]);
+
+    if (view === 'create' || view === 'edit') {
+        return <AssetWizard asset={selectedAsset} onBack={handleBackToList} onSaveSuccess={handleSaveSuccess} />;
     }
 
     return (
@@ -170,13 +223,14 @@ export default function AssetsContent() {
                 </div>
             </CardHeader>
             <CardContent>
-                <div className="border rounded-lg">
+                 <div className="border rounded-lg">
                     <Table>
                         <TableHeader>
                             <TableRow>
                                 <TableHead>Asset ID</TableHead>
                                 <TableHead>Make & Model</TableHead>
                                 <TableHead>Year</TableHead>
+                                <TableHead>Reg. Number</TableHead>
                                 <TableHead>Client</TableHead>
                                 <TableHead className="text-right">Actions</TableHead>
                             </TableRow>
@@ -188,6 +242,7 @@ export default function AssetsContent() {
                                         <TableCell className="font-mono">{asset.id}</TableCell>
                                         <TableCell>{asset.make} {asset.model}</TableCell>
                                         <TableCell>{asset.year}</TableCell>
+                                        <TableCell>{asset.registrationNumber}</TableCell>
                                         <TableCell>{asset.clientId}</TableCell>
                                         <TableCell className="text-right">
                                             {agreementId ? (
@@ -195,14 +250,14 @@ export default function AssetsContent() {
                                                     <LinkIcon className="mr-2 h-4 w-4" /> Link to Agreement
                                                 </Button>
                                             ) : (
-                                                <Button variant="ghost" size="sm">View Details</Button>
+                                                <Button variant="ghost" size="sm" onClick={() => handleEdit(asset)}>Edit Details</Button>
                                             )}
                                         </TableCell>
                                     </TableRow>
                                 ))
                             ) : (
                                 <TableRow>
-                                    <TableCell colSpan={5} className="h-24 text-center">
+                                    <TableCell colSpan={6} className="h-24 text-center">
                                         No assets found for this client.
                                     </TableCell>
                                 </TableRow>
