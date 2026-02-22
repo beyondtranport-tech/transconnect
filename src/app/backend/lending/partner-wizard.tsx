@@ -18,6 +18,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
 import { provinces } from '@/lib/geodata';
+import BalanceSheetContent from './balance-sheet-content';
+import IncomeStatementContent from './income-statement-content';
 
 // --- Zod Schemas (mirrors client-wizard) ---
 const ownerSchema = z.object({
@@ -69,6 +71,8 @@ const steps = [
     { id: 'owners', name: 'Owners & Directors', fields: ['owners'] },
     { id: 'management', name: 'Management', fields: ['management'] },
     { id: 'banking', name: 'Bank Accounts', fields: ['bankAccounts'] },
+    { id: 'balance-sheet', name: 'Balance Sheet' },
+    { id: 'income-statement', name: 'Income Statement' },
     { id: 'review', name: 'Review & Save' },
 ];
 
@@ -102,6 +106,7 @@ const StepMain = () => {
 
 const StepAddress = () => {
     const { control, watch, setValue } = useFormContext();
+
     const usePhysicalForPostal = watch('usePhysicalForPostal');
     const physicalStreet = watch('physicalStreet');
     const physicalSuburb = watch('physicalSuburb');
@@ -109,11 +114,14 @@ const StepAddress = () => {
     const physicalPostCode = watch('physicalPostCode');
     const physicalProvince = watch('physicalProvince');
     const selectedPhysicalProvince = watch('physicalProvince');
+    const postalCityValue = watch('postalCity');
+    const selectedPostalProvince = watch('postalProvince');
+
     const physicalCities = useMemo(() => {
         const province = provinces.find(p => p.name === selectedPhysicalProvince);
         return province ? province.cities : [];
     }, [selectedPhysicalProvince]);
-    const selectedPostalProvince = watch('postalProvince');
+
     const postalCities = useMemo(() => {
         const province = provinces.find(p => p.name === selectedPostalProvince);
         return province ? province.cities : [];
@@ -129,6 +137,19 @@ const StepAddress = () => {
         }
     }, [usePhysicalForPostal, physicalStreet, physicalSuburb, physicalCity, physicalPostCode, physicalProvince, setValue]);
 
+    useEffect(() => {
+        if (physicalCities.length > 0 && !physicalCities.includes(physicalCity)) {
+            setValue('physicalCity', '');
+        }
+    }, [selectedPhysicalProvince, physicalCities, physicalCity, setValue]);
+    
+    useEffect(() => {
+        if (postalCities.length > 0 && !postalCities.includes(postalCityValue)) {
+            setValue('postalCity', '');
+        }
+    }, [selectedPostalProvince, postalCities, postalCityValue, setValue]);
+
+
     return (
         <div className="space-y-8">
             <div>
@@ -136,8 +157,24 @@ const StepAddress = () => {
                 <div className="space-y-4 max-w-2xl">
                     <FormField control={control} name="physicalStreet" render={({ field }) => (<FormItem><FormLabel>Street Address</FormLabel><FormControl><Input placeholder="e.g., 123 Industrial Rd" {...field} /></FormControl></FormItem>)} />
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <FormField control={control} name="physicalProvince" render={({ field }) => (<FormItem><FormLabel>Province</FormLabel><Select onValueChange={field.onChange} value={field.value || ''}><FormControl><SelectTrigger><SelectValue placeholder="Select province..." /></SelectTrigger></FormControl><SelectContent>{provinces.map(p => <SelectItem key={p.name} value={p.name}>{p.name}</SelectItem>)}</SelectContent></Select></FormItem>)} />
-                        <FormField control={control} name="physicalCity" render={({ field }) => (<FormItem><FormLabel>City</FormLabel><Select onValueChange={field.onChange} value={field.value || ''} disabled={!selectedPhysicalProvince}><FormControl><SelectTrigger><SelectValue placeholder="Select city..." /></SelectTrigger></FormControl><SelectContent>{physicalCities.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent></Select></FormItem>)} />
+                        <FormField control={control} name="physicalProvince" render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Province</FormLabel>
+                                <Select onValueChange={field.onChange} value={field.value || ''}>
+                                    <FormControl><SelectTrigger><SelectValue placeholder="Select province..." /></SelectTrigger></FormControl>
+                                    <SelectContent>{provinces.map(p => <SelectItem key={p.name} value={p.name}>{p.name}</SelectItem>)}</SelectContent>
+                                </Select>
+                            </FormItem>
+                        )} />
+                        <FormField control={control} name="physicalCity" render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>City</FormLabel>
+                                <Select onValueChange={field.onChange} value={field.value || ''} disabled={!selectedPhysicalProvince}>
+                                    <FormControl><SelectTrigger><SelectValue placeholder="Select city..." /></SelectTrigger></FormControl>
+                                    <SelectContent>{physicalCities.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+                                </Select>
+                            </FormItem>
+                        )} />
                     </div>
                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <FormField control={control} name="physicalSuburb" render={({ field }) => (<FormItem><FormLabel>Suburb</FormLabel><FormControl><Input placeholder="e.g., Pomona" {...field} /></FormControl></FormItem>)} />
@@ -278,6 +315,10 @@ export default function PartnerWizard({ partnerData, partnerType, onBack, onSave
 
         if (isValid && currentStep < steps.length - 1) {
             setCurrentStep(prev => prev + 1);
+        } else {
+            if(!isValid) {
+                 toast({ variant: 'destructive', title: 'Validation Error', description: 'Please correct the errors before proceeding.' });
+            }
         }
     };
     const handleBack = () => { currentStep > 0 ? setCurrentStep(prev => prev - 1) : onBack(); };
@@ -326,6 +367,8 @@ export default function PartnerWizard({ partnerData, partnerType, onBack, onSave
             case 'owners': return <StepOwners />;
             case 'management': return <StepManagement />;
             case 'banking': return <StepBanking />;
+            case 'balance-sheet': return <BalanceSheetContent />;
+            case 'income-statement': return <IncomeStatementContent />;
             case 'review': return <StepReview />;
             default: return null;
         }
@@ -360,3 +403,5 @@ export default function PartnerWizard({ partnerData, partnerType, onBack, onSave
         </FormProvider>
     );
 }
+
+    
