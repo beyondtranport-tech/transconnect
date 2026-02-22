@@ -42,7 +42,7 @@ const dummyAssets = [
 ];
 
 // --- Wizard Component for Adding/Editing Assets ---
-function AssetWizard({ asset, onBack, onSaveSuccess }: { asset?: any, onBack: () => void, onSaveSuccess: () => void }) {
+function AssetWizard({ asset, onBack, onSaveSuccess }: { asset?: any, onBack: () => void, onSaveSuccess: (data: AssetFormValues) => void }) {
     const [isSaving, setIsSaving] = useState(false);
     const { toast } = useToast();
     const methods = useForm<AssetFormValues>({
@@ -60,7 +60,7 @@ function AssetWizard({ asset, onBack, onSaveSuccess }: { asset?: any, onBack: ()
         await new Promise(resolve => setTimeout(resolve, 1000));
         toast({ title: asset ? 'Asset Updated' : 'Asset Created' });
         setIsSaving(false);
-        onSaveSuccess();
+        onSaveSuccess(values); // Pass the saved data back up
     };
 
     return (
@@ -108,19 +108,19 @@ export default function AssetsContent() {
     const { toast } = useToast();
     const [view, setView] = useState<'list' | 'create' | 'edit'>('list');
     const [selectedAsset, setSelectedAsset] = useState<any | null>(null);
+    const [assets, setAssets] = useState(dummyAssets); // State for assets
 
     const clientId = searchParams.get('clientId');
     const agreementId = searchParams.get('agreementId');
 
     const assetsForClient = useMemo(() => {
-        if (!clientId) return dummyAssets; // Show all if no client is specified
-        return dummyAssets.filter(asset => asset.clientId === clientId);
-    }, [clientId]);
+        if (!clientId) return assets;
+        return assets.filter(asset => asset.clientId === clientId);
+    }, [clientId, assets]);
     
     const handleLinkAsset = (assetId: string) => {
         if (!agreementId) return;
 
-        // In a real application, this would be an API call to update the Firestore document
         console.log(`Linking asset ${assetId} to agreement ${agreementId}`);
 
         toast({
@@ -136,8 +136,13 @@ export default function AssetsContent() {
         setSelectedAsset(null);
     };
     
-    const handleSaveSuccess = () => {
-        // In a real app, you would force a re-fetch of the assets list here.
+    const handleSaveSuccess = (newAssetData: AssetFormValues) => {
+        const newAsset = {
+            ...newAssetData,
+            id: `ASSET-${Date.now()}`,
+            clientId: clientId || 'Unassigned'
+        };
+        setAssets(prevAssets => [...prevAssets, newAsset]);
         setView('list');
         setSelectedAsset(null);
     };
@@ -146,49 +151,6 @@ export default function AssetsContent() {
         setSelectedAsset(asset);
         setView('edit');
     }, []);
-
-    const columns: ColumnDef<any>[] = useMemo(() => [
-        { 
-            accessorKey: 'id', 
-            header: 'Asset ID',
-            cell: ({ row }) => <div className="font-mono">{row.original.id}</div>
-        },
-        { 
-            accessorKey: 'make', 
-            header: 'Make & Model',
-            cell: ({ row }) => <div>{row.original.make} {row.original.model}</div>
-        },
-        { 
-            accessorKey: 'year', 
-            header: 'Year',
-            cell: ({ row }) => <div>{row.original.year}</div>
-        },
-        {
-            accessorKey: 'registrationNumber',
-            header: 'Reg. Number',
-            cell: ({ row }) => <div>{row.original.registrationNumber}</div>
-        },
-        { 
-            accessorKey: 'clientId', 
-            header: 'Client',
-            cell: ({ row }) => <div>{row.original.clientId}</div>
-        },
-        { 
-            id: 'actions', 
-            header: () => <div className="text-right">Actions</div>, 
-            cell: ({ row }) => (
-                <div className="text-right">
-                    {agreementId ? (
-                        <Button size="sm" onClick={() => handleLinkAsset(row.original.id)}>
-                            <LinkIcon className="mr-2 h-4 w-4" /> Link to Agreement
-                        </Button>
-                    ) : (
-                        <Button variant="ghost" size="sm" onClick={() => handleEdit(row.original)}>Edit Details</Button>
-                    )}
-                </div>
-            )
-        }
-    ], [agreementId, handleLinkAsset, handleEdit]);
 
     if (view === 'create' || view === 'edit') {
         return <AssetWizard asset={selectedAsset} onBack={handleBackToList} onSaveSuccess={handleSaveSuccess} />;
