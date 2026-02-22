@@ -6,20 +6,18 @@ import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 
+const CLIENT_APP_NAME = 'firebase-client-app-transconnect';
+
 // IMPORTANT: DO NOT MODIFY THIS FUNCTION
 export function initializeFirebase() {
-  let firebaseApp;
-  if (!getApps().length) {
-    try {
-      firebaseApp = initializeApp(firebaseConfig);
-    } catch (e) {
-      if (process.env.NODE_ENV === "production") {
-        console.warn('Automatic initialization failed. Falling back to firebase config object.', e);
-      }
-      firebaseApp = initializeApp(firebaseConfig);
-    }
+  let firebaseApp: FirebaseApp;
+  
+  const existingApp = getApps().find(app => app.name === CLIENT_APP_NAME);
+
+  if (existingApp) {
+    firebaseApp = existingApp;
   } else {
-    firebaseApp = getApp();
+    firebaseApp = initializeApp(firebaseConfig, CLIENT_APP_NAME);
   }
 
   const auth = getAuth(firebaseApp);
