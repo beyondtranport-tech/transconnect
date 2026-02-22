@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useCallback, useEffect } from 'react';
@@ -38,7 +39,6 @@ export default function PartnerDetails({ partnerType, initialAction }: { partner
     const { data: partners, isLoading, forceRefresh } = useCollection(partnersQuery);
 
     useEffect(() => {
-        // If initialAction is 'add', immediately switch to create view.
         if (initialAction === 'add') {
             setView('create');
         }
@@ -129,3 +129,4 @@ export default function PartnerDetails({ partnerType, initialAction }: { partner
         </Card>
     );
 }
+

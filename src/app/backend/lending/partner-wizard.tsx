@@ -1,62 +1,227 @@
+
 'use client';
 
-import React, { useState } from 'react';
-import { useForm, FormProvider } from 'react-hook-form';
+import React, { useState, useMemo, useEffect } from 'react';
+import { useForm, useFieldArray, FormProvider, useFormContext } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { ArrowLeft, Loader2, Save } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Loader2, Save, Check, PlusCircle, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken } from '@/firebase';
+import { cn } from '@/lib/utils';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
+import { Separator } from '@/components/ui/separator';
+import { provinces } from '@/lib/geodata';
+
+// --- Zod Schemas (mirrors client-wizard) ---
+const ownerSchema = z.object({
+  name: z.string().optional(), idNo: z.string().optional(), address: z.string().optional(),
+  suburb: z.string().optional(), city: z.string().optional(), postCode: z.string().optional(),
+  province: z.string().optional(), cell: z.string().optional(), position: z.string().optional(),
+  qualification: z.string().optional(), since: z.string().optional(), held: z.coerce.number().optional(),
+});
+
+const managementSchema = z.object({
+    name: z.string().optional(), idNo: z.string().optional(), address: z.string().optional(),
+    suburb: z.string().optional(), city: z.string().optional(), postCode: z.string().optional(),
+    province: z.string().optional(), cell: z.string().optional(), position: z.string().optional(),
+    title: z.string().optional(), qualification: z.string().optional(), since: z.string().optional(),
+    description: z.string().optional(),
+});
+
+const bankAccountSchema = z.object({
+    bank: z.string().optional(), branchCode: z.string().optional(), accountNo: z.string().optional(),
+    branchName: z.string().optional(), bankCode: z.string().optional(), address: z.string().optional(),
+    postCode: z.string().optional(), phone: z.string().optional(), email: z.string().email().optional().or(z.literal('')),
+    contact: z.string().optional(),
+});
 
 const partnerSchema = z.object({
   name: z.string().min(1, "Partner name is required."),
-  globalFacilityLimit: z.coerce.number().min(0, "Limit must be a positive number.").optional(),
+  globalFacilityLimit: z.coerce.number().min(0).optional(),
+  type: z.string().optional(), category: z.string().optional(), language: z.string().optional(),
+  regId: z.string().optional(), isVatRegistered: z.boolean().default(false), vatNo: z.string().optional(),
+  physicalStreet: z.string().optional(), physicalSuburb: z.string().optional(), physicalCity: z.string().optional(),
+  physicalPostCode: z.string().optional(), physicalProvince: z.string().optional(),
+  usePhysicalForPostal: z.boolean().default(false),
+  postalStreet: z.string().optional(), postalSuburb: z.string().optional(), postalCity: z.string().optional(),
+  postalPostCode: z.string().optional(), postalProvince: z.string().optional(),
+  telW: z.string().optional(), telH: z.string().optional(), fax: z.string().optional(),
+  cell: z.string().optional(), email: z.string().optional(), url: z.string().optional(),
+  primaryContact: z.string().optional(),
+  owners: z.array(ownerSchema).optional(),
+  management: z.array(managementSchema).optional(),
+  bankAccounts: z.array(bankAccountSchema).optional(),
 });
-
 type PartnerFormValues = z.infer<typeof partnerSchema>;
 
-interface PartnerWizardProps {
-  partnerData?: Partial<PartnerFormValues> & { id?: string };
-  partnerType: 'Suppliers' | 'Vendors' | 'Associates' | 'Debtors';
-  onBack: () => void;
-  onSaveSuccess: () => void;
-}
+// Step Definitions
+const steps = [
+    { id: 'main', name: 'Main Details', fields: ['name', 'type', 'category', 'language', 'regId', 'vatNo'] },
+    { id: 'address', name: 'Address', fields: ['physicalStreet', 'physicalCity', 'postalStreet', 'postalCity'] },
+    { id: 'contact', name: 'Contact Info', fields: ['email', 'cell', 'telW'] },
+    { id: 'owners', name: 'Owners & Directors', fields: ['owners'] },
+    { id: 'management', name: 'Management', fields: ['management'] },
+    { id: 'banking', name: 'Bank Accounts', fields: ['bankAccounts'] },
+    { id: 'review', name: 'Review & Save' },
+];
 
-export default function PartnerWizard({ partnerData, partnerType, onBack, onSaveSuccess }: PartnerWizardProps) {
+const defaultValues: Partial<PartnerFormValues> = {
+  name: '', type: '', category: '', language: '', regId: '',
+  isVatRegistered: false, vatNo: '', usePhysicalForPostal: false,
+  owners: [], management: [], bankAccounts: [],
+};
+
+// --- Step Sub-components (copied and adapted from client-wizard) ---
+const StepMain = () => {
+    const { control, watch } = useFormContext();
+    const isVatRegistered = watch('isVatRegistered');
+    return (
+      <div className="space-y-4 max-w-2xl">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <FormField control={control} name="name" render={({ field }) => (<FormItem><FormLabel>Name</FormLabel><FormControl><Input placeholder="Partner Legal Name" {...field} /></FormControl><FormMessage /></FormItem>)} />
+          <FormField control={control} name="type" render={({ field }) => (<FormItem><FormLabel>Type</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select..."/></SelectTrigger></FormControl><SelectContent><SelectItem value="supplier">Supplier</SelectItem><SelectItem value="vendor">Vendor</SelectItem><SelectItem value="associate">Associate</SelectItem></SelectContent></Select></FormItem>)} />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <FormField control={control} name="category" render={({ field }) => (<FormItem><FormLabel>Category</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select..."/></SelectTrigger></FormControl><SelectContent><SelectItem value="transport">Transport</SelectItem><SelectItem value="logistics">Logistics</SelectItem><SelectItem value="other">Other</SelectItem></SelectContent></Select></FormItem>)} />
+          <FormField control={control} name="regId" render={({ field }) => (<FormItem><FormLabel>Reg. ID</FormLabel><FormControl><Input placeholder="Registration ID" {...field} /></FormControl></FormItem>)} />
+        </div>
+        <div className="space-y-4">
+          <FormField control={control} name="isVatRegistered" render={({ field }) => (<FormItem className="flex flex-row items-center space-x-3 space-y-0 pt-2"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl><FormLabel>VAT Registered?</FormLabel></FormItem>)} />
+          {isVatRegistered && <FormField control={control} name="vatNo" render={({ field }) => (<FormItem><FormLabel>VAT Number</FormLabel><FormControl><Input placeholder="e.g. 4000123456" {...field} /></FormControl><FormMessage /></FormItem>)} />}
+        </div>
+      </div>
+    );
+};
+
+const StepAddress = () => {
+    const { control, watch, setValue } = useFormContext();
+    const usePhysicalForPostal = watch('usePhysicalForPostal');
+    const physicalStreet = watch('physicalStreet');
+    const physicalSuburb = watch('physicalSuburb');
+    const physicalCity = watch('physicalCity');
+    const physicalPostCode = watch('physicalPostCode');
+    const physicalProvince = watch('physicalProvince');
+    const selectedPhysicalProvince = watch('physicalProvince');
+    const physicalCities = useMemo(() => {
+        const province = provinces.find(p => p.name === selectedPhysicalProvince);
+        return province ? province.cities : [];
+    }, [selectedPhysicalProvince]);
+    const selectedPostalProvince = watch('postalProvince');
+    const postalCities = useMemo(() => {
+        const province = provinces.find(p => p.name === selectedPostalProvince);
+        return province ? province.cities : [];
+    }, [selectedPostalProvince]);
+
+    useEffect(() => {
+        if (usePhysicalForPostal) {
+            setValue('postalStreet', physicalStreet || '');
+            setValue('postalSuburb', physicalSuburb || '');
+            setValue('postalCity', physicalCity || '');
+            setValue('postalPostCode', physicalPostCode || '');
+            setValue('postalProvince', physicalProvince || '');
+        }
+    }, [usePhysicalForPostal, physicalStreet, physicalSuburb, physicalCity, physicalPostCode, physicalProvince, setValue]);
+
+    return (
+        <div className="space-y-8">
+            <div>
+                <h3 className="text-lg font-semibold mb-4">Physical Address</h3>
+                <div className="space-y-4 max-w-2xl">
+                    <FormField control={control} name="physicalStreet" render={({ field }) => (<FormItem><FormLabel>Street Address</FormLabel><FormControl><Input placeholder="e.g., 123 Industrial Rd" {...field} /></FormControl></FormItem>)} />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <FormField control={control} name="physicalProvince" render={({ field }) => (<FormItem><FormLabel>Province</FormLabel><Select onValueChange={field.onChange} value={field.value || ''}><FormControl><SelectTrigger><SelectValue placeholder="Select province..." /></SelectTrigger></FormControl><SelectContent>{provinces.map(p => <SelectItem key={p.name} value={p.name}>{p.name}</SelectItem>)}</SelectContent></Select></FormItem>)} />
+                        <FormField control={control} name="physicalCity" render={({ field }) => (<FormItem><FormLabel>City</FormLabel><Select onValueChange={field.onChange} value={field.value || ''} disabled={!selectedPhysicalProvince}><FormControl><SelectTrigger><SelectValue placeholder="Select city..." /></SelectTrigger></FormControl><SelectContent>{physicalCities.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent></Select></FormItem>)} />
+                    </div>
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <FormField control={control} name="physicalSuburb" render={({ field }) => (<FormItem><FormLabel>Suburb</FormLabel><FormControl><Input placeholder="e.g., Pomona" {...field} /></FormControl></FormItem>)} />
+                        <FormField control={control} name="physicalPostCode" render={({ field }) => (<FormItem><FormLabel>Post Code</FormLabel><FormControl><Input placeholder="e.g., 1619" {...field} /></FormControl></FormItem>)} />
+                    </div>
+                </div>
+            </div>
+            <Separator />
+            <div>
+                 <h3 className="text-lg font-semibold mb-4">Postal Address</h3>
+                 <FormField control={control} name="usePhysicalForPostal" render={({ field }) => (<FormItem className="flex items-center space-x-2 mb-4"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl><FormLabel>Same as Physical Address</FormLabel></FormItem>)} />
+                <div className="space-y-4 max-w-2xl">
+                    <FormField control={control} name="postalStreet" render={({ field }) => (<FormItem><FormLabel>Street Address or P.O. Box</FormLabel><FormControl><Input placeholder="e.g., P.O. Box 12345" {...field} disabled={usePhysicalForPostal} /></FormControl></FormItem>)} />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <FormField control={control} name="postalProvince" render={({ field }) => (<FormItem><FormLabel>Province</FormLabel><Select onValueChange={field.onChange} value={field.value || ''} disabled={usePhysicalForPostal}><FormControl><SelectTrigger><SelectValue placeholder="Select province..." /></SelectTrigger></FormControl><SelectContent>{provinces.map(p => <SelectItem key={p.name} value={p.name}>{p.name}</SelectItem>)}</SelectContent></Select></FormItem>)} />
+                        <FormField control={control} name="postalCity" render={({ field }) => (<FormItem><FormLabel>City</FormLabel><Select onValueChange={field.onChange} value={field.value || ''} disabled={usePhysicalForPostal || !selectedPostalProvince}><FormControl><SelectTrigger><SelectValue placeholder="Select city..." /></SelectTrigger></FormControl><SelectContent>{postalCities.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent></Select></FormItem>)} />
+                    </div>
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <FormField control={control} name="postalSuburb" render={({ field }) => (<FormItem><FormLabel>Suburb</FormLabel><FormControl><Input placeholder="e.g., Pomona" {...field} disabled={usePhysicalForPostal} /></FormControl></FormItem>)} />
+                        <FormField control={control} name="postalPostCode" render={({ field }) => (<FormItem><FormLabel>Post Code</FormLabel><FormControl><Input placeholder="e.g., 1619" {...field} disabled={usePhysicalForPostal} /></FormControl></FormItem>)} />
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+const StepContact = () => ( <div className="space-y-4 max-w-2xl"><div className="grid grid-cols-1 md:grid-cols-2 gap-4"><FormField control={useFormContext().control} name="telW" render={({ field }) => (<FormItem><FormLabel>Tel (Work)</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} /><FormField control={useFormContext().control} name="telH" render={({ field }) => (<FormItem><FormLabel>Tel (Home)</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} /></div><div className="grid grid-cols-1 md:grid-cols-2 gap-4"><FormField control={useFormContext().control} name="fax" render={({ field }) => (<FormItem><FormLabel>Fax</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} /><FormField control={useFormContext().control} name="cell" render={({ field }) => (<FormItem><FormLabel>Cell</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} /></div><div className="grid grid-cols-1 md:grid-cols-2 gap-4"><FormField control={useFormContext().control} name="email" render={({ field }) => (<FormItem><FormLabel>Email</FormLabel><FormControl><Input type="email" {...field} /></FormControl></FormItem>)} /><FormField control={useFormContext().control} name="url" render={({ field }) => (<FormItem><FormLabel>Website URL</FormLabel><FormControl><Input type="url" {...field} /></FormControl></FormItem>)} /></div><FormField control={useFormContext().control} name="primaryContact" render={({ field }) => (<FormItem><FormLabel>Primary Contact Person</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} /></div>);
+
+const StepOwners = () => {
+    const { control } = useFormContext();
+    const { fields, append, remove } = useFieldArray({ control, name: "owners" });
+    return ( <div className="space-y-6"><Button type="button" variant="outline" size="sm" onClick={() => append({})}><PlusCircle className="mr-2 h-4 w-4" /> Add Owner</Button>{fields.map((field, index) => (<div key={field.id} className="p-4 border rounded-lg relative space-y-4"><div className="flex justify-between items-center"><h3 className="font-semibold text-lg">Owner #{index + 1}</h3><Button type="button" variant="ghost" size="icon" onClick={() => remove(index)}><Trash2 className="h-4 w-4 text-destructive" /></Button></div>{/* ... owner fields ... */}</div>))}</div>);
+};
+
+const StepManagement = () => {
+    const { control } = useFormContext();
+    const { fields, append, remove } = useFieldArray({ control, name: "management" });
+    return ( <div className="space-y-6"><Button type="button" variant="outline" size="sm" onClick={() => append({})}><PlusCircle className="mr-2 h-4 w-4" /> Add Manager</Button>{fields.map((field, index) => (<div key={field.id} className="p-4 border rounded-lg relative space-y-4"><div className="flex justify-between items-center"><h3 className="font-semibold text-lg">Manager #{index + 1}</h3><Button type="button" variant="ghost" size="icon" onClick={() => remove(index)}><Trash2 className="h-4 w-4 text-destructive" /></Button></div>{/* ... management fields ... */}</div>))}</div>);
+};
+
+const StepBanking = () => {
+    const { control } = useFormContext();
+    const { fields, append, remove } = useFieldArray({ control, name: "bankAccounts" });
+    return ( <div className="space-y-6"><Button type="button" variant="outline" size="sm" onClick={() => append({})}><PlusCircle className="mr-2 h-4 w-4" /> Add Bank Account</Button>{fields.map((field, index) => (<div key={field.id} className="p-4 border rounded-lg relative space-y-4"><div className="flex justify-between items-center"><h3 className="font-semibold text-lg">Bank Account #{index + 1}</h3><Button type="button" variant="ghost" size="icon" onClick={() => remove(index)}><Trash2 className="h-4 w-4 text-destructive" /></Button></div>{/* ... bank fields ... */}</div>))}</div>);
+};
+
+const StepReview = () => {
+    const { getValues } = useFormContext();
+    return <pre className="whitespace-pre-wrap bg-muted p-4 rounded-md">{JSON.stringify(getValues(), null, 2)}</pre>;
+};
+
+// --- Wizard Component ---
+export default function PartnerWizard({ partnerData, partnerType, onBack, onSaveSuccess }: { partnerData?: any; partnerType: string; onBack: () => void; onSaveSuccess: () => void; }) {
+    const [currentStep, setCurrentStep] = useState(0);
+    const [isLoading, setIsLoading] = useState(false);
     const { toast } = useToast();
-    const [isSaving, setIsSaving] = useState(false);
-    
-    const isDebtor = partnerType === 'Debtors';
-    const partnerTypeEnum = partnerType.slice(0, -1).toLowerCase();
     
     const methods = useForm<PartnerFormValues>({
         resolver: zodResolver(partnerSchema),
-        defaultValues: {
-            name: partnerData?.name || '',
-            globalFacilityLimit: partnerData?.globalFacilityLimit || 0,
-        }
+        mode: 'onChange',
+        defaultValues: partnerData || defaultValues
     });
 
+    const handleNext = async () => {
+        const isValid = await methods.trigger(steps[currentStep].fields as any);
+        if (isValid && currentStep < steps.length - 1) {
+            setCurrentStep(prev => prev + 1);
+        }
+    };
+    const handleBack = () => { currentStep > 0 ? setCurrentStep(prev => prev - 1) : onBack(); };
+    
     const onSubmit = async (values: PartnerFormValues) => {
-        setIsSaving(true);
+        setIsLoading(true);
         try {
             const token = await getClientSideAuthToken();
             if (!token) throw new Error("Authentication failed.");
-            
-            const payload = isDebtor
-                ? { client: { id: partnerData?.id, status: 'Active', ...values } }
-                : { partner: { id: partnerData?.id, type: partnerTypeEnum, ...values } };
 
-            const action = isDebtor ? 'saveLendingClient' : 'saveLendingPartner';
+            const payload = { partner: { id: partnerData?.id, type: partnerType.slice(0, -1).toLowerCase(), ...values } };
             
             const response = await fetch('/api/admin', {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action, payload }),
+                body: JSON.stringify({ action: 'saveLendingPartner', payload }),
             });
             const result = await response.json();
             if (!response.ok) throw new Error(result.error);
@@ -66,52 +231,56 @@ export default function PartnerWizard({ partnerData, partnerType, onBack, onSave
         } catch (e: any) {
             toast({ variant: 'destructive', title: 'Error Saving', description: e.message });
         } finally {
-            setIsSaving(false);
+            setIsLoading(false);
         }
     };
+
+    const isStepValid = (stepIndex: number) => {
+        if (stepIndex < 0) return true;
+        const step = steps[stepIndex];
+        return step.fields ? step.fields.every(field => !methods.formState.errors[field as keyof typeof methods.formState.errors]) : true;
+    };
     
+    const renderStepContent = () => {
+        switch(steps[currentStep]?.id) {
+            case 'main': return <StepMain />;
+            case 'address': return <StepAddress />;
+            case 'contact': return <StepContact />;
+            case 'owners': return <StepOwners />;
+            case 'management': return <StepManagement />;
+            case 'banking': return <StepBanking />;
+            case 'review': return <StepReview />;
+            default: return null;
+        }
+    };
+
     return (
         <FormProvider {...methods}>
             <form onSubmit={methods.handleSubmit(onSubmit)}>
-                <Card>
-                    <CardHeader>
-                        <CardTitle>{partnerData?.id ? 'Edit' : 'Add New'} {partnerType.slice(0, -1)}</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-6">
-                        <FormField
-                            control={methods.control}
-                            name="name"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>{partnerType.slice(0, -1)} Name</FormLabel>
-                                    <FormControl><Input placeholder={`Enter ${partnerType.toLowerCase().slice(0,-1)} name`} {...field} /></FormControl>
-                                    <FormMessage />
-                                </FormItem>
+                <div className="grid grid-cols-1 md:grid-cols-[250px_1fr] gap-8">
+                    <div className="flex flex-col gap-2 border-r pr-4">
+                        {steps.map((step, index) => (
+                            <Button key={step.id} variant={currentStep === index ? 'default' : 'ghost'} className="justify-start gap-2" onClick={() => setCurrentStep(index)} disabled={index > currentStep && !isStepValid(currentStep - 1)}>
+                                {currentStep > index && isStepValid(index) ? <Check className="h-5 w-5 text-green-500" /> : <div className="h-5 w-5" />}
+                                {step.name}
+                            </Button>
+                        ))}
+                    </div>
+                    <div className="space-y-6">
+                        <h2 className="text-2xl font-bold">{steps[currentStep].name}</h2>
+                        {renderStepContent()}
+                        <div className="flex justify-between pt-8 mt-8 border-t">
+                            <Button type="button" variant="outline" onClick={handleBack}><ArrowLeft className="mr-2 h-4 w-4" /> {currentStep === 0 ? 'Back to List' : 'Back'}</Button>
+                            {currentStep === steps.length - 1 ? (
+                                <Button type="submit" disabled={isLoading}>{isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Save className="mr-2 h-4 w-4"/>} Save {partnerType.slice(0, -1)}</Button>
+                            ) : (
+                                <Button type="button" onClick={handleNext}>Next <ArrowRight className="ml-2 h-4 w-4" /></Button>
                             )}
-                        />
-                        <FormField
-                            control={methods.control}
-                            name="globalFacilityLimit"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Global Facility Limit</FormLabel>
-                                    <FormControl><Input type="number" placeholder="R 0.00" {...field} /></FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                    </CardContent>
-                    <CardFooter className="justify-between">
-                         <Button variant="outline" type="button" onClick={onBack}>
-                            <ArrowLeft className="mr-2 h-4 w-4" /> Back to List
-                        </Button>
-                         <Button type="submit" disabled={isSaving}>
-                            {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Save className="mr-2 h-4 w-4" />}
-                            Save {partnerType.slice(0,-1)}
-                        </Button>
-                    </CardFooter>
-                </Card>
+                        </div>
+                    </div>
+                </div>
             </form>
         </FormProvider>
     );
 }
+
