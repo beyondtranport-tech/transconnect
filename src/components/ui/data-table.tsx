@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -77,7 +76,7 @@ export function DataTable<TData>({ columns, data }: DataTableProps<TData>) {
                 <TableRow key={(row.original as any).id || index}>
                   {columns.map(column => (
                     <TableCell key={(column.id || column.accessorKey) as string}>
-                      {column.cell({ row })}
+                      {column.cell ? column.cell({ row }) : (row.original as any)[column.accessorKey as string]}
                     </TableCell>
                   ))}
                 </TableRow>
