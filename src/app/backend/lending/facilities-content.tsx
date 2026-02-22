@@ -18,6 +18,8 @@ import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from '
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { FormProvider, useForm } from 'react-hook-form';
+import { Badge } from '@/components/ui/badge';
+
 
 const formatCurrency = (amount: number) => new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(amount);
 
@@ -134,7 +136,7 @@ const FacilityWizard = ({ facility, onBack, onSaveSuccess }: { facility?: any, o
                 <div className="flex justify-between items-center mt-8 pt-4 border-t">
                     <Button variant="outline" type="button" onClick={currentStep === 0 ? onBack : () => setCurrentStep(s => s - 1)}><ArrowLeft className="mr-2 h-4 w-4"/> Back</Button>
                     {currentStep < steps.length - 1 ? (
-                        <Button onClick={handleNext} type="button">Next <ArrowRight className="mr-2 h-4 w-4"/></Button>
+                        <Button onClick={handleNext} type="button">Next <ArrowRight className="ml-2 h-4 w-4"/></Button>
                     ) : (
                          <Button type="submit" disabled={isSaving || !selectedClient || !selectedPartner || !selectedAgreement || newFacilityLimit <= 0 || isClientOverLimit || isPartnerOverLimit}>
                             {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Save className="mr-2 h-4 w-4"/>}
@@ -160,11 +162,12 @@ export default function FacilitiesContent() {
     }
 
     const columns: ColumnDef<any>[] = useMemo(() => [
-        { accessorKey: 'clientName', header: 'Client'},
-        { accessorKey: 'partnerName', header: 'Partner' },
-        { accessorKey: 'agreementId', header: 'Agreement ID' },
-        { accessorKey: 'status', header: 'Status' },
-        { accessorKey: 'limit', header: 'Limit', cell: ({row}) => <div className="text-right">{formatCurrency(row.original.limit)}</div> }
+        { accessorKey: 'clientName', header: 'Client', cell: ({ row }) => <span>{row.original.clientName}</span> },
+        { accessorKey: 'partnerName', header: 'Partner', cell: ({ row }) => <span>{row.original.partnerName}</span> },
+        { accessorKey: 'agreementId', header: 'Agreement ID', cell: ({ row }) => <span className="font-mono text-xs">{row.original.agreementId}</span> },
+        { accessorKey: 'status', header: 'Status', cell: ({ row }) => <Badge>{row.original.status}</Badge> },
+        { accessorKey: 'limit', header: 'Limit', cell: ({ row }) => <div className="text-right">{formatCurrency(row.original.limit)}</div> },
+        { id: 'actions', header: () => <div className="text-right">Actions</div>, cell: ({ row }) => <div className="text-right"><Button variant="ghost" size="sm" onClick={() => alert('Edit facility')}>Edit</Button></div> }
     ], []);
 
     if(view === 'create') {

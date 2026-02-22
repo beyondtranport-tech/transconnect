@@ -190,7 +190,7 @@ export default function AgreementsContent() {
     };
 
     const columns: ColumnDef<any>[] = useMemo(() => [
-        { accessorKey: 'id', header: 'Agreement ID' },
+        { accessorKey: 'id', header: 'Agreement ID', cell: ({ row }) => <span className="font-mono text-xs">{row.original.id}</span> },
         { accessorKey: 'type', header: 'Type', cell: ({ row }) => <span className="capitalize">{row.original.type?.replace('-', ' ')}</span> },
         { accessorKey: 'status', header: 'Status', cell: ({ row }) => <Badge>{row.original.status}</Badge> },
         { id: 'actions', header: () => <div className="text-right">Actions</div>, cell: ({ row }) => <div className="text-right"><Button variant="outline" size="sm" onClick={() => handleEdit(row.original)}>Manage</Button></div> }
@@ -292,4 +292,3 @@ export default function AgreementsContent() {
         </Card>
     );
 }
-

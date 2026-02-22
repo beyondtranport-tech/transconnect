@@ -14,6 +14,8 @@ import * as z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+
 
 const dummyCollateralAssets = [
     { id: 'asset-001', assetDescription: '2022 Scania R560 (FVH123GP)', client: 'Sample Transport Co.', agreement: 'AG-101', securityDocStatus: 'Generated', titleDocStatus: 'Received' },
@@ -83,11 +85,11 @@ export default function CollateralContent() {
     }, []);
 
     const columns: ColumnDef<any>[] = useMemo(() => [
-        { accessorKey: 'assetDescription', header: 'Asset Description' },
-        { accessorKey: 'client', header: 'Client' },
-        { accessorKey: 'agreement', header: 'Agreement' },
-        { accessorKey: 'securityDocStatus', header: 'Security Doc Status' },
-        { accessorKey: 'titleDocStatus', header: 'Title Doc Status' },
+        { accessorKey: 'assetDescription', header: 'Asset Description', cell: ({ row }) => <span>{row.original.assetDescription}</span> },
+        { accessorKey: 'client', header: 'Client', cell: ({ row }) => <span>{row.original.client}</span> },
+        { accessorKey: 'agreement', header: 'Agreement', cell: ({ row }) => <span className="font-mono text-xs">{row.original.agreement}</span> },
+        { accessorKey: 'securityDocStatus', header: 'Security Doc Status', cell: ({ row }) => <Badge>{row.original.securityDocStatus}</Badge> },
+        { accessorKey: 'titleDocStatus', header: 'Title Doc Status', cell: ({ row }) => <Badge>{row.original.titleDocStatus}</Badge> },
         { id: 'actions', header: () => <div className="text-right">Actions</div>, cell: ({ row }) => <div className="text-right"><Button variant="ghost" size="sm" onClick={() => handleEdit(row.original)}>Edit</Button></div> },
     ], [handleEdit]);
     

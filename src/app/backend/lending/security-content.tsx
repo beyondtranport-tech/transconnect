@@ -14,6 +14,7 @@ import * as z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
 
 const dummySecurityDocs = [
     { id: 'sec-001', name: 'Cession of Book Debts', client: 'Sample Transport Co.', agreement: 'AG-101', docStatus: 'Generated', recordStatus: 'Unconfirmed' },
@@ -82,11 +83,11 @@ export default function SecurityContent() {
     }, []);
 
     const columns: ColumnDef<any>[] = useMemo(() => [
-        { accessorKey: 'name', header: 'Agreement Type' },
-        { accessorKey: 'client', header: 'Client' },
-        { accessorKey: 'agreement', header: 'Main Agreement' },
-        { accessorKey: 'docStatus', header: 'Document Status' },
-        { accessorKey: 'recordStatus', header: 'Record Status' },
+        { accessorKey: 'name', header: 'Agreement Type', cell: ({ row }) => <span>{row.original.name}</span> },
+        { accessorKey: 'client', header: 'Client', cell: ({ row }) => <span>{row.original.client}</span> },
+        { accessorKey: 'agreement', header: 'Main Agreement', cell: ({ row }) => <span className="font-mono text-xs">{row.original.agreement}</span> },
+        { accessorKey: 'docStatus', header: 'Document Status', cell: ({ row }) => <Badge>{row.original.docStatus}</Badge> },
+        { accessorKey: 'recordStatus', header: 'Record Status', cell: ({ row }) => <Badge>{row.original.recordStatus}</Badge> },
         { id: 'actions', header: () => <div className="text-right">Actions</div>, cell: ({ row }) => <div className="text-right"><Button variant="ghost" size="sm" onClick={() => handleEdit(row.original)}>Edit</Button></div> },
     ], [handleEdit]);
     
