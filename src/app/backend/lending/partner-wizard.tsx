@@ -2,7 +2,7 @@
 'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { useForm, useFieldArray, FormProvider, useFormContext } from 'react-hook-form';
+import { useForm, useFieldArray, FormProvider, useFormContext, useWatch } from "react-hook-form";
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Button } from '@/components/ui/button';
@@ -94,7 +94,7 @@ type PartnerFormValues = z.infer<typeof partnerSchema>;
 // --- Step Definitions ---
 const steps = [
     { id: 'main', name: 'Main Details', fields: ['name', 'type', 'category', 'language', 'regId', 'vatNo'] },
-    { id: 'address', name: 'Address', fields: ['physicalStreet', 'physicalCity', 'postalStreet', 'postalCity'] },
+    { id: 'address', name: 'Address', fields: ['physicalStreet', 'physicalCity', 'physicalPostCode', 'postalStreet', 'postalCity', 'postalPostCode'] },
     { id: 'contact', name: 'Contact Info', fields: ['email', 'cell', 'telW'] },
     { id: 'owners', name: 'Owners & Directors', fields: ['owners'] },
     { id: 'management', name: 'Management', fields: ['management'] },
@@ -138,26 +138,29 @@ const StepAddress = () => {
     const { control, watch, setValue } = useFormContext();
     const usePhysicalForPostal = watch('usePhysicalForPostal');
     
-    const physicalAddressFields = watch(['physicalStreet', 'physicalSuburb', 'physicalCity', 'physicalPostCode', 'physicalProvince']);
+    // Subscribe to physical address fields
+    const physicalAddressWatcher = useWatch({ control, name: ['physicalStreet', 'physicalSuburb', 'physicalCity', 'physicalPostCode', 'physicalProvince'] });
 
     useEffect(() => {
         if (usePhysicalForPostal) {
-            setValue('postalStreet', physicalAddressFields[0] || '');
-            setValue('postalSuburb', physicalAddressFields[1] || '');
-            setValue('postalCity', physicalAddressFields[2] || '');
-            setValue('postalPostCode', physicalAddressFields[3] || '');
-            setValue('postalProvince', physicalAddressFields[4] || '');
+            setValue('postalStreet', physicalAddressWatcher[0] || '');
+            setValue('postalSuburb', physicalAddressWatcher[1] || '');
+            setValue('postalCity', physicalAddressWatcher[2] || '');
+            setValue('postalPostCode', physicalAddressWatcher[3] || '');
+            setValue('postalProvince', physicalAddressWatcher[4] || '');
         }
-    }, [usePhysicalForPostal, physicalAddressFields, setValue]);
+    }, [usePhysicalForPostal, physicalAddressWatcher, setValue]);
 
     const selectedPhysicalProvince = watch('physicalProvince');
     const physicalCities = useMemo(() => {
+        if (!selectedPhysicalProvince) return [];
         const province = provinces.find(p => p.name === selectedPhysicalProvince);
         return province ? province.cities : [];
     }, [selectedPhysicalProvince]);
 
     const selectedPostalProvince = watch('postalProvince');
     const postalCities = useMemo(() => {
+        if (!selectedPostalProvince) return [];
         const province = provinces.find(p => p.name === selectedPostalProvince);
         return province ? province.cities : [];
     }, [selectedPostalProvince]);
@@ -169,18 +172,32 @@ const StepAddress = () => {
                 <div className="space-y-4 max-w-2xl">
                     <FormField control={control} name="physicalStreet" render={({ field }) => (<FormItem><FormLabel>Street Address</FormLabel><FormControl><Input placeholder="e.g., 123 Industrial Rd" {...field} /></FormControl></FormItem>)} />
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <FormField control={control} name="physicalProvince" render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Province</FormLabel>
-                                <Select onValueChange={(value) => { field.onChange(value); setValue('physicalCity', ''); }} value={field.value || ''}>
-                                    <FormControl><SelectTrigger><SelectValue placeholder="Select province..." /></SelectTrigger></FormControl>
-                                    <SelectContent>{provinces.map(p => <SelectItem key={p.name} value={p.name}>{p.name}</SelectItem>)}</SelectContent>
-                                </Select>
-                            </FormItem>
-                        )} />
-                        <FormField control={control} name="physicalCity" render={({ field }) => (
-                            <FormItem><FormLabel>City</FormLabel><Select onValueChange={field.onChange} value={field.value || ''} disabled={!selectedPhysicalProvince}><FormControl><SelectTrigger><SelectValue placeholder="Select city..." /></SelectTrigger></FormControl><SelectContent>{physicalCities.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent></Select></FormItem>
-                        )} />
+                        <FormField
+                            control={control}
+                            name="physicalProvince"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Province</FormLabel>
+                                    <Select onValueChange={(value) => { field.onChange(value); setValue('physicalCity', ''); }} value={field.value || ''}>
+                                        <FormControl><SelectTrigger><SelectValue placeholder="Select province..." /></SelectTrigger></FormControl>
+                                        <SelectContent>{provinces.map(p => <SelectItem key={p.name} value={p.name}>{p.name}</SelectItem>)}</SelectContent>
+                                    </Select>
+                                </FormItem>
+                            )}
+                        />
+                        <FormField
+                            control={control}
+                            name="physicalCity"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>City</FormLabel>
+                                    <Select onValueChange={field.onChange} value={field.value || ''} disabled={!selectedPhysicalProvince}>
+                                        <FormControl><SelectTrigger><SelectValue placeholder="Select city..." /></SelectTrigger></FormControl>
+                                        <SelectContent>{physicalCities.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+                                    </Select>
+                                </FormItem>
+                            )}
+                        />
                     </div>
                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <FormField control={control} name="physicalSuburb" render={({ field }) => (<FormItem><FormLabel>Suburb</FormLabel><FormControl><Input placeholder="e.g., Pomona" {...field} /></FormControl></FormItem>)} />
@@ -191,14 +208,31 @@ const StepAddress = () => {
             <Separator />
             <div>
                  <h3 className="text-lg font-semibold mb-4">Postal Address</h3>
-                 <FormField control={control} name="usePhysicalForPostal" render={({ field }) => (<FormItem className="flex items-center space-x-2 mb-4"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl><FormLabel>Same as Physical Address</FormLabel></FormItem>)} />
+                 <FormField
+                    control={control}
+                    name="usePhysicalForPostal"
+                    render={({ field }) => (
+                        <FormItem className="flex items-center space-x-2 mb-4">
+                            <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl>
+                            <FormLabel>Same as Physical Address</FormLabel>
+                        </FormItem>
+                    )}
+                />
                 <div className="space-y-4 max-w-2xl">
                     <FormField control={control} name="postalStreet" render={({ field }) => (<FormItem><FormLabel>Street Address or P.O. Box</FormLabel><FormControl><Input placeholder="e.g., P.O. Box 12345" {...field} disabled={usePhysicalForPostal} /></FormControl></FormItem>)} />
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <FormField control={control} name="postalProvince" render={({ field }) => (
-                            <FormItem><FormLabel>Province</FormLabel><Select onValueChange={(value) => { field.onChange(value); setValue('postalCity', ''); }} value={field.value || ''} disabled={usePhysicalForPostal}><FormControl><SelectTrigger><SelectValue placeholder="Select province..." /></SelectTrigger></FormControl><SelectContent>{provinces.map(p => <SelectItem key={p.name} value={p.name}>{p.name}</SelectItem>)}</SelectContent></Select></FormItem>
+                        <FormField
+                            control={control}
+                            name="postalProvince"
+                            render={({ field }) => (
+                                <FormItem><FormLabel>Province</FormLabel><Select onValueChange={(value) => { field.onChange(value); setValue('postalCity', ''); }} value={field.value || ''} disabled={usePhysicalForPostal}><FormControl><SelectTrigger><SelectValue placeholder="Select province..." /></SelectTrigger></FormControl><SelectContent>{provinces.map(p => <SelectItem key={p.name} value={p.name}>{p.name}</SelectItem>)}</SelectContent></Select></FormItem>
                         )} />
-                        <FormField control={control} name="postalCity" render={({ field }) => (<FormItem><FormLabel>City</FormLabel><Select onValueChange={field.onChange} value={field.value || ''} disabled={usePhysicalForPostal || !selectedPostalProvince}><FormControl><SelectTrigger><SelectValue placeholder="Select city..." /></SelectTrigger></FormControl><SelectContent>{postalCities.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent></Select></FormItem>)} />
+                        <FormField
+                            control={control}
+                            name="postalCity"
+                            render={({ field }) => (
+                                <FormItem><FormLabel>City</FormLabel><Select onValueChange={field.onChange} value={field.value || ''} disabled={usePhysicalForPostal || !selectedPostalProvince}><FormControl><SelectTrigger><SelectValue placeholder="Select city..." /></SelectTrigger></FormControl><SelectContent>{postalCities.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent></Select></FormItem>
+                        )} />
                     </div>
                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <FormField control={control} name="postalSuburb" render={({ field }) => (<FormItem><FormLabel>Suburb</FormLabel><FormControl><Input placeholder="e.g., Pomona" {...field} disabled={usePhysicalForPostal} /></FormControl></FormItem>)} />
@@ -214,36 +248,45 @@ const StepContact = () => ( <div className="space-y-4 max-w-2xl"><div className=
 
 const OwnerFormFields = ({ index, remove }: { index: number; remove: (index: number) => void }) => {
     const { control, watch, setValue } = useFormContext();
+    
     const provinceValue = watch(`owners.${index}.province`);
 
     const cities = useMemo(() => {
+        if (!provinceValue) return [];
         const province = provinces.find(p => p.name === provinceValue);
         return province ? province.cities : [];
     }, [provinceValue]);
 
     return (
-        <div key={`owner-${index}`} className="p-4 border rounded-lg relative space-y-4">
+        <div className="p-4 border rounded-lg relative space-y-4">
             <div className="flex justify-between items-center"><h3 className="font-semibold text-lg">Owner #{index + 1}</h3><Button type="button" variant="ghost" size="icon" className="absolute top-2 right-2" onClick={() => remove(index)}><Trash2 className="h-4 w-4 text-destructive" /></Button></div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4"><FormField control={control} name={`owners.${index}.name`} render={({ field }) => (<FormItem><FormLabel>Name</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} /><FormField control={control} name={`owners.${index}.idNo`} render={({ field }) => (<FormItem><FormLabel>ID No</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} /></div>
             <FormField control={control} name={`owners.${index}.address`} render={({ field }) => (<FormItem><FormLabel>Street Address</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField control={control} name={`owners.${index}.province`} render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>Province</FormLabel>
-                        <Select onValueChange={(value) => { field.onChange(value); setValue(`owners.${index}.city`, ''); }} value={field.value || ''}>
-                            <FormControl><SelectTrigger><SelectValue placeholder="Select province..." /></SelectTrigger></FormControl>
-                            <SelectContent>{provinces.map(p => <SelectItem key={p.name} value={p.name}>{p.name}</SelectItem>)}</SelectContent>
-                        </Select>
-                    </FormItem>
+                <FormField
+                    control={control}
+                    name={`owners.${index}.province`}
+                    render={({ field }) => (
+                        <FormItem><FormLabel>Province</FormLabel>
+                            <Select onValueChange={(value) => { field.onChange(value); setValue(`owners.${index}.city`, ''); }} value={field.value || ''}>
+                                <FormControl><SelectTrigger><SelectValue placeholder="Select province..." /></SelectTrigger></FormControl>
+                                <SelectContent>{provinces.map(p => <SelectItem key={p.name} value={p.name}>{p.name}</SelectItem>)}</SelectContent>
+                            </Select>
+                        </FormItem>
                 )} />
-                <FormField control={control} name={`owners.${index}.city`} render={({ field }) => (
-                    <FormItem><FormLabel>City</FormLabel><Select onValueChange={field.onChange} value={field.value || ''} disabled={!provinceValue}><FormControl><SelectTrigger><SelectValue placeholder="Select city..." /></SelectTrigger></FormControl><SelectContent>{cities.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent></Select></FormItem>
+                <FormField
+                    control={control}
+                    name={`owners.${index}.city`}
+                    render={({ field }) => (
+                        <FormItem><FormLabel>City</FormLabel>
+                            <Select onValueChange={field.onChange} value={field.value || ''} disabled={!provinceValue}>
+                                <FormControl><SelectTrigger><SelectValue placeholder="Select city..." /></SelectTrigger></FormControl>
+                                <SelectContent>{cities.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+                            </Select>
+                        </FormItem>
                 )} />
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField control={control} name={`owners.${index}.suburb`} render={({ field }) => (<FormItem><FormLabel>Suburb</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
-                <FormField control={control} name={`owners.${index}.postCode`} render={({ field }) => (<FormItem><FormLabel>Post Code</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
-            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4"><FormField control={control} name={`owners.${index}.suburb`} render={({ field }) => (<FormItem><FormLabel>Suburb</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} /><FormField control={control} name={`owners.${index}.postCode`} render={({ field }) => (<FormItem><FormLabel>Post Code</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} /></div>
             <FormField control={control} name={`owners.${index}.cell`} render={({ field }) => (<FormItem><FormLabel>Cell</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
             <Separator />
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -272,8 +315,8 @@ const StepOwners = () => {
 const ManagementFormFields = ({ index, remove }: { index: number; remove: (index: number) => void }) => {
     const { control, watch, setValue } = useFormContext();
     const provinceValue = watch(`management.${index}.province`);
-
     const cities = useMemo(() => {
+        if (!provinceValue) return [];
         const province = provinces.find(p => p.name === provinceValue);
         return province ? province.cities : [];
     }, [provinceValue]);
@@ -281,10 +324,7 @@ const ManagementFormFields = ({ index, remove }: { index: number; remove: (index
     return (
         <div className="p-4 border rounded-lg relative space-y-4">
             <div className="flex justify-between items-center"><h3 className="font-semibold text-lg">Manager #{index + 1}</h3><Button type="button" variant="ghost" size="icon" className="absolute top-2 right-2" onClick={() => remove(index)}><Trash2 className="h-4 w-4 text-destructive" /></Button></div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField control={control} name={`management.${index}.name`} render={({ field }) => (<FormItem><FormLabel>Name</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
-                <FormField control={control} name={`management.${index}.idNo`} render={({ field }) => (<FormItem><FormLabel>ID No</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
-            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4"><FormField control={control} name={`management.${index}.name`} render={({ field }) => (<FormItem><FormLabel>Name</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} /><FormField control={control} name={`management.${index}.idNo`} render={({ field }) => (<FormItem><FormLabel>ID No</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} /></div>
             <FormField control={control} name={`management.${index}.address`} render={({ field }) => (<FormItem><FormLabel>Street Address</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField control={control} name={`management.${index}.province`} render={({ field }) => (
@@ -294,10 +334,7 @@ const ManagementFormFields = ({ index, remove }: { index: number; remove: (index
                     <FormItem><FormLabel>City</FormLabel><Select onValueChange={field.onChange} value={field.value || ''} disabled={!provinceValue}><FormControl><SelectTrigger><SelectValue placeholder="Select city..." /></SelectTrigger></FormControl><SelectContent>{cities.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent></Select></FormItem>
                 )} />
             </div>
-             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField control={control} name={`management.${index}.suburb`} render={({ field }) => (<FormItem><FormLabel>Suburb</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
-                <FormField control={control} name={`management.${index}.postCode`} render={({ field }) => (<FormItem><FormLabel>Post Code</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
-            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4"><FormField control={control} name={`management.${index}.suburb`} render={({ field }) => (<FormItem><FormLabel>Suburb</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} /><FormField control={control} name={`management.${index}.postCode`} render={({ field }) => (<FormItem><FormLabel>Post Code</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} /></div>
             <FormField control={control} name={`management.${index}.cell`} render={({ field }) => (<FormItem><FormLabel>Cell</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
             <Separator />
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -313,7 +350,7 @@ const ManagementFormFields = ({ index, remove }: { index: number; remove: (index
             </div>
         </div>
     );
-}
+};
 
 const StepManagement = () => {
     const { control } = useFormContext();
@@ -328,6 +365,7 @@ const StepManagement = () => {
     );
 };
 
+
 const StepBanking = () => {
     const { control } = useFormContext();
     const { fields, append, remove } = useFieldArray({ control, name: "bankAccounts" });
@@ -338,26 +376,12 @@ const StepBanking = () => {
             {fields.map((field, index) => (
                  <div key={field.id} className="p-4 border rounded-lg relative space-y-4">
                     <div className="flex justify-between items-center"><h3 className="font-semibold text-lg">Bank Account #{index + 1}</h3><Button type="button" variant="ghost" size="icon" className="absolute top-2 right-2" onClick={() => remove(index)}><Trash2 className="h-4 w-4 text-destructive" /></Button></div>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <FormField control={control} name={`bankAccounts.${index}.bank`} render={({ field }) => (<FormItem><FormLabel>Bank</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
-                        <FormField control={control} name={`bankAccounts.${index}.accountNo`} render={({ field }) => (<FormItem><FormLabel>Account No</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
-                        <FormField control={control} name={`bankAccounts.${index}.branchCode`} render={({ field }) => (<FormItem><FormLabel>Branch Code</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <FormField control={control} name={`bankAccounts.${index}.branchName`} render={({ field }) => (<FormItem><FormLabel>Branch Name</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
-                        <FormField control={control} name={`bankAccounts.${index}.bankCode`} render={({ field }) => (<FormItem><FormLabel>Bank Code</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
-                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4"><FormField control={control} name={`bankAccounts.${index}.bank`} render={({ field }) => (<FormItem><FormLabel>Bank</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} /><FormField control={control} name={`bankAccounts.${index}.accountNo`} render={({ field }) => (<FormItem><FormLabel>Account No</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} /><FormField control={control} name={`bankAccounts.${index}.branchCode`} render={({ field }) => (<FormItem><FormLabel>Branch Code</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} /></div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4"><FormField control={control} name={`bankAccounts.${index}.branchName`} render={({ field }) => (<FormItem><FormLabel>Branch Name</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} /><FormField control={control} name={`bankAccounts.${index}.bankCode`} render={({ field }) => (<FormItem><FormLabel>Bank Code</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} /></div>
                     <Separator />
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <FormField control={control} name={`bankAccounts.${index}.address`} render={({ field }) => (<FormItem><FormLabel>Address</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
-                        <FormField control={control} name={`bankAccounts.${index}.postCode`} render={({ field }) => (<FormItem><FormLabel>Post Code</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
-                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4"><FormField control={control} name={`bankAccounts.${index}.address`} render={({ field }) => (<FormItem><FormLabel>Address</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} /><FormField control={control} name={`bankAccounts.${index}.postCode`} render={({ field }) => (<FormItem><FormLabel>Post Code</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} /></div>
                     <Separator />
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <FormField control={control} name={`bankAccounts.${index}.phone`} render={({ field }) => (<FormItem><FormLabel>Phone</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
-                        <FormField control={control} name={`bankAccounts.${index}.email`} render={({ field }) => (<FormItem><FormLabel>Email</FormLabel><FormControl><Input type="email" {...field} /></FormControl></FormItem>)} />
-                        <FormField control={control} name={`bankAccounts.${index}.contact`} render={({ field }) => (<FormItem><FormLabel>Contact</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
-                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4"><FormField control={control} name={`bankAccounts.${index}.phone`} render={({ field }) => (<FormItem><FormLabel>Phone</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} /><FormField control={control} name={`bankAccounts.${index}.email`} render={({ field }) => (<FormItem><FormLabel>Email</FormLabel><FormControl><Input type="email" {...field} /></FormControl></FormItem>)} /><FormField control={control} name={`bankAccounts.${index}.contact`} render={({ field }) => (<FormItem><FormLabel>Contact</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} /></div>
                 </div>
             ))}
         </div>
@@ -368,60 +392,12 @@ const BalanceSheetEntryForm = ({ index, remove }: { index: number, remove: (inde
     const { register } = useFormContext();
     return (
         <Card className="relative">
-            <CardHeader>
-                <CardTitle>Balance Sheet #{index + 1}</CardTitle>
-                <Button variant="ghost" size="icon" className="absolute top-2 right-2" onClick={() => remove(index)}>
-                    <Trash2 className="h-4 w-4 text-destructive" />
-                </Button>
-            </CardHeader>
+             <CardHeader><CardTitle>Balance Sheet #{index + 1}</CardTitle><Button variant="ghost" size="icon" className="absolute top-2 right-2" onClick={() => remove(index)}><Trash2 className="h-4 w-4 text-destructive" /></Button></CardHeader>
             <CardContent className="space-y-4">
-                <div className="space-y-2">
-                    <Label>Statement Date</Label>
-                    <Input type="date" {...register(`balanceSheets.${index}.statementDate`)} />
-                </div>
+                <div className="space-y-2"><Label>Statement Date</Label><Input type="date" {...register(`balanceSheets.${index}.statementDate`)} /></div>
                 <div className="grid md:grid-cols-2 gap-x-8 gap-y-4">
-                    {/* Assets Column */}
-                    <div className="space-y-4">
-                        <h4 className="font-semibold text-lg text-primary">Assets</h4>
-                        <div className="pl-4 border-l-2 border-primary/50 space-y-4">
-                            <h5 className="font-medium">Non-Current Assets</h5>
-                            <div className="pl-4 space-y-2 mt-2">
-                                <div className="space-y-1"><Label>Property, Plant & Equipment</Label><Input type="number" placeholder="0.00" {...register(`balanceSheets.${index}.ppe`)} /></div>
-                                <div className="space-y-1"><Label>Intangible Assets</Label><Input type="number" placeholder="0.00" {...register(`balanceSheets.${index}.intangibleAssets`)} /></div>
-                                <div className="space-y-1"><Label>Financial Assets</Label><Input type="number" placeholder="0.00" {...register(`balanceSheets.${index}.financialAssets`)} /></div>
-                            </div>
-                            <h5 className="font-medium">Current Assets</h5>
-                            <div className="pl-4 space-y-2 mt-2">
-                                <div className="space-y-1"><Label>Inventories</Label><Input type="number" placeholder="0.00" {...register(`balanceSheets.${index}.inventories`)} /></div>
-                                <div className="space-y-1"><Label>Trade & Other Receivables</Label><Input type="number" placeholder="0.00" {...register(`balanceSheets.${index}.receivables`)} /></div>
-                                <div className="space-y-1"><Label>Cash & Cash Equivalents</Label><Input type="number" placeholder="0.00" {...register(`balanceSheets.${index}.cash`)} /></div>
-                            </div>
-                        </div>
-                        <div className="font-bold text-lg border-t pt-2 mt-4 flex justify-between"><span>Total Assets</span><span>R 0.00</span></div>
-                    </div>
-                    {/* Equity & Liabilities Column */}
-                    <div className="space-y-4">
-                        <h4 className="font-semibold text-lg text-primary">Equity & Liabilities</h4>
-                        <div className="pl-4 border-l-2 border-primary/50 space-y-4">
-                            <h5 className="font-medium">Equity</h5>
-                            <div className="pl-4 space-y-2 mt-2">
-                                <div className="space-y-1"><Label>Share Capital</Label><Input type="number" placeholder="0.00" {...register(`balanceSheets.${index}.shareCapital`)} /></div>
-                                <div className="space-y-1"><Label>Retained Earnings</Label><Input type="number" placeholder="0.00" {...register(`balanceSheets.${index}.retainedEarnings`)} /></div>
-                            </div>
-                            <h5 className="font-medium">Non-Current Liabilities</h5>
-                            <div className="pl-4 space-y-2 mt-2">
-                                <div className="space-y-1"><Label>Long-Term Borrowings</Label><Input type="number" placeholder="0.00" {...register(`balanceSheets.${index}.longTermDebt`)} /></div>
-                                <div className="space-y-1"><Label>Lease Liabilities</Label><Input type="number" placeholder="0.00" {...register(`balanceSheets.${index}.leaseLiabilities`)} /></div>
-                            </div>
-                            <h5 className="font-medium">Current Liabilities</h5>
-                            <div className="pl-4 space-y-2 mt-2">
-                                <div className="space-y-1"><Label>Trade & Other Payables</Label><Input type="number" placeholder="0.00" {...register(`balanceSheets.${index}.payables`)} /></div>
-                                <div className="space-y-1"><Label>Short-Term Borrowings</Label><Input type="number" placeholder="0.00" {...register(`balanceSheets.${index}.shortTermDebt`)} /></div>
-                                <div className="space-y-1"><Label>Current Tax Payable</Label><Input type="number" placeholder="0.00" {...register(`balanceSheets.${index}.taxPayable`)} /></div>
-                            </div>
-                        </div>
-                        <div className="font-bold text-lg border-t pt-2 mt-4 flex justify-between"><span>Total Equity & Liabilities</span><span>R 0.00</span></div>
-                    </div>
+                    <div className="space-y-4"><h4 className="font-semibold text-lg text-primary">Assets</h4><div className="pl-4 border-l-2 border-primary/50 space-y-4"><h5 className="font-medium">Non-Current Assets</h5><div className="pl-4 space-y-2 mt-2"><div className="space-y-1"><Label>Property, Plant & Equipment</Label><Input type="number" placeholder="0.00" {...register(`balanceSheets.${index}.ppe`)} /></div><div className="space-y-1"><Label>Intangible Assets</Label><Input type="number" placeholder="0.00" {...register(`balanceSheets.${index}.intangibleAssets`)} /></div><div className="space-y-1"><Label>Financial Assets</Label><Input type="number" placeholder="0.00" {...register(`balanceSheets.${index}.financialAssets`)} /></div></div><h5 className="font-medium">Current Assets</h5><div className="pl-4 space-y-2 mt-2"><div className="space-y-1"><Label>Inventories</Label><Input type="number" placeholder="0.00" {...register(`balanceSheets.${index}.inventories`)} /></div><div className="space-y-1"><Label>Trade & Other Receivables</Label><Input type="number" placeholder="0.00" {...register(`balanceSheets.${index}.receivables`)} /></div><div className="space-y-1"><Label>Cash & Cash Equivalents</Label><Input type="number" placeholder="0.00" {...register(`balanceSheets.${index}.cash`)} /></div></div></div><div className="font-bold text-lg border-t pt-2 mt-4 flex justify-between"><span>Total Assets</span><span>R 0.00</span></div></div>
+                    <div className="space-y-4"><h4 className="font-semibold text-lg text-primary">Equity & Liabilities</h4><div className="pl-4 border-l-2 border-primary/50 space-y-4"><h5 className="font-medium">Equity</h5><div className="pl-4 space-y-2 mt-2"><div className="space-y-1"><Label>Share Capital</Label><Input type="number" placeholder="0.00" {...register(`balanceSheets.${index}.shareCapital`)} /></div><div className="space-y-1"><Label>Retained Earnings</Label><Input type="number" placeholder="0.00" {...register(`balanceSheets.${index}.retainedEarnings`)} /></div></div><h5 className="font-medium">Non-Current Liabilities</h5><div className="pl-4 space-y-2 mt-2"><div className="space-y-1"><Label>Long-Term Borrowings</Label><Input type="number" placeholder="0.00" {...register(`balanceSheets.${index}.longTermDebt`)} /></div><div className="space-y-1"><Label>Lease Liabilities</Label><Input type="number" placeholder="0.00" {...register(`balanceSheets.${index}.leaseLiabilities`)} /></div></div><h5 className="font-medium">Current Liabilities</h5><div className="pl-4 space-y-2 mt-2"><div className="space-y-1"><Label>Trade & Other Payables</Label><Input type="number" placeholder="0.00" {...register(`balanceSheets.${index}.payables`)} /></div><div className="space-y-1"><Label>Short-Term Borrowings</Label><Input type="number" placeholder="0.00" {...register(`balanceSheets.${index}.shortTermDebt`)} /></div><div className="space-y-1"><Label>Current Tax Payable</Label><Input type="number" placeholder="0.00" {...register(`balanceSheets.${index}.taxPayable`)} /></div></div></div><div className="font-bold text-lg border-t pt-2 mt-4 flex justify-between"><span>Total Equity & Liabilities</span><span>R 0.00</span></div></div>
                 </div>
             </CardContent>
         </Card>
@@ -464,6 +440,7 @@ const StepIncomeStatement = () => {
     const { fields, append, remove } = useFieldArray({ name: 'incomeStatements', control });
     return <div className="space-y-6"><Button type="button" variant="outline" size="sm" onClick={() => append({})}><PlusCircle className="mr-2 h-4 w-4" />Add Income Statement</Button>{fields.map((field, index) => <IncomeStatementEntryForm key={field.id} index={index} remove={remove} />)}</div>;
 };
+
 
 const StepReview = () => {
     const { getValues } = useFormContext();
@@ -586,3 +563,4 @@ export default function PartnerWizard({ partnerData, partnerType, onBack, onSave
         </FormProvider>
     );
 }
+
