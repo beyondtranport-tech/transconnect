@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useMemo, useCallback, useEffect } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
 import { PlusCircle, FileSignature, Loader2, Save, Trash2, ArrowLeft, ArrowRight, Check } from 'lucide-react';
@@ -35,6 +35,7 @@ const securitySchema = z.object({
   securityType: z.string().min(1, "A type is required (e.g., Cession of Debtors)."),
   description: z.string().optional(),
   docStatus: z.string().optional().default("Generated"),
+  clientCode: z.string().optional(),
 });
 
 type SecurityFormValues = z.infer<typeof securitySchema>;
@@ -42,7 +43,7 @@ type SecurityFormValues = z.infer<typeof securitySchema>;
 const wizardSteps = [
   { id: 'client', name: 'Select Client', fields: ['clientId'] },
   { id: 'agreement', name: 'Select Agreement', fields: ['agreementId'] },
-  { id: 'details', name: 'Security Details', fields: ['securityType', 'description'] },
+  { id: 'details', name: 'Security Details', fields: ['securityType', 'description', 'clientCode'] },
   { id: 'status', name: 'Document Status', fields: ['docStatus'] },
   { id: 'review', name: 'Review & Save' },
 ];
@@ -56,7 +57,7 @@ function SecurityWizard({ securityDoc, onBack, onSaveSuccess }: { securityDoc?: 
     const methods = useForm<SecurityFormValues>({
         resolver: zodResolver(securitySchema),
         mode: 'onChange',
-        defaultValues: securityDoc || { clientId: '', agreementId: '', securityType: '', description: '', docStatus: 'Generated' },
+        defaultValues: securityDoc || { clientId: '', agreementId: '', securityType: '', description: '', docStatus: 'Generated', clientCode: '' },
     });
     
     const { control, watch, trigger } = methods;
@@ -103,9 +104,9 @@ function SecurityWizard({ securityDoc, onBack, onSaveSuccess }: { securityDoc?: 
             case 'agreement':
                 return <FormField control={control} name="agreementId" render={({field}) => <FormItem><FormLabel>Agreement</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value} disabled={!selectedClientId || areAgreementsLoading}><FormControl><SelectTrigger><SelectValue placeholder="Select an agreement..." /></SelectTrigger></FormControl><SelectContent>{(agreements || []).map((a: any) => <SelectItem key={a.id} value={a.id}>{a.id}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>} />;
             case 'details':
-                return <div className="space-y-4"><FormField control={control} name="securityType" render={({ field }) => (<FormItem><FormLabel>Type of Security</FormLabel><FormControl><Input placeholder="e.g., Cession of Book Debts" {...field} /></FormControl><FormMessage /></FormItem>)} /><FormField control={control} name="description" render={({ field }) => (<FormItem><FormLabel>Description (Optional)</FormLabel><FormControl><Textarea placeholder="Add any relevant details..." {...field} /></FormControl><FormMessage /></FormItem>)} /></div>;
+                return <div className="space-y-4"><FormField control={control} name="securityType" render={({ field }) => (<FormItem><FormLabel>Type of Security</FormLabel><FormControl><Input placeholder="e.g., Cession of Debtors" {...field} /></FormControl><FormMessage /></FormItem>)} /><FormField control={control} name="description" render={({ field }) => (<FormItem><FormLabel>Description (Optional)</FormLabel><FormControl><Textarea placeholder="Add any relevant details..." {...field} /></FormControl><FormMessage /></FormItem>)} /><FormField control={control} name="clientCode" render={({ field }) => (<FormItem><FormLabel>Client Code</FormLabel><FormControl><Input placeholder="e.g., STC-001" {...field} /></FormControl><FormMessage /></FormItem>)} /></div>;
             case 'status':
-                return <FormField control={control} name="docStatus" render={({ field }) => (<FormItem><FormLabel>Document Status</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select status..."/></SelectTrigger></FormControl><SelectContent>{docStatusOptions.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)} />;
+                return <FormField control={control} name="docStatus" render={({ field }) => (<FormItem><FormLabel>Document Status</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select status..."/></SelectTrigger></FormControl><SelectContent>{docStatusOptions.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>} />;
             case 'review':
                 return <div className="space-y-2"><p>Client: {watch('clientId')}</p><p>Agreement: {watch('agreementId')}</p><p>Type: {watch('securityType')}</p><p>Status: {watch('docStatus')}</p></div>;
             default: return null;
@@ -163,6 +164,7 @@ export default function SecurityContent() {
         { accessorKey: 'name', header: 'Agreement Type', cell: ({ row }) => <span>{row.original.name}</span> },
         { accessorKey: 'client', header: 'Client', cell: ({ row }) => <span>{row.original.client}</span> },
         { accessorKey: 'clientCode', header: 'Client Code', cell: ({ row }) => <span className="font-mono text-xs">{row.original.clientCode}</span> },
+        { accessorKey: 'agreement', header: 'Agreement ID', cell: ({ row }) => <span className="font-mono text-xs">{row.original.agreement}</span> },
         { accessorKey: 'docStatus', header: 'Document Status', cell: ({ row }) => <Badge>{row.original.docStatus}</Badge> },
         { accessorKey: 'recordStatus', header: 'Record Status', cell: ({ row }) => <Badge>{row.original.recordStatus}</Badge> },
         { id: 'actions', header: () => <div className="text-right">Actions</div>, cell: ({ row }) => <div className="text-right"><Button variant="ghost" size="sm" onClick={() => handleEdit(row.original)}>Edit</Button></div> },
@@ -191,3 +193,4 @@ export default function SecurityContent() {
         </Card>
     );
 }
+    
