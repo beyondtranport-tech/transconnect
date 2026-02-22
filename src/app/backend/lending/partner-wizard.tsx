@@ -106,7 +106,6 @@ const StepMain = () => {
 
 const StepAddress = () => {
     const { control, watch, setValue } = useFormContext();
-
     const usePhysicalForPostal = watch('usePhysicalForPostal');
     const physicalStreet = watch('physicalStreet');
     const physicalSuburb = watch('physicalSuburb');
@@ -114,8 +113,6 @@ const StepAddress = () => {
     const physicalPostCode = watch('physicalPostCode');
     const physicalProvince = watch('physicalProvince');
     const selectedPhysicalProvince = watch('physicalProvince');
-    
-    const postalCityValue = watch('postalCity');
     const selectedPostalProvince = watch('postalProvince');
 
     const physicalCities = useMemo(() => {
@@ -137,18 +134,18 @@ const StepAddress = () => {
             setValue('postalProvince', physicalProvince || '');
         }
     }, [usePhysicalForPostal, physicalStreet, physicalSuburb, physicalCity, physicalPostCode, physicalProvince, setValue]);
-
-    useEffect(() => {
-        if (physicalCities.length > 0 && physicalCity && !physicalCities.includes(physicalCity)) {
-            setValue('physicalCity', '');
-        }
-    }, [selectedPhysicalProvince, physicalCities, physicalCity, setValue]);
     
     useEffect(() => {
-        if (postalCities.length > 0 && postalCityValue && !postalCities.includes(postalCityValue)) {
-            setValue('postalCity', '');
-        }
-    }, [selectedPostalProvince, postalCities, postalCityValue, setValue]);
+        const subscription = watch((value, { name }) => {
+            if (name === 'physicalProvince') {
+                setValue('physicalCity', '');
+            }
+            if (name === 'postalProvince') {
+                 setValue('postalCity', '');
+            }
+        });
+        return () => subscription.unsubscribe();
+    }, [watch, setValue]);
 
     return (
         <div className="space-y-8">
@@ -206,22 +203,24 @@ const StepContact = () => ( <div className="space-y-4 max-w-2xl"><div className=
 
 const OwnerFormFields = ({ index, remove }: { index: number; remove: (index: number) => void }) => {
     const { control, watch, setValue } = useFormContext();
-    const provinceValue = watch(`owners.${index}.province`);
-    const cityValue = watch(`owners.${index}.city`);
+    
+    useEffect(() => {
+        const subscription = watch((value, { name }) => {
+            if (name === `owners.${index}.province`) {
+                setValue(`owners.${index}.city`, '');
+            }
+        });
+        return () => subscription.unsubscribe();
+    }, [watch, setValue, index]);
 
+    const provinceValue = watch(`owners.${index}.province`);
     const cities = useMemo(() => {
         const province = provinces.find(p => p.name === provinceValue);
         return province ? province.cities : [];
     }, [provinceValue]);
 
-    useEffect(() => {
-        if (cities.length > 0 && cityValue && !cities.includes(cityValue)) {
-            setValue(`owners.${index}.city`, '');
-        }
-    }, [provinceValue, cities, cityValue, setValue, index]);
-
     return (
-        <div key={`owner-${index}`} className="p-4 border rounded-lg relative space-y-4">
+        <div className="p-4 border rounded-lg relative space-y-4">
             <div className="flex justify-between items-center"><h3 className="font-semibold text-lg">Owner #{index + 1}</h3><Button type="button" variant="ghost" size="icon" onClick={() => remove(index)}><Trash2 className="h-4 w-4 text-destructive" /></Button></div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4"><FormField control={control} name={`owners.${index}.name`} render={({ field }) => (<FormItem><FormLabel>Name</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} /><FormField control={control} name={`owners.${index}.idNo`} render={({ field }) => (<FormItem><FormLabel>ID No</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} /></div>
             <FormField control={control} name={`owners.${index}.address`} render={({ field }) => (<FormItem><FormLabel>Street Address</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
@@ -266,7 +265,7 @@ const StepOwners = () => {
     const { fields, append, remove } = useFieldArray({ control, name: "owners" });
     return (
         <div className="space-y-6">
-            <Button type="button" variant="outline" size="sm" onClick={() => append({ name: '', address: '', suburb: '', city: '', province: '', postCode: '', idNo: '', cell: '', position: '', qualification: '', since: '', held: 0 })}><PlusCircle className="mr-2 h-4 w-4" /> Add Owner</Button>
+            <Button type="button" variant="outline" size="sm" onClick={() => append({})}><PlusCircle className="mr-2 h-4 w-4" /> Add Owner</Button>
             {fields.map((field, index) => (
                 <OwnerFormFields key={field.id} index={index} remove={remove} />
             ))}
@@ -276,19 +275,21 @@ const StepOwners = () => {
 
 const ManagementFormFields = ({ index, remove }: { index: number; remove: (index: number) => void }) => {
     const { control, watch, setValue } = useFormContext();
-    const provinceValue = watch(`management.${index}.province`);
-    const cityValue = watch(`management.${index}.city`);
 
+    useEffect(() => {
+        const subscription = watch((value, { name }) => {
+            if (name === `management.${index}.province`) {
+                setValue(`management.${index}.city`, '');
+            }
+        });
+        return () => subscription.unsubscribe();
+    }, [watch, setValue, index]);
+
+    const provinceValue = watch(`management.${index}.province`);
     const cities = useMemo(() => {
         const province = provinces.find(p => p.name === provinceValue);
         return province ? province.cities : [];
     }, [provinceValue]);
-
-    useEffect(() => {
-        if (cities.length > 0 && cityValue && !cities.includes(cityValue)) {
-            setValue(`management.${index}.city`, '');
-        }
-    }, [provinceValue, cities, cityValue, setValue, index]);
 
     return (
         <div key={`manager-${index}`} className="p-4 border rounded-lg relative space-y-4">
@@ -373,6 +374,7 @@ const StepManagement = () => {
         </div>
     );
 };
+
 
 const StepBanking = () => {
     const { control } = useFormContext();
@@ -509,12 +511,15 @@ export default function PartnerWizard({ partnerData, partnerType, onBack, onSave
             <form onSubmit={methods.handleSubmit(onSubmit)}>
                 <div className="grid grid-cols-1 md:grid-cols-[250px_1fr] gap-8">
                     <div className="flex flex-col gap-2 border-r pr-4">
-                        {steps.map((step, index) => (
-                            <Button key={step.id} variant={currentStep === index ? 'default' : 'ghost'} className="justify-start gap-2" onClick={() => setCurrentStep(index)} disabled={index > currentStep && !isStepValid(currentStep - 1)}>
-                                {currentStep > index && isStepValid(index) ? <Check className="h-5 w-5 text-green-500" /> : <div className="h-5 w-5" />}
-                                {step.name}
-                            </Button>
-                        ))}
+                        {steps.map((step, index) => {
+                            const isCompleted = index < currentStep && isStepValid(index);
+                            return (
+                                <Button key={step.id} variant={currentStep === index ? 'default' : 'ghost'} className="justify-start gap-2" onClick={() => setCurrentStep(index)} disabled={index > currentStep && !isStepValid(currentStep - 1)}>
+                                    {isCompleted ? <Check className="h-5 w-5 text-green-500" /> : <div className="h-5 w-5" />}
+                                    {step.name}
+                                </Button>
+                            )
+                        })}
                     </div>
                     <div className="space-y-6">
                         <h2 className="text-2xl font-bold">{steps[currentStep].name}</h2>
