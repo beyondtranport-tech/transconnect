@@ -96,6 +96,43 @@ export async function POST(req: NextRequest) {
                 
                 return NextResponse.json({ success: true, message: 'Shop has been unpublished and reverted to a draft.' });
             }
+            case 'saveLendingPartner': {
+                if (!isAdmin) {
+                    throw new Error("Forbidden: Admin access required.");
+                }
+                const { partner } = payload;
+                if (!partner) throw new Error("Partner data is required.");
+
+                const partnersCollection = db.collection('lendingPartners');
+                let docRef;
+                let data;
+
+                if (partner.id) { // Update
+                    docRef = partnersCollection.doc(partner.id);
+                    data = { ...partner, updatedAt: FieldValue.serverTimestamp() };
+                    delete data.id;
+                    await docRef.set(data, { merge: true });
+                } else { // Create
+                    docRef = partnersCollection.doc();
+                    data = { ...partner, id: docRef.id, createdAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp() };
+                    await docRef.set(data);
+                }
+                return NextResponse.json({ success: true, id: docRef.id });
+            }
+             case 'deleteLendingPartner': {
+                if (!isAdmin) {
+                    throw new Error("Forbidden: Admin access required.");
+                }
+                const { partnerId, collection } = payload;
+                if (!partnerId || !collection) throw new Error("partnerId and collection name are required.");
+
+                if(collection !== 'lendingClients' && collection !== 'lendingPartners') {
+                    throw new Error("Invalid collection name.");
+                }
+
+                await db.collection(collection).doc(partnerId).delete();
+                return NextResponse.json({ success: true });
+            }
             case 'saveLendingClient': {
                 if (!isAdmin) {
                     throw new Error("Forbidden: Admin access required.");

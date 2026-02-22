@@ -1,9 +1,7 @@
-
 'use client';
 
-import React, { useState, useMemo, useCallback, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { useState, useMemo, useCallback, useEffect } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { PlusCircle, Loader2 } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
@@ -64,7 +62,7 @@ export default function PartnerDetails({ partnerType, initialAction }: { partner
     const handleSaveSuccess = () => {
         forceRefresh();
         handleBackToList();
-    };
+    }
     
     const handleDelete = async (partnerId: string) => {
          try {
@@ -108,6 +106,7 @@ export default function PartnerDetails({ partnerType, initialAction }: { partner
         }
     ], [handleEdit, partnerType]);
 
+
     if (view === 'create' || view === 'edit') {
         return <PartnerWizard partnerData={selectedPartner} partnerType={partnerType} onBack={handleBackToList} onSaveSuccess={handleSaveSuccess} />;
     }
@@ -130,5 +129,3 @@ export default function PartnerDetails({ partnerType, initialAction }: { partner
         </Card>
     );
 }
-
-    
