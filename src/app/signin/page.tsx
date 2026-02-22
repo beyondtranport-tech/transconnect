@@ -128,6 +128,22 @@ function SignInFormComponent() {
       if (!sessionResponse.ok) {
         throw new Error('Failed to set session cookie.');
       }
+      
+      // Explicitly call checkAndCreateUser after successful sign-in
+      const checkAndCreateUserResponse = await fetch('/api/checkAndCreateUser', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${idToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({}), // Body can be empty for sign-in
+      });
+
+      if (!checkAndCreateUserResponse.ok) {
+        const result = await checkAndCreateUserResponse.json();
+        // Log error but don't block the user, as the user document might already exist.
+        console.error("checkAndCreateUser call failed on sign-in:", result.error);
+      }
 
       toast({
         title: 'Sign In Successful',

@@ -158,6 +158,7 @@ function JoinFormComponent() {
         throw new Error('Failed to create server session.');
       }
 
+      // Explicitly call checkAndCreateUser after successful sign-up
       const checkAndCreateUserResponse = await fetch('/api/checkAndCreateUser', {
           method: 'POST',
           headers: {
@@ -169,6 +170,7 @@ function JoinFormComponent() {
 
       if (!checkAndCreateUserResponse.ok) {
           const result = await checkAndCreateUserResponse.json();
+          // This is a critical error on sign-up, so we should throw it.
           throw new Error(result.error || "Failed to create user profile in database.");
       }
 

@@ -107,7 +107,6 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
   const [baseUser, setBaseUser] = useState<User | null>(auth.currentUser);
   const [isAuthLoading, setIsAuthLoading] = useState(true);
   const [authError, setAuthError] = useState<Error | null>(null);
-  const userCheckPerformed = useRef(false);
 
   const { enrichedUser, isEnriching, forceRefresh } = useEnrichedUser(baseUser, firestore);
 
@@ -118,27 +117,6 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
         const idToken = firebaseUser ? await firebaseUser.getIdToken() : null;
         await setSessionCookie(idToken);
         
-        if (firebaseUser && idToken && !userCheckPerformed.current) {
-          userCheckPerformed.current = true;
-          try {
-            const referrerId = new URLSearchParams(window.location.search).get('ref');
-            await fetch('/api/checkAndCreateUser', {
-              method: 'POST',
-              headers: {
-                'Authorization': `Bearer ${idToken}`,
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({ referrerId }), 
-            });
-          } catch (error) {
-            console.error("FirebaseProvider: Failed to call checkAndCreateUser:", error);
-          }
-        }
-        
-        if (!firebaseUser) {
-          userCheckPerformed.current = false;
-        }
-        
         setBaseUser(firebaseUser);
         setIsAuthLoading(false);
         setAuthError(null);
@@ -147,7 +125,6 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
         console.error("FirebaseProvider: onIdTokenChanged error:", error);
         setSessionCookie(null);
         setBaseUser(null);
-        userCheckPerformed.current = false;
         setIsAuthLoading(false);
         setAuthError(error);
       }
