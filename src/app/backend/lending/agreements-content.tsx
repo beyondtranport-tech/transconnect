@@ -19,6 +19,9 @@ import * as z from "zod";
 import { Form, FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
 import { Separator } from '@/components/ui/separator';
+import { DataTable } from '@/components/ui/data-table';
+import { type ColumnDef } from '@/hooks/use-data-table';
+
 
 const agreementTypes = [
     { id: 'loan-pv', label: 'Loan pv' },
@@ -185,6 +188,13 @@ export default function AgreementsContent() {
         forceRefresh();
         handleBackToList();
     };
+
+    const columns: ColumnDef<any>[] = useMemo(() => [
+        { accessorKey: 'id', header: 'Agreement ID' },
+        { accessorKey: 'type', header: 'Type', cell: ({ row }) => <span className="capitalize">{row.original.type?.replace('-', ' ')}</span> },
+        { accessorKey: 'status', header: 'Status', cell: ({ row }) => <Badge>{row.original.status}</Badge> },
+        { id: 'actions', header: () => <div className="text-right">Actions</div>, cell: ({ row }) => <div className="text-right"><Button variant="outline" size="sm" onClick={() => handleEdit(row.original)}>Manage</Button></div> }
+    ], [handleEdit]);
     
     return (
         <Card>
@@ -225,29 +235,11 @@ export default function AgreementsContent() {
                         <h3 className="text-lg font-semibold mb-4">
                             Existing Agreements for: <span className="text-primary">{clients?.find(c => c.id === selectedClient)?.name}</span>
                         </h3>
-                         <div className="border rounded-lg">
-                            <Table>
-                                <TableHeader><TableRow><TableHead>Agreement ID</TableHead><TableHead>Type</TableHead><TableHead>Status</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader>
-                                <TableBody>
-                                    {areAgreementsLoading ? (
-                                        <TableRow><TableCell colSpan={4} className="text-center"><Loader2 className="animate-spin"/></TableCell></TableRow>
-                                    ) : displayAgreements.length > 0 ? (
-                                        displayAgreements.map((agreement: any) => (
-                                            <TableRow key={agreement.id}>
-                                                <TableCell className="font-mono">{agreement.id}</TableCell>
-                                                <TableCell className="capitalize">{agreement.type?.replace('-', ' ')}</TableCell>
-                                                <TableCell><Badge>{agreement.status}</Badge></TableCell>
-                                                <TableCell className="text-right">
-                                                    <Button variant="outline" size="sm" onClick={() => handleEdit(agreement)}>Manage</Button>
-                                                </TableCell>
-                                            </TableRow>
-                                        ))
-                                    ) : (
-                                        <TableRow><TableCell colSpan={4} className="text-center">No agreements found for this client.</TableCell></TableRow>
-                                    )}
-                                </TableBody>
-                            </Table>
-                         </div>
+                        {areAgreementsLoading ? (
+                             <div className="flex justify-center items-center py-10"><Loader2 className="h-8 w-8 animate-spin"/></div>
+                        ) : (
+                            <DataTable columns={columns} data={displayAgreements} />
+                        )}
                     </div>
                 )}
                 
