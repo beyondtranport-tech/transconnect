@@ -15,11 +15,12 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Trash2 } from 'lucide-react';
 
 
 const dummySecurityDocs = [
-    { id: 'sec-001', name: 'Cession of Book Debts', client: 'Sample Transport Co.', agreement: 'AG-101', docStatus: 'Generated', recordStatus: 'Unconfirmed' },
-    { id: 'sec-002', name: 'Suretyship by Directors', client: 'Another Client Ltd', agreement: 'AG-205', docStatus: 'Signed In', recordStatus: 'Confirmed' },
+    { id: 'sec-001', name: 'Cession of Book Debts', client: 'Sample Transport Co.', clientCode: 'STC-001', agreement: 'AG-101', docStatus: 'Generated', recordStatus: 'Unconfirmed' },
+    { id: 'sec-002', name: 'Suretyship by Directors', client: 'Another Client Ltd', clientCode: 'ACL-001', agreement: 'AG-205', docStatus: 'Signed In', recordStatus: 'Confirmed' },
 ];
 
 const docStatusOptions = ["Generated", "Sent", "Received", "Checked", "Signed In"];
@@ -28,6 +29,7 @@ const securitySchema = z.object({
   name: z.string().min(1, 'Agreement type is required.'),
   client: z.string().min(1, 'Client is required.'),
   agreement: z.string().min(1, 'Agreement is required.'),
+  clientCode: z.string().optional(),
   docStatus: z.string().optional(),
   recordStatus: z.string().optional(),
 });
@@ -39,7 +41,7 @@ function SecurityWizard({ securityDoc, onBack, onSaveSuccess }: { securityDoc?: 
     const { toast } = useToast();
     const methods = useForm<SecurityFormValues>({
         resolver: zodResolver(securitySchema),
-        defaultValues: securityDoc || { name: '', client: '', agreement: '', docStatus: 'Generated', recordStatus: 'Unconfirmed' },
+        defaultValues: securityDoc || { name: '', client: '', agreement: '', clientCode: '', docStatus: 'Generated', recordStatus: 'Unconfirmed' },
     });
 
     const onSubmit = async (values: SecurityFormValues) => {
@@ -61,6 +63,7 @@ function SecurityWizard({ securityDoc, onBack, onSaveSuccess }: { securityDoc?: 
                     <CardContent className="space-y-4">
                         <FormField control={methods.control} name="name" render={({ field }) => (<FormItem><FormLabel>Agreement Type</FormLabel><FormControl><Input placeholder="e.g., Cession of Book Debts" {...field} /></FormControl><FormMessage /></FormItem>)} />
                         <FormField control={methods.control} name="client" render={({ field }) => (<FormItem><FormLabel>Client</FormLabel><FormControl><Input placeholder="Client Name" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                        <FormField control={methods.control} name="clientCode" render={({ field }) => (<FormItem><FormLabel>Client Code</FormLabel><FormControl><Input placeholder="e.g., STC001" {...field} /></FormControl><FormMessage /></FormItem>)} />
                         <FormField control={methods.control} name="agreement" render={({ field }) => (<FormItem><FormLabel>Main Agreement ID</FormLabel><FormControl><Input placeholder="e.g., AG-101" {...field} /></FormControl><FormMessage /></FormItem>)} />
                         <FormField control={methods.control} name="docStatus" render={({ field }) => (<FormItem><FormLabel>Document Status</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent>{docStatusOptions.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent></Select></FormItem>)} />
                     </CardContent>
@@ -86,7 +89,7 @@ export default function SecurityContent() {
     const columns: ColumnDef<any>[] = useMemo(() => [
         { accessorKey: 'name', header: 'Agreement Type', cell: ({ row }) => <span>{row.original.name}</span> },
         { accessorKey: 'client', header: 'Client', cell: ({ row }) => <span>{row.original.client}</span> },
-        { accessorKey: 'agreement', header: 'Main Agreement', cell: ({ row }) => <span className="font-mono text-xs">{row.original.agreement}</span> },
+        { accessorKey: 'clientCode', header: 'Client Code', cell: ({ row }) => <span className="font-mono text-xs">{row.original.clientCode}</span> },
         { accessorKey: 'docStatus', header: 'Document Status', cell: ({ row }) => <Badge>{row.original.docStatus}</Badge> },
         { accessorKey: 'recordStatus', header: 'Record Status', cell: ({ row }) => <Badge>{row.original.recordStatus}</Badge> },
         { id: 'actions', header: () => <div className="text-right">Actions</div>, cell: ({ row }) => <div className="text-right"><Button variant="ghost" size="sm" onClick={() => handleEdit(row.original)}>Edit</Button></div> },
