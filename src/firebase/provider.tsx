@@ -63,35 +63,41 @@ function useEnrichedUser(baseUser: User | null, firestore: Firestore | null) {
     const isAdmin = baseUser?.email === 'beyondtransport@gmail.com' || baseUser?.email === 'mkoton100@gmail.com';
 
     const userDocRef = useMemoFirebase(() => {
-        if (!firestore || !baseUser || isAdmin) return null;
+        // Only create a doc ref if the user is not an admin and exists
+        if (!firestore || !baseUser || isAdmin) {
+            return null;
+        }
         return doc(firestore, 'users', baseUser.uid);
     }, [firestore, baseUser, isAdmin]);
 
+    // Always call useDoc, it handles the null case gracefully and returns a stable forceRefresh
     const { data: userData, isLoading: isUserDataLoading, forceRefresh } = useDoc<{ companyId: string; passwordChangeRequired?: boolean }>(userDocRef);
-    
-    return useMemo(() => {
-        if (!baseUser) return { enrichedUser: null, isEnriching: false, forceRefresh };
-        
-        if (isAdmin) {
-             return {
-                enrichedUser: baseUser as EnrichedUser,
-                isEnriching: false,
-                forceRefresh: () => {}
-            };
-        }
 
-        if (isUserDataLoading) return { enrichedUser: baseUser as EnrichedUser, isEnriching: true, forceRefresh };
-        
+    const enrichedUser = useMemo(() => {
+        if (!baseUser) {
+            return null;
+        }
+        // Admin user doesn't need data from the 'users' collection
+        if (isAdmin) {
+            return baseUser as EnrichedUser;
+        }
+        // For regular users, combine the auth user with the Firestore data
         return {
-            enrichedUser: {
-                ...baseUser,
-                companyId: userData?.companyId,
-                passwordChangeRequired: userData?.passwordChangeRequired
-            } as EnrichedUser,
-            isEnriching: false,
-            forceRefresh
-        };
-    }, [baseUser, userData, isUserDataLoading, forceRefresh, isAdmin]);
+            ...baseUser,
+            companyId: userData?.companyId,
+            passwordChangeRequired: userData?.passwordChangeRequired,
+        } as EnrichedUser;
+    }, [baseUser, userData, isAdmin]);
+
+    // The user is "enriching" if they are not an admin and the user document is loading
+    const isEnriching = !isAdmin && !!baseUser && isUserDataLoading;
+    
+    // Memoize the final returned object from the hook to ensure its stability
+    return useMemo(() => ({
+        enrichedUser,
+        isEnriching,
+        forceRefresh,
+    }), [enrichedUser, isEnriching, forceRefresh]);
 }
 
 
