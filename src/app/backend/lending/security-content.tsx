@@ -98,20 +98,102 @@ function SecurityWizard({ securityDoc, onBack, onSaveSuccess }: { securityDoc?: 
     };
 
     const renderStepContent = () => {
-        switch (wizardSteps[currentStep].id) {
+        const stepId = wizardSteps[currentStep]?.id;
+        switch (stepId) {
             case 'client':
-                return <FormField control={control} name="clientId" render={({field}) => <FormItem><FormLabel>Client</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value} disabled={areClientsLoading}><FormControl><SelectTrigger><SelectValue placeholder="Select a client..." /></SelectTrigger></FormControl><SelectContent>{(clients || []).map((c: any) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>} />;
+                return (
+                    <FormField
+                        control={control}
+                        name="clientId"
+                        render={({field}) => (
+                            <FormItem>
+                                <FormLabel>Client</FormLabel>
+                                <Select onValueChange={field.onChange} defaultValue={field.value} disabled={areClientsLoading}>
+                                    <FormControl><SelectTrigger><SelectValue placeholder="Select a client..." /></SelectTrigger></FormControl>
+                                    <SelectContent>{(clients || []).map((c: any) => (
+                                        <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                                    ))}</SelectContent>
+                                </Select>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                );
             case 'agreement':
-                return <FormField control={control} name="agreementId" render={({field}) => <FormItem><FormLabel>Agreement</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value} disabled={!selectedClientId || areAgreementsLoading}><FormControl><SelectTrigger><SelectValue placeholder="Select an agreement..." /></SelectTrigger></FormControl><SelectContent>{(agreements || []).map((a: any) => <SelectItem key={a.id} value={a.id}>{a.id}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>} />;
+                return (
+                    <FormField
+                        control={control}
+                        name="agreementId"
+                        render={({field}) => (
+                            <FormItem>
+                                <FormLabel>Agreement</FormLabel>
+                                <Select onValueChange={field.onChange} defaultValue={field.value} disabled={!selectedClientId || areAgreementsLoading}>
+                                    <FormControl><SelectTrigger><SelectValue placeholder={areAgreementsLoading ? "Loading..." : "Select an agreement..."} /></SelectTrigger></FormControl>
+                                    <SelectContent>{(agreements || []).map((a:any) => (
+                                        <SelectItem key={a.id} value={a.id}>{a.id}</SelectItem>
+                                    ))}</SelectContent>
+                                </Select>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                );
             case 'details':
-                return <div className="space-y-4"><FormField control={control} name="securityType" render={({ field }) => (<FormItem><FormLabel>Type of Security</FormLabel><FormControl><Input placeholder="e.g., Cession of Debtors" {...field} /></FormControl><FormMessage /></FormItem>)} /><FormField control={control} name="description" render={({ field }) => (<FormItem><FormLabel>Description (Optional)</FormLabel><FormControl><Textarea placeholder="Add any relevant details..." {...field} /></FormControl><FormMessage /></FormItem>)} /><FormField control={control} name="clientCode" render={({ field }) => (<FormItem><FormLabel>Client Code</FormLabel><FormControl><Input placeholder="e.g., STC-001" {...field} /></FormControl><FormMessage /></FormItem>)} /></div>;
+                return (
+                    <div className="space-y-4">
+                        <FormField control={control} name="securityType" render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Type of Security</FormLabel>
+                                <FormControl><Input placeholder="e.g., Cession of Debtors" {...field} /></FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )} />
+                        <FormField control={control} name="description" render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Description (Optional)</FormLabel>
+                                <FormControl><Textarea placeholder="Add any relevant details..." {...field} /></FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )} />
+                        <FormField control={control} name="clientCode" render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Client Code</FormLabel>
+                                <FormControl><Input placeholder="e.g., STC-001" {...field} /></FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )} />
+                    </div>
+                );
             case 'status':
-                return <FormField control={control} name="docStatus" render={({ field }) => (<FormItem><FormLabel>Document Status</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select status..."/></SelectTrigger></FormControl><SelectContent>{docStatusOptions.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>} />;
+                return (
+                    <FormField 
+                        control={control} 
+                        name="docStatus" 
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Document Status</FormLabel>
+                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                    <FormControl><SelectTrigger><SelectValue placeholder="Select status..."/></SelectTrigger></FormControl>
+                                    <SelectContent>{docStatusOptions.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
+                                </Select>
+                                <FormMessage />
+                            </FormItem>
+                        )} 
+                    />
+                );
             case 'review':
-                return <div className="space-y-2"><p>Client: {watch('clientId')}</p><p>Agreement: {watch('agreementId')}</p><p>Type: {watch('securityType')}</p><p>Status: {watch('docStatus')}</p></div>;
+                return (
+                    <div className="space-y-2">
+                        <p>Client: {watch('clientId')}</p>
+                        <p>Agreement: {watch('agreementId')}</p>
+                        <p>Type: {watch('securityType')}</p>
+                        <p>Status: {watch('docStatus')}</p>
+                    </div>
+                );
             default: return null;
         }
     };
+
 
     return (
         <Card>
@@ -193,4 +275,3 @@ export default function SecurityContent() {
         </Card>
     );
 }
-    
