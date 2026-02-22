@@ -1,17 +1,17 @@
 
 'use client';
 
-import { useState, useMemo, useCallback, useEffect } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Users, PlusCircle, Trash2, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Loader2 } from 'lucide-react';
-import { useToast } from "@/hooks/use-toast";
-import { DataTable } from '@/components/ui/data-table';
-import { type ColumnDef } from '@/hooks/use-data-table';
 import { useCollection, useFirestore, useMemoFirebase, getClientSideAuthToken } from '@/firebase';
 import { collection, query, where } from 'firebase/firestore';
 import PartnerWizard from './partner-wizard';
 import { Badge } from '@/components/ui/badge';
+import { DataTable } from '@/components/ui/data-table';
+import { type ColumnDef } from '@/hooks/use-data-table';
+import { useToast } from '@/hooks/use-toast';
 
 const formatCurrency = (amount: number) => {
     if (typeof amount !== 'number') return 'R 0';
@@ -48,12 +48,12 @@ export default function PartnerDetails({ partnerType, initialAction }: { partner
         setSelectedPartner(partner);
         setView('edit');
     }, []);
-
+    
     const handleAdd = () => {
         setSelectedPartner(null);
         setView('create');
     };
-
+    
     const handleBackToList = () => {
         setView('list');
         setSelectedPartner(null);
@@ -92,7 +92,7 @@ export default function PartnerDetails({ partnerType, initialAction }: { partner
         { 
             accessorKey: 'status', 
             header: 'Status', 
-            cell: ({row}) => <Badge className="capitalize">{row.original.status || 'Active'}</Badge>
+            cell: ({row}) => <Badge className="capitalize">{row.original.status || 'Draft'}</Badge>
         },
         { 
             accessorKey: 'globalFacilityLimit', 
@@ -117,7 +117,7 @@ export default function PartnerDetails({ partnerType, initialAction }: { partner
                 <div>
                     <CardTitle>Manage {partnerType}</CardTitle>
                 </div>
-                <Button onClick={handleAdd}><PlusCircle className="mr-2 h-4 w-4"/> Add {partnerType.slice(0,-1)}</Button>
+                <Button onClick={handleAdd}><PlusCircle className="mr-2 h-4 w-4" /> Add {partnerType.slice(0,-1)}</Button>
             </CardHeader>
             <CardContent>
                  {isLoading ? (
@@ -129,4 +129,3 @@ export default function PartnerDetails({ partnerType, initialAction }: { partner
         </Card>
     );
 }
-
