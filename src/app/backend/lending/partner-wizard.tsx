@@ -112,6 +112,7 @@ const defaultValues: Partial<PartnerFormValues> = {
   balanceSheets: [], incomeStatements: [],
 };
 
+
 // --- Sub-components for each step ---
 
 const StepMain = () => {
@@ -143,14 +144,13 @@ const StepAddress = () => {
     const { control, watch, setValue } = useFormContext();
     const usePhysicalForPostal = watch('usePhysicalForPostal');
     const selectedPhysicalProvince = watch('physicalProvince');
-    const selectedPostalProvince = watch('postalProvince');
-
     const physicalCities = useMemo(() => {
         if (!selectedPhysicalProvince) return [];
         const province = provinces.find(p => p.name === selectedPhysicalProvince);
         return province ? province.cities : [];
     }, [selectedPhysicalProvince]);
-    
+
+    const selectedPostalProvince = watch('postalProvince');
     const postalCities = useMemo(() => {
         if (!selectedPostalProvince) return [];
         const province = provinces.find(p => p.name === selectedPostalProvince);
@@ -250,7 +250,6 @@ const StepContact = () => ( <div className="space-y-4 max-w-2xl"><div className=
 const OwnerFormFields = ({ index, remove }: { index: number; remove: (index: number) => void }) => {
     const { control, watch, setValue } = useFormContext();
     const provinceValue = watch(`owners.${index}.province`);
-
     const cities = useMemo(() => {
         if (!provinceValue) return [];
         const province = provinces.find(p => p.name === provinceValue);
@@ -395,12 +394,11 @@ const BalanceSheetEntryForm = ({ index, remove }: { index: number; remove: (inde
                 </Button>
             </CardHeader>
             <CardContent className="space-y-4">
-                 <div className="space-y-2">
+                <div className="space-y-2">
                     <Label>Statement Date</Label>
                     <Input type="date" {...register(`balanceSheets.${index}.statementDate`)} />
                 </div>
                 <div className="grid md:grid-cols-2 gap-x-8 gap-y-4">
-                    {/* Assets */}
                     <div className="space-y-4">
                         <h4 className="font-semibold text-lg text-primary">Assets</h4>
                         <div className="pl-4 border-l-2 border-primary/50 space-y-4">
@@ -412,7 +410,7 @@ const BalanceSheetEntryForm = ({ index, remove }: { index: number; remove: (inde
                                     <div className="space-y-1"><Label>Financial Assets</Label><Input type="number" placeholder="0.00" {...register(`balanceSheets.${index}.financialAssets`)} /></div>
                                 </div>
                             </div>
-                             <div>
+                            <div>
                                 <h5 className="font-medium">Current Assets</h5>
                                 <div className="pl-4 space-y-2 mt-2">
                                     <div className="space-y-1"><Label>Inventories</Label><Input type="number" placeholder="0.00" {...register(`balanceSheets.${index}.inventories`)} /></div>
@@ -421,15 +419,14 @@ const BalanceSheetEntryForm = ({ index, remove }: { index: number; remove: (inde
                                 </div>
                             </div>
                         </div>
-                         <div className="font-bold text-lg border-t pt-2 mt-4 flex justify-between">
+                        <div className="font-bold text-lg border-t pt-2 mt-4 flex justify-between">
                             <span>Total Assets</span>
                             <span>R 0.00</span>
                         </div>
                     </div>
-                    {/* Equity & Liabilities */}
                     <div className="space-y-4">
                         <h4 className="font-semibold text-lg text-primary">Equity & Liabilities</h4>
-                         <div className="pl-4 border-l-2 border-primary/50 space-y-4">
+                        <div className="pl-4 border-l-2 border-primary/50 space-y-4">
                             <div>
                                 <h5 className="font-medium">Equity</h5>
                                 <div className="pl-4 space-y-2 mt-2">
@@ -437,23 +434,23 @@ const BalanceSheetEntryForm = ({ index, remove }: { index: number; remove: (inde
                                     <div className="space-y-1"><Label>Retained Earnings</Label><Input type="number" placeholder="0.00" {...register(`balanceSheets.${index}.retainedEarnings`)} /></div>
                                 </div>
                             </div>
-                             <div>
+                            <div>
                                 <h5 className="font-medium">Non-Current Liabilities</h5>
-                                 <div className="pl-4 space-y-2 mt-2">
+                                <div className="pl-4 space-y-2 mt-2">
                                     <div className="space-y-1"><Label>Long-Term Borrowings</Label><Input type="number" placeholder="0.00" {...register(`balanceSheets.${index}.longTermDebt`)} /></div>
                                     <div className="space-y-1"><Label>Lease Liabilities</Label><Input type="number" placeholder="0.00" {...register(`balanceSheets.${index}.leaseLiabilities`)} /></div>
                                 </div>
                             </div>
-                             <div>
+                            <div>
                                 <h5 className="font-medium">Current Liabilities</h5>
-                                 <div className="pl-4 space-y-2 mt-2">
+                                <div className="pl-4 space-y-2 mt-2">
                                     <div className="space-y-1"><Label>Trade & Other Payables</Label><Input type="number" placeholder="0.00" {...register(`balanceSheets.${index}.payables`)} /></div>
                                     <div className="space-y-1"><Label>Short-Term Borrowings</Label><Input type="number" placeholder="0.00" {...register(`balanceSheets.${index}.shortTermDebt`)} /></div>
                                     <div className="space-y-1"><Label>Current Tax Payable</Label><Input type="number" placeholder="0.00" {...register(`balanceSheets.${index}.taxPayable`)} /></div>
                                 </div>
                             </div>
                         </div>
-                         <div className="font-bold text-lg border-t pt-2 mt-4 flex justify-between">
+                        <div className="font-bold text-lg border-t pt-2 mt-4 flex justify-between">
                             <span>Total Equity & Liabilities</span>
                             <span>R 0.00</span>
                         </div>
@@ -474,9 +471,17 @@ const IncomeStatementEntryForm = ({ index, remove }: { index: number; remove: (i
     const { register } = useFormContext();
     return (
         <Card className="relative">
-            <CardHeader><CardTitle>Income Statement #{index + 1}</CardTitle><Button variant="ghost" size="icon" className="absolute top-2 right-2" onClick={() => remove(index)}><Trash2 className="h-4 w-4 text-destructive" /></Button></CardHeader>
+            <CardHeader>
+                <CardTitle>Income Statement #{index + 1}</CardTitle>
+                <Button variant="ghost" size="icon" className="absolute top-2 right-2" onClick={() => remove(index)}>
+                    <Trash2 className="h-4 w-4 text-destructive" />
+                </Button>
+            </CardHeader>
             <CardContent className="space-y-4">
-                <div className="space-y-2"><Label>Statement Date</Label><Input type="date" {...register(`incomeStatements.${index}.statementDate`)} /></div>
+                <div className="space-y-2">
+                    <Label>Statement Date</Label>
+                    <Input type="date" {...register(`incomeStatements.${index}.statementDate`)} />
+                </div>
                 <div className="space-y-2"><Label>Revenue</Label><Input type="number" placeholder="0.00" {...register(`incomeStatements.${index}.revenue`)} /></div>
                 <div className="space-y-2"><Label>Cost of Sales</Label><Input type="number" placeholder="0.00" {...register(`incomeStatements.${index}.cogs`)} /></div>
                 <p className="flex justify-between font-semibold"><span>Gross Profit</span><span>R 0.00</span></p>
@@ -485,10 +490,10 @@ const IncomeStatementEntryForm = ({ index, remove }: { index: number; remove: (i
                 <div className="space-y-2"><Label>Operating Expenses</Label><Input type="number" placeholder="0.00" {...register(`incomeStatements.${index}.opex`)} /></div>
                 <p className="flex justify-between font-semibold"><span>Operating Profit</span><span>R 0.00</span></p>
                 <Separator />
-                 <div className="space-y-2"><Label>Finance Costs</Label><Input type="number" placeholder="0.00" {...register(`incomeStatements.${index}.financeCosts`)} /></div>
+                <div className="space-y-2"><Label>Finance Costs</Label><Input type="number" placeholder="0.00" {...register(`incomeStatements.${index}.financeCosts`)} /></div>
                 <p className="flex justify-between font-semibold"><span>Profit Before Tax</span><span>R 0.00</span></p>
                 <Separator />
-                  <div className="space-y-2"><Label>Income Tax Expense</Label><Input type="number" placeholder="0.00" {...register(`incomeStatements.${index}.tax`)} /></div>
+                <div className="space-y-2"><Label>Income Tax Expense</Label><Input type="number" placeholder="0.00" {...register(`incomeStatements.${index}.tax`)} /></div>
                 <p className="flex justify-between font-bold text-lg text-primary border-t pt-2 mt-2"><span>Profit for the Period</span><span>R 0.00</span></p>
             </CardContent>
         </Card>
@@ -545,7 +550,6 @@ export default function PartnerWizard({ partnerData, partnerType, onBack, onSave
             const token = await getClientSideAuthToken();
             if (!token) throw new Error("Authentication failed.");
 
-            const collectionName = partnerType === 'Debtors' ? 'lendingClients' : 'lendingPartners';
             const action = partnerType === 'Debtors' ? 'saveLendingClient' : 'saveLendingPartner';
             const payloadKey = partnerType === 'Debtors' ? 'client' : 'partner';
 
@@ -625,4 +629,4 @@ export default function PartnerWizard({ partnerData, partnerType, onBack, onSave
     );
 }
 
-```
+    
