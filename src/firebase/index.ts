@@ -1,4 +1,3 @@
-
 'use client';
 
 export * from './init';
@@ -10,3 +9,4 @@ export * from './errors';
 export * from './error-emitter';
 export { useStorage } from './provider';
 export { useMemoFirebase } from '@/hooks/use-memo-firebase';
+export { useUser } from './provider'; // Re-export useUser explicitly

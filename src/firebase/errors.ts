@@ -1,6 +1,6 @@
-
 'use client';
-import { getAuth, getIdToken, type User } from 'firebase/auth';
+import { getIdToken, type User } from 'firebase/auth';
+import { getInitializedFirebaseServices } from '@/firebase/init';
 
 type SecurityRuleContext = {
   path: string;
@@ -78,9 +78,8 @@ function buildAuthObject(currentUser: User | null): FirebaseAuthObject | null {
 function buildRequestObject(context: SecurityRuleContext): SecurityRuleRequest {
   let authObject: FirebaseAuthObject | null = null;
   try {
-    // Safely attempt to get the current user.
-    const firebaseAuth = getAuth();
-    const currentUser = firebaseAuth.currentUser;
+    const { auth } = getInitializedFirebaseServices();
+    const currentUser = auth.currentUser;
     if (currentUser) {
       authObject = buildAuthObject(currentUser);
     }
@@ -125,7 +124,7 @@ export class FirestorePermissionError extends Error {
 
 
 export async function getClientSideAuthToken(): Promise<string | null> {
-    const auth = getAuth();
+    const { auth } = getInitializedFirebaseServices();
     if (auth.currentUser) {
         try {
             // The `false` means it will return the cached token unless it's expired.

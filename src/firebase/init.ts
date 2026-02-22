@@ -2,27 +2,53 @@
 
 import { firebaseConfig } from '@/firebase/config';
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
-import { getStorage } from 'firebase/storage';
+import { getAuth, Auth } from 'firebase/auth';
+import { getFirestore, Firestore } from 'firebase/firestore';
+import { getStorage, FirebaseStorage } from 'firebase/storage';
 
 const CLIENT_APP_NAME = 'firebase-client-app-transconnect';
 
+interface FirebaseServices {
+  firebaseApp: FirebaseApp;
+  auth: Auth;
+  firestore: Firestore;
+  storage: FirebaseStorage;
+}
+
+let firebaseServices: FirebaseServices | null = null;
+
+
 // IMPORTANT: DO NOT MODIFY THIS FUNCTION
-export function initializeFirebase() {
-  let firebaseApp: FirebaseApp;
-  
-  const existingApp = getApps().find(app => app.name === CLIENT_APP_NAME);
+export function initializeFirebase(): FirebaseServices {
+    if (firebaseServices) {
+        return firebaseServices;
+    }
 
-  if (existingApp) {
-    firebaseApp = existingApp;
-  } else {
-    firebaseApp = initializeApp(firebaseConfig, CLIENT_APP_NAME);
+    let firebaseApp: FirebaseApp;
+    
+    const existingApp = getApps().find(app => app.name === CLIENT_APP_NAME);
+
+    if (existingApp) {
+        firebaseApp = existingApp;
+    } else {
+        firebaseApp = initializeApp(firebaseConfig, CLIENT_APP_NAME);
+    }
+
+    const auth = getAuth(firebaseApp);
+    const firestore = getFirestore(firebaseApp);
+    const storage = getStorage(firebaseApp); 
+
+    firebaseServices = { firebaseApp, auth, firestore, storage };
+    return firebaseServices;
+}
+
+
+// New function to access the initialized services
+export function getInitializedFirebaseServices(): FirebaseServices {
+  if (!firebaseServices) {
+    // This will be called if getInitializedFirebaseServices is used before FirebaseClientProvider
+    // has had a chance to run. It's a safe fallback.
+    return initializeFirebase();
   }
-
-  const auth = getAuth(firebaseApp);
-  const firestore = getFirestore(firebaseApp);
-  const storage = getStorage(firebaseApp); 
-
-  return { firebaseApp, auth, firestore, storage };
+  return firebaseServices;
 }
