@@ -118,7 +118,7 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
     const unsubscribe = onIdTokenChanged(
       auth,
       async (firebaseUser) => {
-        const idToken = firebaseUser ? await getIdToken(firebaseUser, true) : null; // Force refresh
+        const idToken = firebaseUser ? await firebaseUser.getIdToken() : null;
         await setSessionCookie(idToken);
         
         if (firebaseUser && idToken) {
@@ -132,8 +132,8 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
               },
               body: JSON.stringify({ referrerId }), 
             });
-            // Force a refresh of the user data after the backend check is complete
-            forceRefresh();
+            // The re-render from setBaseUser will cause useDoc to re-fetch the user profile if needed.
+            // No manual forceRefresh() is required here, which was part of the loop problem.
           } catch (error) {
             console.error("FirebaseProvider: Failed to call checkAndCreateUser:", error);
           }
@@ -152,7 +152,7 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
       }
     );
     return () => unsubscribe();
-  }, [auth, forceRefresh]);
+  }, [auth]); // This effect should only run once to set up the listener.
 
   const contextValue = useMemo((): FirebaseContextState => ({
     firebaseApp,
