@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
@@ -94,6 +93,14 @@ function AgreementWizard({ agreement, onBack, onSaveSuccess }: { agreement?: any
     }, [firestore, selectedClientId]);
     const { data: assets, isLoading: areAssetsLoading } = useCollection(assetsQuery);
 
+    const clientName = useMemo(() => {
+        if (agreement?.id && selectedClientId && clients) {
+            return clients.find((c: any) => c.id === selectedClientId)?.name || 'Unknown Client';
+        }
+        return '';
+    }, [agreement, selectedClientId, clients]);
+
+
     const handleNext = async () => {
         const currentStepConfig = dynamicSteps[currentStep];
         const isValid = currentStepConfig.fields ? await trigger(currentStepConfig.fields as any) : true;
@@ -145,10 +152,16 @@ function AgreementWizard({ agreement, onBack, onSaveSuccess }: { agreement?: any
                     <FormField control={control} name="clientId" render={({field}) => (
                         <FormItem>
                             <FormLabel>Client</FormLabel>
-                            <Select onValueChange={field.onChange} value={field.value || ''} disabled={areClientsLoading || !!agreement?.id}>
-                                <FormControl><SelectTrigger><SelectValue placeholder="Select a client..."/></SelectTrigger></FormControl>
-                                <SelectContent>{(clients || []).map((c: any) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
-                            </Select>
+                             {agreement?.id ? (
+                                <FormControl>
+                                    <Input value={clientName} disabled />
+                                </FormControl>
+                            ) : (
+                                <Select onValueChange={field.onChange} value={field.value || ''} disabled={areClientsLoading}>
+                                    <FormControl><SelectTrigger><SelectValue placeholder="Select a client..."/></SelectTrigger></FormControl>
+                                    <SelectContent>{(clients || []).map((c: any) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
+                                </Select>
+                            )}
                             <FormMessage/>
                         </FormItem>
                     )} />
@@ -201,11 +214,11 @@ function AgreementWizard({ agreement, onBack, onSaveSuccess }: { agreement?: any
                 );
             case 'review':
                 const values = getValues();
-                const clientName = clients?.find(c => c.id === values.clientId)?.name;
+                const clientNameReview = clients?.find(c => c.id === values.clientId)?.name;
                 const asset = assets?.find(a => a.id === values.assetId);
                 return (
                     <div className="space-y-2 text-sm">
-                        <p><strong>Client:</strong> {clientName}</p>
+                        <p><strong>Client:</strong> {clientNameReview}</p>
                         <p><strong>Type:</strong> {values.type}</p>
                         <p><strong>Amount:</strong> {formatCurrency(values.amount || 0)}</p>
                         <p><strong>Term:</strong> {values.term} months</p>
@@ -386,4 +399,3 @@ export default function AgreementsContent() {
         </Card>
     );
 }
-
