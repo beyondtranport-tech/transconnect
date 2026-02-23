@@ -16,9 +16,9 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useCollection, useFirestore, useMemoFirebase, useUser, getClientSideAuthToken } from '@/firebase';
-import { collection, query, collectionGroup } from 'firebase/firestore';
+import { collection, query } from 'firebase/firestore';
 import { Progress } from '@/components/ui/progress';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
@@ -54,6 +54,33 @@ const formSchema = z.object({
 
 type AssetWizardFormValues = z.infer<typeof formSchema>;
 
+// --- Dropdown Data ---
+const vehicleMakes = [
+  { id: 'scania', name: 'Scania' },
+  { id: 'volvo', name: 'Volvo' },
+  { id: 'mercedes-benz', name: 'Mercedes-Benz' },
+  { id: 'man', name: 'MAN' },
+  { id: 'freightliner', name: 'Freightliner' },
+  { id: 'henred-fruehauf', name: 'Henred Fruehauf' },
+  { id: 'afrit', name: 'Afrit' },
+  { id: 'other', name: 'Other' },
+];
+
+const vehicleModels: { [key: string]: { id: string; name: string }[] } = {
+  scania: [{ id: 'r-series', name: 'R-Series' }, { id: 'g-series', name: 'G-Series' }, { id: 'p-series', name: 'P-Series' }],
+  volvo: [{ id: 'fh-series', name: 'FH Series' }, { id: 'fm-series', name: 'FM Series' }, { id: 'fmx-series', name: 'FMX Series' }],
+  'mercedes-benz': [{ id: 'actros', name: 'Actros' }, { id: 'axor', name: 'Axor' }, { id: 'atego', name: 'Atego' }],
+  man: [{ id: 'tgx', name: 'TGX' }, { id: 'tgs', name: 'TGS' }, { id: 'tgm', name: 'TGM' }],
+  freightliner: [{ id: 'cascadia', name: 'Cascadia' }, { id: 'argosy', name: 'Argosy' }],
+  'henred-fruehauf': [{ id: 'tautliner', name: 'Tautliner' }, { id: 'flatdeck', name: 'Flatdeck' }, { id: 'refrigerated', name: 'Refrigerated' }],
+  afrit: [{ id: 'side-tipper', name: 'Side Tipper' }, { id: 'interlink', name: 'Interlink' }],
+  other: [{ id: 'custom', name: 'Custom/Other' }],
+};
+
+const currentYear = new Date().getFullYear();
+const years = Array.from({ length: 30 }, (_, i) => ({ id: (currentYear - i).toString(), name: (currentYear - i).toString() }));
+
+
 // --- Wizard Steps Configuration ---
 const wizardSteps = [
     { id: 'client', name: 'Client', fields: ['clientId'] },
@@ -83,18 +110,95 @@ const StepSelectClient = () => {
         )}/>
     )
 }
-const StepAssetDetails = () => (
-    <div className="space-y-4">
-        {Object.keys(assetDetailsSchema.shape).map(key => {
-            const label = key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
-            return (
-                <FormField key={key} control={useFormContext().control} name={`asset.${key}`} render={({ field }) => (
-                    <FormItem><FormLabel>{label}</FormLabel><FormControl><Input type={key === 'year' || key === 'tare' || key === 'gvm' ? 'number' : key.includes('Date') ? 'date' : 'text'} {...field} /></FormControl><FormMessage /></FormItem>
-                )} />
-            )
-        })}
-    </div>
-);
+const StepAssetDetails = () => {
+    const { control, watch, setValue } = useFormContext();
+    const selectedMake = watch('asset.make');
+
+    const models = useMemo(() => {
+        if (!selectedMake) return [];
+        return vehicleModels[selectedMake] || [];
+    }, [selectedMake]);
+
+    useEffect(() => {
+        if (selectedMake && models.length > 0) {
+            const currentModel = watch('asset.model');
+            if (currentModel && !models.some(m => m.id === currentModel)) {
+                setValue('asset.model', '');
+            }
+        }
+    }, [selectedMake, models, setValue, watch]);
+
+
+    return (
+        <div className="space-y-4">
+             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <FormField
+                    control={control}
+                    name="asset.make"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Make</FormLabel>
+                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <FormControl><SelectTrigger><SelectValue placeholder="Select make..." /></SelectTrigger></FormControl>
+                                <SelectContent>{vehicleMakes.map(m => <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>)}</SelectContent>
+                            </Select>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
+                 <FormField
+                    control={control}
+                    name="asset.model"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Model</FormLabel>
+                            <Select onValueChange={field.onChange} value={field.value} disabled={!selectedMake}>
+                                <FormControl><SelectTrigger><SelectValue placeholder="Select model..." /></SelectTrigger></FormControl>
+                                <SelectContent>{models.map(m => <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>)}</SelectContent>
+                            </Select>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
+                 <FormField
+                    control={control}
+                    name="asset.year"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Year</FormLabel>
+                             <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <FormControl><SelectTrigger><SelectValue placeholder="Select year..." /></SelectTrigger></FormControl>
+                                <SelectContent>{years.map(y => <SelectItem key={y.id} value={y.id}>{y.name}</SelectItem>)}</SelectContent>
+                            </Select>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField control={control} name="asset.registrationNumber" render={({ field }) => (<FormItem><FormLabel>Registration Number</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+                <FormField control={control} name="asset.registerNumber" render={({ field }) => (<FormItem><FormLabel>Register #</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                 <FormField control={control} name="asset.vin" render={({ field }) => (<FormItem><FormLabel>VIN</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+                <FormField control={control} name="asset.engineNumber" render={({ field }) => (<FormItem><FormLabel>Engine Number</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField control={control} name="asset.tare" render={({ field }) => (<FormItem><FormLabel>Tare (kg)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                <FormField control={control} name="asset.gvm" render={({ field }) => (<FormItem><FormLabel>GVM (kg)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
+            </div>
+             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField control={control} name="asset.titleholder" render={({ field }) => (<FormItem><FormLabel>Titleholder</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+                <FormField control={control} name="asset.owner" render={({ field }) => (<FormItem><FormLabel>Owner</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField control={control} name="asset.firstRegistrationDate" render={({ field }) => (<FormItem><FormLabel>Date of First Registration</FormLabel><FormControl><Input type="date" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                <FormField control={control} name="asset.classification" render={({ field }) => (<FormItem><FormLabel>Classification</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+            </div>
+        </div>
+    );
+};
+
 const documentTypes = [ { id: 'invoice', label: 'Invoice' }, { id: 'rc1', label: 'RC1 Certificate' }, { id: 'licenseDisk', label: 'License Disk' }, { id: 'deliveryNote', label: 'Delivery Note' } ];
 const StepDocuments = () => {
     const { control, setValue } = useFormContext();
@@ -187,9 +291,20 @@ const AssetWizard = ({ asset, onBack, onSaveSuccess, defaultClientId }: { asset?
 
     const handleNext = async () => {
         const currentStepConfig = wizardSteps[currentStep];
-        const isValid = currentStepConfig.fields ? await methods.trigger(currentStepConfig.fields as any) : true;
-        if (isValid && currentStep < wizardSteps.length - 1) setCurrentStep(prev => prev + 1);
-        else if (!isValid) toast({ variant: 'destructive', title: 'Validation Error', description: 'Please fill in all required fields.' });
+        if (!currentStepConfig) return;
+
+        let isValid = false;
+        if (currentStepConfig.fields) {
+            isValid = await methods.trigger(currentStepConfig.fields as (keyof AssetWizardFormValues)[]);
+        } else {
+            isValid = true;
+        }
+
+        if (isValid && currentStep < wizardSteps.length - 1) {
+            setCurrentStep(prev => prev + 1);
+        } else if (!isValid) {
+            toast({ variant: 'destructive', title: 'Validation Error', description: 'Please fill in all required fields for this step.' });
+        }
     };
     
     const handleBack = () => { currentStep > 0 ? setCurrentStep(prev => prev - 1) : onBack(); };
@@ -216,7 +331,7 @@ const AssetWizard = ({ asset, onBack, onSaveSuccess, defaultClientId }: { asset?
             setIsSaving(false);
         }
     };
-    
+
     const isStepValid = (stepIndex: number) => {
         if (stepIndex < 0) return true;
         const step = wizardSteps[stepIndex];
@@ -260,13 +375,13 @@ const AssetWizard = ({ asset, onBack, onSaveSuccess, defaultClientId }: { asset?
                             <div className="space-y-6">
                                 <h2 className="text-2xl font-bold">{wizardSteps[currentStep].name}</h2>
                                 {renderStepContent()}
+                                <div className="flex justify-between pt-8 mt-8 border-t">
+                                    <Button type="button" variant="outline" onClick={handleBack}><ArrowLeft className="mr-2 h-4 w-4" /> Back</Button>
+                                    {currentStep < wizardSteps.length - 1 ? <Button type="button" onClick={handleNext}>Next <ArrowRight className="ml-2 h-4 w-4" /></Button> : <Button type="submit" disabled={isSaving}>{isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />} Save Asset</Button>}
+                                </div>
                             </div>
                         </div>
                     </CardContent>
-                    <CardFooter className="justify-between">
-                        <Button type="button" variant="outline" onClick={handleBack}><ArrowLeft className="mr-2 h-4 w-4" /> Back</Button>
-                        {currentStep < wizardSteps.length - 1 ? <Button type="button" onClick={handleNext}>Next <ArrowRight className="ml-2 h-4 w-4" /></Button> : <Button type="submit" disabled={isSaving}>{isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />} Save Asset</Button>}
-                    </CardFooter>
                 </form>
             </FormProvider>
         </Card>
@@ -301,6 +416,7 @@ export default function AssetsContent() {
     }, [clients]);
 
     const enrichedAssets = useMemo(() => {
+        if (!assets) return [];
         return (assets || []).map(asset => ({ ...asset, clientName: clientMap.get(asset.clientId) || asset.clientId }));
     }, [assets, clientMap]);
 
@@ -326,7 +442,7 @@ export default function AssetsContent() {
     
     const columns: ColumnDef<any>[] = useMemo(() => [
         { accessorKey: 'id', header: 'Asset ID' },
-        { header: 'Description', cell: ({row}) => <div>{row.original.asset.make} {row.original.asset.model}</div>},
+        { header: 'Description', cell: ({row}) => <div>{row.original.asset?.make} {row.original.asset?.model}</div>},
         { accessorKey: 'clientName', header: 'Client' },
         { id: 'actions', header: () => <div className="text-right">Actions</div>, cell: ({ row }) => <div className="text-right"><Button variant="ghost" size="sm" onClick={() => handleEdit(row.original)}>Edit</Button></div> }
     ], [handleEdit]);
@@ -351,3 +467,5 @@ export default function AssetsContent() {
         </Card>
     );
 }
+
+    
