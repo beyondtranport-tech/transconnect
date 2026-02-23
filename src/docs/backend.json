@@ -472,7 +472,31 @@
         "description": "An asset financed through a lending agreement.",
         "type": "object",
         "properties": {
-            "id": { "type": "string" }
+            "id": { "type": "string" },
+            "clientId": { "type": "string" },
+            "agreementId": { "type": "string" },
+            "make": { "type": "string" },
+            "model": { "type": "string" },
+            "year": { "type": "string" },
+            "registrationNumber": { "type": "string" },
+            "registerNumber": { "type": "string" },
+            "vin": { "type": "string" },
+            "engineNumber": { "type": "string" },
+            "tare": { "type": "string" },
+            "gvm": { "type": "string" },
+            "titleholder": { "type": "string" },
+            "owner": { "type": "string" },
+            "firstRegistrationDate": { "type": "string" },
+            "classification": { "type": "string" },
+            "documents": {
+                "type": "object",
+                "properties": {
+                    "invoice": { "type": "string", "format": "uri" },
+                    "rc1": { "type": "string", "format": "uri" },
+                    "licenseDisk": { "type": "string", "format": "uri" },
+                    "deliveryNote": { "type": "string", "format": "uri" }
+                }
+            }
         }
     },
     "Security": {
