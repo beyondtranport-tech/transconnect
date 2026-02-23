@@ -69,16 +69,22 @@ function AgreementWizard({ agreement, onBack, onSaveSuccess }: { agreement?: any
     const methods = useForm<AgreementFormValues>({
         resolver: zodResolver(agreementSchema),
         mode: 'onChange',
-        defaultValues: agreement || { clientId: '', type: '', status: 'pending', amount: 0, term: 0, rate: 0, assetId: '' },
     });
     
+    useEffect(() => {
+        if (agreement) {
+            methods.reset(agreement);
+        } else {
+            methods.reset({ clientId: '', type: '', status: 'pending', amount: 0, term: 0, rate: 0, assetId: '' });
+        }
+    }, [agreement, methods]);
+
     const { control, watch, trigger, getValues } = methods;
 
     const selectedClientId = watch('clientId');
     const agreementType = watch('type');
     const dynamicSteps = useMemo(() => agreementType === 'installment-sale' ? wizardSteps : wizardSteps.filter(step => step.id !== 'asset'), [agreementType]);
     
-    // Data fetching
     const clientsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'lendingClients')) : null, [firestore]);
     const { data: clients, isLoading: areClientsLoading } = useCollection(clientsQuery);
     
@@ -166,7 +172,7 @@ function AgreementWizard({ agreement, onBack, onSaveSuccess }: { agreement?: any
                     <FormField control={control} name="type" render={({field}) => (
                         <FormItem>
                             <FormLabel>Agreement Type</FormLabel>
-                            <Select onValueChange={field.onChange} value={field.value || ''} disabled={!!agreement?.id}>
+                            <Select onValueChange={field.onChange} value={field.value || ''}>
                                 <FormControl><SelectTrigger><SelectValue placeholder="Select type..."/></SelectTrigger></FormControl>
                                 <SelectContent>{agreementTypes.map(t => <SelectItem key={t.id} value={t.id}>{t.label}</SelectItem>)}</SelectContent>
                             </Select>
@@ -394,3 +400,5 @@ export default function AgreementsContent() {
         </Card>
     );
 }
+
+    
