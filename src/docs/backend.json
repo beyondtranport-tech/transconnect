@@ -440,7 +440,14 @@
         "description": "Represents a single lending agreement with a client.",
         "type": "object",
         "properties": {
-            "id": { "type": "string" }
+            "id": { "type": "string" },
+            "clientId": { "type": "string", "description": "The ID of the client this agreement belongs to."},
+            "assetId": { "type": "string", "description": "The ID of the asset being financed under this agreement."},
+            "type": { "type": "string", "enum": ["loan-pv", "loan-fl", "installment-sale", "rental", "discounting"], "description": "The type of lending agreement."},
+            "status": { "type": "string", "enum": ["pending", "active", "completed", "defaulted"], "description": "The current status of the agreement."},
+            "amount": { "type": "number", "description": "The principal amount of the agreement."},
+            "term": { "type": "number", "description": "The term of the agreement in months."},
+            "rate": { "type": "number", "description": "The annual interest rate."}
         }
     },
     "Facility": {

@@ -3,146 +3,196 @@
 
 import { useState, useMemo, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { Landmark, FileText, Repeat, Briefcase, Handshake, Users, Truck, PlusCircle, ArrowLeft, ArrowRight, Loader2, Save, AlertTriangle } from "lucide-react";
+import { Landmark, FileText, ArrowLeft, ArrowRight, Loader2, PlusCircle, Save, Check, Truck } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query } from 'firebase/firestore';
 import { Input } from '@/components/ui/input';
-import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { useForm, FormProvider } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { Form, FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
 import { Separator } from '@/components/ui/separator';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
+import { getClientSideAuthToken } from '@/firebase';
+import { cn } from '@/lib/utils';
 
 
 const agreementTypes = [
     { id: 'loan-pv', label: 'Loan pv' },
     { id: 'loan-fl', label: 'Loan fl' },
-    { id: 'installment-sale', label: 'Instalment Sale' },
+    { id: 'installment-sale', label: 'Installment Sale' },
     { id: 'rental', label: 'Leases' },
     { id: 'discounting', label: 'Factoring' },
 ];
 
 const agreementSchema = z.object({
-  type: z.string(),
-  status: z.string(),
-  amount: z.coerce.number().optional(),
-  term: z.coerce.number().optional(),
-  rate: z.coerce.number().optional(),
+  clientId: z.string().min(1, 'Client is required'),
+  type: z.string().min(1, 'Agreement type is required'),
+  status: z.string().default('pending'),
+  amount: z.coerce.number().positive("Amount must be a positive number."),
+  term: z.coerce.number().int().positive("Term must be a positive integer."),
+  rate: z.coerce.number().min(0, "Rate cannot be negative."),
+  assetId: z.string().optional(),
 });
 
 type AgreementFormValues = z.infer<typeof agreementSchema>;
 
-const AgreementWizard = ({ agreement, client, onBack, onSaveSuccess }: { agreement: any, client: any, onBack: () => void, onSaveSuccess: () => void }) => {
-    const isEditable = agreement.status.toLowerCase() === 'pending';
+const wizardSteps = [
+    { id: 'client', name: 'Select Client', fields: ['clientId'] },
+    { id: 'type', name: 'Agreement Type', fields: ['type'] },
+    { id: 'details', name: 'Financial Details', fields: ['amount', 'term', 'rate'] },
+    { id: 'asset', name: 'Link Asset', fields: ['assetId'] },
+    { id: 'review', name: 'Review & Save' },
+];
+
+const formatCurrency = (value: number) => {
+    if (typeof value !== 'number' || isNaN(value)) return 'R 0';
+    return new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR', maximumFractionDigits: 0 }).format(value);
+};
+
+
+function AgreementWizard({ agreement, onBack, onSaveSuccess }: { agreement?: any, onBack: () => void, onSaveSuccess: () => void }) {
+    const [currentStep, setCurrentStep] = useState(0);
+    const [isLoading, setIsLoading] = useState(false);
     const { toast } = useToast();
-    const [isSaving, setIsSaving] = useState(false);
-    
+    const firestore = useFirestore();
+
     const methods = useForm<AgreementFormValues>({
         resolver: zodResolver(agreementSchema),
-        defaultValues: {
-            type: agreement.type || '',
-            status: agreement.status || '',
-            amount: agreement.amount || 0,
-            term: agreement.term || 0,
-            rate: agreement.rate || 0,
-        },
+        mode: 'onChange',
+        defaultValues: agreement || { clientId: '', type: '', status: 'pending', amount: 0, term: 0, rate: 0, assetId: '' },
     });
+    
+    const { control, watch, trigger, getValues } = methods;
+
+    const selectedClientId = watch('clientId');
+    const agreementType = watch('type');
+    const dynamicSteps = useMemo(() => agreementType === 'installment-sale' ? wizardSteps : wizardSteps.filter(step => step.id !== 'asset'), [agreementType]);
+    
+    // Data fetching
+    const clientsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'lendingClients')) : null, [firestore]);
+    const { data: clients, isLoading: areClientsLoading } = useCollection(clientsQuery);
+    const assetsQuery = useMemoFirebase(() => {
+        if (!firestore || !selectedClientId) return null;
+        return query(collection(firestore, `lendingClients/${selectedClientId}/assets`));
+    }, [firestore, selectedClientId]);
+    const { data: assets, isLoading: areAssetsLoading } = useCollection(assetsQuery);
+
+    const handleNext = async () => {
+        const currentStepConfig = dynamicSteps[currentStep];
+        const isValid = currentStepConfig.fields ? await trigger(currentStepConfig.fields as any) : true;
+        
+        if (isValid && currentStep < dynamicSteps.length - 1) {
+            setCurrentStep(prev => prev + 1);
+        } else if (!isValid) {
+            toast({ variant: 'destructive', title: 'Validation Error', description: 'Please complete the current step.' });
+        }
+    };
+    
+    const handleBack = () => { currentStep > 0 ? setCurrentStep(prev => prev - 1) : onBack(); };
 
     const onSubmit = async (values: AgreementFormValues) => {
-        setIsSaving(true);
-        // Placeholder for API call
-        console.log("Saving agreement:", { id: agreement.id, ...values });
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        toast({ title: 'Agreement Updated' });
-        setIsSaving(false);
-        onSaveSuccess();
+        setIsLoading(true);
+        try {
+            const token = await getClientSideAuthToken();
+            if (!token) throw new Error("Authentication failed.");
+            
+            const response = await fetch('/api/admin', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'saveLendingAgreement', payload: { agreement: { id: agreement?.id, ...values } } }),
+            });
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.error);
+            
+            toast({ title: agreement?.id ? 'Agreement Updated' : 'Agreement Created' });
+            onSaveSuccess();
+        } catch (e: any) {
+            toast({ variant: 'destructive', title: 'Error saving agreement', description: e.message });
+        } finally {
+            setIsLoading(false);
+        }
+    };
+    
+    const isStepValid = (stepIndex: number) => {
+        if (stepIndex < 0) return true;
+        const step = dynamicSteps[stepIndex];
+        if (!step.fields) return true;
+        const fields = step.fields as (keyof AgreementFormValues)[];
+        return fields.every(field => !methods.formState.errors[field as keyof typeof methods.formState.errors]);
     };
 
+    const renderStepContent = () => {
+        switch (dynamicSteps[currentStep].id) {
+            case 'client':
+                return <FormField control={control} name="clientId" render={({field}) => <FormItem><FormLabel>Client</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value} disabled={areClientsLoading || !!agreement}><FormControl><SelectTrigger><SelectValue placeholder="Select a client..."/></SelectTrigger></FormControl><SelectContent>{(clients || []).map((c: any) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent></Select><FormMessage/></FormItem>}/>
+            case 'type':
+                return <FormField control={control} name="type" render={({field}) => <FormItem><FormLabel>Agreement Type</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value} disabled={!!agreement}><FormControl><SelectTrigger><SelectValue placeholder="Select type..."/></SelectTrigger></FormControl><SelectContent>{agreementTypes.map(t => <SelectItem key={t.id} value={t.id}>{t.label}</SelectItem>)}</SelectContent></Select><FormMessage/></FormItem>}/>
+            case 'details':
+                return <div className="grid grid-cols-3 gap-4"><FormField control={control} name="amount" render={({field}) => <FormItem><FormLabel>Amount</FormLabel><FormControl><Input type="number" {...field}/></FormControl><FormMessage/></FormItem>}/><FormField control={control} name="term" render={({field}) => <FormItem><FormLabel>Term (Months)</FormLabel><FormControl><Input type="number" {...field}/></FormControl><FormMessage/></FormItem>}/><FormField control={control} name="rate" render={({field}) => <FormItem><FormLabel>Rate (%)</FormLabel><FormControl><Input type="number" {...field}/></FormControl><FormMessage/></FormItem>}/></div>
+            case 'asset':
+                return <FormField control={control} name="assetId" render={({field}) => <FormItem><FormLabel>Linked Asset</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value} disabled={areAssetsLoading}><FormControl><SelectTrigger><SelectValue placeholder={areAssetsLoading ? "Loading assets..." : "Select an asset..."}/></SelectTrigger></FormControl><SelectContent>{(assets || []).map((a:any) => <SelectItem key={a.id} value={a.id}>{a.make} {a.model} ({a.registrationNumber})</SelectItem>)}</SelectContent></Select><FormMessage/></FormItem>}/>
+            case 'review':
+                const values = getValues();
+                const clientName = clients?.find(c => c.id === values.clientId)?.name;
+                const asset = assets?.find(a => a.id === values.assetId);
+                return <div className="space-y-2 text-sm"><p><strong>Client:</strong> {clientName}</p><p><strong>Type:</strong> {values.type}</p><p><strong>Amount:</strong> {formatCurrency(values.amount || 0)}</p><p><strong>Term:</strong> {values.term} months</p><p><strong>Rate:</strong> {values.rate}%</p>{asset && <p><strong>Asset:</strong> {asset.make} {asset.model}</p>}</div>
+            default: return null;
+        }
+    }
+
     return (
-        <div>
-            <h3 className="text-lg font-semibold mb-4">
-                Managing Agreement: <span className="font-mono text-primary">{agreement.id}</span>
-            </h3>
+        <Card>
             <FormProvider {...methods}>
                 <form onSubmit={methods.handleSubmit(onSubmit)}>
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Agreement Details</CardTitle>
-                            {!isEditable && (
-                                <CardDescription className="text-amber-600 flex items-center gap-2">
-                                    <AlertTriangle className="h-4 w-4" /> This agreement is not in a 'Pending' state and cannot be edited.
-                                </CardDescription>
-                            )}
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            <fieldset disabled={!isEditable} className="space-y-4">
-                                <div className="grid grid-cols-2 gap-4">
-                                    <FormField control={methods.control} name="type" render={({ field }) => (<FormItem><FormLabel>Type</FormLabel><FormControl><Input {...field} disabled /></FormControl></FormItem>)} />
-                                    <FormField control={methods.control} name="status" render={({ field }) => (<FormItem><FormLabel>Status</FormLabel><FormControl><Input {...field} disabled /></FormControl></FormItem>)} />
-                                </div>
-                                <div className="grid grid-cols-3 gap-4">
-                                    <FormField control={methods.control} name="amount" render={({ field }) => (<FormItem><FormLabel>Amount</FormLabel><FormControl><Input type="number" {...field} /></FormControl></FormItem>)} />
-                                    <FormField control={methods.control} name="term" render={({ field }) => (<FormItem><FormLabel>Term (Months)</FormLabel><FormControl><Input type="number" {...field} /></FormControl></FormItem>)} />
-                                    <FormField control={methods.control} name="rate" render={({ field }) => (<FormItem><FormLabel>Rate (%)</FormLabel><FormControl><Input type="number" {...field} /></FormControl></FormItem>)} />
-                                </div>
-                            </fieldset>
-
-                            {agreement.type === 'installment-sale' && (
-                                <>
-                                    <Separator className="my-6" />
-                                    <div>
-                                        <h3 className="text-base font-semibold flex items-center gap-2 mb-4">
-                                            <Truck className="h-5 w-5 text-muted-foreground" />
-                                            Associated Asset
-                                        </h3>
-                                        {agreement.assetId ? (
-                                            <div className="flex justify-between items-center">
-                                                <p className="text-sm text-muted-foreground">Asset linked: <span className="font-mono text-foreground">{agreement.assetId}</span></p>
-                                                <Button asChild variant="outline" size="sm">
-                                                    <Link href={`/lending?view=assets&assetId=${agreement.assetId}`}>View Asset</Link>
-                                                </Button>
-                                            </div>
-                                        ) : (
-                                            <div className="flex justify-between items-center">
-                                                <p className="text-sm text-muted-foreground">No asset has been linked to this agreement yet.</p>
-                                                <Button asChild>
-                                                    <Link href={`/lending?view=assets&clientId=${client?.id}&agreementId=${agreement.id}`}>Add Asset</Link>
-                                                </Button>
-                                            </div>
-                                        )}
+                    <CardHeader>
+                        <CardTitle>{agreement?.id ? 'Edit' : 'Create New'} Agreement</CardTitle>
+                        <CardDescription>Follow the steps to set up a new lending agreement.</CardDescription>
+                    </CardHeader>
+                     <CardContent>
+                        <div className="flex items-center gap-4 mb-8">
+                            {dynamicSteps.map((step, index) => (
+                                <React.Fragment key={step.id}>
+                                    <div className="flex flex-col items-center">
+                                        <div className={cn("h-8 w-8 rounded-full flex items-center justify-center font-bold", currentStep >= index ? "bg-primary text-primary-foreground" : "bg-muted")}>
+                                            {isStepValid(index-1) && currentStep > index ? <Check className="h-5 w-5"/> : index+1}
+                                        </div>
+                                        <p className={cn("text-xs mt-1 text-center", currentStep >= index ? "font-semibold" : "text-muted-foreground")}>{step.name}</p>
                                     </div>
-                                </>
-                            )}
-                        </CardContent>
-                        <CardFooter className="flex justify-between">
-                            <Button variant="outline" onClick={onBack} type="button">Back to List</Button>
-                            <Button type="submit" disabled={!isEditable || isSaving}>
-                                {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                                Save Changes
-                            </Button>
-                        </CardFooter>
-                    </Card>
+                                    {index < dynamicSteps.length - 1 && <div className={cn("flex-1 h-0.5 mb-4", currentStep > index && isStepValid(index) ? "bg-primary" : "bg-muted")} />}
+                                </React.Fragment>
+                            ))}
+                        </div>
+                        <div className="min-h-[150px]">
+                            {renderStepContent()}
+                        </div>
+                    </CardContent>
+                    <CardFooter className="justify-between">
+                        <Button type="button" variant="outline" onClick={handleBack}><ArrowLeft className="mr-2 h-4 w-4" /> Back</Button>
+                        {currentStep < dynamicSteps.length - 1 ? (
+                            <Button type="button" onClick={handleNext}>Next <ArrowRight className="ml-2 h-4 w-4" /></Button>
+                        ) : (
+                            <Button type="submit" disabled={isLoading}>{isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Save className="mr-2 h-4 w-4" />} {agreement?.id ? 'Update' : 'Create'} Agreement</Button>
+                        )}
+                    </CardFooter>
                 </form>
             </FormProvider>
-        </div>
-    );
-};
+        </Card>
+    )
+}
 
 
 export default function AgreementsContent() {
     const firestore = useFirestore();
     const [selectedClient, setSelectedClient] = useState<string | null>(null);
     const [view, setView] = useState<'list' | 'create' | 'edit'>('list');
-    const [selectedAgreementType, setSelectedAgreementType] = useState<string | null>(null);
     const [selectedAgreement, setSelectedAgreement] = useState<any | null>(null);
 
     const clientsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'lendingClients')) : null, [firestore]);
@@ -153,15 +203,7 @@ export default function AgreementsContent() {
         return query(collection(firestore, `lendingClients/${selectedClient}/agreements`));
     }, [firestore, selectedClient]);
     const { data: agreements, isLoading: areAgreementsLoading, forceRefresh } = useCollection(agreementsQuery);
-
-    const sampleClients = [{ id: 'sample-client-1', name: 'Sample Transport Co.' }];
-    const sampleAgreements = [{ id: 'AG-101', type: 'loan-pv', status: 'Active' }, {id: 'AG-102', type: 'installment-sale', status: 'Pending'}];
     
-    const displayClients = (clients && clients.length > 0) ? clients : sampleClients;
-    const displayAgreements = (agreements && agreements.length > 0) ? agreements : (selectedClient ? sampleAgreements : []);
-    
-    const clientForAgreement = clients?.find(c => c.id === selectedClient);
-
     const handleSelectClient = (clientId: string) => {
         setSelectedClient(clientId);
         setView('list');
@@ -170,12 +212,11 @@ export default function AgreementsContent() {
     
     const handleCreateNew = () => {
         setView('create');
-        setSelectedAgreementType(null);
-        setSelectedAgreement(null);
+        setSelectedAgreement({ clientId: selectedClient });
     }
     
     const handleEdit = (agreement: any) => {
-        setSelectedAgreement(agreement);
+        setSelectedAgreement({ clientId: selectedClient, ...agreement });
         setView('edit');
     };
     
@@ -193,8 +234,13 @@ export default function AgreementsContent() {
         { accessorKey: 'id', header: 'Agreement ID', cell: ({ row }) => <span className="font-mono text-xs">{row.original.id}</span> },
         { accessorKey: 'type', header: 'Type', cell: ({ row }) => <span className="capitalize">{row.original.type?.replace('-', ' ')}</span> },
         { accessorKey: 'status', header: 'Status', cell: ({ row }) => <Badge>{row.original.status}</Badge> },
+        { accessorKey: 'amount', header: 'Amount', cell: ({ row }) => formatCurrency(row.original.amount) },
         { id: 'actions', header: () => <div className="text-right">Actions</div>, cell: ({ row }) => <div className="text-right"><Button variant="outline" size="sm" onClick={() => handleEdit(row.original)}>Manage</Button></div> }
     ], [handleEdit]);
+    
+    if (view === 'create' || view === 'edit') {
+        return <AgreementWizard agreement={selectedAgreement} onBack={handleBackToList} onSaveSuccess={handleSaveSuccess} />;
+    }
     
     return (
         <Card>
@@ -207,7 +253,7 @@ export default function AgreementsContent() {
                 </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-end">
                     <div className="space-y-2">
                         <Label htmlFor="client-select">1. Select a Client</Label>
                         <Select onValueChange={handleSelectClient} value={selectedClient || ''} disabled={areClientsLoading}>
@@ -215,7 +261,7 @@ export default function AgreementsContent() {
                                 <SelectValue placeholder={areClientsLoading ? "Loading clients..." : "Select a client..."} />
                             </SelectTrigger>
                             <SelectContent>
-                                {displayClients.map(client => (
+                                {(clients || []).map((client:any) => (
                                     <SelectItem key={client.id} value={client.id}>{client.name}</SelectItem>
                                 ))}
                             </SelectContent>
@@ -230,7 +276,7 @@ export default function AgreementsContent() {
                 
                 <Separator />
                 
-                {view === 'list' && selectedClient && (
+                {selectedClient && (
                      <div className="pt-6">
                         <h3 className="text-lg font-semibold mb-4">
                             Existing Agreements for: <span className="text-primary">{clients?.find(c => c.id === selectedClient)?.name}</span>
@@ -238,54 +284,8 @@ export default function AgreementsContent() {
                         {areAgreementsLoading ? (
                              <div className="flex justify-center items-center py-10"><Loader2 className="h-8 w-8 animate-spin"/></div>
                         ) : (
-                            <DataTable columns={columns} data={displayAgreements} />
+                            <DataTable columns={columns} data={agreements || []} />
                         )}
-                    </div>
-                )}
-                
-                {view === 'create' && (
-                    <div className="pt-6">
-                        <h3 className="text-lg font-semibold mb-4">
-                           Create New Agreement for: <span className="text-primary">{clients?.find(c => c.id === selectedClient)?.name}</span>
-                        </h3>
-                        <div className="max-w-sm space-y-2 mb-6">
-                            <Label htmlFor="agreement-type-select">Select an Agreement Type</Label>
-                            <Select onValueChange={setSelectedAgreementType} value={selectedAgreementType || ''}>
-                                <SelectTrigger id="agreement-type-select"><SelectValue placeholder="Select an agreement type..." /></SelectTrigger>
-                                <SelectContent>
-                                    {agreementTypes.map(type => (
-                                        <SelectItem key={type.id} value={type.id}>{type.label}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
-
-                        {selectedAgreementType && (
-                            <div className="pt-6 border-t">
-                                <h3 className="font-semibold mb-4 text-muted-foreground">
-                                    New Agreement Details: <span className="text-foreground">{agreementTypes.find(t => t.id === selectedAgreementType)?.label}</span>
-                                </h3>
-                                {/* Form for the selected agreement type would go here */}
-                                <div className="p-8 border-2 border-dashed rounded-lg text-center">
-                                    <p className="text-muted-foreground">Form fields for this agreement type would appear here.</p>
-                                </div>
-                                <div className="flex justify-between items-center mt-6">
-                                     <Button variant="outline" onClick={() => setView('list')}><ArrowLeft className="mr-2 h-4 w-4"/> Back to List</Button>
-                                     <Button>Save Agreement</Button>
-                                </div>
-                            </div>
-                        )}
-                    </div>
-                )}
-
-                 {view === 'edit' && selectedAgreement && (
-                    <div className="pt-6">
-                        <AgreementWizard
-                            agreement={selectedAgreement}
-                            client={clientForAgreement}
-                            onBack={handleBackToList}
-                            onSaveSuccess={handleSaveSuccess}
-                        />
                     </div>
                 )}
             </CardContent>

@@ -71,6 +71,24 @@ export async function POST(req: NextRequest) {
         // --- END AUTHORIZATION ---
 
         switch (action) {
+            case 'saveLendingAgreement': {
+                if (!isAdmin) throw new Error("Forbidden: Admin access required.");
+                const { agreement } = payload;
+                if (!agreement || !agreement.clientId) throw new Error("clientId and agreement data are required.");
+                
+                const { clientId, id, ...agreementData } = agreement;
+                const collectionRef = db.collection(`lendingClients/${clientId}/agreements`);
+                
+                if (id) { // Update existing agreement
+                    const docRef = collectionRef.doc(id);
+                    await docRef.set({ ...agreementData, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+                    return NextResponse.json({ success: true, id: id });
+                } else { // Create new agreement
+                    const newDocRef = collectionRef.doc();
+                    await newDocRef.set({ ...agreementData, id: newDocRef.id, status: 'pending', createdAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp() });
+                    return NextResponse.json({ success: true, id: newDocRef.id });
+                }
+            }
             case 'saveLendingAsset': {
                 if (!isAdmin) throw new Error("Forbidden: Admin access required.");
                 const { asset } = payload;
