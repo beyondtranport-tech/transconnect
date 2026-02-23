@@ -140,24 +140,22 @@ export default function AgreementsContent() {
     const agreementType = watch('type');
 
      const dynamicSteps = useMemo(() => {
-        const baseSteps = [
+        let baseSteps = [
             { id: 'client', name: 'Client', fields: ['clientId'] },
             { id: 'type', name: 'Agreement Type', fields: ['type'] },
             { id: 'details', name: 'Financial Details', fields: ['amountExVat', 'term', 'rate'] },
         ];
-        
+
         if (agreementType === 'installment-sale') {
             baseSteps.push({ id: 'asset', name: 'Link Asset', fields: [] });
         }
 
-        const finalSteps = [
+        return [
             ...baseSteps,
             { id: 'review', name: 'Review & Save', fields: [] }
-        ];
-        
-        return finalSteps.map((step, index) => ({
+        ].map((step, index) => ({
             ...step,
-            name: `Step ${index + 1}: ${step.name.replace(/Step \d+: /,'')}`,
+            name: `Step ${index + 1}: ${step.name.replace(/^Step \d+: /, '')}`,
         }));
     }, [agreementType]);
     
@@ -503,3 +501,4 @@ export default function AgreementsContent() {
         </Card>
     );
 }
+
