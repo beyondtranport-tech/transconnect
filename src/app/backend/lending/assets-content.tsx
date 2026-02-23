@@ -44,6 +44,7 @@ const assetDetailsSchema = z.object({
   owner: z.string().min(1, 'Owner is required'),
   firstRegistrationDate: z.string().min(1, 'Date of first registration is required'),
   classification: z.string().min(1, 'Classification is required'),
+  costOfSale: z.coerce.number().optional(),
 });
 
 const formSchema = assetDetailsSchema.extend({
@@ -87,7 +88,7 @@ const years = Array.from({ length: 30 }, (_, i) => ({ id: (currentYear - i).toSt
 // --- Wizard Steps Configuration ---
 const wizardSteps = [
     { id: 'client', name: 'Client', fields: ['clientId'] },
-    { id: 'asset', name: 'Asset Details', fields: ['make', 'model', 'year', 'registrationNumber', 'registerNumber', 'vin', 'tare', 'gvm', 'titleholder', 'owner', 'firstRegistrationDate', 'classification'] },
+    { id: 'asset', name: 'Asset Details', fields: ['make', 'model', 'year', 'registrationNumber', 'registerNumber', 'vin', 'tare', 'gvm', 'titleholder', 'owner', 'firstRegistrationDate', 'classification', 'costOfSale'] },
     { id: 'documents', name: 'Documents', fields: [] },
     { id: 'review', name: 'Review & Save' },
 ];
@@ -186,9 +187,10 @@ const StepAssetDetails = () => {
                  <FormField control={control} name="vin" render={({ field }) => (<FormItem><FormLabel>VIN</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
                 <FormField control={control} name="engineNumber" render={({ field }) => (<FormItem><FormLabel>Engine Number</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <FormField control={control} name="tare" render={({ field }) => (<FormItem><FormLabel>Tare (kg)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
                 <FormField control={control} name="gvm" render={({ field }) => (<FormItem><FormLabel>GVM (kg)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                <FormField control={control} name="costOfSale" render={({ field }) => (<FormItem><FormLabel>Cost of Sale (ex. VAT)</FormLabel><FormControl><Input type="number" placeholder="0.00" {...field} /></FormControl><FormMessage /></FormItem>)} />
             </div>
              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField control={control} name="titleholder" render={({ field }) => (<FormItem><FormLabel>Titleholder</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
@@ -262,8 +264,7 @@ const StepDocuments = () => {
 
 const StepReview = () => {
     const { getValues } = useFormContext();
-    const values = getValues();
-    return <pre className="whitespace-pre-wrap bg-muted p-4 rounded-md text-xs">{JSON.stringify(values, null, 2)}</pre>;
+    return <pre className="whitespace-pre-wrap bg-muted p-4 rounded-md text-xs">{JSON.stringify(getValues(), null, 2)}</pre>;
 };
 
 
@@ -482,7 +483,7 @@ export default function AssetsContent() {
         { accessorKey: 'id', header: 'Asset ID' },
         { header: 'Description', cell: ({row}) => <div>{row.original.make} {row.original.model}</div>},
         { accessorKey: 'clientName', header: 'Client' },
-        { accessorKey: 'status', header: 'Status', cell: ({ row }) => <Badge variant={statusColors[row.original.status] || 'secondary'} className="capitalize">{row.original.status || 'Available'}</Badge>},
+        { accessorKey: 'status', header: 'Status', cell: ({ row }) => <Badge variant={statusColors[row.original.status] || 'secondary'} className="capitalize">{row.original.status || 'Available'}</Badge> },
         { id: 'actions', header: () => <div className="text-right">Actions</div>, cell: ({ row }) => <div className="text-right"><AssetActionMenu asset={row.original} onEdit={() => handleEdit(row.original)} onUpdate={forceRefresh} /></div> }
     ], [handleEdit, forceRefresh]);
 
@@ -513,5 +514,3 @@ export default function AssetsContent() {
         </Card>
     );
 }
-
-    
