@@ -46,14 +46,6 @@ const agreementSchema = z.object({
 
 type AgreementFormValues = z.infer<typeof agreementSchema>;
 
-const wizardSteps = [
-    { id: 'client', name: 'Select Client', fields: ['clientId'] },
-    { id: 'type', name: 'Agreement Type', fields: ['type'] },
-    { id: 'details', name: 'Financial Details', fields: ['amount', 'term', 'rate'] },
-    { id: 'asset', name: 'Link Asset', fields: ['assetId'] },
-    { id: 'review', name: 'Review & Save' },
-];
-
 const formatCurrency = (value: number) => {
     if (typeof value !== 'number' || isNaN(value)) return 'R 0';
     return new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR', maximumFractionDigits: 0 }).format(value);
@@ -81,7 +73,6 @@ export default function AgreementsContent() {
     const clientsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'lendingClients')) : null, [firestore]);
     const { data: clients, isLoading: areClientsLoading } = useCollection(clientsQuery);
     
-    // This will get the client ID from the form when in the wizard, or from state when in the list
     const clientIdFromForm = watch('clientId'); 
     const clientIdForQueries = view === 'list' ? selectedClient : clientIdFromForm;
 
@@ -136,13 +127,24 @@ export default function AgreementsContent() {
     };
 
     const agreementType = watch('type');
+
     const dynamicSteps = useMemo(() => {
-        const baseSteps = wizardSteps.filter(step => step.id !== 'asset');
+        const baseSteps = [
+            { id: 'client', name: 'Select Client', fields: ['clientId'] },
+            { id: 'type', name: 'Agreement Type', fields: ['type'] },
+            { id: 'details', name: 'Financial Details', fields: ['amount', 'term', 'rate'] },
+        ];
+        
         if (agreementType === 'installment-sale') {
-            const assetStepIndex = wizardSteps.findIndex(s => s.id === 'asset');
-            baseSteps.splice(assetStepIndex -1, 0, wizardSteps[assetStepIndex]);
+            baseSteps.push({ id: 'asset', name: 'Link Asset', fields: ['assetId'] });
         }
-        return baseSteps.map((step, index) => ({...step, name: step.name.replace(/Step \d+|Final Step/, `Step ${index + 1}`)}));
+
+        baseSteps.push({ id: 'review', name: 'Review & Save' });
+
+        return baseSteps.map((step, index) => ({
+            ...step,
+            name: `Step ${index + 1}: ${step.name.replace(/^Step \d+: /, '')}`,
+        }));
     }, [agreementType]);
     
     const handleNext = async () => {
@@ -215,7 +217,7 @@ export default function AgreementsContent() {
                 return (
                     <div className="space-y-4">
                         <Label>Agreement Type</Label>
-                        {!isTypeEditable ? (
+                        {!isTypeEditable && view === 'edit' ? (
                             <div className="flex items-center gap-4">
                                 <Input value={agreementTypes.find(t => t.id === watch('type'))?.label || 'Not set'} disabled />
                                 <Button type="button" variant="outline" onClick={() => setIsTypeEditable(true)}>Change</Button>
