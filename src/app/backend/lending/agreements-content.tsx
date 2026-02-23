@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
@@ -39,7 +40,7 @@ const agreementTypes = [
 const agreementSchema = z.object({
   clientId: z.string().min(1, 'Client is required'),
   type: z.string().min(1, 'Agreement type is required'),
-  status: z.string().default('pending'),
+  status: z.string().default('credit'),
   amountExVat: z.coerce.number().positive("Amount (ex. VAT) must be a positive number."),
   term: z.coerce.number().int().positive("Term must be a positive integer."),
   rate: z.coerce.number().min(0, "Rate cannot be negative."),
@@ -138,7 +139,7 @@ const AgreementWizard = ({ agreement, onBack, onSaveSuccess, clients, areClients
             setIsTypeEditable(false);
             setCurrentStep(0);
         } else {
-            reset({ clientId: searchParams.get('clientId') || '', type: '', status: 'pending', amountExVat: 0, term: 0, rate: 0, assetId: '' });
+            reset({ clientId: searchParams.get('clientId') || '', type: '', status: 'credit', amountExVat: 0, term: 0, rate: 0, assetId: '' });
             setIsTypeEditable(true);
             setCurrentStep(0);
         }
@@ -470,6 +471,8 @@ export default function AgreementsContent() {
 
     const statusColors: { [key: string]: 'default' | 'secondary' | 'destructive' | 'outline' } = {
         pending: 'secondary',
+        credit: 'secondary',
+        payout: 'outline',
         active: 'default',
         completed: 'outline',
         defaulted: 'destructive',
@@ -547,3 +550,5 @@ export default function AgreementsContent() {
         </Card>
     );
 }
+
+    

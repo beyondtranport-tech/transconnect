@@ -1,4 +1,5 @@
 
+
 'use server';
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -105,7 +106,7 @@ export async function POST(req: NextRequest) {
                 if (!clientId || !agreementId || !status) {
                     throw new Error("clientId, agreementId, and status are required.");
                 }
-                const validStatuses = ['pending', 'active', 'completed', 'defaulted'];
+                const validStatuses = ['pending', 'credit', 'payout', 'active', 'completed', 'defaulted'];
                 if (!validStatuses.includes(status)) {
                     throw new Error(`Invalid status. Must be one of: ${validStatuses.join(', ')}`);
                 }
@@ -134,8 +135,8 @@ export async function POST(req: NextRequest) {
                         });
                     }
 
-                    // If reverting to 'pending' and an asset is linked, update asset status back to 'available'
-                    if (status === 'pending' && agreementData.assetId) {
+                    // If reverting from active and an asset is linked, update asset status back to 'available'
+                    if (agreementData.status === 'active' && status !== 'active' && agreementData.assetId) {
                          const assetRef = db.doc(`lendingAssets/${agreementData.assetId}`);
                          transaction.update(assetRef, {
                             status: 'available',
@@ -151,7 +152,7 @@ export async function POST(req: NextRequest) {
                 const { agreement } = payload;
                 if (!agreement || !agreement.clientId) throw new Error("clientId and agreement data are required.");
             
-                const { id: agreementId, ...dataToSave } = agreement; // Keep clientId in the data
+                const { id: agreementId, ...dataToSave } = agreement;
                 const collectionRef = db.collection(`lendingClients/${dataToSave.clientId}/agreements`);
             
                 if (agreementId) { // Update existing agreement
@@ -180,7 +181,7 @@ export async function POST(req: NextRequest) {
                     return NextResponse.json({ success: true, id: agreementId });
                 } else { // Create new agreement
                     const newDocRef = collectionRef.doc();
-                    await newDocRef.set({ ...dataToSave, id: newDocRef.id, status: 'pending', createdAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp() });
+                    await newDocRef.set({ ...dataToSave, id: newDocRef.id, status: 'credit', createdAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp() });
                     return NextResponse.json({ success: true, id: newDocRef.id });
                 }
             }

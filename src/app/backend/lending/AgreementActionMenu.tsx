@@ -1,3 +1,5 @@
+
+
 'use client';
 
 import React, { useState } from 'react';
@@ -19,7 +21,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
-import { Loader2, MoreVertical, CheckCircle, XCircle, FileSignature, RotateCcw, Trash2 } from 'lucide-react';
+import { Loader2, MoreVertical, CheckCircle, XCircle, FileSignature, RotateCcw, Trash2, Send } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken } from '@/firebase';
 
@@ -39,7 +41,7 @@ async function performAdminAction(token: string, action: string, payload: any) {
 
 export function AgreementActionMenu({ agreement, onEdit, onUpdate }: { agreement: any; onEdit: () => void; onUpdate: () => void; }) {
     const [isProcessing, setIsProcessing] = useState(false);
-    const [actionToConfirm, setActionToConfirm] = useState<'activate' | 'complete' | 'default' | 'revert' | 'delete' | null>(null);
+    const [actionToConfirm, setActionToConfirm] = useState<'sendToPayout' | 'logPayment' | 'complete' | 'default' | 'revertToCredit' | 'delete' | null>(null);
     const { toast } = useToast();
 
     const handleAction = async () => {
@@ -62,7 +64,13 @@ export function AgreementActionMenu({ agreement, onEdit, onUpdate }: { agreement
                 successMessage = 'Agreement has been deleted.';
             } else {
                 apiAction = 'updateAgreementStatus';
-                const statusMap = { activate: 'active', complete: 'completed', default: 'defaulted', revert: 'pending' };
+                const statusMap = {
+                    sendToPayout: 'payout',
+                    logPayment: 'active',
+                    complete: 'completed',
+                    default: 'defaulted',
+                    revertToCredit: 'credit',
+                };
                 const newStatus = statusMap[actionToConfirm as keyof typeof statusMap];
                  if (!newStatus) {
                     throw new Error('Invalid action specified.');
@@ -84,16 +92,17 @@ export function AgreementActionMenu({ agreement, onEdit, onUpdate }: { agreement
 
     const getAlertStrings = () => {
         switch (actionToConfirm) {
-            case 'activate': return { title: "Activate Agreement?", description: "This will change the agreement status to 'active'. If an asset is linked, its status will become 'financed'." };
-            case 'complete': return { title: "Complete Agreement?", description: "This will mark the agreement as 'completed'. This action cannot be undone." };
-            case 'default': return { title: "Default Agreement?", description: "This will mark the agreement as 'defaulted'. This action cannot be undone." };
-            case 'revert': return { title: "Revert to Pending?", description: "This will change the agreement status back to 'pending', allowing full edits. If an asset was linked, its status will become 'available' again." };
+            case 'sendToPayout': return { title: "Send to Payouts?", description: "This will move the agreement to the 'payout' stage, ready for payment processing." };
+            case 'logPayment': return { title: "Log Payment & Activate?", description: "This will mark the agreement as paid and change its status to 'active'." };
+            case 'complete': return { title: "Complete Agreement?", description: "This will mark the agreement as 'completed'." };
+            case 'default': return { title: "Default Agreement?", description: "This will mark the agreement as 'defaulted'." };
+            case 'revertToCredit': return { title: "Revert to Credit Review?", description: "This will move the agreement back to the 'credit' stage." };
             case 'delete': return { title: "Delete Agreement?", description: "This will permanently delete this agreement. This action cannot be undone." };
             default: return { title: "", description: "" };
         }
     };
     
-    const canBeDeleted = agreement.status === 'pending';
+    const canBeDeleted = agreement.status === 'pending' || agreement.status === 'credit';
 
     return (
         <AlertDialog open={!!actionToConfirm} onOpenChange={(open) => !open && setActionToConfirm(null)}>
@@ -108,11 +117,14 @@ export function AgreementActionMenu({ agreement, onEdit, onUpdate }: { agreement
                         <FileSignature className="mr-2 h-4 w-4" /> Edit Details
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem onSelect={() => setActionToConfirm('activate')} disabled={agreement.status !== 'pending'}>
-                        <CheckCircle className="mr-2 h-4 w-4" /> Activate
+                    <DropdownMenuItem onSelect={() => setActionToConfirm('sendToPayout')} disabled={agreement.status !== 'credit'}>
+                        <Send className="mr-2 h-4 w-4" /> Send to Payouts
                     </DropdownMenuItem>
-                    <DropdownMenuItem onSelect={() => setActionToConfirm('revert')} disabled={agreement.status !== 'active'}>
-                        <RotateCcw className="mr-2 h-4 w-4" /> Revert to Pending
+                    <DropdownMenuItem onSelect={() => setActionToConfirm('logPayment')} disabled={agreement.status !== 'payout'}>
+                        <CheckCircle className="mr-2 h-4 w-4" /> Log Payment & Activate
+                    </DropdownMenuItem>
+                     <DropdownMenuItem onSelect={() => setActionToConfirm('revertToCredit')} disabled={agreement.status !== 'payout'}>
+                        <RotateCcw className="mr-2 h-4 w-4" /> Revert to Credit Review
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onSelect={() => setActionToConfirm('complete')} disabled={agreement.status !== 'active'}>
@@ -142,3 +154,5 @@ export function AgreementActionMenu({ agreement, onEdit, onUpdate }: { agreement
         </AlertDialog>
     );
 }
+
+    

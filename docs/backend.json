@@ -445,7 +445,7 @@
             "clientId": { "type": "string", "description": "The ID of the client this agreement belongs to."},
             "assetId": { "type": "string", "description": "The ID of the asset being financed under this agreement."},
             "type": { "type": "string", "enum": ["loan-pv", "loan-fl", "installment-sale", "rental", "discounting"], "description": "The type of lending agreement."},
-            "status": { "type": "string", "enum": ["pending", "active", "completed", "defaulted"], "description": "The current status of the agreement."},
+            "status": { "type": "string", "enum": ["pending", "credit", "payout", "active", "completed", "defaulted"], "description": "The current status of the agreement."},
             "amount": { "type": "number", "description": "The principal amount of the agreement, inclusive of VAT." },
             "vatAmount": { "type": "number", "description": "The VAT portion of the financed amount." },
             "markup": { "type": "number", "description": "Unfunded income from the deal." },
@@ -815,3 +815,5 @@
     "reasoning": "The data model is refactored to separate user identity from business entities. A new `/users` collection stores individual user profiles, linked via Firebase Auth UID. A new `/companies` collection stores business-related data, including wallet balance, membership status, and subcollections for transactions, staff, quotes, etc. This creates a cleaner, more scalable architecture where a user owns a company, rather than the user and company being the same entity. This prevents data duplication and clarifies ownership for security rules. Added Special Offer fields to Membership entity and created new entities for Connect Plan pricing to support advanced promotional offers. Added a complete, separate data structure for the Debtor Management System (DMS) under collections prefixed with 'lending' to ensure clear separation for future spin-off potential."
   }
 }
+
+    
