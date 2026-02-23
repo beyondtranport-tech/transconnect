@@ -2,8 +2,8 @@
 'use client';
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Landmark, FileText, ArrowLeft, ArrowRight, Loader2, PlusCircle, Save, Check } from "lucide-react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { Landmark, FileText, ArrowLeft, ArrowRight, Loader2, PlusCircle, Save, Check, Users, Truck } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
@@ -12,7 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { useForm, FormProvider } from "react-hook-form";
+import { useForm, FormProvider, useFormContext } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -24,6 +24,8 @@ import { getClientSideAuthToken } from '@/firebase';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import { AgreementActionMenu } from './AgreementActionMenu';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from '@/components/ui/dialog';
+import { AssetWizard } from './assets-content';
 
 
 const agreementTypes = [
@@ -62,6 +64,7 @@ export default function AgreementsContent() {
     const [isSaving, setIsSaving] = useState(false);
     const { toast } = useToast();
     const [isTypeEditable, setIsTypeEditable] = useState(false);
+    const [isAssetModalOpen, setIsAssetModalOpen] = useState(false);
 
     const methods = useForm<AgreementFormValues>({
         resolver: zodResolver(agreementSchema),
@@ -80,25 +83,25 @@ export default function AgreementsContent() {
         if (!firestore || !clientIdForQueries) return null;
         return query(collection(firestore, `lendingClients/${clientIdForQueries}/agreements`));
     }, [firestore, clientIdForQueries]);
-    const { data: agreements, isLoading: areAgreementsLoading, forceRefresh } = useCollection(agreementsQuery);
+    const { data: agreements, isLoading: areAgreementsLoading, forceRefresh: forceRefreshAgreements } = useCollection(agreementsQuery);
 
     const assetsQuery = useMemoFirebase(() => {
         if (!firestore || !clientIdForQueries) return null;
         return query(collection(firestore, `lendingClients/${clientIdForQueries}/assets`));
     }, [firestore, clientIdForQueries]);
-    const { data: assets, isLoading: areAssetsLoading } = useCollection(assetsQuery);
+    const { data: assets, isLoading: areAssetsLoading, forceRefresh: forceRefreshAssets } = useCollection(assetsQuery);
     
-     useEffect(() => {
+    useEffect(() => {
         if (view === 'edit' && selectedAgreement) {
             reset({
                 clientId: selectedClient || selectedAgreement.clientId,
                 ...selectedAgreement
             });
-            setIsTypeEditable(false);
+            setIsTypeEditable(false); // Start with type locked
             setCurrentStep(0);
         } else if (view === 'create') {
             reset({ clientId: selectedClient || '', type: '', status: 'pending', amount: 0, term: 0, rate: 0, assetId: '' });
-            setIsTypeEditable(true);
+            setIsTypeEditable(true); // Allow type selection for new
             setCurrentStep(0);
         }
     }, [view, selectedAgreement, reset, selectedClient]);
@@ -125,30 +128,32 @@ export default function AgreementsContent() {
     };
 
     const handleSaveSuccess = () => {
-        forceRefresh();
+        forceRefreshAgreements();
         handleBackToList();
     };
 
     const agreementType = watch('type');
 
-     const dynamicSteps = useMemo(() => {
-        const baseSteps = [
-            { id: 'client', name: 'Step 1: Select Client', fields: ['clientId'] },
-            { id: 'type', name: 'Step 2: Agreement Type', fields: ['type'] },
-            { id: 'details', name: 'Step 3: Financial Details', fields: ['amount', 'term', 'rate'] },
+    const dynamicSteps = useMemo(() => {
+        const steps = [
+            { id: 'client', name: 'Client', fields: ['clientId'] },
+            { id: 'type', name: 'Agreement Type', fields: ['type'] },
+            { id: 'details', name: 'Financial Details', fields: ['amount', 'term', 'rate'] },
         ];
         
         if (agreementType === 'installment-sale') {
-            baseSteps.push({ id: 'asset', name: 'Step 4: Link Asset', fields: ['assetId'] });
+            steps.push({ id: 'asset', name: 'Link Asset', fields: ['assetId'] });
         }
 
-        baseSteps.push({ id: 'review', name: 'Step 5: Review & Save' });
+        steps.push({ id: 'review', name: 'Review & Save' });
 
-        return baseSteps.map((step, index) => ({
+        // Re-label step numbers
+        return steps.map((step, index) => ({
             ...step,
-            name: step.name.replace(/Step \d+: /, `Step ${index + 1}: `),
+            name: `Step ${index + 1}: ${step.name}`,
         }));
     }, [agreementType]);
+    
     
     const handleNext = async () => {
         const currentStepConfig = dynamicSteps[currentStep];
@@ -192,6 +197,46 @@ export default function AgreementsContent() {
         if (!step.fields) return true;
         const fields = step.fields as (keyof AgreementFormValues)[];
         return fields.every(field => !methods.formState.errors[field as keyof typeof methods.formState.errors]);
+    };
+
+    const StepAsset = () => {
+        const { control, getValues } = useFormContext();
+        return (
+            <div className="space-y-4">
+                <FormField control={control} name="assetId" render={({field}) => (
+                    <FormItem>
+                        <FormLabel>Linked Asset</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value || ''} disabled={areAssetsLoading}>
+                            <FormControl><SelectTrigger><SelectValue placeholder={areAssetsLoading ? "Loading assets..." : "Select an asset..."}/></SelectTrigger></FormControl>
+                            <SelectContent>{(assets && assets.length > 0) ? (
+                                (assets || []).map((a:any) => <SelectItem key={a.id} value={a.id}>{a.make} {a.model} ({a.registrationNumber})</SelectItem>)
+                            ) : (
+                                <div className="p-4 text-sm text-muted-foreground text-center">No assets found for this client.</div>
+                            )}</SelectContent>
+                        </Select>
+                        <FormMessage/>
+                    </FormItem>
+                )}/>
+                <Dialog open={isAssetModalOpen} onOpenChange={setIsAssetModalOpen}>
+                    <DialogTrigger asChild>
+                        <Button variant="outline" className="w-full">
+                            <PlusCircle className="mr-2 h-4 w-4" /> Add New Asset
+                        </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-4xl">
+                        <AssetWizard 
+                            onBack={() => setIsAssetModalOpen(false)}
+                            onSaveSuccess={() => {
+                                forceRefreshAssets();
+                                setIsAssetModalOpen(false);
+                            }}
+                            defaultClientId={getValues('clientId')}
+                        />
+                    </DialogContent>
+                </Dialog>
+                <p className="text-xs text-muted-foreground">If the asset is not in the list, use the button above to add it to the client's asset register.</p>
+            </div>
+        );
     };
 
     const renderStepContent = () => {
@@ -246,31 +291,7 @@ export default function AgreementsContent() {
                         <FormField control={control} name="rate" render={({field}) => <FormItem><FormLabel>Rate (%)</FormLabel><FormControl><Input type="number" {...field}/></FormControl><FormMessage/></FormItem>}/>
                     </div>
                 );
-            case 'asset':
-                return (
-                    <div className="space-y-4">
-                        <FormField control={control} name="assetId" render={({field}) => 
-                            <FormItem>
-                                <FormLabel>Linked Asset</FormLabel>
-                                <Select onValueChange={field.onChange} defaultValue={field.value} disabled={areAssetsLoading}>
-                                    <FormControl><SelectTrigger><SelectValue placeholder={areAssetsLoading ? "Loading assets..." : "Select an asset..."}/></SelectTrigger></FormControl>
-                                    <SelectContent>{(assets && assets.length > 0) ? (
-                                        (assets || []).map((a:any) => <SelectItem key={a.id} value={a.id}>{a.make} {a.model} ({a.registrationNumber})</SelectItem>)
-                                    ) : (
-                                        <div className="p-4 text-sm text-muted-foreground text-center">No assets found for this client.</div>
-                                    )}</SelectContent>
-                                </Select>
-                                <FormMessage/>
-                            </FormItem>
-                        }/>
-                        <Button asChild variant="outline" className="w-full">
-                            <Link href={`/lending?view=assets&clientId=${getValues('clientId')}`}>
-                                <PlusCircle className="mr-2 h-4 w-4" /> Go to Asset Register
-                            </Link>
-                        </Button>
-                        <p className="text-xs text-muted-foreground">If the asset is not in the list, use the button above to go to the asset register, add it, then return here to complete the agreement.</p>
-                    </div>
-                );
+            case 'asset': return <StepAsset />;
             case 'review':
                 const values = getValues();
                 const clientNameReview = clients?.find(c => c.id === values.clientId)?.name;
@@ -304,10 +325,10 @@ export default function AgreementsContent() {
         { accessorKey: 'amount', header: 'Amount', cell: ({ row }) => formatCurrency(row.original.amount) },
         { id: 'actions', header: () => <div className="text-right">Actions</div>, cell: ({ row }) => (
             <div className="text-right">
-                <AgreementActionMenu agreement={{clientId: selectedClient, ...row.original}} onEdit={() => handleEdit(row.original)} onUpdate={forceRefresh} />
+                <AgreementActionMenu agreement={{clientId: selectedClient, ...row.original}} onEdit={() => handleEdit(row.original)} onUpdate={forceRefreshAgreements} />
             </div>
         )}
-    ], [selectedClient, forceRefresh, handleEdit]);
+    ], [selectedClient, forceRefreshAgreements, handleEdit]);
     
     if (view === 'create' || view === 'edit') {
         return (
