@@ -17,7 +17,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useCollection, useFirestore, useMemoFirebase, getClientSideAuthToken } from '@/firebase';
+import { useCollection, useFirestore, useMemoFirebase, getClientSideAuthToken, useUser } from '@/firebase';
 import { collection, query, collectionGroup } from 'firebase/firestore';
 import { Progress } from '@/components/ui/progress';
 import { DataTable } from '@/components/ui/data-table';
