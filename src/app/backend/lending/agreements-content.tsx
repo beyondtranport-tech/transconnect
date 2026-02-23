@@ -2,7 +2,7 @@
 'use client';
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Landmark, FileText, ArrowLeft, ArrowRight, Loader2, PlusCircle, Save, Check } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
@@ -60,51 +60,87 @@ const formatCurrency = (value: number) => {
 };
 
 
-function AgreementWizard({ agreement, onBack, onSaveSuccess }: { agreement?: any, onBack: () => void, onSaveSuccess: () => void }) {
-    const [currentStep, setCurrentStep] = useState(0);
-    const [isLoading, setIsLoading] = useState(false);
-    const { toast } = useToast();
+export default function AgreementsContent() {
     const firestore = useFirestore();
-    const [isTypeEditable, setIsTypeEditable] = useState(!agreement?.id);
+    const [selectedClient, setSelectedClient] = useState<string | null>(null);
+    const [view, setView] = useState<'list' | 'create' | 'edit'>('list');
+    const [selectedAgreement, setSelectedAgreement] = useState<any | null>(null);
+
+    const [currentStep, setCurrentStep] = useState(0);
+    const [isSaving, setIsSaving] = useState(false);
+    const { toast } = useToast();
+    const [isTypeEditable, setIsTypeEditable] = useState(false);
 
     const methods = useForm<AgreementFormValues>({
         resolver: zodResolver(agreementSchema),
         mode: 'onChange',
     });
-    
-    useEffect(() => {
-        if (agreement) {
-            methods.reset(agreement);
-            setIsTypeEditable(!agreement.id); // If editing, type is not editable by default
-        } else {
-            methods.reset({ clientId: '', type: '', status: 'pending', amount: 0, term: 0, rate: 0, assetId: '' });
-            setIsTypeEditable(true); // If new, type is editable
-        }
-    }, [agreement, methods]);
 
-    const { control, watch, trigger, getValues } = methods;
+    const { control, watch, trigger, getValues, reset } = methods;
 
-    const selectedClientId = watch('clientId');
-    const agreementType = watch('type');
-    const dynamicSteps = useMemo(() => agreementType === 'installment-sale' ? wizardSteps : wizardSteps.filter(step => step.id !== 'asset'), [agreementType]);
-    
     const clientsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'lendingClients')) : null, [firestore]);
     const { data: clients, isLoading: areClientsLoading } = useCollection(clientsQuery);
     
+    const agreementsQuery = useMemoFirebase(() => {
+        if (!firestore || !selectedClient) return null;
+        return query(collection(firestore, `lendingClients/${selectedClient}/agreements`));
+    }, [firestore, selectedClient]);
+    const { data: agreements, isLoading: areAgreementsLoading, forceRefresh } = useCollection(agreementsQuery);
+
     const assetsQuery = useMemoFirebase(() => {
-        if (!firestore || !selectedClientId) return null;
-        return query(collection(firestore, `lendingClients/${selectedClientId}/assets`));
-    }, [firestore, selectedClientId]);
+        if (!firestore || !selectedClient) return null;
+        return query(collection(firestore, `lendingClients/${selectedClient}/assets`));
+    }, [firestore, selectedClient]);
     const { data: assets, isLoading: areAssetsLoading } = useCollection(assetsQuery);
-
-    const clientName = useMemo(() => {
-        if (selectedClientId && clients) {
-            return clients.find((c: any) => c.id === selectedClientId)?.name || 'Unknown Client';
+    
+    useEffect(() => {
+        if (view === 'edit' && selectedAgreement) {
+            reset(selectedAgreement);
+            setIsTypeEditable(false);
+            setCurrentStep(0);
+        } else if (view === 'create') {
+            reset({ clientId: selectedClient || '', type: '', status: 'pending', amount: 0, term: 0, rate: 0, assetId: '' });
+            setIsTypeEditable(true);
+            setCurrentStep(0);
         }
-        return '';
-    }, [selectedClientId, clients]);
+    }, [view, selectedAgreement, reset, selectedClient]);
 
+    const handleSelectClient = (clientId: string) => {
+        setSelectedClient(clientId);
+        setView('list');
+        setSelectedAgreement(null);
+    }
+    
+    const handleCreateNew = () => {
+        setView('create');
+        setSelectedAgreement(null);
+    }
+    
+    const handleEdit = useCallback((agreement: any) => {
+        setSelectedAgreement({ clientId: selectedClient, ...agreement });
+        setView('edit');
+    }, [selectedClient]);
+    
+    const handleBackToList = () => {
+        setView('list');
+        setSelectedAgreement(null);
+    };
 
+    const handleSaveSuccess = () => {
+        forceRefresh();
+        handleBackToList();
+    };
+
+    const agreementType = watch('type');
+    const dynamicSteps = useMemo(() => {
+        const baseSteps = wizardSteps.filter(step => step.id !== 'asset');
+        if (agreementType === 'installment-sale') {
+            const assetStepIndex = wizardSteps.findIndex(s => s.id === 'asset');
+            baseSteps.splice(assetStepIndex -1, 0, wizardSteps[assetStepIndex]);
+        }
+        return baseSteps.map((step, index) => ({...step, name: step.name.replace(/Step \d+|Final Step/, `Step ${index + 1}`)}));
+    }, [agreementType]);
+    
     const handleNext = async () => {
         const currentStepConfig = dynamicSteps[currentStep];
         const isValid = currentStepConfig.fields ? await trigger(currentStepConfig.fields as any) : true;
@@ -116,10 +152,10 @@ function AgreementWizard({ agreement, onBack, onSaveSuccess }: { agreement?: any
         }
     };
     
-    const handleBack = () => { currentStep > 0 ? setCurrentStep(prev => prev - 1) : onBack(); };
+    const handleBack = () => { currentStep > 0 ? setCurrentStep(prev => prev - 1) : handleBackToList(); };
 
     const onSubmit = async (values: AgreementFormValues) => {
-        setIsLoading(true);
+        setIsSaving(true);
         try {
             const token = await getClientSideAuthToken();
             if (!token) throw new Error("Authentication failed.");
@@ -127,17 +163,17 @@ function AgreementWizard({ agreement, onBack, onSaveSuccess }: { agreement?: any
             const response = await fetch('/api/admin', {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action: 'saveLendingAgreement', payload: { agreement: { id: agreement?.id, ...values } } }),
+                body: JSON.stringify({ action: 'saveLendingAgreement', payload: { agreement: { id: selectedAgreement?.id, ...values } } }),
             });
             const result = await response.json();
             if (!response.ok) throw new Error(result.error);
             
-            toast({ title: agreement?.id ? 'Agreement Updated' : 'Agreement Created' });
-            onSaveSuccess();
+            toast({ title: selectedAgreement?.id ? 'Agreement Updated' : 'Agreement Created' });
+            handleSaveSuccess();
         } catch (e: any) {
             toast({ variant: 'destructive', title: 'Error saving agreement', description: e.message });
         } finally {
-            setIsLoading(false);
+            setIsSaving(false);
         }
     };
     
@@ -150,15 +186,16 @@ function AgreementWizard({ agreement, onBack, onSaveSuccess }: { agreement?: any
     };
 
     const renderStepContent = () => {
-        switch (dynamicSteps[currentStep].id) {
+        const stepId = dynamicSteps[currentStep].id;
+        switch (stepId) {
             case 'client':
                 return (
                     <FormField control={control} name="clientId" render={({field}) => (
                         <FormItem>
                             <FormLabel>Client</FormLabel>
-                             {agreement?.id ? (
+                             {view === 'edit' ? (
                                 <FormControl>
-                                    <Input value={clientName} disabled />
+                                    <Input value={clients?.find(c => c.id === field.value)?.name || 'Loading...'} disabled />
                                 </FormControl>
                             ) : (
                                 <Select onValueChange={field.onChange} value={field.value || ''} disabled={areClientsLoading}>
@@ -174,9 +211,9 @@ function AgreementWizard({ agreement, onBack, onSaveSuccess }: { agreement?: any
                 return (
                     <div className="space-y-4">
                         <Label>Agreement Type</Label>
-                        {!isTypeEditable && agreement?.id ? (
+                        {!isTypeEditable ? (
                             <div className="flex items-center gap-4">
-                                <Input value={agreementTypes.find(t => t.id === methods.getValues('type'))?.label || 'Not set'} disabled />
+                                <Input value={agreementTypes.find(t => t.id === watch('type'))?.label || 'Not set'} disabled />
                                 <Button type="button" variant="outline" onClick={() => setIsTypeEditable(true)}>Change</Button>
                             </div>
                         ) : (
@@ -218,7 +255,7 @@ function AgreementWizard({ agreement, onBack, onSaveSuccess }: { agreement?: any
                             </FormItem>
                         }/>
                         <Button asChild variant="outline" className="w-full">
-                            <Link href={`/lending?view=assets&action=add&clientId=${selectedClientId}`}>
+                            <Link href={`/lending?view=assets&action=add&clientId=${selectedClient}`}>
                                 <PlusCircle className="mr-2 h-4 w-4" /> Add New Asset
                             </Link>
                         </Button>
@@ -243,107 +280,12 @@ function AgreementWizard({ agreement, onBack, onSaveSuccess }: { agreement?: any
         }
     }
 
-    return (
-         <Card>
-            <FormProvider {...methods}>
-                <form onSubmit={methods.handleSubmit(onSubmit)}>
-                    <CardHeader>
-                        <CardTitle>{agreement?.id ? 'Edit' : 'Create New'} Agreement</CardTitle>
-                        <CardDescription>Follow the steps to set up a new lending agreement.</CardDescription>
-                    </CardHeader>
-                     <CardContent>
-                        <div className="grid grid-cols-1 md:grid-cols-[250px_1fr] gap-8">
-                            {/* Sidebar Stepper */}
-                            <div className="flex flex-col gap-2 border-r pr-4">
-                                {dynamicSteps.map((step, index) => {
-                                    const isCompleted = index < currentStep && isStepValid(index);
-                                    return (
-                                        <Button 
-                                            key={step.id} 
-                                            variant={currentStep === index ? 'default' : 'ghost'} 
-                                            className="justify-start gap-2"
-                                            onClick={() => setCurrentStep(index)}
-                                            disabled={index > currentStep && !isStepValid(currentStep - 1)}
-                                        >
-                                            {isCompleted ? <Check className="h-5 w-5 text-green-500" /> : <div className={cn("h-5 w-5 rounded-full flex items-center justify-center text-xs font-bold", currentStep >= index ? "bg-primary-foreground text-primary" : "bg-muted-foreground/20")}>{index + 1}</div>}
-                                            {step.name}
-                                        </Button>
-                                    );
-                                })}
-                            </div>
 
-                            {/* Form Content */}
-                            <div className="space-y-6">
-                                <h2 className="text-2xl font-bold">{dynamicSteps[currentStep].name}</h2>
-                                <div className="min-h-[250px]">
-                                    {renderStepContent()}
-                                </div>
-                                <div className="flex justify-between pt-8 mt-8 border-t">
-                                    <Button type="button" variant="outline" onClick={handleBack}>
-                                        <ArrowLeft className="mr-2 h-4 w-4" /> {currentStep === 0 ? 'Back to List' : 'Back'}
-                                    </Button>
-                                    {currentStep < dynamicSteps.length - 1 ? (
-                                        <Button type="button" onClick={handleNext}>Next <ArrowRight className="ml-2 h-4 w-4" /></Button>
-                                    ) : (
-                                        <Button type="submit" disabled={isLoading}>{isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Save className="mr-2 h-4 w-4" />} {agreement?.id ? 'Update' : 'Create'} Agreement</Button>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-                    </CardContent>
-                </form>
-            </FormProvider>
-        </Card>
-    );
-}
-
-
-const statusColors: { [key: string]: 'default' | 'secondary' | 'destructive' | 'outline' } = {
-    pending: 'secondary',
-    active: 'default',
-    completed: 'outline',
-    defaulted: 'destructive',
-};
-
-export default function AgreementsContent() {
-    const firestore = useFirestore();
-    const [selectedClient, setSelectedClient] = useState<string | null>(null);
-    const [view, setView] = useState<'list' | 'create' | 'edit'>('list');
-    const [selectedAgreement, setSelectedAgreement] = useState<any | null>(null);
-
-    const clientsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'lendingClients')) : null, [firestore]);
-    const { data: clients, isLoading: areClientsLoading } = useCollection(clientsQuery);
-    
-    const agreementsQuery = useMemoFirebase(() => {
-        if (!firestore || !selectedClient) return null;
-        return query(collection(firestore, `lendingClients/${selectedClient}/agreements`));
-    }, [firestore, selectedClient]);
-    const { data: agreements, isLoading: areAgreementsLoading, forceRefresh } = useCollection(agreementsQuery);
-    
-    const handleSelectClient = (clientId: string) => {
-        setSelectedClient(clientId);
-        setView('list');
-        setSelectedAgreement(null);
-    }
-    
-    const handleCreateNew = () => {
-        setView('create');
-        setSelectedAgreement({ clientId: selectedClient });
-    }
-    
-    const handleEdit = useCallback((agreement: any) => {
-        setSelectedAgreement({ clientId: selectedClient, ...agreement });
-        setView('edit');
-    }, [selectedClient]);
-    
-    const handleBackToList = () => {
-        setView('list');
-        setSelectedAgreement(null);
-    };
-
-    const handleSaveSuccess = () => {
-        forceRefresh();
-        handleBackToList();
+    const statusColors: { [key: string]: 'default' | 'secondary' | 'destructive' | 'outline' } = {
+        pending: 'secondary',
+        active: 'default',
+        completed: 'outline',
+        defaulted: 'destructive',
     };
 
     const columns: ColumnDef<any>[] = useMemo(() => [
@@ -359,7 +301,58 @@ export default function AgreementsContent() {
     ], [selectedClient, forceRefresh, handleEdit]);
     
     if (view === 'create' || view === 'edit') {
-        return <AgreementWizard agreement={selectedAgreement} onBack={handleBackToList} onSaveSuccess={handleSaveSuccess} />;
+        return (
+             <Card>
+                <FormProvider {...methods}>
+                    <form onSubmit={methods.handleSubmit(onSubmit)}>
+                        <CardHeader>
+                            <CardTitle>{selectedAgreement?.id ? 'Edit' : 'Create New'} Agreement</CardTitle>
+                            <CardDescription>Follow the steps to set up a new lending agreement.</CardDescription>
+                        </CardHeader>
+                         <CardContent>
+                            <div className="grid grid-cols-1 md:grid-cols-[250px_1fr] gap-8">
+                                {/* Sidebar Stepper */}
+                                <div className="flex flex-col gap-2 border-r pr-4">
+                                    {dynamicSteps.map((step, index) => {
+                                        const isCompleted = index < currentStep && isStepValid(index);
+                                        return (
+                                            <Button 
+                                                key={step.id} 
+                                                variant={currentStep === index ? 'default' : 'ghost'} 
+                                                className="justify-start gap-2"
+                                                onClick={() => setCurrentStep(index)}
+                                                disabled={index > currentStep && !isStepValid(currentStep - 1)}
+                                            >
+                                                {isCompleted ? <Check className="h-5 w-5 text-green-500" /> : <div className={cn("h-5 w-5 rounded-full flex items-center justify-center text-xs font-bold", currentStep >= index ? "bg-primary-foreground text-primary" : "bg-muted-foreground/20")}>{index + 1}</div>}
+                                                {step.name}
+                                            </Button>
+                                        );
+                                    })}
+                                </div>
+
+                                {/* Form Content */}
+                                <div className="space-y-6">
+                                    <h2 className="text-2xl font-bold">{dynamicSteps[currentStep].name}</h2>
+                                    <div className="min-h-[250px]">
+                                        {renderStepContent()}
+                                    </div>
+                                    <div className="flex justify-between pt-8 mt-8 border-t">
+                                        <Button type="button" variant="outline" onClick={handleBack}>
+                                            <ArrowLeft className="mr-2 h-4 w-4" /> {currentStep === 0 ? 'Back to List' : 'Back'}
+                                        </Button>
+                                        {currentStep < dynamicSteps.length - 1 ? (
+                                            <Button type="button" onClick={handleNext}>Next <ArrowRight className="ml-2 h-4 w-4" /></Button>
+                                        ) : (
+                                            <Button type="submit" disabled={isSaving}>{isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Save className="mr-2 h-4 w-4" />} {selectedAgreement?.id ? 'Update' : 'Create'} Agreement</Button>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </form>
+                </FormProvider>
+            </Card>
+        );
     }
     
     return (
@@ -412,4 +405,3 @@ export default function AgreementsContent() {
         </Card>
     );
 }
-
