@@ -2,7 +2,7 @@
 'use client';
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Landmark, FileText, ArrowLeft, ArrowRight, Loader2, PlusCircle, Save, Check } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -57,7 +57,10 @@ const formatCurrency = (value: number) => {
 
 export default function AgreementsContent() {
     const firestore = useFirestore();
-    const [selectedClient, setSelectedClient] = useState<string | null>(null);
+    const router = useRouter();
+    const searchParams = useSearchParams();
+
+    const [selectedClient, setSelectedClient] = useState<string | null>(searchParams.get('clientId'));
     const [view, setView] = useState<'list' | 'create' | 'edit'>('list');
     const [selectedAgreement, setSelectedAgreement] = useState<any | null>(null);
 
@@ -66,7 +69,13 @@ export default function AgreementsContent() {
     const { toast } = useToast();
     const [isTypeEditable, setIsTypeEditable] = useState(false);
     const [isAssetModalOpen, setIsAssetModalOpen] = useState(false);
-    const router = useRouter();
+
+    useEffect(() => {
+        const clientIdFromUrl = searchParams.get('clientId');
+        if (clientIdFromUrl !== selectedClient) {
+            setSelectedClient(clientIdFromUrl);
+        }
+    }, [searchParams, selectedClient]);
     
 
     const methods = useForm<AgreementFormValues>({
@@ -112,7 +121,7 @@ export default function AgreementsContent() {
     }, [view, selectedAgreement, reset, selectedClient]);
 
     const handleSelectClient = (clientId: string) => {
-        setSelectedClient(clientId);
+        router.push(`/lending?view=agreements&clientId=${clientId}`);
         setView('list');
         setSelectedAgreement(null);
     }
@@ -502,4 +511,3 @@ export default function AgreementsContent() {
     );
 }
 
-    
