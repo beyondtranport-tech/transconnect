@@ -81,21 +81,25 @@ export default function AgreementsContent() {
     const clientsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'lendingClients')) : null, [firestore]);
     const { data: clients, isLoading: areClientsLoading } = useCollection(clientsQuery);
     
+    // This will get the client ID from the form when in the wizard, or from state when in the list
+    const clientIdFromForm = watch('clientId'); 
+    const clientIdForQueries = view === 'list' ? selectedClient : clientIdFromForm;
+
     const agreementsQuery = useMemoFirebase(() => {
-        if (!firestore || !selectedClient) return null;
-        return query(collection(firestore, `lendingClients/${selectedClient}/agreements`));
-    }, [firestore, selectedClient]);
+        if (!firestore || !clientIdForQueries) return null;
+        return query(collection(firestore, `lendingClients/${clientIdForQueries}/agreements`));
+    }, [firestore, clientIdForQueries]);
     const { data: agreements, isLoading: areAgreementsLoading, forceRefresh } = useCollection(agreementsQuery);
 
     const assetsQuery = useMemoFirebase(() => {
-        if (!firestore || !selectedClient) return null;
-        return query(collection(firestore, `lendingClients/${selectedClient}/assets`));
-    }, [firestore, selectedClient]);
+        if (!firestore || !clientIdForQueries) return null;
+        return query(collection(firestore, `lendingClients/${clientIdForQueries}/assets`));
+    }, [firestore, clientIdForQueries]);
     const { data: assets, isLoading: areAssetsLoading } = useCollection(assetsQuery);
     
     useEffect(() => {
         if (view === 'edit' && selectedAgreement) {
-            reset(selectedAgreement);
+            reset({ clientId: selectedClient, ...selectedAgreement });
             setIsTypeEditable(false);
             setCurrentStep(0);
         } else if (view === 'create') {
@@ -117,9 +121,9 @@ export default function AgreementsContent() {
     }
     
     const handleEdit = useCallback((agreement: any) => {
-        setSelectedAgreement({ clientId: selectedClient, ...agreement });
+        setSelectedAgreement(agreement);
         setView('edit');
-    }, [selectedClient]);
+    }, []);
     
     const handleBackToList = () => {
         setView('list');
@@ -255,7 +259,7 @@ export default function AgreementsContent() {
                             </FormItem>
                         }/>
                         <Button asChild variant="outline" className="w-full">
-                            <Link href={`/lending?view=assets&action=add&clientId=${selectedClient}`}>
+                            <Link href={`/lending?view=assets&action=add&clientId=${getValues('clientId')}`}>
                                 <PlusCircle className="mr-2 h-4 w-4" /> Add New Asset
                             </Link>
                         </Button>
@@ -405,3 +409,4 @@ export default function AgreementsContent() {
         </Card>
     );
 }
+
