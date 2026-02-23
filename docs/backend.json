@@ -440,7 +440,14 @@
         "description": "Represents a single lending agreement with a client.",
         "type": "object",
         "properties": {
-            "id": { "type": "string" }
+            "id": { "type": "string" },
+            "clientId": { "type": "string", "description": "The ID of the client this agreement belongs to."},
+            "assetId": { "type": "string", "description": "The ID of the asset being financed under this agreement."},
+            "type": { "type": "string", "enum": ["loan-pv", "loan-fl", "installment-sale", "rental", "discounting"], "description": "The type of lending agreement."},
+            "status": { "type": "string", "enum": ["pending", "active", "completed", "defaulted"], "description": "The current status of the agreement."},
+            "amount": { "type": "number", "description": "The principal amount of the agreement."},
+            "term": { "type": "number", "description": "The term of the agreement in months."},
+            "rate": { "type": "number", "description": "The annual interest rate."}
         }
     },
     "Facility": {
@@ -469,10 +476,33 @@
     "Asset": {
         "$schema": "http://json-schema.org/draft-07/schema#",
         "title": "Asset",
-        "description": "An asset financed through a lending agreement.",
+        "description": "An asset belonging to a client.",
         "type": "object",
         "properties": {
-            "id": { "type": "string" }
+            "id": { "type": "string" },
+            "clientId": { "type": "string" },
+            "make": { "type": "string" },
+            "model": { "type": "string" },
+            "year": { "type": "string" },
+            "registrationNumber": { "type": "string" },
+            "registerNumber": { "type": "string" },
+            "vin": { "type": "string" },
+            "engineNumber": { "type": "string" },
+            "tare": { "type": "string" },
+            "gvm": { "type": "string" },
+            "titleholder": { "type": "string" },
+            "owner": { "type": "string" },
+            "firstRegistrationDate": { "type": "string" },
+            "classification": { "type": "string" },
+            "documents": {
+                "type": "object",
+                "properties": {
+                    "invoice": { "type": "string", "format": "uri" },
+                    "rc1": { "type": "string", "format": "uri" },
+                    "licenseDisk": { "type": "string", "format": "uri" },
+                    "deliveryNote": { "type": "string", "format": "uri" }
+                }
+            }
         }
     },
     "Security": {
@@ -500,8 +530,11 @@
         "type": "object",
         "properties": {
             "id": { "type": "string" },
+            "name": { "type": "string" },
+            "type": { "type": "string", "enum": ["supplier", "vendor", "associate", "funder"] },
             "globalFacilityLimit": { "type": "number", "description": "The maximum total exposure allowed for this partner across all client facilities." }
-        }
+        },
+        "required": ["id", "name", "type"]
     }
   },
   "auth": {
@@ -742,11 +775,11 @@
         }
       },
       {
-        "path": "/lendingClients/{clientId}/agreements/{agreementId}/assets/{assetId}",
+        "path": "/lendingClients/{clientId}/assets/{assetId}",
         "definition": {
             "entityName": "Asset",
             "schema": { "$ref": "#/entities/Asset" },
-            "description": "DMS: Asset(s) being financed under an agreement."
+            "description": "DMS: Asset(s) belonging to a client."
         }
       },
       {
@@ -777,4 +810,3 @@
     "reasoning": "The data model is refactored to separate user identity from business entities. A new `/users` collection stores individual user profiles, linked via Firebase Auth UID. A new `/companies` collection stores business-related data, including wallet balance, membership status, and subcollections for transactions, staff, quotes, etc. This creates a cleaner, more scalable architecture where a user owns a company, rather than the user and company being the same entity. This prevents data duplication and clarifies ownership for security rules. Added Special Offer fields to Membership entity and created new entities for Connect Plan pricing to support advanced promotional offers. Added a complete, separate data structure for the Debtor Management System (DMS) under collections prefixed with 'lending' to ensure clear separation for future spin-off potential."
   }
 }
-    

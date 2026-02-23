@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
@@ -5,7 +6,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Link as LinkIcon, PlusCircle, Truck, Loader2, Save, Check, ArrowRight, Upload } from "lucide-react";
+import { ArrowLeft, PlusCircle, Truck, Loader2, Save, Check, ArrowRight, Upload, FileText } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import Link from 'next/link';
 import { useForm, FormProvider, useFormContext } from 'react-hook-form';
@@ -42,7 +43,6 @@ const assetDetailsSchema = z.object({
 
 const formSchema = z.object({
   clientId: z.string().min(1, "A client must be selected."),
-  agreementId: z.string().min(1, "An agreement must be selected."),
   asset: assetDetailsSchema,
   documents: z.object({
       invoice: z.string().optional(),
@@ -57,7 +57,6 @@ type AssetWizardFormValues = z.infer<typeof formSchema>;
 // --- Wizard Steps Configuration ---
 const wizardSteps = [
     { id: 'client', name: 'Client', fields: ['clientId'] },
-    { id: 'agreement', name: 'Agreement', fields: ['agreementId'] },
     { id: 'asset', name: 'Asset Details', fields: ['asset'] },
     { id: 'documents', name: 'Documents', fields: [] },
     { id: 'review', name: 'Review & Save' },
@@ -81,18 +80,6 @@ const StepSelectClient = () => {
     return (
         <FormField control={control} name="clientId" render={({ field }) => (
             <FormItem><FormLabel>Select Client</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value} disabled={isLoading}><FormControl><SelectTrigger><SelectValue placeholder={isLoading ? "Loading..." : "Select a client..."} /></SelectTrigger></FormControl><SelectContent>{(clients || []).map((c: any) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
-        )}/>
-    )
-}
-const StepSelectAgreement = () => {
-    const { control, watch } = useFormContext();
-    const firestore = useFirestore();
-    const clientId = watch('clientId');
-    const agreementsQuery = useMemoFirebase(() => firestore && clientId ? query(collection(firestore, `lendingClients/${clientId}/agreements`)) : null, [firestore, clientId]);
-    const { data: agreements, isLoading } = useCollection(agreementsQuery);
-    return (
-        <FormField control={control} name="agreementId" render={({ field }) => (
-            <FormItem><FormLabel>Select Agreement</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value} disabled={!clientId || isLoading}><FormControl><SelectTrigger><SelectValue placeholder={isLoading ? "Loading..." : "Select an agreement..."} /></SelectTrigger></FormControl><SelectContent>{(agreements || []).map((a: any) => <SelectItem key={a.id} value={a.id}>{a.id}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
         )}/>
     )
 }
@@ -171,7 +158,7 @@ const StepReview = () => {
     const values = getValues();
     return (
          <div className="space-y-4">
-             <Card><CardHeader><CardTitle>Client & Agreement</CardTitle></CardHeader><CardContent><p>Client ID: {values.clientId}</p><p>Agreement ID: {values.agreementId}</p></CardContent></Card>
+             <Card><CardHeader><CardTitle>Client</CardTitle></CardHeader><CardContent><p>Client ID: {values.clientId}</p></CardContent></Card>
              <Card><CardHeader><CardTitle>Asset</CardTitle></CardHeader><CardContent><pre className="whitespace-pre-wrap text-xs">{JSON.stringify(values.asset, null, 2)}</pre></CardContent></Card>
              <Card><CardHeader><CardTitle>Documents</CardTitle></CardHeader><CardContent>
                 <ul className="list-disc list-inside">
@@ -184,7 +171,7 @@ const StepReview = () => {
 
 
 // --- Asset Wizard ---
-const AssetWizard = ({ asset, onBack, onSaveSuccess }: { asset?: any, onBack: () => void, onSaveSuccess: () => void }) => {
+const AssetWizard = ({ asset, onBack, onSaveSuccess, defaultClientId }: { asset?: any, onBack: () => void, onSaveSuccess: () => void, defaultClientId?: string | null }) => {
     const [currentStep, setCurrentStep] = useState(0);
     const [isSaving, setIsSaving] = useState(false);
     const { toast } = useToast();
@@ -192,7 +179,10 @@ const AssetWizard = ({ asset, onBack, onSaveSuccess }: { asset?: any, onBack: ()
     const methods = useForm<AssetWizardFormValues>({
         resolver: zodResolver(formSchema),
         mode: 'onChange',
-        defaultValues: asset || { clientId: '', agreementId: '', asset: {}, documents: {} },
+        defaultValues: asset || { 
+            clientId: defaultClientId || '',
+            asset: {}, documents: {} 
+        },
     });
 
     const handleNext = async () => {
@@ -227,10 +217,18 @@ const AssetWizard = ({ asset, onBack, onSaveSuccess }: { asset?: any, onBack: ()
         }
     };
     
+    const isStepValid = (stepIndex: number) => {
+        if (stepIndex < 0) return true;
+        const step = wizardSteps[stepIndex];
+        if (!step.fields) return true;
+        const fields = step.fields as (keyof AssetWizardFormValues)[];
+        return fields.every(field => !methods.formState.errors[field as keyof typeof methods.formState.errors]);
+    };
+
     const renderStepContent = () => {
-        switch(wizardSteps[currentStep].id) {
+        const stepId = wizardSteps[currentStep]?.id;
+        switch (stepId) {
             case 'client': return <StepSelectClient />;
-            case 'agreement': return <StepSelectAgreement />;
             case 'asset': return <StepAssetDetails />;
             case 'documents': return <StepDocuments />;
             case 'review': return <StepReview />;
@@ -245,13 +243,20 @@ const AssetWizard = ({ asset, onBack, onSaveSuccess }: { asset?: any, onBack: ()
                     <CardHeader><CardTitle>{asset ? 'Edit Asset' : 'Onboard New Asset'}</CardTitle></CardHeader>
                     <CardContent>
                         <div className="grid grid-cols-1 md:grid-cols-[250px_1fr] gap-8">
+                            {/* Stepper */}
                             <div className="flex flex-col gap-2 border-r pr-4">
-                                {wizardSteps.map((step, index) => (
-                                    <Button key={step.id} variant={currentStep === index ? 'default' : 'ghost'} className="justify-start gap-2" onClick={() => setCurrentStep(index)} disabled={index > currentStep && !methods.formState.isValid}>
-                                        {currentStep > index ? <Check className="h-5 w-5 text-green-500" /> : <div className="h-5 w-5" />} {step.name}
-                                    </Button>
-                                ))}
+                                {wizardSteps.map((step, index) => {
+                                    const isCompleted = index < currentStep && isStepValid(index);
+                                    return (
+                                         <Button key={step.id} variant={currentStep === index ? 'default' : 'ghost'} className="justify-start gap-2" onClick={() => setCurrentStep(index)} disabled={index > currentStep && !isStepValid(currentStep - 1)}>
+                                            {isCompleted ? <Check className="h-5 w-5 text-green-500" /> : <div className="h-5 w-5" />}
+                                            {step.name}
+                                        </Button>
+                                    )
+                                })}
                             </div>
+
+                            {/* Form Content */}
                             <div className="space-y-6">
                                 <h2 className="text-2xl font-bold">{wizardSteps[currentStep].name}</h2>
                                 {renderStepContent()}
@@ -272,11 +277,17 @@ const AssetWizard = ({ asset, onBack, onSaveSuccess }: { asset?: any, onBack: ()
 // --- Main Component ---
 export default function AssetsContent() {
     const searchParams = useSearchParams();
-    const router = useRouter();
-    const { toast } = useToast();
     const [view, setView] = useState<'list' | 'create' | 'edit'>('list');
     const [selectedAsset, setSelectedAsset] = useState<any | null>(null);
     const firestore = useFirestore();
+    const defaultClientId = searchParams.get('clientId');
+
+    useEffect(() => {
+        const action = searchParams.get('action');
+        if (action === 'add') {
+            setView('create');
+        }
+    }, [searchParams]);
 
     const assetsQuery = useMemoFirebase(() => firestore ? query(collectionGroup(firestore, 'assets')) : null, [firestore]);
     const { data: assets, isLoading, forceRefresh } = useCollection(assetsQuery);
@@ -298,29 +309,37 @@ export default function AssetsContent() {
         setView('edit');
     }, []);
     
-    const handleSaveSuccess = () => {
-        forceRefresh();
+    const handleAdd = () => {
+        setSelectedAsset(null);
+        setView('create');
+    };
+    
+    const handleBackToList = () => {
         setView('list');
         setSelectedAsset(null);
     };
 
+    const handleSaveSuccess = () => {
+        forceRefresh();
+        handleBackToList();
+    }
+    
     const columns: ColumnDef<any>[] = useMemo(() => [
         { accessorKey: 'id', header: 'Asset ID' },
-        { accessorKey: 'assetDescription', header: 'Description', cell: ({row}) => <div>{row.original.make} {row.original.model}</div>},
+        { header: 'Description', cell: ({row}) => <div>{row.original.asset.make} {row.original.asset.model}</div>},
         { accessorKey: 'clientName', header: 'Client' },
-        { accessorKey: 'agreementId', header: 'Agreement ID' },
         { id: 'actions', header: () => <div className="text-right">Actions</div>, cell: ({ row }) => <div className="text-right"><Button variant="ghost" size="sm" onClick={() => handleEdit(row.original)}>Edit</Button></div> }
     ], [handleEdit]);
 
     if (view === 'create' || view === 'edit') {
-        return <AssetWizard asset={selectedAsset} onBack={() => setView('list')} onSaveSuccess={handleSaveSuccess} />;
+        return <AssetWizard asset={selectedAsset} onBack={handleBackToList} onSaveSuccess={handleSaveSuccess} defaultClientId={defaultClientId} />;
     }
 
     return (
         <Card>
             <CardHeader className="flex flex-row justify-between items-start">
                 <div><CardTitle className="flex items-center gap-2"><Truck /> Asset Register</CardTitle><CardDescription>Manage all financed assets.</CardDescription></div>
-                <Button onClick={() => setView('create')}><PlusCircle className="mr-2 h-4 w-4" /> Add New Asset</Button>
+                <Button onClick={handleAdd}><PlusCircle className="mr-2 h-4 w-4" /> Add New Asset</Button>
             </CardHeader>
             <CardContent>
                  {isLoading ? (

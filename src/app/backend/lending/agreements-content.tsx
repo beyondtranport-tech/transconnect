@@ -16,12 +16,13 @@ import { useForm, FormProvider } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from "@/hooks/use-toast";
 import { Separator } from '@/components/ui/separator';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
 import { getClientSideAuthToken } from '@/firebase';
 import { cn } from '@/lib/utils';
+import Link from 'next/link';
 
 
 const agreementTypes = [
@@ -79,6 +80,7 @@ function AgreementWizard({ agreement, onBack, onSaveSuccess }: { agreement?: any
     // Data fetching
     const clientsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'lendingClients')) : null, [firestore]);
     const { data: clients, isLoading: areClientsLoading } = useCollection(clientsQuery);
+    
     const assetsQuery = useMemoFirebase(() => {
         if (!firestore || !selectedClientId) return null;
         return query(collection(firestore, `lendingClients/${selectedClientId}/assets`));
@@ -167,16 +169,28 @@ function AgreementWizard({ agreement, onBack, onSaveSuccess }: { agreement?: any
                 );
             case 'asset':
                 return (
-                    <FormField control={control} name="assetId" render={({field}) => 
-                        <FormItem>
-                            <FormLabel>Linked Asset</FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value} disabled={areAssetsLoading}>
-                                <FormControl><SelectTrigger><SelectValue placeholder={areAssetsLoading ? "Loading assets..." : "Select an asset..."}/></SelectTrigger></FormControl>
-                                <SelectContent>{(assets || []).map((a:any) => <SelectItem key={a.id} value={a.id}>{a.make} {a.model} ({a.registrationNumber})</SelectItem>)}</SelectContent>
-                            </Select>
-                            <FormMessage/>
-                        </FormItem>
-                    }/>
+                    <div className="space-y-4">
+                        <FormField control={control} name="assetId" render={({field}) => 
+                            <FormItem>
+                                <FormLabel>Linked Asset</FormLabel>
+                                <Select onValueChange={field.onChange} defaultValue={field.value} disabled={areAssetsLoading}>
+                                    <FormControl><SelectTrigger><SelectValue placeholder={areAssetsLoading ? "Loading assets..." : "Select an asset..."}/></SelectTrigger></FormControl>
+                                    <SelectContent>{(assets && assets.length > 0) ? (
+                                        (assets || []).map((a:any) => <SelectItem key={a.id} value={a.id}>{a.asset.make} {a.asset.model} ({a.asset.registrationNumber})</SelectItem>)
+                                    ) : (
+                                        <div className="p-4 text-sm text-muted-foreground text-center">No assets found for this client.</div>
+                                    )}</SelectContent>
+                                </Select>
+                                <FormMessage/>
+                            </FormItem>
+                        }/>
+                        <Button asChild variant="outline" className="w-full">
+                            <Link href={`/lending?view=assets&action=add&clientId=${selectedClientId}`}>
+                                <PlusCircle className="mr-2 h-4 w-4" /> Add New Asset
+                            </Link>
+                        </Button>
+                        <p className="text-xs text-muted-foreground">If the asset is not in the list, you will be redirected to add it. You will need to restart this agreement wizard afterward.</p>
+                    </div>
                 );
             case 'review':
                 const values = getValues();
@@ -189,7 +203,7 @@ function AgreementWizard({ agreement, onBack, onSaveSuccess }: { agreement?: any
                         <p><strong>Amount:</strong> {formatCurrency(values.amount || 0)}</p>
                         <p><strong>Term:</strong> {values.term} months</p>
                         <p><strong>Rate:</strong> {values.rate}%</p>
-                        {asset && <p><strong>Asset:</strong> {asset.make} {asset.model}</p>}
+                        {asset && <p><strong>Asset:</strong> {asset.asset.make} {asset.asset.model}</p>}
                     </div>
                 );
             default: return null;

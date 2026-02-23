@@ -1,4 +1,3 @@
-
 'use server';
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -92,17 +91,19 @@ export async function POST(req: NextRequest) {
             case 'saveLendingAsset': {
                 if (!isAdmin) throw new Error("Forbidden: Admin access required.");
                 const { asset } = payload;
-                if (!asset || !asset.clientId || !asset.agreementId) throw new Error("clientId, agreementId, and asset data are required.");
+                if (!asset || !asset.clientId) throw new Error("clientId and asset data are required.");
                 
-                const { clientId, agreementId, id, ...assetData } = asset;
-                const collectionRef = db.collection(`lendingClients/${clientId}/agreements/${agreementId}/assets`);
+                const { clientId, id, ...assetData } = asset;
+                const collectionRef = db.collection(`lendingClients/${clientId}/assets`);
                 
                 if (id) { // Update existing asset
                     const docRef = collectionRef.doc(id);
+                    delete assetData.agreementId;
                     await docRef.set({ ...assetData, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
                     return NextResponse.json({ success: true, id: id });
                 } else { // Create new asset
                     const newDocRef = collectionRef.doc();
+                    delete assetData.agreementId;
                     await newDocRef.set({ ...assetData, id: newDocRef.id, createdAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp() });
                     return NextResponse.json({ success: true, id: newDocRef.id });
                 }
