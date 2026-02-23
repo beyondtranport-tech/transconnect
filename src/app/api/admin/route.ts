@@ -101,10 +101,30 @@ export async function POST(req: NextRequest) {
                 }
 
                 const agreementRef = db.doc(`lendingClients/${clientId}/agreements/${agreementId}`);
-                await agreementRef.update({
-                    status: status,
-                    updatedAt: FieldValue.serverTimestamp(),
+                
+                await db.runTransaction(async (transaction) => {
+                    const agreementDoc = await transaction.get(agreementRef);
+                    if (!agreementDoc.exists) {
+                        throw new Error("Agreement not found.");
+                    }
+                    const agreementData = agreementDoc.data()!;
+
+                    // Update the agreement status
+                    transaction.update(agreementRef, {
+                        status: status,
+                        updatedAt: FieldValue.serverTimestamp(),
+                    });
+
+                    // If setting to 'active' and an asset is linked, update the asset's status
+                    if (status === 'active' && agreementData.assetId) {
+                        const assetRef = db.doc(`lendingClients/${clientId}/assets/${agreementData.assetId}`);
+                        transaction.update(assetRef, {
+                            status: 'financed',
+                            updatedAt: FieldValue.serverTimestamp(),
+                        });
+                    }
                 });
+                
                 return NextResponse.json({ success: true, message: "Agreement status updated." });
             }
             case 'saveLendingAgreement': {

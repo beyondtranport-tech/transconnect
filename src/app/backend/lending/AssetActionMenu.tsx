@@ -40,7 +40,7 @@ async function performAdminAction(token: string, action: string, payload: any) {
 
 export function AssetActionMenu({ asset, onEdit, onUpdate }: { asset: any; onEdit: () => void; onUpdate: () => void; }) {
     const [isProcessing, setIsProcessing] = useState(false);
-    const [actionToConfirm, setActionToConfirm] = useState<'financed' | 'sold' | 'decommissioned' | null>(null);
+    const [actionToConfirm, setActionToConfirm] = useState<'sold' | 'decommissioned' | null>(null);
     const { toast } = useToast();
 
     const handleAction = async () => {
@@ -70,7 +70,6 @@ export function AssetActionMenu({ asset, onEdit, onUpdate }: { asset: any; onEdi
 
     const getAlertStrings = () => {
         switch (actionToConfirm) {
-            case 'financed': return { title: "Mark as Financed?", description: "This will change the asset status to 'financed'." };
             case 'sold': return { title: "Mark as Sold?", description: "This will change the asset status to 'sold'." };
             case 'decommissioned': return { title: "Decommission Asset?", description: "This will change the asset status to 'decommissioned'." };
             default: return { title: "", description: "" };
@@ -90,9 +89,6 @@ export function AssetActionMenu({ asset, onEdit, onUpdate }: { asset: any; onEdi
                         <FileSignature className="mr-2 h-4 w-4" /> Edit Details
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem onSelect={() => setActionToConfirm('financed')} disabled={asset.status === 'financed'}>
-                        <CheckCircle className="mr-2 h-4 w-4" /> Mark as Financed
-                    </DropdownMenuItem>
                     <DropdownMenuItem onSelect={() => setActionToConfirm('sold')}>
                         <CheckCircle className="mr-2 h-4 w-4" /> Mark as Sold
                     </DropdownMenuItem>
@@ -114,4 +110,3 @@ export function AssetActionMenu({ asset, onEdit, onUpdate }: { asset: any; onEdi
         </AlertDialog>
     );
 }
-

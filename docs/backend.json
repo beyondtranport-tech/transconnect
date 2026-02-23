@@ -494,6 +494,7 @@
             "owner": { "type": "string" },
             "firstRegistrationDate": { "type": "string" },
             "classification": { "type": "string" },
+            "status": { "type": "string", "enum": ["available", "financed", "sold", "decommissioned"], "description": "The current status of the asset." },
             "documents": {
                 "type": "object",
                 "properties": {

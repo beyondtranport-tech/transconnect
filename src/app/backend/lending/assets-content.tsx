@@ -334,7 +334,7 @@ const AssetWizard = ({ asset, onBack, onSaveSuccess, defaultClientId }: { asset?
             setIsSaving(false);
         }
     };
-    
+
     const onInvalid = (errors: any) => {
         let stepIndex = -1;
         let errorMessage = "An unknown validation error occurred. Please check all fields.";
@@ -511,7 +511,7 @@ export default function AssetsContent() {
     return (
         <Card>
             <CardHeader className="flex flex-row justify-between items-start">
-                <div><CardTitle className="flex items-center gap-2"><Truck /> Asset Register</CardTitle><CardDescription>Manage all financed assets.</CardDescription></div>
+                <div><CardTitle className="flex items-center gap-2"><Truck /> Asset Register</CardTitle><CardDescription>Manage all financed assets. An asset's status is automatically set to "Financed" when linked to an active agreement.</CardDescription></div>
                 <Button onClick={handleAdd}><PlusCircle className="mr-2 h-4 w-4" /> Add New Asset</Button>
             </CardHeader>
             <CardContent>
@@ -524,4 +524,3 @@ export default function AssetsContent() {
         </Card>
     );
 }
-
