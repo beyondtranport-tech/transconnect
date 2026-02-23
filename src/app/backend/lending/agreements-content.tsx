@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
@@ -56,7 +57,8 @@ const formatCurrency = (value: number) => {
 // New isolated component for VAT calculation
 const VatCalculationSummary = () => {
     const { watch } = useFormContext();
-    const amountExVat = watch('amountExVat') || 0;
+    // Correctly coerce the watched value to a number for calculations
+    const amountExVat = Number(watch('amountExVat')) || 0;
     const vatAmount = amountExVat * 0.15;
     const totalAmount = amountExVat + vatAmount;
 
