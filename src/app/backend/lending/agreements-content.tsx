@@ -57,7 +57,6 @@ const formatCurrency = (value: number) => {
 // New isolated component for VAT calculation
 const VatCalculationSummary = () => {
     const { watch } = useFormContext();
-    // Correctly coerce the watched value to a number for calculations
     const amountExVat = Number(watch('amountExVat')) || 0;
     const vatAmount = amountExVat * 0.15;
     const totalAmount = amountExVat + vatAmount;
@@ -102,7 +101,7 @@ export default function AgreementsContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
 
-    const [selectedClient, setSelectedClient] = useState<string | null>(searchParams.get('clientId'));
+    const selectedClient = searchParams.get('clientId');
     const [view, setView] = useState<'list' | 'create' | 'edit'>('list');
     const [selectedAgreement, setSelectedAgreement] = useState<any | null>(null);
 
@@ -111,13 +110,6 @@ export default function AgreementsContent() {
     const { toast } = useToast();
     const [isTypeEditable, setIsTypeEditable] = useState(false);
     const [isAssetModalOpen, setIsAssetModalOpen] = useState(false);
-
-    useEffect(() => {
-        const clientIdFromUrl = searchParams.get('clientId');
-        if (clientIdFromUrl !== selectedClient) {
-            setSelectedClient(clientIdFromUrl);
-        }
-    }, [searchParams, selectedClient]);
     
 
     const methods = useForm<AgreementFormValues>({
@@ -535,3 +527,4 @@ export default function AgreementsContent() {
         </Card>
     );
 }
+
