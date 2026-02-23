@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Landmark, FileText, ArrowLeft, ArrowRight, Loader2, PlusCircle, Save, Check } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -69,8 +69,14 @@ function AgreementWizard({ agreement, onBack, onSaveSuccess }: { agreement?: any
     const methods = useForm<AgreementFormValues>({
         resolver: zodResolver(agreementSchema),
         mode: 'onChange',
-        defaultValues: agreement || { clientId: '', type: '', status: 'pending', amount: 0, term: 0, rate: 0, assetId: '' },
+        defaultValues: { clientId: '', type: '', status: 'pending', amount: 0, term: 0, rate: 0, assetId: '' },
     });
+
+    useEffect(() => {
+        if (agreement) {
+            methods.reset(agreement);
+        }
+    }, [agreement, methods]);
     
     const { control, watch, trigger, getValues } = methods;
 
@@ -378,5 +384,5 @@ export default function AgreementsContent() {
                 )}
             </CardContent>
         </Card>
-    )
+    );
 }
