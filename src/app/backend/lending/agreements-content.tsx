@@ -481,7 +481,7 @@ export default function AgreementsContent() {
     const columns: ColumnDef<any>[] = useMemo(() => [
         { accessorKey: 'id', header: 'Agreement ID', cell: ({ row }) => <span className="font-mono text-xs">{row.original.id}</span> },
         { accessorKey: 'type', header: 'Type', cell: ({ row }) => <span className="capitalize">{row.original.type?.replace('-', ' ')}</span> },
-        { accessorKey: 'status', header: 'Status', cell: ({ row }) => <Badge variant={statusColors[row.original.status] || 'secondary'} className="capitalize">{row.original.status}</Badge> },
+        { accessorKey: 'status', header: 'Status', cell: ({ row }) => <Badge variant={statusColors[row.original.status?.toLowerCase()] || 'secondary'} className="capitalize">{row.original.status || 'N/A'}</Badge> },
         { accessorKey: 'amount', header: 'Amount', cell: ({ row }) => formatCurrency(row.original.amount) },
         { id: 'actions', header: () => <div className="text-right">Actions</div>, cell: ({ row }) => (
             <div className="text-right">
@@ -550,5 +550,3 @@ export default function AgreementsContent() {
         </Card>
     );
 }
-
-    

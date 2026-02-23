@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import React, { useState } from 'react';
@@ -102,7 +101,14 @@ export function AgreementActionMenu({ agreement, onEdit, onUpdate }: { agreement
         }
     };
     
-    const canBeDeleted = agreement.status === 'pending' || agreement.status === 'credit';
+    // Robust checks for enabling/disabling actions
+    const status = agreement.status?.toLowerCase() || '';
+    const canBeDeleted = status === 'pending' || status === 'credit';
+    const canBeSentToPayout = status === 'credit';
+    const canBeActivated = status === 'payout';
+    const canBeReverted = status === 'payout';
+    const canBeCompleted = status === 'active';
+    const canBeDefaulted = status === 'active';
 
     return (
         <AlertDialog open={!!actionToConfirm} onOpenChange={(open) => !open && setActionToConfirm(null)}>
@@ -117,20 +123,20 @@ export function AgreementActionMenu({ agreement, onEdit, onUpdate }: { agreement
                         <FileSignature className="mr-2 h-4 w-4" /> Edit Details
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem onSelect={() => setActionToConfirm('sendToPayout')} disabled={agreement.status !== 'credit'}>
+                    <DropdownMenuItem onSelect={() => setActionToConfirm('sendToPayout')} disabled={!canBeSentToPayout}>
                         <Send className="mr-2 h-4 w-4" /> Send to Payouts
                     </DropdownMenuItem>
-                    <DropdownMenuItem onSelect={() => setActionToConfirm('logPayment')} disabled={agreement.status !== 'payout'}>
+                    <DropdownMenuItem onSelect={() => setActionToConfirm('logPayment')} disabled={!canBeActivated}>
                         <CheckCircle className="mr-2 h-4 w-4" /> Log Payment & Activate
                     </DropdownMenuItem>
-                     <DropdownMenuItem onSelect={() => setActionToConfirm('revertToCredit')} disabled={agreement.status !== 'payout'}>
+                     <DropdownMenuItem onSelect={() => setActionToConfirm('revertToCredit')} disabled={!canBeReverted}>
                         <RotateCcw className="mr-2 h-4 w-4" /> Revert to Credit Review
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem onSelect={() => setActionToConfirm('complete')} disabled={agreement.status !== 'active'}>
+                    <DropdownMenuItem onSelect={() => setActionToConfirm('complete')} disabled={!canBeCompleted}>
                         <CheckCircle className="mr-2 h-4 w-4" /> Mark as Completed
                     </DropdownMenuItem>
-                    <DropdownMenuItem className="text-destructive" onSelect={() => setActionToConfirm('default')} disabled={agreement.status !== 'active'}>
+                    <DropdownMenuItem className="text-destructive" onSelect={() => setActionToConfirm('default')} disabled={!canBeDefaulted}>
                         <XCircle className="mr-2 h-4 w-4" /> Mark as Defaulted
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
@@ -154,5 +160,3 @@ export function AgreementActionMenu({ agreement, onEdit, onUpdate }: { agreement
         </AlertDialog>
     );
 }
-
-    
