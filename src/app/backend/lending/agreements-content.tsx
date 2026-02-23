@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Landmark, FileText, ArrowLeft, ArrowRight, Loader2, PlusCircle, Save, Check, Truck } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -290,5 +290,5 @@ export default function AgreementsContent() {
                 )}
             </CardContent>
         </Card>
-    );
+    )
 }
