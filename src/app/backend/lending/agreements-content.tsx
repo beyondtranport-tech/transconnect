@@ -96,9 +96,9 @@ const StepDetails = () => {
     );
 };
 
-const AgreementWizard = ({ agreement, onBack, onSaveSuccess, clients, areClientsLoading }: { 
-    agreement?: any, 
-    onBack: () => void, 
+const AgreementWizard = ({ agreement, onBack, onSaveSuccess, clients, areClientsLoading }: {
+    agreement?: any,
+    onBack: () => void,
     onSaveSuccess: () => void,
     clients: any[],
     areClientsLoading: boolean
@@ -118,14 +118,8 @@ const AgreementWizard = ({ agreement, onBack, onSaveSuccess, clients, areClients
     });
 
     const { control, watch, trigger, getValues, reset } = methods;
-    
-    const clientIdFromForm = watch('clientId'); 
 
-    const agreementsQuery = useMemoFirebase(() => {
-        if (!firestore || !clientIdFromForm) return null;
-        return query(collection(firestore, `lendingClients/${clientIdFromForm}/agreements`));
-    }, [firestore, clientIdFromForm]);
-    const { data: agreements, isLoading: areAgreementsLoading, forceRefresh: forceRefreshAgreements } = useCollection(agreementsQuery);
+    const clientIdFromForm = watch('clientId');
 
     const assetsQuery = useMemoFirebase(() => {
         if (!firestore || !clientIdFromForm) return null;
@@ -135,13 +129,13 @@ const AgreementWizard = ({ agreement, onBack, onSaveSuccess, clients, areClients
 
     useEffect(() => {
         if (agreement) {
-             const amountExVat = (agreement.amount || 0) / 1.15;
+            const amountExVat = (agreement.amount || 0) / 1.15;
             reset({
-                clientId: agreement.clientId,
                 ...agreement,
+                clientId: agreement.clientId,
                 amountExVat: amountExVat
             });
-            setIsTypeEditable(false); 
+            setIsTypeEditable(false);
             setCurrentStep(0);
         } else {
             reset({ clientId: searchParams.get('clientId') || '', type: '', status: 'pending', amountExVat: 0, term: 0, rate: 0, assetId: '' });
@@ -171,26 +165,26 @@ const AgreementWizard = ({ agreement, onBack, onSaveSuccess, clients, areClients
             name: `Step ${index + 1}: ${step.name.replace(/^Step \d+: /, '')}`,
         }));
     }, [agreementType]);
-    
-    
+
+
     const handleNext = async () => {
         const currentStepConfig = dynamicSteps[currentStep];
         if (!currentStepConfig) return;
-        
+
         let isValid = false;
         if (currentStepConfig.fields && currentStepConfig.fields.length > 0) {
             isValid = await trigger(currentStepConfig.fields as any);
         } else {
             isValid = true;
         }
-        
+
         if (isValid && currentStep < dynamicSteps.length - 1) {
             setCurrentStep(prev => prev + 1);
         } else if (!isValid) {
             toast({ variant: 'destructive', title: 'Validation Error', description: 'Please complete the current step.' });
         }
     };
-    
+
     const handleBackWizard = () => { currentStep > 0 ? setCurrentStep(prev => prev - 1) : onBack(); };
 
     const onSubmit = async (values: AgreementFormValues) => {
@@ -198,7 +192,7 @@ const AgreementWizard = ({ agreement, onBack, onSaveSuccess, clients, areClients
         try {
             const token = await getClientSideAuthToken();
             if (!token) throw new Error("Authentication failed.");
-            
+
             const amountExVat = values.amountExVat || 0;
             const selectedAsset = (assets || []).find((a: any) => a.id === values.assetId);
             const costOfSale = selectedAsset?.costOfSale || 0;
@@ -216,7 +210,7 @@ const AgreementWizard = ({ agreement, onBack, onSaveSuccess, clients, areClients
             };
 
             const payload = { agreement: { id: agreement?.id, ...dataToSave } };
-            
+
             const response = await fetch('/api/admin', {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
@@ -224,7 +218,7 @@ const AgreementWizard = ({ agreement, onBack, onSaveSuccess, clients, areClients
             });
             const result = await response.json();
             if (!response.ok) throw new Error(result.error);
-            
+
             toast({ title: agreement?.id ? 'Agreement Updated' : 'Agreement Created' });
             onSaveSuccess();
         } catch (e: any) {
@@ -233,7 +227,7 @@ const AgreementWizard = ({ agreement, onBack, onSaveSuccess, clients, areClients
             setIsSaving(false);
         }
     };
-    
+
     const isStepValid = (stepIndex: number) => {
         if (stepIndex < 0) return true;
         const step = dynamicSteps[stepIndex];
@@ -249,7 +243,7 @@ const AgreementWizard = ({ agreement, onBack, onSaveSuccess, clients, areClients
         const selectedAsset = useMemo(() => (assets || []).find((a: any) => a.id === selectedAssetId), [selectedAssetId, assets]);
         const costOfSale = selectedAsset?.costOfSale || 0;
         const markup = amountExVat > 0 && costOfSale > 0 ? amountExVat - costOfSale : 0;
-        
+
         if (!selectedAsset) return null;
 
         return (
@@ -264,7 +258,7 @@ const AgreementWizard = ({ agreement, onBack, onSaveSuccess, clients, areClients
 
     const StepAsset = () => {
         const { control, getValues } = useFormContext();
-        
+
         return (
             <div className="space-y-4">
                 <FormField control={control} name="assetId" render={({field}) => (
@@ -285,7 +279,7 @@ const AgreementWizard = ({ agreement, onBack, onSaveSuccess, clients, areClients
                 )}/>
 
                 <MarkupSummary />
-                
+
                  <Dialog open={isAssetModalOpen} onOpenChange={setIsAssetModalOpen}>
                     <DialogTrigger asChild>
                         <Button variant="outline" className="w-full">
@@ -293,7 +287,7 @@ const AgreementWizard = ({ agreement, onBack, onSaveSuccess, clients, areClients
                         </Button>
                     </DialogTrigger>
                     <DialogContent className="max-w-4xl">
-                        <AssetWizard 
+                        <AssetWizard
                             onBack={() => setIsAssetModalOpen(false)}
                             onSaveSuccess={() => {
                                 forceRefreshAssets();
@@ -389,9 +383,9 @@ const AgreementWizard = ({ agreement, onBack, onSaveSuccess, clients, areClients
                                 {dynamicSteps.map((step, index) => {
                                     const isCompleted = index < currentStep && isStepValid(index);
                                     return (
-                                        <Button 
-                                            key={step.id} 
-                                            variant={currentStep === index ? 'default' : 'ghost'} 
+                                        <Button
+                                            key={step.id}
+                                            variant={currentStep === index ? 'default' : 'ghost'}
                                             className="justify-start gap-2"
                                             onClick={() => setCurrentStep(index)}
                                             disabled={index > currentStep && !isStepValid(currentStep - 1)}
@@ -438,27 +432,32 @@ export default function AgreementsContent() {
 
     const clientsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'lendingClients')) : null, [firestore]);
     const { data: clients, isLoading: areClientsLoading } = useCollection(clientsQuery);
-    
+
     const agreementsQuery = useMemoFirebase(() => {
         if (!firestore || !selectedClient) return null;
         return query(collection(firestore, `lendingClients/${selectedClient}/agreements`));
     }, [firestore, selectedClient]);
     const { data: agreements, isLoading: areAgreementsLoading, forceRefresh: forceRefreshAgreements } = useCollection(agreementsQuery);
 
+    const agreementsWithClientId = useMemo(() => {
+        if (!agreements || !selectedClient) return [];
+        return agreements.map(a => ({ ...a, clientId: selectedClient }));
+    }, [agreements, selectedClient]);
+
     const handleSelectClient = (clientId: string) => {
         router.push(`/lending?view=agreements&clientId=${clientId}`);
     }
-    
+
     const handleCreateNew = () => {
         setView('create');
         setSelectedAgreement(null);
     }
-    
+
     const handleEdit = useCallback((agreement: any) => {
         setSelectedAgreement(agreement);
         setView('edit');
     }, []);
-    
+
     const handleBackToList = () => {
         setView('list');
         setSelectedAgreement(null);
@@ -483,21 +482,21 @@ export default function AgreementsContent() {
         { accessorKey: 'amount', header: 'Amount', cell: ({ row }) => formatCurrency(row.original.amount) },
         { id: 'actions', header: () => <div className="text-right">Actions</div>, cell: ({ row }) => (
             <div className="text-right">
-                <AgreementActionMenu agreement={{clientId: selectedClient, ...row.original}} onEdit={() => handleEdit(row.original)} onUpdate={forceRefreshAgreements} />
+                <AgreementActionMenu agreement={row.original} onEdit={() => handleEdit(row.original)} onUpdate={forceRefreshAgreements} />
             </div>
         )}
-    ], [selectedClient, forceRefreshAgreements, handleEdit]);
-    
+    ], [forceRefreshAgreements, handleEdit]);
+
     if (view === 'create' || view === 'edit') {
-        return <AgreementWizard 
-                    agreement={selectedAgreement} 
-                    onBack={handleBackToList} 
-                    onSaveSuccess={handleSaveSuccess} 
+        return <AgreementWizard
+                    agreement={selectedAgreement}
+                    onBack={handleBackToList}
+                    onSaveSuccess={handleSaveSuccess}
                     clients={clients || []}
                     areClientsLoading={areClientsLoading}
                 />;
     }
-    
+
     return (
         <Card>
             <CardHeader>
@@ -529,9 +528,9 @@ export default function AgreementsContent() {
                         </Button>
                     </div>
                 </div>
-                
+
                 <Separator />
-                
+
                 {selectedClient && (
                      <div className="pt-6">
                         <h3 className="text-lg font-semibold mb-4">
@@ -540,7 +539,7 @@ export default function AgreementsContent() {
                         {areAgreementsLoading ? (
                              <div className="flex justify-center items-center py-10"><Loader2 className="h-8 w-8 animate-spin"/></div>
                         ) : (
-                            <DataTable columns={columns} data={agreements || []} />
+                            <DataTable columns={columns} data={agreementsWithClientId || []} />
                         )}
                     </div>
                 )}
@@ -548,4 +547,3 @@ export default function AgreementsContent() {
         </Card>
     );
 }
-
