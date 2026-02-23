@@ -3,7 +3,7 @@
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { Landmark, FileText, ArrowLeft, ArrowRight, Loader2, PlusCircle, Save, Check, Users, Truck } from "lucide-react";
+import { Landmark, FileText, ArrowLeft, ArrowRight, Loader2, PlusCircle, Save, Check } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
@@ -64,7 +64,7 @@ export default function AgreementsContent() {
     const [isSaving, setIsSaving] = useState(false);
     const { toast } = useToast();
     const [isTypeEditable, setIsTypeEditable] = useState(false);
-    const [isAssetModalOpen, setIsAssetModalOpen] = useState(false);
+    
 
     const methods = useForm<AgreementFormValues>({
         resolver: zodResolver(agreementSchema),
@@ -135,20 +135,23 @@ export default function AgreementsContent() {
     const agreementType = watch('type');
 
     const dynamicSteps = useMemo(() => {
-        const steps = [
+        const baseSteps = [
             { id: 'client', name: 'Client', fields: ['clientId'] },
             { id: 'type', name: 'Agreement Type', fields: ['type'] },
             { id: 'details', name: 'Financial Details', fields: ['amount', 'term', 'rate'] },
         ];
         
         if (agreementType === 'installment-sale') {
-            steps.push({ id: 'asset', name: 'Link Asset', fields: ['assetId'] });
+            baseSteps.push({ id: 'asset', name: 'Link Asset', fields: [] }); // No validation on the whole step, but on the field inside
         }
 
-        steps.push({ id: 'review', name: 'Review & Save' });
+        const finalSteps = [
+            ...baseSteps,
+            { id: 'review', name: 'Review & Save' }
+        ];
 
         // Re-label step numbers
-        return steps.map((step, index) => ({
+        return finalSteps.map((step, index) => ({
             ...step,
             name: `Step ${index + 1}: ${step.name}`,
         }));
@@ -157,7 +160,14 @@ export default function AgreementsContent() {
     
     const handleNext = async () => {
         const currentStepConfig = dynamicSteps[currentStep];
-        const isValid = currentStepConfig.fields ? await trigger(currentStepConfig.fields as any) : true;
+        if (!currentStepConfig) return;
+        
+        let isValid = false;
+        if (currentStepConfig.fields && currentStepConfig.fields.length > 0) {
+            isValid = await trigger(currentStepConfig.fields as any);
+        } else {
+            isValid = true; // For steps without fields like review or asset link
+        }
         
         if (isValid && currentStep < dynamicSteps.length - 1) {
             setCurrentStep(prev => prev + 1);
@@ -194,13 +204,15 @@ export default function AgreementsContent() {
     const isStepValid = (stepIndex: number) => {
         if (stepIndex < 0) return true;
         const step = dynamicSteps[stepIndex];
-        if (!step.fields) return true;
+        if (!step.fields || step.fields.length === 0) return true;
         const fields = step.fields as (keyof AgreementFormValues)[];
         return fields.every(field => !methods.formState.errors[field as keyof typeof methods.formState.errors]);
     };
 
     const StepAsset = () => {
         const { control, getValues } = useFormContext();
+        const [isAssetModalOpen, setIsAssetModalOpen] = useState(false);
+    
         return (
             <div className="space-y-4">
                 <FormField control={control} name="assetId" render={({field}) => (
@@ -211,7 +223,9 @@ export default function AgreementsContent() {
                             <SelectContent>{(assets && assets.length > 0) ? (
                                 (assets || []).map((a:any) => <SelectItem key={a.id} value={a.id}>{a.make} {a.model} ({a.registrationNumber})</SelectItem>)
                             ) : (
-                                <div className="p-4 text-sm text-muted-foreground text-center">No assets found for this client.</div>
+                                <div className="p-4 text-sm text-muted-foreground text-center">
+                                    {areAssetsLoading ? <Loader2 className="h-4 w-4 animate-spin mx-auto" /> : 'No assets found for this client.'}
+                                </div>
                             )}</SelectContent>
                         </Select>
                         <FormMessage/>
@@ -354,7 +368,7 @@ export default function AgreementsContent() {
                                                 disabled={index > currentStep && !isStepValid(currentStep - 1)}
                                             >
                                                 {isCompleted ? <Check className="h-5 w-5 text-green-500" /> : <div className={cn("h-5 w-5 rounded-full flex items-center justify-center text-xs font-bold", currentStep >= index ? "bg-primary-foreground text-primary" : "bg-muted-foreground/20")}>{index + 1}</div>}
-                                                {step.name}
+                                                {step.name.replace(/Step \d+: /, '')}
                                             </Button>
                                         );
                                     })}
@@ -435,3 +449,4 @@ export default function AgreementsContent() {
         </Card>
     );
 }
+
