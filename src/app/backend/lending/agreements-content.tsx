@@ -3,7 +3,7 @@
 
 import React, { useState, useMemo, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { Landmark, FileText, ArrowLeft, ArrowRight, Loader2, PlusCircle, Save, Check, Truck } from "lucide-react";
+import { Landmark, FileText, ArrowLeft, ArrowRight, Loader2, PlusCircle, Save, Check } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
@@ -149,7 +149,7 @@ function AgreementWizard({ agreement, onBack, onSaveSuccess }: { agreement?: any
     }
 
     return (
-        <Card>
+         <Card>
             <FormProvider {...methods}>
                 <form onSubmit={methods.handleSubmit(onSubmit)}>
                     <CardHeader>
@@ -157,35 +157,49 @@ function AgreementWizard({ agreement, onBack, onSaveSuccess }: { agreement?: any
                         <CardDescription>Follow the steps to set up a new lending agreement.</CardDescription>
                     </CardHeader>
                      <CardContent>
-                        <div className="flex items-center gap-4 mb-8">
-                            {dynamicSteps.map((step, index) => (
-                                <React.Fragment key={step.id}>
-                                    <div className="flex flex-col items-center">
-                                        <div className={cn("h-8 w-8 rounded-full flex items-center justify-center font-bold", currentStep >= index ? "bg-primary text-primary-foreground" : "bg-muted")}>
-                                            {isStepValid(index-1) && currentStep > index ? <Check className="h-5 w-5"/> : index+1}
-                                        </div>
-                                        <p className={cn("text-xs mt-1 text-center", currentStep >= index ? "font-semibold" : "text-muted-foreground")}>{step.name}</p>
-                                    </div>
-                                    {index < dynamicSteps.length - 1 && <div className={cn("flex-1 h-0.5 mb-4", currentStep > index && isStepValid(index) ? "bg-primary" : "bg-muted")} />}
-                                </React.Fragment>
-                            ))}
-                        </div>
-                        <div className="min-h-[150px]">
-                            {renderStepContent()}
+                        <div className="grid grid-cols-1 md:grid-cols-[250px_1fr] gap-8">
+                            {/* Sidebar Stepper */}
+                            <div className="flex flex-col gap-2 border-r pr-4">
+                                {dynamicSteps.map((step, index) => {
+                                    const isCompleted = index < currentStep && isStepValid(index);
+                                    return (
+                                        <Button 
+                                            key={step.id} 
+                                            variant={currentStep === index ? 'default' : 'ghost'} 
+                                            className="justify-start gap-2"
+                                            onClick={() => setCurrentStep(index)}
+                                            disabled={index > currentStep && !isStepValid(currentStep - 1)}
+                                        >
+                                            {isCompleted ? <Check className="h-5 w-5 text-green-500" /> : <div className={cn("h-5 w-5 rounded-full flex items-center justify-center text-xs font-bold", currentStep >= index ? "bg-primary-foreground text-primary" : "bg-muted-foreground/20")}>{index + 1}</div>}
+                                            {step.name}
+                                        </Button>
+                                    );
+                                })}
+                            </div>
+
+                            {/* Form Content */}
+                            <div className="space-y-6">
+                                <h2 className="text-2xl font-bold">{dynamicSteps[currentStep].name}</h2>
+                                <div className="min-h-[250px]">
+                                    {renderStepContent()}
+                                </div>
+                                <div className="flex justify-between pt-8 mt-8 border-t">
+                                    <Button type="button" variant="outline" onClick={handleBack}>
+                                        <ArrowLeft className="mr-2 h-4 w-4" /> {currentStep === 0 ? 'Back to List' : 'Back'}
+                                    </Button>
+                                    {currentStep < dynamicSteps.length - 1 ? (
+                                        <Button type="button" onClick={handleNext}>Next <ArrowRight className="ml-2 h-4 w-4" /></Button>
+                                    ) : (
+                                        <Button type="submit" disabled={isLoading}>{isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Save className="mr-2 h-4 w-4" />} {agreement?.id ? 'Update' : 'Create'} Agreement</Button>
+                                    )}
+                                </div>
+                            </div>
                         </div>
                     </CardContent>
-                    <CardFooter className="justify-between">
-                        <Button type="button" variant="outline" onClick={handleBack}><ArrowLeft className="mr-2 h-4 w-4" /> Back</Button>
-                        {currentStep < dynamicSteps.length - 1 ? (
-                            <Button type="button" onClick={handleNext}>Next <ArrowRight className="ml-2 h-4 w-4" /></Button>
-                        ) : (
-                            <Button type="submit" disabled={isLoading}>{isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Save className="mr-2 h-4 w-4" />} {agreement?.id ? 'Update' : 'Create'} Agreement</Button>
-                        )}
-                    </CardFooter>
                 </form>
             </FormProvider>
         </Card>
-    )
+    );
 }
 
 
@@ -236,6 +250,7 @@ export default function AgreementsContent() {
         { accessorKey: 'status', header: 'Status', cell: ({ row }) => <Badge>{row.original.status}</Badge> },
         { accessorKey: 'amount', header: 'Amount', cell: ({ row }) => formatCurrency(row.original.amount) },
         { id: 'actions', header: () => <div className="text-right">Actions</div>, cell: ({ row }) => <div className="text-right"><Button variant="outline" size="sm" onClick={() => handleEdit(row.original)}>Manage</Button></div> }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     ], [handleEdit]);
     
     if (view === 'create' || view === 'edit') {
