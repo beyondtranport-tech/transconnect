@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo, useCallback } from 'react';
@@ -298,10 +299,10 @@ export default function AgreementsContent() {
         setSelectedAgreement({ clientId: selectedClient });
     }
     
-    const handleEdit = (agreement: any) => {
+    const handleEdit = useCallback((agreement: any) => {
         setSelectedAgreement({ clientId: selectedClient, ...agreement });
         setView('edit');
-    };
+    }, [selectedClient]);
     
     const handleBackToList = () => {
         setView('list');
