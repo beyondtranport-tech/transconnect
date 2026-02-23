@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
@@ -28,7 +27,6 @@ import { AgreementActionMenu } from './AgreementActionMenu';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from '@/components/ui/dialog';
 import { AssetWizard } from './assets-content';
 
-
 const agreementTypes = [
     { id: 'loan-pv', label: 'Loan pv' },
     { id: 'loan-fl', label: 'Loan fl' },
@@ -41,11 +39,12 @@ const agreementSchema = z.object({
   clientId: z.string().min(1, 'Client is required'),
   type: z.string().min(1, 'Agreement type is required'),
   status: z.string().default('pending'),
-  amount: z.coerce.number().positive("Amount must be a positive number."),
+  amountExVat: z.coerce.number().positive("Amount (ex. VAT) must be a positive number."),
   term: z.coerce.number().int().positive("Term must be a positive integer."),
   rate: z.coerce.number().min(0, "Rate cannot be negative."),
   assetId: z.string().optional(),
 });
+
 
 type AgreementFormValues = z.infer<typeof agreementSchema>;
 
@@ -89,21 +88,23 @@ export default function AgreementsContent() {
 
     const assetsQuery = useMemoFirebase(() => {
         if (!firestore || !clientIdForQueries) return null;
-        return query(collection(firestore, 'lendingAssets'), where('clientId', '==', clientIdForQueries));
+        return query(collection(firestore, 'lendingAssets'), where('clientId', '==', clientIdForQueries), where('status', '==', 'available'));
     }, [firestore, clientIdForQueries]);
     const { data: assets, isLoading: areAssetsLoading, forceRefresh: forceRefreshAssets } = useCollection(assetsQuery);
     
     useEffect(() => {
         if (view === 'edit' && selectedAgreement) {
+             const amountExVat = (selectedAgreement.amount || 0) / 1.15;
             reset({
                 clientId: selectedClient || selectedAgreement.clientId,
-                ...selectedAgreement
+                ...selectedAgreement,
+                amountExVat: amountExVat
             });
-            setIsTypeEditable(false); // Start with type locked
+            setIsTypeEditable(false); 
             setCurrentStep(0);
         } else if (view === 'create') {
-            reset({ clientId: selectedClient || '', type: '', status: 'pending', amount: 0, term: 0, rate: 0, assetId: '' });
-            setIsTypeEditable(true); // Allow type selection for new
+            reset({ clientId: selectedClient || '', type: '', status: 'pending', amountExVat: 0, term: 0, rate: 0, assetId: '' });
+            setIsTypeEditable(true);
             setCurrentStep(0);
         }
     }, [view, selectedAgreement, reset, selectedClient]);
@@ -140,19 +141,18 @@ export default function AgreementsContent() {
         const baseSteps = [
             { id: 'client', name: 'Client', fields: ['clientId'] },
             { id: 'type', name: 'Agreement Type', fields: ['type'] },
-            { id: 'details', name: 'Financial Details', fields: ['amount', 'term', 'rate'] },
+            { id: 'details', name: 'Financial Details', fields: ['amountExVat', 'term', 'rate'] },
         ];
         
         if (agreementType === 'installment-sale') {
-            baseSteps.push({ id: 'asset', name: 'Link Asset', fields: [] }); // No validation on the whole step, but on the field inside
+            baseSteps.push({ id: 'asset', name: 'Link Asset', fields: [] });
         }
 
         const finalSteps = [
             ...baseSteps,
             { id: 'review', name: 'Review & Save' }
         ];
-
-        // Re-label step numbers
+        
         return finalSteps.map((step, index) => ({
             ...step,
             name: `Step ${index + 1}: ${step.name}`,
@@ -168,7 +168,7 @@ export default function AgreementsContent() {
         if (currentStepConfig.fields && currentStepConfig.fields.length > 0) {
             isValid = await trigger(currentStepConfig.fields as any);
         } else {
-            isValid = true; // For steps without fields like review or asset link
+            isValid = true;
         }
         
         if (isValid && currentStep < dynamicSteps.length - 1) {
@@ -186,10 +186,28 @@ export default function AgreementsContent() {
             const token = await getClientSideAuthToken();
             if (!token) throw new Error("Authentication failed.");
             
+            const amountExVat = values.amountExVat || 0;
+            const selectedAsset = (assets || []).find((a: any) => a.id === values.assetId);
+            const costOfSale = selectedAsset?.costOfSale || 0;
+
+            const dataToSave = {
+                clientId: values.clientId,
+                type: values.type,
+                status: values.status,
+                term: values.term,
+                rate: values.rate,
+                assetId: values.assetId,
+                amount: amountExVat * 1.15,
+                vatAmount: amountExVat * 0.15,
+                markup: amountExVat > 0 && costOfSale > 0 ? amountExVat - costOfSale : 0,
+            };
+
+            const payload = { agreement: { id: selectedAgreement?.id, ...dataToSave } };
+            
             const response = await fetch('/api/admin', {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action: 'saveLendingAgreement', payload: { agreement: { id: selectedAgreement?.id, ...values } } }),
+                body: JSON.stringify({ action: 'saveLendingAgreement', payload }),
             });
             const result = await response.json();
             if (!response.ok) throw new Error(result.error);
@@ -211,8 +229,38 @@ export default function AgreementsContent() {
         return fields.every(field => !methods.formState.errors[field as keyof typeof methods.formState.errors]);
     };
 
+    const StepDetails = () => {
+        const { control, watch } = useFormContext();
+        const amountExVat = watch('amountExVat') || 0;
+        const vatAmount = amountExVat * 0.15;
+        const totalAmount = amountExVat + vatAmount;
+
+        return (
+            <div className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField control={control} name="term" render={({ field }) => (<FormItem><FormLabel>Term (Months)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                    <FormField control={control} name="rate" render={({ field }) => (<FormItem><FormLabel>Rate (%)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                </div>
+                <Separator />
+                <div className="space-y-4">
+                    <FormField control={control} name="amountExVat" render={({ field }) => (<FormItem><FormLabel>Amount (ex. VAT)</FormLabel><FormControl><Input type="number" placeholder="R 0.00" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                    <div className="p-4 border rounded-lg bg-muted space-y-2 text-sm">
+                        <div className="flex justify-between"><span>VAT (15%)</span><span className="font-mono">{formatCurrency(vatAmount)}</span></div>
+                        <div className="flex justify-between font-bold text-base border-t pt-2 mt-2"><span>Total Finance Amount (incl. VAT)</span><span className="font-mono">{formatCurrency(totalAmount)}</span></div>
+                    </div>
+                </div>
+            </div>
+        );
+    };
+
     const StepAsset = () => {
-        const { control, getValues } = useFormContext();
+        const { control, getValues, watch } = useFormContext();
+        
+        const amountExVat = watch('amountExVat') || 0;
+        const selectedAssetId = watch('assetId');
+        const selectedAsset = (assets || []).find((a: any) => a.id === selectedAssetId);
+        const costOfSale = selectedAsset?.costOfSale || 0;
+        const markup = amountExVat > 0 && costOfSale > 0 ? amountExVat - costOfSale : 0;
         
         return (
             <div className="space-y-4">
@@ -220,18 +268,28 @@ export default function AgreementsContent() {
                     <FormItem>
                         <FormLabel>Linked Asset</FormLabel>
                         <Select onValueChange={field.onChange} value={field.value || ''} disabled={areAssetsLoading}>
-                            <FormControl><SelectTrigger><SelectValue placeholder={areAssetsLoading ? "Loading assets..." : "Select an asset..."}/></SelectTrigger></FormControl>
+                            <FormControl><SelectTrigger><SelectValue placeholder={areAssetsLoading ? "Loading assets..." : "Select an available asset..."}/></SelectTrigger></FormControl>
                             <SelectContent>{(assets && assets.length > 0) ? (
                                 (assets || []).map((a:any) => <SelectItem key={a.id} value={a.id}>{a.make} {a.model} ({a.registrationNumber})</SelectItem>)
                             ) : (
                                 <div className="p-4 text-sm text-muted-foreground text-center">
-                                    {areAssetsLoading ? <Loader2 className="h-4 w-4 animate-spin mx-auto" /> : 'No assets found for this client.'}
+                                    {areAssetsLoading ? <Loader2 className="h-4 w-4 animate-spin mx-auto" /> : 'No available assets found for this client.'}
                                 </div>
                             )}</SelectContent>
                         </Select>
                         <FormMessage/>
                     </FormItem>
                 )}/>
+
+                {selectedAsset && (
+                    <div className="p-4 border rounded-lg bg-muted space-y-2 text-sm mt-4">
+                        <h4 className="font-semibold mb-2">Financial Summary</h4>
+                        <div className="flex justify-between"><span>Finance Amount (ex. VAT)</span><span className="font-mono">{formatCurrency(amountExVat)}</span></div>
+                        <div className="flex justify-between"><span>Asset Cost of Sale</span><span className="font-mono">{formatCurrency(costOfSale)}</span></div>
+                        <div className="flex justify-between font-bold text-base border-t pt-2 mt-2"><span>Markup (Unfunded Income)</span><span className="font-mono text-primary">{formatCurrency(markup)}</span></div>
+                    </div>
+                )}
+                
                 <Dialog open={isAssetModalOpen} onOpenChange={setIsAssetModalOpen}>
                     <DialogTrigger asChild>
                         <Button variant="outline" className="w-full">
@@ -298,24 +356,20 @@ export default function AgreementsContent() {
                         )}
                     </div>
                 );
-            case 'details':
-                return (
-                    <div className="grid grid-cols-3 gap-4">
-                        <FormField control={control} name="amount" render={({field}) => <FormItem><FormLabel>Amount</FormLabel><FormControl><Input type="number" {...field}/></FormControl><FormMessage/></FormItem>}/>
-                        <FormField control={control} name="term" render={({field}) => <FormItem><FormLabel>Term (Months)</FormLabel><FormControl><Input type="number" {...field}/></FormControl><FormMessage/></FormItem>}/>
-                        <FormField control={control} name="rate" render={({field}) => <FormItem><FormLabel>Rate (%)</FormLabel><FormControl><Input type="number" {...field}/></FormControl><FormMessage/></FormItem>}/>
-                    </div>
-                );
+            case 'details': return <StepDetails />;
             case 'asset': return <StepAsset />;
             case 'review':
                 const values = getValues();
                 const clientNameReview = clients?.find(c => c.id === values.clientId)?.name;
                 const asset = assets?.find(a => a.id === values.assetId);
+                const amountExVat = values.amountExVat || 0;
+                const totalAmount = amountExVat * 1.15;
+
                 return (
                     <div className="space-y-2 text-sm">
                         <p><strong>Client:</strong> {clientNameReview}</p>
                         <p><strong>Type:</strong> {values.type}</p>
-                        <p><strong>Amount:</strong> {formatCurrency(values.amount || 0)}</p>
+                        <p><strong>Amount (incl. VAT):</strong> {formatCurrency(totalAmount)}</p>
                         <p><strong>Term:</strong> {values.term} months</p>
                         <p><strong>Rate:</strong> {values.rate}%</p>
                         {asset && <p><strong>Asset:</strong> {asset.make} {asset.model}</p>}
@@ -356,7 +410,6 @@ export default function AgreementsContent() {
                         </CardHeader>
                          <CardContent>
                             <div className="grid grid-cols-1 md:grid-cols-[250px_1fr] gap-8">
-                                {/* Sidebar Stepper */}
                                 <div className="flex flex-col gap-2 border-r pr-4">
                                     {dynamicSteps.map((step, index) => {
                                         const isCompleted = index < currentStep && isStepValid(index);
@@ -374,8 +427,6 @@ export default function AgreementsContent() {
                                         );
                                     })}
                                 </div>
-
-                                {/* Form Content */}
                                 <div className="space-y-6">
                                     <h2 className="text-2xl font-bold">{dynamicSteps[currentStep].name}</h2>
                                     <div className="min-h-[250px]">
@@ -451,6 +502,3 @@ export default function AgreementsContent() {
     );
 }
 
-
-
-    
