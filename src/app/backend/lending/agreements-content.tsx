@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo, useCallback } from 'react';
@@ -23,6 +22,7 @@ import { type ColumnDef } from '@/hooks/use-data-table';
 import { getClientSideAuthToken } from '@/firebase';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
+import { AgreementActionMenu } from './AgreementActionMenu';
 
 
 const agreementTypes = [
@@ -176,7 +176,7 @@ function AgreementWizard({ agreement, onBack, onSaveSuccess }: { agreement?: any
                                 <Select onValueChange={field.onChange} defaultValue={field.value} disabled={areAssetsLoading}>
                                     <FormControl><SelectTrigger><SelectValue placeholder={areAssetsLoading ? "Loading assets..." : "Select an asset..."}/></SelectTrigger></FormControl>
                                     <SelectContent>{(assets && assets.length > 0) ? (
-                                        (assets || []).map((a:any) => <SelectItem key={a.id} value={a.id}>{a.asset.make} {a.asset.model} ({a.asset.registrationNumber})</SelectItem>)
+                                        (assets || []).map((a:any) => <SelectItem key={a.id} value={a.id}>{a.make} {a.model} ({a.registrationNumber})</SelectItem>)
                                     ) : (
                                         <div className="p-4 text-sm text-muted-foreground text-center">No assets found for this client.</div>
                                     )}</SelectContent>
@@ -203,7 +203,7 @@ function AgreementWizard({ agreement, onBack, onSaveSuccess }: { agreement?: any
                         <p><strong>Amount:</strong> {formatCurrency(values.amount || 0)}</p>
                         <p><strong>Term:</strong> {values.term} months</p>
                         <p><strong>Rate:</strong> {values.rate}%</p>
-                        {asset && <p><strong>Asset:</strong> {asset.asset.make} {asset.asset.model}</p>}
+                        {asset && <p><strong>Asset:</strong> {asset.make} {asset.model}</p>}
                     </div>
                 );
             default: return null;
@@ -265,6 +265,13 @@ function AgreementWizard({ agreement, onBack, onSaveSuccess }: { agreement?: any
 }
 
 
+const statusColors: { [key: string]: 'default' | 'secondary' | 'destructive' | 'outline' } = {
+    pending: 'secondary',
+    active: 'default',
+    completed: 'outline',
+    defaulted: 'destructive',
+};
+
 export default function AgreementsContent() {
     const firestore = useFirestore();
     const [selectedClient, setSelectedClient] = useState<string | null>(null);
@@ -309,11 +316,14 @@ export default function AgreementsContent() {
     const columns: ColumnDef<any>[] = useMemo(() => [
         { accessorKey: 'id', header: 'Agreement ID', cell: ({ row }) => <span className="font-mono text-xs">{row.original.id}</span> },
         { accessorKey: 'type', header: 'Type', cell: ({ row }) => <span className="capitalize">{row.original.type?.replace('-', ' ')}</span> },
-        { accessorKey: 'status', header: 'Status', cell: ({ row }) => <Badge>{row.original.status}</Badge> },
+        { accessorKey: 'status', header: 'Status', cell: ({ row }) => <Badge variant={statusColors[row.original.status] || 'secondary'} className="capitalize">{row.original.status}</Badge> },
         { accessorKey: 'amount', header: 'Amount', cell: ({ row }) => formatCurrency(row.original.amount) },
-        { id: 'actions', header: () => <div className="text-right">Actions</div>, cell: ({ row }) => <div className="text-right"><Button variant="outline" size="sm" onClick={() => handleEdit(row.original)}>Manage</Button></div> }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    ], []);
+        { id: 'actions', header: () => <div className="text-right">Actions</div>, cell: ({ row }) => (
+            <div className="text-right">
+                <AgreementActionMenu agreement={{clientId: selectedClient, ...row.original}} onEdit={() => handleEdit(row.original)} onUpdate={forceRefresh} />
+            </div>
+        )}
+    ], [selectedClient, forceRefresh, handleEdit]);
     
     if (view === 'create' || view === 'edit') {
         return <AgreementWizard agreement={selectedAgreement} onBack={handleBackToList} onSaveSuccess={handleSaveSuccess} />;

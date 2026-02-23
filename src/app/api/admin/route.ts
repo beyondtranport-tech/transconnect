@@ -70,6 +70,24 @@ export async function POST(req: NextRequest) {
         // --- END AUTHORIZATION ---
 
         switch (action) {
+            case 'updateAgreementStatus': {
+                if (!isAdmin) throw new Error("Forbidden: Admin access required.");
+                const { clientId, agreementId, status } = payload;
+                if (!clientId || !agreementId || !status) {
+                    throw new Error("clientId, agreementId, and status are required.");
+                }
+                const validStatuses = ['pending', 'active', 'completed', 'defaulted'];
+                if (!validStatuses.includes(status)) {
+                    throw new Error(`Invalid status. Must be one of: ${validStatuses.join(', ')}`);
+                }
+
+                const agreementRef = db.doc(`lendingClients/${clientId}/agreements/${agreementId}`);
+                await agreementRef.update({
+                    status: status,
+                    updatedAt: FieldValue.serverTimestamp(),
+                });
+                return NextResponse.json({ success: true, message: "Agreement status updated." });
+            }
             case 'saveLendingAgreement': {
                 if (!isAdmin) throw new Error("Forbidden: Admin access required.");
                 const { agreement } = payload;

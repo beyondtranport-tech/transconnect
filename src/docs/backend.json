@@ -476,12 +476,11 @@
     "Asset": {
         "$schema": "http://json-schema.org/draft-07/schema#",
         "title": "Asset",
-        "description": "An asset financed through a lending agreement.",
+        "description": "An asset belonging to a client.",
         "type": "object",
         "properties": {
             "id": { "type": "string" },
             "clientId": { "type": "string" },
-            "agreementId": { "type": "string" },
             "make": { "type": "string" },
             "model": { "type": "string" },
             "year": { "type": "string" },
@@ -776,11 +775,11 @@
         }
       },
       {
-        "path": "/lendingClients/{clientId}/agreements/{agreementId}/assets/{assetId}",
+        "path": "/lendingClients/{clientId}/assets/{assetId}",
         "definition": {
             "entityName": "Asset",
             "schema": { "$ref": "#/entities/Asset" },
-            "description": "DMS: Asset(s) being financed under an agreement."
+            "description": "DMS: Asset(s) belonging to a client."
         }
       },
       {
