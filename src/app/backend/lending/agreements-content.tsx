@@ -88,9 +88,12 @@ export default function AgreementsContent() {
     }, [firestore, clientIdForQueries]);
     const { data: assets, isLoading: areAssetsLoading } = useCollection(assetsQuery);
     
-    useEffect(() => {
+     useEffect(() => {
         if (view === 'edit' && selectedAgreement) {
-            reset({ clientId: selectedClient, ...selectedAgreement });
+            reset({
+                clientId: selectedClient || selectedAgreement.clientId,
+                ...selectedAgreement
+            });
             setIsTypeEditable(false);
             setCurrentStep(0);
         } else if (view === 'create') {
@@ -128,22 +131,22 @@ export default function AgreementsContent() {
 
     const agreementType = watch('type');
 
-    const dynamicSteps = useMemo(() => {
+     const dynamicSteps = useMemo(() => {
         const baseSteps = [
-            { id: 'client', name: 'Select Client', fields: ['clientId'] },
-            { id: 'type', name: 'Agreement Type', fields: ['type'] },
-            { id: 'details', name: 'Financial Details', fields: ['amount', 'term', 'rate'] },
+            { id: 'client', name: 'Step 1: Select Client', fields: ['clientId'] },
+            { id: 'type', name: 'Step 2: Agreement Type', fields: ['type'] },
+            { id: 'details', name: 'Step 3: Financial Details', fields: ['amount', 'term', 'rate'] },
         ];
         
         if (agreementType === 'installment-sale') {
-            baseSteps.push({ id: 'asset', name: 'Link Asset', fields: ['assetId'] });
+            baseSteps.push({ id: 'asset', name: 'Step 4: Link Asset', fields: ['assetId'] });
         }
 
-        baseSteps.push({ id: 'review', name: 'Review & Save' });
+        baseSteps.push({ id: 'review', name: 'Step 5: Review & Save' });
 
         return baseSteps.map((step, index) => ({
             ...step,
-            name: `Step ${index + 1}: ${step.name.replace(/^Step \d+: /, '')}`,
+            name: step.name.replace(/Step \d+: /, `Step ${index + 1}: `),
         }));
     }, [agreementType]);
     
@@ -261,11 +264,11 @@ export default function AgreementsContent() {
                             </FormItem>
                         }/>
                         <Button asChild variant="outline" className="w-full">
-                            <Link href={`/lending?view=assets&action=add&clientId=${getValues('clientId')}`}>
-                                <PlusCircle className="mr-2 h-4 w-4" /> Add New Asset
+                            <Link href={`/lending?view=assets&clientId=${getValues('clientId')}`}>
+                                <PlusCircle className="mr-2 h-4 w-4" /> Go to Asset Register
                             </Link>
                         </Button>
-                        <p className="text-xs text-muted-foreground">If the asset is not in the list, you will be redirected to add it. You will need to restart this agreement wizard afterward.</p>
+                        <p className="text-xs text-muted-foreground">If the asset is not in the list, use the button above to go to the asset register, add it, then return here to complete the agreement.</p>
                     </div>
                 );
             case 'review':
@@ -411,4 +414,3 @@ export default function AgreementsContent() {
         </Card>
     );
 }
-
