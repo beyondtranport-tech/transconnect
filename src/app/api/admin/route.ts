@@ -70,6 +70,16 @@ export async function POST(req: NextRequest) {
         // --- END AUTHORIZATION ---
 
         switch (action) {
+            case 'deleteLendingAgreement': {
+                if (!isAdmin) throw new Error("Forbidden: Admin access required.");
+                const { clientId, agreementId } = payload;
+                if (!clientId || !agreementId) {
+                    throw new Error("clientId and agreementId are required.");
+                }
+                const agreementRef = db.doc(`lendingClients/${clientId}/agreements/${agreementId}`);
+                await agreementRef.delete();
+                return NextResponse.json({ success: true, message: "Agreement deleted successfully." });
+            }
             case 'updateAssetStatus': {
                 if (!isAdmin) throw new Error("Forbidden: Admin access required.");
                 const { assetId, status } = payload;
@@ -1061,5 +1071,3 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ success: false, error: error.message }, { status });
     }
 }
-
-    
