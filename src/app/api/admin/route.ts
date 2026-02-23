@@ -1,3 +1,4 @@
+
 'use server';
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -70,6 +71,24 @@ export async function POST(req: NextRequest) {
         // --- END AUTHORIZATION ---
 
         switch (action) {
+            case 'updateAssetStatus': {
+                if (!isAdmin) throw new Error("Forbidden: Admin access required.");
+                const { clientId, assetId, status } = payload;
+                if (!clientId || !assetId || !status) {
+                    throw new Error("clientId, assetId, and status are required.");
+                }
+                const validStatuses = ['available', 'financed', 'sold', 'decommissioned'];
+                if (!validStatuses.includes(status)) {
+                    throw new Error(`Invalid status. Must be one of: ${validStatuses.join(', ')}`);
+                }
+
+                const assetRef = db.doc(`lendingClients/${clientId}/assets/${assetId}`);
+                await assetRef.update({
+                    status: status,
+                    updatedAt: FieldValue.serverTimestamp(),
+                });
+                return NextResponse.json({ success: true, message: "Asset status updated." });
+            }
             case 'updateAgreementStatus': {
                 if (!isAdmin) throw new Error("Forbidden: Admin access required.");
                 const { clientId, agreementId, status } = payload;
@@ -116,13 +135,11 @@ export async function POST(req: NextRequest) {
                 
                 if (id) { // Update existing asset
                     const docRef = collectionRef.doc(id);
-                    delete assetData.agreementId;
                     await docRef.set({ ...assetData, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
                     return NextResponse.json({ success: true, id: id });
                 } else { // Create new asset
                     const newDocRef = collectionRef.doc();
-                    delete assetData.agreementId;
-                    await newDocRef.set({ ...assetData, id: newDocRef.id, createdAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp() });
+                    await newDocRef.set({ ...assetData, id: newDocRef.id, createdAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp(), status: 'available' });
                     return NextResponse.json({ success: true, id: newDocRef.id });
                 }
             }
@@ -770,7 +787,7 @@ export async function POST(req: NextRequest) {
                     return dateB - dateA;
                 });
 
-                return NextResponse.json({ success: true, data });
+                return NextResponse.json({ success: true, data: data });
             }
             case 'getFinanceApplications': {
                  const [quotesSnap, enquiriesSnap] = await Promise.all([

@@ -22,6 +22,8 @@ import { collection, query, collectionGroup } from 'firebase/firestore';
 import { Progress } from '@/components/ui/progress';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
+import { AssetActionMenu } from './AssetActionMenu';
+import { Badge } from '@/components/ui/badge';
 
 
 // --- Zod Schemas ---
@@ -79,7 +81,8 @@ const vehicleModels: { [key: string]: { id: string; name: string }[] } = {
 
 const currentYear = new Date().getFullYear();
 const years = Array.from({ length: 30 }, (_, i) => ({ id: (currentYear - i).toString(), name: (currentYear - i).toString() }));
-
+import { provinces } from "@/lib/geodata";
+import { Textarea } from "@/components/ui/textarea";
 
 // --- Wizard Steps Configuration ---
 const wizardSteps = [
@@ -488,10 +491,18 @@ export default function AssetsContent() {
     
     const columns: ColumnDef<any>[] = useMemo(() => [
         { accessorKey: 'id', header: 'Asset ID' },
-        { header: 'Description', cell: ({row}) => <div>{row.original.asset?.make} {row.original.asset?.model}</div>},
+        { header: 'Description', cell: ({row}) => <div>{row.original.make} {row.original.model}</div>},
         { accessorKey: 'clientName', header: 'Client' },
-        { id: 'actions', header: () => <div className="text-right">Actions</div>, cell: ({ row }) => <div className="text-right"><Button variant="ghost" size="sm" onClick={() => handleEdit(row.original)}>Edit</Button></div> }
-    ], [handleEdit]);
+        { accessorKey: 'status', header: 'Status', cell: ({ row }) => <Badge variant={statusColors[row.original.status] || 'secondary'} className="capitalize">{row.original.status || 'Available'}</Badge>},
+        { id: 'actions', header: () => <div className="text-right">Actions</div>, cell: ({ row }) => <div className="text-right"><AssetActionMenu asset={row.original} onEdit={() => handleEdit(row.original)} onUpdate={forceRefresh} /></div> }
+    ], [handleEdit, forceRefresh]);
+
+    const statusColors: { [key: string]: 'default' | 'secondary' | 'destructive' | 'outline' } = {
+        available: 'default',
+        financed: 'secondary',
+        sold: 'outline',
+        decommissioned: 'destructive',
+    };
 
     if (view === 'create' || view === 'edit') {
         return <AssetWizard asset={selectedAsset} onBack={handleBackToList} onSaveSuccess={handleSaveSuccess} defaultClientId={defaultClientId} />;
@@ -513,3 +524,4 @@ export default function AssetsContent() {
         </Card>
     );
 }
+
