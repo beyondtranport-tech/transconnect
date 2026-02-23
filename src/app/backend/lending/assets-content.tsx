@@ -17,7 +17,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useCollection, useFirestore, useMemoFirebase, useUser, getClientSideAuthToken } from '@/firebase';
+import { useCollection, useFirestore, useMemoFirebase, getClientSideAuthToken } from '@/firebase';
 import { collection, query, collectionGroup } from 'firebase/firestore';
 import { Progress } from '@/components/ui/progress';
 import { DataTable } from '@/components/ui/data-table';
@@ -84,7 +84,7 @@ const years = Array.from({ length: 30 }, (_, i) => ({ id: (currentYear - i).toSt
 // --- Wizard Steps Configuration ---
 const wizardSteps = [
     { id: 'client', name: 'Client', fields: ['clientId'] },
-    { id: 'asset', name: 'Asset Details', fields: ['asset'] },
+    { id: 'asset', name: 'Asset Details', fields: ['asset.make', 'asset.model', 'asset.year', 'asset.registrationNumber', 'asset.registerNumber', 'asset.vin', 'asset.tare', 'asset.gvm', 'asset.titleholder', 'asset.owner', 'asset.firstRegistrationDate', 'asset.classification'] },
     { id: 'documents', name: 'Documents', fields: [] },
     { id: 'review', name: 'Review & Save' },
 ];
@@ -294,7 +294,7 @@ const AssetWizard = ({ asset, onBack, onSaveSuccess, defaultClientId }: { asset?
         if (!currentStepConfig) return;
 
         let isValid = false;
-        if (currentStepConfig.fields) {
+        if (currentStepConfig.fields && currentStepConfig.fields.length > 0) {
             isValid = await methods.trigger(currentStepConfig.fields as (keyof AssetWizardFormValues)[]);
         } else {
             isValid = true;
@@ -331,11 +331,51 @@ const AssetWizard = ({ asset, onBack, onSaveSuccess, defaultClientId }: { asset?
             setIsSaving(false);
         }
     };
+    
+    const onInvalid = (errors: any) => {
+        let stepIndex = -1;
+        let errorMessage = "An unknown validation error occurred. Please check all fields.";
+
+        const findError = () => {
+            for (let i = 0; i < wizardSteps.length; i++) {
+                const stepFields = wizardSteps[i].fields || [];
+                for (const fieldPath of stepFields) {
+                    const fieldParts = fieldPath.split('.');
+                    let errorNode = errors;
+                    for (const part of fieldParts) {
+                        errorNode = errorNode?.[part];
+                    }
+                    if (errorNode?.message) {
+                        stepIndex = i;
+                        errorMessage = errorNode.message;
+                        return;
+                    }
+                }
+            }
+        };
+
+        findError();
+        
+        if (stepIndex !== -1) {
+            setCurrentStep(stepIndex);
+            toast({
+                variant: 'destructive',
+                title: `Error in Step ${stepIndex + 1}: ${wizardSteps[stepIndex].name}`,
+                description: errorMessage,
+            });
+        } else {
+             toast({
+                variant: 'destructive',
+                title: 'Validation Error',
+                description: 'Please review all steps for required information.',
+            });
+        }
+    };
 
     const isStepValid = (stepIndex: number) => {
         if (stepIndex < 0) return true;
         const step = wizardSteps[stepIndex];
-        if (!step.fields) return true;
+        if (!step.fields || step.fields.length === 0) return true;
         const fields = step.fields as (keyof AssetWizardFormValues)[];
         return fields.every(field => !methods.formState.errors[field as keyof typeof methods.formState.errors]);
     };
@@ -354,7 +394,7 @@ const AssetWizard = ({ asset, onBack, onSaveSuccess, defaultClientId }: { asset?
     return (
         <Card>
             <FormProvider {...methods}>
-                <form onSubmit={methods.handleSubmit(onSubmit)}>
+                <form onSubmit={methods.handleSubmit(onSubmit, onInvalid)}>
                     <CardHeader><CardTitle>{asset ? 'Edit Asset' : 'Onboard New Asset'}</CardTitle></CardHeader>
                     <CardContent>
                         <div className="grid grid-cols-1 md:grid-cols-[250px_1fr] gap-8">
@@ -374,10 +414,16 @@ const AssetWizard = ({ asset, onBack, onSaveSuccess, defaultClientId }: { asset?
                             {/* Form Content */}
                             <div className="space-y-6">
                                 <h2 className="text-2xl font-bold">{wizardSteps[currentStep].name}</h2>
-                                {renderStepContent()}
+                                <div className="min-h-[400px]">
+                                    {renderStepContent()}
+                                </div>
                                 <div className="flex justify-between pt-8 mt-8 border-t">
                                     <Button type="button" variant="outline" onClick={handleBack}><ArrowLeft className="mr-2 h-4 w-4" /> Back</Button>
-                                    {currentStep < wizardSteps.length - 1 ? <Button type="button" onClick={handleNext}>Next <ArrowRight className="ml-2 h-4 w-4" /></Button> : <Button type="submit" disabled={isSaving}>{isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />} Save Asset</Button>}
+                                    {currentStep < wizardSteps.length - 1 ? (
+                                        <Button type="button" onClick={handleNext}>Next <ArrowRight className="ml-2 h-4 w-4" /></Button>
+                                    ) : (
+                                        <Button type="submit" disabled={isSaving}>{isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />} Save Asset</Button>
+                                    )}
                                 </div>
                             </div>
                         </div>
@@ -467,6 +513,3 @@ export default function AssetsContent() {
         </Card>
     );
 }
-
-
-    
