@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
@@ -54,6 +53,47 @@ const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR', maximumFractionDigits: 0 }).format(value);
 };
 
+// New isolated component for VAT calculation
+const VatCalculationSummary = () => {
+    const { watch } = useFormContext();
+    const amountExVat = watch('amountExVat') || 0;
+    const vatAmount = amountExVat * 0.15;
+    const totalAmount = amountExVat + vatAmount;
+
+    return (
+        <div className="p-4 border rounded-lg bg-muted space-y-2 text-sm">
+            <div className="flex justify-between"><span>VAT (15%)</span><span className="font-mono">{formatCurrency(vatAmount)}</span></div>
+            <div className="flex justify-between font-bold text-base border-t pt-2 mt-2"><span>Total Finance Amount (incl. VAT)</span><span className="font-mono">{formatCurrency(totalAmount)}</span></div>
+        </div>
+    );
+}
+
+const StepDetails = () => {
+    const { control } = useFormContext();
+
+    return (
+        <div className="space-y-6">
+             <FormField
+                control={control}
+                name="amountExVat"
+                render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Amount (ex. VAT)</FormLabel>
+                        <FormControl>
+                            <Input type="number" placeholder="R 0.00" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                    </FormItem>
+                )}
+            />
+            <VatCalculationSummary />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField control={control} name="term" render={({ field }) => (<FormItem><FormLabel>Term (Months)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                <FormField control={control} name="rate" render={({ field }) => (<FormItem><FormLabel>Rate (%)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
+            </div>
+        </div>
+    );
+};
 
 export default function AgreementsContent() {
     const firestore = useFirestore();
@@ -238,38 +278,28 @@ export default function AgreementsContent() {
         return fields.every(field => !methods.formState.errors[field as keyof typeof methods.formState.errors]);
     };
 
-    const StepDetails = () => {
-        const { control, watch } = useFormContext();
+    const MarkupSummary = () => {
+        const { watch } = useFormContext();
         const amountExVat = watch('amountExVat') || 0;
-        const vatAmount = amountExVat * 0.15;
-        const totalAmount = amountExVat + vatAmount;
+        const selectedAssetId = watch('assetId');
+        const selectedAsset = useMemo(() => (assets || []).find((a: any) => a.id === selectedAssetId), [selectedAssetId]);
+        const costOfSale = selectedAsset?.costOfSale || 0;
+        const markup = amountExVat > 0 && costOfSale > 0 ? amountExVat - costOfSale : 0;
+        
+        if (!selectedAsset) return null;
 
         return (
-            <div className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormField control={control} name="term" render={({ field }) => (<FormItem><FormLabel>Term (Months)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                    <FormField control={control} name="rate" render={({ field }) => (<FormItem><FormLabel>Rate (%)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                </div>
-                <Separator />
-                <div className="space-y-4">
-                     <FormField control={control} name="amountExVat" render={({ field }) => (<FormItem><FormLabel>Amount (ex. VAT)</FormLabel><FormControl><Input type="number" placeholder="R 0.00" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                    <div className="p-4 border rounded-lg bg-muted space-y-2 text-sm">
-                        <div className="flex justify-between"><span>VAT (15%)</span><span className="font-mono">{formatCurrency(vatAmount)}</span></div>
-                        <div className="flex justify-between font-bold text-base border-t pt-2 mt-2"><span>Total Finance Amount (incl. VAT)</span><span className="font-mono">{formatCurrency(totalAmount)}</span></div>
-                    </div>
-                </div>
+            <div className="p-4 border rounded-lg bg-muted space-y-2 text-sm mt-4">
+                <h4 className="font-semibold mb-2">Financial Summary</h4>
+                <div className="flex justify-between"><span>Finance Amount (ex. VAT)</span><span className="font-mono">{formatCurrency(amountExVat)}</span></div>
+                <div className="flex justify-between"><span>Asset Cost of Sale</span><span className="font-mono">{formatCurrency(costOfSale)}</span></div>
+                <div className="flex justify-between font-bold text-base border-t pt-2 mt-2"><span>Markup (Unfunded Income)</span><span className="font-mono text-primary">{formatCurrency(markup)}</span></div>
             </div>
         );
     };
 
     const StepAsset = () => {
-        const { control, getValues, watch } = useFormContext();
-        
-        const amountExVat = watch('amountExVat') || 0;
-        const selectedAssetId = watch('assetId');
-        const selectedAsset = (assets || []).find((a: any) => a.id === selectedAssetId);
-        const costOfSale = selectedAsset?.costOfSale || 0;
-        const markup = amountExVat > 0 && costOfSale > 0 ? amountExVat - costOfSale : 0;
+        const { control, getValues } = useFormContext();
         
         return (
             <div className="space-y-4">
@@ -290,14 +320,7 @@ export default function AgreementsContent() {
                     </FormItem>
                 )}/>
 
-                {selectedAsset && (
-                    <div className="p-4 border rounded-lg bg-muted space-y-2 text-sm mt-4">
-                        <h4 className="font-semibold mb-2">Financial Summary</h4>
-                        <div className="flex justify-between"><span>Finance Amount (ex. VAT)</span><span className="font-mono">{formatCurrency(amountExVat)}</span></div>
-                        <div className="flex justify-between"><span>Asset Cost of Sale</span><span className="font-mono">{formatCurrency(costOfSale)}</span></div>
-                        <div className="flex justify-between font-bold text-base border-t pt-2 mt-2"><span>Markup (Unfunded Income)</span><span className="font-mono text-primary">{formatCurrency(markup)}</span></div>
-                    </div>
-                )}
+                <MarkupSummary />
                 
                  <Dialog open={isAssetModalOpen} onOpenChange={setIsAssetModalOpen}>
                     <DialogTrigger asChild>
@@ -510,4 +533,3 @@ export default function AgreementsContent() {
         </Card>
     );
 }
-
