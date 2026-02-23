@@ -65,6 +65,7 @@ function AgreementWizard({ agreement, onBack, onSaveSuccess }: { agreement?: any
     const [isLoading, setIsLoading] = useState(false);
     const { toast } = useToast();
     const firestore = useFirestore();
+    const [isTypeEditable, setIsTypeEditable] = useState(!agreement?.id);
 
     const methods = useForm<AgreementFormValues>({
         resolver: zodResolver(agreementSchema),
@@ -74,8 +75,10 @@ function AgreementWizard({ agreement, onBack, onSaveSuccess }: { agreement?: any
     useEffect(() => {
         if (agreement) {
             methods.reset(agreement);
+            setIsTypeEditable(!agreement.id); // If editing, type is not editable by default
         } else {
             methods.reset({ clientId: '', type: '', status: 'pending', amount: 0, term: 0, rate: 0, assetId: '' });
+            setIsTypeEditable(true); // If new, type is editable
         }
     }, [agreement, methods]);
 
@@ -169,16 +172,25 @@ function AgreementWizard({ agreement, onBack, onSaveSuccess }: { agreement?: any
                 );
             case 'type':
                 return (
-                    <FormField control={control} name="type" render={({field}) => (
-                        <FormItem>
-                            <FormLabel>Agreement Type</FormLabel>
-                            <Select onValueChange={field.onChange} value={field.value || ''}>
-                                <FormControl><SelectTrigger><SelectValue placeholder="Select type..."/></SelectTrigger></FormControl>
-                                <SelectContent>{agreementTypes.map(t => <SelectItem key={t.id} value={t.id}>{t.label}</SelectItem>)}</SelectContent>
-                            </Select>
-                            <FormMessage/>
-                        </FormItem>
-                    )}/>
+                    <div className="space-y-4">
+                        <Label>Agreement Type</Label>
+                        {!isTypeEditable && agreement?.id ? (
+                            <div className="flex items-center gap-4">
+                                <Input value={agreementTypes.find(t => t.id === methods.getValues('type'))?.label || 'Not set'} disabled />
+                                <Button type="button" variant="outline" onClick={() => setIsTypeEditable(true)}>Change</Button>
+                            </div>
+                        ) : (
+                            <FormField control={control} name="type" render={({field}) => (
+                                <FormItem>
+                                    <Select onValueChange={field.onChange} value={field.value || ''}>
+                                        <FormControl><SelectTrigger><SelectValue placeholder="Select type..."/></SelectTrigger></FormControl>
+                                        <SelectContent>{agreementTypes.map(t => <SelectItem key={t.id} value={t.id}>{t.label}</SelectItem>)}</SelectContent>
+                                    </Select>
+                                    <FormMessage/>
+                                </FormItem>
+                            )}/>
+                        )}
+                    </div>
                 );
             case 'details':
                 return (
@@ -401,4 +413,3 @@ export default function AgreementsContent() {
     );
 }
 
-    
