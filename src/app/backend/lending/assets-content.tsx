@@ -10,7 +10,7 @@ import { ArrowLeft, PlusCircle, Truck, Loader2, Save, Check, ArrowRight, Upload,
 import { useToast } from "@/hooks/use-toast";
 import Link from 'next/link';
 import { useForm, FormProvider, useFormContext } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
+import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from 'zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -18,12 +18,14 @@ import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useCollection, useFirestore, useMemoFirebase, getClientSideAuthToken, useUser } from '@/firebase';
-import { collection, query, collectionGroup } from 'firebase/firestore';
+import { collection, query } from 'firebase/firestore';
 import { Progress } from '@/components/ui/progress';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
 import { AssetActionMenu } from './AssetActionMenu';
 import { Badge } from '@/components/ui/badge';
+import { provinces } from "@/lib/geodata";
+import { Textarea } from "@/components/ui/textarea";
 
 
 // --- Zod Schemas ---
@@ -81,8 +83,6 @@ const vehicleModels: { [key: string]: { id: string; name: string }[] } = {
 
 const currentYear = new Date().getFullYear();
 const years = Array.from({ length: 30 }, (_, i) => ({ id: (currentYear - i).toString(), name: (currentYear - i).toString() }));
-import { provinces } from "@/lib/geodata";
-import { Textarea } from "@/components/ui/textarea";
 
 // --- Wizard Steps Configuration ---
 const wizardSteps = [
@@ -278,7 +278,7 @@ const StepReview = () => {
 
 
 // --- Asset Wizard ---
-const AssetWizard = ({ asset, onBack, onSaveSuccess, defaultClientId }: { asset?: any, onBack: () => void, onSaveSuccess: () => void, defaultClientId?: string | null }) => {
+export const AssetWizard = ({ asset, onBack, onSaveSuccess, defaultClientId }: { asset?: any, onBack: () => void, onSaveSuccess: () => void, defaultClientId?: string | null }) => {
     const [currentStep, setCurrentStep] = useState(0);
     const [isSaving, setIsSaving] = useState(false);
     const { toast } = useToast();
