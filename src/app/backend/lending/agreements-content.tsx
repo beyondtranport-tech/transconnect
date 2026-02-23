@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
@@ -171,7 +172,7 @@ function AgreementWizard({ agreement, onBack, onSaveSuccess }: { agreement?: any
                     <FormField control={control} name="type" render={({field}) => (
                         <FormItem>
                             <FormLabel>Agreement Type</FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value} disabled={!!agreement?.id}>
+                            <Select onValueChange={field.onChange} value={field.value || ''} disabled={!!agreement?.id}>
                                 <FormControl><SelectTrigger><SelectValue placeholder="Select type..."/></SelectTrigger></FormControl>
                                 <SelectContent>{agreementTypes.map(t => <SelectItem key={t.id} value={t.id}>{t.label}</SelectItem>)}</SelectContent>
                             </Select>
