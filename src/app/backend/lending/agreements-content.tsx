@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
@@ -87,9 +88,9 @@ export default function AgreementsContent() {
     const { data: agreements, isLoading: areAgreementsLoading, forceRefresh: forceRefreshAgreements } = useCollection(agreementsQuery);
 
     const assetsQuery = useMemoFirebase(() => {
-        if (!firestore || !clientIdForQueries) return null;
-        return query(collection(firestore, 'lendingAssets'), where('clientId', '==', clientIdForQueries), where('status', '==', 'available'));
-    }, [firestore, clientIdForQueries]);
+        if (!firestore || !clientIdFromForm) return null;
+        return query(collection(firestore, 'lendingAssets'), where('clientId', '==', clientIdFromForm), where('status', '==', 'available'));
+    }, [firestore, clientIdFromForm]);
     const { data: assets, isLoading: areAssetsLoading, forceRefresh: forceRefreshAssets } = useCollection(assetsQuery);
     
     useEffect(() => {
@@ -502,3 +503,6 @@ export default function AgreementsContent() {
     );
 }
 
+
+
+  
