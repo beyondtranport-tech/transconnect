@@ -145,7 +145,7 @@ function AgreementWizard({ agreement, onBack, onSaveSuccess }: { agreement?: any
                     <FormField control={control} name="clientId" render={({field}) => (
                         <FormItem>
                             <FormLabel>Client</FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value} disabled={areClientsLoading || !!agreement?.id}>
+                            <Select onValueChange={field.onChange} value={field.value || ''} disabled={areClientsLoading || !!agreement?.id}>
                                 <FormControl><SelectTrigger><SelectValue placeholder="Select a client..."/></SelectTrigger></FormControl>
                                 <SelectContent>{(clients || []).map((c: any) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
                             </Select>
@@ -386,3 +386,4 @@ export default function AgreementsContent() {
         </Card>
     );
 }
+
