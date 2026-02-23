@@ -132,18 +132,66 @@ function AgreementWizard({ agreement, onBack, onSaveSuccess }: { agreement?: any
     const renderStepContent = () => {
         switch (dynamicSteps[currentStep].id) {
             case 'client':
-                return <FormField control={control} name="clientId" render={({field}) => <FormItem><FormLabel>Client</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value} disabled={areClientsLoading || !!agreement}><FormControl><SelectTrigger><SelectValue placeholder="Select a client..."/></SelectTrigger></FormControl><SelectContent>{(clients || []).map((c: any) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent></Select><FormMessage/></FormItem>}/>
+                return (
+                    <FormField control={control} name="clientId" render={({field}) => (
+                        <FormItem>
+                            <FormLabel>Client</FormLabel>
+                            <Select onValueChange={field.onChange} defaultValue={field.value} disabled={areClientsLoading || !!agreement?.id}>
+                                <FormControl><SelectTrigger><SelectValue placeholder="Select a client..."/></SelectTrigger></FormControl>
+                                <SelectContent>{(clients || []).map((c: any) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
+                            </Select>
+                            <FormMessage/>
+                        </FormItem>
+                    )} />
+                );
             case 'type':
-                return <FormField control={control} name="type" render={({field}) => <FormItem><FormLabel>Agreement Type</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value} disabled={!!agreement}><FormControl><SelectTrigger><SelectValue placeholder="Select type..."/></SelectTrigger></FormControl><SelectContent>{agreementTypes.map(t => <SelectItem key={t.id} value={t.id}>{t.label}</SelectItem>)}</SelectContent></Select><FormMessage/></FormItem>}/>
+                return (
+                    <FormField control={control} name="type" render={({field}) => (
+                        <FormItem>
+                            <FormLabel>Agreement Type</FormLabel>
+                            <Select onValueChange={field.onChange} defaultValue={field.value} disabled={!!agreement?.id}>
+                                <FormControl><SelectTrigger><SelectValue placeholder="Select type..."/></SelectTrigger></FormControl>
+                                <SelectContent>{agreementTypes.map(t => <SelectItem key={t.id} value={t.id}>{t.label}</SelectItem>)}</SelectContent>
+                            </Select>
+                            <FormMessage/>
+                        </FormItem>
+                    )}/>
+                );
             case 'details':
-                return <div className="grid grid-cols-3 gap-4"><FormField control={control} name="amount" render={({field}) => <FormItem><FormLabel>Amount</FormLabel><FormControl><Input type="number" {...field}/></FormControl><FormMessage/></FormItem>}/><FormField control={control} name="term" render={({field}) => <FormItem><FormLabel>Term (Months)</FormLabel><FormControl><Input type="number" {...field}/></FormControl><FormMessage/></FormItem>}/><FormField control={control} name="rate" render={({field}) => <FormItem><FormLabel>Rate (%)</FormLabel><FormControl><Input type="number" {...field}/></FormControl><FormMessage/></FormItem>}/></div>
+                return (
+                    <div className="grid grid-cols-3 gap-4">
+                        <FormField control={control} name="amount" render={({field}) => <FormItem><FormLabel>Amount</FormLabel><FormControl><Input type="number" {...field}/></FormControl><FormMessage/></FormItem>}/>
+                        <FormField control={control} name="term" render={({field}) => <FormItem><FormLabel>Term (Months)</FormLabel><FormControl><Input type="number" {...field}/></FormControl><FormMessage/></FormItem>}/>
+                        <FormField control={control} name="rate" render={({field}) => <FormItem><FormLabel>Rate (%)</FormLabel><FormControl><Input type="number" {...field}/></FormControl><FormMessage/></FormItem>}/>
+                    </div>
+                );
             case 'asset':
-                return <FormField control={control} name="assetId" render={({field}) => <FormItem><FormLabel>Linked Asset</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value} disabled={areAssetsLoading}><FormControl><SelectTrigger><SelectValue placeholder={areAssetsLoading ? "Loading assets..." : "Select an asset..."}/></SelectTrigger></FormControl><SelectContent>{(assets || []).map((a:any) => <SelectItem key={a.id} value={a.id}>{a.make} {a.model} ({a.registrationNumber})</SelectItem>)}</SelectContent></Select><FormMessage/></FormItem>}/>
+                return (
+                    <FormField control={control} name="assetId" render={({field}) => 
+                        <FormItem>
+                            <FormLabel>Linked Asset</FormLabel>
+                            <Select onValueChange={field.onChange} defaultValue={field.value} disabled={areAssetsLoading}>
+                                <FormControl><SelectTrigger><SelectValue placeholder={areAssetsLoading ? "Loading assets..." : "Select an asset..."}/></SelectTrigger></FormControl>
+                                <SelectContent>{(assets || []).map((a:any) => <SelectItem key={a.id} value={a.id}>{a.make} {a.model} ({a.registrationNumber})</SelectItem>)}</SelectContent>
+                            </Select>
+                            <FormMessage/>
+                        </FormItem>
+                    }/>
+                );
             case 'review':
                 const values = getValues();
                 const clientName = clients?.find(c => c.id === values.clientId)?.name;
                 const asset = assets?.find(a => a.id === values.assetId);
-                return <div className="space-y-2 text-sm"><p><strong>Client:</strong> {clientName}</p><p><strong>Type:</strong> {values.type}</p><p><strong>Amount:</strong> {formatCurrency(values.amount || 0)}</p><p><strong>Term:</strong> {values.term} months</p><p><strong>Rate:</strong> {values.rate}%</p>{asset && <p><strong>Asset:</strong> {asset.make} {asset.model}</p>}</div>
+                return (
+                    <div className="space-y-2 text-sm">
+                        <p><strong>Client:</strong> {clientName}</p>
+                        <p><strong>Type:</strong> {values.type}</p>
+                        <p><strong>Amount:</strong> {formatCurrency(values.amount || 0)}</p>
+                        <p><strong>Term:</strong> {values.term} months</p>
+                        <p><strong>Rate:</strong> {values.rate}%</p>
+                        {asset && <p><strong>Asset:</strong> {asset.make} {asset.model}</p>}
+                    </div>
+                );
             default: return null;
         }
     }
@@ -251,7 +299,7 @@ export default function AgreementsContent() {
         { accessorKey: 'amount', header: 'Amount', cell: ({ row }) => formatCurrency(row.original.amount) },
         { id: 'actions', header: () => <div className="text-right">Actions</div>, cell: ({ row }) => <div className="text-right"><Button variant="outline" size="sm" onClick={() => handleEdit(row.original)}>Manage</Button></div> }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    ], [handleEdit]);
+    ], []);
     
     if (view === 'create' || view === 'edit') {
         return <AgreementWizard agreement={selectedAgreement} onBack={handleBackToList} onSaveSuccess={handleSaveSuccess} />;
