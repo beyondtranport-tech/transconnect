@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
@@ -7,7 +8,7 @@ import { Landmark, FileText, ArrowLeft, ArrowRight, Loader2, PlusCircle, Save, C
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, query } from 'firebase/firestore';
+import { collection, query, where } from 'firebase/firestore';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -95,7 +96,13 @@ const StepDetails = () => {
     );
 };
 
-const AgreementWizard = ({ agreement, onBack, onSaveSuccess }: { agreement?: any, onBack: () => void, onSaveSuccess: () => void }) => {
+const AgreementWizard = ({ agreement, onBack, onSaveSuccess, clients, areClientsLoading }: { 
+    agreement?: any, 
+    onBack: () => void, 
+    onSaveSuccess: () => void,
+    clients: any[],
+    areClientsLoading: boolean
+}) => {
     const [currentStep, setCurrentStep] = useState(0);
     const [isSaving, setIsSaving] = useState(false);
     const { toast } = useToast();
@@ -111,9 +118,6 @@ const AgreementWizard = ({ agreement, onBack, onSaveSuccess }: { agreement?: any
     });
 
     const { control, watch, trigger, getValues, reset } = methods;
-
-    const clientsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'lendingClients')) : null, [firestore]);
-    const { data: clients, isLoading: areClientsLoading } = useCollection(clientsQuery);
     
     const clientIdFromForm = watch('clientId'); 
 
@@ -242,7 +246,7 @@ const AgreementWizard = ({ agreement, onBack, onSaveSuccess }: { agreement?: any
         const { watch } = useFormContext();
         const amountExVat = watch('amountExVat') || 0;
         const selectedAssetId = watch('assetId');
-        const selectedAsset = useMemo(() => (assets || []).find((a: any) => a.id === selectedAssetId), [selectedAssetId]);
+        const selectedAsset = useMemo(() => (assets || []).find((a: any) => a.id === selectedAssetId), [selectedAssetId, assets]);
         const costOfSale = selectedAsset?.costOfSale || 0;
         const markup = amountExVat > 0 && costOfSale > 0 ? amountExVat - costOfSale : 0;
         
@@ -314,7 +318,7 @@ const AgreementWizard = ({ agreement, onBack, onSaveSuccess }: { agreement?: any
                             <FormLabel>Client</FormLabel>
                              {agreement?.id ? (
                                 <FormControl>
-                                    <Input value={clients?.find(c => c.id === field.value)?.name || 'Loading...'} disabled />
+                                    <Input value={clients?.find(c => c.id === field.value)?.name || (areClientsLoading ? 'Loading...' : 'Unknown Client')} disabled />
                                 </FormControl>
                             ) : (
                                 <Select onValueChange={field.onChange} value={field.value || ''} disabled={areClientsLoading}>
@@ -485,7 +489,13 @@ export default function AgreementsContent() {
     ], [selectedClient, forceRefreshAgreements, handleEdit]);
     
     if (view === 'create' || view === 'edit') {
-        return <AgreementWizard agreement={selectedAgreement} onBack={handleBackToList} onSaveSuccess={handleSaveSuccess} />;
+        return <AgreementWizard 
+                    agreement={selectedAgreement} 
+                    onBack={handleBackToList} 
+                    onSaveSuccess={handleSaveSuccess} 
+                    clients={clients || []}
+                    areClientsLoading={areClientsLoading}
+                />;
     }
     
     return (
