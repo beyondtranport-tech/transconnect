@@ -69,14 +69,8 @@ function AgreementWizard({ agreement, onBack, onSaveSuccess }: { agreement?: any
     const methods = useForm<AgreementFormValues>({
         resolver: zodResolver(agreementSchema),
         mode: 'onChange',
-        defaultValues: { clientId: '', type: '', status: 'pending', amount: 0, term: 0, rate: 0, assetId: '' },
+        defaultValues: agreement || { clientId: '', type: '', status: 'pending', amount: 0, term: 0, rate: 0, assetId: '' },
     });
-
-    useEffect(() => {
-        if (agreement) {
-            methods.reset(agreement);
-        }
-    }, [agreement, methods]);
     
     const { control, watch, trigger, getValues } = methods;
 
@@ -95,11 +89,11 @@ function AgreementWizard({ agreement, onBack, onSaveSuccess }: { agreement?: any
     const { data: assets, isLoading: areAssetsLoading } = useCollection(assetsQuery);
 
     const clientName = useMemo(() => {
-        if (agreement?.id && selectedClientId && clients) {
+        if (selectedClientId && clients) {
             return clients.find((c: any) => c.id === selectedClientId)?.name || 'Unknown Client';
         }
         return '';
-    }, [agreement, selectedClientId, clients]);
+    }, [selectedClientId, clients]);
 
 
     const handleNext = async () => {
