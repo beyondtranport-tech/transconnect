@@ -151,7 +151,7 @@ export default function AgreementsContent() {
 
         const finalSteps = [
             ...baseSteps,
-            { id: 'review', name: 'Review & Save' }
+            { id: 'review', name: 'Review & Save', fields: [] }
         ];
         
         return finalSteps.map((step, index) => ({

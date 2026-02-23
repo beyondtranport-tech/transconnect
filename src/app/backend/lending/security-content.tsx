@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import React, { useState, useMemo, useCallback } from 'react';
@@ -20,12 +21,6 @@ import { collection, query } from 'firebase/firestore';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import { Textarea } from "@/components/ui/textarea";
-
-// Dummy Data
-const dummySecurityDocs = [
-    { id: 'sec-001', securityType: 'Cession of Book Debts', client: 'Sample Transport Co.', clientCode: 'STC-001', agreement: 'AG-101', docStatus: 'Generated', recordStatus: 'Unconfirmed' },
-    { id: 'sec-002', name: 'Suretyship by Directors', securityType: 'Suretyship by Directors', client: 'Another Client Ltd', clientCode: 'ACL-001', agreement: 'AG-205', docStatus: 'Signed In', recordStatus: 'Confirmed' },
-];
 
 const docStatusOptions = ["Generated", "Sent", "Received", "Checked", "Signed In"];
 
@@ -187,7 +182,7 @@ function SecurityWizard({ securityDoc, onBack, onSaveSuccess }: { securityDoc?: 
             <FormProvider {...methods}>
                 <form onSubmit={methods.handleSubmit(onSubmit)}>
                     <CardHeader>
-                        <CardTitle>{securityDoc ? 'Edit' : 'Create'} Security Agreement</CardTitle>
+                        <CardTitle>{securityDoc ? 'Edit' : 'Add'} Security Agreement</CardTitle>
                         <CardDescription>Follow the steps to link a security document to an agreement.</CardDescription>
                     </CardHeader>
                     <CardContent>
@@ -264,7 +259,7 @@ export default function SecurityContent() {
                 <div><CardTitle className="flex items-center gap-2"><FileSignature /> Security Agreements Register</CardTitle><CardDescription>Track non-tangible security agreements like deeds of surety and cessions of book debt.</CardDescription></div>
                 <Button onClick={() => setView('create')}><PlusCircle className="mr-2 h-4 w-4" /> Add Security Agreement</Button>
             </CardHeader>
-            <CardContent><DataTable columns={columns} data={dummySecurityDocs} /></CardContent>
+            <CardContent><DataTable columns={columns} data={[]} /></CardContent>
         </Card>
     );
 }
