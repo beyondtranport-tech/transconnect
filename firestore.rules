@@ -136,6 +136,9 @@ service cloud.firestore {
     }
     
     // --- Lending Module Collections (Admin Only) ---
+    match /lendingAssets/{assetId} {
+        allow read, write: if isAdmin();
+    }
     match /lendingClients/{clientId}/{document=**} {
         allow read, write: if isAdmin();
     }
@@ -144,3 +147,4 @@ service cloud.firestore {
     }
   }
 }
+    

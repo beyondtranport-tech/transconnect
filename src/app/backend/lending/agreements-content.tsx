@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
@@ -7,7 +8,7 @@ import { Landmark, FileText, ArrowLeft, ArrowRight, Loader2, PlusCircle, Save, C
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, query } from 'firebase/firestore';
+import { collection, query, where } from 'firebase/firestore';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -64,6 +65,7 @@ export default function AgreementsContent() {
     const [isSaving, setIsSaving] = useState(false);
     const { toast } = useToast();
     const [isTypeEditable, setIsTypeEditable] = useState(false);
+    const [isAssetModalOpen, setIsAssetModalOpen] = useState(false);
     
 
     const methods = useForm<AgreementFormValues>({
@@ -87,7 +89,7 @@ export default function AgreementsContent() {
 
     const assetsQuery = useMemoFirebase(() => {
         if (!firestore || !clientIdForQueries) return null;
-        return query(collection(firestore, `lendingClients/${clientIdForQueries}/assets`));
+        return query(collection(firestore, 'lendingAssets'), where('clientId', '==', clientIdForQueries));
     }, [firestore, clientIdForQueries]);
     const { data: assets, isLoading: areAssetsLoading, forceRefresh: forceRefreshAssets } = useCollection(assetsQuery);
     
@@ -211,8 +213,7 @@ export default function AgreementsContent() {
 
     const StepAsset = () => {
         const { control, getValues } = useFormContext();
-        const [isAssetModalOpen, setIsAssetModalOpen] = useState(false);
-    
+        
         return (
             <div className="space-y-4">
                 <FormField control={control} name="assetId" render={({field}) => (
@@ -248,7 +249,7 @@ export default function AgreementsContent() {
                         />
                     </DialogContent>
                 </Dialog>
-                <p className="text-xs text-muted-foreground">If the asset is not in the list, use the button above to add it to the client's asset register.</p>
+                <p className="text-xs text-muted-foreground">If the asset is not in the list, use the button above to add it to the asset register.</p>
             </div>
         );
     };
@@ -450,3 +451,6 @@ export default function AgreementsContent() {
     );
 }
 
+
+
+    

@@ -1,4 +1,5 @@
 
+
 {
   "entities": {
     "User": {
@@ -744,6 +745,14 @@
         }
       },
       {
+        "path": "/lendingAssets/{assetId}",
+        "definition": {
+            "entityName": "Asset",
+            "schema": { "$ref": "#/entities/Asset" },
+            "description": "DMS: Central register of all assets, linked to clients via clientId."
+        }
+      },
+      {
         "path": "/lendingClients/{clientId}",
         "definition": {
             "entityName": "Client",
@@ -776,14 +785,6 @@
         }
       },
       {
-        "path": "/lendingClients/{clientId}/assets/{assetId}",
-        "definition": {
-            "entityName": "Asset",
-            "schema": { "$ref": "#/entities/Asset" },
-            "description": "DMS: Asset(s) belonging to a client."
-        }
-      },
-      {
         "path": "/lendingClients/{clientId}/agreements/{agreementId}/securities/{securityId}",
         "definition": {
             "entityName": "Security",
@@ -811,3 +812,6 @@
     "reasoning": "The data model is refactored to separate user identity from business entities. A new `/users` collection stores individual user profiles, linked via Firebase Auth UID. A new `/companies` collection stores business-related data, including wallet balance, membership status, and subcollections for transactions, staff, quotes, etc. This creates a cleaner, more scalable architecture where a user owns a company, rather than the user and company being the same entity. This prevents data duplication and clarifies ownership for security rules. Added Special Offer fields to Membership entity and created new entities for Connect Plan pricing to support advanced promotional offers. Added a complete, separate data structure for the Debtor Management System (DMS) under collections prefixed with 'lending' to ensure clear separation for future spin-off potential."
   }
 }
+
+
+    

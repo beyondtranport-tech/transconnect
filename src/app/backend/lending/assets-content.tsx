@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
@@ -45,9 +46,8 @@ const assetDetailsSchema = z.object({
   classification: z.string().min(1, 'Classification is required'),
 });
 
-const formSchema = z.object({
+const formSchema = assetDetailsSchema.extend({
   clientId: z.string().min(1, "A client must be selected."),
-  asset: assetDetailsSchema,
   documents: z.object({
       invoice: z.string().optional(),
       rc1: z.string().optional(),
@@ -87,7 +87,7 @@ const years = Array.from({ length: 30 }, (_, i) => ({ id: (currentYear - i).toSt
 // --- Wizard Steps Configuration ---
 const wizardSteps = [
     { id: 'client', name: 'Client', fields: ['clientId'] },
-    { id: 'asset', name: 'Asset Details', fields: ['asset.make', 'asset.model', 'asset.year', 'asset.registrationNumber', 'asset.registerNumber', 'asset.vin', 'asset.tare', 'asset.gvm', 'asset.titleholder', 'asset.owner', 'asset.firstRegistrationDate', 'asset.classification'] },
+    { id: 'asset', name: 'Asset Details', fields: ['make', 'model', 'year', 'registrationNumber', 'registerNumber', 'vin', 'tare', 'gvm', 'titleholder', 'owner', 'firstRegistrationDate', 'classification'] },
     { id: 'documents', name: 'Documents', fields: [] },
     { id: 'review', name: 'Review & Save' },
 ];
@@ -115,7 +115,7 @@ const StepSelectClient = () => {
 }
 const StepAssetDetails = () => {
     const { control, watch, setValue } = useFormContext();
-    const selectedMake = watch('asset.make');
+    const selectedMake = watch('make');
 
     const models = useMemo(() => {
         if (!selectedMake) return [];
@@ -124,9 +124,9 @@ const StepAssetDetails = () => {
 
     useEffect(() => {
         if (selectedMake && models.length > 0) {
-            const currentModel = watch('asset.model');
+            const currentModel = watch('model');
             if (currentModel && !models.some(m => m.id === currentModel)) {
-                setValue('asset.model', '');
+                setValue('model', '');
             }
         }
     }, [selectedMake, models, setValue, watch]);
@@ -137,7 +137,7 @@ const StepAssetDetails = () => {
              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <FormField
                     control={control}
-                    name="asset.make"
+                    name="make"
                     render={({ field }) => (
                         <FormItem>
                             <FormLabel>Make</FormLabel>
@@ -151,7 +151,7 @@ const StepAssetDetails = () => {
                 />
                  <FormField
                     control={control}
-                    name="asset.model"
+                    name="model"
                     render={({ field }) => (
                         <FormItem>
                             <FormLabel>Model</FormLabel>
@@ -165,7 +165,7 @@ const StepAssetDetails = () => {
                 />
                  <FormField
                     control={control}
-                    name="asset.year"
+                    name="year"
                     render={({ field }) => (
                         <FormItem>
                             <FormLabel>Year</FormLabel>
@@ -179,24 +179,24 @@ const StepAssetDetails = () => {
                 />
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField control={control} name="asset.registrationNumber" render={({ field }) => (<FormItem><FormLabel>Registration Number</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-                <FormField control={control} name="asset.registerNumber" render={({ field }) => (<FormItem><FormLabel>Register #</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+                <FormField control={control} name="registrationNumber" render={({ field }) => (<FormItem><FormLabel>Registration Number</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+                <FormField control={control} name="registerNumber" render={({ field }) => (<FormItem><FormLabel>Register #</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                 <FormField control={control} name="asset.vin" render={({ field }) => (<FormItem><FormLabel>VIN</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-                <FormField control={control} name="asset.engineNumber" render={({ field }) => (<FormItem><FormLabel>Engine Number</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+                 <FormField control={control} name="vin" render={({ field }) => (<FormItem><FormLabel>VIN</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+                <FormField control={control} name="engineNumber" render={({ field }) => (<FormItem><FormLabel>Engine Number</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField control={control} name="asset.tare" render={({ field }) => (<FormItem><FormLabel>Tare (kg)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                <FormField control={control} name="asset.gvm" render={({ field }) => (<FormItem><FormLabel>GVM (kg)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                <FormField control={control} name="tare" render={({ field }) => (<FormItem><FormLabel>Tare (kg)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                <FormField control={control} name="gvm" render={({ field }) => (<FormItem><FormLabel>GVM (kg)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
             </div>
              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField control={control} name="asset.titleholder" render={({ field }) => (<FormItem><FormLabel>Titleholder</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-                <FormField control={control} name="asset.owner" render={({ field }) => (<FormItem><FormLabel>Owner</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+                <FormField control={control} name="titleholder" render={({ field }) => (<FormItem><FormLabel>Titleholder</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+                <FormField control={control} name="owner" render={({ field }) => (<FormItem><FormLabel>Owner</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField control={control} name="asset.firstRegistrationDate" render={({ field }) => (<FormItem><FormLabel>Date of First Registration</FormLabel><FormControl><Input type="date" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                <FormField control={control} name="asset.classification" render={({ field }) => (<FormItem><FormLabel>Classification</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+                <FormField control={control} name="firstRegistrationDate" render={({ field }) => (<FormItem><FormLabel>Date of First Registration</FormLabel><FormControl><Input type="date" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                <FormField control={control} name="classification" render={({ field }) => (<FormItem><FormLabel>Classification</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
             </div>
         </div>
     );
@@ -263,17 +263,7 @@ const StepDocuments = () => {
 const StepReview = () => {
     const { getValues } = useFormContext();
     const values = getValues();
-    return (
-         <div className="space-y-4">
-             <Card><CardHeader><CardTitle>Client</CardTitle></CardHeader><CardContent><p>Client ID: {values.clientId}</p></CardContent></Card>
-             <Card><CardHeader><CardTitle>Asset</CardTitle></CardHeader><CardContent><pre className="whitespace-pre-wrap text-xs">{JSON.stringify(values.asset, null, 2)}</pre></CardContent></Card>
-             <Card><CardHeader><CardTitle>Documents</CardTitle></CardHeader><CardContent>
-                <ul className="list-disc list-inside">
-                    {Object.entries(values.documents || {}).map(([key, value]) => value ? <li key={key}><a href={value as string} target="_blank" rel="noopener noreferrer" className="text-primary underline">{key}</a></li> : null)}
-                </ul>
-             </CardContent></Card>
-        </div>
-    )
+    return <pre className="whitespace-pre-wrap bg-muted p-4 rounded-md text-xs">{JSON.stringify(values, null, 2)}</pre>;
 };
 
 
@@ -288,7 +278,6 @@ export const AssetWizard = ({ asset, onBack, onSaveSuccess, defaultClientId }: {
         mode: 'onChange',
         defaultValues: asset || { 
             clientId: defaultClientId || '',
-            asset: {}, documents: {} 
         },
     });
 
@@ -407,7 +396,7 @@ export const AssetWizard = ({ asset, onBack, onSaveSuccess, defaultClientId }: {
                                     const isCompleted = index < currentStep && isStepValid(index);
                                     return (
                                          <Button key={step.id} variant={currentStep === index ? 'default' : 'ghost'} className="justify-start gap-2" onClick={() => setCurrentStep(index)} disabled={index > currentStep && !isStepValid(currentStep - 1)}>
-                                            {isCompleted ? <Check className="h-5 w-5 text-green-500" /> : <div className="h-5 w-5" />}
+                                            {isCompleted ? <Check className="h-5 w-5 text-green-500" /> : <div className={cn("h-5 w-5 rounded-full flex items-center justify-center text-xs font-bold", currentStep >= index ? "bg-primary-foreground text-primary" : "bg-muted-foreground/20")}>{index + 1}</div>}
                                             {step.name}
                                         </Button>
                                     )
@@ -453,7 +442,7 @@ export default function AssetsContent() {
         }
     }, [searchParams]);
 
-    const assetsQuery = useMemoFirebase(() => firestore ? query(collectionGroup(firestore, 'assets')) : null, [firestore]);
+    const assetsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'lendingAssets')) : null, [firestore]);
     const { data: assets, isLoading, forceRefresh } = useCollection(assetsQuery);
     
     const clientsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'lendingClients')) : null, [firestore]);
@@ -524,3 +513,5 @@ export default function AssetsContent() {
         </Card>
     );
 }
+
+    

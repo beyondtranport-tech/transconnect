@@ -72,16 +72,16 @@ export async function POST(req: NextRequest) {
         switch (action) {
             case 'updateAssetStatus': {
                 if (!isAdmin) throw new Error("Forbidden: Admin access required.");
-                const { clientId, assetId, status } = payload;
-                if (!clientId || !assetId || !status) {
-                    throw new Error("clientId, assetId, and status are required.");
+                const { assetId, status } = payload;
+                if (!assetId || !status) {
+                    throw new Error("assetId and status are required.");
                 }
                 const validStatuses = ['available', 'financed', 'sold', 'decommissioned'];
                 if (!validStatuses.includes(status)) {
                     throw new Error(`Invalid status. Must be one of: ${validStatuses.join(', ')}`);
                 }
 
-                const assetRef = db.doc(`lendingClients/${clientId}/assets/${assetId}`);
+                const assetRef = db.doc(`lendingAssets/${assetId}`);
                 await assetRef.update({
                     status: status,
                     updatedAt: FieldValue.serverTimestamp(),
@@ -116,16 +116,16 @@ export async function POST(req: NextRequest) {
 
                     // If setting to 'active' and an asset is linked, update the asset's status to 'financed'
                     if (status === 'active' && agreementData.assetId) {
-                        const assetRef = db.doc(`lendingClients/${clientId}/assets/${agreementData.assetId}`);
+                        const assetRef = db.doc(`lendingAssets/${agreementData.assetId}`);
                         transaction.update(assetRef, {
                             status: 'financed',
-                            updatedAt: FieldValue.serverTimestamp(),
+                            updatedAt: FieldValue.serverTimestamp()
                         });
                     }
 
                     // If reverting to 'pending' and an asset is linked, update asset status back to 'available'
                     if (status === 'pending' && agreementData.assetId) {
-                         const assetRef = db.doc(`lendingClients/${clientId}/assets/${agreementData.assetId}`);
+                         const assetRef = db.doc(`lendingAssets/${agreementData.assetId}`);
                          transaction.update(assetRef, {
                             status: 'available',
                             updatedAt: FieldValue.serverTimestamp(),
@@ -158,7 +158,7 @@ export async function POST(req: NextRequest) {
                         // If the agreement is active and an asset is being linked, update the asset status
                         const currentStatus = agreementDoc.data()?.status;
                         if (currentStatus === 'active' && agreementData.assetId) {
-                            const assetRef = db.doc(`lendingClients/${clientId}/assets/${agreementData.assetId}`);
+                            const assetRef = db.doc(`lendingAssets/${agreementData.assetId}`);
                             transaction.update(assetRef, {
                                 status: 'financed',
                                 updatedAt: FieldValue.serverTimestamp()
@@ -178,8 +178,8 @@ export async function POST(req: NextRequest) {
                 const { asset } = payload;
                 if (!asset || !asset.clientId) throw new Error("clientId and asset data are required.");
                 
-                const { clientId, id, ...assetData } = asset;
-                const collectionRef = db.collection(`lendingClients/${clientId}/assets`);
+                const collectionRef = db.collection('lendingAssets');
+                const { id, ...assetData } = asset;
                 
                 if (id) { // Update existing asset
                     const docRef = collectionRef.doc(id);
@@ -1061,3 +1061,5 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ success: false, error: error.message }, { status });
     }
 }
+
+    

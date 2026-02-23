@@ -1,4 +1,5 @@
 
+
 {
   "indexes": [
     {
@@ -106,8 +107,7 @@
       ]
     },
     {
-      "collectionGroup": "assets",
-      "queryScope": "COLLECTION_GROUP",
+      "collectionId": "lendingAssets",
       "fields": [
         { "fieldPath": "clientId", "order": "ASCENDING" }
       ]
@@ -128,3 +128,4 @@
 }
 
   
+    
