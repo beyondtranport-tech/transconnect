@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
@@ -66,6 +65,7 @@ export default function AgreementsContent() {
     const { toast } = useToast();
     const [isTypeEditable, setIsTypeEditable] = useState(false);
     const [isAssetModalOpen, setIsAssetModalOpen] = useState(false);
+    const router = useRouter();
     
 
     const methods = useForm<AgreementFormValues>({
@@ -156,7 +156,7 @@ export default function AgreementsContent() {
         
         return finalSteps.map((step, index) => ({
             ...step,
-            name: `Step ${index + 1}: ${step.name}`,
+            name: `Step ${index + 1}: ${step.name.replace(/Step \d+: /,'')}`,
         }));
     }, [agreementType]);
     
@@ -314,7 +314,7 @@ export default function AgreementsContent() {
     };
 
     const renderStepContent = () => {
-        const stepId = dynamicSteps[currentStep].id;
+        const stepId = dynamicSteps[currentStep]?.id;
         switch (stepId) {
             case 'client':
                 return (
@@ -503,8 +503,4 @@ export default function AgreementsContent() {
     );
 }
 
-
-
-  
-
-  
+    
