@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState } from 'react';
@@ -48,6 +49,18 @@ export function AgreementActionMenu({ agreement, onEdit, onUpdate }: { agreement
         setIsProcessing(true);
         setActionToConfirm(null); // Close the dialog immediately
 
+        const statusMap = {
+            activate: 'active',
+            complete: 'completed',
+            default: 'defaulted'
+        };
+        const newStatus = statusMap[actionToConfirm];
+        if (!newStatus) {
+            toast({ variant: 'destructive', title: 'Internal Error', description: 'Invalid action specified.' });
+            setIsProcessing(false);
+            return;
+        }
+
         try {
             const token = await getClientSideAuthToken();
             if (!token) throw new Error("Authentication failed.");
@@ -55,10 +68,10 @@ export function AgreementActionMenu({ agreement, onEdit, onUpdate }: { agreement
             await performAdminAction(token, 'updateAgreementStatus', {
                 clientId: agreement.clientId,
                 agreementId: agreement.id,
-                status: actionToConfirm,
+                status: newStatus,
             });
 
-            toast({ title: 'Success', description: `Agreement status set to ${actionToConfirm}.` });
+            toast({ title: 'Success', description: `Agreement status set to ${newStatus}.` });
             onUpdate();
         } catch (e: any) {
             toast({ variant: 'destructive', title: 'Action Failed', description: e.message });
