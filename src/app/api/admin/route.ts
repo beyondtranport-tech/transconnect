@@ -1,4 +1,3 @@
-
 'use server';
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -115,11 +114,20 @@ export async function POST(req: NextRequest) {
                         updatedAt: FieldValue.serverTimestamp(),
                     });
 
-                    // If setting to 'active' and an asset is linked, update the asset's status
+                    // If setting to 'active' and an asset is linked, update the asset's status to 'financed'
                     if (status === 'active' && agreementData.assetId) {
                         const assetRef = db.doc(`lendingClients/${clientId}/assets/${agreementData.assetId}`);
                         transaction.update(assetRef, {
                             status: 'financed',
+                            updatedAt: FieldValue.serverTimestamp(),
+                        });
+                    }
+
+                    // If reverting to 'pending' and an asset is linked, update asset status back to 'available'
+                    if (status === 'pending' && agreementData.assetId) {
+                         const assetRef = db.doc(`lendingClients/${clientId}/assets/${agreementData.assetId}`);
+                         transaction.update(assetRef, {
+                            status: 'available',
                             updatedAt: FieldValue.serverTimestamp(),
                         });
                     }
@@ -137,7 +145,27 @@ export async function POST(req: NextRequest) {
                 
                 if (id) { // Update existing agreement
                     const docRef = collectionRef.doc(id);
-                    await docRef.set({ ...agreementData, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+
+                    await db.runTransaction(async (transaction) => {
+                        const agreementDoc = await transaction.get(docRef);
+                        if (!agreementDoc.exists) {
+                            throw new Error("Agreement not found for update.");
+                        }
+
+                        // Update the agreement
+                        transaction.set(docRef, { ...agreementData, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+
+                        // If the agreement is active and an asset is being linked, update the asset status
+                        const currentStatus = agreementDoc.data()?.status;
+                        if (currentStatus === 'active' && agreementData.assetId) {
+                            const assetRef = db.doc(`lendingClients/${clientId}/assets/${agreementData.assetId}`);
+                            transaction.update(assetRef, {
+                                status: 'financed',
+                                updatedAt: FieldValue.serverTimestamp()
+                            });
+                        }
+                    });
+
                     return NextResponse.json({ success: true, id: id });
                 } else { // Create new agreement
                     const newDocRef = collectionRef.doc();

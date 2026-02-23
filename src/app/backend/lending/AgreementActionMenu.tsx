@@ -20,7 +20,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
-import { Loader2, MoreVertical, CheckCircle, XCircle, FileSignature } from 'lucide-react';
+import { Loader2, MoreVertical, CheckCircle, XCircle, FileSignature, RotateCcw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken } from '@/firebase';
 
@@ -40,7 +40,7 @@ async function performAdminAction(token: string, action: string, payload: any) {
 
 export function AgreementActionMenu({ agreement, onEdit, onUpdate }: { agreement: any; onEdit: () => void; onUpdate: () => void; }) {
     const [isProcessing, setIsProcessing] = useState(false);
-    const [actionToConfirm, setActionToConfirm] = useState<'activate' | 'complete' | 'default' | null>(null);
+    const [actionToConfirm, setActionToConfirm] = useState<'activate' | 'complete' | 'default' | 'revert' | null>(null);
     const { toast } = useToast();
 
     const handleAction = async () => {
@@ -52,7 +52,8 @@ export function AgreementActionMenu({ agreement, onEdit, onUpdate }: { agreement
         const statusMap = {
             activate: 'active',
             complete: 'completed',
-            default: 'defaulted'
+            default: 'defaulted',
+            revert: 'pending'
         };
         const newStatus = statusMap[actionToConfirm];
         if (!newStatus) {
@@ -82,9 +83,10 @@ export function AgreementActionMenu({ agreement, onEdit, onUpdate }: { agreement
 
     const getAlertStrings = () => {
         switch (actionToConfirm) {
-            case 'activate': return { title: "Activate Agreement?", description: "This will change the agreement status to 'active'. This action can be reversed." };
+            case 'activate': return { title: "Activate Agreement?", description: "This will change the agreement status to 'active'. If an asset is linked, its status will become 'financed'." };
             case 'complete': return { title: "Complete Agreement?", description: "This will mark the agreement as 'completed'. This action cannot be undone." };
             case 'default': return { title: "Default Agreement?", description: "This will mark the agreement as 'defaulted'. This action cannot be undone." };
+            case 'revert': return { title: "Revert to Pending?", description: "This will change the agreement status back to 'pending', allowing full edits. If an asset was linked, its status will become 'available' again." };
             default: return { title: "", description: "" };
         }
     };
@@ -105,6 +107,10 @@ export function AgreementActionMenu({ agreement, onEdit, onUpdate }: { agreement
                     <DropdownMenuItem onSelect={() => setActionToConfirm('activate')} disabled={agreement.status !== 'pending'}>
                         <CheckCircle className="mr-2 h-4 w-4" /> Activate
                     </DropdownMenuItem>
+                    <DropdownMenuItem onSelect={() => setActionToConfirm('revert')} disabled={agreement.status !== 'active'}>
+                        <RotateCcw className="mr-2 h-4 w-4" /> Revert to Pending
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
                     <DropdownMenuItem onSelect={() => setActionToConfirm('complete')} disabled={agreement.status !== 'active'}>
                         <CheckCircle className="mr-2 h-4 w-4" /> Mark as Completed
                     </DropdownMenuItem>
