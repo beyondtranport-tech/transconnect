@@ -2,6 +2,7 @@
 'use client';
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Landmark, FileText, ArrowLeft, ArrowRight, Loader2, PlusCircle, Save, Check } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -138,7 +139,7 @@ export default function AgreementsContent() {
 
     const agreementType = watch('type');
 
-    const dynamicSteps = useMemo(() => {
+     const dynamicSteps = useMemo(() => {
         const baseSteps = [
             { id: 'client', name: 'Client', fields: ['clientId'] },
             { id: 'type', name: 'Agreement Type', fields: ['type'] },
@@ -244,7 +245,7 @@ export default function AgreementsContent() {
                 </div>
                 <Separator />
                 <div className="space-y-4">
-                    <FormField control={control} name="amountExVat" render={({ field }) => (<FormItem><FormLabel>Amount (ex. VAT)</FormLabel><FormControl><Input type="number" placeholder="R 0.00" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                     <FormField control={control} name="amountExVat" render={({ field }) => (<FormItem><FormLabel>Amount (ex. VAT)</FormLabel><FormControl><Input type="number" placeholder="R 0.00" {...field} /></FormControl><FormMessage /></FormItem>)} />
                     <div className="p-4 border rounded-lg bg-muted space-y-2 text-sm">
                         <div className="flex justify-between"><span>VAT (15%)</span><span className="font-mono">{formatCurrency(vatAmount)}</span></div>
                         <div className="flex justify-between font-bold text-base border-t pt-2 mt-2"><span>Total Finance Amount (incl. VAT)</span><span className="font-mono">{formatCurrency(totalAmount)}</span></div>
@@ -291,7 +292,7 @@ export default function AgreementsContent() {
                     </div>
                 )}
                 
-                <Dialog open={isAssetModalOpen} onOpenChange={setIsAssetModalOpen}>
+                 <Dialog open={isAssetModalOpen} onOpenChange={setIsAssetModalOpen}>
                     <DialogTrigger asChild>
                         <Button variant="outline" className="w-full">
                             <PlusCircle className="mr-2 h-4 w-4" /> Add New Asset
@@ -502,5 +503,3 @@ export default function AgreementsContent() {
         </Card>
     );
 }
-
-    
