@@ -14,6 +14,12 @@ import { Button } from '@/components/ui/button';
 import { ArrowUpDown } from 'lucide-react';
 import React from 'react';
 
+// Helper to safely access nested properties
+function getNestedValue<T>(obj: T, path: string): any {
+  if (obj === null || obj === undefined) return undefined;
+  return path.split('.').reduce((acc, part) => acc && acc[part], obj as any);
+}
+
 interface DataTableProps<TData> {
   columns: ColumnDef<TData>[];
   data: TData[];
@@ -76,7 +82,7 @@ export function DataTable<TData>({ columns, data }: DataTableProps<TData>) {
                 <TableRow key={(row.original as any).id || index}>
                   {columns.map(column => (
                     <TableCell key={(column.id || column.accessorKey) as string}>
-                      {column.cell ? column.cell({ row }) : (row.original as any)[column.accessorKey as string]}
+                      {column.cell ? column.cell({ row }) : getNestedValue(row.original, column.accessorKey as string)}
                     </TableCell>
                   ))}
                 </TableRow>
