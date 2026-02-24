@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from "react";
@@ -14,6 +15,8 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Route, Package, Weight, ArrowRight } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Separator } from "@/components/ui/separator";
 
 
 export default function FreightMatcher() {
@@ -29,8 +32,13 @@ export default function FreightMatcher() {
             vehicleType: "",
             capacity: "",
             preferences: "",
+            rate: undefined,
+            isPartLoad: false,
+            palletCount: undefined,
         },
     });
+
+    const isPartLoad = form.watch("isPartLoad");
 
     async function onSubmit(values: MatchFreightInput) {
         setIsLoading(true);
@@ -81,7 +89,7 @@ export default function FreightMatcher() {
                                 </FormItem>
                             )}
                         />
-                        <FormField
+                         <FormField
                             control={form.control}
                             name="vehicleType"
                             render={({ field }) => (
@@ -99,9 +107,22 @@ export default function FreightMatcher() {
                             name="capacity"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Carrying Capacity</FormLabel>
+                                    <FormLabel>Total Vehicle Capacity</FormLabel>
                                     <FormControl>
                                         <Input placeholder="e.g., 34 tons" {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        <FormField
+                            control={form.control}
+                            name="rate"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Desired Rate (R/km, optional)</FormLabel>
+                                    <FormControl>
+                                        <Input type="number" placeholder="e.g., 22.50" {...field} onChange={e => field.onChange(parseFloat(e.target.value))} />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -111,16 +132,56 @@ export default function FreightMatcher() {
                             control={form.control}
                             name="preferences"
                             render={({ field }) => (
-                                <FormItem className="md:col-span-2">
-                                    <FormLabel>Preferences (Optional)</FormLabel>
+                                <FormItem>
+                                    <FormLabel>Other Preferences (Optional)</FormLabel>
                                     <FormControl>
-                                        <Input placeholder="e.g., No-touch freight" {...field} />
+                                        <Input placeholder="e.g., No-touch freight, specific goods" {...field} />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
                             )}
                         />
                     </div>
+                    
+                    <Separator />
+
+                    <div className="space-y-4">
+                         <FormField
+                            control={form.control}
+                            name="isPartLoad"
+                            render={({ field }) => (
+                                <FormItem className="flex flex-row items-center space-x-3 space-y-0">
+                                    <FormControl>
+                                        <Checkbox
+                                            checked={field.value}
+                                            onCheckedChange={field.onChange}
+                                        />
+                                    </FormControl>
+                                    <div className="space-y-1 leading-none">
+                                        <FormLabel>
+                                            Looking for a part load?
+                                        </FormLabel>
+                                    </div>
+                                </FormItem>
+                            )}
+                        />
+                        {isPartLoad && (
+                             <FormField
+                                control={form.control}
+                                name="palletCount"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Available Pallet Space</FormLabel>
+                                        <FormControl>
+                                            <Input type="number" placeholder="e.g., 10" {...field} onChange={e => field.onChange(parseInt(e.target.value, 10))}/>
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                        )}
+                    </div>
+                    
                     <Button type="submit" disabled={isLoading} className="w-full md:w-auto">
                         {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                         Find Matches

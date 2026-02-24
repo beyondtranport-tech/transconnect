@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -5,6 +6,7 @@ import { Truck } from "lucide-react";
 import FreightMatcher from "@/app/tech/freight-matcher";
 import Image from "next/image";
 import data from "@/lib/placeholder-images.json";
+import LoadCalculator from "@/app/tech/load-calculator";
 
 const { placeholderImages } = data;
 const techImage = placeholderImages.find(p => p.id === "tech-home");
@@ -32,16 +34,21 @@ export default function LoadsMallPage() {
 
             <section className="py-16 md:py-24 bg-background">
                 <div className="container mx-auto px-4">
-                    <div className="max-w-4xl mx-auto">
-                        <Card>
-                            <CardHeader>
-                                <CardTitle className="flex items-center gap-2"><Truck className="h-6 w-6"/>AI Freight Matcher</CardTitle>
-                                <CardDescription>Enter your vehicle details and current location to find the best matching loads from our network.</CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <FreightMatcher />
-                            </CardContent>
-                        </Card>
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+                        <div className="lg:col-span-2">
+                             <Card>
+                                <CardHeader>
+                                    <CardTitle className="flex items-center gap-2"><Truck className="h-6 w-6"/>AI Freight Matcher</CardTitle>
+                                    <CardDescription>Enter your vehicle details and current location to find the best matching loads from our network.</CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    <FreightMatcher />
+                                </CardContent>
+                            </Card>
+                        </div>
+                         <div className="lg:col-span-1 space-y-8">
+                           <LoadCalculator />
+                        </div>
                     </div>
                 </div>
             </section>

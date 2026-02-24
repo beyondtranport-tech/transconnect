@@ -8,6 +8,9 @@ export const MatchFreightInputSchema = z.object({
   vehicleType: z.string().describe('The type of vehicle the transporter has (e.g., truck, van).'),
   capacity: z.string().describe('The carrying capacity of the vehicle.'),
   preferences: z.string().optional().describe('Any specific preferences or requirements of the transporter.'),
+  rate: z.number().optional().describe('The desired rate per kilometer.'),
+  isPartLoad: z.boolean().optional().describe('Whether the transporter is looking for a partial load.'),
+  palletCount: z.number().optional().describe('The number of pallets the transporter wants to load, if it is a part load. Assume 1 pallet is roughly 1 ton.'),
 });
 export type MatchFreightInput = z.infer<typeof MatchFreightInputSchema>;
 
