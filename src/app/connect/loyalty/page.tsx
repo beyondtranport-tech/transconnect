@@ -15,7 +15,10 @@ const { placeholderImages } = data;
 const loyaltyImage = placeholderImages.find(p => p.id === 'funding-division');
 
 const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(price);
+    if (typeof price !== 'number' || isNaN(price)) return 'R 0';
+    const parts = price.toFixed(0).toString().split('.');
+    const integerPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+    return `R ${integerPart}`;
 };
 
 export default function LoyaltyPlanPage() {

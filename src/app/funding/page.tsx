@@ -1,16 +1,14 @@
 
-
 'use client';
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { ArrowRight, CheckCircle, Landmark, Book, FileText, Repeat } from "lucide-react";
+import { ArrowRight, CheckCircle, Landmark, Book, FileText, Repeat, Loader2 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import data from "@/lib/placeholder-images.json";
 import { useUser } from "@/firebase";
 import * as React from "react";
-import { useState, useEffect } from "react";
 import * as gtag from '@/lib/gtag';
 
 const { placeholderImages } = data;
@@ -45,12 +43,7 @@ const agreementTypes = [
 ]
 
 export default function FundingPage() {
-    const { user } = useUser();
-    const [isClient, setIsClient] = useState(false);
-
-    useEffect(() => {
-        setIsClient(true);
-    }, []);
+    const { user, isUserLoading } = useUser();
 
     const handleApplyClick = () => {
         if (!process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS_ID) return;
@@ -71,6 +64,8 @@ export default function FundingPage() {
             value: 0
         });
     }
+
+    const ctaLink = user ? '/funding/apply' : '/join?redirect=/funding/apply';
 
     return (
         <div>
@@ -113,9 +108,18 @@ export default function FundingPage() {
                             <p className="text-lg">We see the opportunities that others miss. Our expertise lies in our ability to take something that seems 'un-financeable', structure it correctly, and convert it into a viable funding opportunity. We don’t want to run your business; we want to fuel it.</p>
                         </div>
                         <div className="mt-12">
-                             <Button asChild size="lg" onClick={handleApplyClick}>
-                                <Link href={isClient && user ? '/funding/apply' : '/join?redirect=/funding/apply'}>
-                                    Start Your Application <ArrowRight className="ml-2 h-5 w-5" />
+                             <Button asChild size="lg" onClick={handleApplyClick} disabled={isUserLoading}>
+                                <Link href={ctaLink}>
+                                    {isUserLoading ? (
+                                        <>
+                                            <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                                            Loading...
+                                        </>
+                                    ) : (
+                                        <>
+                                            Start Your Application <ArrowRight className="ml-2 h-5 w-5" />
+                                        </>
+                                    )}
                                 </Link>
                             </Button>
                         </div>

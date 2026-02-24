@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useCart } from '@/context/CartContext';
@@ -13,7 +14,13 @@ import Link from 'next/link';
 import { doc } from 'firebase/firestore';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
-const formatCurrency = (amount: number) => new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(amount);
+const formatCurrency = (amount: number) => {
+    if (typeof amount !== 'number' || isNaN(amount)) return 'R 0';
+    const parts = amount.toFixed(2).toString().split('.');
+    const integerPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+    return `R ${integerPart}.${parts[1]}`;
+};
+
 
 export default function CartPage() {
   const { cartItems, removeFromCart, updateQuantity, clearCart, totalPrice } = useCart();

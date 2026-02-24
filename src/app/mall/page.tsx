@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Button } from "@/components/ui/button";
@@ -9,7 +10,7 @@ import data from "@/lib/placeholder-images.json";
 import { marketplaceItems } from "@/lib/data";
 import { Badge } from "@/components/ui/badge";
 import * as React from "react";
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { IntentModal, type ModalConfig, type IncentiveStep } from "./intent-modal";
 import { useUser } from "@/firebase";
 import { useRouter } from "next/navigation";
@@ -26,16 +27,10 @@ const saAuctionMallImage = placeholderImages.find(p => p.id === 'sa-auction-mall
 
 
 const formatPrice = (price: number) => {
-    const formattedPrice = new Intl.NumberFormat('en-ZA', {
-        style: 'currency',
-        currency: 'ZAR',
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0,
-    }).format(price);
-    // On the server, Node.js might use a non-breaking space.
-    // On the client, it might be a regular space.
-    // We normalize to a regular space to prevent hydration mismatches.
-    return formattedPrice.replace(/\s/g, ' ');
+    if (typeof price !== 'number' || isNaN(price)) return 'R 0';
+    const parts = price.toFixed(0).toString().split('.');
+    const integerPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+    return `R ${integerPart}`;
 };
 
 
@@ -125,16 +120,11 @@ const malls = [
 export default function MallPage() {
     const { user } = useUser();
     const router = useRouter();
-    const [isClient, setIsClient] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [modalConfig, setModalConfig] = useState<ModalConfig | null>(null);
     const [incentiveStep, setIncentiveStep] = useState<IncentiveStep | null>(null);
     const [showIncentiveStep, setShowIncentiveStep] = useState(false);
 
-    useEffect(() => {
-        setIsClient(true);
-    }, []);
-    
     const showIncentive = (href: string) => {
         setIncentiveStep({
             title: "Become a Valued Supplier",
@@ -369,7 +359,7 @@ export default function MallPage() {
                                         <p className="text-sm text-muted-foreground mt-1 h-10 truncate">{item.description}</p>
                                     </div>
                                     <div className="flex justify-between items-end mt-4">
-                                        {isClient && <p className="text-xl font-bold text-primary">{formatPrice(item.price)}</p>}
+                                        <p className="text-xl font-bold text-primary">{formatPrice(item.price)}</p>
                                         <Button size="sm">View Item</Button>
                                     </div>
                                 </CardContent>

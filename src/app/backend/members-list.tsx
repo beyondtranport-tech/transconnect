@@ -12,7 +12,7 @@ import { cn } from '@/lib/utils';
 import MemberActionMenu from './member-action-menu';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { format as formatDateFns } from 'date-fns';
+import { format } from 'date-fns';
 
 interface Member {
     id: string;
@@ -129,7 +129,7 @@ export default function MembersList() {
             try {
                 const date = new Date(dateStr);
                 if (isNaN(date.getTime())) return 'Invalid Date';
-                return formatDateFns(date, "dd MMM yyyy");
+                return format(date, "dd MMM yyyy");
             } catch {
                 return 'Invalid Date';
             }

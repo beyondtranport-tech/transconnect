@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useConfig } from '@/hooks/use-config';
@@ -12,11 +13,13 @@ import Link from 'next/link';
 const { placeholderImages } = data;
 const techImage = placeholderImages.find(p => p.id === "tech-home");
 
-const formatPrice = (price?: number) => {
-    if (typeof price !== 'number') return 'N/A';
+const formatPrice = (price?: number, perUnit = false, unit = "month") => {
+    if (typeof price !== 'number' || isNaN(price)) return 'N/A';
     if (price === 0) return 'Free';
-    const formatted = new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(price);
-    return formatted.replace(/\s/g, ' ');
+    const parts = price.toFixed(0).toString().split('.');
+    const integerPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+    const formatted = `R ${integerPart}`;
+    return perUnit ? `${formatted}/${unit}` : formatted;
 };
 
 export default function TechPage() {
